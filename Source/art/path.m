@@ -616,6 +616,9 @@ typedef struct
 {
   int x0, x1, y0, sy;
 
+  int minx,maxx;
+  int first_y,last_y;
+
   unsigned int *span;
   unsigned int *index;
   int span_size, num_span;
@@ -635,17 +638,21 @@ static void clip_svp_callback(void *data, int y, int start,
 
   alpha = start;
 
-  ci->index[y - ci->y0] = ci->num_span;
+  ci->index[y - ci->y0 - ci->first_y] = ci->num_span;
   if (y-ci->y0<0 || y-ci->y0>=ci->sy)
   {
 	printf("weird y=%i (%i)\n",y,y-ci->y0);
   }
 
   /* empty line; very common case */
-  if (!alpha && !n_steps)
+  if (alpha < 0x10000 && !n_steps)
     {
+      if (ci->first_y == y - ci->y0)
+        ci->first_y++;
       return;
     }
+
+  ci->last_y = y - ci->y0 + 1;
 
   x = 0;
   state = alpha >= 0x10000;
@@ -657,6 +664,7 @@ static void clip_svp_callback(void *data, int y, int start,
 	  ci->span = realloc(ci->span, sizeof(unsigned int) * ci->span_size);
 	}
       ci->span[ci->num_span++] = x;
+      if (x < ci->minx) ci->minx = x;
     }
 
 
@@ -673,6 +681,8 @@ static void clip_svp_callback(void *data, int y, int start,
 	      ci->span = realloc(ci->span, sizeof(unsigned int) * ci->span_size);
 	    }
 	  ci->span[ci->num_span++] = x;
+	  if (x < ci->minx) ci->minx = x;
+	  if (x > ci->maxx) ci->maxx = x;
 	  state = nstate;
 	}
     }
@@ -684,6 +694,7 @@ static void clip_svp_callback(void *data, int y, int start,
 	  ci->span = realloc(ci->span, sizeof(unsigned int) * ci->span_size);
 	}
       ci->span[ci->num_span++] = ci->x1;
+      if (ci->x1 > ci->maxx) ci->maxx = ci->x1;
     }
 }
 
@@ -704,6 +715,12 @@ static void clip_svp_callback(void *data, int y, int start,
   ci.x1 = clip_x1;
   ci.y0 = clip_y0;
   ci.sy = clip_sy;
+
+  ci.minx = ci.x1 - ci.x0;
+  ci.maxx = 0;
+  ci.first_y = 0;
+  ci.last_y = -1;
+
   if (clip_span)
     {
       NSLog(@"TODO: _clip_add_svp: with existing clip_span not implemented");
@@ -716,6 +733,31 @@ static void clip_svp_callback(void *data, int y, int start,
       clip_span = ci.span;
       clip_index = ci.index;
       clip_index[clip_sy] = clip_num_span = ci.num_span;
+
+      clip_y1 = clip_y0 + ci.last_y;
+      clip_y0 += ci.first_y;
+      clip_sy = clip_y1 - clip_y0;
+      if (clip_y1 <= clip_y0)
+	all_clipped = YES;
+
+      if (ci.minx > 0)
+	{
+	  int i;
+	  for (i = 0; i < clip_num_span; i++)
+	    {
+	      clip_span[i] -= ci.minx;
+	      if (clip_span[i] < 0)
+	        NSLog(@"_clip_add_svp: clip_span[i]<0 when adjusting for minx");
+	      if (clip_span[i] > ci.maxx - ci.minx)
+	        NSLog(@"_clip_add_svp: clip_span[i] too large when adjusting for minx");
+	    }
+	}
+
+      clip_x1 = clip_x0 + ci.maxx;
+      clip_x0 += ci.minx;
+      clip_sx = clip_x1 - clip_x0;
+      if (clip_x1 <= clip_x0)
+	all_clipped = YES;
     }
   art_svp_free(svp);
 }

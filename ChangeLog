@@ -1,3 +1,8 @@
+2002-09-20 18:05  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/art/path.m (clip_svp_callback, -_clip_add_svp:): Update
+	the clipping bounding box.
+
 2002-09-19  Adam Fedor  <fedor@gnu.org>
 
 	* Source/win32/WIN32Server.m ([WIN -setbackgroundcolor::]): New.
