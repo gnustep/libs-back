@@ -48,10 +48,6 @@
 #define SLIDE_TIME_STEP   .02   /* in seconds */
 #define SLIDE_NR_OF_STEPS 20  
 
-#define	dragWindev [XGServer _windowWithTag: [_window windowNumber]]
-#define	XX(P)	(P.x)
-#define	XY(P)	(DisplayHeight(XDPY, dragWindev->screen) - P.y)
-
 @interface XGRawWindow : NSWindow
 @end
 
@@ -165,10 +161,47 @@ static	XGDragView	*sharedDragView = nil;
   return sharedDragView;
 }
 
-+ (Class) windowClass
+- (id) init
 {
-  return [XGRawWindow class];
+  self = [super init];
+  if (self != nil)
+    {
+      NSRect winRect = {{0, 0}, {DWZ, DWZ}};
+      XGRawWindow *sharedDragWindow = [XGRawWindow alloc];
+
+      dragCell = [[NSCell alloc] initImageCell: nil];
+      [dragCell setBordered: NO];
+      
+      [sharedDragWindow initWithContentRect: winRect
+				  styleMask: NSBorderlessWindowMask
+				    backing: NSBackingStoreNonretained
+				      defer: NO];
+      [sharedDragWindow setContentView: self];
+      RELEASE(self);
+
+      // Cache the X structure of our window
+      dragWindev = [XGServer _windowWithTag: [sharedDragWindow windowNumber]];
+    }
+
+  return self;
 }
+
+- (BOOL) isDragging
+{
+  return isDragging;
+}
+
+- (void) dealloc
+{
+  [super dealloc];
+  RELEASE(cursors);
+}
+
+- (void) drawRect: (NSRect)rect
+{
+  [dragCell drawWithFrame: [self frame] inView: self];
+}
+
 
 /*
  * External drag operation
@@ -177,7 +210,7 @@ static	XGDragView	*sharedDragView = nil;
 {
   // Start a dragging session from another application
   dragSource = nil;
-  destExternal = YES;
+  dragExternal = YES;
   operationMask = NSDragOperationAll;
 
   ASSIGN(dragPasteboard, [NSPasteboard pasteboardWithName: NSDragPboard]);
@@ -186,7 +219,7 @@ static	XGDragView	*sharedDragView = nil;
 - (void) updateDragInfoFromEvent: (NSEvent*)event
 {
   // Store the drag info, so that we can send status messages as response 
-  destWindow = [event window];
+  dragWindow = [event window];
   dragPoint = [event locationInWindow];
   dragSequence = [event timestamp];
   dragMask = [event data2];
@@ -201,6 +234,11 @@ static	XGDragView	*sharedDragView = nil;
  * Local drag operation
  */
 
+/*
+ * TODO:
+ *  - use initialOffset
+ *  - use screenLocation
+ */
 - (void) dragImage: (NSImage*)anImage
 		at: (NSPoint)screenLocation
 	    offset: (NSSize)initialOffset
@@ -209,16 +247,52 @@ static	XGDragView	*sharedDragView = nil;
 	    source: (id)sourceObject
 	 slideBack: (BOOL)slideFlag
 {
+  if (anImage == nil)
+    {
+      anImage = [NSImage imageNamed: @"common_Close"];
+    }
+
+  [dragCell setImage: anImage];
+
+  ASSIGN(dragPasteboard, pboard);
+  dragSource = RETAIN(sourceObject);
+  dragSequence = [event timestamp];
+  dragExternal = NO;
+  slideBack = slideFlag;
+
+  NSDebugLLog(@"NSDragging", @"Start drag with %@", [pboard types]);
   typelist = mimeTypeForPasteboardType (XDPY, [self zone], [pboard types]);
-  [super dragImage: anImage
-		at: screenLocation
-	    offset: initialOffset
-	     event: event
-	pasteboard: pboard
-	    source: sourceObject
-	 slideBack: slideFlag];
+  [self _handleDrag: event];
   NSZoneFree([self zone], typelist);
   typelist = NULL;
+  RELEASE(dragSource);
+}
+
+- (void) _sendLocalEvent: (GSAppKitSubtype)subtype
+		  action: (NSDragOperation)action
+	        position: (NSPoint)eventLocation
+	       timestamp: (NSTimeInterval)time
+	        toWindow: (NSWindow*)dWindow
+{
+  NSEvent *e;
+  NSGraphicsContext *context = GSCurrentContext();
+  gswindow_device_t *windev;
+
+  windev = [XGServer _windowWithTag: [dWindow windowNumber]];
+  eventLocation = NSMakePoint(eventLocation.x - NSMinX(windev->xframe),
+			      eventLocation.y - NSMinY(windev->xframe));
+  eventLocation.y = NSHeight(windev->xframe) - eventLocation.y;
+
+  e = [NSEvent otherEventWithType: NSAppKitDefined
+	  location: eventLocation
+	  modifierFlags: 0
+	  timestamp: time
+	  windowNumber: windev->number
+	  context: context
+	  subtype: subtype
+	  data1: dragWindev->ident
+	  data2: action];
+  [dWindow sendEvent: e];
 }
 
 - (void) postDragEvent: (NSEvent *)theEvent
@@ -230,7 +304,7 @@ static	XGDragView	*sharedDragView = nil;
     {
       NSDragOperation action = [theEvent data2];
       
-      if (destExternal)
+      if (dragExternal)
 	{
 	  Atom xaction;
 	  
@@ -254,7 +328,7 @@ static	XGDragView	*sharedDragView = nil;
     }
   else if ([theEvent subtype] == GSAppKitDraggingFinished)
     {
-      if (destExternal)
+      if (dragExternal)
 	{
 	  xdnd_send_finished(&dnd, 
 			     [theEvent data1],
@@ -268,6 +342,199 @@ static	XGDragView	*sharedDragView = nil;
     }
 }
 
+/*
+  Method to initialize the dragview before it is put on the screen.
+  It only initializes the instance variables that have to do with
+  moving the image over the screen and variables that are used
+  to keep track where we are.
+
+  So it is typically used just before the dragview is actually displayed.
+
+  Pre coniditions:
+  - dragCell is initialized with the image to drag.
+  - typelist is initialized with the dragging types
+  Post conditions:
+  - all instance variables pertaining to moving the window are initialized
+  - all instance variables pertaining to X-Windows  are initialized
+  
+ */
+- (void) _setupWindow: (NSPoint) dragStart
+{
+  NSSize imageSize = [[dragCell image] size];
+  
+  offset = NSMakePoint (imageSize.width / 2.0, imageSize.height / 2.0);
+  
+  [_window setFrame: NSMakeRect (dragStart.x - offset.x, 
+                                 dragStart.y - offset.y,
+                                 imageSize.width, imageSize.height)
+           display: NO];
+
+  NSDebugLLog (@"NSDragging", @"---dragWindow: %x <- %x",
+                 dragWindev->parent, dragWindev->ident);
+
+  /* setup the wx and wy coordinates, used for moving the view around */
+  wx = dragWindev->siz_hints.x;
+  wy = dragWindev->siz_hints.y;
+
+  dragPosition = dragStart;
+  newPosition = dragStart;
+
+  // Only display the image
+  [GSServerForWindow(_window) restrictWindow: dragWindev->number
+		    toImage: [dragCell image]];
+
+  [_window orderFront: nil];
+}
+
+
+/*
+  updates the operationMask by examining modifier keys
+  pressed during -theEvent-.
+
+  If the current value of operationMask == NSDragOperationIgnoresModifiers
+  it will return immediately without updating the operationMask
+  
+  This method will return YES if the operationMask
+  is changed, NO if it is still the same.
+*/
+- (BOOL) _updateOperationMask: (NSEvent*) theEvent
+{
+  unsigned int mod = [theEvent modifierFlags];
+  unsigned int oldOperationMask = operationMask;
+
+  if (operationMask == NSDragOperationIgnoresModifiers)
+    {
+      return NO;
+    }
+  
+  if (mod & NSControlKeyMask)
+    {
+      operationMask = NSDragOperationLink;
+    }
+  else if (mod & NSAlternateKeyMask)
+    {
+      operationMask = NSDragOperationCopy;
+    }
+  else if (mod & NSCommandKeyMask)
+    {
+      operationMask = NSDragOperationGeneric;
+    }
+  else
+    {
+      operationMask = NSDragOperationAll;
+    }
+
+  return (operationMask != oldOperationMask);
+}
+  
+/**
+  _setCursor examines the state of the dragging and update
+  the cursor accordingly.  It will not save the current cursor,
+  if you want to keep the original you have to save it yourself.
+
+  The code recogines 4 cursors:
+
+  - NONE - when the source does not allow dragging
+  - COPY - when the current operation is ONLY Copy
+  - LINK - when the current operation is ONLY Link
+  - GENERIC - all other cases
+
+  And two colors
+
+  - GREEN - when the target accepts the drop
+  - BLACK - when the target does not accept the drop
+
+  Note that the code to figure out which of the 4 cursor to use
+  depends on the fact that
+
+  {NSDragOperationNone, NSDragOperationCopy, NSDragOperationLink} = {0, 1, 2}
+*/
+- (void) _setCursor
+{
+  NSCursor *newCursor;
+  NSString *name;
+  NSString *iname;
+  int       mask;
+
+  mask = dragMask & operationMask;
+
+  if (targetWindow)
+    mask &= targetMask;
+
+  NSDebugLLog (@"NSDragging",
+               @"drag, operation, target mask = (%x, %x, %x), dnd aware = %d\n",
+               dragMask, operationMask, targetMask,
+               (targetWindow != (Window) None));
+  
+  if (cursors == nil)
+    cursors = RETAIN([NSMutableDictionary dictionary]);
+  
+  name = iname = nil;
+  newCursor = nil;
+  switch (mask)
+    {
+    case NSDragOperationNone:
+      name = @"NoCursor";
+      iname = @"common_noCursor";
+      break;
+    case NSDragOperationCopy:
+      name = @"CopyCursor";
+      iname = @"common_copyCursor";
+      break;
+    case NSDragOperationLink:
+      name = @"LinkCursor";
+      iname = @"common_linkCursor";
+      break;
+    case NSDragOperationGeneric:
+      break;
+    default:
+      // FIXME: Should not happen, add warning?
+      break;
+    }
+
+  if (name != nil)
+    {
+      newCursor = [cursors objectForKey: name];
+      if (newCursor == nil)
+	{
+	  NSImage *image = [NSImage imageNamed: iname];
+	  newCursor = [[NSCursor alloc] initWithImage: image];
+	  [cursors setObject: newCursor forKey: name];
+	  RELEASE(newCursor);
+	}
+    }
+  if (newCursor == nil)
+    {
+      name = @"ArrowCursor";
+      newCursor = [cursors objectForKey: name];
+      if (newCursor == nil)
+	{
+	  /* Make our own arrow cursor, since we want to color it */
+	  void *c;
+	  
+	  newCursor = [[NSCursor alloc] initWithImage: nil];
+	  [GSCurrentServer() standardcursor: GSArrowCursor : &c];
+	  [newCursor _setCid: c];
+	  [cursors setObject: newCursor forKey: name];
+	  RELEASE(newCursor);
+	}
+    }
+  
+  [newCursor set];
+
+  if ((targetWindow != (Window) None) && mask != NSDragOperationNone)
+    {
+      [GSCurrentServer() setcursorcolor: [NSColor greenColor] 
+		      : [NSColor blackColor] 
+		      : [newCursor _cid]];
+    }
+  else
+    {
+      [GSCurrentServer() setcursorcolor: [NSColor blackColor] 
+		      : [NSColor whiteColor] 
+		      : [newCursor _cid]];
+    }
+}
 
 /*
   The dragging support works by hijacking the NSApp event loop.
@@ -304,11 +571,13 @@ static	XGDragView	*sharedDragView = nil;
   BOOL          refreshedView = NO;
 
   // Unset the target window  
-  targetWindowRef = 0;
+  targetWindow = 0;
   targetMask = NSDragOperationAll;
 
   isDragging = YES;
   startPoint = [eWindow convertBaseToScreen: [theEvent locationInWindow]];
+
+  [self _setupWindow: startPoint];
 
   // Notify the source that dragging has started
   if ([dragSource respondsToSelector:
@@ -318,6 +587,8 @@ static	XGDragView	*sharedDragView = nil;
 		  beganAt: startPoint];
     }
 
+  NSDebugLLog(@"NSDragging", @"Drag window X origin %d %d\n", wx, wy);
+  
   // --- Setup up the masks for the drag operation ---------------------
   if ([dragSource respondsToSelector:
     @selector(ignoreModifierKeysWhileDragging)]
@@ -331,7 +602,7 @@ static	XGDragView	*sharedDragView = nil;
       [self _updateOperationMask: theEvent];
     }
 
-  dragMask = [dragSource draggingSourceOperationMaskForLocal: !destExternal];
+  dragMask = [dragSource draggingSourceOperationMaskForLocal: !dragExternal];
   
   // --- Setup the event loop ------------------------------------------
   [self _updateAndMoveImageToCorrectPosition];
@@ -360,10 +631,10 @@ static	XGDragView	*sharedDragView = nil;
   [NSEvent stopPeriodicEvents];
   [self _updateAndMoveImageToCorrectPosition];
 
-  NSDebugLLog(@"NSDragging", @"dnd ending %x\n", targetWindowRef);
+  NSDebugLLog(@"NSDragging", @"dnd ending %x\n", targetWindow);
 
   // --- Deposit the drop ----------------------------------------------
-  if ((targetWindowRef != (int) None)
+  if ((targetWindow != (Window) None)
     && ((targetMask & dragMask & operationMask) != NSDragOperationNone))
     {
       // FIXME: (22 Jan 2002)
@@ -382,21 +653,21 @@ static	XGDragView	*sharedDragView = nil;
       [_window orderOut: nil];
       [cursorBeforeDrag set];
       NSDebugLLog(@"NSDragging", @"sending dnd drop\n");
-      if (!destExternal)
+      if (!dragExternal)
 	{
 	  [self _sendLocalEvent: GSAppKitDraggingDrop
 			 action: 0
 		       position: NSZeroPoint
 		      timestamp: CurrentTime
-		       toWindow: destWindow];
+		       toWindow: dragWindow];
 	}
       else
 	{
-	  if (targetWindowRef == dragWindev->root)
+	  if (targetWindow == dragWindev->root)
 	    {
 	      // FIXME There is an xdnd extension for root drop
 	    }
-	  xdnd_send_drop(&dnd, targetWindowRef, dragWindev->ident, CurrentTime);
+	  xdnd_send_drop(&dnd, targetWindow, dragWindev->ident, CurrentTime);
 	}
 
       //CHECKME: Why XSync here?
@@ -452,7 +723,6 @@ static	XGDragView	*sharedDragView = nil;
         switch (sub)
         {
         case GSAppKitWindowMoved:
-        case GSAppKitWindowResized:
           /*
            * Keep window up-to-date with its current position.
            */
@@ -461,7 +731,7 @@ static	XGDragView	*sharedDragView = nil;
           
         case GSAppKitDraggingStatus:
           NSDebugLLog(@"NSDragging", @"got GSAppKitDraggingStatus\n");
-          if ((Window)[theEvent data1] == targetWindowRef)
+          if ((Window)[theEvent data1] == targetWindow)
             {
               unsigned int newTargetMask = [theEvent data2];
 
@@ -502,19 +772,19 @@ static	XGDragView	*sharedDragView = nil;
         {
 	  // If flags change, send update to allow
 	  // destination to take note.
-	  if (destWindow)
+	  if (dragWindow)
             {
               [self _sendLocalEvent: GSAppKitDraggingUpdate
 		    action: dragMask & operationMask
-		    position: newPosition
+		    position: NSMakePoint(wx + offset.x, wy + offset.y)
 		    timestamp: CurrentTime
-		    toWindow: destWindow];
+		    toWindow: dragWindow];
 	    }
 	  else
 	    {
-	      xdnd_send_position(&dnd, targetWindowRef, dragWindev->ident,
+	      xdnd_send_position(&dnd, targetWindow, dragWindev->ident,
 		GSActionForDragOperation(dragMask & operationMask),
-		XX(newPosition), XY(newPosition), CurrentTime);
+		wx + offset.x, wy + offset.y, CurrentTime);
 	    }
           [self _setCursor];
         }
@@ -547,13 +817,14 @@ static	XGDragView	*sharedDragView = nil;
   
   //--- Store old values -----------------------------------------------------
             
-  oldDragWindow = destWindow;
-  oldDragExternal = destExternal;
+  oldDragWindow = dragWindow;
+  oldDragExternal = dragExternal;
             
             
   //--- Determine target XWindow ---------------------------------------------
-
-  mouseWindow = [self _xWindowAcceptingDnDunderX: XX(dragPosition) Y: XY(dragPosition)];
+            
+  mouseWindow = [self _xWindowAcceptingDnDunderX: wx + offset.x
+					       Y: wy + offset.y];
 
   //--- Determine target NSWindow --------------------------------------------
 
@@ -561,21 +832,21 @@ static	XGDragView	*sharedDragView = nil;
             
   if (dwindev != 0)
     {
-      destWindow = GSWindowWithNumber(dwindev->number);
+      dragWindow = GSWindowWithNumber(dwindev->number);
     }
   else
     {
-      destWindow = nil;
+      dragWindow = nil;
     }
 
   // If we have are not hovering above a window that we own
   // we are dragging to an external application.
             
-  destExternal = (mouseWindow != (Window) None) && (destWindow == nil);
+  dragExternal = (mouseWindow != (Window) None) && (dragWindow == nil);
             
-  if (destWindow)
+  if (dragWindow)
     {
-      dragPoint = [destWindow convertScreenToBase: dragPosition];
+      dragPoint = [dragWindow convertScreenToBase: dragPosition];
     }
             
   NSDebugLLog(@"NSDragging", @"mouse window %x\n", mouseWindow);
@@ -584,7 +855,7 @@ static	XGDragView	*sharedDragView = nil;
             
   //--- send exit message if necessary -------------------------------------
             
-  if ((mouseWindow != targetWindowRef) && targetWindowRef)
+  if ((mouseWindow != targetWindow) && targetWindow)
     {
       /* If we change windows and the old window is dnd aware, we send an
          dnd exit */
@@ -601,17 +872,17 @@ static	XGDragView	*sharedDragView = nil;
         }  
       else
         {  
-          xdnd_send_leave(&dnd, targetWindowRef, dragWindev->ident);
+          xdnd_send_leave(&dnd, targetWindow, dragWindev->ident);
         }
     }
 
   //  Reset drag mask when we switch from external to internal or back
   //
-  if (oldDragExternal != destExternal)
+  if (oldDragExternal != dragExternal)
     {
       unsigned int newMask;
 
-      newMask = [dragSource draggingSourceOperationMaskForLocal: destExternal];
+      newMask = [dragSource draggingSourceOperationMaskForLocal: dragExternal];
       if (newMask != dragMask)
         {
           dragMask = newMask;
@@ -620,22 +891,22 @@ static	XGDragView	*sharedDragView = nil;
     }
 
 
-  if (mouseWindow == targetWindowRef && targetWindowRef)  
+  if (mouseWindow == targetWindow && targetWindow)  
     { // same window, sending update
       NSDebugLLog(@"NSDragging", @"sending dnd pos\n");
-      if (destWindow)
+      if (dragWindow)
         {
           [self _sendLocalEvent: GSAppKitDraggingUpdate
 			 action: dragMask & operationMask
-		       position: dragPosition
+		       position: NSMakePoint (wx + offset.x, wy + offset.y)
 		      timestamp: CurrentTime
-		       toWindow: destWindow];
+		       toWindow: dragWindow];
         }
       else
         {
-          xdnd_send_position(&dnd, targetWindowRef, dragWindev->ident,
-	    GSActionForDragOperation (dragMask & operationMask),
-	    XX(dragPosition), XY(dragPosition), CurrentTime);
+          xdnd_send_position(&dnd, targetWindow, dragWindev->ident,
+	    GSActionForDragOperation (dragMask & operationMask), wx + offset.x, 
+	    wy + offset.y, CurrentTime);
         }
     }
   else if (mouseWindow != (Window) None)
@@ -646,26 +917,26 @@ static	XGDragView	*sharedDragView = nil;
       NSDebugLLog(@"NSDragging",
                   @"sending dnd enter/pos\n");
       
-      if (destWindow)
+      if (dragWindow)
         {
           [self _sendLocalEvent: GSAppKitDraggingEnter
                 action: dragMask
-                position:dragPosition
+                position: NSMakePoint (wx + offset.x, wy + offset.y)
                 timestamp: CurrentTime
-                toWindow: destWindow];
+                toWindow: dragWindow];
         }
       else
         {
           xdnd_send_enter(&dnd, mouseWindow, dragWindev->ident, typelist);
           xdnd_send_position(&dnd, mouseWindow, dragWindev->ident,
 	    GSActionForDragOperation (dragMask & operationMask),
-	    XX(dragPosition), XY(dragPosition), CurrentTime);
+	    wx + offset.x, wy + offset.y, CurrentTime);
         }
     }
 
-  if (targetWindowRef != mouseWindow)
+  if (targetWindow != mouseWindow)
     {
-      targetWindowRef = mouseWindow;
+      targetWindow = mouseWindow;
       changeCursor = YES;
     }
   
@@ -673,6 +944,147 @@ static	XGDragView	*sharedDragView = nil;
     {
       [self _setCursor];
     }
+}
+
+/* NSDraggingInfo protocol */
+- (NSWindow*) draggingDestinationWindow
+{
+  return dragWindow;
+}
+
+- (NSPoint) draggingLocation
+{
+  return dragPoint;
+}
+
+- (NSPasteboard*) draggingPasteboard
+{
+  return dragPasteboard;
+}
+
+- (int) draggingSequenceNumber
+{
+  return dragSequence;
+}
+
+- (id) draggingSource
+{
+  return dragSource;
+}
+
+- (unsigned int) draggingSourceOperationMask
+{
+  // Mix in possible modifiers
+  return dragMask & operationMask;
+}
+
+- (NSImage*) draggedImage
+{
+  if (dragSource)
+    return [dragCell image];
+  else
+    return nil;
+}
+
+- (NSPoint) draggedImageLocation
+{
+  NSPoint loc;
+
+  if (dragSource)
+    {
+      NSSize size;
+
+      size = [[dragCell image] size];
+      loc = NSMakePoint(dragPoint.x-size.width/2, dragPoint.y - size.height/2);
+    }
+  else
+    {
+      loc = dragPoint;
+    }
+  return loc;
+}
+
+
+/*
+ * Move the dragged image immediately to the position indicated by
+ * the instance variable newPosition.
+ *
+ * In doing so it will update the (wx, wy) and dragPosition instance variables.
+ */
+- (void) _moveDraggedImageToNewPosition
+{
+  wx += (int) (newPosition.x - dragPosition.x);
+  wy += (int) (dragPosition.y - newPosition.y);
+
+  // We use this instead of the simpler `dragPosition = newPosition'
+  // because we want to keep the dragPosition in sync with (wx, wy)
+  // and (wx, wy) are integers.
+  dragPosition.x += (float) ((int) newPosition.x - dragPosition.x);
+  dragPosition.y += (float) ((int) newPosition.y - dragPosition.y);
+/*
+  XMoveWindow (XDPY, dragWindev->ident, wx, wy);
+*/
+  [GSServerForWindow(_window) movewindow: NSMakePoint(newPosition.x - offset.x, 
+						      newPosition.y - offset.y) 
+		    : dragWindev->number];
+}
+
+
+- (void) _slideDraggedImageTo: (NSPoint)screenPoint
+                numberOfSteps: (int) steps
+               waitAfterSlide: (BOOL) waitFlag
+{
+  // --- If we do not need multiple redrawing, just move the image immediately
+  //     to its desired spot.
+
+  if (steps < 2)
+    {
+      newPosition = screenPoint;
+      [self _moveDraggedImageToNewPosition];
+    }
+  else
+    {
+      [NSEvent startPeriodicEventsAfterDelay: 0.02 withPeriod: SLIDE_TIME_STEP];
+
+      // Use the event loop to redraw the image repeatedly.
+      // Using the event loop to allow the application to process
+      // expose events.  
+      while (steps)
+        {
+          NSEvent *theEvent = [NSApp nextEventMatchingMask: NSPeriodicMask
+                                     untilDate: [NSDate distantFuture]
+                                     inMode: NSEventTrackingRunLoopMode
+                                     dequeue: YES];
+          
+          if ([theEvent type] != NSPeriodic)
+            {
+              NSDebugLLog (@"NSDragging", 
+			   @"Unexpected event type: %d during slide",
+                           [theEvent type]);
+            }
+          newPosition.x = (screenPoint.x + ((float) steps - 1.0) 
+			   * dragPosition.x) / ((float) steps);
+          newPosition.y = (screenPoint.y + ((float) steps - 1.0) 
+			   * dragPosition.y) / ((float) steps);
+
+          [self _moveDraggedImageToNewPosition];
+          steps --;
+        }
+      [NSEvent stopPeriodicEvents];
+    }
+  if (waitFlag)
+    {
+      [NSThread sleepUntilDate: 
+	[NSDate dateWithTimeIntervalSinceNow: SLIDE_TIME_STEP * 2.0]];
+    }
+}
+
+
+- (void) slideDraggedImageTo:  (NSPoint) point
+{
+  [self _slideDraggedImageTo: point 
+	       numberOfSteps: SLIDE_NR_OF_STEPS 
+	      waitAfterSlide: YES];
 }
 
 
