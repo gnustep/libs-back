@@ -435,23 +435,21 @@ static NSMutableDictionary	*_globalFontDictionary = nil;
   reg = [encoding objectAtIndex: 0];
   if (reg != nil)
     { 
-      NSString *enc = [encoding lastObject];
-
-      if (enc != nil)
+      if ([encoding count] > 1)
         {
-	  mostCompatibleStringEncoding = [GSFontInfo encodingForRegistry: reg
-						     encoding: enc];
+	  NSString *enc = [encoding lastObject];
+	  mostCompatibleStringEncoding = GSEncodingForRegistry(reg, enc);
+	  if (mostCompatibleStringEncoding == GSUndefinedEncoding)
+	    mostCompatibleStringEncoding = NSASCIIStringEncoding;
           if (mostCompatibleStringEncoding == NSUnicodeStringEncoding)
             mostCompatibleStringEncoding = NSUTF8StringEncoding;
-
-	  encodingScheme = [NSString stringWithFormat: @"%@-%@", 
-				     reg, enc];
-	  //NSLog(@"Found encoding %d for %@", mostCompatibleStringEncoding, encodingScheme);
 	  RETAIN(encodingScheme);
 	  [fontDictionary setObject: encodingScheme
 			  forKey: NSAFMEncodingScheme];
 	}
     }
+  else
+    encodingScheme = nil;
 /*
   height = XGFontPropULong(xdpy, font_info, XA_X_HEIGHT);
   if (height != 0)
