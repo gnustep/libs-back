@@ -1,3 +1,8 @@
+2005-04-01 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/x11/XGDragView.m: Complete code changes to factor out as
+	much as possible into the superclass and avoid duplication.
+
 2005-03-30  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.9.5

@@ -223,15 +223,14 @@ static	XGDragView	*sharedDragView = nil;
 
 - (void) postDragEvent: (NSEvent *)theEvent
 {
-  gswindow_device_t	*window;
-
-  window = [XGServer _windowWithTag: [theEvent windowNumber]];
-  if ([theEvent subtype] == GSAppKitDraggingStatus)
+  if (destExternal)
     {
-      NSDragOperation action = [theEvent data2];
-      
-      if (destExternal)
+      gswindow_device_t	*window;
+
+      window = [XGServer _windowWithTag: [theEvent windowNumber]];
+      if ([theEvent subtype] == GSAppKitDraggingStatus)
 	{
+	  NSDragOperation action = [theEvent data2];
 	  Atom xaction;
 	  
 	  xaction = GSActionForDragOperation(action);
@@ -243,437 +242,74 @@ static	XGDragView	*sharedDragView = nil;
 			   0, 0, 0, 0,
 			   xaction);
 	}
-      else
-        {
-	  if (action != targetMask)
-	    {
-	      targetMask = action;
-	      [self _setCursor];
-	    }
-	}
-    }
-  else if ([theEvent subtype] == GSAppKitDraggingFinished)
-    {
-      if (destExternal)
+      else if ([theEvent subtype] == GSAppKitDraggingFinished)
 	{
-	  xdnd_send_finished(&dnd, 
-			     [theEvent data1],
-			     window->ident,
-			     0);
+	  xdnd_send_finished(&dnd, [theEvent data1], window->ident, 0);
 	}
     }
   else
     {
-      NSDebugLLog(@"NSDragging", @"Internal: unhandled post external event");
+      [super postDragEvent: theEvent];
+    }
+}
+
+- (void) sendExternalEvent: (GSAppKitSubtype)subtype
+		    action: (NSDragOperation)action
+		  position: (NSPoint)eventLocation
+		 timestamp: (NSTimeInterval)time
+		  toWindow: (int)dWindowNumber
+{
+  switch (subtype)
+    {
+      case GSAppKitDraggingDrop:
+	if (targetWindowRef == dragWindev->root)
+	  {
+	    // FIXME There is an xdnd extension for root drop
+	  }
+	xdnd_send_drop(&dnd, dWindowNumber, dragWindev->ident, CurrentTime);
+	break;
+
+      case GSAppKitDraggingUpdate:
+	xdnd_send_position(&dnd, dWindowNumber, dragWindev->ident,
+	  GSActionForDragOperation(dragMask & operationMask),
+	  XX(newPosition), XY(newPosition), CurrentTime);
+	break;
+
+      case GSAppKitDraggingEnter:
+	xdnd_send_enter(&dnd, dWindowNumber, dragWindev->ident, typelist);
+	xdnd_send_position(&dnd, dWindowNumber, dragWindev->ident,
+	  GSActionForDragOperation (dragMask & operationMask),
+	  XX(dragPosition), XY(dragPosition), CurrentTime);
+	break;
+
+      case GSAppKitDraggingExit:
+	xdnd_send_leave(&dnd, dWindowNumber, dragWindev->ident);
+	break;
+
+      default:
+	break;
     }
 }
 
 
-/*
-  The dragging support works by hijacking the NSApp event loop.
-
-  - this function loops until the dragging operation is finished
-    and consumes all NSEvents during the drag operation.
-
-  - It sets up periodic events.  The drawing and communication
-    with DraggingSource and DraggingTarget is handled in the
-    periodic event code.  The use of periodic events is purely
-    a performance improvement.  If no periodic events are used
-    the system can not process them all on time.
-    At least on a 333Mhz laptop, using fairly simple
-    DraggingTarget code.
-
-  PROBLEMS:
-
-  - No autoreleasePools are created.  So long drag operations can consume
-    memory
-
-  - It seems that sometimes a periodic event get lost.
-*/
-- (void) _handleDrag: (NSEvent*)theEvent
+- (NSWindow*) windowAcceptingDnDunder: (NSPoint)p
+			    windowRef: (int*)mouseWindowRef
 {
-  Display	*xDisplay = [XGServer currentXDisplay]; // Caching some often used values.
-  NSWindow	*eWindow = [theEvent window];   // Use eWindow for coordination transformation
-  NSDate	*theDistantFuture = [NSDate distantFuture];
-  NSImage       *dragImage = [dragCell image];
-  unsigned int	eventMask = NSLeftMouseDownMask | NSLeftMouseUpMask
-    | NSLeftMouseDraggedMask | NSMouseMovedMask
-    | NSPeriodicMask | NSAppKitDefinedMask | NSFlagsChangedMask;
-  NSPoint       startPoint;   // Storing values, to restore after we have finished.
-  NSCursor      *cursorBeforeDrag = [NSCursor currentCursor];
-  BOOL          refreshedView = NO;
-
-  // Unset the target window  
-  targetWindowRef = 0;
-  targetMask = NSDragOperationAll;
-
-  isDragging = YES;
-  startPoint = [eWindow convertBaseToScreen: [theEvent locationInWindow]];
-
-  // Notify the source that dragging has started
-  if ([dragSource respondsToSelector:
-      @selector(draggedImage:beganAt:)])
-    {
-      [dragSource draggedImage: dragImage
-		  beganAt: startPoint];
-    }
-
-  // --- Setup up the masks for the drag operation ---------------------
-  if ([dragSource respondsToSelector:
-    @selector(ignoreModifierKeysWhileDragging)]
-    && [dragSource ignoreModifierKeysWhileDragging])
-    {
-      operationMask = NSDragOperationIgnoresModifiers;
-    }
-  else
-    {
-      operationMask = 0;
-      [self _updateOperationMask: theEvent];
-    }
-
-  dragMask = [dragSource draggingSourceOperationMaskForLocal: !destExternal];
-  
-  // --- Setup the event loop ------------------------------------------
-  [self _updateAndMoveImageToCorrectPosition];
-  [NSEvent startPeriodicEventsAfterDelay: 0.02 withPeriod: 0.03];
-
-  // --- Loop that handles all events during drag operation -----------
-  while ([theEvent type] != NSLeftMouseUp)
-    {
-      [self _handleEventDuringDragging: theEvent];
-      
-      // FIXME: Force the redisplay of the source view after the drag.  
-      // Temporary fix for bug#11352.
-      if(refreshedView == NO)
-	{
-	  [dragSource display];
-	  refreshedView = YES;
-	}
-
-      theEvent = [NSApp nextEventMatchingMask: eventMask
-				    untilDate: theDistantFuture
-				       inMode: NSEventTrackingRunLoopMode
-				      dequeue: YES];
-    }
-
-  // --- Event loop for drag operation stopped ------------------------
-  [NSEvent stopPeriodicEvents];
-  [self _updateAndMoveImageToCorrectPosition];
-
-  NSDebugLLog(@"NSDragging", @"dnd ending %x\n", targetWindowRef);
-
-  // --- Deposit the drop ----------------------------------------------
-  if ((targetWindowRef != (int) None)
-    && ((targetMask & dragMask & operationMask) != NSDragOperationNone))
-    {
-      // FIXME: (22 Jan 2002)
-      // We remove the dragged image from the screen before 
-      // sending the dnd drop event to the destination.
-      // This code should actually be rewritten, because
-      // the depositing of the drop consist of three steps
-      //  - prepareForDragOperation
-      //  - performDragOperation
-      //  - concludeDragOperation.
-      // The dragged image should be removed from the screen
-      // between the prepare and the perform operation.
-      // The three steps are now executed in the NSWindow class
-      // and the NSWindow class does not have access to
-      // the image.  (at least not through the xdnd protocol)
-      [_window orderOut: nil];
-      [cursorBeforeDrag set];
-      NSDebugLLog(@"NSDragging", @"sending dnd drop\n");
-      if (!destExternal)
-	{
-	  [self _sendLocalEvent: GSAppKitDraggingDrop
-			 action: 0
-		       position: NSZeroPoint
-		      timestamp: CurrentTime
-		       toWindow: destWindow];
-	}
-      else
-	{
-	  if (targetWindowRef == dragWindev->root)
-	    {
-	      // FIXME There is an xdnd extension for root drop
-	    }
-	  xdnd_send_drop(&dnd, targetWindowRef, dragWindev->ident, CurrentTime);
-	}
-
-      //CHECKME: Why XSync here?
-      XSync(xDisplay, False);
-      if ([dragSource respondsToSelector:
-	@selector(draggedImage:endedAt:deposited:)])
-	{
-          NSPoint point;
-          
-	  point = [theEvent locationInWindow];
-	  point = [[theEvent window] convertBaseToScreen: point];
-	  [dragSource draggedImage: dragImage
-			   endedAt: point
-			 deposited: YES];
-	}
-    }
-  else
-    {
-      if (slideBack)
-        {
-          [self slideDraggedImageTo: startPoint];
-        }
-      [_window orderOut: nil];
-      [cursorBeforeDrag set];
-      
-      if ([dragSource respondsToSelector:
-	@selector(draggedImage:endedAt:deposited:)])
-	{
-          NSPoint point;
-          
-	  point = [theEvent locationInWindow];
-	  point = [[theEvent window] convertBaseToScreen: point];
-	  [dragSource draggedImage: dragImage
-			   endedAt: point
-			 deposited: NO];
-	}
-    }
-  isDragging = NO;
-}
-
-
-/*
- * Handle the events for the event loop during drag and drop
- */
-- (void) _handleEventDuringDragging: (NSEvent *) theEvent
-{
-  switch ([theEvent type])
-    {
-    case  NSAppKitDefined:
-      {
-        GSAppKitSubtype	sub = [theEvent subtype];
-        
-        switch (sub)
-        {
-        case GSAppKitWindowMoved:
-        case GSAppKitWindowResized:
-          /*
-           * Keep window up-to-date with its current position.
-           */
-          [NSApp sendEvent: theEvent];
-          break;
-          
-        case GSAppKitDraggingStatus:
-          NSDebugLLog(@"NSDragging", @"got GSAppKitDraggingStatus\n");
-          if ((Window)[theEvent data1] == targetWindowRef)
-            {
-              unsigned int newTargetMask = [theEvent data2];
-
-              if (newTargetMask != targetMask)
-                {
-                  targetMask = newTargetMask;
-                  [self _setCursor];
-                }
-            }
-          break;
-          
-        case GSAppKitDraggingFinished:
-          NSLog(@"Internal: got GSAppKitDraggingFinished out of seq");
-          break;
-          
-        case GSAppKitWindowFocusIn:
-	case GSAppKitWindowFocusOut:
-	case GSAppKitWindowLeave:
-	case GSAppKitWindowEnter:
-          break;
-          
-        default:
-          NSLog(@"Internal: dropped NSAppKitDefined (%d) event", sub);
-          break;
-        }
-      }
-      break;
-      
-    case NSMouseMoved:
-    case NSLeftMouseDragged:
-    case NSLeftMouseDown:
-    case NSLeftMouseUp:
-      newPosition = [[theEvent window] convertBaseToScreen:
-	[theEvent locationInWindow]];
-      break;
-    case NSFlagsChanged:
-      if ([self _updateOperationMask: theEvent])
-        {
-	  // If flags change, send update to allow
-	  // destination to take note.
-	  if (destWindow)
-            {
-              [self _sendLocalEvent: GSAppKitDraggingUpdate
-		    action: dragMask & operationMask
-		    position: newPosition
-		    timestamp: CurrentTime
-		    toWindow: destWindow];
-	    }
-	  else
-	    {
-	      xdnd_send_position(&dnd, targetWindowRef, dragWindev->ident,
-		GSActionForDragOperation(dragMask & operationMask),
-		XX(newPosition), XY(newPosition), CurrentTime);
-	    }
-          [self _setCursor];
-        }
-      break;
-    case NSPeriodic:
-      if (newPosition.x != dragPosition.x || newPosition.y != dragPosition.y) 
-        {
-          [self _updateAndMoveImageToCorrectPosition];
-        }
-      break;
-    default:
-      NSLog(@"Internal: dropped event (%d) during dragging", [theEvent type]);
-    }
-}
-  
-/*
- * This method will move the drag image and update all associated data
- */
-- (void) _updateAndMoveImageToCorrectPosition
-{
-  NSWindow		*oldDragWindow;
-  BOOL                   oldDragExternal;
   gswindow_device_t	*dwindev;
-  Window                 mouseWindow; 
-  BOOL                   changeCursor = NO;
-            
-  //--- Move drag image to the new position -----------------------------------
 
-  [self _moveDraggedImageToNewPosition];
-  
-  //--- Store old values -----------------------------------------------------
-            
-  oldDragWindow = destWindow;
-  oldDragExternal = destExternal;
-            
-            
-  //--- Determine target XWindow ---------------------------------------------
+  *mouseWindowRef = [self _xWindowAcceptingDnDunderX: XX(p) Y: XY(p)];
+  dwindev = [XGServer _windowForXWindow: *mouseWindowRef];
 
-  mouseWindow = [self _xWindowAcceptingDnDunderX: XX(dragPosition) Y: XY(dragPosition)];
-
-  //--- Determine target NSWindow --------------------------------------------
-
-  dwindev = [XGServer _windowForXWindow: mouseWindow];
-            
   if (dwindev != 0)
     {
-      destWindow = GSWindowWithNumber(dwindev->number);
+      return GSWindowWithNumber(dwindev->number);
     }
   else
     {
-      destWindow = nil;
-    }
-
-  // If we have are not hovering above a window that we own
-  // we are dragging to an external application.
-            
-  destExternal = (mouseWindow != (Window) None) && (destWindow == nil);
-            
-  if (destWindow)
-    {
-      dragPoint = [destWindow convertScreenToBase: dragPosition];
-    }
-            
-  NSDebugLLog(@"NSDragging", @"mouse window %x\n", mouseWindow);
-            
-            
-            
-  //--- send exit message if necessary -------------------------------------
-            
-  if ((mouseWindow != targetWindowRef) && targetWindowRef)
-    {
-      /* If we change windows and the old window is dnd aware, we send an
-         dnd exit */
-                
-      NSDebugLLog(@"NSDragging", @"sending dnd exit\n");
-                
-      if (oldDragWindow)   
-        {
-          [self _sendLocalEvent: GSAppKitDraggingExit
-			 action: dragMask & operationMask
-		       position: NSZeroPoint
-                      timestamp: dragSequence
-		       toWindow: oldDragWindow];
-        }  
-      else
-        {  
-          xdnd_send_leave(&dnd, targetWindowRef, dragWindev->ident);
-        }
-    }
-
-  //  Reset drag mask when we switch from external to internal or back
-  //
-  if (oldDragExternal != destExternal)
-    {
-      unsigned int newMask;
-
-      newMask = [dragSource draggingSourceOperationMaskForLocal: destExternal];
-      if (newMask != dragMask)
-        {
-          dragMask = newMask;
-          changeCursor = YES;
-        }
-    }
-
-
-  if (mouseWindow == targetWindowRef && targetWindowRef)  
-    { // same window, sending update
-      NSDebugLLog(@"NSDragging", @"sending dnd pos\n");
-      if (destWindow)
-        {
-          [self _sendLocalEvent: GSAppKitDraggingUpdate
-			 action: dragMask & operationMask
-		       position: dragPosition
-		      timestamp: CurrentTime
-		       toWindow: destWindow];
-        }
-      else
-        {
-          xdnd_send_position(&dnd, targetWindowRef, dragWindev->ident,
-	    GSActionForDragOperation (dragMask & operationMask),
-	    XX(dragPosition), XY(dragPosition), CurrentTime);
-        }
-    }
-  else if (mouseWindow != (Window) None)
-    {
-      //FIXME: We might force the cursor update here, if the
-      //target wants to change the cursor.
-      
-      NSDebugLLog(@"NSDragging",
-                  @"sending dnd enter/pos\n");
-      
-      if (destWindow)
-        {
-          [self _sendLocalEvent: GSAppKitDraggingEnter
-                action: dragMask
-                position:dragPosition
-                timestamp: CurrentTime
-                toWindow: destWindow];
-        }
-      else
-        {
-          xdnd_send_enter(&dnd, mouseWindow, dragWindev->ident, typelist);
-          xdnd_send_position(&dnd, mouseWindow, dragWindev->ident,
-	    GSActionForDragOperation (dragMask & operationMask),
-	    XX(dragPosition), XY(dragPosition), CurrentTime);
-        }
-    }
-
-  if (targetWindowRef != mouseWindow)
-    {
-      targetWindowRef = mouseWindow;
-      changeCursor = YES;
-    }
-  
-  if (changeCursor)
-    {
-      [self _setCursor];
+      return nil;
     }
 }
+            
 
 
 /*
