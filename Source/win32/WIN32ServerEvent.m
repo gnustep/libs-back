@@ -181,12 +181,12 @@ static void invalidateWindow(HWND hwnd, RECT rect);
   NSRect rect;
   RECT r;
   NSEvent *ev = nil;
+  NSWindow *window = GSWindowWithNumber((int)hwnd);
 
   GetWindowRect(hwnd, &r);
-  rect = MSScreenRectToGS(r);
+  rect = MSScreenRectToGS(r, [window styleMask], self);
   eventLocation = rect.origin;
 
-  NSWindow *window = GSWindowWithNumber((int)hwnd);
   if (window)
     {
       if( subtype == GSAppKitWindowMoved )

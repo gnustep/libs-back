@@ -378,14 +378,9 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 {
   gswindow_device_t	*win = (gswindow_device_t*)window;
   NSRect	x;
-  float	t, b, l, r;
 
-  [self styleoffsets: &l : &r : &t : &b : win->win_attrs.window_style];
-
-  x.size.width = o.size.width - l - r;
-  x.size.height = o.size.height - t - b;
-  x.origin.x = o.origin.x + l;
-  x.origin.y = o.origin.y + o.size.height - t;
+  x = o;
+  x.origin.y = x.origin.y + o.size.height;
   x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y;
 NSDebugLLog(@"Frame", @"O2X %d, %@, %@", win->number,
   NSStringFromRect(o), NSStringFromRect(x));
@@ -404,11 +399,11 @@ NSDebugLLog(@"Frame", @"O2X %d, %@, %@", win->number,
 
   [self styleoffsets: &l : &r : &t : &b : win->win_attrs.window_style];
 
-  x.size.width = o.size.width - l - r;
-  x.size.height = o.size.height - t - b;
-  x.origin.x = o.origin.x;
+  x.size.width = o.size.width;
+  x.size.height = o.size.height;
+  x.origin.x = o.origin.x - l;
   x.origin.y = o.origin.y + o.size.height;
-  x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y;
+  x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y - t;
 NSDebugLLog(@"Frame", @"O2H %d, %@, %@", win->number,
   NSStringFromRect(o), NSStringFromRect(x));
   return x;
@@ -440,14 +435,10 @@ NSDebugLLog(@"Frame", @"O2H %d, %@, %@", win->number,
 {
   gswindow_device_t	*win = (gswindow_device_t*)window;
   NSRect	o;
-  float	t, b, l, r;
 
-  [self styleoffsets: &l : &r : &t : &b : win->win_attrs.window_style];
-  o.size.width = x.size.width + l + r;
-  o.size.height = x.size.height + t + b;
-  o.origin.x = x.origin.x - l;
-  o.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y;
-  o.origin.y = o.origin.y - o.size.height + t;
+  o = x;
+  o.origin.y = DisplayHeight(dpy, win->screen) - o.origin.y;
+  o.origin.y = o.origin.y - o.size.height;
 NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   NSStringFromRect(x), NSStringFromRect(o));
   return o;
@@ -1423,11 +1414,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 */
 - (void) windowdevice: (int)win
 {
-  int      x, y;
   unsigned width, height;
-  unsigned old_width;
-  unsigned old_height;
-  XWindowAttributes winattr;
   gswindow_device_t *window;
   NSGraphicsContext *ctxt;
 
@@ -1442,41 +1429,8 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   if (!window->ident)
     return;
 
-  old_width = NSWidth(window->xframe);
-  old_height = NSHeight(window->xframe);
-
-  XFlush (dpy);
-
-  XGetGeometry(dpy, window->ident, &window->root,
-	       &x, &y, &width, &height,
-	       &window->border, &window->depth);
-  /* hack:
-   * wait until a resize of window is finished (especially for NSMenu)
-   * is there any way to wait until X finished it's stuff?
-   * XSync(), XFlush() doesn't do the job!
-   */
-  if (height != (unsigned int)(window->siz_hints.height))
-    {
-#if HAVE_USLEEP
-      usleep(1);
-#else
-      for (x=0; x<10000; x++)
-	;
-#endif
-      XGetGeometry(dpy, window->ident, &window->root,
-		   &x, &y, &width, &height,
-		   &window->border, &window->depth);
-    }
-
-  window->xframe.size.width = width;
-  window->xframe.size.height = height;
-
-  XGetWindowAttributes(dpy, window->ident, &winattr);
-  window->map_state = winattr.map_state;
-  
-  NSDebugLLog (@"NSWindow", @"window geom device ((%f, %f), (%f, %f))",
-	        window->xframe.origin.x,  window->xframe.origin.y, 
-	        window->xframe.size.width,  window->xframe.size.height);
+  width = NSWidth(window->xframe);
+  height = NSHeight(window->xframe);
 
   if (window->buffer
       && (window->buffer_width != width || window->buffer_height != height)
@@ -1601,7 +1555,7 @@ static BOOL didCreatePixmaps;
       /*
        * Some window managers ignore any hints and properties until the
        * window is actually mapped, so we need to set them all up
-       * immediately bofore mapping the window ...
+       * immediately before mapping the window ...
        */
 
       setNormalHints(dpy, window);
@@ -1858,20 +1812,13 @@ static BOOL didCreatePixmaps;
 
 - (void) placewindow: (NSRect)rect : (int)win
 {
-  NSAutoreleasePool	*arp;
-  NSRect		xVal;
-  NSRect		last;
-  NSEvent		*event;
-  NSDate		*limit;
-  NSMutableArray	*tmpQueue;
-  unsigned		pos;
-  float			xdiff;
-  float			ydiff;
-  gswindow_device_t	*window;
-  NSWindow              *nswin;
-  NSRect		frame;
-  BOOL			resize = NO;
-  BOOL			move = NO;
+  NSEvent *e;
+  NSRect xVal;
+  gswindow_device_t *window;
+  NSWindow *nswin;
+  NSRect frame;
+  BOOL resize = NO;
+  BOOL move = NO;
 
   window = WINDOW_WITH_TAG(win);
   if (win == 0 || window == NULL)
@@ -1895,8 +1842,6 @@ static BOOL didCreatePixmaps;
     {
       move = YES;
     }
-  xdiff = rect.origin.x - frame.origin.x;
-  ydiff = rect.origin.y - frame.origin.y;
 
   xVal = [self _OSFrameToXHints: rect for: window];
   window->siz_hints.width = (int)xVal.size.width;
@@ -1905,8 +1850,6 @@ static BOOL didCreatePixmaps;
   window->siz_hints.y = (int)xVal.origin.y;
   xVal = [self _OSFrameToXFrame: rect for: window];
 
-  last = window->xframe;
-
   NSDebugLLog(@"Moving", @"Place %d - o:%@, x:%@", window->number,
     NSStringFromRect(rect), NSStringFromRect(xVal));
   XMoveResizeWindow (dpy, window->ident,
@@ -1914,124 +1857,42 @@ static BOOL didCreatePixmaps;
     window->siz_hints.width, window->siz_hints.height);
   setNormalHints(dpy, window);
 
-  /*
-   * Now massage all the events currently in the queue to make sure
-   * mouse locations in our window are adjusted as necessary.
-   */
-  arp = [NSAutoreleasePool new];
-  limit = [NSDate distantPast];	/* Don't wait for new events.	*/
-  tmpQueue = [NSMutableArray arrayWithCapacity: 8];
-  for (;;)
+  /* Update xframe right away. We optimistically assume that we'll get the
+  frame we asked for. If we're right, -gui can update/redraw right away,
+  and we don't have to do anything when the ConfigureNotify arrives later.
+  If we're wrong, the ConfigureNotify will have the exact coordinates, and
+  at that point, we'll send new GSAppKitWindow* events to -gui. */
+  window->xframe = xVal;
+
+  if (resize == YES)
     {
-      NSEventType	type;
-
-      event = DPSGetEvent(self, NSAnyEventMask, limit,
-	NSEventTrackingRunLoopMode);
-      if (event == nil)
-	break;
-      type = [event type];
-      if (type == NSAppKitDefined && [event windowNumber] == win)
-	{
-	  GSAppKitSubtype	sub = [event subtype];
-
-	  /*
-	   * Window movement or resize events for the window we are
-	   * watching are posted immediately, so they can take effect
-	   * before the placewindow returns.
-	   */
-	  if (sub == GSAppKitWindowMoved || sub == GSAppKitWindowResized)
-	    {
-	      [nswin sendEvent: event];
-	    }
-	  else
-	    {
-	      [tmpQueue addObject: event];
-	    }
-	}
-      else if (type != NSPeriodic && type != NSLeftMouseDragged
-	&& type != NSOtherMouseDragged && type != NSRightMouseDragged
-	&& type != NSMouseMoved)
-	{
-	  /*
-	   * Save any events that arrive before our window is moved - excepting
-	   * periodic events (which we can assume will be outdated) and mouse
-	   * movement events (which might flood us).
-	   */
-	  [tmpQueue addObject: event];
-	}
-      if (NSEqualRects(xVal, window->xframe) == YES ||
-	NSEqualRects(rect, [nswin frame]) == YES)
-	{
-	  break;
-	}
-      if (NSEqualRects(last, window->xframe) == NO)
-	{
-	  NSDebugLLog(@"Moving", @"From: %@\nWant %@\nGot %@",
-	    NSStringFromRect(last),
-	    NSStringFromRect(xVal),
-	    NSStringFromRect(window->xframe));
-	  last = window->xframe;
-	}
+      NSDebugLLog(@"Moving", @"Fake size %d - %@", window->number,
+	NSStringFromSize(rect.size));
+      e = [NSEvent otherEventWithType: NSAppKitDefined
+			     location: rect.origin
+			modifierFlags: 0
+			    timestamp: 0
+			 windowNumber: win
+			      context: GSCurrentContext()
+			      subtype: GSAppKitWindowResized
+				data1: rect.size.width
+				data2: rect.size.height];
+      [nswin sendEvent: e];
     }
-  /*
-   * If we got any events while waiting for the window movement, we
-   * may need to adjust their locations to match the new window position.
-   */
-  pos = [tmpQueue count];
-  while (pos-- > 0) 
+  else if (move == YES)
     {
-      event = [tmpQueue objectAtIndex: pos];
-      if ([event windowNumber] == win)
-	{
-	  NSPoint	loc = [event locationInWindow];
-
-	  loc.x -= xdiff;
-	  loc.y -= ydiff;
-	  [event _patchLocation: loc];
-	}
-      DPSPostEvent(self, event, YES);
-    }
-  RELEASE(arp);
-
-  /*
-   * Failsafe - if X hasn't told us it has moved/resized the window, we
-   * fake the notification and post them immediately, so they can take
-   * effect before the placewindow returns.
-   */
-  if (NSEqualRects([nswin frame], rect) == NO)
-    {
-      NSEvent	*e;
-
-      if (resize == YES)
-	{
-	  NSDebugLLog(@"Moving", @"Fake size %d - %@", window->number,
-	    NSStringFromSize(rect.size));
-	  e = [NSEvent otherEventWithType: NSAppKitDefined
-				 location: rect.origin
-			    modifierFlags: 0
-				timestamp: 0
-			     windowNumber: win
-		                  context: GSCurrentContext()
-				  subtype: GSAppKitWindowResized
-				    data1: rect.size.width
-				    data2: rect.size.height];
-	  [nswin sendEvent: e];
-	}
-      if (move == YES)
-	{
-	  NSDebugLLog(@"Moving", @"Fake move %d - %@", window->number,
-	    NSStringFromPoint(rect.origin));
-	  e = [NSEvent otherEventWithType: NSAppKitDefined
-				 location: NSZeroPoint
-			    modifierFlags: 0
-				timestamp: 0
-			     windowNumber: win
-		                  context: GSCurrentContext()
-				  subtype: GSAppKitWindowMoved
-				    data1: rect.origin.x
-				    data2: rect.origin.y];
-	  [nswin sendEvent: e];
-	}
+      NSDebugLLog(@"Moving", @"Fake move %d - %@", window->number,
+	NSStringFromPoint(rect.origin));
+      e = [NSEvent otherEventWithType: NSAppKitDefined
+			     location: NSZeroPoint
+			modifierFlags: 0
+			    timestamp: 0
+			 windowNumber: win
+			      context: GSCurrentContext()
+			      subtype: GSAppKitWindowMoved
+				data1: rect.origin.x
+				data2: rect.origin.y];
+      [nswin sendEvent: e];
     }
 }
 
