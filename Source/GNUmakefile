@@ -33,9 +33,9 @@ include ../config.make
 
 # The library to be compiled, as a library or as a bundle
 ifeq ($(BACKEND_BUNDLE),)
-LIBRARY_NAME=libgnustep-back
+LIBRARY_NAME=libgnustep-$(BACKEND_NAME)
 else
-BUNDLE_NAME=libgnustep-back
+BUNDLE_NAME=libgnustep-$(BACKEND_NAME)
 endif
 
 #
@@ -57,11 +57,11 @@ endif
 ifneq ($(BUILD_WINLIB),)
 SUBPROJECTS += winlib
 endif
-libgnustep-back_SUBPROJECTS=$(SUBPROJECTS)
+libgnustep-$(BACKEND_NAME)_SUBPROJECTS=$(SUBPROJECTS)
 
-libgnustep-back_OBJC_FILES=GSBackend.m
+libgnustep-$(BACKEND_NAME)_OBJC_FILES=GSBackend.m
 
-libgnustep-back_PRINCIPAL_CLASS=GSBackend
+libgnustep-$(BACKEND_NAME)_PRINCIPAL_CLASS=GSBackend
 
 -include GNUmakefile.preamble
 
