@@ -92,6 +92,23 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
 - (void) setupRunLoopInputSourcesForMode: (NSString*)mode
 {
+#ifdef    __CYGWIN__
+  NSRunLoop *currentRunLoop = [NSRunLoop currentRunLoop];
+  int fdMessageQueue;
+#define WIN_MSG_QUEUE_FNAME    "/dev/windows"
+
+  // Open a file descriptor for the windows message queue
+  fdMessageQueue = open (WIN_MSG_QUEUE_FNAME, O_RDONLY);
+  if (fdMessageQueue == -1)
+    {
+      NSLog(@"Failed opening %s\n", WIN_MSG_QUEUE_FNAME);
+      exit(1);
+    }
+  [currentRunLoop addEvent: (void*)fdMessageQueue
+                  type: ET_RDESC
+                  watcher: (id<RunLoopEvents>)self
+                  forMode: mode];
+#else 
   // FIXME
   NSTimer *timer;
 
@@ -101,6 +118,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 		   userInfo: nil
 		   repeats: YES];
   [[NSRunLoop currentRunLoop] addTimer: timer forMode: mode];
+#endif
 }
 
 /**
@@ -532,7 +550,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
 - (NSRect) windowbounds: (int) winNum
 {
   RECT r;
-  NSWindow *window = GSWindowWithNumber((int)hwnd);
+  NSWindow *window = GSWindowWithNumber(winNum);
 
   GetWindowRect((HWND)winNum, &r);
   return MSScreenRectToGS(r, [window styleMask], self);
