@@ -1,3 +1,9 @@
+2004-11-28  Matt Rice <ratmice@yahoo.com>
+
+	* Source/x11/XGGLFormat.m (-initWithAttributes:,append,append1): Add 
+	missing curly brackets, fix append and append1 macros so they can safely
+	be used without curly brackets.
+	
 2004-11-28 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Tools/gpbs.m: When run as daemon, re-execute with --no-fork flag
