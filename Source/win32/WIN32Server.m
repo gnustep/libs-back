@@ -706,7 +706,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
 
 - (void) standardcursor: (int)style : (void **)cid
 {
-  HCURSOR hCursor;
+  HCURSOR hCursor = 0;
 
   NSDebugLLog(@"WTrace", @"standardcursor: %d", style);
   switch (style)
@@ -730,8 +730,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
       hCursor = LoadCursor(NULL, IDC_SIZENS);
       break;
     default:
-      hCursor = LoadCursor(NULL, IDC_ARROW);
-      break;
+      return;
     }
   *cid = (void*)hCursor;
 }
