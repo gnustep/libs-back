@@ -1,3 +1,8 @@
+2004-02-28  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m (-setupRunLoopInputSourcesForMode:): 
+	Use a shorte timer interval.
+
 2004-02-24 15:45  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/image.m: Add support for grayscale, one-is-black
