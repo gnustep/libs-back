@@ -43,6 +43,7 @@ XGFontManager.m \
 XGContext.m \
 XGGState.m \
 XGGeometry.m \
+XGFontSetFontInfo.m \
 linking.m
 
 ifeq ($(WITH_XFT),yes)
