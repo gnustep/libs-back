@@ -123,6 +123,7 @@
 - (void) DPSstroke;
 
 - (void) GSSendBezierPath: (NSBezierPath *)path;
+- (void) GSRectClipList: (const NSRect *)rects : (int) count;
 - (void) GSRectFillList: (const NSRect *)rects : (int) count;
 
 - (void)DPSimage: (NSAffineTransform*) matrix 

@@ -699,17 +699,17 @@ static unsigned int unique_index = 0;
 
 - (void) GSSendBezierPath: (NSBezierPath *)path
 {
-  [self notImplemented: _cmd];
+  [gstate GSSendBezierPath: path];
 }
 
 - (void) GSRectClipList: (const NSRect *)rects : (int) count
 {
-  [self notImplemented: _cmd];
+  [gstate GSRectClipList: rects : count];
 }
 
 - (void) GSRectFillList: (const NSRect *)rects : (int) count
 {
-  [self notImplemented: _cmd];
+  [gstate GSRectFillList: rects : count];
 }
 
 /* ----------------------------------------------------------------------- */
