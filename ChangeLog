@@ -1,3 +1,16 @@
+2002-09-19  Adam Fedor  <fedor@gnu.org>
+
+	* Source/win32/WIN32Server.m ([WIN -setbackgroundcolor::]): New.
+	* Source/x11/XGServerWindow.m ([XGServer -_createBuffer:]): Remove
+	setting background pixmap.
+	([XGServer -setbackgroundcolor::]): New
+
+	* Source/xlib/XGGState.m
+	(-_compositeGState:sourcefromRect:fromRecttoPoint:toPointop:opfraction):
+	Convert destination point not rect.
+	(-DPSimage:matrix:pixelsWide:pixelsHigh:bitsPerSample:samplesPerPixel:bitsPerPixel:bytesPerRow:isPlanar:hasAlpha:colorSpaceName:data):
+	Remove flipping.	
+
 2002-09-19 00:33  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Header/x11/XGInputServer.h, Source/x11/XIMInputServer.m: Track

@@ -892,9 +892,6 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 		 0, 0, 
 		 NSWidth(window->xframe),
 		 NSHeight(window->xframe));
-
-  /* Set background pixmap to avoid redundant fills */
-  XSetWindowBackgroundPixmap(dpy, window->ident, window->buffer);
 }
 
 - (int) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style
@@ -1222,6 +1219,26 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 	  setWindowHintsForStyle (dpy, window->ident, style);
 	}
     }
+}
+
+- (void) setbackgroundcolor: (NSColor *)color : (int)win
+{
+  XColor xf;
+  gswindow_device_t *window;
+
+  window = WINDOW_WITH_TAG(win);
+  if (!window)
+    return;
+
+
+  color = [color colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+  xf.red   = 65535 * [color redComponent];
+  xf.green = 65535 * [color greenComponent];
+  xf.blue  = 65535 * [color blueComponent];
+  NSDebugLLog(@"XGTrace", @"setbackgroundcolor: %@ %d", color, win);
+  xf = [self xColorFromColor: xf forScreen: window->screen];
+  window->xwn_attrs.background_pixel = xf.pixel;
+  XSetWindowBackground(dpy, window->ident, window->xwn_attrs.background_pixel);
 }
 
 - (void) windowbacking: (NSBackingStoreType)type : (int) win
