@@ -166,6 +166,20 @@ if test -r $x_includes/X11/DPS; then
 fi
 AC_SUBST(X_PRE_LIBS)
 
+# Old X11 support
+AC_MSG_CHECKING([for X11 function prototypes])
+AC_EGREP_CPP(yes, 
+ [#include <X11/Xlib.h>
+  #if NeedFunctionPrototypes
+    yes
+  #endif
+  ], have_funcproto=yes, have_funcproto=no)
+AC_MSG_RESULT([$have_funcproto])
+if test "$have_funcproto" = no; then
+  AC_DEFINE(FUNCPROTO,1,[Define if X11 doesn't automatically use prototypes])
+fi
+
+
 #--------------------------------------------------------------------
 # Find for DPS
 #--------------------------------------------------------------------

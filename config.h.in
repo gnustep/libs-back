@@ -11,6 +11,9 @@
 /* Define to type of window server to build */
 #undef BUILD_SERVER
 
+/* Define if X11 doesn't automatically use prototypes */
+#undef FUNCPROTO
+
 /* Define to 1 if you have the <DPS/dpsclient.h> header file. */
 #undef HAVE_DPS_DPSCLIENT_H
 

@@ -4387,6 +4387,41 @@ if test -r $x_includes/X11/DPS; then
 fi
 
 
+# Old X11 support
+echo "$as_me:$LINENO: checking for X11 function prototypes" >&5
+echo $ECHO_N "checking for X11 function prototypes... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <X11/Xlib.h>
+  #if NeedFunctionPrototypes
+    yes
+  #endif
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "yes" >/dev/null 2>&1; then
+  have_funcproto=yes
+else
+  have_funcproto=no
+fi
+rm -f conftest*
+
+echo "$as_me:$LINENO: result: $have_funcproto" >&5
+echo "${ECHO_T}$have_funcproto" >&6
+if test "$have_funcproto" = no; then
+
+cat >>confdefs.h <<\_ACEOF
+#define FUNCPROTO 1
+_ACEOF
+
+fi
+
+
 #--------------------------------------------------------------------
 # Find for DPS
 #--------------------------------------------------------------------
