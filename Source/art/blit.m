@@ -29,6 +29,8 @@ This file includes itself. Many times. You have been warned.
 #include <math.h>
 #include <string.h>
 
+#include <Foundation/NSDebug.h>
+
 #include "x11/XGServer.h"
 
 #include "blit.h"

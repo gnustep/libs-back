@@ -1430,6 +1430,7 @@ static ArtSVP *copy_svp(ArtSVP *svp)
 -(void) _setup_stuff: (int)window  : (RDSClient *)remote;
 #else
 -(void) _setup_stuff: (gswindow_device_t *)win : (int)x : (int)y;
+-(void) GSCurrentDevice: (void **)device : (int *)x : (int *)y;
 #endif
 @end
 
@@ -1494,6 +1495,16 @@ static ArtSVP *copy_svp(ArtSVP *svp)
 	DESTROY(wi);
 	wi=[ARTWindowBuffer artWindowBufferForWindow: window];
 }
+
+-(void) GSCurrentDevice: (void **)device : (int *)x : (int *)y
+{
+	*x = *y = 0;
+	if (wi)
+		*device = wi->window;
+	else
+		*device = NULL;
+}
+
 #endif
 
 @end
@@ -1620,151 +1631,13 @@ static ArtSVP *copy_svp(ArtSVP *svp)
 {
 	[(ARTGState *)gstate _setup_stuff: device : x : y];
 }
-#endif
-@end
 
-
-
-#ifndef RDS
-
-#include <AppKit/NSImage.h>
-@implementation NSImage (dummy)
--(Pixmap) xPixmapMask
-{ /* TODO */
-	return 0;
-}
-@end
-
-
-
-/*
-   XGBitmapImageRep.m
-
-   NSBitmapImageRep for GNUstep GUI X/GPS Backend
-
-   Copyright (C) 1996-1999 Free Software Foundation, Inc.
-
-   Author:  Adam Fedor <fedor@colorado.edu>
-   Author:  Scott Christley <scottc@net-community.com>
-   Date: Feb 1996
-   Author:  Felipe A. Rodriguez <far@ix.netcom.com>
-   Date: May 1998
-   Author:  Richard Frith-Macdonald <richard@brainstorm.co.uk>
-   Date: Mar 1999
-   Rewritten: Adam Fedor <fedor@gnu.org>
-   Date: May 2000
-
-   This file is part of the GNUstep GUI X/GPS Backend.
-
-   This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
-   License as published by the Free Software Foundation; either
-   version 2 of the License, or (at your option) any later version.
-
-   This library is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-
-   You should have received a copy of the GNU Library General Public
-   License along with this library; see the file COPYING.LIB.
-   If not, write to the Free Software Foundation,
-   59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-*/
-
-#include <config.h>
-#include <stdlib.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-
-#ifdef HAVE_WRASTER_H
-#include "wraster.h"
-#else
-#include "x11/wraster.h"
-#endif
-#include "x11/XGServerWindow.h"
-#include <Foundation/NSData.h>
-#include <Foundation/NSDebug.h>
-#include <Foundation/NSUserDefaults.h>
-#include <AppKit/NSBitmapImageRep.h>
-#include <AppKit/NSImage.h>
-#include <AppKit/NSGraphics.h>
-
-@interface NSBitmapImageRep (BackEnd)
-- (Pixmap) xPixmapMask;
-@end
-
-
-@implementation NSBitmapImageRep (Backend)
-
-#ifdef WITH_WRASTER
-+ (NSArray *) _wrasterFileTypes
+-(void) GSCurrentDevice: (void **)device : (int *)x : (int *)y
 {
-  int i;
-  NSMutableArray *warray;
-  char **types = RSupportedFileFormats();
-  
-  i = 0;
-  warray = [NSMutableArray arrayWithCapacity: 4];
-  while (types[i] != NULL)
-    {
-      NSString *type = [NSString stringWithCString: types[i]];
-      type = [type lowercaseString];
-      if (strcmp(types[i], "TIFF") != 0)
-	{
-	  [warray addObject: type];
-	  if (strcmp(types[i], "JPEG") == 0)
-	    [warray addObject: @"jpg"];
-	  else if (strcmp(types[i], "PPM") == 0)
-	    [warray addObject: @"pgm"];
-	}
-      i++;
-    }
-  return warray;
+	[(ARTGState *)gstate GSCurrentDevice: device : x : y];
 }
 
-- _initFromWrasterFile: (NSString *)filename number: (int)imageNumber
-{
-  int screen;
-  RImage *image;
-  RContext *context;
+#endif
 
-  if (imageNumber > 0)
-    {
-      /* RLoadImage doesn't handle this very well */
-      RELEASE(self);
-      return nil;
-    }
-
-  NSDebugLLog(@"NSImage", @"Loading %@ using wraster routines", filename);
-  screen = [[[GSCurrentServer() screenList] objectAtIndex: 0] intValue];
-  context = [(XGServer *)GSCurrentServer() xrContextForScreen: screen];
-  image = RLoadImage(context, (char *)[filename cString], imageNumber);
-  if (!image)
-    {
-      RELEASE(self);
-      return nil;
-    }
-  [self initWithBitmapDataPlanes: &(image->data)
-		pixelsWide: image->width
-		pixelsHigh: image->height
-		bitsPerSample: 8
-	        samplesPerPixel: (image->format == RRGBAFormat) ? 4 : 3
-		hasAlpha: (image->format == RRGBAFormat) ? YES : NO
-		isPlanar: NO
-		colorSpaceName: NSDeviceRGBColorSpace
-		bytesPerRow: 0
-		bitsPerPixel: 0];
-
-  /* Make NSBitmapImageRep own the data */
-  _imageData = [NSMutableData dataWithBytesNoCopy: image->data
-				    length: (_bytesPerRow*image->height)];
-  RETAIN(_imageData);
-  free(image);
-
-  return self;
-}
-#endif /* WITH_WRASTER */
-
-#endif /* RDS */
+@end
 
