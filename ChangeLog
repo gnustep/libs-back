@@ -1,3 +1,8 @@
+2002-09-25 22:39  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Rework font configuration code to handle
+	the updated (and rather different) .nfont package format.
+
 2002-09-24 14:38  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Use GSFontAntiAlias defaults value to decide

@@ -30,6 +30,7 @@
 #include <Foundation/NSPathUtilities.h>
 #include <Foundation/NSFileManager.h>
 #include <Foundation/NSUserDefaults.h>
+#include <Foundation/NSBundle.h>
 #include <Foundation/NSDebug.h>
 #include <AppKit/GSFontInfo.h>
 #include <AppKit/NSAffineTransform.h>
@@ -101,6 +102,10 @@ static NSMutableSet *families_seen, *families_pending;
 @public
   NSString *familyName;
 
+  /* the following two are localized */
+  NSString *faceName;
+  NSString *displayName;
+
   NSArray *files;
   int weight;
   unsigned int traits;
@@ -122,8 +127,14 @@ static NSMutableSet *families_seen, *families_pending;
 
 -(NSString *) description
 {
-  return [NSString stringWithFormat: @"<FTFaceInfo %p: %@ %i %i>",
-    self, files, weight, traits];
+  return [NSString stringWithFormat: @"<FTFaceInfo %p: '%@' %@ %i %i>",
+    self, displayName, files, weight, traits];
+}
+
+/* FTFaceInfo:s should never be deallocated */
+-(void) dealloc
+{
+  NSLog(@"Warning: -dealloc called on %@",self);
 }
 
 @end
@@ -170,6 +181,7 @@ static struct
 {@"Nord"           ,NSBoldFontMask            ,14},
 
 {@"Italic"         ,NSItalicFontMask          ,-1},
+{@"Oblique"        ,NSItalicFontMask          ,-1},
 
 {@"Cond"           ,NSCondensedFontMask       ,-1},
 {@"Condensed"      ,NSCondensedFontMask       ,-1},
@@ -177,13 +189,12 @@ static struct
 };
   int i;
 
-  *weight = 5;
   *traits = 0;
 //  printf("do '%@'\n", s);
   while ([s length] > 0)
     {
 //      printf("  got '%@'\n", s);
-      if ([s hasSuffix: @"-"])
+      if ([s hasSuffix: @"-"] || [s hasSuffix: @" "])
 	{
 //	  printf("  do -\n");
 	  s = [s substringToIndex: [s length] - 1];
@@ -208,79 +219,99 @@ static struct
 }
 
 
-static void add_face(NSString *family, NSString *face, NSDictionary *d,
-	NSString *path, BOOL valid_face)
+static void add_face(NSString *family, int family_weight,
+	unsigned int family_traits, NSDictionary *d, NSString *path,
+	BOOL from_nfont)
 {
   FTFaceInfo *fi;
   int weight;
   unsigned int traits;
-  NSString *full_name;
 
-//  printf("'%@'-'%@' |%@|\n", family, face, d);
+  NSString *fontName;
+  NSString *faceName, *rawFaceName;
 
-  if (valid_face)
+
+  if (!from_nfont)
     {
-      int p;
-      if ([face isEqual: @"Normal"])
-	full_name = family;
-      else
-	full_name = [NSString stringWithFormat: @"%@-%@", family, face];
-      p = traits_from_string(face, &traits, &weight);
-/*      if (p > 0)
-	NSLog(@"failed to split: %@ to %i %04x %i", face, p, traits, weight);
-      else
-	NSLog(@"got %04x %i for %@", traits, weight, face);*/
-    }
-  else
-    {
-      int p = traits_from_string(family, &traits, &weight);
-      full_name = family;
-      if (p > 0)
-	{
-	  face = [family substringFromIndex: p];
-	  family = [family substringToIndex: p];
-	  if ([face length] <= 0)
-	    face = @"Normal";
-	  else
-	    full_name = [NSString stringWithFormat: @"%@-%@", family, face];
-	}
-      else
-	face = @"Normal";
-
-      if ([families_seen member: family])
-	{
-//	  NSLog(@"#2 already seen %@", family);
-	  return;
-	}
-      [families_pending addObject: family];
-      family = [families_pending member: family];
-//      NSLog(@"split %@ to '%@' '%@' %04x %i", full_name, family, face, traits, weight);
+      NSLog(@".font not back in yet");
+      return;
     }
 
-  if ([fcfg_allFontNames containsObject: full_name])
+  fontName = [d objectForKey: @"PostScriptName"];
+  if (!fontName)
+    {
+      NSLog(@"Warning: Face in %@ has no PostScriptName!",path);
+      return;
+    }
+
+  if ([fcfg_allFontNames containsObject: fontName])
     return;
 
   fi = [[FTFaceInfo alloc] init];
+  fi->familyName = [family copy];
 
+  if ([d objectForKey: @"LocalizedNames"])
     {
-      NSArray *files = [d objectForKey: @"Files"];
-      int i, c = [files count];
+      NSDictionary *l;
+      NSArray *lang;
+      int i;
 
-      if (!files)
+      l = [d objectForKey: @"LocalizedNames"];
+      lang = [NSUserDefaults userLanguages];
+      faceName = nil;
+      rawFaceName = [l objectForKey: @"English"];
+      for (i = 0; i < [lang count] && !faceName; i++)
 	{
-	  NSLog(@"No filename specified for font '%@'!", full_name);
-	  DESTROY(fi);
-	  return;
+	  faceName = [l objectForKey: [lang objectAtIndex: i]];
 	}
-
-      fi->files = [[NSMutableArray alloc] init];
-      for (i = 0; i < c; i++)
+      if (!faceName)
+	faceName = rawFaceName;
+      if (!faceName)
 	{
-	  [(NSMutableArray *)fi->files addObject:
-	    [path stringByAppendingPathComponent:
-	      [files objectAtIndex: i]]];
+	  faceName = @"<unknown face>";
+	  NSLog(@"Warning: couldn't find localized face name or fallback for %@",fontName);
 	}
     }
+  else if ((faceName = [d objectForKey: @"Name"]))
+    {
+      rawFaceName = faceName;
+      /* TODO: Smarter localization? Parse space separated parts and
+      translate individually? */
+      /* TODO: Need to define the strings somewhere, and make sure the
+      strings files get created.  */
+      faceName = [NSLocalizedStringFromTableInBundle(faceName,nil,
+			[NSBundle bundleForClass: fi->isa],nil) copy];
+      fi->faceName = faceName;
+    }
+  else
+    {
+      NSLog(@"Warning: Can't find name for face %@ in %@!",fontName,path);
+      return;
+    }
+
+  fi->displayName = [[family stringByAppendingString: @" "]
+			     stringByAppendingString: faceName];
+
+
+  weight = family_weight;
+  if (rawFaceName)
+    traits_from_string(rawFaceName, &traits, &weight);
+
+  {
+    NSArray *files = [d objectForKey: @"Files"];
+    int i, c = [files count];
+
+    if (files)
+      {
+	fi->files = [[NSMutableArray alloc] init];
+	for (i = 0; i < c; i++)
+	  {
+	    [(NSMutableArray *)fi->files addObject:
+	      [path stringByAppendingPathComponent:
+		[files objectAtIndex: i]]];
+	  }
+      }
+  }
 
   if ([d objectForKey: @"Weight"])
     weight = [[d objectForKey: @"Weight"] intValue];
@@ -288,6 +319,7 @@ static void add_face(NSString *family, NSString *face, NSDictionary *d,
 
   if ([d objectForKey: @"Traits"])
     traits = [[d objectForKey: @"Traits"] intValue];
+  traits |= family_traits;
   fi->traits = traits;
 
   if ([d objectForKey: @"RenderHints_hack"])
@@ -300,20 +332,17 @@ static void add_face(NSString *family, NSString *face, NSDictionary *d,
 	fi->render_hints_hack=0x00202;
     }
 
-  fi->familyName = [family copy];
+  NSDebugLLog(@"ftfont", @"adding '%@' '%@'", fontName, fi);
 
-  NSDebugLLog(@"ftfont", @"adding '%@' '%@'", full_name, fi);
-
-//  printf("'%@'  fi=|%@|\n", full_name, fi);
-  [fcfg_all_fonts setObject: fi forKey: full_name];
-  [fcfg_allFontNames addObject: full_name];
+  [fcfg_all_fonts setObject: fi forKey: fontName];
+  [fcfg_allFontNames addObject: fontName];
 
     {
       NSArray *a;
       NSMutableArray *ma;
       a = [NSArray arrayWithObjects:
-	full_name,
-	face,
+	fontName,
+	faceName,
 	[NSNumber numberWithInt: weight],
 	[NSNumber numberWithUnsignedInt: traits],
 	nil];
@@ -333,12 +362,13 @@ static void add_face(NSString *family, NSString *face, NSDictionary *d,
 
 static void load_font_configuration(void)
 {
-  int i, j, c;
+  int i, j, k, c;
   NSArray *paths;
   NSString *path, *font_path;
   NSFileManager *fm = [NSFileManager defaultManager];
   NSArray *files;
   NSDictionary *d;
+  NSArray *faces;
 
   fcfg_all_fonts = [[NSMutableDictionary alloc] init];
   fcfg_allFontFamilies = [[NSMutableDictionary alloc] init];
@@ -352,16 +382,17 @@ static void load_font_configuration(void)
     {
       path = [paths objectAtIndex: i];
       path = [path stringByAppendingPathComponent: @"Fonts"];
-//      printf("try %@\n", path);
       files = [fm directoryContentsAtPath: path];
       c = [files count];
 
       for (j = 0; j < c; j++)
 	{
-	  NSString *family, *face;
-	  NSEnumerator *e;
+	  NSString *family;
 	  NSDictionary *face_info;
 	  NSString *font_info_path;
+
+	  int weight;
+	  unsigned int traits;
 
 	  font_path = [files objectAtIndex: j];
 	  if (![[font_path pathExtension] isEqual: @"nfont"])
@@ -378,25 +409,39 @@ static void load_font_configuration(void)
 
 	  font_path = [path stringByAppendingPathComponent: font_path];
 
+	  NSDebugLLog(@"ftfont",@"loading %@",font_path);
+
 	  font_info_path = [font_path stringByAppendingPathComponent: @"FontInfo.plist"];
 	  if (![fm fileExistsAtPath: font_info_path])
 	    continue;
 	  d = [NSDictionary dictionaryWithContentsOfFile: font_info_path];
 	  if (!d)
 	    continue;
-	  d = [d objectForKey: @"Faces"];
 
-	  e = [d keyEnumerator];
-	  while ((face = [e nextObject]))
+	  if ([d objectForKey: @"Weight"])
+	    weight = [[d objectForKey: @"Weight"] intValue];
+	  else
+	    weight = 5;
+
+	  if ([d objectForKey: @"Traits"])
+	    traits = [[d objectForKey: @"Traits"] intValue];
+	  else
+	    traits = 0;
+
+	  faces = [d objectForKey: @"Faces"];
+	  if (![faces isKindOfClass: [NSArray class]])
 	    {
-	      face_info = [d objectForKey: face];
-	      if ([face_info isKindOfClass: [NSString class]])
-		face_info = [NSArray arrayWithObject: face_info];
-	      if ([face_info isKindOfClass: [NSArray class]])
-		face_info = [NSDictionary dictionaryWithObject: face_info
-		                                      forKey: @"Files"];
+	      NSLog(@"Warning: %@ isn't a valid .nfont package, ignoring.",
+ 	        font_path);
+	      if ([faces isKindOfClass: [NSDictionary class]])
+	        NSLog(@"(it looks like an old-style .nfont package)");
+	      continue;
+	    }
 
-	      add_face(family, face, face_info, font_path, YES);
+	  for (k = 0; k < [faces count]; k++)
+	    {
+	      face_info = [faces objectAtIndex: k];
+	      add_face(family, weight, traits, face_info, font_path, YES);
 	    }
 	}
 
@@ -410,13 +455,14 @@ static void load_font_configuration(void)
 
 	  family = [font_path stringByDeletingPathExtension];
 	  font_path = [path stringByAppendingPathComponent: font_path];
-	  d = [NSDictionary dictionaryWithObject:
+	  d = [NSDictionary dictionaryWithObjectsAndKeys:
 	    [NSArray arrayWithObjects:
 	      family,
 	      [family stringByAppendingPathExtension: @"afm"],
-	      nil]
-	    forKey: @"Files"];
-	  add_face(family, nil, d, font_path, NO);
+	      nil],
+	    @"Files", /* TODO */
+	    nil];
+	  add_face(family, 5, 0, d, font_path, NO);
 	}
       [families_seen unionSet: families_pending];
       [families_pending removeAllObjects];
@@ -509,9 +555,10 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   font_entry = [fcfg_all_fonts objectForKey: name];
   if (!font_entry)
     {
-      font_entry = [fcfg_all_fonts objectForKey: [fcfg_allFontNames objectAtIndex: 0]];
-      NSLog(@"Warning: can't find font '%@', falling back to '%@'",
-	    name, [fcfg_allFontNames objectAtIndex: 0]);
+      NSLog(@"Warning: font '%@' doesn't exist",name);
+      name = [fcfg_allFontNames objectAtIndex: 0];
+      font_entry = [fcfg_all_fonts objectForKey: name];
+      NSLog(@"falling back to '%@'",name);
     }
 
   face_info = font_entry;
