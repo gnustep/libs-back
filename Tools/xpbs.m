@@ -58,9 +58,7 @@ static char* atom_names[] = {
   "NULL",
   "FILE_NAME",
   "CLIPBOARD",
-#ifdef X_HAVE_UTF8_STRING
   "UTF8_STRING"
-#endif
 };
 static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 
@@ -84,9 +82,7 @@ static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 #define XG_NULL                 atoms[13]
 #define XG_FILE_NAME		atoms[14]
 #define XA_CLIPBOARD		atoms[15]
-#ifdef X_HAVE_UTF8_STRING
 #define XG_UTF8_STRING		atoms[16]
-#endif
 
 
 
@@ -130,13 +126,9 @@ osTypeToX(NSString *t)
 static NSString*
 xTypeToOs(Atom t)
 {
-#ifdef X_HAVE_UTF8_STRING
-  if (t == XG_UTF8_STRING)
-#else
-  if (t == XA_STRING)
-#endif
-    return NSStringPboardType;
-  else if (t == XG_TEXT)
+  if ((t == XG_UTF8_STRING) || 
+      (t == XG_TEXT) || 
+      (t == XA_STRING))
     return NSStringPboardType;
   else if (t == XG_FILE_NAME)
     return NSFilenamesPboardType;
@@ -145,41 +137,6 @@ xTypeToOs(Atom t)
 }
 
 
-
-static Bool xAppendProperty(Display* display,
-	      Window window,
-	      Atom property,
-	      Atom target,
-	      int format,
-	      unsigned char* data,
-	      int number_items)
-{
-// Ensure that the error handler is set up.
-//   xSetErrorHandler();
-
-// Any routine that appends properties can generate a BadAlloc error.
-//    xResetErrorFlag();
-
-  if (number_items > 0)
-    {
-      XChangeProperty(display,
-	window,
-	property,
-	target,
-	format,
-	PropModeAppend,
-	data,
-	number_items);
-
-      XSync(display, False);
-
-// Check if our write to a property generated an X error.
-//        if (xError())
-//            return False;
-    }
-
-  return True;
-}
 
 @interface	XPbOwner : NSObject
 {
@@ -223,7 +180,7 @@ static Bool xAppendProperty(Display* display,
 - (void) xSelectionNotify: (XSelectionEvent*)xEvent;
 - (void) xSelectionRequest: (XSelectionRequestEvent*)xEvent;
 - (BOOL) xProvideSelection: (XSelectionRequestEvent*)xEvent;
-- (Time) xTimeByAppending;
+- (Time) xTimeByAppending: (Atom) defaultType;
 - (BOOL) xSendData: (unsigned char*) data format: (int) format 
 	     items: (int) numItems type: (Atom) xType
 		to: (Window) window property: (Atom) property;
@@ -483,12 +440,6 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
       NSDebugLLog(@"Pbs", @"Selection notify for wrong (not our) window.");
       return;
     }
-
-  if (xEvent->property == (Atom)None)
-    {
-      NSLog(@"Owning program failed to convert data.");
-      return;
-    }
   else
     {
       NSDebugLLog(@"Pbs", @"Selection (%s) notify - '%s'.",
@@ -575,13 +526,67 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
    *	so we must tell the X server that we have the current selection.
    *	To conform to ICCCM we need to specify an up-to-date timestamp.
    */
-  XSetSelectionOwner(xDisplay, _xPb, xAppWin, [self xTimeByAppending]);
+#ifdef X_HAVE_UTF8_STRING
+   Atom defaultType = XG_UTF8_STRING;
+#else // X_HAVE_UTF8_STRING not defined
+   Atom defaultType = XA_STRING;
+#endif // X_HAVE_UTF8_STRING not defined
+
+  XSetSelectionOwner(xDisplay, _xPb, xAppWin, 
+		     [self xTimeByAppending: defaultType]);
   w = XGetSelectionOwner(xDisplay, _xPb);
   if (w != xAppWin)
     {
       NSLog(@"Failed to set X selection owner to the pasteboard server.");
     }
-  [self setOwnedByOpenStep: YES];
+  else
+    {
+      [self setOwnedByOpenStep: YES];
+    }
+}
+
+- (void) requestData: (Atom)xType 
+{
+  Time	whenRequested;
+
+  /*
+   * Do a nul append to a property to get a timestamp, if it returns the
+   * 'CurrentTime' constant then we haven't been able to get one.
+   */
+  whenRequested = [self xTimeByAppending: xType];
+  if (whenRequested != CurrentTime)
+    {
+      NSDate	*limit;
+      
+      /*
+       * Ok - we got a timestamp, so we can ask the selection system for
+       * the pasteboard data that was/is valid for theat time.
+       * Ask the X system to provide the pasteboard data in the
+       * appropriate property of our application root window.
+       */
+      XConvertSelection(xDisplay, [self xPb], xType,
+			[self xPb], xAppWin, whenRequested);
+      XFlush(xDisplay);
+      
+      /*
+       * Run an event loop to read X events until we have aquired the
+       * pasteboard data we need.
+       */
+      limit = [NSDate dateWithTimeIntervalSinceNow: 20.0];
+      [self setWaitingForSelection: whenRequested];
+      while ([self waitingForSelection] == whenRequested)
+        {
+	  [[NSRunLoop currentRunLoop] runMode: xWaitMode
+				      beforeDate: limit];
+	  if ([limit timeIntervalSinceNow] <= 0.0)
+	      break;	/* Timeout */
+	}
+      if ([self waitingForSelection] != 0)
+        {
+	  [self setWaitingForSelection: 0];
+	  NSLog(@"Timed out waiting for X selection");
+	}
+    }
 }
 
 - (void) pasteboard: (NSPasteboard*)pb provideDataForType: (NSString*)type
@@ -595,51 +600,11 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
    */
   if ([type isEqual: NSStringPboardType])
     {
-      Time	whenRequested;
-
-      /*
-       * Do a nul append to a property to get a timestamp, if it returns the
-       * 'CurrentTime' constant then we haven't been able to get one.
-       */
-      whenRequested = [self xTimeByAppending];
-      if (whenRequested != CurrentTime)
-	{
-	  NSDate	*limit;
-
-	  /*
-	   * Ok - we got a timestamp, so we can ask the selection system for
-	   * the pasteboard data that was/is valid for theat time.
-	   * Ask the X system to provide the pasteboard data in the
-	   * appropriate property of our application root window.
-	   */
 #ifdef X_HAVE_UTF8_STRING
-	  XConvertSelection(xDisplay, [self xPb], XG_UTF8_STRING,
-	    [self xPb], xAppWin, whenRequested);
-#else // X_HAVE_UTF8_STRING not defined
-	  XConvertSelection(xDisplay, [self xPb], XA_STRING,
-	    [self xPb], xAppWin, whenRequested);
+      [self requestData: XG_UTF8_STRING];
+      if ([self data] == nil)
 #endif // X_HAVE_UTF8_STRING not defined
-	  XFlush(xDisplay);
-
-	  /*
-	   * Run an event loop to read X events until we have aquired the
-	   * pasteboard data we need.
-	   */
-	  limit = [NSDate dateWithTimeIntervalSinceNow: 20.0];
-	  [self setWaitingForSelection: whenRequested];
-	  while ([self waitingForSelection] == whenRequested)
-	    {
-	      [[NSRunLoop currentRunLoop] runMode: xWaitMode
-				       beforeDate: limit];
-	      if ([limit timeIntervalSinceNow] <= 0.0)
-		break;	/* Timeout */
-	    }
-	  if ([self waitingForSelection] != 0)
-	    {
-	      [self setWaitingForSelection: 0];
-	      NSLog(@"Timed out waiting for X selection");
-	    }
-	}
+	[self requestData: XA_STRING];
     }
   else
     {
@@ -710,14 +675,16 @@ xErrorHandler(Display *d, XErrorEvent *e)
   int		status;
   unsigned char	*data;
   Atom		actual_target;
-#ifdef X_HAVE_UTF8_STRING
-  Atom		new_target = XG_UTF8_STRING;
-#else // X_HAVE_UTF8_STRING not defined
-  Atom		new_target = XA_STRING;
-#endif // X_HAVE_UTF8_STRING
   int		actual_format;
   unsigned long	bytes_remaining;
   unsigned long	number_items;
+
+  if (xEvent->property == (Atom)None)
+    {
+      NSDebugLLog(@"Pbs", @"Owning program failed to convert data.");
+      [self setWaitingForSelection: 0];
+      return;
+    }
 
   if ([self waitingForSelection] > xEvent->time)
     {
@@ -735,7 +702,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
 				0L,                             // offset
 				FULL_LENGTH,
 				True,               // Delete prop when read.
-				new_target,
+				AnyPropertyType,
 				&actual_target,
 				&actual_format,
 				&number_items,
@@ -744,10 +711,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
 
   if ((status == Success) && (number_items > 0))
     {
-// Convert data to text string.
-// string = PropertyToString(xDisplay,new_target,number_items,(char*)data);
-
-#ifdef X_HAVE_UTF8_STRING
+      // Convert data to text string.
       if (actual_target == XG_UTF8_STRING)
 	{
 	  NSData	*d;
@@ -762,8 +726,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	  RELEASE(s);
 	  [self setData: d];
 	}
-#else // X_HAVE_UTF8_STRING not defined
-      if (new_target == XA_STRING)
+      else if (actual_target == XA_STRING)
 	{
 	  NSData	*d;
 	  NSString	*s;
@@ -777,7 +740,6 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	  RELEASE(s);
 	  [self setData: d];
 	}
-#endif // X_HAVE_UTF8_STRING not defined
       else
 	{
 	  NSLog(@"Unsupported data type from X selection.");
@@ -902,6 +864,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	}
       else
 	{
+	  // A fixed type was requested.
+	  xType = xEvent->target;
 	  /*
            * Find an available OpenStep pasteboard type that corresponds
 	   * to the requested X type.
@@ -911,12 +875,21 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	      NSString	*type = [types objectAtIndex: i];
 	      Atom	t = osTypeToX(type);
 
-	      if (t == xEvent->target)
+	      if (t == xType)
 		{
 		  osType = type;
 		  xType = t;
 		  break;
 		}
+	    }
+
+	  // If UTF8 is the default we have to handle the case where the target
+          // applciaiton cannot handle this. 
+	  if ((osType == nil) &&
+	      [types containsObject: NSStringPboardType] && 
+	      ((xType == XA_STRING) || (xType == XG_TEXT)))
+	    {
+	      osType = NSStringPboardType;
 	    }
 	}
 
@@ -929,11 +902,16 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	  if ([osType isEqualToString: NSStringPboardType])
 	    {
 	      NSString	*s = [_pb stringForType: NSStringPboardType];
-#ifdef X_HAVE_UTF8_STRING
-	      NSData *d = [s dataUsingEncoding: NSUTF8StringEncoding];
-#else // X_HAVE_UTF8_STRING not defined
-	      NSData *d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
-#endif // X_HAVE_UTF8_STRING not defined
+	      NSData *d;
+
+	      if (xType == XG_UTF8_STRING)
+	        {
+		  d = [s dataUsingEncoding: NSUTF8StringEncoding];
+		}
+	      else
+	        {
+		  d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+		}
 
 	      format = 8;
 	      if (d != nil)
@@ -1000,7 +978,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
   return status;
 }
 
-- (Time) xTimeByAppending
+- (Time) xTimeByAppending: (Atom)defaultType
 {
   NSDate	*limit;
   Time		whenRequested;
@@ -1025,16 +1003,12 @@ xErrorHandler(Display *d, XErrorEvent *e)
        * The property doesn't exist - so we will be creating a new (empty)
        * property.
        */
-#ifdef X_HAVE_UTF8_STRING
-      actualType = XG_UTF8_STRING;
-#else // X_HAVE_UTF8_STRING not defined
-      actualType = XA_STRING;
-#endif // X_HAVE_UTF8_STRING not defined
+      actualType = defaultType;
       actualFormat = 8;
     }
 
   XChangeProperty(xDisplay, xAppWin, [self xPb], actualType, actualFormat,
-    PropModeAppend, 0, 0);
+    PropModeReplace, 0, 0);
   XFlush(xDisplay);
   limit = [NSDate dateWithTimeIntervalSinceNow: 3.0];
   [self setTimeOfLastAppend: 0];
