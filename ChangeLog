@@ -1,3 +1,13 @@
+2003-04-27  Adam Fedor  <fedor@gnu.org>
+
+	* Updates for filesystem change.
+	* GNUmakefile (GNUSTEP_MAKEFILES): Remove
+	* Documentation/GNUmakefile, Source/GNUmakefile,
+	Source/*/GNUmakefile, Tools/GNUmakefile: Idem
+	* configure.ac: Replace $GNUSTEP_SYSTEM_ROOT/Makefiles with
+	$GNUSTEP_MAKEFILES.  Replace Libraries with Library/Libraries.
+	Replace Headers with Library/Headers.
+
 2003-03-01  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/winlib/Win32FontInfo.m
