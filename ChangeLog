@@ -1,3 +1,10 @@
+2002-11-16  Gregory John Casamento <greg_casamento@yahoo.com>
+
+	* Headers/x11/XGOpenGL.h: Added define to avoid collision of
+	parameters named "id" in some versions of the OpenGL headers
+	with the Objective-C type "id".   This was causing build of
+	back to fail.
+
 2002-11-15  Frederic De Jaeger <dejaeger@free.fr>
 
 	* Source/x11/XGGLFormat.m, Source/x11/XGGLContext.m
