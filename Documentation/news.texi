@@ -7,7 +7,7 @@
 @include version.texi
 @end ifset
 
-@section Noteworthy changes in version @samp{0.9.5}
+@section Noteworthy changes in version @samp{0.9.4}
 
 @itemize @bullet
 @item Fast drawing on 8 bit displays was added (although it might only
