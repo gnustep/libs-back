@@ -45,6 +45,13 @@
   XIMStyle  xim_style;
   NSMutableData   *dbuf;
   NSStringEncoding encoding;
+
+  /* Track the XIC:s and destroy them explicitly to work around an XFree86
+  bug:
+  http://www.xfree86.org/pipermail/xpert/2002-June/018370.html
+  */
+  XIC      *xics;
+  int       num_xics;
 }
 
 - (id) initWithDelegate: (id)aDelegate

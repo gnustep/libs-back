@@ -1,3 +1,8 @@
+2002-09-19 00:33  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Header/x11/XGInputServer.h, Source/x11/XIMInputServer.m: Track
+	all created XIC:s and destroy them explicitly.
+
 2002-09-18 19:59  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/blit.h, Source/art/blit.m, Source/art/composite.m:
