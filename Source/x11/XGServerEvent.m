@@ -975,7 +975,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	      _command_pressed |= 1;
 	    }
 	  if (_command_keycodes[1] 
-	      && check_modifier (&xEvent, _command_keycodes[2]))
+	      && check_modifier (&xEvent, _command_keycodes[1]))
 	    {
 	      _command_pressed = 2;
 	    }
