@@ -2,6 +2,7 @@
 
 	* Source/xlib/XGGState.m (-DPSrectclip::::): Clear path.
 	* Source/winlib/WIN32GState.m (-DPSrectclip::::): Idem.
+	* Source/art/path.m (-DPSrectclip::::): Idem.
 
 2003-09-30  Adam Fedor  <fedor@gnu.org>
 
