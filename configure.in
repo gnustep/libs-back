@@ -71,9 +71,11 @@ else
  wprefix=${with_wraster}/
 fi
 
-GRAPHIC_LIBS=`${wprefix}get-wraster-flags --libs`
-GRAPHIC_CFLAGS=`${wprefix}get-wraster-flags --cflags`
-GRAPHIC_LFLAGS=`${wprefix}get-wraster-flags --ldflags`
+if test "x$with_wraster" != "xnone"; then
+  GRAPHIC_LIBS=`${wprefix}get-wraster-flags --libs`
+  GRAPHIC_CFLAGS=`${wprefix}get-wraster-flags --cflags | sed -e "s|-I/usr/include||"`
+  GRAPHIC_LFLAGS=`${wprefix}get-wraster-flags --ldflags`
+fi
 
 AC_DEFUN(AC_CHECK_WRASTER,
 [dnl
@@ -84,7 +86,7 @@ wraster_check_save_libs=${LIBS}
 CPPFLAGS="$1 $2 ${CPPFLAGS}"
 LIBS="$3 $LIBS"
 
-# Check for RFillImage which is only in version 2.0 or libwraster
+# Check for RFillImage which is only in version 2.0 of libwraster
 AC_CHECK_LIB(wraster, RFillImage, gs_cv_have_wraster=yes, gs_cv_have_wraster=no)
 if test "$gs_cv_have_wraster" = yes; then
   AC_CHECK_HEADERS(wraster.h, gs_cv_have_wraster=yes, gs_cv_have_wraster=no)
@@ -112,6 +114,9 @@ if test $gs_cv_have_wraster = no -o $x_includes != NONE; then
   set_x_paths=yes
 fi
 AC_PATH_XTRA
+if test "x$no_x" = xyes; then
+  set_x_paths=no
+fi
 
 if test $set_x_paths = yes; then
   GRAPHIC_CFLAGS="$X_CFLAGS"
@@ -213,14 +218,28 @@ fi
 #--------------------------------------------------------------------
 AC_ARG_WITH(jpeg_library, 
            [  --with-jpeg-library=DIR JPEG library file are in DIR], ,
-           with_jpeg_library=/usr/local/lib)
+           with_jpeg_library=)
 AC_ARG_WITH(jpeg_include,  
 	[  --with-jpeg-include=DIR JPEG include files are in DIR], ,
-        with_jpeg_include=/usr/local/include)
+        with_jpeg_include=)
+
+if test "$with_jpeg_library" = ""; then
+  case "$target_os" in
+    freebsd*)	with_jpeg_include="/usr/local/include"
+		with_jpeg_library="/usr/local/lib";;
+  esac
+fi
+
+if test -n "$with_jpeg_library"; then
+  with_jpeg_library="-L$with_jpeg_library"
+fi
+if test -n "$with_jpeg_include"; then
+  with_jpeg_include="-I$with_jpeg_include"
+fi
 
 AC_DEFUN(AC_CHECK_JPEGLIB,
 [jpeg_check_lib_save_header=${CPPFLAGS}
-CPPFLAGS="-L$1 -I$2 ${CPPFLAGS}"
+CPPFLAGS="$1 $2 ${CPPFLAGS}"
 
 AC_CHECK_LIB(jpeg, jpeg_destroy_decompress,
       jpeg_ok=yes,
@@ -237,8 +256,8 @@ if test "$jpeg_ok" = yes; then
   AC_MSG_RESULT($jpeg_ok)
 
   if test "$jpeg_ok" = yes; then
-    GRAPHIC_LFLAGS="-L$1 $GRAPHIC_LFLAGS"
-    GRAPHIC_CFLAGS="-I$1 $GRAPHIC_CFLAGS"
+    GRAPHIC_LFLAGS="$1 $GRAPHIC_LFLAGS"
+    GRAPHIC_CFLAGS="$2 $GRAPHIC_CFLAGS"
   fi
 fi
 CPPFLAGS="${jpeg_check_lib_save_header}"])
@@ -252,15 +271,29 @@ fi
 #--------------------------------------------------------------------
 AC_ARG_WITH(tiff_library, 
            [  --with-tiff-library=DIR TIFF library file are in DIR], ,
-           with_tiff_library=/usr/local/lib)
+           with_tiff_library=)
 AC_ARG_WITH(tiff_include,  
 	[  --with-tiff-include=DIR TIFF include files are in DIR], ,
-        with_tiff_include=/usr/local/include)
+        with_tiff_include=)
+
+if test "$with_tiff_library" = ""; then
+  case "$target_os" in
+    freebsd*)	with_tiff_include="/usr/local/include"
+		with_tiff_library="/usr/local/lib";;
+  esac
+fi
+
+if test -n "$with_tiff_library"; then
+  with_tiff_library="-L$with_tiff_library"
+fi
+if test -n "$with_tiff_include"; then
+  with_tiff_include="-I$with_tiff_include"
+fi
 
 AC_DEFUN(AC_CHECK_TIFFLIB,
 [tiff_check_lib_save_header=${CPPFLAGS}
 tiff_check_lib_save_libs=${LIBS}
-CPPFLAGS="-L$1 ${JPEG_LIB} -I$2 ${JPEG_INCLUDE} ${CPPFLAGS}"
+CPPFLAGS="$1 ${JPEG_LIB} $2 ${JPEG_INCLUDE} ${CPPFLAGS}"
 AC_CHECK_LIB(z, main, HAVE_LIBZ=1, HAVE_LIBZ=0)
 
 AC_MSG_CHECKING(for -ltiff without -ljpeg nor -lz)
@@ -288,42 +321,35 @@ if test $HAVE_LIBZ = 1; then
   fi
 fi
 
-AC_CHECK_LIB(tiff, TIFFReadScanline,
-      tiff_ok=yes,
-      tiff_ok=no
-      AC_MSG_WARN(Cannot find libtiff)
-      echo "* The GUI library reqiures the TIFF library"
-      echo "* Use --with-tiff-library to specify the tiff library"
-      echo "* directory if it is not in the usual place(s)"
-      echo "* You may also have to specify --with-jpeg-library if the jpeg"
-      echo "* Library is needed by tiff"
-      if test "x$CONFIGURING_CORE_LIBRARIES" != x; then
-        AC_MSG_ERROR(You must have proper libraries installed to compile core)
-      fi,
-      $JPEG -lm)
+AC_CHECK_LIB(tiff, TIFFReadScanline, tiff_ok=yes, tiff_ok=no, $JPEG -lm)
 if test "$tiff_ok" = yes; then
-  AC_CHECK_HEADER(tiffio.h,
-                  tiff_ok=yes,
-	          tiff_ok=no)
+  AC_CHECK_HEADER(tiffio.h, tiff_ok=yes, tiff_ok=no)
   if test "$tiff_ok" = yes; then
-    GRAPHIC_LFLAGS="-L$1 $GRAPHIC_LFLAGS"
-    GRAPHIC_CFLAGS="-I$1 $GRAPHIC_CFLAGS"
+    GRAPHIC_LFLAGS="$1 $GRAPHIC_LFLAGS"
+    GRAPHIC_CFLAGS="$2 $GRAPHIC_CFLAGS"
     GRAPHIC_LIBS="-ltiff $JPEG $GRAPHIC_LIBS"
   else
     AC_MSG_WARN(Cannot find libtiff header tiffio)
     echo "* The GUI library requres the TIFF library"
     echo "* Use --with-tiff-include to specify the tiff header directory"
+    echo "* and --with-tiff-library to specify the tiff library directory"
     echo "* if it is not in the usual place(s)"
-    if test "x$CONFIGURING_CORE_LIBRARIES" != x; then
-      AC_MSG_ERROR(You must have proper libraries installed to compile core)
-    fi
+    AC_MSG_ERROR(gnustep-gui will not compile without tiff includes)
   fi
+else
+  AC_MSG_WARN(Cannot find libtiff)
+  echo "* The GUI library reqiures the TIFF library"
+  echo "* Use --with-tiff-library to specify the tiff library"
+  echo "* directory if it is not in the usual place(s)"
+  echo "* You may also have to specify --with-jpeg-library if the jpeg"
+  echo "* library is needed by tiff",
+  AC_MSG_ERROR(gnustep-gui will not compile without tiff)
 fi
 CPPFLAGS="${tiff_check_lib_save_header}"])
 
 if test $gs_cv_have_wraster = no -o $set_x_paths = yes; then
   AC_CHECK_TIFFLIB(${with_tiff_library}, ${with_tiff_include})
-fi
+fi 
 
 save_CPPFLAGS=${CPPFLAGS}
 CPPFLAGS="$CPPFLAGS $GRAPHIC_CFLAGS"
@@ -414,13 +440,13 @@ fi
 #--------------------------------------------------------------------
 AC_ARG_WITH(name, 
            [  --with-name=PREFIX      Set the name of the backend (def=back)])
+AC_MSG_CHECKING(Backend name)
 if test "x$with_name" = "x"; then
  BACKEND_NAME=back
 else
  BACKEND_NAME=${with_name}
 fi
+AC_MSG_RESULT($BACKEND_NAME)
 AC_SUBST(BACKEND_NAME)
 
 AC_OUTPUT(back.make config.make)
-
-

@@ -336,11 +336,6 @@
   DPScurrentgray(dps_context, gray);
 }
 
-- (void)DPScurrentgstate: (int)gst 
-{
-  DPScurrentgstate(dps_context, gst);
-}
-
 - (void)DPScurrenthalftone
 {
   DPScurrenthalftone(dps_context);
@@ -424,11 +419,6 @@
 - (void)DPSgsave
 {
   DPSgsave(dps_context);
-}
-
-- (void)DPSgstate
-{
-  DPSgstate(dps_context);
 }
 
 - (void)DPSinitgraphics

@@ -1194,9 +1194,23 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
     }
 }
 
-- (void) windowbacking: (NSBackingStoreType)type
+- (void) windowbacking: (NSBackingStoreType)type : (int) win
 {
-  [self subclassResponsibility: _cmd];
+  gswindow_device_t *window;
+
+  window = WINDOW_WITH_TAG(win);
+  if (!window)
+    return;
+
+  NSDebugLLog(@"XGTrace", @"DPSwindowbacking: %@ : %d", type, win);
+
+  if (window->buffer && type == NSBackingStoreNonretained)
+    {
+      XFreePixmap (XDPY, window->buffer);
+      window->buffer = 0;
+    }
+  window->type = type;
+  [self _createBuffer: window];
 }
 
 - (void) titlewindow: (NSString *)window_title : (int) win
