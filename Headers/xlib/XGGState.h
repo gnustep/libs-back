@@ -39,8 +39,8 @@
 {
 @public
   void      *context;
+  void      *windevice;
   GC	    xgcntxt;
-  int       window;
   XGCValues gcv;
   Drawable  draw;
   Drawable  alpha_buffer;
@@ -51,8 +51,7 @@
   BOOL sharedGC;  /* Do we own the GC or share it? */
 }
 
-- (void) setWindow: (int)win;
-- (void) setDrawable: (Drawable)theDrawable;
+- (void) setWindowDevice: (void *)device;
 - (void) setGraphicContext: (GC)xGraphicContext;
 - (void) setGCValues: (XGCValues)values withMask: (int)mask;
 - (void) setClipMask;
@@ -61,9 +60,9 @@
 
 - (BOOL) hasDrawable;
 - (BOOL) hasGraphicContext;
+- (void *) windevice;
 - (Drawable) drawable;
 - (GC) graphicContext;
-- (NSPoint) offset;
 - (NSRect) clipRect;
 
 - (void) setFont: (NSFont*)font;

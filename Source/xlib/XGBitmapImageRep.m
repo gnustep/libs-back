@@ -125,10 +125,7 @@
 {
   unsigned char	*bData;
   XGContext	*ctxt = (XGContext*)GSCurrentContext();
-  Display	*xDisplay = [ctxt xDisplay];
-  Drawable	xDrawable;
-  GC		gc;
-  int           x, y;
+  gswindow_device_t *gs_win;
 
   // Only produce pixmaps for meshed images with alpha
   if ((_numColors != 4) || _isPlanar)
@@ -136,11 +133,12 @@
 
   bData = [self bitmapData];
 
-  [ctxt DPScurrentgcdrawable: (void**)&gc : (void**)&xDrawable : &x : &y];
+  [ctxt GSCurrentDevice: (void**)&gs_win : NULL : NULL];
 
   // FIXME: This optimistic computing works only, if there are no 
   // additional bytes at the end of a line.
-  return  xgps_cursor_mask (xDisplay, xDrawable, bData, _pixelsWide, _pixelsHigh, _numColors);
+  return  xgps_cursor_mask (gs_win->display, GET_XDRAWABLE(gs_win), 
+			    bData, _pixelsWide, _pixelsHigh, _numColors);
 }
 
 @end

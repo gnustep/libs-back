@@ -1,9 +1,25 @@
+2002-04-14  Adam Fedor  <fedor@gnu.org>
+
+	* Headers/x11/XGServerWindow.h: Add graphics driver protocol
+	information.
+	* Source/x11/XGServerWindow.m (_createBuffer:): Use it.
+	(-termwindow:): Idem.
+	([XGServer -windowbacking::win]): Idem.
+	([XGServer -windowdevice:]): Idem.
+	([XGServer -_addExposedRectangle::]): Idem.
+	([XGServer -flushwindowrect::]): Idem.
+
+	* Source/xlib/XGBitmapImageRep.m: Use new GSCurrentDevice.
+	* Source/xlib/XGContext.m: Idem.
+	* Headers/xlib/XGGState.h: Use window device, not window number.
+	* Source/xlib/XGGState.m: Idem.
+
 Thu Apr 11 22:24:01 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 
 	* Source/x11/XGServerEvent.m: Added missing includes.
 	* Source/x11/XGServerWindow.m: Idem.
 	* Source/x11/XGDragView.m: Idem.
-	
+	2
 2002-04-11  Richard Frith-Macdonald  <rfm@gnu.org>
 
 	* Tools/gpbs.m: Fixed bug in argument parsing ... was objecting to

@@ -60,25 +60,32 @@ typedef struct {
 #define WMFHideOtherApplications		10
 #define WMFHideApplication			12
 
+/* Graphics Driver protocol. Setup in [NSGraphicsContext-contextDevice:] */
+enum {
+  GDriverHandlesBacking = 1,
+  GDriverHandlesExpose = 2
+};
+
 typedef struct _gswindow_device_t {
-  Display               *display;
-  Window                ident;
-  Window                root;
-  Window		parent;
-  int                   screen;
-  GC                    gc;
-  long                  number;
-  int                   depth;
-  int                   border;
-  int			map_state;
-  int                   visibility;
-  NSBackingStoreType    type;
-  NSRect                xframe;
-  Drawable              buffer;
-  Drawable              alpha_buffer;
+  Display               *display;      /* Display this window is on */
+  Window                ident;         /* Window handle */
+  Window                root;          /* Handle of root window */
+  Window		parent;        /* Handle of parent window */
+  int                   screen;        /* Screeen this window is on */
+  GC                    gc;            /* GC for drawing */
+  long                  number;        /* Globally unique identifier */
+  int                   depth;         /* Window depth */
+  int                   border;        /* Border size */
+  int			map_state;     /* X map state */
+  int                   visibility;    /* X visibility */
+  NSBackingStoreType    type;          /* Backing type */
+  NSRect                xframe;        /* Window frame */
+  Drawable              buffer;        /* Backing store pixmap */
+  Drawable              alpha_buffer;  /* Alpha buffer. Managed by gdriver
+					  will be freed if HandlesBacking=0 */
   BOOL			is_exposed;
-  NSMutableArray	*exposedRects;
-  Region		region;		// Used between several expose events
+  NSMutableArray	*exposedRects; /* List of exposure event rects */
+  Region		region;	       /* Used between several expose events */
   XWMHints		gen_hints;
   XSizeHints		siz_hints;
   GNUstepWMAttributes	win_attrs;
@@ -89,9 +96,11 @@ typedef struct _gswindow_device_t {
   Atom			protocols[4];
   int			numProtocols;
   XIC                   ic;
+  void                  *gdriver;      /* gdriver ident. Managed by gdriver */
+  int                   gdriverProtocol; /* Managed by gdriver */
 } gswindow_device_t;
 
-#define GET_XDRAWABLE(win)  ((win)->buffer ? (win)->buffer: (win)->ident)                               
+#define GET_XDRAWABLE(win)  ((win)->buffer ? (win)->buffer: (win)->ident)
 
 @interface XGServer (DPSWindow)
 + (gswindow_device_t *) _windowForXWindow: (Window)xWindow;

@@ -521,6 +521,7 @@ static	XGDragView	*sharedDragView = nil;
       break;
     default:
       // FIXME: Should not happen, add warning?
+      break;
     }
 
   if (name != nil)
