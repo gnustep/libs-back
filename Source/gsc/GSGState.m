@@ -733,29 +733,32 @@
 
 - (void) DPSrectclip: (float)x : (float)y : (float)w : (float)h
 {
-  NSRect rect = NSMakeRect(x, y, w, h);
+  NSRect rect = [ctm rectInMatrixSpace: NSMakeRect(x, y, w, h)]; 
+  NSBezierPath *oldPath = path;
 
-  rect = [ctm rectInMatrixSpace: rect];
-  ASSIGN(path, [NSBezierPath bezierPathWithRect: rect]);
+  path = [NSBezierPath bezierPathWithRect: rect];
   [self DPSclip];
+  path = oldPath;
 }
 
 - (void) DPSrectfill: (float)x : (float)y : (float)w : (float)h
 {
-  NSRect rect = NSMakeRect(x, y, w, h);
+  NSRect rect = [ctm rectInMatrixSpace: NSMakeRect(x, y, w, h)]; 
+  NSBezierPath *oldPath = path;
 
-  rect = [ctm rectInMatrixSpace: rect];
-  ASSIGN(path, [NSBezierPath bezierPathWithRect: rect]);
+  path = [NSBezierPath bezierPathWithRect: rect];
   [self DPSfill];
+  path = oldPath;
 }
 
 - (void) DPSrectstroke: (float)x : (float)y : (float)w : (float)h
 {
-  NSRect rect = NSMakeRect(x, y, w, h);
+  NSRect rect = [ctm rectInMatrixSpace: NSMakeRect(x, y, w, h)]; 
+  NSBezierPath *oldPath = path;
 
-  rect = [ctm rectInMatrixSpace: rect];
-  ASSIGN(path, [NSBezierPath bezierPathWithRect: rect]);
+  path = [NSBezierPath bezierPathWithRect: rect];
   [self DPSstroke];
+  path = oldPath;
 }
 
 - (void)DPSreversepath 
