@@ -1489,10 +1489,6 @@ static	Region	emptyRegion;
     [self setColor: &fillColor state: COLOR_STROKE];
 
   bounds = XGViewRectToX(self, NSMakeRect(x, y, w, h));
-  if (bounds.width > 0)
-    bounds.width--;
-  if (bounds.height > 0)
-    bounds.height--;
   // Hack: Only draw when alpha is not zero
   if (drawingAlpha == NO || strokeColor.field[AINDEX] != 0.0)
     XDrawRectangle(XDPY, draw, xgcntxt,
