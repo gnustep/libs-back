@@ -1,3 +1,8 @@
+2003-08-05  Martin Brecher <martin@mb-itconsulting.com>
+
+	* Tools/gpbs.1: Updated, fixed typos, added BUGS and HISTORY
+	section, file is now unprocessed as it should be.
+
 2003-08-10 23:26  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Override the new default font name methods.
