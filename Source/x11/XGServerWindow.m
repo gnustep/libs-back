@@ -37,6 +37,10 @@
 #include <AppKit/NSGraphics.h>
 #include <AppKit/NSWindow.h>
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef HAVE_WRASTER_H
 #include "wraster.h"
 #else
@@ -1344,21 +1348,22 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 
   XFlush (dpy);
 
+  XGetGeometry(dpy, window->ident, &window->root,
+	       &x, &y, &width, &height,
+	       &window->border, &window->depth);
   /* hack:
    * wait until a resize of window is finished (especially for NSMenu)
    * is there any way to wait until X finished it's stuff?
    * XSync(), XFlush() doesn't do the job!
    */
-  { 
-    int	i = 0;
-    do
-      {
-	XGetGeometry(dpy, window->ident, &window->root,
-		     &x, &y, &width, &height,
-		     &window->border, &window->depth);
-      }
-    while( i++<10 && height != window->siz_hints.height );
-  }
+  if (height != window->siz_hints.height)
+    {
+      usleep(1);
+      XGetGeometry(dpy, window->ident, &window->root,
+		   &x, &y, &width, &height,
+		   &window->border, &window->depth);
+    }
+
   window->xframe.size.width = width;
   window->xframe.size.height = height;
 
