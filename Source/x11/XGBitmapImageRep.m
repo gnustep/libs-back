@@ -35,8 +35,8 @@
 
 #include <config.h>
 #include <stdlib.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
+//#include <X11/Xlib.h>
+//#include <X11/Xutil.h>
 
 #include "x11/XGServerWindow.h"
 #include <Foundation/NSData.h>
@@ -51,11 +51,6 @@
 #else
 #include "x11/wraster.h"
 #endif
-
-@interface NSBitmapImageRep (BackEnd)
-- (Pixmap) xPixmapMask;
-@end
-
 
 @implementation NSBitmapImageRep (Backend)
 
@@ -127,45 +122,5 @@
   return self;
 }
 #endif /* WITH_WRASTER */
-
-- (Pixmap) xPixmapMask
-{
-  unsigned char	*bData;
-  NSGraphicsContext	*ctxt = (NSGraphicsContext*)GSCurrentContext();
-  gswindow_device_t *gs_win;
-  // Only produce pixmaps for meshed images with alpha
-  if ((_numColors != 4) || _isPlanar)
-    return 0;
-  bData = [self bitmapData];
-
-  [ctxt GSCurrentDevice: (void**)&gs_win : NULL : NULL];
-
-  // FIXME: This optimistic computing works only, if there are no 
-  // additional bytes at the end of a line.
-  return  xgps_cursor_mask (gs_win->display, GET_XDRAWABLE(gs_win),
-			    bData, _pixelsWide, _pixelsHigh, _numColors);
-}
-
-@end
-
-
-@implementation NSImage (Backend)
-
-- (Pixmap) xPixmapMask
-{
-  NSArray *reps = [self representations];
-  NSEnumerator *enumerator = [reps objectEnumerator];
-  NSImageRep *rep;
-
-  while ((rep = [enumerator nextObject]) != nil)
-    {
-      if ([rep isKindOfClass: [NSBitmapImageRep class]])
-        {
-	  return [(NSBitmapImageRep*)rep xPixmapMask];
-	}
-    }
-
-  return 0;
-}
 
 @end
