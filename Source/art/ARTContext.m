@@ -97,128 +97,60 @@ Context:
 draw_info_t ART_DI;
 
 
-/* TODO:
-this is incorrect. we're supposed to transform when we add the point;
-the points in the path shouldn't change if the ctm changes */
-@implementation ARTGState (proper_paths)
-
-
 #if 0
 /* useful when debugging */
-static void dump_vpath(ArtVpath *vp)
+static void dump_bpath(ArtBpath *vp)
 {
 	int i;
+	printf("** dumping %p **\n",vp);
 	for (i=0;;i++)
 	{
 		if (vp[i].code==ART_MOVETO_OPEN)
-			printf("moveto_open");
+			printf("  moveto_open");
 		else if (vp[i].code==ART_MOVETO)
-			printf("moveto");
+			printf("  moveto");
 		else if (vp[i].code==ART_LINETO)
-			printf("lineto");
+			printf("  lineto");
+		else if (vp[i].code==ART_CURVETO)
+			printf("  curveto");
 		else
-			printf("unknown %i",vp[i].code);
+			printf("  unknown %i",vp[i].code);
 
-		printf(" (%g %g)\n",vp[i].x,vp[i].y);
+		printf(" (%g %g) (%g %g) (%g %g)\n",
+			vp[i].x1,vp[i].y1,
+			vp[i].x2,vp[i].y2,
+			vp[i].x3,vp[i].y3);
 		if (vp[i].code==ART_END)
 			break;
 	}
 }
+
+{
+	int i;
+	NSBezierPathElement type;
+	NSPoint pts[3];
+	for (i=0;i<[newPath elementCount];i++)
+	{
+		type=[newPath elementAtIndex: i associatedPoints: pts];
+		switch (type)
+		{
+		case NSMoveToBezierPathElement:
+			printf("moveto (%g %g)\n",pts[0].x,pts[0].y);
+			break;
+		case NSLineToBezierPathElement:
+			printf("lineto (%g %g)\n",pts[0].x,pts[0].y);
+			break;
+		case NSCurveToBezierPathElement:
+			printf("curveto (%g %g) (%g %g) (%g %g)\n",
+				pts[0].x,pts[0].y,
+				pts[1].x,pts[1].y,
+				pts[2].x,pts[2].y);
+			break;
+		}
+	}
+}
+
 #endif
-
-
-#define CHECK_PATH do { if (!path) path=[[NSBezierPath alloc] init]; } while (0)
-
-- (void)DPScurrentpoint: (float *)x : (float *)y
-{
-	NSPoint p;
-	if (!path)
-		return;
-	p=[path currentPoint];
-	*x=p.x;
-	*y=p.y;
-}
-
-- (void) DPSarc: (float)x : (float)y : (float)r : (float)angle1 : (float)angle2 
-{
-  NSPoint center = NSMakePoint(x, y);
-
-  CHECK_PATH;
-  [path appendBezierPathWithArcWithCenter: center
-	radius: r
-	startAngle: angle1
-	endAngle: angle2
-	clockwise: NO];
-}
-
-- (void) DPSarcn: (float)x : (float)y : (float)r : (float)angle1 : (float)angle2 
-{
-  NSPoint center = NSMakePoint(x, y);
-
-  CHECK_PATH;
-  [path appendBezierPathWithArcWithCenter: center
-	radius: r
-	startAngle: angle1
-	endAngle: angle2
-	clockwise: YES];
-}
-
-- (void)DPScurveto: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)x3 : (float)y3 
-{
-  NSPoint p1 = NSMakePoint(x1, y1);
-  NSPoint p2 = NSMakePoint(x2, y2);
-  NSPoint p3 = NSMakePoint(x3, y3);
-
-  CHECK_PATH;
-  [path curveToPoint: p3 controlPoint1: p1 controlPoint2: p2];
-}
-
-- (void)DPSlineto: (float)x : (float)y 
-{
-  NSPoint p = NSMakePoint(x, y);
-
-  CHECK_PATH;
-  [path lineToPoint: p];
-}
-
-- (void)DPSmoveto: (float)x : (float)y 
-{
-  NSPoint p = NSMakePoint(x, y);
-
-  CHECK_PATH;
-  [path moveToPoint: p];
-}
-
-- (void)DPSrcurveto: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)x3 : (float)y3 
-{
-  NSPoint p1 = NSMakePoint(x1, y1);
-  NSPoint p2 = NSMakePoint(x2, y2);
-  NSPoint p3 = NSMakePoint(x3, y3);
- 
-  CHECK_PATH;
-  [path relativeCurveToPoint: p3
-	controlPoint1: p1
-	controlPoint2: p2];
-}
-
-- (void)DPSrlineto: (float)x : (float)y 
-{
-  NSPoint p = NSMakePoint(x, y);
- 
-  CHECK_PATH;
-  [path relativeLineToPoint: p];
-}
-
-- (void)DPSrmoveto: (float)x : (float)y 
-{
-  NSPoint p = NSMakePoint(x, y);
- 
-  CHECK_PATH;
-  [path relativeMoveToPoint: p];
-}
-
-@end
-
 
 
 @implementation ARTGState
@@ -326,7 +258,7 @@ very expensive
 	NSPoint p;
 
 	if ([path isEmpty]) return;
-	p=[path currentPoint];
+	p=[self currentPoint];
 
 	[(id<FTFontInfo>)[font fontInfo]
 		outlineString: s
@@ -346,7 +278,6 @@ very expensive
 
 	if ([path isEmpty]) return;
 	p=[path currentPoint];
-	p=[ctm pointInMatrixSpace: p];
 
 	x=p.x;
 	y=wi->sy-p.y;
@@ -375,7 +306,6 @@ very expensive
 
 	if ([path isEmpty]) return;
 	p=[path currentPoint];
-	p=[ctm pointInMatrixSpace: p];
 
 	x=p.x;
 	y=wi->sy-p.y;
@@ -399,7 +329,6 @@ very expensive
 
 	if ([path isEmpty]) return;
 	p=[path currentPoint];
-	p=[ctm pointInMatrixSpace: p];
 
 	x=p.x;
 	y=wi->sy-p.y;
@@ -423,7 +352,6 @@ very expensive
 
 	if ([path isEmpty]) return;
 	p=[path currentPoint];
-	p=[ctm pointInMatrixSpace: p];
 
 	x=p.x;
 	y=wi->sy-p.y;
@@ -596,74 +524,6 @@ very expensive
 }
 
 
-- (void)DPSarct: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)r
-{
-	float x0,y0;
-	float dx1,dy1,dx2,dy2;
-	float l,a1,a2;
-	NSPoint p;
-
-	p=[path currentPoint];
-	x0=p.x;
-	y0=p.y;
-
-	dx1=x0-x1;
-	dy1=y0-y1;
-	dx2=x2-x1;
-	dy2=y2-y1;
-
-	l=dx1*dx1+dy1*dy1;
-	if (l<=0)
-	{
-		[self DPSlineto: x1 : y1];
-		return;
-	}
-	l=1/sqrt(l);
-	dx1*=l; dy1*=l;
-
-	l=dx2*dx2+dy2*dy2;
-	if (l<=0)
-	{
-		[self DPSlineto: x1 : y1];
-		return;
-	}
-	l=1/sqrt(l);
-	dx2*=l; dy2*=l;
-
-	l=dx1*dx2+dy1*dy2;
-	if (l<-0.999)
-	{
-		[self DPSlineto: x1 : y1];
-		return;
-	}
-
-	l=r/sin(acos(l));
-
-	p.x=x1+(dx1+dx2)*l;
-	p.y=y1+(dy1+dy2)*l;
-
-	l=dx1*dy2-dx2*dy1;
-
-	a1=acos(dx1)/PI*180;
-	if (dy1<0) a1=-a1;
-	a2=acos(dx2)/PI*180;
-	if (dy2<0) a2=-a2;
-
-	if (l<0)
-	{
-		a2=a2-90;
-		a1=a1+90;
-		[self DPSarc: p.x:p.y : r : a1 : a2];
-	}
-	else
-	{
-		a2=a2+90;
-		a1=a1-90;
-		[self DPSarcn: p.x:p.y : r : a1 : a2];
-	}
-}
-
-
 -(ArtVpath *) _vpath_from_current_path: (BOOL)fill
 {
 	ArtBpath *bpath,*bp2;
@@ -770,12 +630,18 @@ very expensive
 	}
 	bpath[j].code=ART_END;
 
-	matrix[0]= ctm->matrix.m11;
+/*	matrix[0]= ctm->matrix.m11;
 	matrix[1]=-ctm->matrix.m12;
 	matrix[2]= ctm->matrix.m21;
 	matrix[3]=-ctm->matrix.m22;
 	matrix[4]= ctm->matrix.tx;
-	matrix[5]=-ctm->matrix.ty+wi->sy;
+	matrix[5]=-ctm->matrix.ty+wi->sy;*/
+	matrix[0]= 1;
+	matrix[1]= 0;
+	matrix[2]= 0;
+	matrix[3]=-1;
+	matrix[4]= 0;
+	matrix[5]= wi->sy;
 
 	bp2=art_bpath_affine_transform(bpath,matrix);
 	art_free(bpath);
