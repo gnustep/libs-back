@@ -693,6 +693,18 @@ DWORD windowStyleForGSStyle(unsigned int style)
     case GSIBeamCursor:
       hCursor = LoadCursor(NULL, IDC_IBEAM);
       break;
+    case GSCrosshairCursor:
+      hCursor = LoadCursor(NULL, IDC_CROSS);
+      break;
+    case GSPointingHandCursor:
+      hCursor = LoadCursor(NULL, IDC_HAND);
+      break;
+    case GSResizeLeftRightCursor:
+      hCursor = LoadCursor(NULL, IDC_SIZEWE);
+      break;
+    case GSResizeUpDownCursor:
+      hCursor = LoadCursor(NULL, IDC_SIZENS);
+      break;
     default:
       hCursor = LoadCursor(NULL, IDC_ARROW);
       break;

@@ -1,3 +1,10 @@
+2004-06-19  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-standardcursor::): Added more
+	standard cursors.
+	* Source/win32/WIN32Server.m (-standardcursor::): Added more
+	standard cursors.
+
 2004-06-28 00:45  Alexander Malmberg <alexander@malmberg.org>
 
 	* Headers/x11/XGServerWindow.h: Add buffer_width and buffer_height
