@@ -666,6 +666,7 @@ very expensive
   gstate = [[ARTGState allocWithZone: [self zone]] initWithDrawContext: self];
   [gstate DPSsetalpha: 1.0];
   [gstate DPSsetlinewidth: 1.0];
+  [gstate DPSsetstrokeadjust: 1];
 
 #ifdef RDS
   {
