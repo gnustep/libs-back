@@ -804,8 +804,13 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	  NSData	*d;
 	  NSString	*s;
 
-	  s = [NSString stringWithCString: data];
+	  d = [[NSData alloc] initWithBytes: (void*)data 
+			      length: number_items];
+	  s = [[NSString alloc] initWithData: d
+				encoding: NSISOLatin1StringEncoding];
+	  RELEASE(d);
 	  d = [NSSerializer serializePropertyList: s];
+	  RELEASE(s);
 	  [self setData: d];
 	}
       else
@@ -959,12 +964,16 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	  if ([osType isEqualToString: NSStringPboardType])
 	    {
 	      NSString	*s = [_pb stringForType: NSStringPboardType];
+	      NSData *d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
 
 	      format = 8;
-	      numItems = [s cStringLength];
-	      data = malloc(numItems + 1);
-	      if (data)
-		[s getCString: data];
+	      if (d != nil)
+	        {
+		  numItems = [d length];
+		  data = malloc(numItems + 1);
+		  if (data)
+		    [d getBytes: data];
+		}
 	    }
 	  else
 	    {
