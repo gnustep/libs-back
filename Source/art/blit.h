@@ -36,27 +36,27 @@ copyright 2002 Alexander Malmberg <alexander@malmberg.org>
 
 typedef struct render_run_s
 {
-	unsigned char r,g,b,a,real_a;
-	unsigned char *dst,*dsta;
+  unsigned char r, g, b, a, real_a;
+  unsigned char *dst, *dsta;
 
-	/* the following fields are only used by the svp rendering helpers */
-	int x0,x1;
-	int rowstride,arowstride,bpp;
-	void (*run_alpha)(struct render_run_s *ri,int num);
-	void (*run_opaque)(struct render_run_s *ri,int num);
+  /* the following fields are only used by the svp rendering helpers */
+  int x0, x1;
+  int rowstride, arowstride, bpp;
+  void (*run_alpha)(struct render_run_s *ri, int num);
+  void (*run_opaque)(struct render_run_s *ri, int num);
 } render_run_t;
 
 
 typedef struct
 {
-	unsigned char *dst,*dsta;
-	unsigned char *src,*srca;
+  unsigned char *dst, *dsta;
+  unsigned char *src, *srca;
 } composite_run_t;
 
 
 typedef struct draw_info_s
 {
-	int how;
+  int how;
 #define DI_FALLBACK              0
 
 /* counting from lsb */
@@ -72,64 +72,65 @@ typedef struct draw_info_s
 
 #define DI_NUM                   9
 
-	int bytes_per_pixel;
-	int drawing_depth;
-	int inline_alpha,inline_alpha_ofs;
+  int bytes_per_pixel;
+  int drawing_depth;
+  int inline_alpha, inline_alpha_ofs;
 
 
-	void (*render_run_alpha)(render_run_t *ri,int num);
-	void (*render_run_opaque)(render_run_t *ri,int num);
-	void (*render_run_alpha_a)(render_run_t *ri,int num);
-	void (*render_run_opaque_a)(render_run_t *ri,int num);
+  void (*render_run_alpha)(render_run_t *ri, int num);
+  void (*render_run_opaque)(render_run_t *ri, int num);
+  void (*render_run_alpha_a)(render_run_t *ri, int num);
+  void (*render_run_opaque_a)(render_run_t *ri, int num);
 
-	void (*render_blit_alpha_opaque)(unsigned char *dst,
-		const unsigned char *src,
-		unsigned char r,unsigned char g,unsigned char b,int num);
-	void (*render_blit_mono_opaque)(unsigned char *dst,
-		const unsigned char *src,int src_ofs,
-		unsigned char r,unsigned char g,unsigned char b,
-		int num);
+  void (*render_blit_alpha_opaque)(unsigned char *dst,
+				   const unsigned char *src,
+				   unsigned char r, unsigned char g,
+				   unsigned char b, int num);
+  void (*render_blit_mono_opaque)(unsigned char *dst,
+				  const unsigned char *src, int src_ofs,
+				  unsigned char r, unsigned char g,
+				  unsigned char b, int num);
 
-	void (*render_blit_alpha)(unsigned char *dst,const unsigned char *src,
-		unsigned char r,unsigned char g,unsigned char b,
-		unsigned char alpha,int num);
-	void (*render_blit_mono)(unsigned char *dst,
-		const unsigned char *src,int src_ofs,
-		unsigned char r,unsigned char g,unsigned char b,
-		unsigned char alpha,int num);
+  void (*render_blit_alpha)(unsigned char *dst, const unsigned char *src,
+			    unsigned char r, unsigned char g, unsigned char b,
+			    unsigned char alpha, int num);
+  void (*render_blit_mono)(unsigned char *dst,
+			   const unsigned char *src, int src_ofs,
+			   unsigned char r, unsigned char g, unsigned char b,
+			   unsigned char alpha, int num);
 
 
-	void (*composite_sover_aa)(composite_run_t *c,int num);
-	void (*composite_sover_ao)(composite_run_t *c,int num);
+  void (*composite_sover_aa)(composite_run_t *c, int num);
+  void (*composite_sover_ao)(composite_run_t *c, int num);
 
-	void (*composite_sin_aa)(composite_run_t *c,int num);
-	void (*composite_sin_oa)(composite_run_t *c,int num);
+  void (*composite_sin_aa)(composite_run_t *c, int num);
+  void (*composite_sin_oa)(composite_run_t *c, int num);
 
-	void (*composite_sout_aa)(composite_run_t *c,int num);
-	void (*composite_sout_oa)(composite_run_t *c,int num);
+  void (*composite_sout_aa)(composite_run_t *c, int num);
+  void (*composite_sout_oa)(composite_run_t *c, int num);
 
-	void (*composite_satop_aa)(composite_run_t *c,int num);
+  void (*composite_satop_aa)(composite_run_t *c, int num);
 
-	void (*composite_dover_aa)(composite_run_t *c,int num);
-	void (*composite_dover_oa)(composite_run_t *c,int num);
+  void (*composite_dover_aa)(composite_run_t *c, int num);
+  void (*composite_dover_oa)(composite_run_t *c, int num);
 
-	void (*composite_din_aa)(composite_run_t *c,int num);
+  void (*composite_din_aa)(composite_run_t *c, int num);
 
-	void (*composite_dout_aa)(composite_run_t *c,int num);
+  void (*composite_dout_aa)(composite_run_t *c, int num);
 
-	void (*composite_datop_aa)(composite_run_t *c,int num);
+  void (*composite_datop_aa)(composite_run_t *c, int num);
 
-	void (*composite_xor_aa)(composite_run_t *c,int num);
+  void (*composite_xor_aa)(composite_run_t *c, int num);
 
-	void (*composite_plusl_aa)(composite_run_t *c,int num);
-	void (*composite_plusl_oa)(composite_run_t *c,int num);
-	void (*composite_plusl_ao)(composite_run_t *c,int num);
-	void (*composite_plusl_oo)(composite_run_t *c,int num);
+  void (*composite_plusl_aa)(composite_run_t *c, int num);
+  void (*composite_plusl_oa)(composite_run_t *c, int num);
+  void (*composite_plusl_ao)(composite_run_t *c, int num);
+  void (*composite_plusl_oo)(composite_run_t *c, int num);
 
-	void (*composite_plusd_aa)(composite_run_t *c,int num);
-	void (*composite_plusd_oa)(composite_run_t *c,int num);
-	void (*composite_plusd_ao)(composite_run_t *c,int num);
-	void (*composite_plusd_oo)(composite_run_t *c,int num);
+  void (*composite_plusd_aa)(composite_run_t *c, int num);
+  void (*composite_plusd_oa)(composite_run_t *c, int num);
+  void (*composite_plusd_ao)(composite_run_t *c, int num);
+  void (*composite_plusd_oo)(composite_run_t *c, int num);
 } draw_info_t;
 
 #define RENDER_RUN_ALPHA (DI.render_run_alpha)
@@ -143,13 +144,13 @@ typedef struct draw_info_s
 #define RENDER_BLIT_MONO DI.render_blit_mono
 
 void artcontext_setup_draw_info(draw_info_t *di,
-	unsigned int red_mask,unsigned int green_mask,unsigned int blue_mask,
+	unsigned int red_mask, unsigned int green_mask, unsigned int blue_mask,
 	int bpp);
 
-void artcontext_render_svp(const ArtSVP *svp,int x0,int y0,int x1,int y1,
-	unsigned char r,unsigned char g,unsigned char b,unsigned char a,
-	unsigned char *dst,int rowstride,
-	unsigned char *dsta,int arowstride,int has_alpha,
+void artcontext_render_svp(const ArtSVP *svp, int x0, int y0, int x1, int y1,
+	unsigned char r, unsigned char g, unsigned char b, unsigned char a,
+	unsigned char *dst, int rowstride,
+	unsigned char *dsta, int arowstride, int has_alpha,
 	draw_info_t *di);
 
 #endif

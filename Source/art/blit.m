@@ -1356,58 +1356,58 @@ ourself.
 static void render_svp_callback(void *data,int y,int start,
 	ArtSVPRenderAAStep *steps,int n_steps)
 {
-	render_run_t *ri=data;
-	int x0=ri->x0,x1;
-	int num;
-	int alpha;
-	unsigned char *dst,*dsta;
+  render_run_t *ri=data;
+  int x0=ri->x0,x1;
+  int num;
+  int alpha;
+  unsigned char *dst,*dsta;
 
-	alpha=start;
+  alpha=start;
 
-	/* empty line; very common case */
-	if (alpha<0x10000 && !n_steps)
+  /* empty line; very common case */
+  if (alpha<0x10000 && !n_steps)
+    {
+      ri->dst+=ri->rowstride;
+      ri->dsta+=ri->arowstride;
+      return;
+    }
+
+  dst=ri->dst+ri->rowstride;
+  dsta=ri->dsta+ri->arowstride;
+
+  for (;n_steps;n_steps--,steps++)
+    {
+      x1=steps->x;
+      num=x1-x0;
+
+      ri->a=(alpha*ri->real_a+0x800000)>>24;
+      if (ri->a && num)
 	{
-		ri->dst+=ri->rowstride;
-		ri->dsta+=ri->arowstride;
-		return;
+	  if (ri->a==255)
+	    ri->run_opaque(ri,num);
+	  else
+	    ri->run_alpha(ri,num);
 	}
+      ri->dst+=ri->bpp*num;
+      ri->dsta+=num;
 
-	dst=ri->dst+ri->rowstride;
-	dsta=ri->dsta+ri->arowstride;
+      alpha+=steps->delta;
+      x0=x1;
+    }
 
-	for (;n_steps;n_steps--,steps++)
-	{
-		x1=steps->x;
-		num=x1-x0;
+  x1=ri->x1;
+  num=x1-x0;
+  ri->a=(alpha*ri->real_a+0x800000)>>24;
+  if (ri->a && num)
+    {
+      if (ri->a==255)
+	ri->run_opaque(ri,num);
+      else
+	ri->run_alpha(ri,num);
+    }
 
-		ri->a=(alpha*ri->real_a+0x800000)>>24;
-		if (ri->a && num)
-		{
-			if (ri->a==255)
-				ri->run_opaque(ri,num);
-			else
-				ri->run_alpha(ri,num);
-		}
-		ri->dst+=ri->bpp*num;
-		ri->dsta+=num;
-
-		alpha+=steps->delta;
-		x0=x1;
-	}
-
-	x1=ri->x1;
-	num=x1-x0;
-	ri->a=(alpha*ri->real_a+0x800000)>>24;
-	if (ri->a && num)
-	{
-		if (ri->a==255)
-			ri->run_opaque(ri,num);
-		else
-			ri->run_alpha(ri,num);
-	}
-
-	ri->dst=dst;
-	ri->dsta=dsta;
+  ri->dst=dst;
+  ri->dsta=dsta;
 }
 
 void artcontext_render_svp(const ArtSVP *svp,int x0,int y0,int x1,int y1,
@@ -1416,35 +1416,35 @@ void artcontext_render_svp(const ArtSVP *svp,int x0,int y0,int x1,int y1,
 	unsigned char *dsta,int arowstride,int has_alpha,
 	draw_info_t *di)
 {
-	render_run_t ri;
+  render_run_t ri;
 
-	ri.x0=x0;
-	ri.x1=x1;
+  ri.x0=x0;
+  ri.x1=x1;
 
-	ri.r=r;
-	ri.g=g;
-	ri.b=b;
-	ri.real_a=ri.a=a;
+  ri.r=r;
+  ri.g=g;
+  ri.b=b;
+  ri.real_a=ri.a=a;
 
-	ri.bpp=di->bytes_per_pixel;
+  ri.bpp=di->bytes_per_pixel;
 
-	ri.dst=dst;
-	ri.rowstride=rowstride;
+  ri.dst=dst;
+  ri.rowstride=rowstride;
 
-	if (has_alpha)
-	{
-		ri.dsta=dsta;
-		ri.arowstride=arowstride;
-		ri.run_alpha=di->render_run_alpha_a;
-		ri.run_opaque=di->render_run_opaque_a;
-	}
-	else
-	{
-		ri.run_alpha=di->render_run_alpha;
-		ri.run_opaque=di->render_run_opaque;
-	}
+  if (has_alpha)
+    {
+      ri.dsta=dsta;
+      ri.arowstride=arowstride;
+      ri.run_alpha=di->render_run_alpha_a;
+      ri.run_opaque=di->render_run_opaque_a;
+    }
+  else
+    {
+      ri.run_alpha=di->render_run_alpha;
+      ri.run_opaque=di->render_run_opaque;
+    }
 
-	art_svp_render_aa(svp,x0,y0,x1,y1,render_svp_callback,&ri);
+  art_svp_render_aa(svp,x0,y0,x1,y1,render_svp_callback,&ri);
 }
 
 
@@ -1504,84 +1504,84 @@ might eventually need to be fixed */
 
 static int byte_ofs_of_mask(unsigned int m)
 {
-	union
-	{
-		unsigned char b[4];
-		unsigned int m;
-	} tmp;
+  union
+    {
+      unsigned char b[4];
+      unsigned int m;
+    } tmp;
 
-	tmp.m=m;
-	if (tmp.b[0]==0xff && !tmp.b[1] && !tmp.b[2] && !tmp.b[3])
-		return 0;
-	else if (tmp.b[1]==0xff && !tmp.b[0] && !tmp.b[2] && !tmp.b[3])
-		return 1;
-	else if (tmp.b[2]==0xff && !tmp.b[0] && !tmp.b[1] && !tmp.b[3])
-		return 2;
-	else if (tmp.b[3]==0xff && !tmp.b[0] && !tmp.b[1] && !tmp.b[2])
-		return 3;
-	else
-		return -1;
+  tmp.m=m;
+  if (tmp.b[0]==0xff && !tmp.b[1] && !tmp.b[2] && !tmp.b[3])
+    return 0;
+  else if (tmp.b[1]==0xff && !tmp.b[0] && !tmp.b[2] && !tmp.b[3])
+    return 1;
+  else if (tmp.b[2]==0xff && !tmp.b[0] && !tmp.b[1] && !tmp.b[3])
+    return 2;
+  else if (tmp.b[3]==0xff && !tmp.b[0] && !tmp.b[1] && !tmp.b[2])
+    return 3;
+  else
+    return -1;
 }
 
 void artcontext_setup_draw_info(draw_info_t *di,
 	unsigned int red_mask,unsigned int green_mask,unsigned int blue_mask,
 	int bpp)
 {
-	int t=DI_FALLBACK;
+  int t=DI_FALLBACK;
 
-	if (bpp==16 && red_mask==0xf800 && green_mask==0x7e0 &&
-	    blue_mask==0x1f)
+  if (bpp==16 && red_mask==0xf800 && green_mask==0x7e0 &&
+      blue_mask==0x1f)
+    {
+      t=DI_16_B5_G6_R5;
+    }
+  else if (bpp==16 &&  red_mask==0x7c00 && green_mask==0x3e0 &&
+	   blue_mask==0x1f)
+    {
+      t=DI_16_B5_G5_R5_A1;
+    }
+  else if (bpp==24 || bpp==32)
+    {
+      int r,g,b;
+
+      r=byte_ofs_of_mask(red_mask);
+      g=byte_ofs_of_mask(green_mask);
+      b=byte_ofs_of_mask(blue_mask);
+
+      if (bpp==24)
 	{
-		t=DI_16_B5_G6_R5;
+	  if (r==0 && g==1 && b==2)
+	    t=DI_24_RGB;
+	  else if (r==2 && g==1 && b==0)
+	    t=DI_24_BGR;
 	}
-	else if (bpp==16 &&  red_mask==0x7c00 && green_mask==0x3e0 &&
-                 blue_mask==0x1f)
+      else if (bpp==32)
 	{
-		t=DI_16_B5_G5_R5_A1;
+	  if (r==0 && g==1 && b==2)
+	    t=DI_32_RGBA;
+	  else if (r==2 && g==1 && b==0)
+	    t=DI_32_BGRA;
+	  else if (r==1 && g==2 && b==3)
+	    t=DI_32_ARGB;
+	  else if (r==3 && g==2 && b==1)
+	    t=DI_32_ABGR;
 	}
-	else if (bpp==24 || bpp==32)
-	{
-		int r,g,b;
+    }
 
-		r=byte_ofs_of_mask(red_mask);
-		g=byte_ofs_of_mask(green_mask);
-		b=byte_ofs_of_mask(blue_mask);
+  //	t=DI_32_ARGB; /* HACK */
 
-		if (bpp==24)
-		{
-			if (r==0 && g==1 && b==2)
-				t=DI_24_RGB;
-			else if (r==2 && g==1 && b==0)
-				t=DI_24_BGR;
-		}
-		else if (bpp==32)
-		{
-			if (r==0 && g==1 && b==2)
-				t=DI_32_RGBA;
-			else if (r==2 && g==1 && b==0)
-				t=DI_32_BGRA;
-			else if (r==1 && g==2 && b==3)
-				t=DI_32_ARGB;
-			else if (r==3 && g==2 && b==1)
-				t=DI_32_ABGR;
-		}
-	}
-
-//	t=DI_32_ARGB; /* HACK */
-
-	*di=draw_infos[t];
-	if (!di->render_run_alpha)
-		*di=draw_infos[DI_FALLBACK];
-	if (di->how==DI_FALLBACK)
-	{
-		NSLog(@"Unrecognized color masks: %08x:%08x:%08x %i",
-			red_mask,green_mask,blue_mask,bpp);
-//		NSLog(@"Attempting to use fallback code (currently unimplemented). This will be _very_ slow!");
-		NSLog(@"Please report this along with details on your pixel format "
- 		      @"(ie. the four numbers above). (Or better yet, implement it "
-		      @"and send me a patch.)");
-		exit(1);
-	}
+  *di=draw_infos[t];
+  if (!di->render_run_alpha)
+    *di=draw_infos[DI_FALLBACK];
+  if (di->how==DI_FALLBACK)
+    {
+      NSLog(@"Unrecognized color masks: %08x:%08x:%08x %i",
+	    red_mask,green_mask,blue_mask,bpp);
+      //		NSLog(@"Attempting to use fallback code (currently unimplemented). This will be _very_ slow!");
+      NSLog(@"Please report this along with details on your pixel format "
+	    @"(ie. the four numbers above). (Or better yet, implement it "
+	    @"and send me a patch.)");
+      exit(1);
+    }
 }
 #endif
 

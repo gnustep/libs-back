@@ -25,12 +25,15 @@ copyright 2002 Alexander Malmberg <alexander@malmberg.org>
 
 @protocol FTFontInfo
 -(void) drawString: (const char *)s
-	at: (int)x:(int)y
-	to: (int)x0:(int)y0:(int)x1:(int)y1:(unsigned char *)buf:(int)bpl
-	color:(unsigned char)r:(unsigned char)g:(unsigned char)b:(unsigned char)alpha
+	at: (int)x : (int)y
+	to: (int)x0 : (int)y0 : (int)x1 : (int)y1
+	: (unsigned char *)buf : (int)bpl
+	color: (unsigned char)r : (unsigned char)g : (unsigned char)b
+	: (unsigned char)alpha
 	transform: (NSAffineTransform *)transform
 	drawinfo: (struct draw_info_s *)di;
 
+/* TODO: see if this is really necessary */
 -(void) drawString: (const char *)s
 	at: (int)x:(int)y
 	to: (int)x0:(int)y0:(int)x1:(int)y1:(unsigned char *)buf:(int)bpl
@@ -39,7 +42,7 @@ copyright 2002 Alexander Malmberg <alexander@malmberg.org>
 	deltas: (const float *)delta_data : (int)delta_size : (int)delta_flags;
 
 -(void) outlineString: (const char *)s
-	at: (float)x:(float)y
+	at: (float)x : (float)y
 	gstate: (void *)func_param;
 
 +(void) initializeBackend;
