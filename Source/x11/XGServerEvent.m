@@ -317,6 +317,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	  }
 	  generic.lastClick = xEvent.xbutton.time;
 	  generic.lastTime = generic.lastClick;
+	  deltaY = 0.0;
 
 	  if (xEvent.xbutton.button == generic.lMouse)
 	    eventType = NSLeftMouseDown;
@@ -460,7 +461,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 		NSDebugLLog(@"NSEvent", @"WM Protocol - %s\n",
 			    XGetAtomName(dpy, xEvent.xclient.data.l[0]));
 
-		if (xEvent.xclient.data.l[0] == generic.delete_win_atom)
+		if ((Atom)xEvent.xclient.data.l[0] == generic.delete_win_atom)
 		  {
 		    /*
 		     * WM is asking us to close a window
@@ -476,7 +477,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 				 data1: 0
 				 data2: 0];
 		  }
-		else if (xEvent.xclient.data.l[0]
+		else if ((Atom)xEvent.xclient.data.l[0]
 			 == generic.miniaturize_atom)
 		  {
 		    eventLocation = NSMakePoint(0,0);
@@ -490,7 +491,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 				 data1: 0
 				 data2: 0];
 		  }
-		else if (xEvent.xclient.data.l[0]
+		else if ((Atom)xEvent.xclient.data.l[0]
 			 == generic.take_focus_atom)
 		  {
 		    /*
