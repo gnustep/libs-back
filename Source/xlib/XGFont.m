@@ -118,7 +118,9 @@ static BOOL XGInitAtoms(Display *dpy)
 - (void) dealloc
 {
   if (font_info != NULL)
-    XUnloadFont([XGServer currentXDisplay], font_info->fid);
+    {
+      XFreeFont([XGServer currentXDisplay], font_info);
+    }
   [super dealloc];
 }
 
