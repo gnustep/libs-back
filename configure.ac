@@ -349,7 +349,7 @@ if test "$tiff_ok" = yes; then
   if test "$tiff_ok" = yes; then
     GRAPHIC_LFLAGS="$1 $GRAPHIC_LFLAGS"
     GRAPHIC_CFLAGS="$2 $GRAPHIC_CFLAGS"
-    GRAPHIC_LIBS="-ltiff $JPEG $GRAPHIC_LIBS"
+    GRAPHIC_LIBS="-ltiff $JPEG -lm $GRAPHIC_LIBS"
   else
     AC_MSG_WARN(Cannot find libtiff header tiffio)
     echo "* The GUI library requres the TIFF library"
