@@ -348,15 +348,22 @@ static BOOL XGInitAtoms(Display *dpy)
 
       // glyph is an unicode char value
       // if the font has non-standard encoding we need to remap it.
-      if ((mostCompatibleStringEncoding != NSASCIIStringEncoding) && 
-	  (mostCompatibleStringEncoding != NSISOLatin1StringEncoding) &&
-	  (mostCompatibleStringEncoding != NSUnicodeStringEncoding))
+      if ((mostCompatibleStringEncoding != NSASCIIStringEncoding)
+	&& (mostCompatibleStringEncoding != NSISOLatin1StringEncoding)
+	&& (mostCompatibleStringEncoding != NSUnicodeStringEncoding))
         {
 	  // FIXME: This only works for 8-Bit characters
-	  index = encode_unitochar(glyph, mostCompatibleStringEncoding);
+	  unsigned int  size = 1;
+	  unsigned char c = 0;
+	  unsigned char *dst = &c;
+
+	  GSFromUnicode(&dst, &size, &glyph, 1, enc, 0, 0);
+	  index = c
 	}
       else 
-	index = glyph;
+	{
+	  index = glyph;
+	}
 
       if (min1 == 0 && max1 == 0)
         {
