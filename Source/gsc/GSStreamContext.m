@@ -43,6 +43,7 @@
 
 @interface GSStreamContext (Private)
 
+- (void) output: (const char*)s length: (size_t)length;
 - (void) output: (const char*)s;
 
 @end
@@ -204,6 +205,7 @@
   fprintf(gstream, "/%s findfont ", [[(GSFontInfo *)fontref fontName] cString]);
   fprintf(gstream, "[%g %g %g %g %g %g] ", m[0], m[1], m[2], m[3], m[4], m[5]);
   fprintf(gstream, " makefont setfont\n");
+  [super GSSetFont: fontref];
 }
 
 - (void) GSSetFontSize: (float)size
@@ -213,22 +215,38 @@
 
 - (void) GSShowText: (const char *)string : (size_t)length
 {
-  [self notImplemented: _cmd];
+  fprintf(gstream, "(");
+  [self output:string length: length];
+  fprintf(gstream, ") show\n");
 }
 
 - (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t)length
 {
-// HACK to get some print output until the new glyph text system is fully implemented
-  char string[length+1];
-  int i;
-
-  for (i = 0; i < length; i++)
-  {
-      string[i] = glyphs[i];
-  } 
-  string[length] = 0;
-  [self DPSshow: string];
-//  [self notImplemented: _cmd];
+  GSFontInfo *font = gstate->font;
+  if ([font respondsToSelector: @selector(nameOfGlyph:)])
+    {
+      int i;
+      
+      for (i = 0; i < length; i++)
+	{
+	  fprintf(gstream, "/%s glyphshow\n",[font nameOfGlyph: glyphs[i]]);
+	}
+    }
+  else
+    {
+      /* If backend doesn't handle nameOfGlyph, assume the glyphs are
+	 just mapped to characters. This is the case for the xlib backend
+	 (at least for now). */
+      char string[length+1];
+      int i;
+      
+      for (i = 0; i < length; i++)
+	{
+	  string[i] = glyphs[i];
+	} 
+      string[length] = 0;
+      [self DPSshow: string];
+    }
 }
 
 
@@ -768,13 +786,13 @@ writeHex(FILE *gstream, const unsigned char *data, int count)
 
 @implementation GSStreamContext (Private)
 
-- (void) output: (const char*)s
+  - (void) output: (const char*)s length: (size_t)length
 {
-  const char *t = s;
+  int i;
 
-  while (*t)
+  for (i = 0; i < length; i++)
     {
-      switch (*t)
+      switch (s[i])
       {
 	case '(':
 	    fputs("\\(", gstream);
@@ -783,11 +801,15 @@ writeHex(FILE *gstream, const unsigned char *data, int count)
 	    fputs("\\)", gstream);
 	    break;
 	default:
-	    fputc(*t, gstream);
+	    fputc(s[i], gstream);
 	    break;
       }
-      t++;
     }
+}
+
+- (void) output: (const char*)s
+{
+  [self output: s length: strlen(s)];
 }
 
 @end

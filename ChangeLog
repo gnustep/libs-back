@@ -1,3 +1,9 @@
+2003-02-09  Adam Fedor  <fedor@gnu.org>
+
+	* Source/gsc/GSStreamContext.m (-GSShowGlyphs::): Implement to use
+	glyphshow if font gives back glyph names, otherwise use previous
+	hack.
+
 2003-02-09  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSStreamContext.m
