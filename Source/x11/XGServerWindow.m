@@ -2233,7 +2233,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
  */
 - (void) setinputstate: (int)st : (int)win
 {
-  NSDebugLLog(@"XGTrace", @"DPSsetinputstate: %d : %d", win, st);
+  NSDebugLLog(@"XGTrace", @"DPSsetinputstate: %d : %d", st, win);
   if ((generic.wm & XGWM_WINDOWMAKER) != 0)
     {
       gswindow_device_t *window = WINDOW_WITH_TAG(win);
