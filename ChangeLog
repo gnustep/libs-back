@@ -1,3 +1,8 @@
+2002-07-28  Adam Fedor  <fedor@gnu.org>
+
+	* Source/xlib/XGBitmap.m (_pixmap_combine_alpha): Use
+	interger arithmatic. (Patch from Jeff Teunissen)
+
 2002-07-19  Adam Fedor  <fedor@gnu.org>
 
 	* Source/xlib/XGGeometry.m (clipXRectsForCopying): Shift rect
@@ -18,7 +23,7 @@
 
 	* Source/xlib/XGBitmap.m (_pixmap_combine_alpha): Fix and
 	cleanup alpha blending (Rescale by alpha)
-	(_bitmap_combine_alpha): Idem. (Patch from deek@d2dc.net).
+	(_bitmap_combine_alpha): Idem. (Patch from Jeff Teunissen).
 
 2002-06-28  Adam Fedor  <fedor@gnu.org>
 

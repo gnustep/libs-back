@@ -150,18 +150,18 @@ _pixmap_combine_alpha(RContext *context,
 
 	  for (col = 0; col < srect.width; col++)
 	    {
-	      unsigned 	sr, sg, sb, sa; // source
-	      unsigned 	dr, dg, db, da; // dest
-	      double  	alpha, ialpha;
+	      unsigned	sr, sg, sb, sa; // source
+	      unsigned	dr, dg, db, da; // dest
+	      unsigned	ialpha;
 
 	      // Get the source pixel information
-	      pixel = XGetPixel (source_im->image, srect.x+col, srect.y+row);
-	      PixelToRGB (pixel, sr, sg, sb);
+	      pixel = XGetPixel(source_im->image, srect.x+col, srect.y+row);
+	      PixelToRGB(pixel, sr, sg, sb);
 
 	      if (source_alpha)
 		{
-		pixel = XGetPixel(source_alpha->image,
-				    srect.x+col, srect.y+row);
+		  pixel = XGetPixel(source_alpha->image,
+				    srect.x + col, srect.y + row);
 		  sa = (pixel >> _ashift) & _amask;
 		}
 	      else
@@ -173,30 +173,37 @@ _pixmap_combine_alpha(RContext *context,
 	      if (fraction < 1.0)
 		sa *= fraction;
 
-	      alpha = ((double) sa) / _amask;
+	      sr *= sa;
+	      sg *= sa;
+	      sb *= sa;
+
+      	      ialpha = (_amask - sa);
 
 	      // Now get dest pixel
-		  pixel = XGetPixel(dest_im->image, col, row);
-	      PixelToRGB (pixel, dr, dg, db);
+	      pixel = XGetPixel(dest_im->image, col, row);
+	      PixelToRGB(pixel, dr, dg, db);
 
+      	      dr *= ialpha;
+      	      dg *= ialpha;
+      	      db *= ialpha;
+	      
 	      if (dest_alpha)
-		    {
+		{
 		  pixel = XGetPixel(dest_alpha->image, col, row);
 		  da = (pixel >> _ashift) & _amask;
-		    }
+		}
 	      else  // no alpha channel, background is opaque
 		da = _amask;
-		      
-      	      ialpha = (1.0 - alpha);
-	      dr = (sr * alpha) + (dr * ialpha);
-	      dg = (sg * alpha) + (dg * ialpha);
-	      db = (sb * alpha) + (db * ialpha);
+
+	      dr = (sr + dr) / _amask;
+	      dg = (sg + dg) / _amask;
+	      db = (sb + db) / _amask;
 
 	      // calc final alpha
 	      if (sa == _amask || da == _amask)
 		da = _amask;
 	      else
-		da = sa + (da * ialpha);
+		da = sa + ((da * ialpha) / _amask);
 
 	      CLAMP(dr);
 	      CLAMP(dg);
@@ -857,7 +864,7 @@ _bitmap_combine_alpha(RContext *context,
   img.a = malloc(img.screen_w);
 
   {
-    unsigned long    	pixel;
+    unsigned long pixel;
 
     /* Two cases, the *_FAST* method, which
        is covered in the first a part of the if
@@ -911,24 +918,21 @@ _bitmap_combine_alpha(RContext *context,
 		unsigned short	sg = (*gptr++ >> (8 - _gwidth));
 		unsigned short	sb = (*bptr++ >> (8 - _bwidth));
 		unsigned short	sa = (*aptr++ >> (8 - _awidth));
-		unsigned      	dr, dg, db, da;
-		double 	      	alpha = (double) sa / ((1 << _rwidth) - 1);
+		unsigned	dr, dg, db, da; // dest
 
 		if (sa == 0)	// dest wouldn't be changed
 		  continue;
 
-		/*
-		 * Unscale alpha value in each color component
-		 */
-		if (sa < _amask)
+      	      	if (sa == _amask)  // source only, don't bother with the rest
 		  {
-		    double  multiplier = (double) _amask / sa;
-		    
-		    sr *= multiplier;
-		    sg *= multiplier;
-		    sb *= multiplier;
+      	      	    // Yes, this is duplicated code -- but it's worth it.
+		    RGBToPixel(sr, sg, sb, pixel);
+		    XPutPixel(dest_im->image, col, row, pixel);
+		    if (dest_alpha)
+		      XPutPixel(dest_alpha->image, col, row, sa << _ashift);
+		    continue;
 		  }
-		
+
 		// get the destination pixel
 		pixel = XGetPixel(dest_im->image, col, row);
 		PixelToRGB(pixel, dr, dg, db);
@@ -940,24 +944,28 @@ _bitmap_combine_alpha(RContext *context,
 		  }
 		else  // no alpha channel, background is opaque
 		  da = _amask;
-			
-		if (sa == _amask || da == 0)  // source only
-		      {
-		    dr = sr;
-		    dg = sg;
-		    db = sb;
+
+      	      	if (da == 0)
+		  {
+      	      	    /*
+		     * Unscale the colors
+		     */
+		    dr = (sr * _amask) / sa;
+		    dg = (sg * _amask) / sa;
+		    db = (sb * _amask) / sa;
 		    da = sa;
 		  }
 		else
 		  {
-		    double ialpha = (1.0 - alpha);
-		    dr = (sr * alpha) + (dr * ialpha);
-		    dg = (sg * alpha) + (dg * ialpha);
-		    db = (sb * alpha) + (db * ialpha);
+		    unsigned  ialpha = _amask - sa;
+
+		    dr = (sr * sa + (dr * ialpha)) / _amask;
+		    dg = (sg * sa + (dg * ialpha)) / _amask;
+		    db = (sb * sa + (db * ialpha)) / _amask;
 		    if (da == _amask || da == _amask)
 		      da = _amask;
 		    else
-		      da = sa + (da * ialpha);
+		      da = sa + ((da * ialpha) / _amask);
 		  }
 
 		CLAMP(dr);
