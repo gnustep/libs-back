@@ -1,3 +1,8 @@
+2002-11-27  Frederic De Jaeger <dejaeger@free.fr>
+
+	* configure.ac: add the flag --disable-glx.
+	* configure: regenerated
+
 2002-11-24  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XIMInputServer.m
