@@ -44,6 +44,10 @@ typedef struct {
   Atom win_menu_atom;
   Atom win_dock_atom;
   Atom win_modal_atom;
+  Atom win_utility_atom;
+  Atom win_splash_atom;
+  Atom win_override_atom;
+  Atom win_topmenu_atom;
 } XGWMWinTypes;
 
 /*
