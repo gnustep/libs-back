@@ -277,12 +277,28 @@ if necessary. Returns new operation, op==-1 means noop. */
 	*dst_needs_alpha=NO;
 	*blit_func_r=blit_func=NULL;
 
-#if 0
 	if (src_transparent) /* only happens with compositerect */
 	{
+		switch (op)
+		{
+		case NSCompositeCopy:
+		case NSCompositeSourceIn:
+		case NSCompositeSourceOut:
+		case NSCompositeDestinationIn:
+		case NSCompositeDestinationAtop:
+		case NSCompositePlusDarker:
+			return NSCompositeClear;
+
+		case NSCompositeSourceOver:
+		case NSCompositeSourceAtop:
+		case NSCompositeDestinationOver:
+		case NSCompositeDestinationOut:
+		case NSCompositeXOR:
+		case NSCompositePlusLighter:
+			return -1; /* noop */
+		}
 	}
 	else
-#endif
  	if (src_opaque && dst_opaque)
 	{ /* both source and destination are totally opaque */
 		switch (op)
