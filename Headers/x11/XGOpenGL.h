@@ -28,7 +28,10 @@
 #define _GNUstep_H_XGOpenGL
 
 #include <AppKit/NSOpenGL.h>
+
+#define id _gs_avoid_id_collision
 #include <GL/glx.h>
+#undef id
 
 @class NSView;
 @class XGXSubWindow;
