@@ -725,7 +725,9 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
 -(void) drawString: (const char *)s
 	at: (int)x : (int)y
-	to: (int)x0 : (int)y0 : (int)x1 : (int)y1 : (unsigned char *)buf : (int)bpl
+	to: (int)x0 : (int)y0 : (int)x1 : (int)y1
+	: (unsigned char *)buf : (int)bpl
+	: (unsigned char *)abuf : (int)abpl
 	color:(unsigned char)r : (unsigned char)g : (unsigned char)b : (unsigned char)alpha
 	transform: (NSAffineTransform *)transform
 	drawinfo: (draw_info_t *)di
@@ -1061,6 +1063,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	      int sx = gb->bitmap.width, sy = gb->bitmap.rows;
 	      const unsigned char *src = gb->bitmap.buffer;
 	      unsigned char *dst = buf;
+	      unsigned char *dsta = abuf;
 
 	      if (gy < 0)
 		{
@@ -1071,6 +1074,8 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	      else if (gy > 0)
 		{
 		  dst += bpl * gy;
+		  if (dsta)
+		    dsta += abpl * gy;
 		}
 
 	      sy += gy;
@@ -1086,6 +1091,8 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	      else if (gx > 0)
 		{
 		  dst += DI.bytes_per_pixel * gx;
+		  if (dsta)
+		    dsta += gx;
 		}
 
 	      sx += gx;
@@ -1095,7 +1102,10 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
 	      if (sx > 0)
 		{
-		  if (alpha >= 255)
+		  if (dsta)
+		    for (; gy < sy; gy++, src += sbpl, dst += bpl, dsta += abpl)
+		      RENDER_BLIT_ALPHA_A(dst, dsta, src, r, g, b, alpha, sx);
+		  else if (alpha >= 255)
 		    for (; gy < sy; gy++, src += sbpl, dst += bpl)
 		      RENDER_BLIT_ALPHA_OPAQUE(dst, src, r, g, b, sx);
 		  else
@@ -1992,17 +2002,15 @@ static int filters[3][7]=
 /* TODO: this whole thing needs cleaning up */
 @implementation FTFontInfo_subpixel
 
--(void) drawString: (const char *)s
+-(void) drawGlyphs: (const NSGlyph *)glyphs : (int)length
 	at: (int)x : (int)y
-	to: (int)x0 : (int)y0 : (int)x1 : (int)y1 : (unsigned char *)buf : (int)bpl
-	color:(unsigned char)r : (unsigned char)g : (unsigned char)b : (unsigned char)alpha
+	to: (int)x0 : (int)y0 : (int)x1 : (int)y1
+	: (unsigned char *)buf : (int)bpl
+	color: (unsigned char)r : (unsigned char)g : (unsigned char)b
+	: (unsigned char)alpha
 	transform: (NSAffineTransform *)transform
-	drawinfo: (draw_info_t *)di
+	drawinfo: (struct draw_info_s *)di
 {
-  const unsigned char *c;
-  unsigned char ch;
-  unsigned int uch;
-
   FTC_CMapDescRec cmap;
   unsigned int glyph;
 
@@ -2015,7 +2023,6 @@ static int filters[3][7]=
   FT_Vector ftdelta;
 
   BOOL subpixel = NO;
-
 
   if (!alpha)
     return;
@@ -2091,70 +2098,9 @@ static int filters[3][7]=
   cmap.u.encoding = ft_encoding_unicode;
   cmap.type = FTC_CMAP_BY_ENCODING;
 
-  for (c = s; *c; c++)
+  for (; length; length--, glyphs++)
     {
-/* TODO: do the same thing in outlineString:... */
-      ch = *c;
-      if (ch < 0x80)
-	{
-	  uch = ch;
-	}
-      else if (ch < 0xc0)
-	{
-	  uch = 0xfffd;
-	}
-      else if (ch < 0xe0)
-	{
-#define ADD_UTF_BYTE(shift, internal) \
-  ch = *++c; \
-  if (ch >= 0x80 && ch < 0xc0) \
-    { \
-      uch |= (ch & 0x3f) << shift; \
-      internal \
-    } \
-  else \
-    { \
-      uch = 0xfffd; \
-      c--; \
-    }
-
-	  uch = (ch & 0x1f) << 6;
-	  ADD_UTF_BYTE(0, )
-	}
-      else if (ch < 0xf0)
-	{
-	  uch = (ch & 0x0f) << 12;
-	  ADD_UTF_BYTE(6, ADD_UTF_BYTE(0, ))
-	}
-      else if (ch < 0xf8)
-	{
-	  uch = (ch & 0x07) << 18;
-	  ADD_UTF_BYTE(12, ADD_UTF_BYTE(6, ADD_UTF_BYTE(0, )))
-	}
-      else if (ch < 0xfc)
-	{
-	  uch = (ch & 0x03) << 24;
-	  ADD_UTF_BYTE(18, ADD_UTF_BYTE(12, ADD_UTF_BYTE(6, ADD_UTF_BYTE(0, ))))
-	}
-      else if (ch < 0xfe)
-	{
-	  uch = (ch & 0x01) << 30;
-	  ADD_UTF_BYTE(24, ADD_UTF_BYTE(18, ADD_UTF_BYTE(12, ADD_UTF_BYTE(6, ADD_UTF_BYTE(0, )))))
-	}
-      else
-	uch = 0xfffd;
-#undef ADD_UTF_BYTE
-
-      glyph = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, uch);
-      cur.font.face_id = imgd.font.face_id;
-      if (!glyph)
-	{
-	  cmap.face_id = fallback.font.face_id;
-	  glyph = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, uch);
-	  if (glyph)
-	    cur.font.face_id = fallback.font.face_id;
-	  cmap.face_id = imgd.font.face_id;
-	}
+      glyph = *glyphs - 1;
 
       if (use_sbit)
 	{

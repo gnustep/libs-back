@@ -560,7 +560,7 @@ seem to cause edges to be off by a pixel
 	
       ox = [matrix transformPoint: NSMakePoint(0, 0)].x;
       oy = wi->sy - [matrix transformPoint: NSMakePoint(0, 0)].y - pixelsHigh;
-	
+
       for (y = 0; y < pixelsHigh; y++)
 	{
 	  for (x = 0; x < pixelsWide; x++)

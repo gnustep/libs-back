@@ -229,6 +229,7 @@ very expensive
     drawString: s
     at: x:y
     to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
+      : (wi->has_alpha? wi->alpha + clip_x0 + clip_y0 * wi->sx : NULL) : wi->sx
     color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
     transform: ctm
     drawinfo: &DI];

@@ -90,6 +90,14 @@ typedef struct draw_info_s
 			   unsigned char r, unsigned char g, unsigned char b,
 			   unsigned char alpha, int num);
 
+  void (*render_blit_alpha_a)(unsigned char *dst, unsigned char *dsta, const unsigned char *src,
+			      unsigned char r, unsigned char g, unsigned char b,
+			      unsigned char alpha, int num);
+  void (*render_blit_mono_a)(unsigned char *dst, unsigned char *dsta,
+			     const unsigned char *src, int src_ofs,
+			     unsigned char r, unsigned char g, unsigned char b,
+			     unsigned char alpha, int num);
+
   void (*render_blit_subpixel)(unsigned char *dst, const unsigned char *src,
 	unsigned char r, unsigned char g, unsigned char b, unsigned char a,
 	int num);
@@ -142,6 +150,8 @@ typedef struct draw_info_s
 #define RENDER_BLIT_MONO_OPAQUE DI.render_blit_mono_opaque
 #define RENDER_BLIT_ALPHA DI.render_blit_alpha
 #define RENDER_BLIT_MONO DI.render_blit_mono
+#define RENDER_BLIT_ALPHA_A DI.render_blit_alpha_a
+#define RENDER_BLIT_MONO_A DI.render_blit_mono_a
 
 void artcontext_setup_draw_info(draw_info_t *di,
 	unsigned int red_mask, unsigned int green_mask, unsigned int blue_mask,

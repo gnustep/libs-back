@@ -30,6 +30,7 @@
 	at: (int)x : (int)y
 	to: (int)x0 : (int)y0 : (int)x1 : (int)y1
 	: (unsigned char *)buf : (int)bpl
+	: (unsigned char *)abuf : (int)abpl
 	color: (unsigned char)r : (unsigned char)g : (unsigned char)b
 	: (unsigned char)alpha
 	transform: (NSAffineTransform *)transform
