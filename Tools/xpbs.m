@@ -23,6 +23,7 @@
 */
 
 #include <Foundation/Foundation.h>
+#include <Foundation/NSUserDefaults.h>
 #include <AppKit/NSPasteboard.h>
 
 #include <X11/Xatom.h>
@@ -56,6 +57,7 @@ static char* atom_names[] = {
   "TEXT",
   "NULL",
   "FILE_NAME",
+  "CLIPBOARD",
 #ifdef X_HAVE_UTF8_STRING
   "UTF8_STRING"
 #endif
@@ -81,8 +83,9 @@ static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 #define XG_TEXT                 atoms[12]
 #define XG_NULL                 atoms[13]
 #define XG_FILE_NAME		atoms[14]
+#define XA_CLIPBOARD		atoms[15]
 #ifdef X_HAVE_UTF8_STRING
-#define XG_UTF8_STRING		atoms[15]
+#define XG_UTF8_STRING		atoms[16]
 #endif
 
 
@@ -254,7 +257,7 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
     {
       XPbOwner		*o;
       NSPasteboard	*p;
-      Atom XA_CLIPBOARD;
+      Atom generalPb, selectionPb;
 
       ownByO = NSCreateMapTable(NSObjectMapKeyCallBacks,
                       NSNonOwnedPointerMapValueCallBacks, 0);
@@ -307,31 +310,35 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
 	}
 
       /*
-       * According to the new open desktop specification these
-       * two pasteboards should be switched around. That is,
-       * general should be XA_CLIPBOARD and selection 
-       * XA_PRIMARY. The problem is that most X programs still
-       * use the old way. So we do the same for now.
+       * According to the new open desktop specification 
+       * http://www.freedesktop.org/standards/clipboards-spec/clipboards.txt
+       * these two pasteboards should be switched around. That is,
+       * general should be XA_CLIPBOARD and selection XA_PRIMARY.
+       * The problem is that most X programs still use the old way.
+       * For these environments we offer a switch to the old mode.
        */
+      if ([[NSUserDefaults standardUserDefaults] boolForKey: @"GSOldClipboard"])
+        {
+	  generalPb = XA_PRIMARY;
+	  selectionPb = XA_CLIPBOARD;
+	}
+      else 
+        {
+	  generalPb = XA_CLIPBOARD;
+	  selectionPb = XA_PRIMARY;
+	}
       /* 
-       * For the general pasteboard we establish an initial owner that is the
-       * X selection system.  In this way, any X window selection already
-       * active will be available to the GNUstep system.
-       * This object is not released!
+       * For the general and the selection pasteboard we establish an initial
+       * owner that is the X selection system.  In this way, any X window
+       * selection already active will be available to the GNUstep system.
+       * These objects are not released!
        */
       p = [NSPasteboard generalPasteboard];
-      o = [[XPbOwner alloc] initWithXPb: XA_PRIMARY osPb: p];
+      o = [[XPbOwner alloc] initWithXPb: generalPb osPb: p];
       [o xSelectionClear];
 
-      /* 
-       * For the selection pasteboard we establish an initial owner that is the
-       * X selection system.  In this way, any X window selection already
-       * active will be available to the GNUstep system.
-       * This object is not released!
-       */
-      XA_CLIPBOARD = XInternAtom(xDisplay, "CLIPBOARD", False);
       p = [NSPasteboard pasteboardWithName: @"Selection"];
-      o = [[XPbOwner alloc] initWithXPb: XA_CLIPBOARD osPb: p];
+      o = [[XPbOwner alloc] initWithXPb: selectionPb osPb: p];
       [o xSelectionClear];
       
       // Call this to get the class initialisation
