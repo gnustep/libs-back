@@ -68,9 +68,6 @@ of crashing, they just print a warning.
 - (void) DPSwidthshow: (float)x : (float)y : (int)c : (const char*)s
 DPSxshow, DPSyshow, DPSxyshow
 
-- (void) DPSclip
-- (void) DPSeoclip
-
 
 ** Other unimplemented stuff **
 
@@ -132,6 +129,8 @@ static draw_info_t DI;
 	BOOL all_clipped;
 #define CLIP_DATA (wi->data+clip_x0*wi->bytes_per_pixel+clip_y0*wi->bytes_per_line)
 	int clip_sx,clip_sy;
+
+	ArtSVP *clip_path;
 }
 
 @end
@@ -538,7 +537,7 @@ if necessary. Returns new operation, op==-1 means noop. */
 //	printf("s=(%i %i)  (%i %i)-(%i %i)\n",sx,sy,x0,y0,x1,y1);
 
 //	printf("clip=(%i %i)-(%i %i)\n",clip_x0,clip_y0,clip_x1,clip_y1);
-	if (clip_x0>x0)
+	if (clip_x0>x0) /* TODO: ??? */
 	{
 		sx+=clip_x0-x0;
 		x0=clip_x0;
@@ -689,6 +688,7 @@ if necessary. Returns new operation, op==-1 means noop. */
 			/* TODO: this only holds if there's no destination
 			alpha, which is no longer true. ignore for now; why
 			would someone sourceover something on itself? */
+			/* TODO: this looks broken. where is tmpbuf used? */
 			memcpy(tmpbuf,src,x1*DI.bytes_per_pixel);
 			blit_func(&c,x1);
 			c.srca+=asbpl;
@@ -736,7 +736,6 @@ if necessary. Returns new operation, op==-1 means noop. */
 	int dbpl;
 
 	void (*blit_func)(composite_run_t *c,int num);
-
 
 	if (!wi || !wi->data) return;
 	if (all_clipped) return;
@@ -914,6 +913,7 @@ very expensive
 -(void) setColor: (device_color_t)color  state: (color_state_t)cState
 {
 	device_color_t c;
+
 	[super setColor: color  state: cState];
 	if (cState&(COLOR_FILL|COLOR_STROKE))
 	{
@@ -1319,17 +1319,6 @@ very expensive
 }
 
 
-- (void) DPSclip
-{
-	NSLog(@"ignoring DPSclip");
-}
-
-- (void) DPSeoclip
-{
-	NSLog(@"ignoring DPSeoclip");
-}
-
-
 -(ArtVpath *) _vpath_from_current_path: (BOOL)fill
 {
 	ArtBpath *bpath,*bp2;
@@ -1453,6 +1442,86 @@ very expensive
 }
 
 
+/* will free the passed in svp */
+-(void) _clip_add_svp: (ArtSVP *)svp
+{
+	if (clip_path)
+	{
+		ArtSVP *svp2;
+/*		ArtSvpWriter *svpw;
+
+		svpw=art_svp_writer_rewind_new(ART_WIND_RULE_INTERSECT);
+		art_svp_intersector(svp,svpw);
+		art_svp_intersector(clip_path,svpw);
+		svp2=art_svp_writer_rewind_reap(svpw);*/
+		svp2=art_svp_intersect(svp,clip_path);
+		art_svp_free(svp);
+		art_svp_free(clip_path);
+		clip_path=svp2;
+	}
+	else
+	{
+		clip_path=svp;
+	}
+}
+
+-(void) _clip: (int)rule
+{
+	ArtVpath *vp;
+	ArtSVP *svp;
+
+	vp=[self _vpath_from_current_path: NO];
+	if (!vp)
+		return;
+	svp=art_svp_from_vpath(vp);
+	art_free(vp);
+
+	{
+		ArtSVP *svp2;
+		ArtSvpWriter *svpw;
+
+		svpw=art_svp_writer_rewind_new(rule);
+		art_svp_intersector(svp,svpw);
+		svp2=art_svp_writer_rewind_reap(svpw);
+		art_svp_free(svp);
+		svp=svp2;
+	}
+
+	[self _clip_add_svp: svp];
+}
+
+-(ArtSVP *) _clip_svp: (ArtSVP *)svp
+{
+	ArtSVP *svp2;
+//	ArtSvpWriter *svpw;
+
+	if (!clip_path)
+		return svp;
+/* TODO */
+/*	svpw=art_svp_writer_rewind_new(ART_WIND_RULE_INTERSECT);
+	art_svp_intersector(svp,svpw);
+	art_svp_intersector(clip_path,svpw);
+	svp2=art_svp_writer_rewind_reap(svpw);
+	art_svp_free(svp);*/
+
+	svp2=art_svp_intersect(svp,clip_path);
+	art_svp_free(svp);
+
+	return svp2;
+}
+
+
+- (void) DPSclip
+{
+	[self _clip: ART_WIND_RULE_NONZERO];
+}
+
+- (void) DPSeoclip
+{
+	[self _clip: ART_WIND_RULE_ODDEVEN];
+}
+
+
 -(void) _fill: (int)rule
 {
 	ArtVpath *vp;
@@ -1479,6 +1548,9 @@ very expensive
 		svp=svp2;
 	}
 
+	if (clip_path)
+		svp=[self _clip_svp: svp];
+
 
 	artcontext_render_svp(svp,clip_x0,clip_y0,clip_x1,clip_y1,
 		fill_color[0],fill_color[1],fill_color[2],fill_color[3],
@@ -1503,94 +1575,19 @@ very expensive
 }
 
 
-- (void) DPSinitclip;
-{ /* TODO: try all this again with reversed paths */
-	if (!wi)
-	{
-		all_clipped=YES;
-		return;
-	}
-
-	clip_x0=clip_y0=0;
-	clip_x1=wi->sx;
-	clip_y1=wi->sy;
-	all_clipped=NO;
-	clip_sx=clip_x1-clip_x0;
-	clip_sy=clip_y1-clip_y0;
-}
-
-- (void) DPSrectclip: (float)x : (float)y : (float)w : (float)h
+/* Fills in vp. If the rectangle is axis- (and optionally pixel)-aligned,
+also fills in the axis coordinates (x0/y0 is min) and returns 1. Otherwise
+returns 0. (Actually, if pixel is NO, it's enough that the edges remain
+within one pixel.) */
+-(int) _axis_rectangle: (float)x : (float)y : (float)w : (float)h
+		 vpath: (ArtVpath *)vp
+		  axis: (int *)px0 : (int *)py0 : (int *)px1 : (int *)py1
+		 pixel: (BOOL)pixel;
 {
-	NSPoint p;
-	NSSize s;
-	NSRect r;
-
-	if (all_clipped)
-		return;
-
-	if (!wi)
-	{
-		all_clipped=YES;
-		return;
-	}
-
-	r=[ctm rectInMatrixSpace: NSMakeRect(x,y,w,h)];
-
-	p=r.origin;
-	s=r.size;
-
-	p.y=wi->sy-p.y;
-	p.y-=s.height;
-
-	/* PS says that any pixel covered by the clipping path is not to
-	be clipped, so we need to round 'outwards' here. */
-	s.width=ceil(s.width+p.x);
-	s.height=ceil(s.height+p.y);
-	p.x=floor(p.x);
-	p.y=floor(p.y);
-
-/*	printf("%p clip was (%i %i)-(%i %i)  (%g %g)+(%g %g)  -> (%g %g)+(%g %g)\n",
-		self,
-		clip_x0,clip_y0,clip_x1,clip_y1,
-		x,y,w,h,p.x,p.y,s.width,s.height);*/
-
-	if (p.x>clip_x0)
-		clip_x0=p.x;
-	if (p.y>clip_y0)
-		clip_y0=p.y;
-
-	p.x=s.width;
-	p.y=s.height;
-
-	if (p.x<clip_x1)
-		clip_x1=p.x;
-	if (p.y<clip_y1)
-		clip_y1=p.y;
-
-	if (clip_x0>=clip_x1 || clip_y0>=clip_y1)
-	{
-//		printf("%p all_clipped by (%g %g)+(%g %g)\n",self,x,y,w,h);
-		all_clipped=YES;
-	}
-
-	clip_sx=clip_x1-clip_x0;
-	clip_sy=clip_y1-clip_y0;
-
-//	printf("now %i (%i %i)-(%i %i)\n",all_clipped,clip_x0,clip_y0,clip_x1,clip_y1);
-}
-
-- (void) DPSrectfill: (float)x : (float)y : (float)w : (float)h
-{
-	ArtVpath vp[6];
-	ArtSVP *svp;
 	float matrix[6];
 	float det;
 	int i;
-	int x0,y0,x1,y1,t;
-
-	if (!wi || !wi->data) return;
-	if (all_clipped) return;
-	if (!fill_color[3]) return;
+	int x0,y0,x1,y1;
 
 	if (w<0) x+=w,w=-w;
 	if (h<0) y+=h,h=-h;
@@ -1638,20 +1635,152 @@ very expensive
 	x1=vp[2].x+0.5;
 	y0=vp[0].y+0.5;
 	y1=vp[2].y+0.5;
-	if (fabs(vp[0].x-vp[1].x)<0.01 && fabs(vp[1].y-vp[2].y)<0.01 &&
-	    fabs(vp[0].x-x0)<0.01 && fabs(vp[0].y-y0)<0.01 &&
-	    fabs(vp[2].x-x1)<0.01 && fabs(vp[2].y-y1)<0.01)
+
+	if (pixel)
 	{
-	}
-	else if (fabs(vp[0].y-vp[1].y)<0.01 && fabs(vp[1].x-vp[2].x)<0.01 &&
-	         fabs(vp[0].x-x0)<0.01 && fabs(vp[0].y-y0)<0.01 &&
-	         fabs(vp[2].x-x1)<0.01 && fabs(vp[2].y-y1)<0.01)
-	{
+		if (x0>x1)
+			*px0=x1,*px1=x0;
+		else
+			*px0=x0,*px1=x1;
+		if (y0>y1)
+			*py0=y1,*py1=y0;
+		else
+			*py0=y0,*py1=y1;
+
+		if (fabs(vp[0].x-vp[1].x)<0.01 && fabs(vp[1].y-vp[2].y)<0.01 &&
+		    fabs(vp[0].x-x0)<0.01 && fabs(vp[0].y-y0)<0.01 &&
+		    fabs(vp[2].x-x1)<0.01 && fabs(vp[2].y-y1)<0.01)
+		{
+			return 1;
+		}
+
+		if (fabs(vp[0].y-vp[1].y)<0.01 && fabs(vp[1].x-vp[2].x)<0.01 &&
+		    fabs(vp[0].x-x0)<0.01 && fabs(vp[0].y-y0)<0.01 &&
+		    fabs(vp[2].x-x1)<0.01 && fabs(vp[2].y-y1)<0.01)
+		{
+			return 1;
+		}
 	}
 	else
 	{
+		/* This is used when clipping, so we need to make sure we
+		contain all pixels. */
+		if (vp[0].x<vp[2].x)
+			*px0=floor(vp[0].x),*px1=ceil(vp[2].x);
+		else
+			*px0=floor(vp[2].x),*px1=ceil(vp[0].x);
+		if (vp[0].y<vp[2].y)
+			*py0=floor(vp[0].y),*py1=ceil(vp[2].y);
+		else
+			*py0=floor(vp[2].y),*py1=ceil(vp[0].y);
+
+		if (floor(vp[0].x)==floor(vp[1].x) && floor(vp[0].y)==floor(vp[3].y) &&
+		    floor(vp[1].y)==floor(vp[2].y) && floor(vp[2].x)==floor(vp[3].x))
+		{
+			return 1;
+		}
+
+		if (floor(vp[0].y)==floor(vp[1].y) && floor(vp[0].x)==floor(vp[3].x) &&
+		    floor(vp[1].x)==floor(vp[2].x) && floor(vp[2].y)==floor(vp[3].y))
+		{
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+
+- (void) DPSinitclip;
+{
+	if (!wi)
+	{
+		all_clipped=YES;
+		return;
+	}
+
+	clip_x0=clip_y0=0;
+	clip_x1=wi->sx;
+	clip_y1=wi->sy;
+	all_clipped=NO;
+	clip_sx=clip_x1-clip_x0;
+	clip_sy=clip_y1-clip_y0;
+
+	if (clip_path)
+	{
+		art_svp_free(clip_path);
+		clip_path=NULL;
+	}
+}
+
+- (void) DPSrectclip: (float)x : (float)y : (float)w : (float)h
+{
+	ArtVpath vp[6];
+	ArtSVP *svp;
+	int x0,y0,x1,y1;
+	int axis_aligned;
+
+	if (all_clipped)
+		return;
+
+	if (!wi)
+	{
+		all_clipped=YES;
+		return;
+	}
+
+	axis_aligned=[self _axis_rectangle: x : y : w : h vpath: vp
+	 	axis: &x0 : &y0 : &x1 : &y1
+		pixel: NO];
+
+	if (!axis_aligned)
+	{
+		svp=art_svp_from_vpath(vp);
+		[self _clip_add_svp: svp];
+		return;
+	}
+
+	if (x0>clip_x0)
+		clip_x0=x0;
+	if (y0>clip_y0)
+		clip_y0=y0;
+
+	if (x1<clip_x1)
+		clip_x1=x1;
+	if (y1<clip_y1)
+		clip_y1=y1;
+
+	if (clip_x0>=clip_x1 || clip_y0>=clip_y1)
+	{
+		all_clipped=YES;
+	}
+
+	clip_sx=clip_x1-clip_x0;
+	clip_sy=clip_y1-clip_y0;
+}
+
+- (void) DPSrectfill: (float)x : (float)y : (float)w : (float)h
+{
+	ArtVpath vp[6];
+	ArtSVP *svp;
+	int x0,y0,x1,y1;
+	int axis_aligned;
+
+	if (!wi || !wi->data) return;
+	if (all_clipped) return;
+	if (!fill_color[3]) return;
+
+	axis_aligned=[self _axis_rectangle: x : y : w : h vpath: vp
+	 	axis: &x0 : &y0 : &x1 : &y1
+		pixel: YES];
+
+	if (!axis_aligned || clip_path)
+	{
 	/* Not properly aligned. Handle the general case. */
 		svp=art_svp_from_vpath(vp);
+
+		if (clip_path)
+			svp=[self _clip_svp: svp];
 
 		artcontext_render_svp(svp,clip_x0,clip_y0,clip_x1,clip_y1,
 			fill_color[0],fill_color[1],fill_color[2],fill_color[3],
@@ -1669,7 +1798,6 @@ very expensive
 		unsigned char *dst=CLIP_DATA;
 		render_run_t ri;
 
-		if (x0>x1) t=x1,x1=x0,x0=t;
 		x0-=clip_x0;
 		x1-=clip_x0;
 		if (x0<=0)
@@ -1682,7 +1810,6 @@ very expensive
 		if (x1<=0)
 			return;
 
-		if (y0>y1) t=y1,y1=y0,y0=t;
 		y0-=clip_y0;
 		y1-=clip_y0;
 		if (y0<=0)
@@ -1809,6 +1936,9 @@ very expensive
 	svp=art_svp_vpath_stroke(vp,linejoinstyle,linecapstyle,temp_scale*line_width,miter_limit,0.5);
 	art_free(vp);
 
+	if (clip_path)
+		svp=[self _clip_svp: svp];
+
 	artcontext_render_svp(svp,clip_x0,clip_y0,clip_x1,clip_y1,
 		stroke_color[0],stroke_color[1],stroke_color[2],stroke_color[3],
 		CLIP_DATA,wi->bytes_per_line,
@@ -1883,6 +2013,9 @@ will give correct results as long as both axises are scaled the same.
 
 	svp=art_svp_vpath_stroke(vp,linejoinstyle,linecapstyle,temp_scale*line_width,miter_limit,0.5);
 	art_free(vp);
+
+	if (clip_path)
+		svp=[self _clip_svp: svp];
 
 	artcontext_render_svp(svp,clip_x0,clip_y0,clip_x1,clip_y1,
 		stroke_color[0],stroke_color[1],stroke_color[2],stroke_color[3],
@@ -2005,6 +2138,42 @@ and that covers most (all?) actual uses of it */
 @end
 
 
+static ArtSVP *copy_svp(ArtSVP *svp)
+{
+	int i;
+	ArtSVP *svp2;
+	ArtSVPSeg *dst,*src;
+
+	if (!svp->n_segs)
+		return NULL;
+
+	svp2=malloc(sizeof(ArtSVP)+sizeof(ArtSVPSeg)*(svp->n_segs-1));
+	if (!svp2)
+	{
+		NSLog(@"out of memory copying svp");
+		return NULL;
+	}
+
+	svp2->n_segs=svp->n_segs;
+
+	for (i=0,src=svp->segs,dst=svp2->segs;i<svp->n_segs;i++,src++,dst++)
+	{
+		dst->n_points=src->n_points;
+		dst->dir=src->dir;
+		dst->bbox=src->bbox;
+		if (src->n_points)
+		{
+			dst->points=malloc(sizeof(ArtPoint)*src->n_points);
+			memcpy(dst->points,src->points,sizeof(ArtPoint)*src->n_points);
+		}
+		else
+			dst->points=NULL;
+	}
+
+	return svp2;
+}
+
+
 @interface ARTGState (internal_stuff)
 #ifdef RDS
 -(void) _setup_stuff: (int)window  : (RDSClient *)remote;
@@ -2020,6 +2189,9 @@ and that covers most (all?) actual uses of it */
 {
 	if (dash.dash)
 		free(dash.dash);
+
+	if (clip_path)
+		art_svp_free(clip_path);
 
 	DESTROY(wi);
 
@@ -2045,6 +2217,11 @@ and that covers most (all?) actual uses of it */
 		dash.n_dash=0;
 		do_dash=0;
 	}
+  }
+
+  if (clip_path)
+  {
+	clip_path=copy_svp(clip_path);
   }
 
   wi=RETAIN(wi);
