@@ -28,6 +28,7 @@
 #include "gsc/GSStreamContext.h"
 #include "gsc/GSStreamGState.h"
 #include <AppKit/GSFontInfo.h>
+#include <AppKit/NSBezierPath.h>
 #include <Foundation/NSArray.h>
 #include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>
@@ -483,6 +484,50 @@
 - (void) DPSstroke
 {
   fprintf(gstream, "stroke\n");
+}
+
+- (void) GSSendBezierPath: (NSBezierPath *)path
+{
+  NSBezierPathElement type;
+  NSPoint pts[3];
+  int i, count;
+  float pattern[10];
+  float phase;
+
+  [self DPSnewpath];
+  [self DPSsetlinewidth: [path lineWidth]];
+  [self DPSsetlinejoin: [path lineJoinStyle]];
+  [self DPSsetlinecap: [path lineCapStyle]];
+  [self DPSsetmiterlimit: [path miterLimit]];
+  [self DPSsetflat: [path flatness]];
+
+  [path getLineDash: pattern count: &count phase: &phase];
+  // Always sent the dash pattern. When NULL this will reset to a solid line.
+  [self DPSsetdash: pattern : count : phase];
+
+  count = [path elementCount];
+  for(i = 0; i < count; i++) 
+    {
+      type = [path elementAtIndex: i associatedPoints: pts];
+      switch(type) 
+        {
+	case NSMoveToBezierPathElement:
+	  [self DPSmoveto: pts[0].x : pts[0].y];
+	  break;
+	case NSLineToBezierPathElement:
+	  [self DPSlineto: pts[0].x : pts[0].y];
+	  break;
+	case NSCurveToBezierPathElement:
+	  [self DPScurveto: pts[0].x : pts[0].y
+	   : pts[1].x : pts[1].y : pts[2].x : pts[2].y];
+	  break;
+	case NSClosePathBezierPathElement:
+	  [self DPSclosepath];
+	  break;
+	default:
+	  break;
+	}
+    }
 }
 
 - (void) GSRectClipList: (const NSRect *)rects: (int)count

@@ -1,3 +1,14 @@
+2002-11-21  Adam Fedor  <fedor@gnu.org>
+
+	* Version: 0.8.3
+
+	* Source/gsc/GSStreamContext.m (-GSSendBezierPath:): Add back and 
+	implement.
+
+	* Source/x11/XGServerEvent.m ([XGServer
+	-receivedEvent:type:extra:forMode:] (ClientMessage:TAKE_FOCUS)):
+	minor correction.
+
 2002-11-21  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSGState.m
