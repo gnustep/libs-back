@@ -17,6 +17,9 @@
 /* Define to 1 if you have the <DPS/dpsNXargs.h> header file. */
 #undef HAVE_DPS_DPSNXARGS_H
 
+/* Define if you have FcPatternCreate */
+#undef HAVE_FC
+
 /* Define if you have the glx library */
 #undef HAVE_GLX
 
