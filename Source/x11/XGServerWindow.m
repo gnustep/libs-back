@@ -201,7 +201,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   MwmHints *hints;
   BOOL needToFreeHints = YES;
   Atom type_ret;
-  int format_ret;
+  int format_ret, success;
   unsigned long nitems_ret;
   unsigned long bytes_after_ret;
   static Atom mwhints_atom = None;
@@ -211,14 +211,14 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
     mwhints_atom = XInternAtom (dpy,_XA_MOTIF_WM_HINTS, False);
   
   /* Get the already-set window hints */
-  XGetWindowProperty (dpy, window, mwhints_atom, 0, 
+  success = XGetWindowProperty (dpy, window, mwhints_atom, 0, 
 		      sizeof (MwmHints) / sizeof (long),
 		      False, AnyPropertyType, &type_ret, &format_ret, 
 		      &nitems_ret, &bytes_after_ret, 
 		      (unsigned char **)&hints);
 
   /* If no window hints were set, create new hints to 0 */
-  if (type_ret == None)
+  if (success != Success || type_ret == None)
     {
       needToFreeHints = NO;
       hints = alloca (sizeof (MwmHints));
