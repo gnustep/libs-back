@@ -1,3 +1,11 @@
+2002-09-20 18:36  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/art/path.m (clip_svp_callback): Use correct x coordinate
+	for final span.
+
+	(-_clip_add_svp:): Place the last entry at the correct place
+	in clip_index.
+
 2002-09-20 18:05  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/path.m (clip_svp_callback, -_clip_add_svp:): Update

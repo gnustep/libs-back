@@ -693,8 +693,9 @@ static void clip_svp_callback(void *data, int y, int start,
 	  ci->span_size += 16;
 	  ci->span = realloc(ci->span, sizeof(unsigned int) * ci->span_size);
 	}
-      ci->span[ci->num_span++] = ci->x1;
-      if (ci->x1 > ci->maxx) ci->maxx = ci->x1;
+      x = ci->x1 - ci->x0;
+      ci->span[ci->num_span++] = x;
+      if (x > ci->maxx) ci->maxx = x;
     }
 }
 
@@ -732,7 +733,7 @@ static void clip_svp_callback(void *data, int y, int start,
       art_svp_render_aa(svp, clip_x0, clip_y0, clip_x1, clip_y1, clip_svp_callback, &ci);
       clip_span = ci.span;
       clip_index = ci.index;
-      clip_index[clip_sy] = clip_num_span = ci.num_span;
+      clip_index[clip_sy - ci.first_y] = clip_num_span = ci.num_span;
 
       clip_y1 = clip_y0 + ci.last_y;
       clip_y0 += ci.first_y;
