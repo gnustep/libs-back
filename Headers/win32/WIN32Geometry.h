@@ -125,7 +125,7 @@ POINT GSWindowOriginToMS(HWND hwnd, NSPoint p)
   h = rect.bottom - rect.top;
 
   p1.x = p.x;
-  p1.y = screen_height - p.y + h;
+  p1.y = screen_height - p.y - h;
   return p1;
 }
 

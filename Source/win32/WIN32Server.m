@@ -157,6 +157,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   return NO;
 }
 
+// FIXME: The following methods wont work for multiple screens
 /* Screen information */
 - (NSSize) resolutionForScreen: (int)screen
 {
@@ -428,10 +429,10 @@ DWORD windowStyleForGSStyle(unsigned int style)
   if (op != NSWindowOut)
     {
       int flag = SW_SHOW;
+
       if (IsIconic((HWND)winNum))
         flag = SW_RESTORE;
       ShowWindow((HWND)winNum, flag); 
-      return;
     }
 
   switch (op)
@@ -444,7 +445,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
       if (otherWin == 0)
 	otherWin = (int)HWND_BOTTOM;
       SetWindowPos((HWND)winNum, (HWND)otherWin, 0, 0, 0, 0, 
-		   SWP_NOSIZE | SWP_NOMOVE);
+		   SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
       break;
     case NSWindowAbove:
       if (otherWin <= 0)
@@ -455,7 +456,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
 	  winNum = (int)HWND_TOP;
 	}
       SetWindowPos((HWND) otherWin, (HWND)winNum, 0, 0, 0, 0, 
-		   SWP_NOSIZE | SWP_NOMOVE);
+		   SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
       break;
     }
 }
@@ -469,7 +470,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
   p = GSWindowOriginToMS((HWND)winNum, loc);
 
   SetWindowPos((HWND)winNum, NULL, p.x, p.y, 0, 0, 
-	       SWP_NOZORDER | SWP_NOSIZE | SWP_NOREDRAW);
+	       SWP_NOZORDER | SWP_NOSIZE);
 }
 
 - (void) placewindow: (NSRect)frame : (int) winNum
@@ -484,7 +485,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
   GetWindowRect((HWND)winNum, &r2);
 
   SetWindowPos((HWND)winNum, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top, 
-	       SWP_NOZORDER | SWP_NOREDRAW);
+	       SWP_NOZORDER);
 
   if ((win->useHDC) &&
       (r.right - r.left != r2.right - r2.left) &&
@@ -613,7 +614,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
 - (void) setinputfocus: (int) winNum
 {
   NSDebugLLog(@"WTrace", @"setinputfocus: %d", winNum);
-  NSDebugLLog(@"Focus", @"Setting input focus to %d");
+  NSDebugLLog(@"Focus", @"Setting input focus to %d", winNum);
   if (winNum == 0)
     {
       NSDebugLLog(@"Focus", @" invalid focus window");

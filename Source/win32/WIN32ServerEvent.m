@@ -48,10 +48,10 @@
  here is almost correct, but will fail for multi monitor systems
 */
 #ifndef GET_X_LPARAM
-#define GET_X_LPARAM(p) LOWORD(p)
+#define GET_X_LPARAM(p) ((int)(short)LOWORD(p))
 #endif
 #ifndef GET_Y_LPARAM
-#define GET_Y_LPARAM(p) HIWORD(p)
+#define GET_Y_LPARAM(p) ((int)(short)HIWORD(p))
 #endif
 
 static NSEvent *process_key_event(HWND hwnd, WPARAM wParam, LPARAM lParam, 
