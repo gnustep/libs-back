@@ -28,8 +28,24 @@
 
 struct XWindowBuffer_depth_info_s
 {
+  /* The drawing depth according to X. Usually the number of bits of color
+  data in each pixel. */
   int drawing_depth;
+
+  /* The number of bytes used by a pixel. There is generally no
+  relationship between this and drawing_depth, except that
+  bytes_per_pixel*8>=drawing_depth. (Eg. 32-bit modes usually have a
+  drawing depth of 24.) */
   int bytes_per_pixel;
+
+  /* If alpha is to be stored inside the normal data, this should be YES.
+  Otherwise, a separate buffer will be allocated for the alpha data (which
+  never does any harm, but it wastes memory if there's enough space in a
+  pixel, as in 32-bit modes. There needs to be 8 bits available for alpha
+  data at a byte boundary for this to work, though. (This could be fixed,
+  but in the mean time, just setting inline_alpha to NO is easier.)
+  inline_alpha_ofs should be the offset to the byte in each pixel that
+  holds the alpha value. */
   BOOL inline_alpha;
   int inline_alpha_ofs;
 };
@@ -79,12 +95,20 @@ that there's only one XWindowBuffer for each window. */
 
   /* If has_alpha is 1 and alpha is NULL, the alpha is stored in data
   somehow. The drawing mechanism code should know how to deal with
-  it. */
+  it. A separate alpha buffer will always be exactly the right size,
+  so each row is sx bytes long.
+
+  If has_alpha is 0, the window is assumed to be completely opaque.
+  */
   unsigned char *alpha;
   int has_alpha;
 }
 
-/* this returns a _retained_ object */
+/*
+Returns a _retained_ XWindowBuffer for the specified gswindow_device_t.
+
+The depth info is only used if a new XWindowBuffer needs to be allocated.
+*/
 + windowBufferForWindow: (gswindow_device_t *)awindow
               depthInfo: (struct XWindowBuffer_depth_info_s *)aDI;
 
@@ -95,6 +119,9 @@ logged.
 
 (In ARTGState, I handle failures by simply ignoring the operation that
 required alpha.)
+
+The alpha channel is initialized to being completely opaque when first
+created.
 */
 -(void) needsAlpha;
 

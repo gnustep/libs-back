@@ -1,3 +1,7 @@
+2002-09-10 22:11  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Headers/x11/XWindowBuffer.h: Add more documentation.
+
 2002-09-10 21:36  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/ARTWindowBuffer.h, Source/art/ARTWindowBuffer.m,
