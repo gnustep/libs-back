@@ -605,7 +605,7 @@
 
 - (NSAffineTransform *) GSCurrentCTM
 {
-  return [ctm copy];
+  return AUTORELEASE([ctm copy]);
 }
 
 - (void) GSSetCTM: (NSAffineTransform *)newctm
