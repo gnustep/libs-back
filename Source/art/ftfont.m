@@ -594,6 +594,9 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   NSArray *rfi;
   FTFaceInfo *font_entry;
 
+  FT_Error error;
+
+
   if (subpixel_text)
     {
       [self release];
@@ -658,9 +661,9 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	fallback.font.face_id = @"/usr/local/share/fonts/truetype/CODE2000.TTF";*/
 
 
-  if (FTC_Manager_Lookup_Size(ftc_manager, &imgd.font, &face, &size))
+  if ((error=FTC_Manager_Lookup_Size(ftc_manager, &imgd.font, &face, &size)))
     {
-      NSLog(@"FTC_Manager_Lookup_Size failed for '%@'!\n", name);
+      NSLog(@"FTC_Manager_Lookup_Size() failed for '%@', error %08x!\n", name, error);
       return self;
     }
 
@@ -749,6 +752,8 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
   FT_Matrix ftmatrix;
   FT_Vector ftdelta;
+
+  FT_Error error;
 
 
   if (!alpha)
@@ -910,8 +915,11 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
       if (use_sbit)
 	{
-	  if (FTC_SBitCache_Lookup(ftc_sbitcache, &cur, glyph, &sbit, NULL))
-	    continue;
+	  if ((error=FTC_SBitCache_Lookup(ftc_sbitcache, &cur, glyph, &sbit, NULL)))
+	    {
+	      NSLog(@"FTC_SBitCache_Lookup() failed with error %08x\n",error);
+	      continue;
+	    }
 
 	  if (!sbit->buffer)
 	    {
@@ -1032,24 +1040,34 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	  FT_Glyph gl;
 	  FT_BitmapGlyph gb;
 
-	  if (FTC_Manager_Lookup_Size(ftc_manager, &cur.font, &face, 0))
-	    continue;
+	  if ((error=FTC_Manager_Lookup_Size(ftc_manager, &cur.font, &face, 0)))
+	    {
+	      NSLog(@"FTC_Manager_Lookup_Size() failed with error %08x\n",error);
+	      continue;
+	    }
 
 	  /* TODO: for rotations of 90, 180, 270, and integer
 	     scales hinting might still be a good idea. */
-	  if (FT_Load_Glyph(face, glyph, FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP))
-	    continue;
-
-	  if (FT_Get_Glyph(face->glyph, &gl))
-	    continue;
-
-	  if (FT_Glyph_Transform(gl, &ftmatrix, &ftdelta))
+	  if ((error=FT_Load_Glyph(face, glyph, FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP)))
 	    {
-	      NSLog(@"glyph transformation failed!");
+	      NSLog(@"FT_Load_Glyph() failed with error %08x\n",error);
 	      continue;
 	    }
-	  if (FT_Glyph_To_Bitmap(&gl, ft_render_mode_normal, 0, 1))
+
+	  if ((error=FT_Get_Glyph(face->glyph, &gl)))
 	    {
+	      NSLog(@"FT_Get_Glyph() failed with error %08x\n",error);
+	      continue;
+	    }
+
+	  if ((error=FT_Glyph_Transform(gl, &ftmatrix, &ftdelta)))
+	    {
+	      NSLog(@"FT_Glyph_Transform() failed with error %08x\n",error);
+	      continue;
+	    }
+	  if ((error=FT_Glyph_To_Bitmap(&gl, ft_render_mode_normal, 0, 1)))
+	    {
+	      NSLog(@"FT_Glyph_To_Bitmap() failed with error %08x\n",error);
 	      FT_Done_Glyph(gl);
 	      continue;
 	    }
@@ -1150,6 +1168,8 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   FT_Matrix ftmatrix;
   FT_Vector ftdelta;
 
+  FT_Error error;
+
 
   if (!alpha)
     return;
@@ -1244,8 +1264,12 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
       if (use_sbit)
 	{
-	  if (FTC_SBitCache_Lookup(ftc_sbitcache, &cur, glyph, &sbit, NULL))
-	    continue;
+	  if ((error=FTC_SBitCache_Lookup(ftc_sbitcache, &cur, glyph, &sbit, NULL)))
+	    {
+	      NSLog(@"FTC_SBitCache_Lookup() failed with error %08x\n",error);
+	      continue;
+	    }
+
 
 	  if (!sbit->buffer)
 	    {
@@ -1366,24 +1390,34 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	  FT_Glyph gl;
 	  FT_BitmapGlyph gb;
 
-	  if (FTC_Manager_Lookup_Size(ftc_manager, &cur.font, &face, 0))
-	    continue;
+	  if ((error=FTC_Manager_Lookup_Size(ftc_manager, &cur.font, &face, 0)))
+	    {
+	      NSLog(@"FTC_Manager_Lookup_Size() failed with error %08x\n",error);
+	      continue;
+	    }
 
 	  /* TODO: for rotations of 90, 180, 270, and integer
 	     scales hinting might still be a good idea. */
-	  if (FT_Load_Glyph(face, glyph, FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP))
-	    continue;
-
-	  if (FT_Get_Glyph(face->glyph, &gl))
-	    continue;
-
-	  if (FT_Glyph_Transform(gl, &ftmatrix, &ftdelta))
+	  if ((error=FT_Load_Glyph(face, glyph, FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP)))
 	    {
-	      NSLog(@"glyph transformation failed!");
+	      NSLog(@"FT_Load_Glyph() failed with error %08x\n",error);
 	      continue;
 	    }
-	  if (FT_Glyph_To_Bitmap(&gl, ft_render_mode_normal, 0, 1))
+
+	  if ((error=FT_Get_Glyph(face->glyph, &gl)))
 	    {
+	      NSLog(@"FT_Get_Glyph() failed with error %08x\n",error);
+	      continue;
+	    }
+
+	  if ((error=FT_Glyph_Transform(gl, &ftmatrix, &ftdelta)))
+	    {
+	      NSLog(@"FT_Glyph_Transform() failed with error %08x\n",error);
+	      continue;
+	    }
+	  if ((error=FT_Glyph_To_Bitmap(&gl, ft_render_mode_normal, 0, 1)))
+	    {
+	      NSLog(@"FT_Glyph_To_Bitmap() failed with error %08x\n",error);
 	      FT_Done_Glyph(gl);
 	      continue;
 	    }
@@ -1458,13 +1492,20 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 -(BOOL) glyphIsEncoded: (NSGlyph)glyph
 {
   FT_Face face;
+  FT_Error error;
 
   glyph--;
-  if (FTC_Manager_Lookup_Size(ftc_manager, &imgd.font, &face, 0))
-    return NO;
+  if ((error=FTC_Manager_Lookup_Size(ftc_manager, &imgd.font, &face, 0)))
+    {
+      NSLog(@"FTC_Manager_Lookup_Size() failed with error %08x",error);
+      return NO;
+    }
 
-  if (FT_Load_Glyph(face, glyph, 0))
-    return NO;
+  if ((error=FT_Load_Glyph(face, glyph, 0)))
+    {
+      NSLog(@"FT_Load_Glyph() failed with error %08x",error);
+      return NO;
+    }
 
   return YES;
 }
@@ -1472,6 +1513,8 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
 - (NSSize) advancementForGlyph: (NSGlyph)glyph
 {
+  FT_Error error;
+
   glyph--;
   if (screenFont)
     {
@@ -1509,8 +1552,11 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	else
 	  cur.type = ftc_image_grays;
 
-      if (FTC_SBitCache_Lookup(ftc_sbitcache, &cur, glyph, &sbit, NULL))
-	return NSZeroSize;
+      if ((error=FTC_SBitCache_Lookup(ftc_sbitcache, &cur, glyph, &sbit, NULL)))
+	{
+	  NSLog(@"FTC_SBitCache_Lookup() failed with error %08x",error);
+	  return NSZeroSize;
+	}
 
       return NSMakeSize(sbit->xadvance, sbit->yadvance);
     }
@@ -1562,12 +1608,14 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   FTC_ImageDesc *cur;
   FT_BBox bbox;
   FT_Glyph g;
+  FT_Error error;
 
   glyph--;
 /* TODO: this is ugly */
   cur = &imgd;
-  if (FTC_ImageCache_Lookup(ftc_imagecache, cur, glyph, &g, NULL))
+  if ((error=FTC_ImageCache_Lookup(ftc_imagecache, cur, glyph, &g, NULL)))
     {
+      NSLog(@"FTC_ImageCache_Lookup() failed with error %08x",error);
 //		NSLog(@"boundingRectForGlyph: %04x -> %i\n", aGlyph, glyph);
       return fontBBox;
     }
