@@ -1,5 +1,9 @@
 2002-04-02  Adam Fedor  <fedor@gnu.org>
 
+	* Source/gsc/GSContext.m (-GSDefineGState): Use new def - also
+	creates a copy of the gstate.
+	(-GSReplaceGState): Replace with copy of current gstate.
+
 	* configure.in (--with-name): Configure the name of the backend
 	* back.make.in: Idem.
 	* config.make.in: Idem.

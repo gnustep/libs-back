@@ -370,6 +370,7 @@ static unsigned int unique_index = 0;
 /* Gstate Handling */
 /* ----------------------------------------------------------------------- */
 
+/* Depreciated. Use GSReplaceGState */
 - (void) DPScurrentgstate: (int)gst
 {
   if (gst)
@@ -399,6 +400,7 @@ static unsigned int unique_index = 0;
   gstate = [gstate copy];
 }
 
+/* Depreciated. Use GSDefineGstate */
 - (void) DPSgstate
 {
   ctxt_push(AUTORELEASE([gstate copy]), opstack);
@@ -422,17 +424,14 @@ static unsigned int unique_index = 0;
     DESTROY(gstate);
 }
 
-/* Should work the same as 'unique_index exch defineuserobject' */
 - (int) GSDefineGState
 {
-  GSGState *obj;
   if(gstate == nil)
     {
       DPS_ERROR(DPSundefined, @"No gstate");
       return 0;
     }
-  ctxt_pop(obj, opstack, GSGState);
-  NSMapInsert(gtable, (void *)++unique_index, obj);
+  NSMapInsert(gtable, (void *)++unique_index, AUTORELEASE([gstate copy]));
   return unique_index;
 }
 
@@ -441,12 +440,11 @@ static unsigned int unique_index = 0;
   [self DPSundefineuserobject: gst];
 }
 
-/* Should work the same as 'currentgstate pop' */
 - (void) GSReplaceGState: (int)gst
 {
   if(gst <= 0)
     return;
-  NSMapInsert(gtable, (void *)gst, gstate);
+  NSMapInsert(gtable, (void *)gst, AUTORELEASE([gstate copy]));
 }
 
 /* ----------------------------------------------------------------------- */
