@@ -2441,7 +2441,7 @@ static int filters[3][7]=
 #ifdef FT212_STUFF
 	  cur.type = ftc_image_grays, subpixel = YES, cur.font.pix_width *= 3, x *= 3;
 #else
-	  cur.flags = FT_LOAD_TARGET_NORMAL, subpixel = YES, cur.font.pix_width *= 3, x *= 3;
+	  cur.flags = FT_LOAD_TARGET_LCD, subpixel = YES;
 #endif
 //			imgd.type|=|ftc_image_flag_unhinted; /* TODO? when? */
       }
@@ -2490,9 +2490,17 @@ static int filters[3][7]=
 	      continue;
 	    }
 
+#ifdef FT212_STUFF
 	  if (sbit->format == ft_pixel_mode_grays)
+#else
+	  if (sbit->format == FT_PIXEL_MODE_LCD)
+#endif
 	    {
+#ifdef FT212_STUFF
 	      int gx = x + sbit->left, gy = y - sbit->top;
+#else
+	      int gx = 3 * x + sbit->left, gy = y - sbit->top;
+#endif
 	      int px0 = (gx - 2 < 0? gx - 4 : gx - 2) / 3;
 	      int px1 = (gx + sbit->width + 2 < 0? gx + sbit->width + 2: gx + sbit->width + 4) / 3;
 	      int llip = gx - px0 * 3;
