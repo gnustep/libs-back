@@ -1,3 +1,12 @@
+2003-07-06  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Header/x11/XGGeneric.m
+	Added some new Atoms to structure XGWMWinTypes.
+	* Source/x11/XGServerWindow.m
+	[_checkWindowManager] initializes the new atoms. In
+	[setwindowlevel::] changed the EWMH case, so that it works 
+	correctly with KDE 3.1. There we used to have borders on menu windows.
+	
 2003-07-05 14:05  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Handle freetype <=2.1.2 in the error
