@@ -583,7 +583,7 @@ seem to cause edges to be off by a pixel
   if (!wi || !wi->data) return;
   if (all_clipped) return;
 
-  [matrix prependTransform: ctm];
+  [matrix appendTransform: ctm];
   if (fabs(matrix->matrix.m11 - 1.0) < 0.001 &&
       fabs(matrix->matrix.m12) < 0.001 &&
       fabs(matrix->matrix.m22 - 1.0) < 0.001 &&

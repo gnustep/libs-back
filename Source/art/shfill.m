@@ -574,7 +574,7 @@ static void function_free(function_t *f)
 	matrix=[ctm copy];
 	if ([shader objectForKey: @"Matrix"])
 	{
-		[matrix appendTransform: [shader objectForKey: @"Matrix"]];
+		[matrix prependTransform: [shader objectForKey: @"Matrix"]];
 	}
 
 	inverse=[matrix copy];

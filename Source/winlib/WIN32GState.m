@@ -478,7 +478,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   if (matrix)
     {
       old_ctm = [ctm copy];
-      [ctm appendTransform: matrix];
+      [ctm prependTransform: matrix];
     }
   p = GSViewPointToWin(self, NSMakePoint(0, 0));
   if (old_ctm != nil)
