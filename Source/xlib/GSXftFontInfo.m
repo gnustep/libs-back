@@ -99,6 +99,19 @@ static NSMutableDictionary	*_globalFontDictionary = nil;
   return extents.width;
 }
 
+- (float) widthOfGlyphs: (const NSGlyph *) glyphs lenght: (int) len
+{
+  XGlyphInfo extents;
+
+  XftTextExtents16 ([XGServer currentXDisplay],
+		    font_info,
+		    glyphs, 
+		    len,
+		    &extents);
+
+  return extents.width;
+}
+
 - (NSMultibyteGlyphPacking)glyphPacking
 {
   return NSTwoByteGlyphPacking;
@@ -221,6 +234,54 @@ static NSMutableDictionary	*_globalFontDictionary = nil;
   /* do it */
   XftDrawString16(xftdraw, &xftcolor, font_info, 
 		  xp.x, xp.y, (XftChar16*)cstr, length);
+
+  /* tidy up */
+  XftDrawDestroy(xftdraw);
+}
+
+- (void) drawGlyphs: (const NSGlyph *) glyphs lenght: (int) len
+	  onDisplay: (Display*) xdpy drawable: (Drawable) draw
+	       with: (GC) xgcntxt at: (XPoint) xp
+{
+  XftDraw *xftdraw;
+  XftColor xftcolor;
+  XColor dummyc;
+  XGCValues values;
+  XGGState *state = [(XGContext *)GSCurrentContext() currentGState];
+  Region xregion = [state xClipRegion];
+  int defaultScreen = DefaultScreen(xdpy);
+  Colormap colmap = DefaultColormap(xdpy, defaultScreen);
+
+  /* ready to draw */
+  xftdraw = XftDrawCreate(xdpy, draw,
+                          DefaultVisual(xdpy, defaultScreen),
+			  colmap);
+  if(xftdraw == NULL) 
+    return;
+
+  /* sort out the drawing colour */
+  XGetGCValues(xdpy, xgcntxt,
+               GCForeground | GCBackground,
+               &values);
+       
+  dummyc.pixel = values.foreground;
+  XQueryColor(xdpy, colmap, &dummyc);
+  xftcolor.color.red = dummyc.red;
+  xftcolor.color.green = dummyc.green;
+  xftcolor.color.blue = dummyc.blue;
+  xftcolor.color.alpha =  0xffff;
+  xftcolor.pixel = values.foreground;
+  
+  // set up clipping 
+  if(xregion != None)
+    {
+      XftDrawSetClip(xftdraw, xregion);
+      XDestroyRegion(xregion);
+    }
+
+  /* do it */
+  XftDrawString16(xftdraw, &xftcolor, font_info, 
+		  xp.x, xp.y, (XftChar16*)glyphs, len);
 
   /* tidy up */
   XftDrawDestroy(xftdraw);
