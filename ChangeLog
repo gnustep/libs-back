@@ -1,3 +1,9 @@
+Fri Oct 11 00:47:04 2002  Nicola Pero  <n.pero@mi.flashnet.it>
+
+	* Source/xlib/XGFont.m ([XGFontInfo -setupAttributes]): Return NO
+	if the font can't be loaded.  (Patch by Georg Fleischmann
+	<georg@vhf.de>).
+
 2002-10-10  Adam Fedor  <fedor@gnu.org>
 
 	* GNUmakefile.postamble: Only install back.make if building

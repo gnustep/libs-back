@@ -250,15 +250,9 @@ static BOOL XGInitAtoms(Display *dpy)
   if ((xfontname == nil) ||
       (font_info = XLoadQueryFont(xdpy, [xfontname cString])) == NULL)
     {
-      NSLog(@"Selected font: %@ at %f (%@) is not available.\n"
-	    @"Using system fixed font instead", fontName, matrix[0], xfontname);
-
-      // Try default font
-      if ((font_info = XLoadQueryFont(xdpy, "9x15")) == NULL)
-        {
-	  NSLog(@"Unable to open fixed font");
-	  return NO;
-	}
+      NSLog(@"XGFont: selected font: %@ at %f (%@) is not available.\n", 
+	    fontName, matrix[0], xfontname);
+      return NO;
     }
   else
     NSDebugLog(@"Loaded font: %@", xfontname);
