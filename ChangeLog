@@ -1,5 +1,10 @@
 2003-07-26  Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/x11/XGServer.m
+	In [XGScreenContext dealloc] free hermes_data of RContext.
+
+2003-07-26  Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/gsc/GSGState.m
 	In [GSCurrentCTM] autorelease the returned value.
 
