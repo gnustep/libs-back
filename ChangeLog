@@ -1,3 +1,10 @@
+2003-08-08  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/xpbs.m
+	[XPbOwner initialize] switched the usage of PRIMARY and CLIPBOARD.
+	* Documentation/Back/DefaultsSummary.gsdoc
+	Add new GSOldClipboard deafult.	
+
 2003-08-02  Kazunobu Kuriyama  <kazunobu.kuriyama@nifty.com>
 
 	* Tools/xpbs.m: Multi-lingual cut & paste support
