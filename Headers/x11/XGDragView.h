@@ -25,6 +25,7 @@
 
 #include <AppKit/NSCell.h>
 #include <AppKit/NSEvent.h>
+#include <GNUstepGUI/GSDragView.h>
 #include <Foundation/NSGeometry.h>
 #include "x11/xdnd.h"
 #include "x11/XGServerWindow.h"
@@ -39,14 +40,6 @@ Atom		GSActionForDragOperation(unsigned int op);
 NSDragOperation	GSDragOperationForAction(Atom xaction);
 
 
-/*
-  used in the operation mask to indicate that the
-  user can not change the drag action by
-  pressing modifiers.
-*/
-
-#define NSDragOperationIgnoresModifiers  0xffff
-
 /*"
   WRO (notes made 18 Nov 2001)
   
@@ -54,43 +47,12 @@ NSDragOperation	GSDragOperationForAction(Atom xaction);
   It hijacks the event loop and manages the complete
   drag and drop sequence.
  "*/
-@interface	XGDragView : NSView <NSDraggingInfo>
+@interface	XGDragView : GSDragView
 {
-  
-  NSCell         *dragCell;       /*" the graphics that is dragged"*/
-  NSPasteboard   *dragPasteboard;
-  NSPoint         dragPoint;      /*" in base coordinates, only valid when dragWindow != nil "*/
-  gswindow_device_t *dragWindev;
-
-  /* information used in the drag and drop event loop */
-  NSPoint         offset;         /*" offset of image w.r.t. cursor "*/
-  NSPoint         dragPosition;   /*" in screen coordinates "*/
-  NSPoint         newPosition;    /*" position, not yet processed "*/
-  int             wx, wy;         /*" position of image in X-coordinates "*/
-  Window          targetWindow;   /*" XWindow that is the current drag target "*/
-  
-  int             dragSequence;
-  id              dragSource;
-
-  unsigned int    dragMask;       /*" Operations supported by the source "*/
-  unsigned int    operationMask;  /*" user specified operation mask (key modifiers).
-                                    this is either a mask of type _NSDragOperation,
-                                    or NSDragOperationIgnoresModifiers, which
-                                    is defined as 0xffff "*/
-  unsigned int    targetMask;     /*" Operations supported by the target, only valid if
-                                    targetIsDndAware is true "*/
-  
-  id              dragWindow;     /*" NSWindow in this application that is the current target "*/
   Atom           *typelist;
-  BOOL            dragExternal;   /*" YES if target and source are in a different application "*/
-  BOOL            isDragging;     /*" Yes if we are currently dragging "*/
-  BOOL            slideBack;      /*" slide back when drag fails? "*/
-  NSMutableDictionary *cursors;
 }
 
-+ (XGDragView*) sharedDragView;
-
-- (BOOL) isDragging;
++ (id) sharedDragView;
 
 - (void) setupDragInfoFromXEvent: (XEvent *)xEvent;
 - (void) updateDragInfoFromEvent: (NSEvent *)event;
