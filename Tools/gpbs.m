@@ -43,7 +43,7 @@
 #define	NSIG	32
 #endif
 
-static int	is_daemon = 0;		/* Currently running as daemon.	 */
+static BOOL	is_daemon = NO;		/* Currently running as daemon.	 */
 static char	ebuf[2048];
 
 #ifdef HAVE_SYSLOG
@@ -1125,11 +1125,14 @@ ihandler(int sig)
 static void
 init(int argc, char** argv, char **env)
 {
-  NSUserDefaults *defs;
-  NSArray	*args = [[NSProcessInfo processInfo] arguments];
-  unsigned	count, c;
-  BOOL		shouldFork = YES;
+  NSUserDefaults	*defs;
+  NSProcessInfo		*pInfo;
+  NSMutableArray	*args;
+  unsigned		count;
+  BOOL			shouldFork = YES;
 
+  pInfo = [NSProcessInfo processInfo];
+  args = AUTORELEASE([[pInfo arguments] mutableCopy]);
   for (count = 1; count < [args count]; count++)
     {
       NSString	*a = [args objectAtIndex: count];
@@ -1142,6 +1145,11 @@ init(int argc, char** argv, char **env)
 	  printf("--no-fork\tavoid fork() to make debugging easy\n");
 	  printf("--verbose\tMore verbose debug output\n");
 	  exit(EXIT_SUCCESS);
+	}
+      else if ([a isEqualToString: @"--daemon"] == YES)
+	{
+	  is_daemon = YES;
+	  shouldFork = NO;
 	}
       else if ([a isEqualToString: @"--no-fork"] == YES)
 	{
@@ -1184,105 +1192,38 @@ init(int argc, char** argv, char **env)
 
   if (shouldFork == YES)
     {
-      char	**a = malloc((argc+2) * sizeof(char*));
+      NSFileHandle	*null;
+      NSTask		*t;
 
-      memcpy(a, argv, argc*sizeof(char*));
-      a[argc] = "--no-fork";
-      a[argc+1] = 0;
-
-      /*
-       *  Now fork off child process to run in background.
-       */
-#ifdef __MINGW__
-      if (_spawnv(_P_NOWAIT, argv[0], a) == -1)
+      t = [NSTask new];
+      NS_DURING
 	{
-	  fprintf(stderr, "gpbs - spawn failed - bye.\n");
-	  exit(EXIT_FAILURE);
+	  [args addObject: @"--daemon"];
+	  [t setLaunchPath: [[NSBundle mainBundle] executablePath]];
+	  [t setArguments: args];
+	  [t setEnvironment: [pInfo environment]];
+	  null = [NSFileHandle fileHandleWithNullDevice];
+	  [t setStandardInput: null];
+	  [t setStandardOutput: null];
+	  [t setStandardError: null];
+	  [t launch];
+	  DESTROY(t);
 	}
-      exit(EXIT_SUCCESS);
-#else
-      is_daemon = 1;
-      switch (fork())
+      NS_HANDLER
 	{
-	  case -1:
-	    NSLog(@"gpbs - fork failed - bye.\n");
-	    exit(1);
-
-	  case 0:
-	    /*
-	     *	Try to run in background.
-	     */
-#ifdef	NeXT
-	    setpgrp(0, getpid());
-#else
-	    setsid();
-#endif
-	    break;
-
-	  default:
-	    if (verbose)
-	      {
-		NSLog(@"Process backgrounded (running as daemon)\r\n");
-	      }
-	    exit(EXIT_SUCCESS);
-	}
-
-      /*
-       *	Ensure we don't have any open file descriptors which may refer
-       *	to sockets bound to ports we may try to use.
-       *
-       *	Use '/dev/null' for stdin and stdout.
-       */
-      for (c = 0; c < FD_SETSIZE; c++)
-	{
-	  if (is_daemon || (c != 2))
-	    {
-	      (void)close(c);
-	    }
-	}
-      if (open("/dev/null", O_RDONLY) != 0)
-	{
-	  sprintf(ebuf, "failed to open stdin from /dev/null (%s)\n",
-	    strerror(errno));
 	  gpbs_log(LOG_CRIT);
-	  exit(EXIT_FAILURE);
+	  DESTROY(t);
 	}
-      if (open("/dev/null", O_WRONLY) != 1)
-	{
-	  sprintf(ebuf, "failed to open stdout from /dev/null (%s)\n",
-	    strerror(errno));
-	  gpbs_log(LOG_CRIT);
-	  exit(EXIT_FAILURE);
-	}
-      if (is_daemon && open("/dev/null", O_WRONLY) != 2)
-	{
-	  sprintf(ebuf, "failed to open stderr from /dev/null (%s)\n",
-	    strerror(errno));
-	  gpbs_log(LOG_CRIT);
-	  exit(EXIT_FAILURE);
-	}
-
-      /*
-       * Try to re-execute the program in case we are running using the
-       * pth library (which would be messed up by having closed descriptors).
-       */
-      if ([[NSBundle mainBundle] executablePath] != nil)
-	{
-	  execve([[[NSBundle mainBundle] executablePath] cString], a, env);
-	  sprintf(ebuf, "failed to exec to '%s' (%s)\n",
-	    argv[0], strerror(errno));
-	  gpbs_log(LOG_CRIT);
-	  exit(EXIT_FAILURE);
-	}
-#endif
+      NS_ENDHANDLER
+      exit(EXIT_FAILURE);
     }
 
-    /*
-     * Make gpbs logging go to syslog unless overridden by user.
-     */
-    defs = [NSUserDefaults standardUserDefaults];
-    [defs registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys:
-      @"YES", @"GSLogSyslog", nil]];
+  /*
+   * Make gpbs logging go to syslog unless overridden by user.
+   */
+  defs = [NSUserDefaults standardUserDefaults];
+  [defs registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys:
+    @"YES", @"GSLogSyslog", nil]];
 }
 
 
