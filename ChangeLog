@@ -1,6 +1,15 @@
+2004-12-09  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m  (-standardcursor:): Don't set
+	default cursor, when no standard cursor is available.
+	* Source/x11/XGServerWindow.m  (-standardcursor:): Don't set
+	default cursor, when no standard cursor is available.
+	Replaced the usage of the type xgps_cursor_id_t with Cursor
+	throughout this file.
+
 2004-12-06  Fred Kiefer <FredKiefer@gmx.de>
 
-	* Source/xlib/XGServerWindow.m  (-setwindowlevel::): Stop using
+	* Source/x11/XGServerWindow.m  (-setwindowlevel::): Stop using
 	the KDE override atom for window levels. The old behaviour may be
 	reactivated via the define USE_KDE_OVERRIDE.
 

@@ -2425,9 +2425,6 @@ static BOOL didCreatePixmaps;
 }
 
 /* Cursor Ops */
-typedef struct _xgps_cursor_id_t {
-  Cursor c;
-} xgps_cursor_id_t;
 
 static char xgps_blank_cursor_bits [] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -2477,9 +2474,9 @@ static BOOL   cursor_hidden = NO;
     }
   else
     {
-      xgps_cursor_id_t *cid = [[NSCursor currentCursor] _cid];
+      Cursor cid = (Cursor)[[NSCursor currentCursor] _cid];
       
-      XDefineCursor (dpy, win, cid->c);
+      XDefineCursor (dpy, win, cid);
     }
 }
 
@@ -2660,46 +2657,45 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
 
 - (void) standardcursor: (int)style : (void **)cid
 {
-  xgps_cursor_id_t *cursor;
-  cursor = NSZoneMalloc([self zone], sizeof(xgps_cursor_id_t));
+  Cursor cursor = None;
+
   switch (style)
     {
     case GSArrowCursor:
-      cursor->c = XCreateFontCursor(dpy, XC_left_ptr);     
+      cursor = XCreateFontCursor(dpy, XC_left_ptr);     
       break;
     case GSIBeamCursor:
-      cursor->c = XCreateFontCursor(dpy, XC_xterm);
+      cursor = XCreateFontCursor(dpy, XC_xterm);
       break;
     case GSCrosshairCursor:
-      cursor->c = XCreateFontCursor(dpy, XC_crosshair);
+      cursor = XCreateFontCursor(dpy, XC_crosshair);
       break;
     case GSDisappearingItemCursor:
-      cursor->c = XCreateFontCursor(dpy, XC_shuttle);
+      cursor = XCreateFontCursor(dpy, XC_shuttle);
       break;
     case GSPointingHandCursor:
-      cursor->c = XCreateFontCursor(dpy, XC_hand1);
+      cursor = XCreateFontCursor(dpy, XC_hand1);
       break;
     case GSResizeDownCursor:
-      cursor->c = XCreateFontCursor(dpy, XC_bottom_side);
+      cursor = XCreateFontCursor(dpy, XC_bottom_side);
       break;
     case GSResizeLeftCursor:
-      cursor->c = XCreateFontCursor(dpy, XC_left_side);
+      cursor = XCreateFontCursor(dpy, XC_left_side);
       break;
     case GSResizeLeftRightCursor:
-      cursor->c = XCreateFontCursor(dpy, XC_sb_h_double_arrow);
+      cursor = XCreateFontCursor(dpy, XC_sb_h_double_arrow);
       break;
     case GSResizeRightCursor:
-      cursor->c = XCreateFontCursor(dpy, XC_right_side);
+      cursor = XCreateFontCursor(dpy, XC_right_side);
       break;
     case GSResizeUpCursor:
-      cursor->c = XCreateFontCursor(dpy, XC_top_side);
+      cursor = XCreateFontCursor(dpy, XC_top_side);
       break;
     case GSResizeUpDownCursor:
-      cursor->c = XCreateFontCursor(dpy, XC_sb_v_double_arrow);
+      cursor = XCreateFontCursor(dpy, XC_sb_v_double_arrow);
       break;
     default:
-      cursor->c = XCreateFontCursor(dpy, XC_left_ptr);     
-      break;
+      return;
     }
   if (cid)
     *cid = (void *)cursor;
@@ -2707,7 +2703,7 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
 
 - (void) imagecursor: (NSPoint)hotp : (int) w :  (int) h : (int)colors : (const char *)image : (void **)cid
 {
-  xgps_cursor_id_t *cursor;
+  Cursor cursor;
   Pixmap source, mask;
   unsigned int maxw, maxh;
   XColor fg, bg;
@@ -2726,14 +2722,13 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
   if ((unsigned int)h > maxh)
     h = maxh;
 
-  cursor = NSZoneMalloc([self zone], sizeof(xgps_cursor_id_t));
   source = xgps_cursor_image(dpy, ROOT, image, w, h, colors, &fg, &bg);
   mask = xgps_cursor_mask(dpy, ROOT, image, w, h, colors);
   bg = [self xColorFromColor: bg forScreen: defScreen];
   fg = [self xColorFromColor: fg forScreen: defScreen];
 
-  cursor->c = XCreatePixmapCursor(dpy, source, mask, &fg, &bg, 
-				  (int)hotp.x, (int)(h - hotp.y));
+  cursor = XCreatePixmapCursor(dpy, source, mask, &fg, &bg, 
+			       (int)hotp.x, (int)(h - hotp.y));
   XFreePixmap(dpy, source);
   XFreePixmap(dpy, mask);
   if (cid)
@@ -2743,13 +2738,13 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
 - (void) setcursorcolor: (NSColor *)fg : (NSColor *)bg : (void*) cid
 {
   XColor xf, xb;
-  xgps_cursor_id_t *cursor;
+  Cursor cursor;
 
-  cursor = (xgps_cursor_id_t *)cid;
-  if (cursor == NULL)
+  cursor = (Cursor)cid;
+  if (cursor == None)
     NSLog(@"Invalidparam: Invalid cursor");
 
-  [self _DPSsetcursor: cursor->c : YES];
+  [self _DPSsetcursor: cursor : YES];
   /* Special hack: Don't set the color when fg == nil. Used by NSCursor
      to just set the cursor but not the color. */
   if (fg == nil)
@@ -2768,7 +2763,7 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
   xf = [self xColorFromColor: xf forScreen: defScreen];
   xb = [self xColorFromColor: xb forScreen: defScreen];
 
-  XRecolorCursor(dpy, cursor->c, &xf, &xb);
+  XRecolorCursor(dpy, cursor, &xf, &xb);
 }
 
 static NSWindowDepth
