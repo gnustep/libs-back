@@ -265,7 +265,7 @@ static XGGLContext *currentGLContext;
 {
   [super init];
   glx_context = None;
-  NSParameterAssert(format);
+  
   if( _format && [_format isKindOfClass: [XGGLPixelFormat class]])
     {
       MAKE_DISPLAY(dpy);
