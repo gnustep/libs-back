@@ -1,3 +1,7 @@
+2003-01-23  Adam Fedor  <fedor@gnu.org>
+
+	* Documentation/Back: Some documentation.
+
 2003-01-20  Adam Fedor  <fedor@gnu.org>
 
 	* Source/gsc/GSStreamContext.m (-GSSetCTM:): Implement.
