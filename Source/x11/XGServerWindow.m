@@ -832,20 +832,20 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   XSetWMClientMachine(dpy, ROOT, &windowName);
   XFree(windowName.value);
 
-  if ((generic.wm & XGWM_WINDOWMAKER) != 0)
-    {
-      GNUstepWMAttributes	win_attrs;
+  // Always send GNUstepWMAttributes
+  {
+    GNUstepWMAttributes	win_attrs;
 
-      /*
-       * Tell WindowMaker not to set up an app icon for us - we'll make our own.
-       */
-      win_attrs.flags = GSExtraFlagsAttr;
-      win_attrs.extra_flags = GSNoApplicationIconFlag;
-      XChangeProperty(dpy, ROOT,
+    /*
+     * Tell WindowMaker not to set up an app icon for us - we'll make our own.
+     */
+    win_attrs.flags = GSExtraFlagsAttr;
+    win_attrs.extra_flags = GSNoApplicationIconFlag;
+    XChangeProperty(dpy, ROOT,
 	generic.win_decor_atom, generic.win_decor_atom,
 	32, PropModeReplace, (unsigned char *)&win_attrs,
 	sizeof(GNUstepWMAttributes)/sizeof(CARD32));
-    }
+  }
 
   if ((generic.wm & XGWM_EWMH) != 0)
     {
@@ -1019,15 +1019,14 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   window->siz_hints.height = NSHeight(frame);
   window->siz_hints.flags = USPosition|PPosition|USSize|PSize;
 
-  // send to the WM window style hints
-  if ((generic.wm & XGWM_WINDOWMAKER) != 0)
-    {
-      XChangeProperty(dpy, window->ident, generic.win_decor_atom, 
+  // Always send GNUstepWMAttributes
+  XChangeProperty(dpy, window->ident, generic.win_decor_atom, 
 		      generic.win_decor_atom, 32, PropModeReplace, 
 		      (unsigned char *)&window->win_attrs,
 		      sizeof(GNUstepWMAttributes)/sizeof(CARD32));
-    }
-  else
+
+  // send to the WM window style hints
+  if ((generic.wm & XGWM_WINDOWMAKER) == 0)
     {
       setWindowHintsForStyle (dpy, window->ident, style);
     }
@@ -1234,14 +1233,13 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       window->siz_hints.height = NSHeight(h);
 
       // send to the WM window style hints
-      if ((generic.wm & XGWM_WINDOWMAKER) != 0)
-	{
-	  XChangeProperty(dpy, window->ident, generic.win_decor_atom, 
+      XChangeProperty(dpy, window->ident, generic.win_decor_atom, 
 			  generic.win_decor_atom, 32, PropModeReplace, 
 			  (unsigned char *)&window->win_attrs,
 			  sizeof(GNUstepWMAttributes)/sizeof(CARD32));
-	}
-      else
+   
+      // send to the WM window style hints
+      if ((generic.wm & XGWM_WINDOWMAKER) == 0)
 	{
 	  setWindowHintsForStyle (dpy, window->ident, style);
 	}
@@ -1331,14 +1329,13 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
     {
       window->win_attrs.extra_flags &= ~GSDocumentEditedFlag;
     }
+
   // send WindowMaker WM window style hints
-  if ((generic.wm & XGWM_WINDOWMAKER) != 0)
-    {
-      XChangeProperty(dpy, window->ident,
+  // Always send GNUstepWMAttributes
+  XChangeProperty(dpy, window->ident,
 	generic.win_decor_atom, generic.win_decor_atom,
 	32, PropModeReplace, (unsigned char *)&window->win_attrs,
 	sizeof(GNUstepWMAttributes)/sizeof(CARD32));
-    }
 }
 
 - (BOOL) appOwnsMiniwindow
@@ -1915,35 +1912,36 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       window->win_attrs.window_level = level;
 
       // send WindowMaker WM window style hints
-      if ((generic.wm & XGWM_WINDOWMAKER) != 0)
-	{
-	  XEvent	event;
+      // Always send GNUstepWMAttributes
+      {
+        XEvent	event;
 
-	  /*
-	   * First change the window properties so that, if the window
-	   * is not mapped, we have stored the required info for when
-	   * the WM maps it.
-	   */
-	  XChangeProperty(dpy, window->ident,
+        /*
+	 * First change the window properties so that, if the window
+	 * is not mapped, we have stored the required info for when
+	 * the WM maps it.
+	 */
+        XChangeProperty(dpy, window->ident,
 	    generic.win_decor_atom, generic.win_decor_atom,
 	    32, PropModeReplace, (unsigned char *)&window->win_attrs,
 	    sizeof(GNUstepWMAttributes)/sizeof(CARD32));
-	  /*
-	   * Now send a message for rapid handling.
-	   */
-	  event.xclient.type = ClientMessage;
-	  event.xclient.message_type = generic.win_decor_atom;
-	  event.xclient.format = 32;
-	  event.xclient.display = dpy;
-	  event.xclient.window = window->ident;
-	  event.xclient.data.l[0] = GSWindowLevelAttr;
-	  event.xclient.data.l[1] = window->win_attrs.window_level;
-	  event.xclient.data.l[2] = 0;
-	  event.xclient.data.l[3] = 0;
-	  XSendEvent(dpy, DefaultRootWindow(dpy), False,
+	/*
+	 * Now send a message for rapid handling.
+	 */
+	event.xclient.type = ClientMessage;
+	event.xclient.message_type = generic.win_decor_atom;
+	event.xclient.format = 32;
+	event.xclient.display = dpy;
+	event.xclient.window = window->ident;
+	event.xclient.data.l[0] = GSWindowLevelAttr;
+	event.xclient.data.l[1] = window->win_attrs.window_level;
+	event.xclient.data.l[2] = 0;
+	event.xclient.data.l[3] = 0;
+	XSendEvent(dpy, DefaultRootWindow(dpy), False,
 	    SubstructureRedirectMask, &event);
-	}
-      else if ((generic.wm & XGWM_EWMH) != 0)
+      }
+
+      if ((generic.wm & XGWM_EWMH) != 0)
 	{
 	  int len;
 	  long data[2];

@@ -1,3 +1,12 @@
+2003-10-29  Yen-Ju Chen <yjchenx@hotmail.com>
+
+	* Source/x11/XGServerWindow.m ([XGServer -_setupRootWindow]): Always
+	set WindowMaker app icon property
+	([XGServer -window::::]): Idem for GNUstep window styles.
+	([XGServer -stylewindow::win]): Idem.
+	([XGServer -docedited::win]): Idem.
+	([XGServer -setwindowlevel::]): Idem.
+
 2003-10-22  Adam Fedor  <fedor@gnu.org>
 
 	* configure.ac: Check for X11 function prototypes (Fixes problems
