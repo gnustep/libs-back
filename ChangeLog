@@ -1,3 +1,10 @@
+2003-05-18  Benhur Stein
+
+	* Source/xlib/XGGState.m (-copyBits:fromRect:toPoint:): Draw
+	correctly when source and dest have different flip'ness.
+	(-_compositeGState:sourcefromRect:fromRecttoPoint:toPointop:opfraction:]):
+	Draw correctly when source is flipped.
+
 2003-05-18 00:03  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/GNUmakefile, Source/art/shfill.m: Implement basic

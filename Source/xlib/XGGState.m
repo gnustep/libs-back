@@ -373,6 +373,8 @@ static	Region	emptyRegion;
   flushRect.size = aRect.size;
   flushRect.origin = aPoint;
   dst = XGViewRectToX(self, flushRect);
+  if (source->ctm->matrix.m22 < 0 && ctm->matrix.m22 > 0) dst.y += src.height;
+  if (source->ctm->matrix.m22 > 0 && ctm->matrix.m22 < 0) dst.y -= src.height;
   NSDebugLLog(@"XGGraphics", @"Copy area from %@ to %@",
 	      NSStringFromRect(aRect), NSStringFromPoint(aPoint));
   XCopyArea(XDPY, from, draw, xgcntxt,
@@ -471,6 +473,7 @@ static	Region	emptyRegion;
     
     flushRect.origin = [ctm pointInMatrixSpace: flushRect.origin];
     drect = XGWindowRectToX(self, flushRect);
+    if (source->ctm->matrix.m22 < 0) drect.y += drect.height;
 
     toXPoint.x = drect.x; 
     toXPoint.y = drect.y; 
