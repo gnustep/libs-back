@@ -373,7 +373,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	  // if pointer is grabbed use grab window
 	  xWin = (grabWindow == 0) ? xEvent.xbutton.window : grabWindow;
 	  if (cWin == 0 || xWin != cWin->ident)
-	    cWin = [XGServer _windowForXWindow: xWin];
+	    generic.cachedWindow = [XGServer _windowForXWindow: xWin];
 	  if (cWin == 0)
 	    break;
 	  eventLocation.x = xEvent.xbutton.x;
@@ -438,7 +438,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	  // if pointer is grabbed use grab window
 	  xWin = (grabWindow == 0) ? xEvent.xbutton.window : grabWindow;
 	  if (cWin == 0 || xWin != cWin->ident)
-	    cWin = [XGServer _windowForXWindow: xWin];
+	    generic.cachedWindow = [XGServer _windowForXWindow: xWin];
 	  if (cWin == 0)
 	    break;
 	  eventLocation.x = xEvent.xbutton.x;
@@ -477,7 +477,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	    NSDebugLLog(@"NSEvent", @"%d ClientMessage\n",
 			xEvent.xclient.window);
 	    if (cWin == 0 || xEvent.xclient.window != cWin->ident)
-	      cWin = [XGServer _windowForXWindow: xEvent.xclient.window];
+	      generic.cachedWindow = [XGServer _windowForXWindow: xEvent.xclient.window];
 	    if (cWin == 0)
 	      break;
 	    if (xEvent.xclient.message_type == generic.protocols_atom)
@@ -684,7 +684,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 		      xEvent.xconfigure.border_width,
 		      xEvent.xconfigure.send_event ? 'T' : 'F');
 	  if (cWin == 0 || xEvent.xconfigure.window != cWin->ident)
-	    cWin = [XGServer _windowForXWindow:xEvent.xconfigure.window];
+	    generic.cachedWindow = [XGServer _windowForXWindow:xEvent.xconfigure.window];
 	  /*
 	   * Ignore events for unmapped windows.
 		 */
@@ -795,7 +795,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	  NSDebugLLog(@"NSEvent", @"%d LeaveNotify\n",
 		      xEvent.xcrossing.window);
 	  if (cWin == 0 || xEvent.xcrossing.window != cWin->ident)
-	    cWin = [XGServer _windowForXWindow: xEvent.xcrossing.window];
+	    generic.cachedWindow = [XGServer _windowForXWindow: xEvent.xcrossing.window];
 	  if (cWin == 0)
 	    break;
 	  eventLocation = NSMakePoint(-1,-1);
@@ -815,7 +815,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	  NSDebugLLog(@"NSEvent", @"%d VisibilityNotify %d\n", 
 		      xEvent.xvisibility.window, xEvent.xvisibility.state);
 	  if (cWin == 0 || xEvent.xvisibility.window != cWin->ident)
-	    cWin=[XGServer _windowForXWindow:xEvent.xvisibility.window];
+	    generic.cachedWindow = [XGServer _windowForXWindow:xEvent.xvisibility.window];
 	  if (cWin != 0)
 	    cWin->visibility = xEvent.xvisibility.state;
 	  break;
@@ -827,7 +827,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 		      xEvent.xexpose.window);
 	  {
 	    if (cWin == 0 || xEvent.xexpose.window != cWin->ident)
-	      cWin=[XGServer _windowForXWindow:xEvent.xexpose.window];
+	      generic.cachedWindow = [XGServer _windowForXWindow:xEvent.xexpose.window];
 	    if (cWin != 0)
 	      {
 		XRectangle rectangle;
@@ -852,7 +852,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	  NSDebugLLog(@"NSEvent", @"%d FocusIn\n",
 		      xEvent.xfocus.window);
 	  if (cWin == 0 || xEvent.xfocus.window != cWin->ident)
-	    cWin=[XGServer _windowForXWindow:xEvent.xfocus.window];
+	    generic.cachedWindow = [XGServer _windowForXWindow:xEvent.xfocus.window];
 	  if (cWin == 0)
 	    break;
 	  NSDebugLLog(@"Focus", @"%d got focus on %d\n",
@@ -888,7 +888,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	    generic.cachedWindow = [XGServer _windowForXWindow: fw];
 	    if (cWin == 0)
 	      {
-		cWin = [XGServer _windowForXParent: fw];
+		generic.cachedWindow = [XGServer _windowForXParent: fw];
 	      }
 	    if (cWin == 0)
 	      {
@@ -911,7 +911,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 		    [NSApp deactivate];
 		  }
 	      }
-	    cWin = [XGServer _windowForXWindow: xEvent.xfocus.window];
+	    generic.cachedWindow = [XGServer _windowForXWindow: xEvent.xfocus.window];
 	    NSDebugLLog(@"Focus", @"%d lost focus on %d\n",
 			xEvent.xfocus.window, (cWin) ? cWin->number : 0);
 	    generic.currentFocusWindow = 0;
@@ -1003,7 +1003,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	  NSDebugLLog(@"NSEvent", @"%d MapNotify\n",
 		      xEvent.xmap.window);
 	  if (cWin == 0 || xEvent.xmap.window != cWin->ident)
-	    cWin=[XGServer _windowForXWindow:xEvent.xmap.window];
+	    generic.cachedWindow = [XGServer _windowForXWindow:xEvent.xmap.window];
 	  if (cWin != 0)
 	    {
 	      cWin->map_state = IsViewable;
@@ -1031,7 +1031,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	  NSDebugLLog(@"NSEvent", @"%d UnmapNotify\n",
 		      xEvent.xunmap.window);
 	  if (cWin == 0 || xEvent.xunmap.window != cWin->ident)
-	    cWin=[XGServer _windowForXWindow:xEvent.xunmap.window];
+	    generic.cachedWindow = [XGServer _windowForXWindow:xEvent.xunmap.window];
 	  if (cWin != 0)
 	    {
 	      cWin->map_state = IsUnmapped;
@@ -1108,7 +1108,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	    xWin = (grabWindow == 0)
 	      ? xEvent.xmotion.window : grabWindow;
 	    if (cWin == 0 || xWin != cWin->ident)
-	      cWin = [XGServer _windowForXWindow: xWin];
+	      generic.cachedWindow = [XGServer _windowForXWindow: xWin];
 	    if (cWin == 0)
 	      break;
 
@@ -1148,7 +1148,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 		      xEvent.xreparent.window, xEvent.xreparent.x,
 		      xEvent.xreparent.y);
 	  if (cWin == 0 || xEvent.xreparent.window != cWin->ident)
-	    cWin=[XGServer _windowForXWindow:xEvent.xreparent.window];
+	    generic.cachedWindow = [XGServer _windowForXWindow:xEvent.xreparent.window];
 	  if (cWin != 0)
 	    {
 	      Window parent = xEvent.xreparent.parent;
