@@ -1,3 +1,9 @@
+2003-05-19 15:56  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/shfill.m (function_getsample): Clamp to range.
+	(function_setup): Use -doubleValue, not -intValue, for values that
+	are allowed to be real numbers.
+
 2003-05-18  Benhur Stein
 
 	* Source/xlib/XGGState.m (-copyBits:fromRect:toPoint:): Draw
