@@ -1,3 +1,8 @@
+2003-08-01  Adam Fedor  <fedor@gnu.org>
+
+	* configure.ac: Move freetype check before Xft check and
+	fix up flags.
+
 2003-07-30  David Ayers  <d.ayers@inode.at>
 
 	* Created tag 'pre-header-reorg-20030731'.
