@@ -1,3 +1,8 @@
+2003-04-10 12:12  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/x11/XWindowBuffer.m (-dealloc): Don't explicitly set the
+	X window's background pixmap back to None.
+
 2003-04-02 14:04  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ARTContext.m, Source/art/blit.h: Clean up includes.

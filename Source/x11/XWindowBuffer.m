@@ -514,7 +514,6 @@ static int warn = 0;
       if (pixmap)
 	{
 	  XFreePixmap(display,pixmap);
-	  XSetWindowBackground(display,window->ident,None);
 	  pixmap=0;
 	}
 
