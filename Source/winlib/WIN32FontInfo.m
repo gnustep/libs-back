@@ -69,7 +69,7 @@
   [super dealloc];
 }
 
-- (float) widthOf: (const char*) s lenght: (int) len
+- (float) widthOf: (const char*) s length: (int) len
 {
   SIZE size;
   HDC hdc;
@@ -92,7 +92,7 @@
   s = [string cString];
   len = strlen(s);
 
-  return [self widthOf: s lenght: len];
+  return [self widthOf: s length: len];
 }
 
 - (NSMultibyteGlyphPacking)glyphPacking
@@ -176,6 +176,28 @@
 
   old = SelectObject(hdc, hFont);
   TextOut(hdc, p.x, p.y - ascender, s, len); 
+  SelectObject(hdc, old);
+}
+
+- (void) drawGlyphs: (const NSGlyph*)s
+	     length: (int)len 
+	       onDC: (HDC)hdc
+		 at: (POINT)p
+{
+  HFONT old;
+  WORD	buf[len];
+  int	i;
+
+  /*
+   * For now, assume that a glyph is a unicode character and can be
+   * stored in a windows WORD
+   */
+  for (i = 0; i < len; i++)
+    {
+      buf[i] = s[i];
+    }
+  old = SelectObject(hdc, hFont);
+  TextOutW(hdc, p.x, p.y - ascender, buf, len); 
   SelectObject(hdc, old);
 }
 

@@ -1,6 +1,9 @@
 2003-02-06 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Tools/gpbs.m (ihandler): Fix for mingw, which doesn't have kill()
+	* Headers/winlib/WIN32FontInfo.h: New method to draw glyphs
+	* Source/winlib/WIN32FontInfo.m: New method to draw glyphs
+	* Source/winlib/WIN32GState.m: New method to draw glyphs
 
 2003-02-02 22:00  Alexander Malmberg <alexander@malmberg.org>
 

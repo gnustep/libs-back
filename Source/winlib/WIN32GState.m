@@ -714,6 +714,26 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 		   onDC: hDC at: p];
   [self releaseHDC: hDC];
 }
+
+- (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t)length 
+{
+  NSPoint current = [path currentPoint];
+  POINT p;
+  HDC hDC;
+
+  hDC = [self getHDC];
+  if (!hDC)
+    {
+      return;
+    } 
+
+  p = GSWindowPointToMS(self, current);
+  [(WIN32FontInfo*)font drawGlyphs: glyphs
+			    length: length
+			      onDC: hDC
+				at: p];
+  [self releaseHDC: hDC];
+}
 @end
 
 @implementation WIN32GState (GStateOps)
