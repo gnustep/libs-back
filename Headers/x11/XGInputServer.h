@@ -59,6 +59,22 @@
 		   name: (NSString *)name;
 - (void) ximFocusICWindow: (gswindow_device_t *)windev;
 - (void) ximCloseIC: (XIC)xic;
+
 @end
+
+// Public interface for the input methods
+@interface XIMInputServer (InputMethod)
+- (NSString *) inputMethodStyle;
+- (NSString *) fontSize: (int *)size;
+- (BOOL) clientWindowRect: (NSRect *)rect;
+
+- (BOOL) statusArea: (NSRect *)rect;
+- (BOOL) preeditArea: (NSRect *)rect;
+- (BOOL) preeditSpot: (NSPoint *)p;
+
+- (BOOL) setStatusArea: (NSRect *)rect;
+- (BOOL) setPreeditArea: (NSRect *)rect;
+- (BOOL) setPreeditSpot: (NSPoint *)p;
+@end // XIMInputServer (InputMethod)
 
 #endif

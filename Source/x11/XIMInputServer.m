@@ -27,6 +27,7 @@
 
 #include "config.h"
 
+#include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>
 #include <Foundation/NSException.h>
@@ -36,6 +37,11 @@
 
 #include "x11/XGInputServer.h"
 #include <X11/Xlocale.h>
+
+#define RootWindowStyle	    (XIMPreeditNothing	| XIMStatusNothing)
+#define OffTheSpotStyle	    (XIMPreeditArea	| XIMStatusArea)
+#define OverTheSpotStyle    (XIMPreeditPosition	| XIMStatusArea)
+#define OnTheSpotStyle	    (XIMPreeditCallbacks| XIMStatusCallbacks)
 
 
 @interface XIMInputServer (XIMPrivate)
@@ -240,31 +246,59 @@
 
 - (int) ximStyleInit
 {
-  /* FIXME: Right now we only support this style *but*
-     this is only temporary */
-  XIMStyle xim_supported_style=XIMPreeditNothing|XIMStatusNothing;
-  XIMStyles *styles;
-  char *failed_arg;
-  int i;
+  NSUserDefaults    *uds;
+  NSString	    *request;
+  XIMStyle	    xim_requested_style;
+  XIMStyles	    *styles;
+  char		    *failed_arg;
+  int		    i;
+  
+  uds = [NSUserDefaults standardUserDefaults];
+  if ((request = [uds stringForKey: @"GSXIMInputMethodStyle"]) == nil)
+    {
+      xim_requested_style = RootWindowStyle;
+    }
+  else if ([request isEqual: @"RootWindow"])
+    {
+      xim_requested_style = RootWindowStyle;
+    }
+  else if ([request isEqual: @"OffTheSpot"])
+    {
+      xim_requested_style = OffTheSpotStyle;
+    }
+  else if ([request isEqual: @"OverTheSpot"])
+    {
+      xim_requested_style = OverTheSpotStyle;
+    }
+  else if ([request isEqual: @"OnTheSpot"])
+    {
+      xim_requested_style = OnTheSpotStyle;
+    }
+  else
+    {
+      NSLog(@"XIM: Unknown style '%s'.\n"
+	    @"Fallback to RootWindow style.", [request cString]);
+      xim_requested_style = RootWindowStyle;
+    }
 
-  failed_arg = XGetIMValues(xim,XNQueryInputStyle,&styles,NULL);
-  if (failed_arg!=NULL)
+  failed_arg = XGetIMValues(xim, XNQueryInputStyle, &styles, NULL);
+  if (failed_arg != NULL)
     {
       NSDebugLLog(@"XIM", @"Can't getting the following IM value :%s",
 		  failed_arg);
       return 0;
     } 
 
-  for (i=0;i<styles->count_styles;i++)
+  for (i = 0; i < styles->count_styles; i++)
     {
-      if (styles->supported_styles[i]==xim_supported_style)
+      if (styles->supported_styles[i] == xim_requested_style)
 	{
-	  xim_style=xim_supported_style;
+	  xim_style = xim_requested_style;
 	  XFree(styles);
 	  return 1;
 	}
     }
-
+  NSLog(@"XIM: '%s' is not supported", request);
   XFree(styles);
   return 0;
 }
@@ -315,10 +349,111 @@
 
 - (XIC) ximCreateIC: (Window)w
 {
-  XIC xic;
-  xic = XCreateIC(xim, XNClientWindow, w, XNInputStyle,
-		  xim_style, NULL);
-  if (xic==NULL)
+  XIC xic = NULL;
+
+  if (xim_style == RootWindowStyle)
+    {
+      xic = XCreateIC(xim,
+		      XNInputStyle, xim_style,
+		      XNClientWindow, w,
+		      NULL);
+    }
+  else if (xim_style == OffTheSpotStyle || xim_style == OverTheSpotStyle)
+    {
+      Display	    *dpy = [XGServer currentXDisplay];
+      XFontSet	    font_set;
+      char	    **missing_charset;
+      int	    num_missing_charset;
+      int	    dummy = 0;
+      XVaNestedList preedit_args = NULL;
+      XVaNestedList status_args = NULL;	
+      XRectangle    status_area;
+      XRectangle    preedit_area;
+      XPoint	    preedit_spot;
+      NSString	    *ns_font_size;
+      int	    font_size;
+      char	    base_font_name[64];
+
+      //
+      // Create a FontSet
+      //
+
+      // N.B. Because some input methods fail to provide a default font set,
+      // we have to do it by ourselves.
+      ns_font_size = [self fontSize: &font_size];
+      sprintf(base_font_name, "*medium-r-normal--%s*", [ns_font_size cString]);
+      font_set = XCreateFontSet(dpy,
+				base_font_name,
+				&missing_charset,
+				&num_missing_charset,
+				NULL);
+      if (!font_set)
+	{
+	  goto finish;
+	}
+      if (missing_charset)
+	{
+	  int i;
+	  NSLog(@"XIM: missing charset: ");
+	  for (i = 0; i < num_missing_charset; ++i)
+	    NSLog(@"%s", missing_charset[i]);
+	  XFreeStringList(missing_charset);
+	}
+
+      //
+      // Create XIC.
+      //
+      // At least, XNFontSet and XNPreeditSpotLocation must be specified
+      // at initialization time.
+      //
+      status_area.width = font_size * 2;
+      status_area.height = font_size + 2;
+      status_area.x = 0;
+      status_area.y = 0;
+
+      status_args = XVaCreateNestedList(dummy,
+					XNArea, &status_area,
+					XNFontSet, font_set,
+					NULL);
+
+      preedit_area.width = 120;
+      preedit_area.height = status_area.height;
+      preedit_area.x = 0;
+      preedit_area.y = 0;
+
+      preedit_spot.x = 0;
+      preedit_spot.y = 0;
+
+      preedit_args = XVaCreateNestedList(dummy,
+					 XNArea, &preedit_area,
+					 XNSpotLocation, &preedit_spot,
+					 XNFontSet, font_set,
+					 NULL);
+
+      xic = XCreateIC(xim,
+		      XNInputStyle, xim_style,
+		      XNClientWindow, w,
+		      XNPreeditAttributes, preedit_args,
+		      XNStatusAttributes, status_args,
+		      NULL);
+
+      if (preedit_args) { XFree(preedit_args); preedit_args = NULL; }
+      if (status_args) { XFree(status_args); status_args = NULL; }
+      if (font_set) XFreeFontSet(dpy, font_set);
+    }
+  else if (xim_style == OnTheSpotStyle)
+    {
+      NSLog(@"XIM: GNUstep doesn't support 'OnTheSpot'.\n"
+	    @"Fallback to RootWindow style.");
+      xim_style = RootWindowStyle;
+      xic = XCreateIC(xim,
+		      XNInputStyle, xim_style,
+		      XNClientWindow, w,
+		      NULL);
+    }
+
+finish:
+  if (xic == NULL)
     NSDebugLLog(@"XIM", @"Can't create the input context.\n");
 
   xics = realloc(xics, sizeof(XIC) * (num_xics + 1));
@@ -356,3 +491,218 @@
 }
 
 @end
+
+@implementation XIMInputServer (InputMethod)
+- (NSString *) inputMethodStyle
+{
+  if (num_xics > 0)
+    {
+      if (xim_style == RootWindowStyle)
+	return @"RootWindow";
+      else if (xim_style == OffTheSpotStyle)
+	return @"OffTheSpot";
+      else if (xim_style == OverTheSpotStyle)
+	return @"OverTheSpot";
+      else if (xim_style == OnTheSpotStyle)
+	return @"OnTheSpot";
+    }
+  return nil;
+}
+
+- (NSString *) fontSize: (int *)size
+{
+  NSString *str;
+
+  str = [[NSUserDefaults standardUserDefaults] stringForKey: @"NSFontSize"];
+  if (!str)
+    str = @"12";
+  *size = (int)strtol([str cString], NULL, 10);
+  return str;
+}
+
+- (BOOL) clientWindowRect: (NSRect *)rect
+{
+  Window	win;
+  Window	dummy;
+  Display	*dpy;
+  int		abs_x, abs_y;
+  int		x, y;
+  unsigned int  w, h;
+  unsigned int  bw, d;
+
+  if (num_xics <= 0 || !rect) return NO;
+
+  *rect = NSMakeRect(0, 0, 0, 0);
+
+  if (XGetICValues(xics[num_xics - 1], XNClientWindow, &win, NULL))
+    return NO;
+  dpy = [XGServer currentXDisplay];
+  if (XTranslateCoordinates(dpy, win, DefaultRootWindow(dpy), 0, 0,
+			    &abs_x, &abs_y, &dummy) == 0)
+    return NO;
+  XGetGeometry(dpy, win, &dummy, &x, &y, &w, &h, &bw, &d);
+
+  // X Window Coordinates to GNUstep Coordinates
+  x = abs_x;
+  y = XDisplayHeight(dpy, 0) - (abs_y + h);
+
+  *rect =  NSMakeRect((float)x, (float)y, (float)w, (float)h);
+
+  return YES;
+}
+
+- (BOOL) statusArea: (NSRect *)rect
+{
+  if (num_xics > 0 && (xim_style & XIMStatusArea))
+    {
+      XRectangle    area;
+      int	    dummy = 0;
+      XVaNestedList arglist = NULL;
+
+      if (!(arglist = XVaCreateNestedList(dummy, XNArea, &area, NULL)))
+	{
+	  return NO;
+	}
+      XGetICValues(xics[num_xics - 1], XNStatusAttributes, arglist, NULL);
+      
+      rect->origin.x	= area.x;
+      rect->origin.y	= area.y;
+      rect->size.width	= area.width;
+      rect->size.height	= area.height;
+
+      if (arglist) { XFree(arglist); arglist = NULL; }
+
+      return YES;
+    }
+  return NO;
+}
+
+- (BOOL) preeditArea: (NSRect *)rect
+{
+  if (num_xics > 0
+      && ((xim_style & XIMPreeditArea) || (xim_style & XIMPreeditPosition)))
+    {
+      XRectangle    area;
+      int	    dummy = 0;
+      XVaNestedList arglist = NULL;
+
+      if (!(arglist = XVaCreateNestedList(dummy, XNArea, &area, NULL)))
+	{
+	  return NO;
+	}
+      XGetICValues(xics[num_xics - 1], XNPreeditAttributes, arglist, NULL);
+
+      rect->origin.x	= area.x;
+      rect->origin.y	= area.y;
+      rect->size.width	= area.width;
+      rect->size.height	= area.height;
+
+      if (arglist) { XFree(arglist); arglist = NULL; }
+
+      return YES;
+    }
+  return NO;
+}
+
+- (BOOL) preeditSpot: (NSPoint *)p
+{
+  if (num_xics > 0 && (xim_style & XIMPreeditPosition))
+    {
+      XPoint	    spot;
+      int	    dummy = 0;
+      XVaNestedList arglist = NULL;
+
+      if (!(arglist = XVaCreateNestedList(dummy, XNSpotLocation, &spot, NULL)))
+	{
+	  return NO;
+	}
+      XGetICValues(xics[num_xics - 1], XNPreeditAttributes, arglist, NULL);
+
+      p->x = spot.x;
+      p->y = spot.y;
+
+      if (arglist) { XFree(arglist); arglist = NULL; }
+
+      return YES;
+    }
+  return NO;
+}
+
+- (BOOL) setStatusArea: (NSRect *)rect
+{
+  if (num_xics > 0 && (xim_style & XIMStatusArea))
+    {
+      XRectangle    area;
+      int	    dummy = 0;
+      XVaNestedList arglist = NULL;
+
+      area.x	    = rect->origin.x;
+      area.y	    = rect->origin.y;
+      area.width    = rect->size.width;
+      area.height   = rect->size.height;
+
+      if (!(arglist = XVaCreateNestedList(dummy, XNArea, &area, NULL)))
+	{
+	  return NO;
+	}
+      XSetICValues(xics[num_xics - 1], XNStatusAttributes, arglist, NULL);
+
+      if (arglist) { XFree(arglist); arglist = NULL; }
+
+      return YES;
+    }
+  return NO;
+}
+
+- (BOOL) setPreeditArea: (NSRect *)rect
+{
+  if (num_xics > 0
+      && ((xim_style & XIMPreeditArea) || (xim_style & XIMPreeditPosition)))
+    {
+      XRectangle    area;
+      int	    dummy = 0;
+      XVaNestedList arglist = NULL;
+
+      area.x	    = rect->origin.x;
+      area.y	    = rect->origin.y;
+      area.width    = rect->size.width;
+      area.height   = rect->size.height;
+
+      if (!(arglist = XVaCreateNestedList(dummy, XNArea, &area, NULL)))
+	{
+	  return NO;
+	}
+      XSetICValues(xics[num_xics - 1], XNPreeditAttributes, arglist, NULL);
+
+      if (arglist) { XFree(arglist); arglist = NULL; }
+
+      return YES;
+    }
+  return NO;
+}
+
+- (BOOL) setPreeditSpot: (NSPoint *)p
+{
+  if (num_xics > 0 && (xim_style & XIMPreeditPosition))
+    {
+      XPoint	    spot;
+      int	    dummy = 0;
+      XVaNestedList arglist = NULL;
+
+      spot.x = p->x;
+      spot.y = p->y;
+
+      if (!(arglist = XVaCreateNestedList(dummy, XNSpotLocation, &spot, NULL)))
+	{
+	  return NO;
+	}
+      XSetICValues(xics[num_xics - 1], XNPreeditAttributes, arglist, NULL);
+
+      if (arglist) { XFree(arglist); arglist = NULL; }
+
+      return YES;
+    }
+  return NO;
+}
+
+@end // XIMInputServer (InputMethod)

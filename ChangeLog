@@ -1,3 +1,23 @@
+2003-07-21  Adam Fedor  <fedor@gnu.org>
+
+	* Documentation/Back/DefaultsSummary.gsdoc: Add new
+	GSXIMInputMethodStyle deafult (Adam Fedor).
+
+	* Source/x11/context.c, StdCmp.c, convert.c, raster.c, scale.c:
+	Updated to 0.80.2 version
+
+2003-07-13  Kazunobu Kuriyama <kazunobu.kuriyama@nifty.com>
+
+	* Header/x11/XGInputServer.h: Add the new category InputMethod.
+	* Header/x11/XGServer.h: Add the new category InputMethod.
+	* Source/x11/XIMInputServer.m:
+	([XIMInputServer (XIMPrivate) -ximStyleInit]): Cover the input
+	method styles RootWindow, OffTheSpot, OverTheSpot, and OnTheSpot.
+	([XIMInputServer (XIMPrivate) -ximCreateIC:]): Implement OffTheSpot
+	and OverTheSpot.  Implement the category InputMethod.
+	* Source/x11/XGServer.m: Implement the category InputMethod.  Add
+	overriding methods to NSTextView (NSView (InputMethod)).
+
 2003-07-27 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Tools/gpbs.m: Use protocols

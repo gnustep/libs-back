@@ -575,3 +575,187 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 
 
 @end
+
+@implementation XGServer (InputMethod)
+- (NSString *) inputMethodStyle
+{
+  return inputServer ? [(XIMInputServer *)inputServer inputMethodStyle] : nil;
+}
+
+- (NSString *) fontSize: (int *)size
+{
+  return inputServer ? [(XIMInputServer *)inputServer fontSize: size] : nil;
+}
+
+- (BOOL) clientWindowRect: (NSRect *)rect
+{
+  return inputServer
+    ? [(XIMInputServer *)inputServer clientWindowRect: rect] : NO;
+}
+
+- (BOOL) statusArea: (NSRect *)rect
+{
+  return inputServer ? [(XIMInputServer *)inputServer statusArea: rect] : NO;
+}
+
+- (BOOL) preeditArea: (NSRect *)rect
+{
+  return inputServer ? [(XIMInputServer *)inputServer preeditArea: rect] : NO;
+}
+
+- (BOOL) preeditSpot: (NSPoint *)p
+{
+  return inputServer ? [(XIMInputServer *)inputServer preeditSpot: p] : NO;
+}
+
+- (BOOL) setStatusArea: (NSRect *)rect
+{
+  return inputServer
+    ? [(XIMInputServer *)inputServer setStatusArea: rect] : NO;
+}
+
+- (BOOL) setPreeditArea: (NSRect *)rect
+{
+  return inputServer
+    ? [(XIMInputServer *)inputServer setPreeditArea: rect] : NO;
+}
+
+- (BOOL) setPreeditSpot: (NSPoint *)p
+{
+  return inputServer
+    ? [(XIMInputServer *)inputServer setPreeditSpot: p] : NO;
+}
+
+@end // XGServer (InputMethod)
+
+
+//==== Additional code for NSTextView =========================================
+//
+//  WARNING  This section is not genuine part of the XGServer implementation.
+//  -------
+//
+//  The methods implemented in this section override some of the internal
+//  methods defined in NSTextView so that the class can support input methods
+//  (XIM) in cooperation with XGServer.
+//
+//  Note that the orverriding is done by defining the methods in a category,
+//  the name of which is not explicitly mentioned in NSTextView.h; the
+//  category is called 'InputMethod'.
+//
+
+#include <AppKit/NSClipView.h>
+#include <AppKit/NSTextView.h>
+
+@implementation NSTextView (InputMethod)
+
+- (void) _updateInputMethodState
+{
+  NSRect    frame;
+  int	    font_size;
+  NSRect    status_area;
+  NSRect    preedit_area;
+  id	    displayServer = (XGServer *)GSCurrentServer();
+
+  if (![displayServer respondsToSelector: @selector(inputMethodStyle)])
+    return;
+
+  if (![displayServer fontSize: &font_size])
+    return;
+
+  if ([[self superview] isKindOfClass: [NSClipView class]])
+    frame = [[self superview] frame];
+  else
+    frame = [self frame];
+
+  status_area.size.width  = 2 * font_size;
+  status_area.size.height = font_size + 2;
+  status_area.origin.x    = 0;
+  status_area.origin.y    = frame.size.height - status_area.size.height;
+
+  if ([[displayServer inputMethodStyle] isEqual: @"OverTheSpot"])
+    {
+      preedit_area.origin.x    = 0;
+      preedit_area.origin.y    = 0;
+      preedit_area.size.width  = frame.size.width;
+      preedit_area.size.height = status_area.size.height;
+
+      [displayServer setStatusArea: &status_area];
+      [displayServer setPreeditArea: &preedit_area];
+    }
+  else if ([[displayServer inputMethodStyle] isEqual: @"OffTheSpot"])
+    {
+      preedit_area.origin.x    = status_area.size.width + 2;
+      preedit_area.origin.y    = status_area.origin.y;
+      preedit_area.size.width  = frame.origin.x + frame.size.width
+	- preedit_area.origin.x;
+      preedit_area.size.height = status_area.size.height;
+
+      [displayServer setStatusArea: &status_area];
+      [displayServer setPreeditArea: &preedit_area];
+    }
+  else
+    {
+      // Do nothing for the RootWindow style.
+    }
+}
+
+- (void) _updateInputMethodWithInsertionPoint: (NSPoint)insertionPoint
+{
+  id displayServer = (XGServer *)GSCurrentServer();
+
+  if (![displayServer respondsToSelector: @selector(inputMethodStyle)])
+    return;
+
+  if ([[displayServer inputMethodStyle] isEqual: @"OverTheSpot"])
+    {
+      id	view;
+      NSRect	frame;
+      NSPoint	p;
+      NSRect	client_win_rect;
+      NSPoint	screenXY_of_frame;
+      double	x_offset;
+      double	y_offset;
+      int	font_size;
+      NSRect	doc_rect;
+      NSRect	doc_visible_rect;
+      BOOL	cond;
+      float	x = insertionPoint.x;
+      float	y = insertionPoint.y;
+
+      [displayServer clientWindowRect: &client_win_rect];
+      [displayServer fontSize: &font_size];
+
+      cond = [[self superview] isKindOfClass: [NSClipView class]];
+      if (cond)
+	view = [self superview];
+      else
+	view = self;
+
+      frame = [view frame];
+      screenXY_of_frame = [[view window] convertBaseToScreen: frame.origin];
+
+      // N.B. The window of NSTextView isn't necessarily the same as the input
+      // method's client window.
+      x_offset = screenXY_of_frame.x - client_win_rect.origin.x; 
+      y_offset = (client_win_rect.origin.y + client_win_rect.size.height)
+	- (screenXY_of_frame.y + frame.size.height) + font_size;
+
+      x += x_offset;
+      y += y_offset;
+      if (cond) // If 'view' is of NSClipView, then
+	{
+	  // N.B. Remember, (x, y) are the values with respect to NSTextView.
+	  // We need to know the corresponding insertion position with respect
+	  // to NSClipView.
+	  doc_rect = [(NSClipView *)view documentRect];
+	  doc_visible_rect = [view documentVisibleRect];
+	  y -= doc_visible_rect.origin.y - doc_rect.origin.y;
+	}
+
+      p = NSMakePoint(x, y);
+      [displayServer setPreeditSpot: &p];
+    }
+}
+
+@end // NSTextView
+//==== End: Additional Code for NSTextView ====================================

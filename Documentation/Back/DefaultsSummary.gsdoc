@@ -83,6 +83,14 @@
           problem with the X-Server.
           </p>
 	  </desc>
+	  <term>GSXIMInputMethodStyle</term>
+	  <desc>
+          <p> A string value used to specify the XIM input method for
+	  entering characters. Valid values are
+	  <code>RootWindow</code>, <code>OffTheSpot</code>, or
+	  <code>OverTheSpot</code>.
+          </p>
+	  </desc>
 	  <term>GraphicCompositing</term>
 	  <desc>
           <p> [Xlib backend only]
@@ -90,7 +98,7 @@
           <code>YES</code>, then the application uses various tricks
           to get alpha colors to work when compositing images. This
           may slow down drawing of images, but it is generally
-          recommended anyway, particularly on fast systems
+          recommended anyway, particularly on fast systems.
           </p>
 	  </desc>
 	  <term>Keyboard Modifiers</term>
