@@ -208,7 +208,7 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
   if (dpy == NULL)
     {
       char *dname = XDisplayName([display_name cString]);
-      [NSException raise: @"DPSconfigurationerror"
+      [NSException raise: NSWindowServerCommunicationException
 		  format: @"Unable to connect to X Server `%s'", dname];
     }
   else

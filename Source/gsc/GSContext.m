@@ -370,19 +370,6 @@ static unsigned int unique_index = 0;
 /* Gstate Handling */
 /* ----------------------------------------------------------------------- */
 
-/* Depreciated. Use GSReplaceGState */
-- (void) DPScurrentgstate: (int)gst
-{
-  if (gst)
-    {
-      /* Associate/copy current gstate with gst */
-      ctxt_push([NSNumber numberWithInt: gst], opstack);
-      ctxt_push(gstate, opstack);
-      [self DPSdefineuserobject];
-      [self DPSexecuserobject: gst];
-    }
-}
-
 - (void) DPSgrestore
 {
   if (GSIArrayCount((GSIArray)gstack) == 0)
@@ -398,12 +385,6 @@ static unsigned int unique_index = 0;
   ctxt_push(gstate, gstack);
   AUTORELEASE(gstate);
   gstate = [gstate copy];
-}
-
-/* Depreciated. Use GSDefineGstate */
-- (void) DPSgstate
-{
-  ctxt_push(AUTORELEASE([gstate copy]), opstack);
 }
 
 - (void) DPSinitgraphics

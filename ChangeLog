@@ -1,3 +1,11 @@
+2002-04-10  Adam Fedor  <fedor@gnu.org>
+
+	* configure.in: Don't set X paths if no X found. Only set
+	/usr/local paths for freebsd
+
+	* Source/gsc/GSContext.m: Remove currentgstate, gstate
+	* Source/x11/XGServerWindow.m (windowbacking:) Implement.
+
 2002-04-06  Adam Fedor  <fedor@gnu.org>
 
 	* configure.in: Renable XIM by default again.
