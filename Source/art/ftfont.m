@@ -663,9 +663,10 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
 //	xHeight = size->metrics.height / 64.0;
 /* TODO: these are _really_ messed up when fonts are flipped */
+  /* TODO: need to look acrefully at these and make sure they are correct */
   ascender = fabs(((int)size->metrics.ascender) / 64.0);
   descender = fabs(((int)size->metrics.descender) / 64.0);
-  xHeight = ascender + descender; /* TODO */
+  xHeight = ascender * 0.5; /* TODO */
   maximumAdvancement = NSMakeSize((size->metrics.max_advance / 64.0), ascender + descender);
 
   fontBBox = NSMakeRect(0, descender, maximumAdvancement.width, ascender + descender);
