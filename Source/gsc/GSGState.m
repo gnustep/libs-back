@@ -505,7 +505,7 @@
 
   // This is rather slow, but it is not used very often
   ictm = [ctm copyWithZone: GSObjCZone(self)];
-  [ictm inverse];
+  [ictm invert];
   user = [ictm pointInMatrixSpace: [path currentPoint]];
   RELEASE(ictm);
   *x = user.x;
@@ -573,7 +573,7 @@
 
 - (void)DPSscale: (float)x : (float)y 
 {
-  [ctm scaleBy: x : y];
+  [ctm scaleXBy: x  yBy: y];
 }
 
 - (void)DPStranslate: (float)x : (float)y 
