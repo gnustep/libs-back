@@ -1465,6 +1465,9 @@ if necessary. Returns new operation, op==-1 means noop. */
 		ri.b=(fill_color[2]*ri.a+0xff)>>8;
 		for (y=0;y<y1;y++,ri.dst+=dbpl)
 			DI.render_run_opaque(&ri,x1);
+
+		if (ri.a!=255)
+			[wi needsAlpha];
 		if (wi->has_alpha)
 		{
 			if (DI.inline_alpha)
@@ -1959,25 +1962,25 @@ very expensive
 }
 
 
-
--(void) _fill: (int)rule
+-(ArtVpath *) _vpath_from_current_path: (BOOL)fill
 {
 	ArtBpath *bpath,*bp2;
 	ArtVpath *vp;
-	ArtSVP *svp;
 	int i,j,c,cur_start,cur_line;
 	NSPoint points[3];
 	NSBezierPathElement t;
 	double matrix[6];
 
-	if (!wi || !wi->data) return;
-	if (all_clipped) return;
-	if (!fill_color[3]) return;
 
 	c=[path elementCount];
-	if (!c) return;
-	/* TODO: double-check upper bound on size */
-	bpath=art_new(ArtBpath,2*c+1);
+	if (!c)
+		return NULL;
+
+	if (fill)
+		bpath=art_new(ArtBpath,2*c+1);
+	else
+		bpath=art_new(ArtBpath,c+1);
+
 	cur_start=-1;
 	cur_line=0;
 	for (i=j=0;i<c;i++)
@@ -1986,18 +1989,27 @@ very expensive
 		switch (t)
 		{
 		case NSMoveToBezierPathElement:
-			if (cur_start!=-1 && cur_line)
-			{
-				if (bpath[j-1].x3!=bpath[cur_start].x3 ||
-				    bpath[j-1].y3!=bpath[cur_start].y3)
+			/* When filling, the path must be closed, so if
+			it isn't already closed, we fix that here. */
+			if (fill)
+ 			{
+				if (cur_start!=-1 && cur_line)
 				{
-					bpath[j].x3=bpath[cur_start].x3;
-					bpath[j].y3=bpath[cur_start].y3;
-					bpath[j].code=ART_LINETO;
-					j++;
+					if (bpath[j-1].x3!=bpath[cur_start].x3 ||
+					    bpath[j-1].y3!=bpath[cur_start].y3)
+					{
+						bpath[j].x3=bpath[cur_start].x3;
+						bpath[j].y3=bpath[cur_start].y3;
+						bpath[j].code=ART_LINETO;
+						j++;
+					}
 				}
+				bpath[j].code=ART_MOVETO;
 			}
-			bpath[j].code=ART_MOVETO;
+			else
+			{
+				bpath[j].code=ART_MOVETO_OPEN;
+			}
 			bpath[j].x3=points[0].x;
 			bpath[j].y3=points[0].y;
 			cur_start=j;
@@ -2026,15 +2038,24 @@ very expensive
 			break;
 
 		case NSClosePathBezierPathElement:
+			if (cur_start!=-1 && cur_line)
+			{
+				bpath[cur_start].code=ART_MOVETO;
+				bpath[j].code=ART_LINETO;
+				bpath[j].x3=bpath[cur_start].x3;
+				bpath[j].y3=bpath[cur_start].y3;
+				j++;
+			}
 			break;
 
 		default:
 			NSLog(@"invalid type %i\n",t);
 			art_free(bpath);
-			return;
+			return NULL;
 		}
 	}
-	if (cur_start!=-1 && cur_line)
+
+	if (fill && cur_start!=-1 && cur_line)
 	{
 		if (bpath[j-1].x3!=bpath[cur_start].x3 ||
 		    bpath[j-1].y3!=bpath[cur_start].y3)
@@ -2047,20 +2068,35 @@ very expensive
 	}
 	bpath[j].code=ART_END;
 
-	matrix[0]=ctm->matrix.m11;
+	matrix[0]= ctm->matrix.m11;
 	matrix[1]=-ctm->matrix.m12;
-	matrix[2]=ctm->matrix.m21;
+	matrix[2]= ctm->matrix.m21;
 	matrix[3]=-ctm->matrix.m22;
-	matrix[4]=ctm->matrix.tx;
+	matrix[4]= ctm->matrix.tx;
 	matrix[5]=-ctm->matrix.ty+wi->sy;
 
 	bp2=art_bpath_affine_transform(bpath,matrix);
 	art_free(bpath);
-	bpath=bp2;
 
-	vp=art_bez_path_to_vec(bpath,0.5);
-	art_free(bpath);
+	vp=art_bez_path_to_vec(bp2,0.5);
+	art_free(bp2);
 
+	return vp;
+}
+
+
+-(void) _fill: (int)rule
+{
+	ArtVpath *vp;
+	ArtSVP *svp;
+
+	if (!wi || !wi->data) return;
+	if (all_clipped) return;
+	if (!fill_color[3]) return;
+
+	vp=[self _vpath_from_current_path: YES];
+	if (!vp)
+		return;
 	svp=art_svp_from_vpath(vp);
 	art_free(vp);
 
@@ -2238,6 +2274,7 @@ very expensive
 	}
 	else
 	{
+	/* Not properly aligned. Handle the general case. */
 		svp=art_svp_from_vpath(vp);
 
 		artcontext_render_svp(svp,clip_x0,clip_y0,clip_x1,clip_y1,
@@ -2408,94 +2445,50 @@ very expensive
 
 - (void) DPSstroke;
 {
-/* TODO: resolve line-width and dash scaling issues */
-	ArtBpath *bpath,*bp2;
+/* TODO: Resolve line-width and dash scaling issues. The way this is
+currently done is the most obvious libart approach:
+
+1. convert the NSBezierPath to an ArtBpath
+2. transform the Bpath
+3. convert the Bpath to a Vpath, approximating the curves with lines
+  (1-3 are done in -_vpath_from_current_path:)
+
+4. apply dashing to the Vpath
+  (art_vpath_dash, called below)
+5. stroke and convert the Vpath to an svp
+  (art_svp_vpath_stroke, called below)
+
+To do this correctly, we need to do dashing and stroking (4 and part of 5)
+in user space. It is possible to do the transform _after_ step 5 (although
+it's less efficient), but we want to do any curve approximation (3, and 5 if
+there are round line ends or joins) in device space.
+
+The best way to solve this is probably to keep doing the transform first,
+and to add transform-aware dashing and stroking functions to libart.
+
+Currently, a single scale value is applied to dashing and stroking. This
+will give correct results as long as both axises are scaled the same.
+
+*/
 	ArtVpath *vp;
 	ArtSVP *svp;
-	int i,j,c,last_subpath;
-	NSPoint points[3];
-	NSBezierPathElement t;
-	double matrix[6];
 	double temp_scale;
 
 	if (!wi || !wi->data) return;
 	if (all_clipped) return;
 	if (!stroke_color[3]) return;
 
-	c=[path elementCount];
-	if (!c) return;
-	bpath=art_new(ArtBpath,c+1);
-	last_subpath=-1;
-	j=0;
-	for (i=0;i<c;i++)
-	{
-		t=[path elementAtIndex: i associatedPoints: points];
-		switch (t)
-		{
-		case NSMoveToBezierPathElement:
-			bpath[j].code=ART_MOVETO_OPEN;
-			bpath[j].x3=points[0].x;
-			bpath[j].y3=points[0].y;
-			last_subpath=j;
-			j++;
-			break;
-
-		case NSLineToBezierPathElement:
-			bpath[j].code=ART_LINETO;
-			bpath[j].x3=points[0].x;
-			bpath[j].y3=points[0].y;
-			j++;
-			break;
-
-		case NSCurveToBezierPathElement:
-			bpath[j].code=ART_CURVETO;
-			bpath[j].x1=points[0].x;
-			bpath[j].y1=points[0].y;
-			bpath[j].x2=points[1].x;
-			bpath[j].y2=points[1].y;
-			bpath[j].x3=points[2].x;
-			bpath[j].y3=points[2].y;
-			j++;
-			break;
-
-		case NSClosePathBezierPathElement:
-			if (last_subpath!=-1)
-			{
-				bpath[last_subpath].code=ART_MOVETO;
-				bpath[j].code=ART_LINETO;
-				bpath[j].x3=bpath[last_subpath].x3;
-				bpath[j].y3=bpath[last_subpath].y3;
-				j++;
-			}
-			break;
-
-		default:
-			NSLog(@"invalid type %i\n",t);
-			art_free(bpath);
-			return;
-		}
-	}
-	bpath[j].code=ART_END;
-
-	matrix[0]=ctm->matrix.m11;
-	matrix[1]=-ctm->matrix.m12;
-	matrix[2]=ctm->matrix.m21;
-	matrix[3]=-ctm->matrix.m22;
-	matrix[4]=ctm->matrix.tx;
-	matrix[5]=-ctm->matrix.ty+wi->sy;
-
-	/* TODO: this is a hack, but it's better than nothing */
-	temp_scale=sqrt(fabs(matrix[0]*matrix[3]-matrix[1]*matrix[2]));
-	if (temp_scale<=0) temp_scale=1;
-
 	/* TODO: this is wrong. we should transform _after_ we dash and
 	stroke */
-	bp2=art_bpath_affine_transform(bpath,matrix);
-	art_free(bpath);
-	bpath=bp2;
+	vp=[self _vpath_from_current_path: NO];
+	if (!vp)
+		return;
 
-	vp=art_bez_path_to_vec(bpath,0.5);
-	art_free(bpath);
+	/* TODO: this is a hack, but it's better than nothing */
+	/* since we flip vertically, the signs here should really be
+	inverted, but the fabs() means that it doesn't matter */
+	temp_scale=sqrt(fabs(ctm->matrix.m11*ctm->matrix.m22-ctm->matrix.m12*ctm->matrix.m21));
+	if (temp_scale<=0) temp_scale=1;
 
 	if (do_dash)
 	{
