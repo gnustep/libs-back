@@ -32,6 +32,9 @@ if test -z "$GNUSTEP_SYSTEM_ROOT"; then
   AC_MSG_ERROR([You must run the GNUstep.sh script before configuring])
 fi
 
+GRAPHIC_CFLAGS="$CPPFLAGS"
+GRAPHIC_LFLAGS="$LDFLAGS"
+
 #--------------------------------------------------------------------
 # Use config.guess, config.sub and install-sh provided by gnustep-make
 #--------------------------------------------------------------------
@@ -81,8 +84,8 @@ if test "x$no_x" = xyes; then
 fi
 
 if test $set_x_paths = yes; then
-  GRAPHIC_CFLAGS="$X_CFLAGS"
-  GRAPHIC_LFLAGS="$X_LIBS"
+  GRAPHIC_CFLAGS="$GRAPHIC_CFLAGS $X_CFLAGS"
+  GRAPHIC_LFLAGS="$GRAPHIC_LFLAGS $X_LIBS"
   GRAPHIC_LIBS="$X_EXTRA_LIBS"
 
   lib_save_header=${CPPFLAGS}
