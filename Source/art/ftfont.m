@@ -345,16 +345,19 @@ static void add_face(NSString *family, int family_weight,
     sizes = [d objectForKey: @"ScreenFonts"];
 
     fi->num_sizes = [sizes count];
-    fi->sizes = malloc(sizeof(fi->sizes[0])*[sizes count]);
-    e = [sizes keyEnumerator];
-    i = 0;
-    while ((size = [e nextObject]))
+    if (fi->num_sizes)
       {
-	fi->sizes[i].pixel_size = [size intValue];
-	fi->sizes[i].files = fix_path(path,[sizes objectForKey: size]);
-	NSDebugLLog(@"ftfont",@"%@ size %i files |%@|\n",
-	  fontName,fi->sizes[i].pixel_size,fi->sizes[i].files);
-	i++;
+	fi->sizes = malloc(sizeof(fi->sizes[0])*[sizes count]);
+	e = [sizes keyEnumerator];
+	i = 0;
+	while ((size = [e nextObject]))
+	  {
+	    fi->sizes[i].pixel_size = [size intValue];
+	    fi->sizes[i].files = fix_path(path,[sizes objectForKey: size]);
+	    NSDebugLLog(@"ftfont",@"%@ size %i files |%@|\n",
+	      fontName,fi->sizes[i].pixel_size,fi->sizes[i].files);
+	    i++;
+          }
       }
   }
 
@@ -1439,6 +1442,20 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	  FT_Done_Glyph(gl);
 	}
     }
+}
+
+
+-(BOOL) glyphIsEncoded: (NSGlyph)glyph
+{
+  FT_Face face;
+
+ if (FTC_Manager_Lookup_Size(ftc_manager, &imgd.font, &face, 0))
+    return NO;
+
+  if (FT_Load_Glyph(face, glyph, 0))
+    return NO;
+
+  return YES;
 }
 
 

@@ -1,3 +1,8 @@
+2003-02-10 18:44  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Implement -glyphIsEncoded:.
+	(add_face): Avoid calling malloc(0).
+
 2003-02-09  Adam Fedor  <fedor@gnu.org>
 
 	* Source/gsc/GSStreamContext.m (-GSShowGlyphs::): Implement to use
