@@ -26,6 +26,7 @@ This file includes itself. Many times. You have been warned.
 
 #ifndef FORMAT_INSTANCE
 
+#include <math.h>
 #include <string.h>
 
 #include "x11/XGServer.h"
@@ -51,6 +52,14 @@ TODO: (optional?) proper gamma handling?
 
 TODO: more cpp magic to reduce the amount of code?
 */
+
+
+/*
+First attempt at gamma correction. Only used in text rendering (blit_*),
+but that's where it's needed the most. The gamma adjustment is a large
+hack, but the results are good.
+*/
+static unsigned char gamma_table[256],inv_gamma_table[256];
 
 
 #define NPRE(r, pre) pre##_##r
@@ -88,10 +97,17 @@ static void MPRE(blit_alpha_opaque) (unsigned char *adst,
 	  BLEND_INC(dst)
 	  continue;
 	}
+
       BLEND_READ(dst, nr, ng, nb)
+      nr = inv_gamma_table[nr];
+      ng = inv_gamma_table[ng];
+      nb = inv_gamma_table[nb];
       nr = (r * a + nr * (255 - a) + 0xff) >> 8;
       ng = (g * a + ng * (255 - a) + 0xff) >> 8;
       nb = (b * a + nb * (255 - a) + 0xff) >> 8;
+      nr = gamma_table[nr];
+      ng = gamma_table[ng];
+      nb = gamma_table[nb];
       BLEND_WRITE(dst, nr, ng, nb)
       BLEND_INC(dst)
     }
@@ -223,6 +239,10 @@ static void MPRE(blit_subpixel) (unsigned char *adst, const unsigned char *asrc,
 
       BLEND_READ(dst, nr, ng, nb)
 
+      nr = inv_gamma_table[nr];
+      ng = inv_gamma_table[ng];
+      nb = inv_gamma_table[nb];
+
       ar *= alpha;
       ag *= alpha;
       ab *= alpha;
@@ -230,6 +250,11 @@ static void MPRE(blit_subpixel) (unsigned char *adst, const unsigned char *asrc,
       nr = (r * ar + nr * (65280 - ar) + 0xff00) >> 16;
       ng = (g * ag + ng * (65280 - ag) + 0xff00) >> 16;
       nb = (b * ab + nb * (65280 - ab) + 0xff00) >> 16;
+
+      nr = gamma_table[nr];
+      ng = gamma_table[ng];
+      nb = gamma_table[nb];
+
       BLEND_WRITE(dst, nr, ng, nb)
       BLEND_INC(dst)
     }
@@ -1562,6 +1587,9 @@ static int byte_ofs_of_mask(unsigned int m)
     return -1;
 }
 
+
+#include <Foundation/NSUserDefaults.h>
+
 void artcontext_setup_draw_info(draw_info_t *di,
 	unsigned int red_mask, unsigned int green_mask, unsigned int blue_mask,
 	int bpp)
@@ -1619,6 +1647,24 @@ void artcontext_setup_draw_info(draw_info_t *di,
 	    @"and send me a patch.)");
       exit(1);
     }
+
+  {
+    float gamma = [[NSUserDefaults standardUserDefaults]
+                      floatForKey: @"back-art-text-gamma"];
+    int i;
+    if (!gamma)
+      gamma = 1.4;
+
+    NSLog(@"gamma=%g",gamma);
+
+    gamma = 1.0 / gamma;
+
+    for (i = 0; i < 256; i++)
+      {
+	gamma_table[i] = pow(i / 255.0, gamma) * 255 + .5;
+	inv_gamma_table[i] = pow(i / 255.0, 1.0 / gamma) * 255 + .5;
+      }
+  }
 }
 #endif
 
