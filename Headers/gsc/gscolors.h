@@ -1,8 +1,8 @@
-/* xrtools - Color conversion routines and other low-level X support
+/* gscolors - Color conversion routines
 
    Copyright (C) 1995 Free Software Foundation, Inc.
 
-   Written by:  Adam Fedor <fedor@boulder.colorado.edu>
+   Written by:  Adam Fedor <fedor@gnu.org>
    Date: Nov 1994
    
    This file is part of the GNU Objective C User Interface Library.
@@ -22,23 +22,27 @@
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111 USA.
    */
 
-#ifndef _xrtools_h_INCLUDE
-#define _xrtools_h_INCLUDE
+#ifndef _gscolors_h_INCLUDE
+#define _gscolors_h_INCLUDE
+
+#define AINDEX 5
 
 typedef enum {
   gray_colorspace, rgb_colorspace, hsb_colorspace, cmyk_colorspace
-} xr_device_colorspace_t;
+} device_colorspace_t;
 
-typedef struct _xr_device_color {
-  xr_device_colorspace_t space;
+typedef struct _device_color {
+  device_colorspace_t space;
   float field[6];
-} xr_device_color_t;
+} device_color_t;
 
 /* Internal conversion of colors to pixels values */
-extern xr_device_color_t xrColorToRGB(xr_device_color_t color);
-extern xr_device_color_t xrColorToGray(xr_device_color_t color);
-extern xr_device_color_t xrColorToCMYK(xr_device_color_t color);
-extern xr_device_color_t xrColorToHSB(xr_device_color_t color);
+extern device_color_t gsMakeColor(device_colorspace_t space, 
+				  float a, float b, float c, float d);
+extern device_color_t gsColorToRGB(device_color_t color);
+extern device_color_t gsColorToGray(device_color_t color);
+extern device_color_t gsColorToCMYK(device_color_t color);
+extern device_color_t gsColorToHSB(device_color_t color);
 
 #endif
 

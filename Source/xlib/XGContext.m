@@ -42,7 +42,6 @@
 #include "xlib/XGContext.h"
 #include "xlib/XGPrivate.h"
 #include "xlib/XGGState.h"
-#include "xlib/xrtools.h"
 
 #ifdef HAVE_XFT
 #include "xlib/XftFontInfo.h"

@@ -30,6 +30,7 @@
 #include <AppKit/NSGraphicsContext.h>   // needed for NSCompositingOperation
 #include <Foundation/NSArray.h>
 #include <Foundation/NSObject.h>
+#include <gsc/gscolors.h>
 
 @class NSAffineTransform;
 @class NSBezierPath;
@@ -40,15 +41,29 @@ typedef enum {
   path_stroke, path_fill, path_eofill, path_clip, path_eoclip
 } ctxt_object_t;
 
+typedef enum {
+  COLOR_STROKE = 1,
+  COLOR_FILL = 2,
+  COLOR_BOTH = 3               /* COLOR_BOTH = COLOR_FILL || COLOR_STROKE */
+} color_state_t;
+
 @interface GSGState : NSObject
 {
 @public
   GSContext *drawcontext;
   NSAffineTransform *ctm;
   NSPoint offset;               /* Offset from Drawable origin */
-  NSBezierPath *path;	        /* current path */
-  NSFont *font;
+  NSBezierPath *path;	        /* Current path */
+  NSFont *font;                 /* Current font */
+  NSColor *fillColorS;          /* Color(space) used for fill drawing */
+  NSColor *strokeColorS;        /* Color(space) used for stroke drawing */
+  device_color_t fillColor;     /* fill color */
+  device_color_t strokeColor;   /* stroke color */
+  color_state_t  cstate;        /* state last time color was set */
 
+  float   charSpacing;
+  NSAffineTransform *textCtm;   /* Text transform - concat with ctm */
+  GSTextDrawingMode textMode;
   BOOL viewIsFlipped;
 }
 
@@ -58,8 +73,7 @@ typedef enum {
 - (void) setOffset: (NSPoint)theOffset;
 - (NSPoint) offset;
 
-- (void) setFont: (NSFont*)font;
-- (NSFont*) currentFont;
+- (void) setColor: (device_color_t)color state: (color_state_t)cState;
 
 - (void) compositeGState: (GSGState *)source
                 fromRect: (NSRect)aRect

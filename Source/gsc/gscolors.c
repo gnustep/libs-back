@@ -1,4 +1,4 @@
-/* xrtools - Color conversion routines and other low-level X support
+/* gscolors - Color conversion routines
 
    Copyright (C) 1998 Free Software Foundation, Inc.
 
@@ -26,12 +26,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "xlib/xrtools.h"
+#include "gsc/gscolors.h"
 
-xr_device_color_t 
-xrMakeColor(xr_device_colorspace_t space, float a, float b, float c, float d)
+device_color_t 
+gsMakeColor(device_colorspace_t space, float a, float b, float c, float d)
 {
-  xr_device_color_t color;
+  device_color_t color;
   color.space = space;
   color.field[0] = a;
   color.field[1] = b;
@@ -40,15 +40,15 @@ xrMakeColor(xr_device_colorspace_t space, float a, float b, float c, float d)
   return color;
 }
 
-xr_device_color_t
-xrGrayToRGB(xr_device_color_t  color)
+device_color_t
+gsGrayToRGB(device_color_t  color)
 {
-  return xrMakeColor(rgb_colorspace, color.field[0], color.field[0], 
+  return gsMakeColor(rgb_colorspace, color.field[0], color.field[0], 
 	      color.field[0], 0);
 }
 
-xr_device_color_t 
-xrHSBToRGB(xr_device_color_t  color)
+device_color_t 
+gsHSBToRGB(device_color_t  color)
 {
   int i;
   float h, s, v;
@@ -60,7 +60,7 @@ xrHSBToRGB(xr_device_color_t  color)
   v = color.field[2];
 
   if (s == 0) 
-    return xrMakeColor(rgb_colorspace, v, v, v, 0);
+    return gsMakeColor(rgb_colorspace, v, v, v, 0);
 
   h = h * 6;
   i = (int)h;
@@ -102,12 +102,12 @@ xrHSBToRGB(xr_device_color_t  color)
       blue = q;
       break;
     }
-  return xrMakeColor(rgb_colorspace, red, green, blue, 0);
+  return gsMakeColor(rgb_colorspace, red, green, blue, 0);
 }
 
 /* FIXME */   
-xr_device_color_t 
-xrCMYKToRGB(xr_device_color_t  color)
+device_color_t 
+gsCMYKToRGB(device_color_t  color)
 {
   float c, m, y, k;
   float red, green, blue;
@@ -137,27 +137,27 @@ xrCMYKToRGB(xr_device_color_t  color)
       green = (m > white ? 0 : white - m);
       blue = (y > white ? 0 : white - y);
     }
-  return xrMakeColor(rgb_colorspace, red, green, blue, 0);
+  return gsMakeColor(rgb_colorspace, red, green, blue, 0);
 }
 
-xr_device_color_t 
-xrColorToRGB(xr_device_color_t color)
+device_color_t 
+gsColorToRGB(device_color_t color)
 {
-  xr_device_color_t new;
+  device_color_t new;
 
   switch(color.space)
     {
     case gray_colorspace:
-      new = xrGrayToRGB(color);
+      new = gsGrayToRGB(color);
       break;
     case rgb_colorspace:
       new = color;
       break;
     case hsb_colorspace: 
-      new = xrHSBToRGB(color);
+      new = gsHSBToRGB(color);
       break;
     case cmyk_colorspace: 
-      new = xrCMYKToRGB(color);
+      new = gsCMYKToRGB(color);
       break;
     default:
       break;
@@ -165,10 +165,10 @@ xrColorToRGB(xr_device_color_t color)
   return new;
 }
 
-xr_device_color_t 
-xrColorToGray(xr_device_color_t color)
+device_color_t 
+gsColorToGray(device_color_t color)
 {
-  xr_device_color_t new;
+  device_color_t new;
 
   new.space = gray_colorspace;
   switch(color.space)
@@ -178,7 +178,7 @@ xrColorToGray(xr_device_color_t color)
       break;
     case hsb_colorspace:
     case cmyk_colorspace: 
-      color = xrColorToRGB(color);
+      color = gsColorToRGB(color);
       /* NO BREAK */
     case rgb_colorspace:
       new.field[0] = 
@@ -191,10 +191,10 @@ xrColorToGray(xr_device_color_t color)
 }
 
 /* FIXME: Not implemented */
-xr_device_color_t 
-xrColorToCMYK(xr_device_color_t color)
+device_color_t 
+gsColorToCMYK(device_color_t color)
 {
-  xr_device_color_t new;
+  device_color_t new;
 
   new.space = cmyk_colorspace;
   switch(color.space)
@@ -215,10 +215,10 @@ xrColorToCMYK(xr_device_color_t color)
 }
 
 /* FIXME: Not implemented */
-xr_device_color_t 
-xrColorToHSB(xr_device_color_t color)
+device_color_t 
+gsColorToHSB(device_color_t color)
 {
-  xr_device_color_t new;
+  device_color_t new;
 
   new.space = hsb_colorspace;
   switch(color.space)

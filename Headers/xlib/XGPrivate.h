@@ -35,7 +35,6 @@
 
 #include "x11/XGServer.h"
 #include "xlib/XGContext.h"
-#include "xlib/xrtools.h"
 #include <AppKit/GSFontInfo.h>
 
 /* Font function (defined in XGFontManager) */

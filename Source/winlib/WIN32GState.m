@@ -106,6 +106,16 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   return window;
 }
 
+- (void) setColor: (device_color_t)color state: (color_state_t)cState
+{
+  [super setColor: color state: cState];
+  color = gsColorToRGB(color);
+  if (cState & COLOR_FILL)
+    wfcolor = RGB(color.field[0]*255, color.field[1]*255, color.field[2]*255);
+  if (cState & COLOR_STOKE)
+    wscolor = RGB(color.field[0]*255, color.field[1]*255, color.field[2]*255);
+}
+
 - (void) copyBits: (WIN32GState*)source fromRect: (NSRect)aRect 
 	  toPoint: (NSPoint)aPoint
 {
@@ -298,119 +308,6 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
       // old_ctm is already retained
       ctm = old_ctm;
     }
-}
-
-@end
-
-@implementation WIN32GState (ColorOps)
-
-- (void)DPScurrentrgbcolor: (float *)r : (float *)g : (float *)b 
-{
-  *r = GetRValue(color) / 255;
-  *g = GetGValue(color) / 255;
-  *b = GetBValue(color) / 255;
-}
-
-- (void)DPSsetrgbcolor: (float)r : (float)g : (float)b 
-{
-  color = RGB(r*255, g*255, b*255);
-
-  // Use in pen and brush!!
-}
-
-- (void)DPScurrentcmykcolor: (float *)c : (float *)m : (float *)y : (float *)k 
-{
-  float alpha;
-  float r, g, b;
-  NSColor *c1, *c2;
-
-  [self DPScurrentrgbcolor: &r : &g : &b];
-
-  c1 = [NSColor colorWithDeviceRed: r green: g
-		blue: b alpha: 1.0];
-  c2 = [c1 colorUsingColorSpaceName: NSDeviceCMYKColorSpace];
-  [c2 getCyan: c magenta: m
-      yellow: y black: k
-      alpha: &alpha];
-}
-
-- (void)DPSsetcmykcolor: (float)c : (float)m : (float)y : (float)k 
-{
-  NSColor *c1, *c2;
-
-  c1 = [NSColor colorWithDeviceCyan: c
-		magenta: m
-		yellow: y
-		black: k
-		alpha: 1.0];
-  c2 = [c1 colorUsingColorSpaceName: NSDeviceRGBColorSpace];
-  [self DPSsetrgbcolor: [c2 redComponent] : [c2 greenComponent] : 
-	  [c2 blueComponent]];
-}
-
-- (void)DPScurrentgray: (float *)gray 
-{
-  float r, g, b;
-  NSColor *c1, *c2;
-
-  [self DPScurrentrgbcolor: &r : &g : &b];
-
-  c1 = [NSColor colorWithDeviceRed: r
-		green: g
-		blue: b
-		alpha: 1.0];
-  c2 = [c1 colorUsingColorSpaceName: NSDeviceWhiteColorSpace];
-  // Or 1.0 - x ???
-  *gray = [c2 whiteComponent];
-}
-
-- (void)DPSsetgray: (float)gray 
-{
-  NSColor *c1, *c2;
-
-  // Or 1.0 - x ???
-  c1 = [NSColor colorWithDeviceWhite: gray
-		alpha: 1.0];
-  c2 = [c1 colorUsingColorSpaceName: NSDeviceRGBColorSpace];
-  [self DPSsetrgbcolor: [c2 redComponent] : [c2 greenComponent] : 
-	  [c2 blueComponent]];
-}
-
-- (void)DPScurrenthsbcolor: (float *)h : (float *)s : (float *)b 
-{
-  float alpha;
-  float r, g, bl;
-  NSColor *c1;
-
-  [self DPScurrentrgbcolor: &r : &g : &bl];
-
-  c1 = [NSColor colorWithDeviceRed: r
-		green: g
-		blue: bl
-		alpha: 1.0];
-  [c1 getHue: h saturation: s
-      brightness: b alpha: &alpha];
-}
-
-- (void)DPSsethsbcolor: (float)h : (float)s : (float)b 
-{
-  NSColor *c1, *c2;
-
-  c1 = [NSColor colorWithDeviceHue: h
-		     saturation: s
-		     brightness: b
-			  alpha: 1.0];
-  c2 = [c1 colorUsingColorSpaceName: NSDeviceRGBColorSpace];
-  [self DPSsetrgbcolor: [c2 redComponent] : [c2 greenComponent] : 
-	  [c2 blueComponent]];
-}
-
-- (void) DPSsetalpha: (float)a
-{
-}
-
-- (void) DPScurrentalpha: (float *)alpha
-{
 }
 
 @end
@@ -645,8 +542,8 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 {
   [ctm makeIdentityMatrix];
   DESTROY(path);
-
-  color = RGB(0*255, 0*255, 0*255);
+  fillColor = gsMakeColor(gray_colorspace, 0, 0, 0, 0);
+  [self setColor: fillColor state: COLOR_BOTH];
 }
 
 - (void) DPSsetdash: (const float*)pattern : (int)count : (float)phase
@@ -725,7 +622,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   br.lbColor = color;
   brush = CreateBrushIndirect(&br);
   */
-  brush = CreateSolidBrush(color);
+  brush = CreateSolidBrush(wfcolor);
   oldBrush = SelectObject(hdc, brush);
 
   switch (joinStyle)
@@ -784,7 +681,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 
   SetMiterLimit(hdc, miterlimit, NULL);
 
-  SetTextColor(hdc, color);
+  SetTextColor(hdc, wfcolor);
   SelectClipRgn(hdc, clipRegion);
 }
 

@@ -317,54 +317,52 @@ static unsigned int unique_index = 0;
 
 - (void) GSSetCharacterSpacing: (float)extra
 {
-  [self notImplemented: _cmd];
+  [gstate GSSetCharacterSpacing: extra];
 }
 
 - (void) GSSetFont: (NSFont*)font
 {
-  [gstate setFont: font];
+  [gstate GSSetFont: font];
 }
 
 - (void) GSSetFontSize: (float)size
 {
-  [self notImplemented: _cmd];
+  [gstate GSSetFontSize: size];
 }
 
 - (NSAffineTransform *) GSGetTextCTM
 {
-  [self notImplemented: _cmd];
-  return nil;
+  return [gstate GSGetTextCTM];
 }
 
 - (NSPoint) GSGetTextPosition
 {
-  [self notImplemented: _cmd];
-  return NSMakePoint(0,0);
+  return [gstate GSGetTextPosition];
 }
 
 - (void) GSSetTextCTM: (NSAffineTransform *)ctm
 {
-  [self notImplemented: _cmd];
+  [gstate GSSetTextCTM: ctm];
 }
 
 - (void) GSSetTextDrawingMode: (GSTextDrawingMode)mode
 {
-  [self notImplemented: _cmd];
+  [gstate GSSetTextDrawingMode: mode];
 }
 
 - (void) GSSetTextPosition: (NSPoint)loc
 {
-  [self notImplemented: _cmd];
+  [gstate GSSetTextPosition: loc];
 }
 
 - (void) GSShowText: (const char *)string : (size_t) length
 {
-  [self notImplemented: _cmd];
+  [gstate GSShowText: string : length];
 }
 
 - (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t) length
 {
-  [self notImplemented: _cmd];
+  [gstate GSShowGlyphs: glyphs : length];
 }
 
 /* ----------------------------------------------------------------------- */
