@@ -1,5 +1,12 @@
 2002-06-08  Fred Kiefer <FredKiefer@gmx.de>
 
+	* Headers/winlib/WIN32FontInfo.h
+	Added ivar for font handle.
+	* Source/winlib/WIN32FontInfo.m
+	Implemented most of the code to support different fonts.
+	
+2002-06-08  Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/gsc/GSGState.m
 	Coorected [DPSrectfill::::], [DPSrectstroke::::] and 
 	[DPSrectclip::::] not to change the path. 
