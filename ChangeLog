@@ -1,3 +1,8 @@
+2003-12-25  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m (-_initWin32Context) set a default
+	cursor, which is used each time the window is entered.
+
 2003-12-23  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/winlib/WIN32GState.m (-copyBits:fromRect:toPoint:): Made
