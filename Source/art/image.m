@@ -102,7 +102,8 @@ typedef struct
     0  unknown, use colorspacename
     1  rgb
     2  cmyk
-    3  gray
+    3  gray, 1=white
+    4  gray, 1=black
   */
   int colorspace;
   NSString *colorspacename;
@@ -188,6 +189,10 @@ static void _image_get_color_rgb_cmyk_gray(image_info_t *ii, render_run_t *ri,
   else if (ii->colorspace == 3)
     {
       ri->r = ri->g = ri->b = values[0];
+    }
+  else if (ii->colorspace == 4)
+    {
+      ri->r = ri->g = ri->b = 255 - values[0];
     }
 }
 
@@ -708,10 +713,11 @@ seem to cause edges to be off by a pixel
   else if (colorSpaceName == NSDeviceCMYKColorSpace)
     ii.colorspace = 2;
   else if (colorSpaceName == NSDeviceWhiteColorSpace ||
-	   colorSpaceName == NSDeviceBlackColorSpace ||
-	   colorSpaceName == NSCalibratedWhiteColorSpace ||
-	   colorSpaceName == NSCalibratedBlackColorSpace)
+	   colorSpaceName == NSCalibratedWhiteColorSpace)
     ii.colorspace = 3;
+  else if (colorSpaceName == NSDeviceBlackColorSpace ||
+	   colorSpaceName == NSCalibratedBlackColorSpace)
+    ii.colorspace = 4;
   else
     ii.colorspace = 0;
 
