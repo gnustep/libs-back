@@ -1,3 +1,7 @@
+2004-07-09  Adam Fedor  <fedor@gnu.org>
+
+	* Documentation/Back/Standards.txt: New EWMH file.
+
 2004-07-06  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/winlib/Win32GState.m (-_compositeGState:...fraction:):
