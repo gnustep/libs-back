@@ -135,62 +135,98 @@ static int use_shape_hack = 0; /* this is an ugly hack :) */
 
       wi->ximage = NULL;
 
+      /* TODO: only use shared memory for 'real' on-screen windows. how can
+      we tell? don't create shared buffer until first expose? */
+      /* The primary problems seems to be the system limit on the _number_
+      of shared memory segments, not their total size, so we only create
+      shared buffers for reasonably large buffers and assume that the small
+      ones are just caches of images and will never be displayed, anyway
+      (and if they are displayed, it won't cost much, since they're small).
+      */
+      if (wi->window->xframe.size.width * wi->window->xframe.size.height < 4096)
+        goto no_xshm;
+
+#define WARN @" Falling back to normal XImage:s (will be slower)."
       /* Use XShm if possible, else fall back to normal XImage:s */
-      if (XShmQueryExtension(wi->display))
+      if (!XShmQueryExtension(wi->display))
 	{
-	  wi->use_shm = 1;
-	  wi->ximage = XShmCreateImage(wi->display,
-	    DefaultVisual(wi->display, DefaultScreen(wi->display)),
-	    aDI->drawing_depth, ZPixmap, NULL, &wi->shminfo,
-	    wi->window->xframe.size.width,
-	    wi->window->xframe.size.height);
+static BOOL xshm_warned = NO;
+	  if (!xshm_warned)
+	    NSLog(@"XShm not supported." WARN);
+	  xshm_warned = YES;
+	  goto no_xshm;
 	}
-      if (wi->ximage)
+
+      wi->use_shm = 1;
+      wi->ximage = XShmCreateImage(wi->display,
+	DefaultVisual(wi->display, DefaultScreen(wi->display)),
+	aDI->drawing_depth, ZPixmap, NULL, &wi->shminfo,
+	wi->window->xframe.size.width,
+	wi->window->xframe.size.height);
+      if (!wi->ximage)
 	{
-	  /* TODO: only use shared memory for 'real' on-screen
-	     windows. how can we tell? */
-	  wi->shminfo.shmid = shmget(IPC_PRIVATE,
-	    wi->ximage->bytes_per_line * wi->ximage->height,
-	    IPC_CREAT | 0700);
+	  NSLog(@"Warning: XShmCreateImage failed!" WARN);
+	  goto no_xshm;
+	}
+      wi->shminfo.shmid = shmget(IPC_PRIVATE,
+	wi->ximage->bytes_per_line * wi->ximage->height,
+	IPC_CREAT | 0700);
 
-	  if (!wi->shminfo.shmid == -1)
-	    NSLog(@"shmget() failed"); /* TODO */
-	  wi->shminfo.shmaddr = wi->ximage->data = shmat(wi->shminfo.shmid, 0, 0);
+      if (wi->shminfo.shmid == -1)
+	{
+	  NSLog(@"Warning: shmget() failed: %m." WARN);
+	  XDestroyImage(wi->ximage);
+	  goto no_xshm;
+	}
 
-	  wi->shminfo.readOnly = 0;
-	  if (!XShmAttach(wi->display, &wi->shminfo))
-	    NSLog(@"XShmAttach() failed");
-
-	  /* We try to create a shared pixmap using the same buffer, and set
-	  it as the background of the window. This allows X to handle expose
-	  events all by itself, which avoids white flashing when things are
-	  dragged across a window. */
-	  /* TODO: we still get and handle expose events, although we don't
-	  need to. */
-	  wi->pixmap=XShmCreatePixmap(wi->display,wi->drawable,
-				      wi->ximage->data,&wi->shminfo,
-				      wi->window->xframe.size.width,
-				      wi->window->xframe.size.height,
-				      aDI->drawing_depth);
-	  if (wi->pixmap)
-	    {
-	      XSetWindowBackgroundPixmap(wi->display,wi->window->ident,wi->pixmap);
-	    }
-
-	  /* On some systems (eg. freebsd), X can't attach to the shared
-	  segment if it's marked for destruction, so we make sure it's
-	  attached before marking it. */
-	  XSync(wi->display,False);
-
-	  /* Mark the segment as destroyed now. Since we're
-	     attached, it won't actually be destroyed, but if we
-	     crashed before doing this, it wouldn't be destroyed
-	     despite nobody being attached anymore. */
+      wi->shminfo.shmaddr = wi->ximage->data = shmat(wi->shminfo.shmid, 0, 0);
+      if ((int)wi->shminfo.shmaddr == -1)
+	{
+	  NSLog(@"Warning: shmat() failed: %m." WARN);
+	  XDestroyImage(wi->ximage);
 	  shmctl(wi->shminfo.shmid, IPC_RMID, 0);
+	  goto no_xshm;
 	}
-      else
+
+      wi->shminfo.readOnly = 0;
+      if (!XShmAttach(wi->display, &wi->shminfo))
 	{
-	  NSLog(@"failed to create shared memory image, using normal XImage:s");
+	  NSLog(@"Warning: XShmAttach() failed." WARN);
+	  XDestroyImage(wi->ximage);
+	  shmdt(wi->shminfo.shmaddr);
+	  shmctl(wi->shminfo.shmid, IPC_RMID, 0);
+	  goto no_xshm;
+	}
+
+      /* We try to create a shared pixmap using the same buffer, and set
+	 it as the background of the window. This allows X to handle expose
+	 events all by itself, which avoids white flashing when things are
+	 dragged across a window. */
+      /* TODO: we still get and handle expose events, although we don't
+	 need to. */
+      wi->pixmap=XShmCreatePixmap(wi->display,wi->drawable,
+				  wi->ximage->data,&wi->shminfo,
+				  wi->window->xframe.size.width,
+				  wi->window->xframe.size.height,
+				  aDI->drawing_depth);
+      if (wi->pixmap) /* TODO: this doesn't work */
+	{
+	  XSetWindowBackgroundPixmap(wi->display,wi->window->ident,wi->pixmap);
+	}
+
+      /* On some systems (eg. freebsd), X can't attach to the shared segment
+      if it's marked for destruction, so we make sure it's attached before
+      marking it. */
+      XSync(wi->display,False);
+
+      /* Mark the segment as destroyed now. Since we're attached, it won't
+      actually be destroyed, but if we crashed before doing this, it wouldn't
+      be destroyed despite nobody being attached anymore. */
+      shmctl(wi->shminfo.shmid, IPC_RMID, 0);
+
+      if (!wi->ximage)
+	{
+no_xshm:
 	  wi->use_shm = 0;
 	  wi->ximage = XCreateImage(wi->display, DefaultVisual(wi->display,
 	    DefaultScreen(wi->display)), aDI->drawing_depth, ZPixmap, 0, NULL,
@@ -203,9 +239,9 @@ static int use_shape_hack = 0; /* this is an ugly hack :) */
 	      XDestroyImage(wi->ximage);
 	      wi->ximage = NULL;
 	    }
-/*TODO?			wi->ximage = XGetImage(wi->display, wi->drawable,
-				0, 0, wi->window->xframe.size.width, wi->window->xframe.size.height,
-				-1, ZPixmap);*/
+/*TODO?	wi->ximage = XGetImage(wi->display, wi->drawable,
+		0, 0, wi->window->xframe.size.width, wi->window->xframe.size.height,
+		-1, ZPixmap);*/
 	}
     }
 
@@ -221,7 +257,7 @@ static int use_shape_hack = 0; /* this is an ugly hack :) */
     }
   else
     {
-      NSLog(@"Warning: failed to create image for window");
+      NSLog(@"Warning: failed to create image for window!");
       wi->data = NULL;
     }
 
@@ -418,6 +454,9 @@ static int warn = 0;
 -(void) needsAlpha
 {
   if (has_alpha)
+    return;
+
+  if (!data)
     return;
 
 //	NSLog(@"needs alpha for %p: %ix%i", self, sx, sy);
