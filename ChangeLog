@@ -1,3 +1,34 @@
+2002-04-21  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/win32
+	* Headers/win32/WIN32Server.h
+	* Headers/win32/WIN32Geometry.h
+	* Source/win32
+	* Source/win32/GNUmakefile
+	* Source/win32/GNUmakefile.preamble
+	* Source/win32/WIN32Server.m
+	New directories and files with Display Server for MS Windows.
+	* Headers/winlib
+	* Headers/winlib/WIN32Context.h
+	* Headers/winlib/WIN32GState.h
+	* Headers/winlib/WIN32FontEnumerator.h
+	* Headers/winlib/WIN32FontInfo.h
+	* Source/winlib
+	* Source/winlib/GNUmakefile
+	* Source/winlib/GNUmakefile.preamble
+	* Source/winlib/WIN32Context.m
+	* Source/winlib/WIN32GState.m
+	* Source/winlib/WIN32FontEnumerator.m
+	* Source/winlib/WIN32FontInfo.m
+	New directories and files for drawing on MS Windows.
+	* configure
+	Add library gdi32 for winlib back end.
+	* Source/GSBackend.m
+	Corrected to handle the winlib/win32 backend correctly.
+	* Tools/gpbs.m
+	Ifdefed some signals that are not defined in mingw and use spawn 
+	instead of fork on mingw. 
+	
 2002-04-19  Richard Frith-Macdonald <rfm@gnu.org>
 
         * Tools/gpbs.m: If given -NSHost specification for the current host,
