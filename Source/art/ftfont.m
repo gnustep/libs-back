@@ -112,6 +112,9 @@ static BOOL anti_alias_by_default;
 
   /* Glyph generation */
   NSGlyph ligature_ff,ligature_fi,ligature_fl,ligature_ffl,ligature_ffi;
+
+
+  float lineHeight;
 }
 @end
 
@@ -749,6 +752,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   /* TODO: need to look acrefully at these and make sure they are correct */
   ascender = fabs(((int)size->metrics.ascender) / 64.0);
   descender = fabs(((int)size->metrics.descender) / 64.0);
+  lineHeight = (int)size->metrics.height / 64.0;
   xHeight = ascender * 0.5; /* TODO */
   maximumAdvancement = NSMakeSize((size->metrics.max_advance / 64.0), ascender + descender);
 
@@ -847,6 +851,12 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 -(void) set
 {
   NSLog(@"ignore -set method of font '%@'\n", fontName);
+}
+
+
+-(float) defaultLineHeightForFont
+{
+  return lineHeight;
 }
 
 
