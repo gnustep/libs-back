@@ -61,10 +61,11 @@
 	  <desc>
           <p>
           With the xlib backend, this is a boolean value which
-          defaults to <code>NO</code>. If set to
+          defaults to <code>YES</code>. If set to
           <code>YES</code> and X Windows system has the XFT
           extension, then the application will use anti-aliased fonts
-          as provided by XFT..
+          as provided by XFT. If set to <code>NO</code> anti-aliased fonts
+	  will not be used even when available.
           </p>
 	  <p> With the art backend, A boolean value which defaults to
 	  YES. If YES, text is anti-aliased at small sizes (9-16

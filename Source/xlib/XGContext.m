@@ -73,13 +73,15 @@
   Class fontClass = Nil;
   Class fontEnumerator = Nil;
   BOOL  enableFontSet;
+  NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
 
   NSDebugLog(@"Initializing GNUstep xlib backend.\n");
 
   [NSGraphicsContext setDefaultContextClass: [XGContext class]];
 
 #ifdef HAVE_XFT
-  if ([[NSUserDefaults standardUserDefaults] boolForKey: @"GSFontAntiAlias"])
+  if (([ud objectForKey: @"GSFontAntiAlias"] == nil) ||
+      ([ud boolForKey: @"GSFontAntiAlias"]))
     {
       fontClass = [GSXftFontInfo class];
 #ifdef HAVE_FC
@@ -87,8 +89,7 @@
 #endif
     }
 #endif
-  enableFontSet = [[NSUserDefaults standardUserDefaults] boolForKey:
-							   @"GSXEnableFontSet"];
+  enableFontSet = [ud boolForKey: @"GSXEnableFontSet"];
   if (fontClass == Nil)
     {
       if (enableFontSet == NO)
