@@ -39,6 +39,7 @@
 typedef struct _win_intern {
   BOOL useHDC;
   HDC hdc; 
+  HGDIOBJ old;
   MINMAXINFO minmax;
 } WIN_INTERN;
 

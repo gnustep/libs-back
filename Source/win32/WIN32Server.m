@@ -317,25 +317,29 @@ DWORD windowStyleForGSStyle(int style)
 
   if (win->useHDC)
     {
+      HGDIOBJ old;
+
+      old = SelectObject(win->hdc, win->old);
+      DeleteObject(old);
       DeleteDC(win->hdc);
       win->hdc = NULL;
+      win->old = NULL;
+      win->useHDC = NO;
     }
 
   if (type == NSBackingStoreBuffered)
     {
       HDC hdc, hdc2;
       HBITMAP hbitmap;
-      HGDIOBJ old;
       RECT r;
 
       GetClientRect((HWND)winNum, &r);
       hdc = GetDC((HWND)winNum);
       hdc2 = CreateCompatibleDC(hdc);
       hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, r.bottom - r.top);
-      old = SelectObject(hdc2, hbitmap);
-      DeleteObject(old);
-
+      win->old = SelectObject(hdc2, hbitmap);
       win->hdc = hdc2;
+      win->useHDC = YES;
 
       ReleaseDC((HWND)winNum, hdc);
     }
@@ -412,14 +416,40 @@ DWORD windowStyleForGSStyle(int style)
 - (void) placewindow: (NSRect)frame : (int) winNum
 {
   RECT r;
+  RECT r2;
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
 
   r = GSScreenRectToMS(frame);
+  GetWindowRect((HWND)winNum, &r2);
 
   //NSLog(@"Placing at %d, %d, %d, %d", r.left, r.top, r.right - r.left, r.bottom - r.top);
   SetWindowPos((HWND)winNum, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top, 
 	       SWP_NOZORDER | SWP_NOREDRAW);
 
-
+  if ((win->useHDC) &&
+      (r.right - r.left != r2.right - r2.left) &&
+      (r.bottom - r.top != r2.bottom - r2.top))
+    {
+      HDC hdc, hdc2;
+      HBITMAP hbitmap;
+      HGDIOBJ old;
+      
+      //NSLog(@"Change backing store to %d %d", r.right - r.left, r.bottom - r.top);
+      old = SelectObject(win->hdc, win->old);
+      DeleteObject(old);
+      DeleteDC(win->hdc);
+      win->hdc = NULL;
+      win->old = NULL;
+      
+      GetClientRect((HWND)winNum, &r);
+      hdc = GetDC((HWND)winNum);
+      hdc2 = CreateCompatibleDC(hdc);
+      hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, r.bottom - r.top);
+      win->old = SelectObject(hdc2, hbitmap);
+      win->hdc = hdc2;
+      
+      ReleaseDC((HWND)winNum, hdc);
+    }
 }
 
 - (BOOL) findwindow: (NSPoint)loc : (int) op : (int) otherWin 
@@ -543,7 +573,7 @@ DWORD windowStyleForGSStyle(int style)
   return MSScreenPointToGS(p.x, p.y);
 }
 
-- (NSPoint) mouseLocationOnScreen: (int)screen window: (void *)win
+- (NSPoint) mouseLocationOnScreen: (int)screen window: (int *)win
 {
   return [self mouselocation];
 }
@@ -994,8 +1024,8 @@ invalidateWindow(HWND hwnd, RECT rect)
   NSRect r = MSWindowRectToGS((HWND)hwnd, rect);
 
   /*
-  NSLog(@"INvalidated window %d %@", hwnd, 
-	NSStringFromRect(MSWindowRectToGS((HWND)hwnd, rect)));
+  NSLog(@"Invalidated window %d %@ (%d, %d, %d, %d)", hwnd, 
+	    NSStringFromRect(r), rect.left, rect.top, rect.right, rect.bottom);
   */
   // Repaint the window's client area. 
   [[window contentView] setNeedsDisplayInRect: r];
@@ -1095,15 +1125,13 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 	    HDC hdc, hdc2;
 	    HBITMAP hbitmap;
 	    RECT r;
-	    HGDIOBJ old;
 
 	    GetClientRect((HWND)hwnd, &r);
 	    hdc = GetDC(hwnd);
 	    hdc2 = CreateCompatibleDC(hdc);
 	    hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, 
 					     r.bottom - r.top);
-	    old = SelectObject(hdc2, hbitmap);
-	    DeleteObject(old);
+	    win->old = SelectObject(hdc2, hbitmap);
 
 	    win->hdc = hdc2;
 	    win->useHDC = YES;
@@ -1124,25 +1152,8 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
       //NSLog(@"Got Message %s for %d", "WINDOWPOSCHANGED", hwnd);
       break;
     case WM_MOVE: 
-      {
-	NSPoint eventLocation = NSMakePoint(0,0);
-	int xPos = (int)(short) LOWORD(lParam);
-	int yPos = (int)(short) HIWORD(lParam);
-	NSPoint p;
-
-	p = MSWindowOriginToGS(hwnd, xPos, yPos);
-	//NSLog(@"Got Message %s for %d to %f, %f", "MOVE", hwnd, p.x, p.y);
-	ev = [NSEvent otherEventWithType: NSAppKitDefined
-		      location: eventLocation
-		      modifierFlags: 0
-		      timestamp: 0
-		      windowNumber: (int)hwnd
-		      context: GSCurrentContext()
-		      subtype: GSAppKitWindowMoved
-		      data1: p.x
-		      data2: p.y];
-	break;
-      }
+      //NSLog(@"Got Message %s for %d to %f, %f", "MOVE", hwnd, p.x, p.y);
+      break;
     case WM_MOVING: 
       //NSLog(@"Got Message %s for %d", "MOVING", hwnd);
       break;
@@ -1162,24 +1173,25 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 	RECT r;
 	WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
 	
-	// FIXME: We should check if the size really did change. And this should 
-	// be called on program size changes as well!
+	// FIXME: We should check if the size really did change.
 	if (win->useHDC)
 	  {
 	    HDC hdc, hdc2;
 	    HBITMAP hbitmap;
 	    HGDIOBJ old;
 
+	    old = SelectObject(win->hdc, win->old);
+	    DeleteObject(old);
 	    DeleteDC(win->hdc);
 	    win->hdc = NULL;
-	    
+	    win->old = NULL;
+
 	    GetClientRect((HWND)hwnd, &r);
+	    //NSLog(@"Change backing store to %d %d", r.right - r.left, r.bottom - r.top);
 	    hdc = GetDC((HWND)hwnd);
 	    hdc2 = CreateCompatibleDC(hdc);
 	    hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, r.bottom - r.top);
-	    old = SelectObject(hdc2, hbitmap);
-	    DeleteObject(old);
-	    //NSLog(@"Change backing store to %d %d", r.right - r.left, r.bottom - r.top);
+	    win->old = SelectObject(hdc2, hbitmap);
 	    win->hdc = hdc2;
 	    
 	    ReleaseDC((HWND)hwnd, hdc);
@@ -1319,7 +1331,13 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 	//NSLog(@"Got Message %s for %d", "DESTROY", hwnd);
 	
 	if (win->useHDC)
-	  DeleteDC(win->hdc);
+	  {
+	    HGDIOBJ old;
+	    
+	    old = SelectObject(win->hdc, win->old);
+	    DeleteObject(old);
+	    DeleteDC(win->hdc);
+	  }
 	objc_free(win);
 	break;
       }
