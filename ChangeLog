@@ -1,3 +1,8 @@
+2002-04-19  Richard Frith-Macdonald <rfm@gnu.org>
+
+        * Tools/gpbs.m: If given -NSHost specification for the current host,
+        ignore it and use the standard name.
+
 2002-04-15  Gregory John Casamento <greg_casamento@yahoo.com>
 	* configure.in: Added check to determine if libXft contains
 	XftDrawStringUtf8 which is used to draw unicode strings.  
