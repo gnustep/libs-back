@@ -143,18 +143,27 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   [super dealloc];
 }
 
-/** Returns an instance of a class which implements the NSDraggingInfo
-    protocol. */
-- (id <NSDraggingInfo>) dragInfo
+- (void) restrictWindow: (int)win toImage: (NSImage*)image
 {
-  [self subclassResponsibility: _cmd];
-  return nil;
+  //[self subclassResponsibility: _cmd];
 }
 
-- (BOOL) slideImage: (NSImage*)image from: (NSPoint)from to: (NSPoint)to
+- (int) findWindowAt: (NSPoint)screenLocation 
+           windowRef: (int*)windowRef 
+           excluding: (int)win
 {
-  [self subclassResponsibility: _cmd];
-  return NO;
+  HWND hwnd;
+  POINT p;
+
+  p = GSScreenPointToMS(screenLocation);
+  hwnd = WindowFromPoint(p);
+  if ((int)hwnd == win)
+    {
+      hwnd = GetWindow(hwnd, GW_HWNDNEXT);
+    }
+
+  *windowRef = (int)hwnd;
+  return (int)hwnd;
 }
 
 // FIXME: The following methods wont work for multiple screens

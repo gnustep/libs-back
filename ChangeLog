@@ -1,3 +1,8 @@
+2004-06-19  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m (-findWindowAt:windowRef:excluding:)
+	New method for D&D. (-dragInfo), (-slideImage:from:to:) Removed.
+
 2004-06-11  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.9.3
