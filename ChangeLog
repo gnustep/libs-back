@@ -1,3 +1,27 @@
+2002-10-08  Adam Fedor  <fedor@gnu.org>
+
+	* Update for front-end passing colorspaces and fonts
+	in overridable way.
+	* Headers/gsc/GSGStateOps.h: Update changed methods.
+	* Source/art/ARTContext.m: Font ivar is now a GSFontInfo
+	class, so use 'font' instead of '[font fontInfo]'.
+	* Source/gsc/GSContext.m (-GSSetFont): Idem.
+	(-GSSetFillColorspace:): Implement.
+	(-GSSetStrokeColorspace:): Idem.
+	(-GSSetFillColor:): Idem.
+	(-GSSetStrokeColor:): Idem.
+	* Source/gsc/GSGState.m: Update font ivar handling.
+	* Source/gsc/GSStreamContext.m: Idem.
+	* Source/winlib/WIN32GState.m: Idem.
+	* Source/xlib/XGGState.m: Idem.
+
+	* Window focus fixes
+	* Source/x11/XGServerEvent.m ([XGServer
+	-receivedEvent:type:extra:forMode:](ClientMessage/TAKE_FOCUS)):
+	Use given window as focus window, not one under mouse.
+	* Source/x11/XGServerWindow.m ([XGServer -setinputfocus:]): Don't
+	reset focus if we already requested it on this window.
+	
 2002-09-28 22:04  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Add .font package handling again.

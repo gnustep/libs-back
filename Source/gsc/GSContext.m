@@ -255,24 +255,24 @@ static unsigned int unique_index = 0;
   [gstate DPSsetrgbcolor:r :g :b];
 }
 
-- (void) GSSetFillColorspace: (NSDictionary *)dict
+- (void) GSSetFillColorspace: (void *)spaceref
 {
-  [self notImplemented: _cmd];
+  [gstate GSSetFillColorspace: spaceref];
 }
 
-- (void) GSSetStrokeColorspace: (NSDictionary *)dict
+- (void) GSSetStrokeColorspace: (void *)spaceref
 {
-  [self notImplemented: _cmd];
+  [gstate GSSetStrokeColorspace: spaceref];
 }
 
-- (void) GSSetFillColor: (float *)values
+- (void) GSSetFillColor: (const float *)values
 {
-  [self notImplemented: _cmd];
+  [gstate GSSetFillColor: values];
 }
 
-- (void) GSSetStrokeColor: (float *)values
+- (void) GSSetStrokeColor: (const float *)values
 {
-  [self notImplemented: _cmd];
+  [gstate GSSetStrokeColor: values];
 }
 
 /* ----------------------------------------------------------------------- */
@@ -323,9 +323,9 @@ static unsigned int unique_index = 0;
   [gstate GSSetCharacterSpacing: extra];
 }
 
-- (void) GSSetFont: (NSFont*)font
+- (void) GSSetFont: (void *)fontref
 {
-  [gstate GSSetFont: font];
+  [gstate GSSetFont: fontref];
 }
 
 - (void) GSSetFontSize: (float)size

@@ -27,6 +27,7 @@
 #include "gsc/GSContext.h"
 #include "gsc/GSStreamContext.h"
 #include "gsc/GSStreamGState.h"
+#include <AppKit/GSFontInfo.h>
 #include <Foundation/NSArray.h>
 #include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>
@@ -121,12 +122,12 @@
   fprintf(gstream, "%g %g %g setrgbcolor\n", r, g, b);
 }
 
-- (void) GSSetFillColor: (float *)values
+- (void) GSSetFillColor: (const float *)values
 {
   [self notImplemented: _cmd];
 }
 
-- (void) GSSetStrokeColor: (float *)values
+- (void) GSSetStrokeColor: (const float *)values
 {
   [self notImplemented: _cmd];
 }
@@ -191,10 +192,10 @@
   [self notImplemented: _cmd];
 }
 
-- (void) GSSetFont: (NSFont*)font
+- (void) GSSetFont: (void *)fontref
 {
-  const float *m = [font matrix];
-  fprintf(gstream, "/%s findfont ", [[font fontName] cString]);
+  const float *m = [(GSFontInfo *)fontref matrix];
+  fprintf(gstream, "/%s findfont ", [[(GSFontInfo *)fontref fontName] cString]);
   fprintf(gstream, "[%g %g %g %g %g %g] ", m[0], m[1], m[2], m[3], m[4], m[5]);
   fprintf(gstream, " makefont setfont\n");
 }

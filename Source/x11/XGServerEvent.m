@@ -493,37 +493,10 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 		else if (xEvent.xclient.data.l[0]
 			 == generic.take_focus_atom)
 		  {
-		    int win;
-		    NSPoint p;
-		    gswindow_device_t *w = 0;
-
 		    /*
 		     * WM is asking us to take the keyboard focus
 		     */
-		    NSDebugLLog(@"Focus", @"check focus: %d",
-				cWin->number);
-		    p = [self mouseLocationOnScreen: -1 window:(void *)&win];
-		    if (win == 0)
-		      {
-			/*
-			 * If we can't locate the window under the mouse,
-			 * assume an existing window.
-			 */
-			nswin = [NSApp keyWindow];
-			if (nswin == nil)
-			  {
-			    nswin = [NSApp mainWindow];
-			  }
-			if (nswin != nil)
-			  {
-			    win = [nswin windowNumber];
-			  }
-		      }
-		    w = [XGServer _windowWithTag: win];
-		    if (w != 0)
-		      {
-			cWin = w;
-		      }
+		    NSDebugLLog(@"Focus", @"check focus: %d", cWin->number);
 		    nswin = [NSApp keyWindow];
 		    if (nswin == nil
 			|| [nswin windowNumber] != cWin->number)
@@ -541,8 +514,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 				     data1: 0
 				     data2: 0];
 		      }
-		    if (nswin != nil
-			&& [nswin windowNumber] == cWin->number)
+		    else if (generic.desiredFocusWindow != 0)
 		      {
 			/*
 			 * We reassert our desire to have input
@@ -929,6 +901,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	      {
 		nswin = GSWindowWithNumber(cWin->number);
 	      }
+	    NSDebugLLog(@"Focus", @"Focus went to %p\n", nswin);
 	    if (nswin == nil)
 	      {
 		[NSApp deactivate]; 

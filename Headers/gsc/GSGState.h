@@ -54,7 +54,7 @@ typedef enum {
   NSAffineTransform *ctm;
   NSPoint offset;               /* Offset from Drawable origin */
   NSBezierPath *path;	        /* Current path */
-  NSFont *font;                 /* Current font */
+  GSFontInfo *font;             /* Current font reference */
   NSColor *fillColorS;          /* Color(space) used for fill drawing */
   NSColor *strokeColorS;        /* Color(space) used for stroke drawing */
   device_color_t fillColor;     /* fill color */

@@ -710,7 +710,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
     } 
 
   p = GSWindowPointToMS(self, current);
-  [(WIN32FontInfo*)[font fontInfo] draw: s lenght:  strlen(s)
+  [(WIN32FontInfo*)font draw: s lenght:  strlen(s)
 		   onDC: hDC at: p];
   [self releaseHDC: hDC];
 }
