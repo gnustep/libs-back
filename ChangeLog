@@ -1,5 +1,12 @@
 2003-01-23  Adam Fedor  <fedor@gnu.org>
 
+	* Headers/xlib/GSXftFontInfo.h: Renamed from XftFontInfo
+	* Source/xlib/GSXftFontInfo.m: Idem.
+	* Source/xlib/GNUmakefile: Update for change.
+	* Source/xlib/XGContext.m: Idem.
+	
+2003-01-23  Adam Fedor  <fedor@gnu.org>
+
 	* Documentation/Back: Some documentation.
 
 2003-01-20  Adam Fedor  <fedor@gnu.org>

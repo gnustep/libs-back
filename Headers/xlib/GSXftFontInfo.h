@@ -1,5 +1,5 @@
 /*
-   XftFontInfo
+   GSXftFontInfo
 
    NSFont helper for GNUstep GUI X/GPS Backend
 
@@ -34,7 +34,7 @@
 
 #include <AppKit/GSFontInfo.h>
 
-@interface XftFontInfo : GSFontInfo
+@interface GSXftFontInfo : GSFontInfo
 {
   XftFont *font_info;
 }

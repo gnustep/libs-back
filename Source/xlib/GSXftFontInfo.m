@@ -1,5 +1,5 @@
 /*
-   XftFontInfo
+   GSXftFontInfo
 
    NSFont helper for GNUstep GUI X/GPS Backend
 
@@ -37,21 +37,21 @@
 // For the encoding functions
 #include <base/Unicode.h>
 
-#include "xlib/XftFontInfo.h"
+#include "xlib/GSXftFontInfo.h"
 
 /*
  * class global dictionary of existing fonts
  */
 static NSMutableDictionary	*_globalFontDictionary = nil;
 
-@interface XftFontInfo (Private)
+@interface GSXftFontInfo (Private)
 
 - (BOOL) setupAttributes;
 - (XGlyphInfo *)xGlyphInfo: (NSGlyph) glyph;
 
 @end
 
-@implementation XftFontInfo
+@implementation GSXftFontInfo
 
 - initWithFontName: (NSString*)name matrix: (const float *)fmatrix
 {
@@ -305,7 +305,7 @@ static NSMutableDictionary	*_globalFontDictionary = nil;
 
 @end
 
-@implementation XftFontInfo (Private)
+@implementation GSXftFontInfo (Private)
 
 - (BOOL) setupAttributes
 {
