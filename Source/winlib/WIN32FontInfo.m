@@ -30,6 +30,9 @@
 
 #include "winlib/WIN32FontInfo.h"
 
+int win32_font_weight(LONG tmWeight);
+NSString *win32_font_family(NSString *fontName);
+
 @interface WIN32FontInfo (Private)
 - (BOOL) setupAttributes;
 @end
@@ -214,9 +217,12 @@
   NSRange range;
 
   //NSLog(@"Creating Font %@ of size %f", fontName, matrix[0]);
+  ASSIGN(familyName, win32_font_family(fontName));
   memset(&logfont, 0, sizeof(LOGFONT));
+  hdc = GetDC(NULL);
   // FIXME This hack gets the font size about right, but what is the real solution?
   logfont.lfHeight = (int)(matrix[0] * 4 / 3);
+  //logfont.lfHeight = -MulDiv(matrix[0], GetDeviceCaps(hdc, LOGPIXELSY), 72);
 
   range = [fontName rangeOfString: @"Bold"];
   if (range.length)
@@ -227,22 +233,21 @@
     logfont.lfItalic = 1; 
 
   logfont.lfQuality = ANTIALIASED_QUALITY;
-  strncpy(logfont.lfFaceName, [fontName cString], LF_FACESIZE);
+  strncpy(logfont.lfFaceName, [familyName cString], LF_FACESIZE);
   hFont = CreateFontIndirect(&logfont);
   if (!hFont)
     {
       NSLog(@"Could not create font %@", fontName);
+      ReleaseDC(NULL, hdc);
       return NO;
     }
 
-  hdc = GetDC(NULL);
   old = SelectObject(hdc, hFont);
   GetTextMetrics(hdc, &metric);
   SelectObject(hdc, old);
   ReleaseDC(NULL, hdc);
 
   // Fill the ivars
-  // NSAFMFamilyName
   isFixedPitch = TMPF_FIXED_PITCH & metric.tmPitchAndFamily;
   isBaseFont = NO;
   ascender = metric.tmAscent;
@@ -254,42 +259,9 @@
 			(float)metric.tmMaxCharWidth,
 			(float)metric.tmHeight);
 
-  // The MS names are a bit different from the NS ones!
-  switch (metric.tmWeight)
-    {
-      case FW_THIN:
-	weight = 1;
-	break;
-      case FW_EXTRALIGHT:
-	weight = 2;
-	break;
-      case FW_LIGHT:
-	weight = 3;
-	break;
-      case FW_REGULAR:
-	weight = 5;
-	break;
-      case FW_MEDIUM:
-	weight = 6;
-	break;
-      case FW_DEMIBOLD:
-	weight = 7;
-	break;
-      case FW_BOLD:
-	weight = 9;
-	break;
-      case FW_EXTRABOLD:
-	weight = 10;
-	break;
-      case FW_BLACK:
-	weight = 12;
-	break;
-    default:
-	// Try to map the range 0 to 1000 into 1 to 14.
-	weight = (int)(metric.tmWeight * 14 / 1000);
-	break;
-    }
+  weight = win32_font_weight(metric.tmWeight);
 
+  traits = 0;
   if (weight >= 9)
     traits |= NSBoldFontMask;
   else
@@ -300,7 +272,7 @@
   else
     traits |= NSUnitalicFontMask;
 
-  // Should come from metric.tmCharSet
+  // FIXME Should come from metric.tmCharSet
   mostCompatibleStringEncoding = NSISOLatin1StringEncoding;
 
   return YES;
