@@ -118,11 +118,11 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   [self setupRunLoopInputSourcesForMode: NSModalPanelRunLoopMode]; 
   [self setupRunLoopInputSourcesForMode: NSEventTrackingRunLoopMode]; 
 
-  flags.useWMTaskbar = YES;
+  flags.useWMTaskBar = YES;
   if ([defs stringForKey: @"GSUseWMTaskbar"] != nil
     && [defs boolForKey: @"GSUseWMTaskbar"] == NO)
     {
-      flags.useWMTaskbar = NO;
+      flags.useWMTaskBar = NO;
     }
 
   return self;
