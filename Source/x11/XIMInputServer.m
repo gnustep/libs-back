@@ -35,6 +35,7 @@
 #include "x11/XGInputServer.h"
 #include <X11/Xlocale.h>
 
+
 @interface XIMInputServer (XIMPrivate)
 - (BOOL) ximInit: (Display *)dpy;
 - (void) ximClose;
@@ -109,6 +110,7 @@
   DESTROY(server_name);
   DESTROY(dbuf);
   [self ximClose];
+  [super dealloc];
 }
 
 /* ----------------------------------------------------------------------
@@ -277,7 +279,17 @@
 
 - (void) ximClose
 {
+  int i;
+  for (i=0;i<num_xics;i++)
+    {
+      XDestroyIC(xics[i]);
+    }
+  free(xics);
+  num_xics=0;
+  xics=NULL;
+
   NSDebugLLog(@"XIM", @"Closed XIM\n");
+
   if (xim)
     XCloseIM(xim);
   xim=NULL;
@@ -316,6 +328,9 @@
 		  xim_style, NULL);
   if (xic==NULL)
     NSDebugLLog(@"XIM", @"Can't create the input context.\n");
+
+  xics = realloc(xics, sizeof(XIC) * (num_xics + 1));
+  xics[num_xics++] = xic;
   return xic;
 }
 
@@ -330,6 +345,21 @@
 
 - (void) ximCloseIC: (XIC)xic
 {
+  int i;
+  for (i = 0; i < num_xics; i++)
+    {
+      if (xics[i] == xic)
+        break;
+    }
+  if (i == num_xics)
+    {
+      NSLog(@"internal error in ximCloseIC: can't find XIC in list");
+      abort();
+    }
+  for (i++; i < num_xics; i++)
+    xics[i - 1] = xics[i];
+  num_xics--;
+
   XDestroyIC(xic);
 }
 
