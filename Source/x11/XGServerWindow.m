@@ -1534,10 +1534,27 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 
   NSDebugLLog(@"XGTrace", @"DPSorderwindow: %d : %d : %d",op,otherWin,winNum);
   level = window->win_attrs.window_level;
-  if (otherWin != 0)
+  if (otherWin > 0)
     {
       other = WINDOW_WITH_TAG(otherWin);
-      level = other->win_attrs.window_level;
+      if (other)
+	level = other->win_attrs.window_level;
+    }
+  else if (otherWin == 0 && op == NSWindowAbove)
+    {
+      /* Don't let the window go in front of the current key/main window.  */
+      /* FIXME: Don't know how to get the current main window.  */
+      Window keywin;
+      int revert, status;
+      status = XGetInputFocus(dpy, &keywin, &revert);
+      other = NULL;
+      if (status == True)
+	{
+	  /* Alloc a temporary window structure */
+	  other = GSAutoreleasedBuffer(sizeof(gswindow_device_t));
+	  other->ident = keywin;
+	  op = NSWindowBelow;
+	}
     }
   else
     {
