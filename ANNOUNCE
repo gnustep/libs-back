@@ -1,7 +1,7 @@
 ANNOUNCE
 ********
 
-This is version 0.9.0 of the GNUstep GUI Backend (`gnustep-back').
+This is version 0.9.1 of the GNUstep GUI Backend (`gnustep-back').
 
 What is the GNUstep GUI Backend?
 ================================
@@ -20,16 +20,17 @@ easily ported to other display systems.
 Window's Systems. It works via a DPS emulation engine to emulate the
 DPS functions required by the front-end system.
 
-Noteworthy changes in version `0.9.0'
+Noteworthy changes in version `0.9.1'
 =====================================
 
-   Some more improvements to copy/paste support following ICCCM
-specifications (like COMPOUND_TEXT support).
+   Color on 8 bit displays works correctly now. WindowMaker properties
+are always set now in case another manager is emulating WindowMaker
+styles.
 
 Where can you get it?  How can you compile it?
 ==============================================
 
-   The gstep-back-0.9.0.tar.gz distribution file has been placed on
+   The gstep-back-0.9.1.tar.gz distribution file has been placed on
 `ftp.gnustep.org' in `pub/gnustep/core'.
 
 Where do I send bug reports?
