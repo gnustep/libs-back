@@ -1,3 +1,8 @@
+2002-10-15 01:37  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Tools/GNUmakefile: Use BUILD_SERVER to decide whether to build
+	X specific parts of gpbs or not.
+
 2002-10-13  Adam Fedor  <fedor@gnu.org>
 
 	* Version: 0.8.2.

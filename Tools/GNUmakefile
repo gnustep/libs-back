@@ -41,6 +41,9 @@ font_cacher_OBJC_FILES = font_cacher.m
 
 ifeq ($(BUILD_GRAPHICS),xlib)
 TOOL_NAME += font_cacher
+endif
+
+ifeq ($(BUILD_SERVER),x11)
 gpbs_OBJC_FILES += xpbs.m 
 ifeq ($(BACKEND_BUNDLE),yes)
 font_cacher_OBJC_FILES += XGCommonFont.m
