@@ -7,6 +7,10 @@
 	_bitmap_combine_alpha, _pixmap_read_alpha): Add 8 bit case.
 	(patch from Paul Secchia <paul@worldnet.att.net>).
 
+	* Documentation/Back/DefaultsSummary.gsdoc: Document it.
+
+	* Documentation/news.texi: Update for new release.
+
 2004-09-05 00:05  Alexander Malmberg <alexander@malmberg.org>
 
 	* Tools/GNUmakefile.preamble: Compile with -Wall.
