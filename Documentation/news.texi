@@ -7,6 +7,21 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.9.5}
+
+@itemize @bullet
+@item Fast drawing on 8 bit displays was added (although it might only
+speed things up on old X11 servers and/or remote servers).
+@item GNUstep modifier keys are mapped to KeySyms instead of KeyCodes
+@item Added a Cairo backend, although it is probably non-functional. Anyone
+is invited to contribute to making it work.
+@item art backend supports reading from a window.
+@item Add internal window decoration handling.
+@end itemize
+
+@c ====================================================================
+@c Keep the next line just below the list of changes in most recent version.
+@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.9.3}
 
@@ -15,10 +30,6 @@
 @item art backend glyph drawing with alpha enhancements.
 @item libwraster is no longer checked for - image functions now in frontend
 @end itemize
-
-@c ====================================================================
-@c Keep the next line just below the list of changes in most recent version.
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.9.2}
 

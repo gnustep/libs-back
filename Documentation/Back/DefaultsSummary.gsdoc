@@ -130,6 +130,15 @@
           recommended anyway, particularly on fast systems.
           </p>
 	  </desc>
+	  <term>Fast Drawing on 8-bit Displays</term>
+	  <desc>
+          <p> [X11-based backends only]
+	  This is not a user default, but if you are using an 8-bit display
+	  and you define the standard X11 <code>BEST</code> colormap (via
+	  <code>xstdcmap -best</code>), then GNUstep will use this colormap
+	  and enable faster drawing onto 8-bit displays.
+          </p>
+	  </desc>
 	  <term>Keyboard Modifiers</term>
 	  <desc>
           <p>
