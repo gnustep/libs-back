@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<!DOCTYPE gsdoc PUBLIC "-//GNUstep//DTD gsdoc 0.6.7//EN" "http://www.gnustep.org/gsdoc-0_7_0.xml">
+<gsdoc base="Back">
+  <head>
+    <title>Back</title>
+    <author name="Adam Fedor">
+      <email address="fedor@gnu.org"/>
+      <url url="http://www.gnustep.org/developers/whoiswho.html"/>
+    </author>
+    <version>$Revision$</version>
+    <date>$Date$</date>
+  </head>
+  <body>
+    <chapter>
+      <heading>Back</heading>
+      <p>
+        Documentation for understanding and writting GUI backends.
+      </p>
+      <list>
+        <item><uref url="WindowFocus.html">Window Focus</uref></item>
+      </list>
+    </chapter>
+  </body>
+</gsdoc>
