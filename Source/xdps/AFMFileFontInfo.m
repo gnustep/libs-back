@@ -235,6 +235,7 @@ afmEnumerator (char* resourceType, char* resourceName, char* resourceFile,
   /*
    * Set the font information in instance variables and in the AFM dictionary.
    */
+  fontDictionary = [[NSMutableDictionary alloc] initWithCapacity: 25];
 
   /* The font may actually be a GS alias, so do not set the fontName
    * field. */
