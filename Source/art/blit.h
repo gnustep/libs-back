@@ -22,14 +22,8 @@ copyright 2002 Alexander Malmberg <alexander@malmberg.org>
 #define blit_h
 
 
-/* TODO!!! */
-#include "config.h"
-#if BUILD_SERVER == SERVER_rds
-#define RDS
-#endif
-
-
 #include <libart_lgpl/libart.h>
+
 
 /** Information about how we draw stuff **/
 
