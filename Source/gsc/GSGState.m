@@ -788,6 +788,8 @@
   path = [NSBezierPath bezierPathWithRect: rect];
   [self DPSclip];
   path = oldPath;
+  if (path)
+    [path removeAllPoints];
 }
 
 - (void) DPSrectfill: (float)x : (float)y : (float)w : (float)h
