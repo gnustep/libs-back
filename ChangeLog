@@ -1,3 +1,8 @@
+2002-09-23 19:30  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/art/ftfont.m (-initWithFontName:matrix:): Retain
+	familyName correctly.
+
 2002-09-21 12:14  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Headers/x11/XWindowBuffer.h, Source/x11/XWindowBuffer.m

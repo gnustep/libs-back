@@ -594,7 +594,7 @@ very expensive
 
 + (void)initializeBackend
 {
-	NSLog(@"Initializing libart/freetype backend");
+	NSDebugLLog(@"back-art",@"Initializing libart/freetype backend");
 
 	[NSGraphicsContext setDefaultContextClass: [ARTContext class]];
 

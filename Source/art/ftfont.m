@@ -513,7 +513,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   traits = font_entry->traits;
 
   fontName = [name copy];
-  familyName = face_info->familyName;
+  familyName = [face_info->familyName copy];
   memcpy(matrix, fmatrix, sizeof(matrix));
 
   /* TODO: somehow make gnustep-gui send unicode our way. utf8? ugly, but it works */
