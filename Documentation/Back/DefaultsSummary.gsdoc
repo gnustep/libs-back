@@ -83,6 +83,15 @@
           problem with the X-Server.
           </p>
 	  </desc>
+	  <term>GSXEnableFontSet</term>
+	  <desc>
+          <p> A string value which defaults to <code>NO</code>. If set to
+	  <code>YES</code>, then the backend font classes will support
+	  full multi-byte/unicode characters. This is useful for using
+	  many East Asian languages. However, the respose of the GUI is
+	  somwhat slower when this is enabled.
+          </p>
+	  </desc>
 	  <term>GSXIMInputMethodStyle</term>
 	  <desc>
           <p> A string value used to specify the XIM input method for
