@@ -63,7 +63,8 @@ LDFLAGS="$LDFLAGS -L$GNUSTEP_LDIR/$LIBRARY_COMBO -L$GNUSTEP_LDIR"
 # Add target OS directories as necessary
 #--------------------------------------------------------------------
 case "$target_os" in
-  freebsd*)   CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
+  freebsd* | openbsd* )   
+	      CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
               LDFLAGS="$LDFLAGS -L/usr/pkg/lib";;
   netbsd*)    CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
               LDFLAGS="$LDFLAGS -L/usr/pkg/lib";;
