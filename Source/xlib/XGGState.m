@@ -1423,6 +1423,13 @@ typedef enum {
   char dash_list[size];
   int i;
 
+  if ((pat == NULL) || (size == 0))
+    {
+      gcv.line_style = LineSolid;
+      [self setGCValues: gcv withMask: GCLineStyle];
+      return;
+    }
+
   gcv.line_style = LineOnOffDash;
   [self setGCValues: gcv withMask: GCLineStyle];
 
