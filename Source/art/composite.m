@@ -674,6 +674,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
 
 	  c.dst += x0 * DI.bytes_per_pixel;
 	  c.dsta += x0;
+	  /* TODO: update c.dst and c.dsta properly when x1==0 */
 
 	  if (x1)
 	    {

@@ -1136,7 +1136,7 @@ static void clip_svp_callback(void *data, int y, int start,
   [self _stroke: vp : YES];
 }
 
-- (void) DPSstroke;
+- (void) DPSstroke
 {
 /* TODO: Resolve line-width and dash scaling issues. The way this is
 currently done is the most obvious libart approach:
