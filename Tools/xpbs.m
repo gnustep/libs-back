@@ -30,6 +30,10 @@
 #include <X11/Xutil.h>
 #include <x11/xdnd.h>
 
+#ifndef X_HAVE_UTF8_STRING
+#warning "XFRee86 UTF8 extension not used: gpbs supports ISO Latin 1 characters only"
+#endif
+
 static Atom	osTypeToX(NSString *t);
 static NSString	*xTypeToOs(Atom t);
 
@@ -51,7 +55,10 @@ static char* atom_names[] = {
   "USER",
   "TEXT",
   "NULL",
-  "FILE_NAME"
+  "FILE_NAME",
+#ifdef X_HAVE_UTF8_STRING
+  "UTF8_STRING"
+#endif
 };
 static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 
@@ -74,6 +81,9 @@ static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 #define XG_TEXT                 atoms[12]
 #define XG_NULL                 atoms[13]
 #define XG_FILE_NAME		atoms[14]
+#ifdef X_HAVE_UTF8_STRING
+#define XG_UTF8_STRING		atoms[15]
+#endif
 
 
 
@@ -81,7 +91,11 @@ static Atom
 osTypeToX(NSString *t)
 {
   if ([t isEqualToString: NSStringPboardType] == YES)
+#ifdef X_HAVE_UTF8_STRING
+    return XG_UTF8_STRING;
+#else
     return XA_STRING;
+#endif
   else if ([t isEqualToString: NSColorPboardType] == YES)
     return XG_NULL;
   else if ([t isEqualToString: NSFileContentsPboardType] == YES)
@@ -113,7 +127,11 @@ osTypeToX(NSString *t)
 static NSString*
 xTypeToOs(Atom t)
 {
+#ifdef X_HAVE_UTF8_STRING
+  if (t == XG_UTF8_STRING)
+#else
   if (t == XA_STRING)
+#endif
     return NSStringPboardType;
   else if (t == XG_TEXT)
     return NSStringPboardType;
@@ -158,92 +176,6 @@ static Bool xAppendProperty(Display* display,
     }
 
   return True;
-}
-
-// This never gets called! 
-static unsigned char*
-xConvertSelection(Display* display,
-		Window window,
-		Atom xTarget,
-		char* program,
-		char* text_data,
-		Atom* new_target,
-		int* format,
-		int* number_items)
-{
-  unsigned char	*data = NULL;
-  int		length;
-  char		*user_name;
-
-  *number_items = 0;
-  *format = 32;			// In virtually all cases, format is 32
-
-  if ((xTarget == XA_STRING) || (xTarget == XG_TEXT))
-    {
-      length = strlen(text_data);
-      data = (unsigned char*) malloc(length + 1);
-
-      if (data != NULL)
-	strcpy(data, text_data);
-
-      *format = 8; 		// Exception to format rule
-      *number_items = length;
-    }
-  else if (xTarget == XG_TIMESTAMP)
-    {
-      length = sizeof(int);
-      data = (unsigned char*) malloc( length );
-      *number_items = 1;
-    }
-  else if (xTarget == XG_CLIENT_WINDOW)
-    {
-      length = sizeof(Window);
-      data = (unsigned char*) malloc( length );
-      *number_items = 1;
-    }
-  else if (xTarget == XG_LENGTH)
-    {
-      length = sizeof(int);
-      data = (unsigned char*) malloc( length );
-      *number_items = 1;
-    }
-  else if (xTarget == XG_NAME)
-    {
-      length = strlen(program) + 1;
-      data = (unsigned char*) malloc( length );
-      strcpy(data, program);
-      *number_items = length;
-    }
-  else if (xTarget == XG_USER)
-    {
-      user_name = getenv("USER");
-      length = strlen(user_name) + 1;
-      data = (unsigned char*) malloc(length);
-      strcpy(data, user_name);
-      *number_items = length;
-    }
-  else if ((xTarget == XG_HOSTNAME) || (xTarget == XG_HOST_NAME))
-    {
-      const char *host = [[[NSProcessInfo processInfo] hostName] cString];
-
-      length = strlen(host) + 1;
-      data = (unsigned char*) malloc(length);
-      strcpy(data, host);
-      *number_items = length;
-    }
-  else if (xTarget == XG_CHAR_POSITION)
-    {
-      length = sizeof(int) * 2;
-      data = (unsigned char*) malloc( length );
-      *number_items = 2;
-    }
-  else if (xTarget == XG_TARGETS)
-    {
-      length = sizeof(atoms);
-      data = (unsigned char*) malloc(length);
-    }
-
-  return data;
 }
 
 @interface	XPbOwner : NSObject
@@ -673,8 +605,13 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
 	   * Ask the X system to provide the pasteboard data in the
 	   * appropriate property of our application root window.
 	   */
+#ifdef X_HAVE_UTF8_STRING
+	  XConvertSelection(xDisplay, [self xPb], XG_UTF8_STRING,
+	    [self xPb], xAppWin, whenRequested);
+#else // X_HAVE_UTF8_STRING not defined
 	  XConvertSelection(xDisplay, [self xPb], XA_STRING,
 	    [self xPb], xAppWin, whenRequested);
+#endif // X_HAVE_UTF8_STRING not defined
 	  XFlush(xDisplay);
 
 	  /*
@@ -766,7 +703,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
   int		status;
   unsigned char	*data;
   Atom		actual_target;
+#ifdef X_HAVE_UTF8_STRING
+  Atom		new_target = XG_UTF8_STRING;
+#else // X_HAVE_UTF8_STRING not defined
   Atom		new_target = XA_STRING;
+#endif // X_HAVE_UTF8_STRING
   int		actual_format;
   unsigned long	bytes_remaining;
   unsigned long	number_items;
@@ -799,6 +740,22 @@ xErrorHandler(Display *d, XErrorEvent *e)
 // Convert data to text string.
 // string = PropertyToString(xDisplay,new_target,number_items,(char*)data);
 
+#ifdef X_HAVE_UTF8_STRING
+      if (actual_target == XG_UTF8_STRING)
+	{
+	  NSData	*d;
+	  NSString	*s;
+
+	  d = [[NSData alloc] initWithBytes: (void *)data
+	                             length: number_items];
+	  s = [[NSString alloc] initWithData: d
+	                            encoding: NSUTF8StringEncoding];
+	  RELEASE(d);
+	  d = [NSSerializer serializePropertyList: s];
+	  RELEASE(s);
+	  [self setData: d];
+	}
+#else // X_HAVE_UTF8_STRING not defined
       if (new_target == XA_STRING)
 	{
 	  NSData	*d;
@@ -813,6 +770,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	  RELEASE(s);
 	  [self setData: d];
 	}
+#endif // X_HAVE_UTF8_STRING not defined
       else
 	{
 	  NSLog(@"Unsupported data type from X selection.");
@@ -964,7 +922,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	  if ([osType isEqualToString: NSStringPboardType])
 	    {
 	      NSString	*s = [_pb stringForType: NSStringPboardType];
+#ifdef X_HAVE_UTF8_STRING
+	      NSData *d = [s dataUsingEncoding: NSUTF8StringEncoding];
+#else // X_HAVE_UTF8_STRING not defined
 	      NSData *d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+#endif // X_HAVE_UTF8_STRING not defined
 
 	      format = 8;
 	      if (d != nil)
@@ -1056,7 +1018,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
        * The property doesn't exist - so we will be creating a new (empty)
        * property.
        */
+#ifdef X_HAVE_UTF8_STRING
+      actualType = XG_UTF8_STRING;
+#else // X_HAVE_UTF8_STRING not defined
       actualType = XA_STRING;
+#endif // X_HAVE_UTF8_STRING not defined
       actualFormat = 8;
     }
 

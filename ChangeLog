@@ -1,3 +1,7 @@
+2003-08-02  Kazunobu Kuriyama  <kazunobu.kuriyama@nifty.com>
+
+	* Tools/xpbs.m: Multi-lingual cut & paste support
+
 2003-08-02 13:29  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/x11/XGServer.m (-dealloc): Only use the rcontext freeing
