@@ -839,8 +839,26 @@
 
 - (void) GSSendBezierPath: (NSBezierPath *)newpath
 {
+  int count;
+  float pattern[10];
+  float phase;
+
+  // Appending to the current path is a lot faster than copying!
+  //ASSIGNCOPY(path, newpath);
   CHECK_PATH;
-  [path appendBezierPath: path];
+  [path removeAllPoints];
+  [path appendBezierPath: newpath];
+  [path transformUsingAffineTransform: ctm];
+
+  // The following should be moved down into the specific subclasses
+  [self DPSsetlinewidth: [newpath lineWidth]];
+  [self DPSsetlinejoin: [newpath lineJoinStyle]];
+  [self DPSsetlinecap: [newpath lineCapStyle]];
+  [self DPSsetmiterlimit: [newpath miterLimit]];
+  [self DPSsetflat: [newpath flatness]];
+
+  [newpath getLineDash: pattern count: &count phase: &phase];
+  [self DPSsetdash: pattern : count : phase];
 }
 
 - (void) GSRectClipList: (const NSRect *)rects : (int) count
