@@ -1924,7 +1924,7 @@ void artcontext_setup_draw_info(draw_info_t *di,
     *di = draw_infos[DI_FALLBACK];
   if (di->how == DI_FALLBACK)
     {
-      NSLog(@"Unrecognized color masks: %08x:%08x:%08x %i",
+      NSLog(@"gnustep-back(art): Unrecognized color masks: %08x:%08x:%08x %i",
 	    red_mask, green_mask, blue_mask, bpp);
       NSLog(@"Please report this along with details on your pixel format "
 	    @"(ie. the four numbers above) to bug-gnustep@gnu.org."
