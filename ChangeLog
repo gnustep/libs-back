@@ -1,3 +1,10 @@
+2002-06-15  Alexander Malmberg <alexander@malmberg.org>
+
+	* configure.ac, configure: Use libart2-config and freetype-config
+	to get libs and cflags for libart and freetype. Updated configure.
+	* Source/gsc/GSGState.m (-DPSinitgraphics): Set alpha _before_
+	calling -setColor:state:.
+
 2002-06-10  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.7.8

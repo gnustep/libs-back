@@ -361,14 +361,20 @@ save_header=${CPPFLAGS}
 save_libs=${LIBS}
 CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
 LIBS="${GRAPHIC_LIBS} ${LIBS}"
-LIBART_LIBS=
+
+LIBART_LIBS="`libart2-config --libs` `freetype-config --libs`"
+LIBART_CFLAGS="`libart2-config --cflags` `freetype-config --cflags`"
+
+CPPFLAGS="${CPPFLAGS} ${LIBART_CFLAGS}"
+LIBS="${LIBS} ${LIBART_LIBS}"
+
 AC_CHECK_LIB(art_lgpl_2, main, have_libart_lgpl_2=yes, have_libart_lgpl_2=no)
 if test "$have_libart_lgpl_2" = yes; then
-  LIBART_LIBS="$LIBART_LIBS -lart_lgpl_2"
+  AC_CHECK_HEADER(libart_lgpl/libart.h,have_libart_lgpl_2=yes, have_libart_lgpl_2=no)
 fi
 AC_CHECK_LIB(freetype, main, have_freetype=yes, have_freetype=no)
 if test "$have_freetype" = yes; then
-  LIBART_LIBS="$LIBART_LIBS -lfreetype"
+  AC_CHECK_HEADER(ft2build.h,have_freetype=yes, have_freetype=no)
 fi
 CPPFLAGS="${save_header}"
 LIBS="${save_libs}"
@@ -422,6 +428,14 @@ if test x"$BUILD_GRAPHICS" = "xxdps"; then
 elif test x"$BUILD_GRAPHICS" = "xart"; then
   BUILD_ART=yes
   GRAPHIC_LIBS="$LIBART_LIBS $GRAPHIC_LIBS"
+  GRAPHIC_CFLAGS="$LIBART_CFLAGS $GRAPHIC_CFLAGS"
+
+  if test "$have_freetype" = no; then
+    AC_MSG_ERROR([can't find freetype, required for graphics=art!])
+  fi
+  if test "$have_libart_lgpl_2" = no; then
+    AC_MSG_ERROR([can't find libart, required for graphics=art!])
+  fi
 fi
 
 AH_TOP([
