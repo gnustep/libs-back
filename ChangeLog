@@ -1,3 +1,9 @@
+2005-01-11 16:15  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/blit.m: Remove #warning:s.
+	* Source/art/blit_scrapheap.m: Add mmx implementation of 15/16bpp
+	blit_alpha_opaque.
+
 2005-01-11 16:01  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Copy old contents to ftfont-old.m and
