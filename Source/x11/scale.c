@@ -2,7 +2,7 @@
  * 
  *  Raster graphics library
  * 
- *  Copyright (c) 1997, 1988, 1999 Alfredo K. Kojima
+ *  Copyright (c) 1997-2002 Alfredo K. Kojima
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Library General Public
@@ -29,7 +29,7 @@
 #include <math.h>
 
 #ifndef PI
-#define PI 	3.141592
+#define PI 3.14159265358979323846
 #endif
 
 #include <assert.h>
@@ -412,6 +412,7 @@ CLIST	*contrib;		/* array of contribution lists */
 #define CLAMP(v,l,h)    ((v)<(l) ? (l) : (v) > (h) ? (h) : v)
 
 
+/* return of calloc is not checked if NULL in the function below! */
 RImage*
 RSmoothScaleImage(RImage *src, unsigned new_width, unsigned new_height)
 {    
@@ -616,7 +617,7 @@ RSmoothScaleImage(RImage *src, unsigned new_width, unsigned new_height)
     }
     free(contrib);
 
-    RDestroyImage(tmp);
+    RReleaseImage(tmp);
     
     return dst;
 }

@@ -2,7 +2,7 @@
  * 
  *  Raster graphics library
  * 
- *  Copyright (c) 1997, 1998, 1999 Alfredo K. Kojima
+ *  Copyright (c) 1997-2002 Alfredo K. Kojima
  * 
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Library General Public
@@ -32,8 +32,16 @@
 
 #include <math.h>
 
-#include "x11/wraster.h"
+#include "wrasterP.h"
+
+#ifdef HAVE_HERMES
+#include <Hermes/Hermes.h>
+#endif
+
 #include "x11/StdCmap.h"
+
+#include "x11/wraster.h"
+
 
 extern void _wraster_change_filter(int type);
 
@@ -53,7 +61,13 @@ static RContextAttributes DEFAULT_CONTEXT_ATTRIBS = {
 	RUseStdColormap
 };
 
-
+char**
+RSupportedFileFormats(void)
+{
+  static char *tmp[2];
+  tmp[0] = NULL;
+  return tmp;
+}
 
 /*
  * 
@@ -558,7 +572,6 @@ getColormap(RContext *context, int screen_number)
 			 &cmaps, &ncmaps, XA_RGB_DEFAULT_MAP)) { 
 	for (i=0; i<ncmaps; ++i) {
 	    if (cmaps[i].visualid == context->visual->visualid) {
-		puts("ACHOU");
 		cmap = cmaps[i].colormap;
 		break;
 	    }
@@ -632,6 +645,11 @@ RCreateContext(Display *dpy, int screen_number, RContextAttributes *attribs)
 	context->attribs->standard_colormap_mode = RUseStdColormap;
     }
 
+    if (!(context->attribs->flags & RC_ScalingFilter)) {
+	context->attribs->flags |= RC_ScalingFilter;
+	context->attribs->scaling_filter = RMitchellFilter;
+    }
+
     /* get configuration from environment variables */
     gatherconfig(context, screen_number);
 #ifndef BENCH
@@ -694,17 +712,66 @@ RCreateContext(Display *dpy, int screen_number, RContextAttributes *attribs)
     context->copy_gc = XCreateGC(dpy, context->drawable, GCFunction
 				 |GCGraphicsExposures, &gcv);
 
-    if (context->vclass == PseudoColor || context->vclass == StaticColor) {
+#ifdef HAVE_HERMES
+    context->hermes_data = malloc(sizeof(RHermesData));
+    if (!context->hermes_data) {
+	RErrorCode = RERR_NOMEMORY;
+	free(context);
+	return NULL;
+    }
+
+    Hermes_Init();
+
+    context->hermes_data->palette = Hermes_PaletteInstance();
+    {
+	unsigned long flags = 0;
 	
+	if (context->attribs->render_mode == RDitheredRendering) {
+	    flags |= HERMES_CONVERT_DITHER;
+	}
+	context->hermes_data->converter = Hermes_ConverterInstance(flags);
+    }
+#endif
+    
+    if (context->vclass == PseudoColor || context->vclass == StaticColor) {
 	if (!setupPseudoColorColormap(context)) {
+	    free(context);
 	    return NULL;
 	}
-    
+#ifdef HAVE_HERMES
+	{
+	    int32 palette[256];
+	    int i;
+
+	    for (i = 0; i < context->ncolors; i++) {
+		palette[i] = ((context->colors[i].red >> 8) << 16) ||
+		    ((context->colors[i].green >> 8) << 8) ||
+		    ((context->colors[i].blue >> 8));
+	    }
+	    
+	    Hermes_PaletteSet(context->hermes_data->palette, palette);
+	}			  
+#endif
     } else if (context->vclass == GrayScale || context->vclass == StaticGray) {
 	context->colors = allocateGrayScale(context);
 	if (!context->colors) {
+	    free(context);
 	    return NULL;
 	}
+#ifdef HAVE_HERMES
+	{
+	    int32 palette[256];
+	    int i;
+
+	    for (i = 0; i < context->ncolors; i++) {
+		palette[i] = ((context->colors[i].red >> 8) << 16) ||
+		    ((context->colors[i].green >> 8) << 8) ||
+		    ((context->colors[i].blue >> 8));
+	    }
+	    
+	    Hermes_PaletteSet(context->hermes_data->palette, palette);
+	}			  
+#endif	
     } else if (context->vclass == TrueColor) {
     	/* calc offsets to create a TrueColor pixel */
 	context->red_offset = count_offset(context->visual->red_mask);
@@ -714,6 +781,10 @@ RCreateContext(Display *dpy, int screen_number, RContextAttributes *attribs)
 	if (context->depth >= 24)
 	    context->attribs->render_mode = RBestMatchRendering;
     }
+
+#ifdef HAVE_HERMES
+    
+#endif
     
     /* check avaiability of MIT-SHM */
 #ifdef XSHM

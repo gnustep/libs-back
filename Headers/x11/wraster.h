@@ -1,7 +1,7 @@
 /*
  *  Raster graphics library
  * 
- *  Copyright (c) 1997 ~ 2000 Alfredo K. Kojima
+ *  Copyright (c) 1997-2002 Alfredo K. Kojima
  * 
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Library General Public
@@ -39,8 +39,8 @@
 #define RLRASTER_H_
 
 
-/* version of the header for the library: 0.20 */
-#define WRASTER_HEADER_VERSION	20
+/* version of the header for the library: 0.21 */
+#define WRASTER_HEADER_VERSION	21
 
 
 #include <X11/Xlib.h>
@@ -148,6 +148,8 @@ typedef struct RContext {
 	unsigned int use_shared_pixmap:1;
 	unsigned int optimize_for_speed:1;
     } flags;
+    
+    struct RHermesData *hermes_data;   /* handle for Hermes stuff */
 } RContext;
 
 
@@ -189,10 +191,11 @@ enum RImageFormat {
  * internal 24bit+alpha image representation
  */
 typedef struct RImage {
-    unsigned char *data;	       /* image data RGBA or RGB */
-    unsigned width, height;	       /* size of the image */
+    unsigned char *data;       /* image data RGBA or RGB */
+    int width, height;	       /* size of the image */
     enum RImageFormat format;
-    RColor background;		       /* background color */
+    RColor background;	       /* background color */
+    int refCount;
 } RImage;
 
 
@@ -320,7 +323,18 @@ RImage *RCreateImageFromDrawable(RContext *context, Drawable drawable,
 
 RImage *RLoadImage(RContext *context, char *file, int index);
 
+RImage* RRetainImage(RImage *image);
 
+void RReleaseImage(RImage *image);
+
+/* Obsoleted function. Use RReleaseImage() instead. This was kept only to
+ * allow a smoother transition and to avoid breaking existing programs, but
+ * it will be removed in a future release. Right now is just an alias to
+ * RReleaseImage(). Do _NOT_ use RDestroyImage() anymore in your programs.
+ * Being an alias to RReleaseImage() this function no longer actually
+ * destroys the image, unless the image is no longer retained in some other
+ * place.
+ */
 void RDestroyImage(RImage *image);
 
 RImage *RGetImageFromXPMData(RContext *context, char **xpmData);
@@ -417,6 +431,10 @@ RImage *RRenderGradient(unsigned width, unsigned height, RColor *from,
 RImage *RRenderMultiGradient(unsigned width, unsigned height, RColor **colors, 
 			     int style);
 
+
+RImage *RRenderInterwovenGradient(unsigned width, unsigned height,
+				  RColor colors1[2], int thickness1,
+				  RColor colors2[2], int thickness2);
 
 
 /*

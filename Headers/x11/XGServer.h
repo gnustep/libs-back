@@ -81,4 +81,19 @@ typedef enum {
 - (NSRect) _XFrameToOSFrame: (NSRect)x for: (void*)window;
 @end
 
+// Public interface for the input methods.  
+@interface XGServer (InputMethod)
+- (NSString *) inputMethodStyle;
+- (NSString *) fontSize: (int *)size;
+- (BOOL) clientWindowRect: (NSRect *)rect;
+
+- (BOOL) statusArea: (NSRect *)rect;
+- (BOOL) preeditArea: (NSRect *)rect;
+- (BOOL) preeditSpot: (NSPoint *)p;
+
+- (BOOL) setStatusArea: (NSRect *)rect;
+- (BOOL) setPreeditArea: (NSRect *)rect;
+- (BOOL) setPreeditSpot: (NSPoint *)p;
+@end
+
 #endif /* _XGServer_h_INCLUDE */
