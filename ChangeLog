@@ -1,3 +1,8 @@
+2003-09-15  Adam Fedor  <fedor@gnu.org>
+
+	* Source/gsc/GSGState.m ([GSGState -deepen]): Typo fix - copy
+	textCtm (reported by Banlu Kemiyatorn <id@project-ile.net>).
+
 2003-09-09  Adam Fedor  <fedor@gnu.org>
 
 	* Source/gsc/GSContext.m (-DPSsetgstate:): Copy gstate so we

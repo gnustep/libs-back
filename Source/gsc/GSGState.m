@@ -100,7 +100,7 @@
     self->path = [path copyWithZone: zone];
 
   self->ctm     = [ctm copyWithZone: zone];
-  self->textCtm = [ctm copyWithZone: zone];
+  self->textCtm = [textCtm copyWithZone: zone];
 
   // Just retain the other objects
   if (font != nil)
