@@ -996,18 +996,19 @@ xErrorHandler(Display *d, XErrorEvent *e)
       int	(*oldHandler)(Display*, XErrorEvent*);
       int	mode = PropModeReplace;
       int	pos = 0;
+      int	maxItems = 4096 * 8 / format;
 
       appendFailure = NO;
       oldHandler = XSetErrorHandler(xErrorHandler);
 
       while (appendFailure == NO && pos < numItems)
 	{
-	  int	maxItems = 4096 * 8 / format;
-
 	  if (pos + maxItems > numItems)
-	    maxItems = numItems - pos;
+	    {
+	      maxItems = numItems - pos;
+	    }
 	  XChangeProperty(xDisplay, window, property,
-	    xType, format, mode, &data[pos*format], maxItems);
+	    xType, format, mode, &data[pos*format/8], maxItems);
 	  mode = PropModeAppend;
 	  pos += maxItems;
 	  XSync(xDisplay, False);
@@ -1015,7 +1016,9 @@ xErrorHandler(Display *d, XErrorEvent *e)
       XFree(data);
       XSetErrorHandler(oldHandler);
       if (appendFailure == NO)
-	status = YES;
+	{
+	  status = YES;
+	}
     }
   return status;
 }

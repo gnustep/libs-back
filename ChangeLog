@@ -1,3 +1,9 @@
+2003-04-27 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Tools/xpbs.m: ([xSendData:format:items:type:to:]) Fix bug
+	calculating offset into data buffer.  Prevent crashing and
+	provision of garbage data.
+
 2003-04-10 12:12  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/x11/XWindowBuffer.m (-dealloc): Don't explicitly set the
