@@ -221,7 +221,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 @end
 
 static inline
-DWORD windowStyleForGSStyle(int style)
+DWORD windowStyleForGSStyle(unsigned int style)
 {
   DWORD wstyle = 0;
 
@@ -306,7 +306,7 @@ DWORD windowStyleForGSStyle(int style)
   DestroyWindow((HWND)winNum); 
 }
 
-- (void) stylewindow: (int)style : (int) winNum
+- (void) stylewindow: (unsigned int)style : (int) winNum
 {
   DWORD wstyle = windowStyleForGSStyle(style);
 
@@ -534,7 +534,7 @@ DWORD windowStyleForGSStyle(int style)
 }
 
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
-		     : (int) style 
+		     : (unsigned int) style 
 {
   DWORD wstyle = windowStyleForGSStyle(style);
   RECT rect = {100, 100, 200, 200};
