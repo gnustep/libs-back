@@ -1,3 +1,8 @@
+2004-01-27  Adam Fedor  <fedor@gnu.org>
+
+	* Documentation/Back/DefaultsSummary.gsdoc: Fix doc markup
+	* Documentation/Back/GNUmakefile: Change install location.
+
 2004-01-25  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/art/shfill.m (-DPSshfill:):
