@@ -1,0 +1,19 @@
+@c -*-texinfo-*-
+@ifclear ANNOUNCE-ONLY
+@chapter NEWS
+@end ifclear
+
+@ifset TEXT-ONLY
+@include version.texi
+@end ifset
+
+@section Noteworthy changes in version @samp{0.7.7}
+First release. Most components extracted from xgps.
+@end itemize
+
+@c ====================================================================
+@c Keep the next line just below the list of changes in most recent version.
+@ifclear ANNOUNCE-ONLY
+
+
+@end ifclear

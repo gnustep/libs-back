@@ -1,0 +1,50 @@
+#
+#   Makefile.preamble
+#
+#   Project specific makefile variables, and additional
+#
+#   Do not put any Makefile rules in this file, instead they should
+#   be put into Makefile.postamble.
+#
+
+#
+# Flags dealing with compiling and linking
+#
+
+# Additional flags to pass to the preprocessor
+#ADDITIONAL_CPPFLAGS += 
+
+# Additional flags to pass to the Objective-C compiler
+#ADDITIONAL_OBJCFLAGS += 
+
+# Additional flags to pass to the C compiler
+#ADDITIONAL_CFLAGS += 
+
+# Additional include directories the compiler should search
+ADDITIONAL_INCLUDE_DIRS += -I../Headers -I../Source/$(GNUSTEP_TARGET_DIR)
+
+
+# Additional LDFLAGS to pass to the linker
+# ADDITIONAL_LDFLAGS += 
+
+# Additional library directories the linker should search
+ADDITIONAL_LIB_DIRS += -L../Source/$(GNUSTEP_OBJ_DIR)
+
+# Additional libraries when linking applications
+#ADDITIONAL_GUI_LIBS +=
+
+#
+# Flags dealing with installing and uninstalling
+#
+
+# Additional directories to be created during installation
+ADDITIONAL_INSTALL_DIRS +=
+
+# Flags for when the backend is compiled as a bundle 
+ifneq ($(BACKEND_BUNDLE),)
+ADDITIONAL_TOOL_LIBS += $(GUI_LIBS) $(GRAPHIC_LIBS) $(SYSTEM_LIBS)
+ADDITIONAL_INCLUDE_DIRS += $(GRAPHIC_CFLAGS)
+ADDITIONAL_LIB_DIRS += $(GRAPHIC_LFLAGS)
+else
+ADDITIONAL_TOOL_LIBS += -lgnustep-gui -lgnustep-back $(SYSTEM_LIBS)
+endif
