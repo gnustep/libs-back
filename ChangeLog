@@ -1,3 +1,8 @@
+Tue Jan 21 02:08:05 2003  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/xlib/XGFont.m ([XGFontInfo -dealloc]): Fixed memory leak:
+	use XFreeFont(), not XUnloadFont().
+
 2003-01-14  Adam Fedor  <fedor@gnu.org>
 
 	* configure.ac: Check for GLX_RGBA_TYPE in glx.h
