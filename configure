@@ -5413,7 +5413,7 @@ else
 fi
 
 if test "$have_gdi32" = yes; then
-  GRAPHIC_LIBS="-lgdi32 ${GRAPHIC_LIBS}"
+  WIN32_LIBS="-lgdi32"
 fi
 CPPFLAGS="${save_header}"
 LIBS="${save_libs}"
@@ -5848,6 +5848,8 @@ echo "$as_me: error: can't find freetype, required for graphics=art!" >&2;}
 echo "$as_me: error: can't find libart, required for graphics=art!" >&2;}
    { (exit 1); exit 1; }; }
   fi
+elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
+  GRAPHIC_LIBS="$WIN32_LIBS $GRAPHIC_LIBS"
 fi
 
 
