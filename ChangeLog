@@ -1,3 +1,13 @@
+2004-01-07 14:51  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/composite.m (-_composite_func::::::): If the source has
+	alpha, the destination is opaque, and the operator is NSCompositeCopy,
+	set dst_needs_alpha to YES.
+
+	(-compositerect:op:): If alpha is needed, make sure alpha is always
+	created _before_ setting up the alpha destination pointers. Only
+	write alpha for NSCompositeCopy if the current color isn't opaque.
+
 2004-01-07  Fred Kiefer <FredKiefer@gmx.de>
 
 	Added missing .cvsignore files and extended the existing ones.

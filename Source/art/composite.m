@@ -137,6 +137,10 @@ if necessary. Returns new operation, or -1 it it's a noop. */
       { /* source has alpha, destination is opaque */
 	switch (op)
 	  {
+	  case NSCompositeCopy:
+	    *dst_needs_alpha = YES;
+	    break;
+
 	  case NSCompositeSourceOver:
 	  case NSCompositeSourceAtop:
 	    blit_func = DI.composite_sover_ao;
@@ -1407,25 +1411,26 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
       ri.r = (fill_color[0] * ri.a + 0xff) >> 8;
       ri.g = (fill_color[1] * ri.a + 0xff) >> 8;
       ri.b = (fill_color[2] * ri.a + 0xff) >> 8;
-      if (ri.a != 255)
-	[wi needsAlpha];
-      if (!wi->has_alpha)
+      if (ri.a != 255 && !wi->has_alpha)
 	return;
 
       DO_STUFF(
 	ri.dst = dst;
 	DI.render_run_opaque(&ri, n);
-	if (DI.inline_alpha)
+	if (ri.a != 255)
 	  {
-	    /* TODO: needs to change to support inline
-	       alpha for non-32-bit modes */
-	    unsigned char *p;
-	    for (p = dst; n; n--, p += 4)
-	      p[DI.inline_alpha_ofs] = ri.a;
-	  }
-	else
-	  {
-	    memset(dst_alpha, ri.a, n);
+	    if (DI.inline_alpha)
+	      {
+		/* TODO: needs to change to support inline
+		   alpha for non-32-bit modes */
+		unsigned char *p;
+		for (p = dst; n; n--, p += 4)
+		  p[DI.inline_alpha_ofs] = ri.a;
+	      }
+	    else
+	      {
+		memset(dst_alpha, ri.a, n);
+	      }
 	  }
       )
     }
