@@ -1,3 +1,8 @@
+2004-09-17  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/winlib/Win32GState.m (-_compositeGState:...fraction:):
+	Made the use of AlphaBlend depend on a define, which by default is missing.
+
 2004-09-09  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Tools/xpbs.m (-[XPbOwner getSelectionData:type:], -[XPbOwner
