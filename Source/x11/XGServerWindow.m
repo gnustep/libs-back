@@ -2140,7 +2140,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       NSDebugLLog(@"Focus", @"Setting focus to unknown win %d", win);
       return;
     }
-  
+
   NSDebugLLog(@"XGTrace", @"DPSsetinputfocus: %d", win);
   /*
    * If we have an outstanding request to set focus to this window,

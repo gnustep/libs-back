@@ -313,7 +313,7 @@
 {
   XIC xic;
   xic = XCreateIC(xim, XNClientWindow, w, XNInputStyle,
-		  xim_style, XNFocusWindow, w, NULL);
+		  xim_style, NULL);
   if (xic==NULL)
     NSDebugLLog(@"XIM", @"Can't create the input context.\n");
   return xic;

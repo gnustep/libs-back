@@ -1,8 +1,7 @@
 2002-07-14  Adam Fedor  <fedor@gnu.org>
 
-	* Source/x11/XGServer.m ([XGServer -dealloc]): Don't close
-	the display (except when DEBUG), till we figure out why it
-	always crashes here.
+	* Source/x11/XIMInputServer.m (-ximCreateIC:): Don't set
+	FocusWindow attrib. Causes a segfault at XCloseDisplay..
 
 2002-07-13  Adam Fedor  <fedor@gnu.org>
 
