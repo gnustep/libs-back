@@ -1,3 +1,8 @@
+2003-10-20 20:09  Alexander Malmberg <alexander@malmberg.org>
+
+	* Tools/xpbs.m (-xProvideSelection:): Copy all characters and the
+	terminating nul in XG_COMPOUND_TEXT handling.
+
 2003-10-20 16:20  Alexander Malmberg <alexander@malmberg.org>
 
 	* Tools/xpbs.m (+xSelectionNotify:): Don't call XGetAtomName()
