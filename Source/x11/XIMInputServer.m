@@ -92,7 +92,7 @@
 #endif
   else
     {
-      encoding = NSISOLatin1StringEncoding;
+      encoding = [NSString defaultCStringEncoding];
     }
 
 #if USE_XIM
