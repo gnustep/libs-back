@@ -40,11 +40,8 @@
 #include "x11/XGServerWindow.h"
 #include "x11/XGDragView.h"
 
-#include <X11/extensions/shape.h>
-
 /* Size of the dragged window */
 #define	DWZ	48
-#define ALPHA_THRESHOLD 158
 
 #define XDPY  [XGServer currentXDisplay]
 
@@ -52,10 +49,6 @@
 #define SLIDE_NR_OF_STEPS 20  
 
 @interface XGRawWindow : NSWindow
-@end
-
-@interface NSImage (BackEnd)
-- (Pixmap) xPixmapMask;
 @end
 
 @interface NSCursor (BackendPrivate)
@@ -245,7 +238,6 @@ static	XGDragView	*sharedDragView = nil;
  * TODO:
  *  - use initialOffset
  *  - use screenLocation
- *  - implement slideBack      
  */
 - (void) dragImage: (NSImage*)anImage
 		at: (NSPoint)screenLocation
@@ -368,8 +360,7 @@ static	XGDragView	*sharedDragView = nil;
  */
 - (void) _setupWindow: (NSPoint) dragStart
 {
-  NSSize		imageSize = [[dragCell image] size];
-  Pixmap		pixmap = 0;
+  NSSize imageSize = [[dragCell image] size];
   
   offset = NSMakePoint (imageSize.width / 2.0, imageSize.height / 2.0);
   
@@ -377,9 +368,6 @@ static	XGDragView	*sharedDragView = nil;
                                  dragStart.y - offset.y,
                                  imageSize.width, imageSize.height)
            display: NO];
-
-  // Unset the target window  
-  targetWindow = 0;
 
   NSDebugLLog (@"NSDragging", @"---dragWindow: %x <- %x",
                  dragWindev->parent, dragWindev->ident);
@@ -391,29 +379,9 @@ static	XGDragView	*sharedDragView = nil;
   dragPosition = dragStart;
   newPosition = dragStart;
 
-  // FIXME this should be integrated with xPixmapMask
-  // but that method should be reorganized
-  if ([[[dragCell image] backgroundColor] alphaComponent] * 256
-    <= ALPHA_THRESHOLD)
-    {
-      // Make it a shaped window containing a pixmap
-      // Need to lockFocus to do this. FIXME when image caching works
-      [self lockFocus];
-      pixmap = [[dragCell image] xPixmapMask];
-      [self unlockFocus];
-    }
-  
-  if (pixmap)
-    {
-      XShapeCombineMask(XDPY, dragWindev->ident, ShapeBounding, 0, 0,
-	pixmap, ShapeSet);
-      XFreePixmap(XDPY, pixmap);
-    }
-  else
-    {
-      XShapeCombineMask(XDPY, dragWindev->ident, ShapeBounding, 0, 0,
-	0, ShapeSet);
-    }
+  // Only display the image
+  [GSServerForWindow(_window) restrictWindow: dragWindev->number
+		    toImage: [dragCell image]];
 
   [_window orderFront: nil];
 }
@@ -607,6 +575,10 @@ static	XGDragView	*sharedDragView = nil;
   // Storing values, to restore after we have finished.
   NSCursor      *cursorBeforeDrag = [NSCursor currentCursor];
   
+  // Unset the target window  
+  targetWindow = 0;
+  targetMask = NSDragOperationAll;
+
   isDragging = YES;
   startPoint = [eWindow convertBaseToScreen: [theEvent locationInWindow]];
 
@@ -621,10 +593,8 @@ static	XGDragView	*sharedDragView = nil;
     }
 
   NSDebugLLog(@"NSDragging", @"Drag window X origin %d %d\n", wx, wy);
-
   
   // --- Setup up the masks for the drag operation ---------------------
-  
   if ([dragSource respondsToSelector:
     @selector(ignoreModifierKeysWhileDragging)]
     && [dragSource ignoreModifierKeysWhileDragging])
@@ -638,15 +608,12 @@ static	XGDragView	*sharedDragView = nil;
     }
 
   dragMask = [dragSource draggingSourceOperationMaskForLocal: !dragExternal];
-  targetMask = NSDragOperationAll;
   
   // --- Setup the event loop ------------------------------------------
-
   [self _updateAndMoveImageToCorrectPosition];
   [NSEvent startPeriodicEventsAfterDelay: 0.02 withPeriod: 0.03];
 
   // --- Loop that handles all events durring drag operation -----------
-  
   while ([theEvent type] != NSLeftMouseUp)
     {
       [self _handleEventDuringDragging: theEvent];
@@ -657,9 +624,7 @@ static	XGDragView	*sharedDragView = nil;
 				      dequeue: YES];
     }
 
-
   // --- Event loop for drag operation stopped ------------------------
-  
   [NSEvent stopPeriodicEvents];
   [self _updateAndMoveImageToCorrectPosition];
 
@@ -1057,8 +1022,12 @@ static	XGDragView	*sharedDragView = nil;
   // and (wx, wy) are integers.
   dragPosition.x += (float) ((int) newPosition.x - dragPosition.x);
   dragPosition.y += (float) ((int) newPosition.y - dragPosition.y);
-
+/*
   XMoveWindow (XDPY, dragWindev->ident, wx, wy);
+*/
+  [GSServerForWindow(_window) movewindow: NSMakePoint(newPosition.x - offset.x, 
+						      newPosition.y - offset.y) 
+		    : dragWindev->number];
 }
 
 
