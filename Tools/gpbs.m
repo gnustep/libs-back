@@ -33,6 +33,10 @@
 #include	"process.h"
 #endif
 
+#ifndef	NSIG
+#define	NSIG	32
+#endif
+
 @class PasteboardServer;
 @class PasteboardObject;
 
@@ -926,7 +930,7 @@ NSMutableDictionary	*pasteboards = nil;
   if (connection == conn)
     {
       NSLog(@"Help - pasteboard server connection has died!\n");
-      exit(1);
+      exit(EXIT_FAILURE);
     }
   if ([connection isKindOf: [NSConnection class]])
     {
@@ -943,7 +947,6 @@ NSMutableDictionary	*pasteboards = nil;
 
 - (void) dealloc
 {
-  [[NSNotificationCenter defaultCenter] removeObserver: self];  
   RELEASE(permenant);
   [super dealloc];
 }
@@ -1015,34 +1018,54 @@ NSMutableDictionary	*pasteboards = nil;
 static void
 ihandler(int sig)
 {
-  int s = 0;
-  
-  /*  We need to re-set ALL signals before we (try to) terminate, not
-   *  just the signal raised. That includes the ones we SIG_IGN.
+  static BOOL	beenHere = NO;
+  BOOL		action;
+  const char	*e;
+
+  /*
+   * Prevent recursion.
    */
-  for (s = 0; s < NSIG; s++)
-    signal(s, SIG_DFL);
-  
-  /* Instead of abort()'ing we re-raise the original signal.  Only if
-   * that fails, we abort().
-   */
-  if ( sig > 0 )
+  if (beenHere == YES)
     {
-#ifdef __MINGW__
       abort();
-#else
-      NSLog(@"Re-raising signal %d.", sig);
-      
-      if( -1 == kill(getpid(), sig) )
-	{
-	  NSLog(@"Re-raising failed, aborting.");
-	  
-	  abort();
-	}
-#endif
     }
-  
-  exit(EXIT_FAILURE);
+  beenHere = YES;
+
+  /*
+   * If asked to terminate, do so cleanly.
+   */
+  if (sig == SIGTERM)
+    {
+      exit(EXIT_FAILURE);
+    }
+
+#ifdef	DEBUG
+  action = YES;		// abort() by default.
+#else
+  action = NO;		// exit() by default.
+#endif
+  e = getenv("CRASH_ON_ABORT");
+  if (e != 0)
+    {
+      if (strcasecmp(e, "yes") == 0 || strcasecmp(e, "true") == 0)
+	action = YES;
+      else if (strcasecmp(e, "no") == 0 || strcasecmp(e, "false") == 0)
+	action = NO;
+      else if (isdigit(*e) && *e != '0')
+	action = YES;
+      else
+	action = NO;
+    }
+
+  if (action == YES)
+    {
+      abort();
+    }
+  else
+    {
+      fprintf(stderr, "gpbs killed by signal %d\n", sig);
+      exit(sig);
+    }
 }
 
 static void
@@ -1062,7 +1085,7 @@ init(int argc, char** argv)
 	  printf("--help\tfor help\n");
 	  printf("--no-fork\tavoid fork() to make debugging easy\n");
 	  printf("--verbose\tMore verbose debug output\n");
-	  exit(0);
+	  exit(EXIT_SUCCESS);
 	}
       else if ([a isEqualToString: @"--no-fork"] == YES)
 	{
@@ -1081,7 +1104,7 @@ init(int argc, char** argv)
 	  printf("gpbs - GNU Pasteboard server\n");
 	  printf("I don't understand '%s'\n", [a cString]);
 	  printf("--help	for help\n");
-	  exit(0);
+	  exit(EXIT_SUCCESS);
 	}
     }
 
@@ -1118,9 +1141,9 @@ init(int argc, char** argv)
       if (_spawnv(_P_NOWAIT, argv[0], a) == -1)
 	{
 	  fprintf(stderr, "gpbs - spawn failed - bye.\n");
-	  exit(1);
+	  exit(EXIT_FAILURE);
 	}
-      exit(0);
+      exit(EXIT_SUCCESS);
     }
 #else
       switch (fork())
@@ -1145,7 +1168,7 @@ init(int argc, char** argv)
 	      {
 		NSLog(@"Process backgrounded (running as daemon)\r\n");
 	      }
-	    exit(0);
+	    exit(EXIT_SUCCESS);
 	}
 #endif 
     }
@@ -1171,7 +1194,7 @@ main(int argc, char** argv, char **env)
   if (server == nil)
     {
       NSLog(@"Unable to create server object.\n");
-      exit(1);
+      exit(EXIT_FAILURE);
     }
 
   /* Register a connection that provides the server object to the network */
@@ -1191,7 +1214,7 @@ main(int argc, char** argv, char **env)
       if ([conn registerName: PBSNAME] == NO)
         {
           NSLog(@"Unable to register with name server.\n");
-          exit(1);
+          exit(EXIT_FAILURE);
         }
     }
   else
@@ -1205,7 +1228,7 @@ main(int argc, char** argv, char **env)
       if (host == nil)
         {
           NSLog(@"gdnc - unknown NSHost argument  ... %@ - quiting.", hostname);
-          exit(1);
+          exit(EXIT_FAILURE);
         }
       a = [host names];
       c = [a count];
@@ -1236,9 +1259,8 @@ main(int argc, char** argv, char **env)
       NSLog(@"GNU pasteboard server startup.\n");
     }
   [[NSRunLoop currentRunLoop] run];
-
   RELEASE(server);
   RELEASE(pool);
-  exit(0);
+  exit(EXIT_SUCCESS);
 }
 
