@@ -1,3 +1,9 @@
+2003-03-22  Willem Rein Oudshoorn  <woudshoo@xs4all.nl>
+
+	* Source/x11/XGServerWindow.m ([XGServer -orderwindow:::]): 
+	Use XWithDrawWindow instead of XUnmapWindow as suggested by
+	Xlib programming manuals.
+
 2003-03-03 20:05  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Remap glyph numbers from freetype so
