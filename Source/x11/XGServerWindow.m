@@ -1358,7 +1358,12 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
    */
   if (height != window->siz_hints.height)
     {
+#if HAVE_USLEEP
       usleep(1);
+#else
+      for (x=0; x<10000; x++)
+	;
+#endif
       XGetGeometry(dpy, window->ident, &window->root,
 		   &x, &y, &width, &height,
 		   &window->border, &window->depth);

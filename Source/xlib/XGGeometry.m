@@ -117,14 +117,23 @@ void
 clipXRectsForCopying (gswindow_device_t* winA, XRectangle* rectA,
                       gswindow_device_t* winB, XRectangle* rectB)
 {
+  XPoint shiftA, shiftB;
   // First make A smaller.
+  shiftA.x = rectA->x;
+  shiftA.y = rectA->y;
   *rectA = XGIntersectionRect (*rectA, accessibleRectForWindow (winA));
   // update size of B with the size of A
+  rectB->x += rectA->x - shiftA.x;
+  rectB->y += rectA->y - shiftA.y;
   rectB->width = MIN (rectA->width, rectB->width);
   rectB->height = MIN (rectA->height, rectB->height);
   // now make B smaller
+  shiftB.x = rectB->x;
+  shiftB.y = rectB->y;
   *rectB = XGIntersectionRect (*rectB, accessibleRectForWindow (winB));
   // and update size of A with size of B
+  rectA->x += rectB->x - shiftB.x;
+  rectA->y += rectB->y - shiftB.y;
   rectA->width = rectB->width;
   rectA->height = rectB->height;
 }
