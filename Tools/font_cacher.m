@@ -478,6 +478,8 @@ static int fontDefSorter(NSArray *el1, NSArray *el2, void *context)
   [data writeToFile: path atomically: YES];
 }
 
+@end
+
 int
 main(int argc, char **argv, char **env)
 {
