@@ -105,12 +105,39 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 }
 
 @interface WIN32GState (WinOps)
-- (void) setStyle: (HDC)hdc;
+- (void) setStyle: (HDC)hDC;
+- (void) restoreStyle: (HDC)hDC;
 - (HDC) getHDC;
-- (void) releaseHDC: (HDC)hdc;
+- (void) releaseHDC: (HDC)hDC;
 @end
 
 @implementation WIN32GState 
+
+- (id) deepen
+{
+  [super deepen];
+
+  if (clipRegion)
+    {
+      HRGN newClipRegion;
+
+      newClipRegion = CreateRectRgn(0, 0, 1, 1);
+      CombineRgn(newClipRegion, clipRegion, NULL, RGN_COPY);
+      clipRegion = newClipRegion;
+    }
+
+  oldBrush = NULL;
+  oldPen = NULL;
+  oldClipRegion = NULL;
+
+  return self;
+}
+
+- (void) dealloc
+{
+  DeleteObject(clipRegion);
+  [super dealloc];
+}
 
 - (void) setWindow: (HWND)number
 {
@@ -137,7 +164,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 	  toPoint: (NSPoint)aPoint
 {
   HDC otherDC;
-  HDC hdc;
+  HDC hDC;
   POINT p;
   RECT rect;
   int h;
@@ -153,9 +180,18 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
     y1 = p.y - h;
 
   otherDC = [source getHDC];
-  hdc = [self getHDC];
+  if (!otherDC)
+    {
+      return;
+    } 
+  hDC = [self getHDC];
+  if (!hDC)
+    {
+      [source releaseHDC: otherDC]; 
+      return;
+    } 
     
-  if (!BitBlt(hdc, p.x, y1, (rect.right - rect.left), h, 
+  if (!BitBlt(hDC, p.x, y1, (rect.right - rect.left), h, 
 	      otherDC, rect.left, rect.top, SRCCOPY))
     {
       NSLog(@"Copy bitmap failed %d", GetLastError());
@@ -164,7 +200,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
       NSLog(@"Copy Bits to %d %d from %d %d size %d %d", p.x , y1, 
 	    rect.left, rect.top, (rect.right - rect.left), h);
     }
-  [self releaseHDC: hdc];
+  [self releaseHDC: hDC];
   [source releaseHDC: otherDC]; 
 }
 
@@ -189,9 +225,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 - (void) compositerect: (NSRect)aRect
                     op: (NSCompositingOperation)op
 {
-  HDC hdc;
   float gray;
-  RECT rect = GSViewRectToWin(self, aRect);
 
   [self DPScurrentgray: &gray];
   if (fabs(gray - 0.667) < 0.005)
@@ -199,14 +233,25 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   else    
     [self DPSsetrgbcolor: 0.121 : 0.121 : 0];
 
-  hdc = [self getHDC];
   switch (op)
     {
     case   NSCompositeClear:
       break;
     case   NSCompositeHighlight:
-      InvertRect(hdc, &rect);
-      break;
+      {
+	HDC hDC;
+	RECT rect = GSViewRectToWin(self, aRect);
+
+	hDC = [self getHDC];
+	if (!hDC)
+	  {
+	    return;
+	  } 
+
+	InvertRect(hDC, &rect);
+	[self releaseHDC: hDC];
+	break;
+      }
     case   NSCompositeCopy:
     // FIXME
     case   NSCompositeSourceOver:
@@ -225,12 +270,11 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 	    : NSWidth(aRect) : NSHeight(aRect)];
       break;
     }
-  [self releaseHDC: hdc];
 }
 
 
 static
-HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
+HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 		       int bitsPerSample, int samplesPerPixel,
 		       int bitsPerPixel, int bytesPerRow,
 		       BOOL isPlanar, BOOL hasAlpha,
@@ -265,18 +309,26 @@ HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
   while((bytesPerRow * 8) < (bitsPerPixel * pixelsWide))
     bytesPerRow++;
 
-  if (!(GetDeviceCaps(hdc, RASTERCAPS) &  RC_DI_BITMAP)) 
+  if (!(GetDeviceCaps(hDC, RASTERCAPS) &  RC_DI_BITMAP)) 
     {
       return NULL;
     }
 
-  hbitmap = CreateCompatibleBitmap(hdc, pixelsWide, pixelsHigh);
+  hbitmap = CreateCompatibleBitmap(hDC, pixelsWide, pixelsHigh);
   if (!hbitmap)
     {
       return NULL;
     }
 
-  bitmap = objc_malloc(sizeof(BITMAPINFOHEADER) + bitsPerPixel * sizeof(RGBQUAD));
+  if (bitsPerPixel > 8)
+    {
+      bitmap = objc_malloc(sizeof(BITMAPV4HEADER));
+    }
+  else 
+    {
+      bitmap = objc_malloc(sizeof(BITMAPINFOHEADER) +  
+			   (1 << bitsPerPixel) * sizeof(RGBQUAD));
+    }
   bmih = (BITMAPINFOHEADER*)bitmap;
 
   bmih->biSize = sizeof(BITMAPINFOHEADER);
@@ -286,8 +338,8 @@ HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
   bmih->biBitCount = bitsPerPixel;
   bmih->biCompression = BI_RGB;
   bmih->biSizeImage = 0;
-  xres = GetDeviceCaps(hdc, HORZRES) / GetDeviceCaps(hdc, HORZSIZE);
-  yres = GetDeviceCaps(hdc, VERTRES) / GetDeviceCaps(hdc, VERTSIZE);
+  xres = GetDeviceCaps(hDC, HORZRES) / GetDeviceCaps(hDC, HORZSIZE);
+  yres = GetDeviceCaps(hDC, VERTRES) / GetDeviceCaps(hDC, VERTSIZE);
   bmih->biXPelsPerMeter = xres;
   bmih->biYPelsPerMeter = yres;
   bmih->biClrUsed = 0;
@@ -329,7 +381,7 @@ HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
       NSLog(@"Unsure how to handle images with %d bits", bitsPerPixel);
     }
 
-  if (!SetDIBits(hdc, hbitmap, 0, pixelsHigh, data[0], 
+  if (!SetDIBits(hDC, hbitmap, 0, pixelsHigh, data[0], 
 		 bitmap, fuColorUse))
     {
       objc_free(bitmap);
@@ -349,10 +401,10 @@ HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
 		: (const unsigned char *const [5]) data
 {
   NSAffineTransform *old_ctm = nil;
-  HDC hdc;
+  HDC hDC;
   HBITMAP hbitmap;
   HGDIOBJ old;
-  HDC hdc2;
+  HDC hDC2;
   POINT p;
   int h;
   int y1;
@@ -360,16 +412,17 @@ HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
   if (window == NULL)
     {
       NSLog(@"No window in DPSImage");
+      return;
     }
 
-  hdc = GetDC((HWND)window);
-  if (!hdc)
+  hDC = GetDC((HWND)window);
+  if (!hDC)
     {
       NSLog(@"No DC for window %d in DPSImage. Error %d", 
 	    (int)window, GetLastError());
     }
 
-  hbitmap = GSCreateBitmap(hdc, pixelsWide, pixelsHigh,
+  hbitmap = GSCreateBitmap(hDC, pixelsWide, pixelsHigh,
 			   bitsPerSample, samplesPerPixel,
 			   bitsPerPixel, bytesPerRow,
 			   isPlanar, hasAlpha,
@@ -379,23 +432,23 @@ HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
       NSLog(@"Created bitmap failed %d", GetLastError());
     }
 
-  hdc2 = CreateCompatibleDC(hdc); 
-  if (!hdc2)
+  hDC2 = CreateCompatibleDC(hDC); 
+  if (!hDC2)
     {
       NSLog(@"No Compatible DC for window %d in DPSImage. Error %d", 
 	    (int)window, GetLastError());
     }
-  old = SelectObject(hdc2, hbitmap);
+  old = SelectObject(hDC2, hbitmap);
   if (!old)
     {
       NSLog(@"SelectObject failed for window %d in DPSImage. Error %d", 
 	    (int)window, GetLastError());
     }
 
-  //SetMapMode(hdc2, GetMapMode(hdc));
-  ReleaseDC((HWND)window, hdc);
+  //SetMapMode(hDC2, GetMapMode(hDC));
+  ReleaseDC((HWND)window, hDC);
 
-  hdc = [self getHDC];
+  hDC = [self getHDC];
 
   h = pixelsHigh;
   // Apply the additional transformation
@@ -416,18 +469,18 @@ HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
   else
     y1 = p.y - h;
 
-  if (!BitBlt(hdc, p.x, y1, pixelsWide, pixelsHigh,
-	      hdc2, 0, 0, SRCCOPY))
+  if (!BitBlt(hDC, p.x, y1, pixelsWide, pixelsHigh,
+	      hDC2, 0, 0, SRCCOPY))
     {
       NSLog(@"Copy bitmap failed %d", GetLastError());
       NSLog(@"DPSimage with %d %d %d %d to %d, %d", pixelsWide, pixelsHigh, 
 	    bytesPerRow, bitsPerPixel, p.x, y1);
     }
   
-  [self releaseHDC: hdc];
+  [self releaseHDC: hDC];
 
-  SelectObject(hdc2, old);
-  DeleteDC(hdc2);
+  SelectObject(hDC2, old);
+  DeleteDC(hDC2);
   DeleteObject(hbitmap);
 }
 
@@ -438,9 +491,13 @@ HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
 - (void) _paintPath: (ctxt_object_t) drawType
 {
   unsigned count;
-  HDC hdc;
+  HDC hDC;
 
-  hdc = [self getHDC];
+  hDC = [self getHDC];
+  if (!hDC)
+    {
+      return;
+    } 
 
   count = [path elementCount];
   if (count)
@@ -450,7 +507,7 @@ HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
       unsigned	j, i = 0;
       POINT p;
 
-      BeginPath(hdc);
+      BeginPath(hDC);
 
       for(j = 0; j < count; j++) 
         {
@@ -459,12 +516,12 @@ HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
 	    {
 	    case NSMoveToBezierPathElement:
 	      p = GSWindowPointToMS(self, points[0]);
-	      MoveToEx(hdc, p.x, p.y, NULL);
+	      MoveToEx(hDC, p.x, p.y, NULL);
 	      break;
 	    case NSLineToBezierPathElement:
 	      p = GSWindowPointToMS(self, points[0]);
 	      // FIXME This gives one pixel to few
-	      LineTo(hdc, p.x, p.y);
+	      LineTo(hDC, p.x, p.y);
 	      break;
 	    case NSCurveToBezierPathElement:
 	      {
@@ -474,59 +531,71 @@ HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
 		  {
 		    bp[i] = GSWindowPointToMS(self, points[i]);
 		  }
-		PolyBezierTo(hdc, bp, 3);
+		PolyBezierTo(hDC, bp, 3);
 	      }
 	      break;
 	    case NSClosePathBezierPathElement:
-	      CloseFigure(hdc);
+	      CloseFigure(hDC);
 	      break;
 	    default:
 	      break;
 	    }
 	}  
-      EndPath(hdc);
+      EndPath(hDC);
 
       // Now operate on the path
       switch (drawType)
 	{
 	case path_stroke:
-	  StrokePath(hdc);
+	  StrokePath(hDC);
 	  break;
 	case path_eofill:
-	  SetPolyFillMode(hdc, ALTERNATE);
-	  FillPath(hdc);
+	  SetPolyFillMode(hDC, ALTERNATE);
+	  FillPath(hDC);
 	  break;
 	case path_fill:
-	  SetPolyFillMode(hdc, WINDING);
-	  FillPath(hdc);
+	  SetPolyFillMode(hDC, WINDING);
+	  FillPath(hDC);
 	  break;
 	case path_eoclip:
 	  {
 	    HRGN region;
 
-	    SetPolyFillMode(hdc, ALTERNATE);
-	    region = PathToRegion(hdc);
-//	    ExtSelectClipRgn(hdc, region, RGN_COPY);
-	    DeleteObject(clipRegion);
-	    clipRegion = region;
+	    SetPolyFillMode(hDC, ALTERNATE);
+	    region = PathToRegion(hDC);
+	    if (clipRegion)
+	    {
+	      CombineRgn(clipRegion, clipRegion, region, RGN_AND);
+	      DeleteObject(region);
+	    }
+	    else
+	      {
+		clipRegion = region;
+	      }
 	    break;
 	  }
 	case path_clip:
 	  {
 	    HRGN region;
 
-	    SetPolyFillMode(hdc, WINDING);
-	    region = PathToRegion(hdc);
-//	    ExtSelectClipRgn(hdc, region, RGN_COPY);
-	    DeleteObject(clipRegion);
-	    clipRegion = region;
+	    SetPolyFillMode(hDC, WINDING);
+	    region = PathToRegion(hDC);
+	    if (clipRegion)
+	    {
+	      CombineRgn(clipRegion, clipRegion, region, RGN_AND);
+	      DeleteObject(region);
+	    }
+	    else
+	      {
+		clipRegion = region;
+	      }
 	    break;
 	  }
 	default:
 	  break;
 	}
     }
-  [self releaseHDC: hdc];
+  [self releaseHDC: hDC];
 
   /*
    * clip does not delete the current path, so we only clear the path if the
@@ -566,94 +635,81 @@ HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
 
 - (void) DPSinitclip;
 {
-  HDC hdc;
-
-  hdc = [self getHDC];
-  SelectClipRgn(hdc, NULL);
-  DeleteObject(clipRegion);
-  clipRegion = NULL;
-  [self releaseHDC: hdc];
+  if (clipRegion)
+    {
+      DeleteObject(clipRegion);
+      clipRegion = NULL;
+    }
 }
 
 - (void)DPSrectfill: (float)x : (float)y : (float)w : (float)h 
 {
-  HDC hdc;
+  HDC hDC;
   HBRUSH brush;
   RECT rect;
 
+  hDC = [self getHDC];
+  if (!hDC)
+    {
+      return;
+    } 
+
+  brush = GetCurrentObject(hDC, OBJ_BRUSH);
   rect = GSViewRectToWin(self, NSMakeRect(x, y, w, h));
-  hdc = [self getHDC];
-  brush = GetCurrentObject(hdc, OBJ_BRUSH);
-  FillRect(hdc, &rect, brush);
-  [self releaseHDC: hdc];
-
-  /*
-  NSPoint origin = [ctm pointInMatrixSpace: NSMakePoint(x, y)];
-  NSSize  size = [ctm sizeInMatrixSpace: NSMakeSize(w, h)];
-
-  if (viewIsFlipped)
-    origin.y -= size.height;
-  ASSIGN(path, [NSBezierPath bezierPathWithRect: 
-			       NSMakeRect(origin.x, origin.y, 
-					  size.width, size.height)]);
-  //NSLog(@"Fill rect %@", NSStringFromRect(NSMakeRect(origin.x, origin.y, 
-  //					  size.width, size.height)));
-  [self DPSfill];
-  */
+  FillRect(hDC, &rect, brush);
+  [self releaseHDC: hDC];
 }
 
 - (void)DPSrectstroke: (float)x : (float)y : (float)w : (float)h 
 {
-  NSPoint origin = [ctm pointInMatrixSpace: NSMakePoint(x, y)];
-  NSSize  size = [ctm sizeInMatrixSpace: NSMakeSize(w, h)];
+  NSRect rect = NSMakeRect(x, y, w, h);
 
-  if (size.width > 0)
-    size.width--;
-  if (size.height > 0)
-    size.height--;
-  if (viewIsFlipped)
-    origin.y -= size.height;
-  else
-    origin.y += 1;
+  rect = [ctm rectInMatrixSpace: rect];
+  if (rect.size.width > 0)
+    rect.size.width--;
+  if (rect.size.height > 0)
+    rect.size.height--;
+  rect.origin.y += 1;
 
-  ASSIGN(path, [NSBezierPath bezierPathWithRect: 
-			       NSMakeRect(origin.x, origin.y, 
-					  size.width, size.height)]);
-  //NSLog(@"Stroke rect %@", NSStringFromRect(NSMakeRect(origin.x, origin.y, 
-  //					  size.width, size.height)));
+  ASSIGN(path, [NSBezierPath bezierPathWithRect: rect]);
+  //NSLog(@"Stroke rect %@", NSStringFromRect(rect));
   [self DPSstroke];
 }
 
 - (void)DPSrectclip: (float)x : (float)y : (float)w : (float)h 
 {
-  NSPoint origin = [ctm pointInMatrixSpace: NSMakePoint(x, y)];
-  NSSize  size = [ctm sizeInMatrixSpace: NSMakeSize(w, h)];
+  RECT rect;
+  HRGN region;
 
-  size.width++;
-  size.height++;
-  if (viewIsFlipped)
-    origin.y -= size.height;
-  ASSIGN(path, [NSBezierPath bezierPathWithRect: 
-			       NSMakeRect(origin.x, origin.y, 
-					  size.width, size.height)]);
-  //NSLog(@"Clip rect %@", NSStringFromRect(NSMakeRect(origin.x, origin.y, 
-  //					  size.width, size.height)));
-  [self DPSclip];
+  rect = GSViewRectToWin(self, NSMakeRect(x, y, w, h));
+  region = CreateRectRgnIndirect(&rect);
+  if (clipRegion)
+    {
+      CombineRgn(clipRegion, clipRegion, region, RGN_AND);
+      DeleteObject(region);
+    }
+  else
+    {
+      clipRegion = region;
+    }
 }
 
 - (void)DPSshow: (const char *)s 
 {
   NSPoint current = [path currentPoint];
   POINT p;
-  HDC hdc;
-  //float ascent = [font ascender];
+  HDC hDC;
+
+  hDC = [self getHDC];
+  if (!hDC)
+    {
+      return;
+    } 
 
   p = GSWindowPointToMS(self, current);
-  hdc = [self getHDC];
   [(WIN32FontInfo*)[font fontInfo] draw: s lenght:  strlen(s)
-		   onDC: hdc at: p];
-  //TextOut(hdc, p.x, p.y - ascent, s, strlen(s)); 
-  [self releaseHDC: hdc];
+		   onDC: hDC at: p];
+  [self releaseHDC: hDC];
 }
 @end
 
@@ -726,7 +782,7 @@ HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
 
 @implementation WIN32GState (WinOps)
 
-- (void) setStyle: (HDC)hdc
+- (void) setStyle: (HDC)hDC
 {
   HPEN pen;
   HBRUSH brush;
@@ -734,14 +790,14 @@ HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
   int join;
   int cap;
   DWORD penStyle;
-  SetBkMode(hdc, TRANSPARENT);
+  SetBkMode(hDC, TRANSPARENT);
   /*
   br.lbStyle = BS_SOLID;
   br.lbColor = color;
   brush = CreateBrushIndirect(&br);
   */
   brush = CreateSolidBrush(wfcolor);
-  oldBrush = SelectObject(hdc, brush);
+  oldBrush = SelectObject(hDC, brush);
 
   switch (joinStyle)
     {
@@ -795,72 +851,84 @@ HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
 		     &br,
 		     0, NULL);
 
-  oldPen = SelectObject(hdc, pen);
+  oldPen = SelectObject(hDC, pen);
 
-  SetMiterLimit(hdc, miterlimit, NULL);
+  SetMiterLimit(hDC, miterlimit, NULL);
 
-  SetTextColor(hdc, wfcolor);
-  SelectClipRgn(hdc, clipRegion);
+  SetTextColor(hDC, wfcolor);
+
+  oldClipRegion = CreateRectRgn(0, 0, 1, 1);
+  if (1 != GetClipRgn(hDC, oldClipRegion))
+    {
+      DeleteObject(oldClipRegion);
+      oldClipRegion = NULL;
+    }
+
+  SelectClipRgn(hDC, clipRegion);
 }
 
-- (void) restoreStyle: (HDC)hdc
+- (void) restoreStyle: (HDC)hDC
 {
   HGDIOBJ old;
 
-  old = SelectObject(hdc, oldBrush);
+  SelectClipRgn(hDC, oldClipRegion);
+  DeleteObject(oldClipRegion);
+  oldClipRegion = NULL;
+
+  old = SelectObject(hDC, oldBrush);
   DeleteObject(old);
 
-  old = SelectObject(hdc, oldPen);
+  old = SelectObject(hDC, oldPen);
   DeleteObject(old);
 }
 
 - (HDC) getHDC
 {
   WIN_INTERN *win;
-  HDC hdc;
+  HDC hDC;
 
   if (NULL == window)
     {
-      NSLog(@"No window in getHDC");
+      //Log(@"No window in getHDC");
       return NULL;
     }
 
   win = (WIN_INTERN *)GetWindowLong((HWND)window, GWL_USERDATA);
   if (win && win->useHDC)
     {
-      hdc = win->hdc;
-      //NSLog(@"getHDC found DC %d", hdc);
+      hDC = win->hdc;
+      //NSLog(@"getHDC found DC %d", hDC);
     }
   else
     {
-      hdc = GetDC((HWND)window);    
-      //NSLog(@"getHDC using window DC %d", hdc);
+      hDC = GetDC((HWND)window);    
+      //NSLog(@"getHDC using window DC %d", hDC);
     }
   
-  if (!hdc)
+  if (!hDC)
     {
-      NSLog(@"No DC in getHDC");
+      //Log(@"No DC in getHDC");
       return NULL;	
     }
 
-  [self setStyle: hdc];
-  return hdc;
+  [self setStyle: hDC];
+  return hDC;
 }
 
-- (void) releaseHDC: (HDC)hdc
+- (void) releaseHDC: (HDC)hDC
 {
   WIN_INTERN *win;
 
   if (NULL == window ||
-      NULL == hdc)
+      NULL == hDC)
     {
       return;
     }
 
-  [self restoreStyle: hdc];
+  [self restoreStyle: hDC];
   win = (WIN_INTERN *)GetWindowLong((HWND)window, GWL_USERDATA);
   if (win && !win->useHDC)
-    ReleaseDC((HWND)window, hdc);
+    ReleaseDC((HWND)window, hDC);
 }
 
 @end
