@@ -397,12 +397,18 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
   else
     {
 	char *sel_name = XGetAtomName(xDisplay, xEvent->selection);
-	char *pro_name = XGetAtomName(xDisplay, xEvent->property);
+	char *pro_name;
+
+	if (xEvent->property == None)
+	  pro_name = NULL;
+	else
+	  pro_name = XGetAtomName(xDisplay, xEvent->property);
 
 	NSDebugLLog(@"Pbs", @"Selection (%s) notify - '%s'.", sel_name, 
-		    pro_name);
+		    pro_name? pro_name : "None");
 	XFree(sel_name);
-	XFree(pro_name);
+	if (pro_name)
+	  XFree(pro_name);
     }
 
   [o xSelectionNotify: xEvent];

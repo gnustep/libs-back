@@ -1,3 +1,8 @@
+2003-10-20 16:20  Alexander Malmberg <alexander@malmberg.org>
+
+	* Tools/xpbs.m (+xSelectionNotify:): Don't call XGetAtomName()
+	if the property is None.
+
 2003-10-19  Adam Fedor  <fedor@gnu.org>
 
 	* Source/xlib/XGBitmap.m: Cache color lookup to reduce use
