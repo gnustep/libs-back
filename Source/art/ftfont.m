@@ -167,6 +167,31 @@ static NSMutableSet *families_seen, *families_pending;
 @end
 
 
+#if 0
+
+/*
+This is a list of "standard" face names. It is here so make_strings can pick
+it up and generate .strings files with them.
+*/
+
+NSLocalizedStringFromTable(@"Book", @"nfontFaceNames", @"")
+NSLocalizedStringFromTable(@"Regular", @"nfontFaceNames", @"")
+NSLocalizedStringFromTable(@"Roman", @"nfontFaceNames", @"")
+NSLocalizedStringFromTable(@"Medium", @"nfontFaceNames", @"")
+NSLocalizedStringFromTable(@"Demi", @"nfontFaceNames", @"")
+NSLocalizedStringFromTable(@"Demibold", @"nfontFaceNames", @"")
+NSLocalizedStringFromTable(@"Bold", @"nfontFaceNames", @"")
+NSLocalizedStringFromTable(@"Heavy", @"nfontFaceNames", @"")
+
+NSLocalizedStringFromTable(@"Italic", @"nfontFaceNames", @"")
+NSLocalizedStringFromTable(@"Oblique", @"nfontFaceNames", @"")
+
+NSLocalizedStringFromTable(@"Bold Italic", @"nfontFaceNames", @"")
+NSLocalizedStringFromTable(@"Bold Oblique", @"nfontFaceNames", @"")
+
+#endif
+
+
 static int traits_from_string(NSString *s, unsigned int *traits, unsigned int *weight)
 {
 static struct
@@ -319,7 +344,7 @@ static void add_face(NSString *family, int family_weight,
       translate individually? */
       /* TODO: Need to define the strings somewhere, and make sure the
       strings files get created.  */
-      faceName = [NSLocalizedStringFromTableInBundle(faceName,nil,
+      faceName = [NSLocalizedStringFromTableInBundle(faceName,@"nfontFaceNames",
 			[NSBundle bundleForClass: [fi class]],nil) copy];
       fi->faceName = faceName;
     }
@@ -329,7 +354,7 @@ static void add_face(NSString *family, int family_weight,
       int split = traits_from_string(family,&dummy,&dummy);
       rawFaceName = faceName = [family substringFromIndex: split];
       family = [family substringToIndex: split];
-      faceName = [NSLocalizedStringFromTableInBundle(faceName,nil,
+      faceName = [NSLocalizedStringFromTableInBundle(faceName,@"nfontFaceNames",
 			[NSBundle bundleForClass: [fi class]],nil) copy];
       fi->faceName = faceName;
     }

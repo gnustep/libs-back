@@ -1,3 +1,19 @@
+2003-06-28 15:27  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Use a specific table when translating
+	face names. Add a list of standard face names so make_strings can
+	generate .strings files.
+
+	* Source/GNUmakefile: Add nfontFaceNames.strings to the list of
+	localized resources. Set the language list to English and Swedish.
+
+	* Source/GNUmakefile.preamble: Add a quick hack to make make_strings
+	pick up the .m files in all subprojects.
+
+	* Source/English.lproj/nfontFaceNames.strings,
+	Source/Swedish.lproj/nfontFaceNames.strings: Add English (dummy) and
+	Swedish translations of the nfont face names.
+
 2003-06-27 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Tools/gpbs.m: Removed unused methods no longer in protocol.

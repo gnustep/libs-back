@@ -47,6 +47,10 @@ libgnustep-$(BACKEND_NAME)_OBJC_FILES=GSBackend.m
 
 libgnustep-$(BACKEND_NAME)_PRINCIPAL_CLASS=GSBackend
 
+libgnustep-$(BACKEND_NAME)_LOCALIZED_RESOURCE_FILES=nfontFaceNames.strings
+
+libgnustep-$(BACKEND_NAME)_LANGUAGES=English Swedish
+
 -include GNUmakefile.preamble
 
 ifeq ($(BACKEND_BUNDLE),)
