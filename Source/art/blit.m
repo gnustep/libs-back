@@ -456,6 +456,46 @@ static void MPRE(run_opaque_a) (render_run_t *ri, int num)
 }
 
 
+static void MPRE(read_pixels_o) (composite_run_t *c, int num)
+{
+  BLEND_TYPE *s = (BLEND_TYPE *)c->src;
+  unsigned char *dst = c->dst;
+  int r, g, b;
+
+  for (; num; num--)
+    {
+      BLEND_READ(s, r, g, b)
+      BLEND_INC(s)
+      dst[0] = r;
+      dst[1] = g;
+      dst[2] = b;
+      dst[3] = 0xff;
+      dst += 4;
+    }
+}
+
+static void MPRE(read_pixels_a) (composite_run_t *c, int num)
+{
+  BLEND_TYPE *s = (BLEND_TYPE *)c->src;
+#ifndef INLINE_ALPHA
+  unsigned char *src_alpha = c->srca;
+#endif
+  unsigned char *dst = c->dst;
+  int r, g, b, a;
+
+  for (; num; num--)
+    {
+      BLEND_READ_ALPHA(s, src_alpha, r, g, b, a)
+      ALPHA_INC(s, src_alpha)
+      dst[0] = r;
+      dst[1] = g;
+      dst[2] = b;
+      dst[3] = a;
+      dst += 4;
+    }
+}
+
+
 /* 1 : 1 - srca */
 static void MPRE(sover_aa) (composite_run_t *c, int num)
 {
@@ -1683,8 +1723,8 @@ ourself.
 #define BLEND_READ(p,nr,ng,nb) \
 	{ \
 		unsigned short _s=p[0]; \
-		nr=(_s>>8); \
-		ng=(_s>>3)&0xff; \
+		nr=(_s>>11)<<3; \
+		ng=((_s>>5)<<2)&0xff; \
 		nb=(_s<<3)&0xff; \
 	}
 #define BLEND_READ_ALPHA(p,pa,nr,ng,nb,na) \
@@ -1721,8 +1761,8 @@ ourself.
 #define BLEND_READ(p,nr,ng,nb) \
 	{ \
 		unsigned short _s=p[0]; \
-		nr=(_s>>7); \
-		ng=(_s>>2)&0xff; \
+		nr=(_s>>10)<<3; \
+		ng=((_s>>5)<<3)&0xff; \
 		nb=(_s<<3)&0xff; \
 	}
 #define BLEND_READ_ALPHA(p,pa,nr,ng,nb,na) \
@@ -1767,6 +1807,9 @@ static draw_info_t draw_infos[DI_NUM] = {
   NPRE(blit_mono_a,x), \
   \
   NPRE(blit_subpixel,x), \
+  \
+  NPRE(read_pixels_o,x), \
+  NPRE(read_pixels_a,x), \
   \
   NPRE(sover_aa,x), \
   NPRE(sover_ao,x), \

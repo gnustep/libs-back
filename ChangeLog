@@ -1,3 +1,19 @@
+2004-07-30 15:52  Alexander Malmberg <alexander@malmberg.org>
+
+	* Headers/gsc/GSCStateOps.h, Source/gsc/GSContext.m,
+	Source/gsc/GSGState.m (-GSReadRect:): New method.
+
+	* Source/art/GNUmakefile: Add ReadRect.m.
+	* Source/art/ReadRect.m: New file.
+	* Source/art/blit.m, Source/art/blit.h: Add read_pixels_a and
+	read_pixels_o. Fix spurious low bits in BLEAN_READ for 16bpp and
+	15bpp modes.
+
+	* Source/xlib/XGContext.m (-GSReadRect:): Remove.
+	* Source/xlib/XGGState.m (-GSReadRect:): Update key names and set all
+	keys even if the rectangle is degenerate. Return nil if the image
+	can't be read. Set the Matrix key.
+
 2004-07-26 15:37  Matt Rice <ratmice@yahoo.com>
 		  Alexander Malmberg <alexander@malmberg.org>
 

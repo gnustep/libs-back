@@ -781,6 +781,12 @@ static unsigned int unique_index = 0;
 /* NSGraphics Ops */	
 /* ----------------------------------------------------------------------- */
 @implementation GSContext (NSGraphics)
+
+- (NSDictionary *) GSReadRect: (NSRect)rect
+{
+  return [gstate GSReadRect: rect];
+}
+
 /*
  * Render Bitmap Images
  */
