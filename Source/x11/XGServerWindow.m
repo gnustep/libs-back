@@ -961,6 +961,19 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   window->siz_hints.height = NSHeight(frame);
   window->siz_hints.flags = USPosition|PPosition|USSize|PSize;
 
+  // send to the WM window style hints
+  if ((generic.wm & XGWM_WINDOWMAKER) != 0)
+    {
+      XChangeProperty(XDPY, window->ident, generic.win_decor_atom, 
+		      generic.win_decor_atom, 32, PropModeReplace, 
+		      (unsigned char *)&window->win_attrs,
+		      sizeof(GNUstepWMAttributes)/sizeof(CARD32));
+    }
+  else
+    {
+      setWindowHintsForStyle (XDPY, window->ident, style);
+    }
+
   // Use the globally active input mode
   window->gen_hints.flags = InputHint;
   window->gen_hints.input = False;
