@@ -1,3 +1,13 @@
+2004-11-10 18:41  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/x11/XWindowBuffer.m (test_xshm): New function.
+	(test_xshm_error_handler): New function.
+	(+windowBufferForWindow:depthInfo:): Move XShm detection code
+	to test_xshm and use it to decide whether to use XShm or not.
+	(+initialize): Move use_xshm setting code to test_xshm.
+	(+_gotShmCompletion:): Don't warn if we can't find an XWindowBuffer
+	for the event.
+
 2004-11-10  Matt Rice <ratmice@yahoo.com>
 
 	* Source/x11/XGServerWindow.m (-iconSize): Implement new method.
