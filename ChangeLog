@@ -1,3 +1,9 @@
+2002-04-27  Ludovic Marcotte <ludovic@Sophos.ca>
+
+	* Source/xlib/XGFontManager.m: Added a RETAIN call to the
+	allFontNames ivar in -enumerateFontsAndFamilies since we would
+	reference a dealloc'ed object after this method call.
+
 2002-04-27  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/win32/WIN32Server.h
