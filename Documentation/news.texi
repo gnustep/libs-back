@@ -7,6 +7,17 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.8.9}
+
+@itemize @bullet
+@item Much improved pasting support between X apps and GNUstep apps.
+@item Backend headers are no longer installed (now private).
+@end itemize
+
+@c ====================================================================
+@c Keep the next line just below the list of changes in most recent version.
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.8.8}
 
 Full multi-byte/unicode support for East Asian languages was added to
@@ -18,10 +29,6 @@ to Kazunobu Kuriyama.
 @item Also added slightly better EWMH support. 
 @item Art backend works with more versions of freetype.
 @end itemize
-
-@c ====================================================================
-@c Keep the next line just below the list of changes in most recent version.
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.8.7}
 
