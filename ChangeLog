@@ -1,3 +1,13 @@
+2004-08-23  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoContext.m (-DPScurrentalpha:,
+	-DPSsetoffset::): Removed methods.
+	* Source/cairo/CairoGState.m (-offset, -setoffset:): Added methods.
+	(-forwardInvocation:): Improved output.
+	(-GSSetDevice:::) Commented out NSLog calls.
+	* Source/gsc/GSGState.m (-_showString:lenght:): Removed this
+	method which was a left over from last patch. 
+	
 2004-08-09 14:38  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/win32/WIN32Server.m, Source/win32/WIN32ServerEvent.m,

@@ -358,14 +358,6 @@
 /* ----------------------------------------------------------------------- */
 /* Text operations */
 /* ----------------------------------------------------------------------- */
-/* Show the first lenght characters from C string s at the current point 
-   and return the width of the string. Does not move the point.
- */
-- (float) _showString: (const char*)s lenght: (int)lenght
-{
-  [self subclassResponsibility: _cmd];
-  return 0.0;
-}
 
 typedef enum {
   show_delta, show_array_x, show_array_y, show_array_xy

@@ -104,11 +104,6 @@
   return self;
 }
 
-- (void) DPSsetoffset: (short int)x : (short int)y
-{
-  XRGSTATE->_offset = NSMakePoint(x, y);
-}
-
 - (void) flushGraphics
 {
   /* FIXME */
@@ -143,11 +138,6 @@
 - (void) GSSetDevice: (void *)device : (int)x : (int)y
 {
   [XRGSTATE GSSetDevice: device : x : y];
-}
-
-- (void) DPScurrentalpha: (float *)a
-{
-  *a = cairo_current_alpha(XRGSTATE->_ct);
 }
 
 @end

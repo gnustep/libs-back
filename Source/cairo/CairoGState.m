@@ -31,7 +31,6 @@
 #define NEEDS_CSMK() NSLog(@"Need CSMK %@ %s", [self description], sel_get_name(_cmd))
 #define FIXME()  NSLog(@":::FIXME::: %@ %s", [self description], sel_get_name(_cmd))
 
-
 static cairo_matrix_t *local_matrix;
 
 /* Be warned that CairoGState didn't derived GSGState */
@@ -39,13 +38,16 @@ static cairo_matrix_t *local_matrix;
 
 + (void) initialize
 {
-  local_matrix = cairo_matrix_create();
+  if (self == [CairoGState class])
+    {
+      local_matrix = cairo_matrix_create();
+    }
 }
 
 - (void) forwardInvocation: (NSInvocation *)anInvocation
 {
   /* only for trapping any unknown message. */
-  FIXME();
+  NSLog (@":::UNKNOWN::: %@ %@", self, anInvocation);
   exit(1);
 }
 
@@ -106,6 +108,16 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
   cairo_set_matrix(ct, local_matrix);
 }
 
+- (void) setOffset: (NSPoint)theOffset
+{
+  _offset = theOffset;
+}
+
+- (NSPoint) offset
+{
+  return _offset;
+}
+
 - (void) GSCurrentDevice: (void **)device: (int *)x : (int *)y
 {
   if (x)
@@ -133,22 +145,18 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
 
   ASSIGN(_surface, [CairoSurface surfaceForDevice: device depthInfo: &cairo_info]);
   _offset = NSMakePoint(x, y);
+/*
   NSLog(@"before: surface %p on state %p",
 	cairo_current_target_surface(_ct), self);
+*/
   [_surface setAsTargetOfCairo: _ct];
   _flipCairoSurfaceMatrix(_ct, _surface);
+/*
   NSLog(@"after: surface %p on state %p %@",
 	cairo_current_target_surface (_ct), self,
 	NSStringFromSize([_surface size]));
-}
-
-/* This shall be invoked by Context */
-/*
--(void) _setSurface: (CairoSurface *)surface
-{
-	ASSIGN(_surface, surface);
-}
 */
+}
 
 @end 
 
