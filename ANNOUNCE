@@ -1,12 +1,12 @@
 ANNOUNCE
 ********
 
-This is version 0.9.3 of the GNUstep GUI Backend (`gnustep-back').
+This is version 0.9.4 of the GNUstep GUI Backend (`gnustep-back').
 
 What is the GNUstep GUI Backend?
 ================================
 
-   It is a back-end component for the GNUstep GUI Library.  The
+It is a back-end component for the GNUstep GUI Library.  The
 implementation of the GNUstep GUI Library is designed in two parts.  The
 first part is the front-end component which is independent of platform
 and display system.  This front-end is combined with a back-end
@@ -20,30 +20,35 @@ easily ported to other display systems.
 Window's Systems. It works via a DPS emulation engine to emulate the
 DPS functions required by the front-end system.
 
-Noteworthy changes in version `0.9.3'
+Noteworthy changes in version `0.9.4'
 =====================================
 
-   * A number of W32 window event enhancements
+   * Fast drawing on 8 bit displays was added (although it might only
+     speed things up on old X11 servers and/or remote servers).
 
-   * art backend glyph drawing with alpha enhancements.
+   * GNUstep modifier keys are mapped to KeySyms instead of KeyCodes
 
-   * libwraster is no longer checked for - image functions now in
-     frontend
+   * Added a Cairo backend, although it is probably non-functional.
+     Anyone is invited to contribute to making it work.
+
+   * art backend supports reading from a window.
+
+   * Add internal window decoration handling.
 
 Where can you get it?  How can you compile it?
 ==============================================
 
-   The gstep-back-0.9.3.tar.gz distribution file has been placed on
+The gstep-back-0.9.4.tar.gz distribution file has been placed on
 `ftp.gnustep.org' in `pub/gnustep/core'.
 
 Where do I send bug reports?
 ============================
 
-   Bug reports can be sent to the GNUstep bug list <bug-gnustep@gnu.org>
+Bug reports can be sent to the GNUstep bug list <bug-gnustep@gnu.org>
 
 Obtaining GNU Software
 ======================
 
-   Check out the GNUstep web site. (<http://www.gnustep.org/>) and the
-GNU web site. (<http://www.gnu.org/>)
+Check out the GNUstep web site. (<http://www.gnustep.org/>) and the GNU
+web site. (<http://www.gnu.org/>)
 
