@@ -1262,6 +1262,7 @@ static	XGDragView	*sharedDragView = nil;
   /* Temporarily make this False? we don't handle it correctly (fedor) */
   winattrs.override_redirect = False;
   XChangeWindowAttributes (XDPY, window->ident, valuemask, &winattrs);
+  [self setLevel: NSPopUpMenuWindowLevel];
 }
 
 @end
