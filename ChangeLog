@@ -1,3 +1,8 @@
+2002-09-26 16:08  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Implement handling of the 'ScreenFonts' key
+	in .nfont packages.
+
 2002-09-25 22:39  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Rework font configuration code to handle
