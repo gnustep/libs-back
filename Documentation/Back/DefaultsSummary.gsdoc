@@ -161,6 +161,16 @@
           used for various display specific operations.
           </p>
 	  </desc>
+	  <term>GSOldClipboard</term>
+	  <desc>
+          <p>[X backends only]
+          A boolean value which defaults to <code>NO</code>. If set to YES the
+	  old GNUstep way of X clipboard interaction will be used. That is
+	  PRIMARY as the general pasteboard and CLIPBOARD for the
+	  selection. Whereas the new X standard is the other way around. This
+	  setting may be needed for interaction in an old X enviornment.
+          </p>
+	  </desc>
 	</deflist>
       </section>
     </chapter>
