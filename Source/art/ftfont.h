@@ -45,6 +45,16 @@
 	transform: (NSAffineTransform *)transform
 	drawinfo: (struct draw_info_s *)di;
 
+-(void) drawGlyphs: (const NSGlyph *)glyphs : (int)length
+	at: (int)x : (int)y
+	to: (int)x0 : (int)y0 : (int)x1 : (int)y1
+	: (unsigned char *)buf : (int)bpl
+	alpha: (unsigned char *)abuf : (int)abpl
+	color: (unsigned char)r : (unsigned char)g : (unsigned char)b
+	: (unsigned char)alpha
+	transform: (NSAffineTransform *)transform
+	drawinfo: (struct draw_info_s *)di;
+
 /* TODO: see if this is really necessary */
 -(void) drawString: (const char *)s
 	at: (int)x:(int)y

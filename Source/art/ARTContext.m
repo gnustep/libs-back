@@ -331,13 +331,27 @@ very expensive
 
   x = p.x;
   y = wi->sy - p.y;
-  [(id<FTFontInfo>)font
-    drawGlyphs: glyphs : length
-    at: x:y
-    to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
-    color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
-    transform: ctm
-    drawinfo: &DI];
+  if (wi->has_alpha)
+    {
+      [(id<FTFontInfo>)font
+	drawGlyphs: glyphs : length
+	at: x:y
+	to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
+	alpha: wi->alpha + clip_x0 + clip_y0 * wi->sx : wi->sx
+	color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
+	transform: ctm
+	drawinfo: &DI];
+    }
+  else
+    {
+      [(id<FTFontInfo>)font
+	drawGlyphs: glyphs : length
+	at: x:y
+	to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
+	color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
+	transform: ctm
+	drawinfo: &DI];
+    }
   UPDATE_UNBUFFERED
 }
 
@@ -638,45 +652,78 @@ very expensive
 
 - (id) initWithContextInfo: (NSDictionary *)info
 {
-	NSString *contextType;
-	contextType = [info objectForKey:
-		NSGraphicsContextRepresentationFormatAttributeName];
+  NSString *contextType;
+  contextType = [info objectForKey:
+    NSGraphicsContextRepresentationFormatAttributeName];
 
-	self = [super initWithContextInfo: info];
-	if (contextType)
-	{
-		/* Most likely this is a PS or PDF context, so just return what
-		   super gave us */
-		return self;
-	}
+  self = [super initWithContextInfo: info];
+  if (contextType)
+    {
+      /* Most likely this is a PS or PDF context, so just return what
+	 super gave us
+	TODO: figure out if this comment still applies
+	 */
+      return self;
+    }
 
-	/* Create a default gstate */
-	gstate = [[ARTGState allocWithZone: [self zone]] initWithDrawContext: self];
-	[gstate DPSsetalpha: 1.0];
-	[gstate DPSsetlinewidth: 1.0];
+  /* Create a default gstate */
+  gstate = [[ARTGState allocWithZone: [self zone]] initWithDrawContext: self];
+  [gstate DPSsetalpha: 1.0];
+  [gstate DPSsetlinewidth: 1.0];
 
 #ifdef RDS
-	{
-		RDSServer *s=(RDSServer *)server;
-		int bpp;
-		int red_mask,green_mask,blue_mask;
-		[s getPixelFormat: &bpp masks: &red_mask : &green_mask : &blue_mask];
-		artcontext_setup_draw_info(&DI,red_mask,green_mask,blue_mask,bpp);
-	}
+  {
+    RDSServer *s=(RDSServer *)server;
+    int bpp;
+    int red_mask, green_mask, blue_mask;
+    [s getPixelFormat: &bpp masks: &red_mask : &green_mask : &blue_mask];
+    artcontext_setup_draw_info(&DI, red_mask, green_mask, blue_mask, bpp);
+  }
 #else
-	{
-		Display *d=[(XGServer *)server xDisplay];
-		Visual *v=DefaultVisual(d,DefaultScreen(d));
-		int bpp=DefaultDepth(d,DefaultScreen(d));
-		XImage *i=XCreateImage(d,v,bpp,ZPixmap,0,NULL,8,8,8,0);
-		bpp=i->bits_per_pixel;
-		XDestroyImage(i);
+  {
+    Display *d = [(XGServer *)server xDisplay];
+    int bpp;
+    Visual *visual;
+    XVisualInfo template;
+    XVisualInfo *visualInfo;
+    int numMatches;
+    XImage *i;
 
-		artcontext_setup_draw_info(&DI,v->red_mask,v->green_mask,v->blue_mask,bpp);
-	}
+    /*
+    We need a visual that we can generate pixel values for by ourselves.
+    Thus, we try to find a DirectColor or TrueColor visual. If that fails,
+    we use the default visual and hope that it's usable.
+    */
+    template.class=DirectColor;
+    visualInfo=XGetVisualInfo(d, VisualClassMask, &template, &numMatches);
+    if (!visualInfo)
+      {
+	template.class=TrueColor;
+	visualInfo=XGetVisualInfo(d, VisualClassMask, &template, &numMatches);
+      }
+    if (visualInfo)
+      {
+	visual = visualInfo->visual;
+	bpp = visualInfo->depth;
+	XFree(visualInfo);
+      }
+    else
+      {
+	visual = DefaultVisual(d, DefaultScreen(d));
+	bpp = DefaultDepth(d, DefaultScreen(d));
+      }
+
+    i = XCreateImage(d, visual, bpp, ZPixmap, 0, NULL, 8, 8, 8, 0);
+    bpp = i->bits_per_pixel;
+    XDestroyImage(i);
+
+    /* Only returns if the visual was usable. */
+    artcontext_setup_draw_info(&DI, visual->red_mask, visual->green_mask,
+			       visual->blue_mask, bpp);
+  }
 #endif
 
-	return self;
+  return self;
 }
 
 

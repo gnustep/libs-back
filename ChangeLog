@@ -1,3 +1,14 @@
+2004-02-29 21:42  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.h, Source/art/ftfont.m: Add
+	-drawGlyphs::at::to::::::alpha::color::::transform:drawinfo: method.
+
+	* Source/art/ARTContext.m (-GSShowGlyphs::): Use it if the
+	destination window has an alpha buffer.
+
+	(-initWithContextInfo:): Try to find a DirectColor or TrueColor
+	visual before falling back on the default visual.
+
 2004-02-28  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.9.2
