@@ -366,8 +366,9 @@ static BOOL XGInitAtoms(Display *dpy)
 	  unsigned int  size = 1;
 	  unsigned char c = 0;
 	  unsigned char *dst = &c;
+	  unichar ch = glyph;
 
-	  GSFromUnicode(&dst, &size, (unichar*)&glyph, 1,
+	  GSFromUnicode(&dst, &size, &ch, 1,
 	    mostCompatibleStringEncoding, 0, 0);
 	  index = c;
 	}
