@@ -186,10 +186,26 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   hwnd = WindowFromPoint(p);
   if ((int)hwnd == win)
     {
-      hwnd = GetWindow(hwnd, GW_HWNDNEXT);
+      /*
+       * If the winodw at the point we want is excluded,
+       * we must look through ALL windows at a lower level
+       * until we find one which contains the same point.
+       */
+      while (hwnd != 0)
+	{
+	  RECT	r;
+
+	  hwnd = GetWindow(hwnd, GW_HWNDNEXT);
+	  GetWindowRect(hwnd, &r);
+	  if (PtInRect(&r, p))
+	    {
+	      break;
+	    }
+	}
     }
 
-  *windowRef = (int)hwnd;
+  *windowRef = (int)hwnd;	// Any windows
+
   return (int)hwnd;
 }
 
