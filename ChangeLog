@@ -1,3 +1,17 @@
+Sat Jun 22 14:28:28 2002  Nicola Pero  <n.pero@mi.flashnet.it>
+
+	* Source/gsc/GSGState.m ([-DPScurrentpoint::]): Use -invert, not
+	-inverse, to invert an affine transform.
+
+Sat Jun 22 14:24:20 2002  Nicola Pero  <n.pero@mi.flashnet.it>
+
+	* Source/gsc/GSContext.m
+	([-NSDrawBitmap:rect:pixelsWide:pixelsHigh:
+	bitsPerSample:samplesPerPixel:bitsPerPixel:bytesPerRow:
+	isPlanar:hasAlpha:colorSpaceName:data]): Use scaleXBy:yBy: rather
+	than scaleBy::.
+	* Source/gsc/GSGState.m ([-DPSscale::]): Idem.
+	
 2002-06-20  Adam Fedor  <fedor@gnu.org>
 
 	* Source/x11/XGServer.m (_parse_display_name): New.
