@@ -320,7 +320,7 @@ _pixmap_combine_alpha(RContext *context,
 	      /*
 	       * Convert the X RGB value to a colormap entry if we
 	       * don't already have one.  Then set the pixel.
-	       * NB.  XAllocColor() will not necessarily return a
+	       * NB.  We will not necessarily get a
 	       * color with exactly the rgb components we gave it, so
 	       * we must record those components beforehand.
 	       */
@@ -329,23 +329,27 @@ _pixmap_combine_alpha(RContext *context,
 		  || c2.green != c1.green
 		  || c2.blue != c1.blue)
 		{
-		  c2.red = c1.red;
-		  c2.green = c1.green;
-		  c2.blue = c1.blue;
-		  XAllocColor(context->dpy, context->cmap, &c1);
+		  RColor rc;
+		  c2 = c1;
+		  rc.red = c1.red >> 8;
+		  rc.green = c1.green >> 8;
+		  rc.blue = c1.blue >> 8;
+		  RGetClosestXColor(context, &rc, &c1);
 		  c2.pixel = c1.pixel;
 		}
 	      XPutPixel(dest_im->image, col, row, c1.pixel);
 	      if (dest_alpha)
 		{
+		  RColor rc;
 		  XColor da;
 		  /* Alpha gets mixed the same as all the
 		     other color components */
 		  da.pixel = XGetPixel(dest_alpha->image, col, row);
 		  GS_QUERY_COLOR(da);
-		  da.red = acolor.red + da.red * (65536 - acolor.red)/65536;
-		  da.green = da.blue = da.red;
-		  XAllocColor(context->dpy, context->cmap, &da);
+		  rc.red = acolor.red >> 8;
+		  rc.red = rc.red + (da.red >> 8) * (256 - rc.red)/256;
+		  rc.green = rc.blue = rc.red;
+		  RGetClosestXColor(context, &rc, &da);
 		  XPutPixel(dest_alpha->image, col, row, da.pixel);
 		}
 	    }
@@ -1009,8 +1013,9 @@ _bitmap_combine_alpha(RContext *context,
       }
     else
       {
-	XColor		c2, a2;
-	unsigned       row, oldAlpha = 65537;
+	XColor	 c2, a2;
+	RColor   rc, rc2;
+	unsigned row, oldAlpha = 65537;
 	unsigned long pixels[CSIZE];
 	XColor colors[CSIZE];
 	BOOL empty[CSIZE];
@@ -1027,8 +1032,7 @@ _bitmap_combine_alpha(RContext *context,
 	 * RGB color values - on the downside, it's very slow.
 	 */
 	pixel = (unsigned long)-1;	// Never valid?
-	c2.pixel = pixel;
-	a2.pixel = pixel;
+	c1.pixel = c2.pixel = a2.pixel = pixel;
 	
 	for (row = 0; row < drect.height; row++)
 	  {
@@ -1052,10 +1056,8 @@ _bitmap_combine_alpha(RContext *context,
 		    if (alpha != oldAlpha)
 		      {
 			oldAlpha = alpha;
-			a2.red = alpha << 8;
-			a2.green = alpha << 8;
-			a2.blue = alpha << 8;
-			XAllocColor(context->dpy, context->cmap, &a2);
+			rc.red = rc.green = rc.blue = alpha;
+			RGetClosestXColor(context, &rc, &a2);
 		      }
 		    if (dest_alpha)
 		      {
@@ -1064,9 +1066,9 @@ _bitmap_combine_alpha(RContext *context,
 			   other color components */
 			da.pixel = XGetPixel(dest_alpha->image, col, row);
 			GS_QUERY_COLOR(da);
-			da.red = a2.red + da.red * (65536 - a2.red)/65536;
-			da.green = da.blue = da.red;
-			XAllocColor(context->dpy, context->cmap, &da);
+			rc.red = alpha + (da.red >> 8) * (256 - alpha)/256;
+			rc.green = rc.blue = rc.red;
+			RGetClosestXColor(context, &rc, &da);
 			XPutPixel(dest_alpha->image, col, row, da.pixel);
 		      }
 		    if (alpha == 0)
@@ -1074,9 +1076,9 @@ _bitmap_combine_alpha(RContext *context,
 		
 		    if (alpha == 255)
 		      {
-			c1.red = r << 8;
-			c1.green = g << 8;
-			c1.blue = b << 8;
+			rc.red = r;
+			rc.green = g;
+			rc.blue = b;
 		      }
 		    else
 		      {
@@ -1095,58 +1097,48 @@ _bitmap_combine_alpha(RContext *context,
 			 * we haven't already done the conversion earlier.
 			 */
 			c0.pixel = XGetPixel(dest_im->image, col, row);
-			if (c0.pixel != pixel)
+			if (c0.pixel != c2.pixel)
 			  {
-			    pixel = c0.pixel;
+			    c2.pixel = c0.pixel;
 			    GS_QUERY_COLOR(c0);
 			  }
 			
 			// mix in alpha to produce RGB out
-			c1.red = ((c0.red*ialpha) + (r*alpha))/255;
-			c1.green = ((c0.green*ialpha) + (g*alpha))/255;
-			c1.blue = ((c0.blue*ialpha) + (b*alpha))/255;
+			rc.red = ((c0.red*ialpha) + (r*alpha))/(255*256);
+			rc.green = ((c0.green*ialpha) + (g*alpha))/(255*256);
+			rc.blue = ((c0.blue*ialpha) + (b*alpha))/(255*256);
 		      }
 		  }
 		else
 		  {
-		    /*
-		     * Simply convert our 8-bit RGB values to X-style
-		     * 16-bit values, then determine the X colormap
-		     * entry and set the pixel.
-		     */
-		    c1.red = r << 8;
-		    c1.green = g << 8;
-		    c1.blue = b << 8;
 		    /* Not using alpha, but we still have to set it
 		       in the pixmap */
 		    if (a2.pixel == pixel)
 		      {
-			a2.red = 255 << 8;
-			a2.green = 255 << 8;
-			a2.blue = 255 << 8;
-			XAllocColor(context->dpy, context->cmap, &a2);
+			rc.red = rc.green = rc.blue = 255;
+			RGetClosestXColor(context, &rc, &a2);
 		      }
 		    if (dest_alpha)
 		      XPutPixel(dest_alpha->image, col, row, a2.pixel);
+		    rc.red = r;
+		    rc.green = g;
+		    rc.blue = b;
 		  }
 		
 		/*
 		 * Convert the X RGB value to a colormap entry if we
 		 * don't already have one.  Then set the pixel.
-		 * NB.  XAllocColor() will not necessarily return a
+		 * NB.  We will not necessarily get a
 		 * color with exactly the rgb components we gave it, so
 		 * we must record those components beforehand.
 		 */
-		if (c2.pixel == (unsigned long)-1
-		    || c2.red != c1.red
-		    || c2.green != c1.green
-		    || c2.blue != c1.blue)
+		if (c1.pixel == pixel
+		    || rc.red != rc2.red
+		    || rc.green != rc2.green
+		    || rc.blue != rc2.blue)
 		  {
-		    c2.red = c1.red;
-		    c2.green = c1.green;
-		    c2.blue = c1.blue;
-		    XAllocColor(context->dpy, context->cmap, &c1);
-		    c2.pixel = c1.pixel;
+		    rc2 = rc;
+		    RGetClosestXColor(context, &rc, &c1);
 		  }
 		XPutPixel(dest_im->image, col, row, c1.pixel);
 	      }
