@@ -1,3 +1,8 @@
+2002-09-18 19:59  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/art/blit.h, Source/art/blit.m, Source/art/composite.m:
+	Implement -dissolveGState:fromRect:toPoint:delta:.
+
 2002-09-18 00:36  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/image.m (-DPSimage:::::::::::): Treat input as
