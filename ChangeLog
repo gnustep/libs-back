@@ -1,3 +1,13 @@
+2004-05-12  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/win32/WIN32Geometry.h: (GSWindowOriginToMS) corrected computation.
+	* Source/win32/WIN32Server.m (-orderwindow:::) Removed obsolte
+	"return" in non-NSWindowOut case and use flag SWP_NOACTIVATE.
+	(-placewindow::, -movewindow::) Don't use flag SWP_NOREDRAW.
+	Patch by MA Garcias <lists@tragnarion.com>.
+	* Source/win32/WIN32ServerEvent.m Corrected definition of the
+	GET_X_LPARAM and GET_Y_LPARAM macros.
+	
 2004-03-30 01:49  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/x11/XGGLFormat.m (-initWithAttributes:): Fix handling of
