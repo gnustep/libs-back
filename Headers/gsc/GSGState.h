@@ -73,7 +73,7 @@ typedef enum {
 - (void) setOffset: (NSPoint)theOffset;
 - (NSPoint) offset;
 
-- (void) setColor: (device_color_t)color state: (color_state_t)cState;
+- (void) setColor: (device_color_t *)color state: (color_state_t)cState;
 
 - (void) compositeGState: (GSGState *)source
                 fromRect: (NSRect)aRect

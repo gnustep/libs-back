@@ -132,16 +132,16 @@
 
 /** Subclasses should override this method to be notified of changes
     in the current color */
-- (void) setColor: (device_color_t)color state: (color_state_t)cState
+- (void) setColor: (device_color_t *)color state: (color_state_t)cState
 {
   float alpha;
   alpha = fillColor.field[AINDEX];
   if (cState & COLOR_FILL)
-    fillColor = color;
+    fillColor = *color;
   fillColor.field[AINDEX] = alpha;
   alpha = strokeColor.field[AINDEX];
   if (cState & COLOR_STROKE)
-    strokeColor = color;
+    strokeColor = *color;
   strokeColor.field[AINDEX] = alpha;
   cstate = cState;
 }
@@ -198,7 +198,7 @@
 - (void) DPScurrentcmykcolor: (float*)c : (float*)m : (float*)y : (float*)k
 {
   device_color_t new = fillColor;
-  new = gsColorToCMYK(new);
+  gsColorToCMYK(&new);
   *c = new.field[0];
   *m = new.field[1];
   *y = new.field[2];
@@ -207,22 +207,22 @@
 
 - (void) DPScurrentgray: (float*)gray
 {
-  device_color_t gcolor;
-  gcolor = gsColorToGray(fillColor);
+  device_color_t gcolor = fillColor;
+  gsColorToGray(&gcolor);
   *gray = gcolor.field[0];
 }
 
 - (void) DPScurrenthsbcolor: (float*)h : (float*)s : (float*)b
 {
-  device_color_t gcolor;
-  gcolor = gsColorToHSB(fillColor);
+  device_color_t gcolor = fillColor;
+  gsColorToHSB(&gcolor);
   *h = gcolor.field[0]; *s = gcolor.field[1]; *b = gcolor.field[2];
 }
 
 - (void) DPScurrentrgbcolor: (float*)r : (float*)g : (float*)b
 {
-  device_color_t gcolor;
-  gcolor = gsColorToRGB(fillColor);
+  device_color_t gcolor = fillColor;
+  gsColorToRGB(&gcolor);
   *r = gcolor.field[0]; *g = gcolor.field[1]; *b = gcolor.field[2];
 }
 
@@ -234,44 +234,53 @@
 {
   CLAMP(a)
   fillColor.field[AINDEX] = strokeColor.field[AINDEX] = a;
-  [self setColor: fillColor state: COLOR_FILL];
-  [self setColor: strokeColor state: COLOR_STROKE];
+  [self setColor: &fillColor state: COLOR_FILL];
+  [self setColor: &strokeColor state: COLOR_STROKE];
 }
 
 - (void) DPSsetcmykcolor: (float)c : (float)m : (float)y : (float)k
 {
+  device_color_t col;
   CLAMP(c)
   CLAMP(m)
   CLAMP(y)
   CLAMP(k)
-  [self setColor: gsMakeColor(cmyk_colorspace, c, m, y, k) state: COLOR_BOTH];
+  gsMakeColor(&col, cmyk_colorspace, c, m, y, k);
+  [self setColor: &col state: COLOR_BOTH];
 }
 
 - (void) DPSsetgray: (float)gray
 {
+  device_color_t col;
   CLAMP(gray)
-  [self setColor: gsMakeColor(gray_colorspace, gray, 0, 0, 0) state: COLOR_BOTH];
+  gsMakeColor(&col, gray_colorspace, gray, 0, 0, 0);
+  [self setColor: &col  state: COLOR_BOTH];
 }
 
 - (void) DPSsethsbcolor: (float)h : (float)s : (float)b
 {
+  device_color_t col;
   CLAMP(h)
   CLAMP(s)
   CLAMP(b)
-  [self setColor: gsMakeColor(hsb_colorspace, h, s, b, 0) state: COLOR_BOTH];
+  gsMakeColor(&col, hsb_colorspace, h, s, b, 0);
+  [self setColor: &col state: COLOR_BOTH];
 }
 
 - (void) DPSsetrgbcolor: (float)r : (float)g : (float)b
 {
+  device_color_t col;
   CLAMP(r)
   CLAMP(g)
   CLAMP(b)
-  [self setColor: gsMakeColor(rgb_colorspace, r, g, b, 0) state: COLOR_BOTH];
+  gsMakeColor(&col, rgb_colorspace, r, g, b, 0);
+  [self setColor: &col state: COLOR_BOTH];
 }
 
 
 - (void) GSSetFillColorspace: (NSDictionary *)dict
 {
+  device_color_t col;
   float values[6];
   NSString *colorSpace = [dict objectForKey: GSColorSpaceName];
   if (fillColorS)
@@ -279,11 +288,13 @@
   memset(values, 0, sizeof(float)*6);
   fillColorS = [NSColor colorWithValues: values colorSpaceName:colorSpace];
   RETAIN(fillColorS);
-  [self setColor: gsMakeColor(rgb_colorspace, 0, 0, 0, 0) state: COLOR_FILL];
+  gsMakeColor(&col, rgb_colorspace, 0, 0, 0, 0);
+  [self setColor: &col state: COLOR_FILL];
 }
 
 - (void) GSSetStrokeColorspace: (NSDictionary *)dict
 {
+  device_color_t col;
   float values[6];
   NSString *colorSpace = [dict objectForKey: GSColorSpaceName];
   if (strokeColorS)
@@ -291,7 +302,8 @@
   memset(values, 0, sizeof(float)*6);
   strokeColorS = [NSColor colorWithValues: values colorSpaceName:colorSpace];
   RETAIN(strokeColorS);
-  [self setColor: gsMakeColor(rgb_colorspace, 0, 0, 0, 0) state: COLOR_STROKE];
+  gsMakeColor(&col, rgb_colorspace, 0, 0, 0, 0);
+  [self setColor: &col state: COLOR_STROKE];
 }
 
 - (void) GSSetFillColor: (float *)values
@@ -314,7 +326,7 @@
 	  green: &dcolor.field[1]
 	   blue: &dcolor.field[2]
 	  alpha: &dcolor.field[AINDEX]];
-  [self setColor: dcolor state: COLOR_FILL];  
+  [self setColor: &dcolor state: COLOR_FILL];
 }
 
 - (void) GSSetStrokeColor: (float *)values
@@ -337,7 +349,7 @@
 	  green: &dcolor.field[1]
 	   blue: &dcolor.field[2]
 	  alpha: &dcolor.field[AINDEX]];
-  [self setColor: dcolor state: COLOR_STROKE];  
+  [self setColor: &dcolor state: COLOR_STROKE];
 }
 
 /* ----------------------------------------------------------------------- */
@@ -457,10 +469,10 @@
 
    /* Initialize colors. By default the same color is used for filling and 
      stroking unless fill and/or stroke color is set explicitly */
-  fillColor = gsMakeColor(gray_colorspace, 0, 0, 0, 0);
+  gsMakeColor(&fillColor, gray_colorspace, 0, 0, 0, 0);
   fillColor.field[AINDEX] = 1.0;
   strokeColor.field[AINDEX] = 1.0;
-  [self setColor: fillColor state: COLOR_BOTH];
+  [self setColor: &fillColor state: COLOR_BOTH];
 
   charSpacing = 0;
   textMode    = GSTextFill;

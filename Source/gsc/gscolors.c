@@ -28,39 +28,40 @@
 #include <math.h>
 #include "gsc/gscolors.h"
 
-device_color_t 
-gsMakeColor(device_colorspace_t space, float a, float b, float c, float d)
+void
+gsMakeColor(device_color_t *dst, device_colorspace_t space, float a, float b, float c, float d)
 {
-  device_color_t color;
-  color.space = space;
-  color.field[0] = a;
-  color.field[1] = b;
-  color.field[2] = c;
-  color.field[3] = d;
-  return color;
+  dst->space = space;
+  dst->field[0] = a;
+  dst->field[1] = b;
+  dst->field[2] = c;
+  dst->field[3] = d;
 }
 
-device_color_t
-gsGrayToRGB(device_color_t  color)
+void
+gsGrayToRGB(device_color_t  *color)
 {
-  return gsMakeColor(rgb_colorspace, color.field[0], color.field[0], 
-	      color.field[0], 0);
+  gsMakeColor(color, rgb_colorspace, color->field[0], color->field[0],
+	      color->field[0], 0);
 }
 
-device_color_t 
-gsHSBToRGB(device_color_t  color)
+void
+gsHSBToRGB(device_color_t  *color)
 {
   int i;
   float h, s, v;
   float f, p, q, t;
   float red, green, blue;
 
-  h = color.field[0];
-  s = color.field[1];
-  v = color.field[2];
+  h = color->field[0];
+  s = color->field[1];
+  v = color->field[2];
 
-  if (s == 0) 
-    return gsMakeColor(rgb_colorspace, v, v, v, 0);
+  if (s == 0)
+    {
+      gsMakeColor(color, rgb_colorspace, v, v, v, 0);
+      return;
+    }
 
   h = h * 6;
   i = (int)h;
@@ -103,21 +104,21 @@ gsHSBToRGB(device_color_t  color)
       blue = q;
       break;
     }
-  return gsMakeColor(rgb_colorspace, red, green, blue, 0);
+  gsMakeColor(color, rgb_colorspace, red, green, blue, 0);
 }
 
 /* FIXME */   
-device_color_t 
-gsCMYKToRGB(device_color_t  color)
+void
+gsCMYKToRGB(device_color_t  *color)
 {
   float c, m, y, k;
   float red, green, blue;
   double white;
 
-  c = color.field[0];
-  m = color.field[1];
-  y = color.field[2];
-  k = color.field[3];
+  c = color->field[0];
+  m = color->field[1];
+  y = color->field[2];
+  k = color->field[3];
   white = 1 - k;
 
   if (k == 0)
@@ -138,139 +139,124 @@ gsCMYKToRGB(device_color_t  color)
       green = (m > white ? 0 : white - m);
       blue = (y > white ? 0 : white - y);
     }
-  return gsMakeColor(rgb_colorspace, red, green, blue, 0);
+  gsMakeColor(color, rgb_colorspace, red, green, blue, 0);
 }
 
-device_color_t 
-gsColorToRGB(device_color_t color)
+void
+gsColorToRGB(device_color_t *color)
 {
-  device_color_t new;
-
-  switch(color.space)
+  switch(color->space)
     {
     case gray_colorspace:
-      new = gsGrayToRGB(color);
+      gsGrayToRGB(color);
       break;
     case rgb_colorspace:
-      new = color;
       break;
     case hsb_colorspace: 
-      new = gsHSBToRGB(color);
+      gsHSBToRGB(color);
       break;
     case cmyk_colorspace: 
-      new = gsCMYKToRGB(color);
+      gsCMYKToRGB(color);
       break;
     default:
       break;
     }
-  return new;
 }
 
-device_color_t 
-gsColorToGray(device_color_t color)
+void
+gsColorToGray(device_color_t *color)
 {
-  device_color_t new;
-
-  new.space = gray_colorspace;
-  switch(color.space)
+  switch(color->space)
     {
     case gray_colorspace:
-      new = color;
       break;
     case hsb_colorspace:
     case cmyk_colorspace: 
-      color = gsColorToRGB(color);
+      gsColorToRGB(color);
       /* NO BREAK */
     case rgb_colorspace:
-      new.field[0] = 
-	((0.3*color.field[0]) + (0.59*color.field[1]) + (0.11*color.field[2]));
+      color->field[0] =
+	((0.3*color->field[0]) + (0.59*color->field[1]) + (0.11*color->field[2]));
       break;
     default:
       break;
     }
-  return new;
+  color->space = gray_colorspace;
 }
 
-device_color_t 
-gsColorToCMYK(device_color_t color)
+void
+gsColorToCMYK(device_color_t *color)
 {
-  device_color_t new;
-
-  new.space = cmyk_colorspace;
-  switch(color.space)
+  switch(color->space)
     {
     case gray_colorspace:
-      new.field[0] = 0.0;
-      new.field[1] = 0.0;
-      new.field[2] = 0.0;
-      new.field[3] = color.field[0];
+      color->field[3] = color->field[0];
+      color->field[0] = 0.0;
+      color->field[1] = 0.0;
+      color->field[2] = 0.0;
       break;
     case hsb_colorspace:
-      color = gsColorToRGB(color);
+      gsColorToRGB(color);
       /* NO BREAK */
     case rgb_colorspace:
-      new.field[0] = 1.0 - color.field[0];
-      new.field[1] = 1.0 - color.field[1];
-      new.field[2] = 1.0 - color.field[2];
-      new.field[3] = 0;
+      color->field[0] = 1.0 - color->field[0];
+      color->field[1] = 1.0 - color->field[1];
+      color->field[2] = 1.0 - color->field[2];
+      color->field[3] = 0;
 
       /* Add a bit of black if possible (for no reason, really). */
-      new.field[3] = new.field[0];
-      new.field[0] = 0.0;
-      new.field[1] -= new.field[3];
-      new.field[2] -= new.field[3];
-      if (new.field[1] > new.field[2])
+      color->field[3] = color->field[0];
+      color->field[0] = 0.0;
+      color->field[1] -= color->field[3];
+      color->field[2] -= color->field[3];
+      if (color->field[1] > color->field[2])
 	{
-	  if (new.field[2] < 0.0)
+	  if (color->field[2] < 0.0)
 	    {
-	      new.field[0] -= new.field[2];
-	      new.field[1] -= new.field[2];
-	      new.field[3] += new.field[2];
-	      new.field[2] = 0;
+	      color->field[0] -= color->field[2];
+	      color->field[1] -= color->field[2];
+	      color->field[3] += color->field[2];
+	      color->field[2] = 0;
 	    }
 	}
       else
 	{
-	  if (new.field[1] < 0.0)
+	  if (color->field[1] < 0.0)
 	    {
-	      new.field[0] -= new.field[1];
-	      new.field[2] -= new.field[1];
-	      new.field[3] += new.field[1];
-	      new.field[1] = 0;
+	      color->field[0] -= color->field[1];
+	      color->field[2] -= color->field[1];
+	      color->field[3] += color->field[1];
+	      color->field[1] = 0;
 	    }
 	}
       
       break;
     case cmyk_colorspace: 
-      new = color;
       break;
     default:
       break;
     }
-  return new;
+  color->space = cmyk_colorspace;
 }
 
-device_color_t 
-gsColorToHSB(device_color_t color)
+void
+gsColorToHSB(device_color_t *color)
 {
-  device_color_t new;
-
-  new.space = hsb_colorspace;
-  switch(color.space)
+  switch(color->space)
     {
     case gray_colorspace:
-      new.field[0] = 0.0;
-      new.field[1] = 0.0;
-      new.field[2] = color.field[0];
+      color->field[2] = color->field[0];
+      color->field[0] = 0.0;
+      color->field[1] = 0.0;
       break;
     case cmyk_colorspace:
-      color = gsColorToRGB(color);
+      gsColorToRGB(color);
       /* NO BREAK */
     case rgb_colorspace:
       {
-	float r = color.field[0];
-	float g = color.field[1];
-	float b = color.field[2];
+	float r = color->field[0];
+	float g = color->field[1];
+	float b = color->field[2];
 	float _hue_component, _saturation_component, _brightness_component;
 
 	if (r == g && r == b)
@@ -311,16 +297,15 @@ gsColorToHSB(device_color_t color)
 	    _saturation_component = diff/V;
 	    _brightness_component = V;
 	  }
-	new.field[0] = _hue_component;
-	new.field[1] = _saturation_component;
-	new.field[2] = _brightness_component;
+	color->field[0] = _hue_component;
+	color->field[1] = _saturation_component;
+	color->field[2] = _brightness_component;
       }
       break;
     case hsb_colorspace:
-      new = color = gsColorToRGB(color);
       break;
     default:
       break;
     }
-  return new;
+  color->space = hsb_colorspace;
 }

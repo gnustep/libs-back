@@ -239,16 +239,18 @@ static	Region	emptyRegion;
   return region;
 }
 
-- (void) setColor: (device_color_t)color state: (color_state_t)cState
+- (void) setColor: (device_color_t *)color state: (color_state_t)cState
 {
+  device_color_t c;
   [super setColor: color state: cState];
   if (context == NULL)
     {
       /* Window device isn't set yet */
       return;
     }
-  color = gsColorToRGB(color);
-  gcv.foreground = xrRGBToPixel(context, color);
+  c = *color;
+  gsColorToRGB(&c);
+  gcv.foreground = xrRGBToPixel(context, c);
   [self setGCValues: gcv withMask: GCForeground];
 }
 
@@ -260,7 +262,7 @@ static	Region	emptyRegion;
       /* Window device isn't set yet */
       return;
     }
-  color = gsMakeColor(rgb_colorspace, value, value, value, 0);
+  gsMakeColor(&color, rgb_colorspace, value, value, value, 0);
   gcv.foreground = xrRGBToPixel(context, color);
   if (agcntxt == None)
     agcntxt = XCreateGC(XDPY, draw, GCForeground, &gcv);
@@ -1209,7 +1211,7 @@ typedef enum {
     }
 
   if ((cstate & COLOR_FILL) == 0)
-    [self setColor: fillColor state: COLOR_FILL];
+    [self setColor: &fillColor state: COLOR_FILL];
 
   /* Use only delta transformations (no offset) */
   len = strlen(s);
@@ -1319,7 +1321,7 @@ typedef enum {
     }
   
   if ((cstate & COLOR_FILL) == 0)
-    [self setColor: fillColor state: COLOR_FILL];
+    [self setColor: &fillColor state: COLOR_FILL];
 
   len = strlen(s);
   width = [font_info widthOf: s lenght: len];
@@ -1498,7 +1500,7 @@ typedef enum {
 - (void)DPSeofill 
 {
   if ((cstate & COLOR_FILL) == 0)
-    [self setColor: fillColor state: COLOR_FILL];
+    [self setColor: &fillColor state: COLOR_FILL];
 
   [self _paintPath: path_eofill];
 }
@@ -1506,7 +1508,7 @@ typedef enum {
 - (void)DPSfill 
 {
   if ((cstate & COLOR_FILL) == 0)
-    [self setColor: fillColor state: COLOR_FILL];
+    [self setColor: &fillColor state: COLOR_FILL];
 
   [self _paintPath: path_fill];
 }
@@ -1555,7 +1557,7 @@ typedef enum {
     }
 
   if ((cstate & COLOR_FILL) == 0)
-    [self setColor: fillColor state: COLOR_FILL];
+    [self setColor: &fillColor state: COLOR_FILL];
 
   bounds = XGViewRectToX(self, NSMakeRect(x, y, w, h));
   // Hack: Only draw when alpha is not zero
@@ -1586,7 +1588,7 @@ typedef enum {
     }
 
   if ((cstate & COLOR_STROKE) == 0)
-    [self setColor: fillColor state: COLOR_STROKE];
+    [self setColor: &fillColor state: COLOR_STROKE];
 
   bounds = XGViewRectToX(self, NSMakeRect(x, y, w, h));
   if (bounds.width > 0)
@@ -1612,7 +1614,7 @@ typedef enum {
 - (void)DPSstroke 
 {
   if ((cstate & COLOR_STROKE) == 0)
-    [self setColor: fillColor state: COLOR_STROKE];
+    [self setColor: &fillColor state: COLOR_STROKE];
 
   [self _paintPath: path_stroke];
 }

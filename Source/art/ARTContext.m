@@ -910,53 +910,80 @@ if necessary. Returns new operation, op==-1 means noop. */
 optimize all this. passing device_color_t structures around by value is
 very expensive
 */
--(void) setColor: (device_color_t)color  state: (color_state_t)cState
+-(void) setColor: (device_color_t *)color  state: (color_state_t)cState
 {
 	device_color_t c;
+	unsigned char r,g,b;
 
 	[super setColor: color  state: cState];
 	if (cState&(COLOR_FILL|COLOR_STROKE))
 	{
-		c=gsColorToRGB(fillColor);
+		c=fillColor;
+		gsColorToRGB(&c); /* TODO: check this */
 		if (c.field[0]>1.0) c.field[0]=1.0;
 		if (c.field[0]<0.0) c.field[0]=0.0;
-		c.field[0]*=255;
+		r=c.field[0]*255;
 		if (c.field[1]>1.0) c.field[1]=1.0;
 		if (c.field[1]<0.0) c.field[1]=0.0;
-		c.field[1]*=255;
+		g=c.field[1]*255;
 		if (c.field[2]>1.0) c.field[2]=1.0;
 		if (c.field[2]<0.0) c.field[2]=0.0;
-		c.field[2]*=255;
-	}
+		b=c.field[2]*255;
 
-	if (cState&COLOR_FILL)
-	{
-		fill_color[0]=c.field[0];
-		fill_color[1]=c.field[1];
-		fill_color[2]=c.field[2];
-		fill_color[3]=fillColor.field[AINDEX]*255;
-	}
-	if (cState&COLOR_STROKE)
-	{
-		stroke_color[0]=c.field[0];
-		stroke_color[1]=c.field[1];
-		stroke_color[2]=c.field[2];
-		stroke_color[3]=strokeColor.field[AINDEX]*255;
+		if (cState&COLOR_FILL)
+		{
+			fill_color[0]=r;
+			fill_color[1]=g;
+			fill_color[2]=b;
+			fill_color[3]=fillColor.field[AINDEX]*255;
+		}
+		if (cState&COLOR_STROKE)
+		{
+			stroke_color[0]=r;
+			stroke_color[1]=g;
+			stroke_color[2]=b;
+			stroke_color[3]=strokeColor.field[AINDEX]*255;
+		}
 	}
 }
 
-/* TODO: optimize the others? optimize the gsc code instead? */
-- (void) DPSsetgray: (float)gray
+/* specially optimized versions (since these are common and simple) */
+-(void) DPSsetgray: (float)gray
 {
   if (gray < 0.0) gray = 0.0;
   if (gray > 1.0) gray = 1.0;
 
   fillColor.space = strokeColor.space = gray_colorspace;
   fillColor.field[0] = strokeColor.field[0] = gray;
-  cstate = COLOR_FILL|COLOR_STROKE;
+  cstate = COLOR_FILL | COLOR_STROKE;
 
   stroke_color[0] = stroke_color[1] = stroke_color[2] =
-    fill_color[0] = fill_color[1] = fill_color[2] = gray*255;
+    fill_color[0] = fill_color[1] = fill_color[2] = gray * 255;
+}
+
+-(void) DPSsetalpha: (float)a
+{
+  if (a < 0.0) a = 0.0;
+  if (a > 1.0) a = 1.0;
+  fillColor.field[AINDEX] = strokeColor.field[AINDEX] = a;
+  stroke_color[3] = fill_color[3] = a * 255;
+}
+
+- (void) DPSsetrgbcolor: (float)r : (float)g : (float)b
+{
+  if (r < 0.0) r = 0.0; if (r > 1.0) r = 1.0;
+  if (g < 0.0) g = 0.0; if (g > 1.0) g = 1.0;
+  if (b < 0.0) b = 0.0; if (b > 1.0) b = 1.0;
+
+  fillColor.space = strokeColor.space = rgb_colorspace;
+  fillColor.field[0] = strokeColor.field[0] = r;
+  fillColor.field[1] = strokeColor.field[1] = g;
+  fillColor.field[2] = strokeColor.field[2] = b;
+  cstate = COLOR_FILL | COLOR_STROKE;
+
+  stroke_color[0] = fill_color[0] = r * 255;
+  stroke_color[1] = fill_color[1] = g * 255;
+  stroke_color[2] = fill_color[2] = b * 255;
 }
 
 
