@@ -259,6 +259,7 @@ static NSMutableDictionary	*_globalFontDictionary = nil;
       XDestroyRegion(xregion);
     }
 
+#ifdef HAVE_UTF8
   /* do it */
   if (NSUTF8StringEncoding == mostCompatibleStringEncoding)
     {
@@ -266,6 +267,7 @@ static NSMutableDictionary	*_globalFontDictionary = nil;
                         xp.x, xp.y, (XftChar8 *)s, length);
     }
   else
+#endif
     {
       XftDrawString8(xftdraw, &xftcolor, font_info, 
                    xp.x, xp.y, (XftChar8*)s, length);
@@ -279,6 +281,7 @@ static NSMutableDictionary	*_globalFontDictionary = nil;
 {
   XGlyphInfo extents;
 
+#ifdef HAVE_UTF8
   if (mostCompatibleStringEncoding == NSUTF8StringEncoding)
     XftTextExtentsUtf8([XGServer currentXDisplay],
                        font_info,
@@ -286,6 +289,7 @@ static NSMutableDictionary	*_globalFontDictionary = nil;
                        len,
                        &extents);
   else
+#endif
     XftTextExtents8([XGServer currentXDisplay],
                     font_info,
                     (XftChar8*)s, 
