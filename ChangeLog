@@ -1,3 +1,15 @@
+2003-07-22  Adam Fedor  <fedor@gnu.org>
+
+	* Headers/x11/XGOpenGL.h (GSglxMinorVersion): New
+
+	* Source/x11/XGGLContext.m (+clearCurrentContext): Use it to call
+	correct function.
+	(-initWithFormat:shareContext:, makeCurrentContext): Idem.
+	* Source/x11/XGGLFormat.m ([ XGGLPixelFormat -getValues:
+        forAttribute:forVirtualScreen:]): Idem.
+	(initWithAttributes:): Idem. 
+	(Patch from Damien Genet with some changes).
+	
 2003-07-21  Adam Fedor  <fedor@gnu.org>
 
 	* Documentation/Back/DefaultsSummary.gsdoc: Add new
