@@ -405,7 +405,7 @@ fpfloat(FILE *stream, float f)
 - (void) DPSsetstrokeadjust: (int)b
 {
   [super DPSsetstrokeadjust: b];
-  fprintf(gstream, "%d setstrokeadjust\n", b);
+  fprintf(gstream, "%s setstrokeadjust\n", b? "true" : "false");
 }
 
 
