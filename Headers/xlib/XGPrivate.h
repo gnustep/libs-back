@@ -102,6 +102,10 @@ extern int _bitmap_combine_alpha(RContext *context,
 		NSCompositingOperation op,
 		XGDrawMechanism drawMechanism);
 
+extern NSData *_pixmap_read_alpha(RContext *context,
+				  RXImage *source_im, RXImage *source_alpha,
+				  XRectangle srect,
+				  XGDrawMechanism drawMechanism);
 
 #endif
 

@@ -72,5 +72,9 @@
 
 @end
 
+@interface XGGState (Ops)
+- (NSDictionary *) GSReadRect: (NSRect)rect;
+@end
+
 #endif /* _XGGState_h_INCLUDE */
 
