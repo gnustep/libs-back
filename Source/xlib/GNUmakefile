@@ -48,7 +48,7 @@ XGGeometry.m \
 linking.m
 
 ifeq ($(WITH_XFT),yes)
-xlib_OBJC_FILES += XftFontInfo.m
+xlib_OBJC_FILES += GSXftFontInfo.m
 endif
 
 xlib_HEADER_FILES_DIR = ../../Headers/xlib

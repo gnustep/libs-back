@@ -44,7 +44,7 @@
 #include "xlib/XGGState.h"
 
 #ifdef HAVE_XFT
-#include "xlib/XftFontInfo.h"
+#include "xlib/GSXftFontInfo.h"
 #endif
 
 #include <X11/Xlib.h>
@@ -78,7 +78,7 @@
 #ifdef HAVE_XFT
   if ([[NSUserDefaults standardUserDefaults] boolForKey: @"GSFontAntiAlias"])
     {
-      fontClass = [XftFontInfo class];
+      fontClass = [GSXftFontInfo class];
     }
 #endif
   if (fontClass == Nil)
