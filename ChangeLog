@@ -1,5 +1,10 @@
 2002-04-01  Adam Fedor  <fedor@gnu.org>
 
+	* Source/x11/XGServerWindow.m ([XGServer -_setupRootWindow]): Read
+	GSAppOwnsMiniwindow default.
+	([XGServer -appOwnsMiniwindow]): Use it.
+	([XGServer -miniwindow:): Idem.
+
 	* Source/gsc/GSContext.m (-GSSendBezierPath:): Implement
 	(-GSRectClipList::): Likewise.
 	(-GSRectFillList::): Likewise.

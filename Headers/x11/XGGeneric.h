@@ -53,7 +53,7 @@ struct XGGeneric {
   int   		wm;
   struct {
     unsigned	useWindowMakerIcons:1;
-    unsigned    borderedBorderless:1;
+    unsigned    appOwnsMiniwindow:1;
     unsigned    doubleParentWindow:1;
   } flags;
   Time			lastTime;

@@ -706,6 +706,12 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 	  generic.flags.useWindowMakerIcons = NO;
 	}
     }
+  generic.flags.appOwnsMiniwindow = YES;
+  if ([defs stringForKey: @"GSAppOwnsMiniwindow"] != nil
+    && [defs boolForKey: @"GSAppOwnsMiniwindow"] == NO)
+    {
+      generic.flags.appOwnsMiniwindow = NO;
+    }
   generic.flags.doubleParentWindow = NO;
   if ([defs stringForKey: @"GSDoubleParentWindows"] != nil
     && [defs boolForKey: @"GSDoubleParentWindows"] == YES)
@@ -1240,6 +1246,11 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
     }
 }
 
+- (BOOL) appOwnsMiniwindow
+{
+  return generic.flags.appOwnsMiniwindow;
+}
+
 - (void) miniwindow: (int) win
 {
   gswindow_device_t	*window;
@@ -1250,16 +1261,12 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       return;
     }
   NSDebugLLog(@"XGTrace", @"DPSminiwindow: %d ", win);
-  // AT PRESENT - things seem to go wrong if we set an icon winiwindow -
-  // I think that the WindowManager prevents us getting most of the events
-  // in the miniwindow - so it doesn't know when it have been unmapped
-  // and we end up trying to perform draw operations on an unmapped window!
-#if 1
   /*
    * If we haven't already done so - set the icon window hint for this
    * window so that the GNUstep miniwindow is displayed (if supported).
    */
-  if ((window->gen_hints.flags & IconWindowHint) == 0)
+  if (generic.flags.appOwnsMiniwindow
+      && (window->gen_hints.flags & IconWindowHint) == 0)
     {
       NSWindow		*nswin;
 
@@ -1277,7 +1284,6 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 	    }
 	}
     }
-#endif
   XIconifyWindow(XDPY, window->ident, XSCR);
 }
 
