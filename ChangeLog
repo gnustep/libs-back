@@ -1,3 +1,7 @@
+2003-11-02 02:27  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/gsc/GSStreamContext.m (fpfloat, writeHex): Make static.
+
 2003-10-29  Yen-Ju Chen <yjchenx@hotmail.com>
 
 	* Source/x11/XGServerWindow.m ([XGServer -_setupRootWindow]): Always

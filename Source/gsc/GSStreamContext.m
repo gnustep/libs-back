@@ -46,7 +46,7 @@
 @end
 
 /* Print a floating point number regardless of localization */
-void
+static void
 fpfloat(FILE *stream, float f)
 {
   char buffer[80], *p;
@@ -797,7 +797,7 @@ fpfloat(FILE *stream, float f)
 
 static char *hexdigits = "0123456789abcdef";
 
-void
+static void
 writeHex(FILE *gstream, const unsigned char *data, int count)
 {
   int i;
