@@ -409,6 +409,18 @@ if test "x$enable_xlib" = "xyes"; then
   AC_MSG_RESULT(xlib)
 fi
 
+#--------------------------------------------------------------------
+# Set the name of the backend
+#--------------------------------------------------------------------
+AC_ARG_WITH(name, 
+           [  --with-name=PREFIX      Set the name of the backend (def=back)])
+if test "x$with_name" = "x"; then
+ BACKEND_NAME=back
+else
+ BACKEND_NAME=${with_name}
+fi
+AC_SUBST(BACKEND_NAME)
+
 AC_OUTPUT(back.make config.make)
 
 

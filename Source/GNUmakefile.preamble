@@ -37,7 +37,7 @@ ADDITIONAL_CFLAGS +=
 
 # Additional include directories the compiler should search
 ADDITIONAL_INCLUDE_DIRS += -I../Headers \
-	-I$(GNUSTEP_TARGET_DIR)
+	-I$(GNUSTEP_TARGET_DIR) $(GRAPHIC_CFLAGS)
 
 # Additional LDFLAGS to pass to the linker
 #ADDITIONAL_LDFLAGS +=
@@ -57,7 +57,7 @@ ADDITIONAL_INCLUDE_DIRS += -I../Headers \
 
 # Flags for compiling as a bundle
 ifneq ($(BACKEND_BUNDLE),)
-libgnustep-back_BUNDLE_LIBS = $(GRAPHIC_LIBS)
+libgnustep-$(BACKEND_NAME)_BUNDLE_LIBS = $(GRAPHIC_LIBS)
 ADDITIONAL_LIB_DIRS += $(GRAPHIC_LFLAGS)
 endif
 

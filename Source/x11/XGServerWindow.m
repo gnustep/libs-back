@@ -2626,7 +2626,7 @@ _computeDepth(int class, int bpp)
 #include	"x11/XGSlideView.h"
 
 @implementation XGServer (Sliding)
-- (BOOL) _slideImage: (NSImage*)image from: (NSPoint)from to: (NSPoint)to
+- (BOOL) slideImage: (NSImage*)image from: (NSPoint)from to: (NSPoint)to
 {
   return [XGSlideView _slideImage: image from: from to: to];
 }
