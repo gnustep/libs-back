@@ -100,8 +100,16 @@ static BOOL XGInitAtoms(Display *dpy)
   return font_info;
 }
 
-- initWithFontName: (NSString*)name matrix: (const float *)fmatrix
+- initWithFontName: (NSString*)name
+	    matrix: (const float *)fmatrix
+	screenFont: (BOOL)screenFont
 {
+  if (screenFont)
+    {
+      RELEASE(self);
+      return nil;
+    }
+
   [super init];
   ASSIGN(fontName, name);
   memcpy(matrix, fmatrix, sizeof(matrix));
@@ -202,6 +210,20 @@ static BOOL XGInitAtoms(Display *dpy)
   XDrawString(xdpy, draw, xgcntxt, xp.x, xp.y, s, len);
 }
 
+- (void) drawGlyphs: (const NSGlyph *) glyphs lenght: (int) len
+	  onDisplay: (Display*) xdpy drawable: (Drawable) draw
+	       with: (GC) xgcntxt at: (XPoint) xp
+{
+  // This font must already be active!
+  unsigned char buf[len];
+  int i;
+  for (i=0;i<len;i++)
+    {
+      buf[i]=glyphs[i];
+    }
+  XDrawString(xdpy, draw, xgcntxt, xp.x, xp.y, buf, len);
+}
+
 - (float) widthOfString: (NSString*)string
 {
   NSData *d = [string dataUsingEncoding: mostCompatibleStringEncoding
@@ -216,6 +238,17 @@ static BOOL XGInitAtoms(Display *dpy)
 - (float) widthOf: (const char*) s lenght: (int) len
 {
   return XTextWidth(font_info, s, len);
+}
+
+- (float) widthOfGlyphs: (const NSGlyph *) glyphs lenght: (int) len
+{
+  unsigned char buf[len];
+  int i;
+  for (i=0;i<len;i++)
+    {
+      buf[i]=glyphs[i];
+    }
+  return XTextWidth(font_info, buf, len);
 }
 
 - (void) setActiveFor: (Display*) xdpy gc: (GC) xgcntxt

@@ -31,7 +31,9 @@ Image drawing. DPSimage and helpers.
 
 #include "ARTGState.h"
 
+#ifndef RDS
 #include "x11/XWindowBuffer.h"
+#endif
 #include "blit.h"
 
 

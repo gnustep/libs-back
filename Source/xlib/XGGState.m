@@ -1347,6 +1347,54 @@ typedef enum {
   [path relativeMoveToPoint: NSMakePoint(width * scale.width, 0)];
 }
 
+
+- (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t) length
+{
+  int width;
+  NSSize scale;
+  XPoint xp;
+
+  if (font == nil)
+    {
+      NSLog(@"DPS (xgps): no font set\n");
+      return;
+    }
+
+  COPY_GC_ON_CHANGE;
+  if (draw == 0)
+    {
+      DPS_WARN(DPSinvalidid, @"No Drawable defined for show");
+      return;
+    }
+  
+  if ((cstate & COLOR_FILL) == 0)
+    [self setColor: &fillColor state: COLOR_FILL];
+
+  width = [(XGFontInfo *)font widthOfGlyphs: glyphs lenght: length];
+  xp = XGWindowPointToX(self, [path currentPoint]);
+  // Hack: Only draw when alpha is not zero
+  if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
+    [(XGFontInfo *)font drawGlyphs: glyphs lenght: length
+	       onDisplay: XDPY drawable: draw
+	       with: xgcntxt at: xp];
+
+  if (drawingAlpha)
+    {
+      NSAssert(alpha_buffer, NSInternalInconsistencyException);
+
+      [self setAlphaColor: fillColor.field[AINDEX]];
+      [(XGFontInfo *)font drawGlyphs: glyphs lenght: length
+		 onDisplay: XDPY drawable: alpha_buffer
+		 with: agcntxt at: xp];
+    }
+  /* Note we update the current point according to the current 
+     transformation scaling, although the text isn't currently
+     scaled (FIXME). */
+  scale = [ctm sizeInMatrixSpace: NSMakeSize(1, 1)];
+  //scale = NSMakeSize(1, 1);
+  [path relativeMoveToPoint: NSMakePoint(width * scale.width, 0)];
+}
+
 - (void)DPSwidthshow: (float)x : (float)y : (int)c : (const char *)s 
 {
   float arr[2];

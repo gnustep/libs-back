@@ -31,7 +31,9 @@ Path handling.
 
 #include "ARTGState.h"
 
+#ifndef RDS
 #include "x11/XWindowBuffer.h"
+#endif
 #include "blit.h"
 
 
