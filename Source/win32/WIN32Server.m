@@ -269,11 +269,13 @@ DWORD windowStyleForGSStyle(int style)
 @implementation WIN32Server (WindowOps)
 
 - (int) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style
+	      : (int) screen
 {
   HWND hwnd; 
   RECT r;
   DWORD wstyle = windowStyleForGSStyle(style);
 
+  frame = [NSWindow contentRectForFrameRect: frame styleMask: _styleMask];
   r = GSScreenRectToMS(frame);
   AdjustWindowRectEx(&r, wstyle, NO, 0);
 
