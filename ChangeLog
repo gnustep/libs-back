@@ -1,3 +1,11 @@
+2004-06-28 00:45  Alexander Malmberg <alexander@malmberg.org>
+
+	* Headers/x11/XGServerWindow.h: Add buffer_width and buffer_height
+	ivars.
+	* Source/x11/XGServerWindow.m (-windowdevice:): Use buffer_width and
+	buffer_height instead of xframe to keep track of the size of the
+	buffer and alpha_buffer.
+
 2004-06-28 00:41  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/xlib/XGGState.m (-setWindowDevice:): Remove use of

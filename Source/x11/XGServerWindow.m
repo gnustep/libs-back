@@ -1472,8 +1472,9 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   NSDebugLLog (@"NSWindow", @"window geom device ((%f, %f), (%f, %f))",
 	        window->xframe.origin.x,  window->xframe.origin.y, 
 	        window->xframe.size.width,  window->xframe.size.height);
-  
-  if (window->buffer && (old_width != width || old_height != height)
+
+  if (window->buffer
+      && (window->buffer_width != width || window->buffer_height != height)
       && (window->gdriverProtocol & GDriverHandlesBacking) == 0)
     {
       [isa waitAllContexts];
@@ -1483,6 +1484,9 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 	XFreePixmap (dpy, window->alpha_buffer);
       window->alpha_buffer = 0;
     }
+
+  window->buffer_width = width;
+  window->buffer_height = height;
 
   if (window->buffer == 0)
     {
