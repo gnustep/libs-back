@@ -1,3 +1,12 @@
+2002-11-26 12:58  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/winlib/WIN32FontInfo.m, Source/xdps/AFMFileFontInfo.m,
+	Source/xlib/XGFont.m, Source/xlib/XftFontInfo.m: Update with new
+	screen font changes in backend/gui interface.
+
+	Source/art/ftfont.m: Update with new interface. Add basic support
+	of screen fonts.
+
 2002-11-24 00:40  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/x11/XWindowBuffer (-_exposeRect:): Round coordinates

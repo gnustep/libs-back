@@ -59,6 +59,9 @@
 #include FT_OUTLINE_H
 
 
+/* TODO: finish screen font handling */
+
+
 /*
 from the back-art-subpixel-text defaults key
 0: normal rendering
@@ -76,12 +79,13 @@ static BOOL anti_alias_by_default;
 @interface FTFontInfo : GSFontInfo <FTFontInfo>
 {
 @public
-  const char *filename;
   FTC_ImageDesc imgd;
 
   FTC_ImageDesc fallback;
 
   FTFaceInfo *face_info;
+
+  BOOL screenFont;
 
 
   /* Glyph generation */
@@ -578,7 +582,9 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
 
 @implementation FTFontInfo
-- initWithFontName: (NSString*)name matrix: (const float *)fmatrix
+- initWithFontName: (NSString*)name
+	matrix: (const float *)fmatrix
+	screenFont: (BOOL)p_screenFont
 {
   FT_Face face;
   FT_Size size;
@@ -594,10 +600,11 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   self = [super init];
 
 
-/*  NSDebugLLog(@"ftfont", @"[%@ -initWithFontName: %@  matrix: (%g %g %g %g %g %g)]\n",
+  NSDebugLLog(@"ftfont", @"[%@ -initWithFontName: %@  matrix: (%g %g %g %g %g %g)] %i\n",
 	      self, name,
 	      fmatrix[0], fmatrix[1], fmatrix[2],
-	      fmatrix[3], fmatrix[4], fmatrix[5]);*/
+	      fmatrix[3], fmatrix[4], fmatrix[5],
+	      screenFont);
 
   font_entry = [fcfg_all_fonts objectForKey: name];
   if (!font_entry)
@@ -624,8 +631,10 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   imgd.font.pix_width = matrix[0];
   imgd.font.pix_height = matrix[3];
 
+  screenFont = p_screenFont;
+
   rfi = font_entry->files;
-  if (font_entry->num_sizes &&
+  if (screenFont && font_entry->num_sizes &&
       ((imgd.font.pix_width == imgd.font.pix_height) ||
        (imgd.font.pix_width == -imgd.font.pix_height)))
     {
@@ -765,9 +774,10 @@ extern void GSToUnicode();
     xy = matrix[2] * transform->matrix.m11 + matrix[3] * transform->matrix.m21;
     yy = matrix[2] * transform->matrix.m12 + matrix[3] * transform->matrix.m22;
 
-    /* if we're drawing 'normal' text (unscaled, unrotated, reasonable
-       size), we can and should use the sbit cache */
-    if (fabs(xx - ((int)xx)) < 0.01 && fabs(yy - ((int)yy)) < 0.01 &&
+    /* If we're drawing 'normal' text (unscaled, unrotated, reasonable
+       size), we can and should use the sbit cache for screen fonts. */
+    if (screenFont &&
+	fabs(xx - ((int)xx)) < 0.01 && fabs(yy - ((int)yy)) < 0.01 &&
 	fabs(xy) < 0.01 && fabs(yx) < 0.01 &&
 	xx < 72 && yy < 72 && xx > 0.5 && yy > 0.5)
       {
@@ -1156,9 +1166,10 @@ extern void GSToUnicode();
     xy = matrix[2] * transform->matrix.m11 + matrix[3] * transform->matrix.m21;
     yy = matrix[2] * transform->matrix.m12 + matrix[3] * transform->matrix.m22;
 
-    /* if we're drawing 'normal' text (unscaled, unrotated, reasonable
-       size), we can and should use the sbit cache */
-    if (fabs(xx - ((int)xx)) < 0.01 && fabs(yy - ((int)yy)) < 0.01 &&
+    /* If we're drawing 'normal' text (unscaled, unrotated, reasonable
+       size), we can and should use the sbit cache for screen fonts. */
+    if (screenFont &&
+	fabs(xx - ((int)xx)) < 0.01 && fabs(yy - ((int)yy)) < 0.01 &&
 	fabs(xy) < 0.01 && fabs(yx) < 0.01 &&
 	xx < 72 && yy < 72 && xx > 0.5 && yy > 0.5)
       {
@@ -1888,6 +1899,7 @@ static int filters[3][7]=
 @end
 
 
+/* TODO: this whole thing needs cleaning up */
 @implementation FTFontInfo_subpixel
 
 -(void) drawString: (const char *)s

@@ -480,9 +480,17 @@ afmEnumerator (char* resourceType, char* resourceName, char* resourceFile,
   return self;
 }
 
-- initWithFontName: (NSString*)name matrix: (const float *)fmatrix
+- initWithFontName: (NSString*)name
+	    matrix: (const float *)fmatrix
+	screenFont: (BOOL)screenFont
 {
   AFMFileFontInfo *fontInfo, *baseFontInfo;
+
+  if (screenFont)
+    {
+      RELEASE(self);
+      return nil;
+    }
 
   RELEASE(self);
   /* Grab an unscaled font info and create a new scaled one. */
