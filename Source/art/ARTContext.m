@@ -566,11 +566,17 @@ very expensive
 
 -(void) GSCurrentDevice: (void **)device : (int *)x : (int *)y
 {
-	*x = *y = 0;
-	if (wi)
-		*device = wi->window;
-	else
-		*device = NULL;
+	if (x)
+		*x = 0;
+	if (y)
+		*y = 0;
+	if (device)
+	{
+		if (wi)
+			*device = wi->window;
+		else
+			*device = NULL;
+	}
 }
 
 #endif
