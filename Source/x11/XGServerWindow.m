@@ -2893,5 +2893,84 @@ _computeDepth(int class, int bpp)
 		   DisplayHeight(dpy, screen));
 }
 
+- (NSImage *) iconTileImage
+{
+  Atom noticeboard_atom;
+  Atom icon_tile_atom;
+  Atom rgba_image_atom;
+  Window win;
+  int count;
+  unsigned char *tile;
+  NSImage *iconTileImage;
+  NSBitmapImageRep *imageRep;
+  unsigned int width, height;
+
+  if (((generic.wm & XGWM_WINDOWMAKER) == 0)
+      || generic.flags.useWindowMakerIcons == NO)
+    return [super iconTileImage];
+
+  noticeboard_atom = XInternAtom(dpy,"_WINDOWMAKER_NOTICEBOARD", False);
+  icon_tile_atom = XInternAtom(dpy,"_WINDOWMAKER_ICON_TILE", False);
+  rgba_image_atom = XInternAtom(dpy,"_RGBA_IMAGE", False);
+  
+  win = DefaultRootWindow(dpy);
+  win = *(Window *)PropGetCheckProperty(dpy, win, noticeboard_atom, XA_WINDOW,
+					32, -1, &count);
+  if (win == (Window)NULL) 
+    return [super iconTileImage];
+  
+  tile = PropGetCheckProperty(dpy, win, icon_tile_atom, rgba_image_atom,
+			      8, -1, &count);
+  if (tile == NULL || count < 4)
+    return [super iconTileImage];
+  
+  width = (tile[0] << 8) + tile[1];
+  height = (tile[2] << 8) + tile[3];
+  
+  if (count > 4 + width * height * 4)
+    return [super iconTileImage];
+  
+  iconTileImage = [[NSImage alloc] init];
+  imageRep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes: NULL
+                                                     pixelsWide: width 
+                                                     pixelsHigh: height 
+                                                  bitsPerSample: 8
+                                                samplesPerPixel: 4
+                                                       hasAlpha: YES
+                                                       isPlanar: NO
+                                                 colorSpaceName: NSDeviceRGBColorSpace
+                                                    bytesPerRow: width * 4
+                                                   bitsPerPixel: 32];
+  memcpy([imageRep bitmapData], &tile[4], width * height * 4);
+  XFree(tile);
+  [iconTileImage addRepresentation:imageRep];
+  RELEASE(imageRep);
+
+  return AUTORELEASE(iconTileImage);
+}
+
+- (NSSize) iconSize
+{
+  XIconSize *xiconsize;
+  int count_return;
+  int status;
+  
+  status = XGetIconSizes(dpy,
+                         DefaultRootWindow(dpy),
+			 &xiconsize,
+			 &count_return);
+  if (status)
+    {
+      if ((generic.wm & XGWM_WINDOWMAKER) != 0) 
+        {
+	  /* must add 4 pixels for the border which windowmaker leaves out
+	     but gnustep draws over. */
+          return NSMakeSize(xiconsize[0].max_width + 4,
+			    xiconsize[0].max_height + 4);
+	}
+    }
+  return [super iconSize];
+}
+
 @end
 
