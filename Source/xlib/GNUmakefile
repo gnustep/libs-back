@@ -38,7 +38,6 @@ SUBPROJECT_NAME=xlib
 
 # The Objective-C source files to be compiled
 xlib_OBJC_FILES = \
-XGBitmapImageRep.m \
 XGBitmap.m \
 XGCommonFont.m \
 XGFont.m \
