@@ -1122,6 +1122,128 @@ static void MPRE(plusd_ao_oo) (composite_run_t *c, int num)
 }
 
 
+static void MPRE(dissolve_aa) (composite_run_t *c, int num)
+{
+  BLEND_TYPE *s = (BLEND_TYPE *)c->src, *d = (BLEND_TYPE *)c->dst;
+#ifndef INLINE_ALPHA
+  unsigned char *src_alpha = c->srca,
+    *dst_alpha = c->dsta;
+#endif
+  int sr, sg, sb, sa, dr, dg, db, da;
+  int fraction = c->fraction;
+
+  for (; num; num--)
+    {
+      BLEND_READ_ALPHA(s, src_alpha, sr, sg, sb, sa)
+      BLEND_READ_ALPHA(d, dst_alpha, dr, dg, db, da)
+
+      sr = (sr * fraction + 0xff) >> 8;
+      sg = (sg * fraction + 0xff) >> 8;
+      sb = (sb * fraction + 0xff) >> 8;
+      sa = (sa * fraction + 0xff) >> 8;
+
+      da = sa + ((da * (255 - sa) + 0xff) >> 8);
+      sa = 255 - sa;
+      dr = sr + ((dr * sa + 0xff) >> 8);
+      dg = sg + ((dg * sa + 0xff) >> 8);
+      db = sb + ((db * sa + 0xff) >> 8);
+
+      BLEND_WRITE_ALPHA(d, dst_alpha, dr, dg, db, da)
+
+      ALPHA_INC(s, src_alpha)
+      ALPHA_INC(d, dst_alpha)
+    }
+}
+static void MPRE(dissolve_ao) (composite_run_t *c, int num)
+{
+  BLEND_TYPE *s = (BLEND_TYPE *)c->src, *d = (BLEND_TYPE *)c->dst;
+#ifndef INLINE_ALPHA
+  unsigned char *src_alpha = c->srca;
+#endif
+  int sr, sg, sb, sa, dr, dg, db;
+  int fraction = c->fraction;
+
+  for (; num; num--)
+    {
+      BLEND_READ_ALPHA(s, src_alpha, sr, sg, sb, sa)
+      BLEND_READ(d, dr, dg, db)
+
+      sr = (sr * fraction + 0xff) >> 8;
+      sg = (sg * fraction + 0xff) >> 8;
+      sb = (sb * fraction + 0xff) >> 8;
+      sa = (sa * fraction + 0xff) >> 8;
+
+      sa = 255 - sa;
+      dr = sr + ((dr * sa + 0xff) >> 8);
+      dg = sg + ((dg * sa + 0xff) >> 8);
+      db = sb + ((db * sa + 0xff) >> 8);
+
+      BLEND_WRITE(d, dr, dg, db)
+
+      ALPHA_INC(s, src_alpha)
+      BLEND_INC(d)
+    }
+}
+static void MPRE(dissolve_oa) (composite_run_t *c, int num)
+{
+  BLEND_TYPE *s = (BLEND_TYPE *)c->src, *d = (BLEND_TYPE *)c->dst;
+#ifndef INLINE_ALPHA
+  unsigned char *dst_alpha = c->dsta;
+#endif
+  int sr, sg, sb, sa, dr, dg, db, da;
+  int fraction = c->fraction;
+
+  for (; num; num--)
+    {
+      BLEND_READ(s, sr, sg, sb)
+      BLEND_READ_ALPHA(d, dst_alpha, dr, dg, db, da)
+
+      sr = (sr * fraction + 0xff) >> 8;
+      sg = (sg * fraction + 0xff) >> 8;
+      sb = (sb * fraction + 0xff) >> 8;
+      sa = fraction;
+
+      da = sa + ((da * (255 - sa) + 0xff) >> 8);
+      sa = 255 - sa;
+      dr = sr + ((dr * sa + 0xff) >> 8);
+      dg = sg + ((dg * sa + 0xff) >> 8);
+      db = sb + ((db * sa + 0xff) >> 8);
+
+      BLEND_WRITE_ALPHA(d, dst_alpha, dr, dg, db, da)
+
+      BLEND_INC(s)
+      ALPHA_INC(d, dst_alpha)
+    }
+}
+static void MPRE(dissolve_oo) (composite_run_t *c, int num)
+{
+  BLEND_TYPE *s = (BLEND_TYPE *)c->src, *d = (BLEND_TYPE *)c->dst;
+  int sr, sg, sb, sa, dr, dg, db;
+  int fraction = c->fraction;
+
+  for (; num; num--)
+    {
+      BLEND_READ(s, sr, sg, sb)
+      BLEND_READ(d, dr, dg, db)
+
+      sr = (sr * fraction + 0xff) >> 8;
+      sg = (sg * fraction + 0xff) >> 8;
+      sb = (sb * fraction + 0xff) >> 8;
+      sa = fraction;
+
+      sa = 255 - sa;
+      dr = sr + ((dr * sa + 0xff) >> 8);
+      dg = sg + ((dg * sa + 0xff) >> 8);
+      db = sb + ((db * sa + 0xff) >> 8);
+
+      BLEND_WRITE(d, dr, dg, db)
+
+      BLEND_INC(s)
+      BLEND_INC(d)
+    }
+}
+
+
 #undef I_NAME
 #undef BLEND_TYPE
 #undef BLEND_READ
@@ -1450,6 +1572,10 @@ static draw_info_t draw_infos[DI_NUM] = {
   NPRE(plusd_oa,x), \
   NPRE(plusd_ao_oo,x), \
   NPRE(plusd_ao_oo,x), \
+  NPRE(dissolve_aa,x), \
+  NPRE(dissolve_oa,x), \
+  NPRE(dissolve_ao,x), \
+  NPRE(dissolve_oo,x),
 
 /* TODO: try to implement fallback versions? possible? */
 {DI_FALLBACK       ,0, 0,0,-1,/*C(fallback)*/},

@@ -825,12 +825,376 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
 - (void) dissolveGState: (GSGState *)source
                fromRect: (NSRect)aRect
                 toPoint: (NSPoint)aPoint
-                  delta: (float)delta
+                  delta: (float)fraction
 {
-  NSLog(@"ignoring dissolveGState: %08x fromRect: (%g %g)+(%g %g) toPoint: (%g %g) delta: %g",
-	source,
-	aRect.origin.x, aRect.origin.y, aRect.size.width, aRect.size.height,
-	aPoint.x, aPoint.y, delta);
+/* much setup code shared with compositeGState:... */
+  ARTGState *ags = (ARTGState *)source;
+  unsigned char *dst, *dst_alpha, *src, *src_alpha;
+
+  void (*blit_func)(composite_run_t *c, int num) = NULL;
+
+  NSPoint sp, dp;
+
+  int cx0,cy0,cx1,cy1;
+  int sx0,sy0;
+
+  int sbpl, dbpl;
+  int asbpl, adbpl;
+
+  rect_trace_t state;
+
+  /* 0 = top->down, 1 = bottom->up */
+  /*
+    TODO: this does not handle the horizontal case
+    either 0=top->down, left->right, 2=top->down, right->left
+    or keep 0 and add 2=top->down, make temporary copy of source
+    could allocate a temporary array on the stack large enough to hold
+    one row and do the operations on it
+  */
+  /* currently 2=top->down, be careful with overlapping rows */
+  /* order=1 is handled generically by flipping sbpl and dbpl and
+     adjusting the pointers. order=2 is handled specially */
+  int order;
+
+  int delta;
+
+
+  if (!wi || !wi->data || !ags->wi || !ags->wi->data) return;
+  if (all_clipped) return;
+
+
+  /* Set up all the pointers and clip things */
+
+  dbpl = wi->bytes_per_line;
+  sbpl = ags->wi->bytes_per_line;
+
+  cx0 = clip_x0;
+  cy0 = clip_y0;
+  cx1 = clip_x1;
+  cy1 = clip_y1;
+
+  sp = [ags->ctm pointInMatrixSpace: aRect.origin];
+  sp.x = floor(sp.x);
+  sp.y = floor(ags->wi->sy - sp.y);
+  dp = [ctm pointInMatrixSpace: aPoint];
+  dp.x = floor(dp.x);
+  dp.y = floor(wi->sy - dp.y);
+
+  if (dp.x - cx0 > sp.x)
+    cx0 = dp.x - sp.x;
+  if (dp.y - cy0 > sp.y)
+    cy0 = dp.y - sp.y;
+
+  if (cx1 - dp.x > ags->wi->sx - sp.x)
+    cx1 = dp.x + ags->wi->sx - sp.x;
+  if (cy1 - dp.y > ags->wi->sy - sp.y)
+    cy1 = dp.y + ags->wi->sy - sp.y;
+
+  sx0 = sp.x - dp.x + cx0;
+  sy0 = sp.y - dp.y + cy0;
+
+  dst = wi->data + cx0 * DI.bytes_per_pixel + cy0 * dbpl;
+  src = ags->wi->data + sx0 * DI.bytes_per_pixel + sy0 * sbpl;
+
+  if (ags->wi->has_alpha)
+    {
+      if (DI.inline_alpha)
+	src_alpha = src;
+      else
+	src_alpha = ags->wi->alpha + sx0 + sy0 * ags->wi->sx;
+      asbpl = ags->wi->sx;
+    }
+  else
+    {
+      src_alpha = NULL;
+      asbpl = 0;
+    }
+
+  if (wi->has_alpha)
+    {
+      if (DI.inline_alpha)
+	dst_alpha = dst;
+      else
+	dst_alpha = wi->alpha + cx0 + cy0 * wi->sx;
+      adbpl = wi->sx;
+    }
+  else
+    {
+      dst_alpha = NULL;
+      adbpl = 0;
+    }
+
+  cy1 -= cy0;
+  cx1 -= cx0;
+
+  if (cx0<0 || cy0<0 || cx0+cx1>wi->sx || cy0+cy1>wi->sy ||
+      sx0<0 || sy0<0 || sx0+cx1>ags->wi->sx || sy0+cy1>ags->wi->sy)
+  {
+    NSLog(@"Warning: invalid coordinates in dissolve: (%g %g)+(%g %g) -> (%g %g) got (%i %i) (%i %i) +(%i %i)",
+	  aRect.origin.x,aRect.origin.x,aRect.size.width,aRect.size.height,aPoint.x,aPoint.y,
+	  cx0,cy0,sx0,sy0,cx1,cy1);
+    return;
+  }
+
+  if (cx1<=0 || cy1<=0)
+    return;
+
+  /* To handle overlapping areas properly, we sometimes need to do
+     things bottom-up instead of top-down. If so, we flip the
+     coordinates here. */
+  order = 0;
+  if (ags == self && sy0 <= cy0)
+    {
+      order = 1;
+      dst += dbpl * (cy1 - 1);
+      src += sbpl * (cy1 - 1);
+      dst_alpha += adbpl * (cy1 - 1);
+      src_alpha += asbpl * (cy1 - 1);
+      dbpl = -dbpl;
+      sbpl = -sbpl;
+      adbpl = -adbpl;
+      asbpl = -asbpl;
+      if (sy0 == cy0)
+	{
+	  if ((sx0 >= cx0 && sx0 <= cx0 + cx1) || (cx0 >= sx0 && cx0 <= sx0 + cx1))
+	    {
+	      order = 2;
+	    }
+	}
+    }
+
+  if (ags->wi->has_alpha && wi->has_alpha)
+    blit_func = DI.dissolve_aa;
+  else if (wi->has_alpha)
+    blit_func = DI.dissolve_oa;
+  else if (ags->wi->has_alpha)
+    blit_func = DI.dissolve_ao;
+  else
+    blit_func = DI.dissolve_oo;
+
+  if (!blit_func)
+    {
+      NSLog(@"unimplemented: dissolveGState: %p fromRect: (%g %g)+(%g %g) toPoint: (%g %g)  delta: %g",
+	    source,
+	    aRect.origin.x, aRect.origin.y,
+	    aRect.size.width, aRect.size.height,
+	    aPoint.x, aPoint.y,
+	    fraction);
+      return;
+    }
+
+  {
+    int ry;
+    int x0, x1;
+    _rect_setup(&state, aRect, sx0, sx0 + cx1, ags->ctm, order, &ry, ags->wi->sy);
+    if (order)
+      {
+	if (ry < sy0)
+	  return;
+	delta = sy0 + cy1 - ry;
+      }
+    else
+      {
+	if (ry >= sy0 + cy1)
+	  return;
+	delta = ry - sy0;
+      }
+
+    if (delta > 0)
+      {
+	src += sbpl * delta;
+	src_alpha += asbpl * delta;
+	dst += dbpl * delta;
+	dst_alpha += adbpl * delta;
+      }
+    else if (delta < 0)
+      {
+	delta = -delta;
+	while (delta)
+	  {
+	    if (!_rect_advance(&state,&x0,&x1))
+	      {
+	        break;
+	      }
+	    delta--;
+	  }
+	if (delta)
+	  return;
+      }
+  }
+
+  /* this breaks the alpha pointer in some, but that's ok since in
+     all those cases, the alpha pointer isn't used (inline alpha or
+     no alpha) */
+  if (order == 2)
+    {
+      unsigned char tmpbuf[cx1 * DI.bytes_per_pixel];
+      unsigned char tmpbufa[cx1];
+      int y;
+      composite_run_t c;
+      int x0, x1;
+
+      c.dst = dst;
+      c.dsta = dst_alpha;
+      c.src = tmpbuf;
+      c.srca = tmpbufa;
+      c.fraction = fraction * 255;
+      for (y = cy1 - delta - 1; y >= 0; y--)
+	{
+	  if (!_rect_advance(&state,&x0,&x1))
+	    break;
+	  x1 -= x0;
+
+	  c.dst += x0 * DI.bytes_per_pixel;
+	  c.dsta += x0;
+
+	  if (x1)
+	    {
+	      memcpy(tmpbuf, src + x0 * DI.bytes_per_pixel, x1 * DI.bytes_per_pixel);
+	      if (ags->wi->has_alpha && !DI.inline_alpha)
+		memcpy(tmpbufa, src_alpha + x0, x1);
+
+	      if (!clip_span)
+		{
+		  blit_func(&c, x1);
+		  c.dst += dbpl - x0 * DI.bytes_per_pixel;
+		  c.dsta += adbpl - x0;
+		}
+	      else
+		{
+		  unsigned int *span, *end;
+		  BOOL state = NO;
+
+		  span = &clip_span[clip_index[y + cy0 - clip_y0]];
+		  end = &clip_span[clip_index[y + cy0 - clip_y0 + 1]];
+
+		  x0 = x0 + cx0 - clip_x0;
+		  x1 += x0;
+		  while (span != end && *span < x0)
+		    {
+		      state = !state;
+		      span++;
+		      if (span == end)
+			break;
+		    }
+		  if (span != end)
+		    {
+		      while (span != end && *span < x1)
+			{
+			  if (state)
+			    blit_func(&c, *span - x0);
+			  c.dst += (*span - x0) * DI.bytes_per_pixel;
+			  c.dsta += (*span - x0);
+			  c.src += (*span - x0) * DI.bytes_per_pixel;
+			  c.srca += (*span - x0);
+			  x0 = *span;
+
+			  state = !state;
+			  span++;
+			  if (span == end)
+			    break;
+			}
+		      if (state)
+			blit_func(&c, x1 - x0);
+		    }
+		  x0 = x0 - cx0 + clip_x0;
+		  c.dst += dbpl - x0 * DI.bytes_per_pixel;
+		  c.dsta += adbpl - x0;
+		  c.src = tmpbuf;
+		  c.srca = tmpbufa;
+		}
+	    }
+
+	  src += sbpl;
+	  src_alpha += asbpl;
+	}
+    }
+  else
+    {
+      int y;
+      composite_run_t c;
+      int x0, x1;
+
+      c.dst = dst;
+      c.dsta = dst_alpha;
+      c.src = src;
+      c.srca = src_alpha;
+      c.fraction = fraction * 255;
+      if (order)
+	y = cy1 - delta - 1;
+      else
+	y = delta;
+      for (; y < cy1 && y >= 0; order? y-- : y++)
+	{
+	  if (!_rect_advance(&state,&x0,&x1))
+	      break;
+	  x1 -= x0;
+	  if (x1 <= 0)
+	    {
+	      c.dst += dbpl;
+	      c.dsta += adbpl;
+	      c.src += sbpl;
+	      c.srca += asbpl;
+	      continue;
+	    }
+	  c.dst += x0 * DI.bytes_per_pixel;
+	  c.dsta += x0;
+	  c.src += x0 * DI.bytes_per_pixel;
+	  c.srca += x0;
+	  if (!clip_span)
+	    {
+	      blit_func(&c, x1);
+	      c.dst += dbpl - x0 * DI.bytes_per_pixel;
+	      c.dsta += adbpl - x0;
+	      c.src += sbpl - x0 * DI.bytes_per_pixel;
+	      c.srca += asbpl - x0;
+	    }
+	  else
+	    {
+	      unsigned int *span, *end;
+	      BOOL state = NO;
+
+	      span = &clip_span[clip_index[y + cy0 - clip_y0]];
+	      end = &clip_span[clip_index[y + cy0 - clip_y0 + 1]];
+
+	      x0 = x0 + cx0 - clip_x0;
+	      x1 += x0;
+	      while (span != end && *span < x0)
+		{
+		  state = !state;
+		  span++;
+		  if (span == end)
+		    break;
+		}
+	      if (span != end)
+		{
+		  while (span != end && *span < x1)
+		    {
+		      if (state)
+		        blit_func(&c, *span - x0);
+		      c.dst += (*span - x0) * DI.bytes_per_pixel;
+		      c.dsta += (*span - x0);
+		      c.src += (*span - x0) * DI.bytes_per_pixel;
+		      c.srca += (*span - x0);
+		      x0 = *span;
+
+		      state = !state;
+		      span++;
+		      if (span == end)
+			break;
+		    }
+		  if (state)
+		    blit_func(&c, x1 - x0);
+		}
+	      x0 = x0 - cx0 + clip_x0;
+	      c.dst += dbpl - x0 * DI.bytes_per_pixel;
+	      c.dsta += adbpl - x0;
+	      c.src += sbpl -  x0 * DI.bytes_per_pixel;
+	      c.srca += asbpl - x0;
+	    }
+	}
+    }
+  UPDATE_UNBUFFERED
 }
 
 

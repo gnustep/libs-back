@@ -41,6 +41,7 @@ typedef struct
 {
   unsigned char *dst, *dsta;
   unsigned char *src, *srca;
+  unsigned char fraction; /* for dissolving */
 } composite_run_t;
 
 
@@ -125,6 +126,11 @@ typedef struct draw_info_s
   void (*composite_plusd_oa)(composite_run_t *c, int num);
   void (*composite_plusd_ao)(composite_run_t *c, int num);
   void (*composite_plusd_oo)(composite_run_t *c, int num);
+
+  void (*dissolve_aa)(composite_run_t *c, int num);
+  void (*dissolve_oa)(composite_run_t *c, int num);
+  void (*dissolve_ao)(composite_run_t *c, int num);
+  void (*dissolve_oo)(composite_run_t *c, int num);
 } draw_info_t;
 
 #define RENDER_RUN_ALPHA (DI.render_run_alpha)
