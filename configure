@@ -832,19 +832,16 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-xim           Disable XIM support
-  --enable-xlib           Build xlib graphics context
-  --enable-xdps           Build xdps graphics context
-  --enable-x11            Build x11 server
-  --enable-win32          Build win32 server
-  --enable-winlib         Build win32 graphics context
+  --enable-server=SRV     Build server type: x11, win32
+  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-wraster=PREFIX   get-wraster-flags directory prefix
+  --with-library-flags=fg Library flags for libraries
+  --with-include-flags=fg Include flags
   --with-x                use the X Window System
-  --with-dps-library=DIR  DPS library file are in DIR
-  --with-dps-include=DIR  DPS include files are in DIR
   --with-jpeg-library=DIR JPEG library file are in DIR
   --with-jpeg-include=DIR JPEG include files are in DIR
   --with-tiff-library=DIR TIFF library file are in DIR
@@ -1250,106 +1247,6 @@ ac_configure="$SHELL $ac_aux_dir/configure" # This should be Cygnus configure.
 #--------------------------------------------------------------------
 # Determine the host, build, and target systems
 #--------------------------------------------------------------------
-# Make sure we can run config.sub.
-$ac_config_sub sun4 >/dev/null 2>&1 ||
-  { { echo "$as_me:$LINENO: error: cannot run $ac_config_sub" >&5
-echo "$as_me: error: cannot run $ac_config_sub" >&2;}
-   { (exit 1); exit 1; }; }
-
-echo "$as_me:$LINENO: checking build system type" >&5
-echo $ECHO_N "checking build system type... $ECHO_C" >&6
-if test "${ac_cv_build+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_cv_build_alias=$build_alias
-test -z "$ac_cv_build_alias" &&
-  ac_cv_build_alias=`$ac_config_guess`
-test -z "$ac_cv_build_alias" &&
-  { { echo "$as_me:$LINENO: error: cannot guess build type; you must specify one" >&5
-echo "$as_me: error: cannot guess build type; you must specify one" >&2;}
-   { (exit 1); exit 1; }; }
-ac_cv_build=`$ac_config_sub $ac_cv_build_alias` ||
-  { { echo "$as_me:$LINENO: error: $ac_config_sub $ac_cv_build_alias failed" >&5
-echo "$as_me: error: $ac_config_sub $ac_cv_build_alias failed" >&2;}
-   { (exit 1); exit 1; }; }
-
-fi
-echo "$as_me:$LINENO: result: $ac_cv_build" >&5
-echo "${ECHO_T}$ac_cv_build" >&6
-build=$ac_cv_build
-build_cpu=`echo $ac_cv_build | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\1/'`
-build_vendor=`echo $ac_cv_build | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\2/'`
-build_os=`echo $ac_cv_build | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
-
-
-echo "$as_me:$LINENO: checking host system type" >&5
-echo $ECHO_N "checking host system type... $ECHO_C" >&6
-if test "${ac_cv_host+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_cv_host_alias=$host_alias
-test -z "$ac_cv_host_alias" &&
-  ac_cv_host_alias=$ac_cv_build_alias
-ac_cv_host=`$ac_config_sub $ac_cv_host_alias` ||
-  { { echo "$as_me:$LINENO: error: $ac_config_sub $ac_cv_host_alias failed" >&5
-echo "$as_me: error: $ac_config_sub $ac_cv_host_alias failed" >&2;}
-   { (exit 1); exit 1; }; }
-
-fi
-echo "$as_me:$LINENO: result: $ac_cv_host" >&5
-echo "${ECHO_T}$ac_cv_host" >&6
-host=$ac_cv_host
-host_cpu=`echo $ac_cv_host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\1/'`
-host_vendor=`echo $ac_cv_host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\2/'`
-host_os=`echo $ac_cv_host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
-
-
-echo "$as_me:$LINENO: checking target system type" >&5
-echo $ECHO_N "checking target system type... $ECHO_C" >&6
-if test "${ac_cv_target+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_cv_target_alias=$target_alias
-test "x$ac_cv_target_alias" = "x" &&
-  ac_cv_target_alias=$ac_cv_host_alias
-ac_cv_target=`$ac_config_sub $ac_cv_target_alias` ||
-  { { echo "$as_me:$LINENO: error: $ac_config_sub $ac_cv_target_alias failed" >&5
-echo "$as_me: error: $ac_config_sub $ac_cv_target_alias failed" >&2;}
-   { (exit 1); exit 1; }; }
-
-fi
-echo "$as_me:$LINENO: result: $ac_cv_target" >&5
-echo "${ECHO_T}$ac_cv_target" >&6
-target=$ac_cv_target
-target_cpu=`echo $ac_cv_target | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\1/'`
-target_vendor=`echo $ac_cv_target | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\2/'`
-target_os=`echo $ac_cv_target | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
-
-
-# The aliases save the names the user supplied, while $host etc.
-# will get canonicalized.
-test -n "$target_alias" &&
-  test "$program_prefix$program_suffix$program_transform_name" = \
-    NONENONEs,x,x, &&
-  program_prefix=${target_alias}-
-
-#--------------------------------------------------------------------
-# The following is so that headers and custom libraries
-# in the GNUstep root are used before the standard ones
-#--------------------------------------------------------------------
-# Set location of GNUstep dirs for later use
-GNUSTEP_HDIR=$GNUSTEP_SYSTEM_ROOT/Headers
-if test "$GNUSTEP_FLATTENED" = yes; then
-  GNUSTEP_LDIR=$GNUSTEP_SYSTEM_ROOT/Libraries
-else
-  clean_target_os=`$GNUSTEP_SYSTEM_ROOT/Makefiles/clean_os.sh $target_os`
-  clean_target_cpu=`$GNUSTEP_SYSTEM_ROOT/Makefiles/clean_cpu.sh $target_cpu`
-  obj_dir=$clean_target_cpu/$clean_target_os
-  GNUSTEP_LDIR=$GNUSTEP_SYSTEM_ROOT/Libraries/$obj_dir
-fi
-CPPFLAGS="$CPPFLAGS -I$GNUSTEP_HDIR"
-LDFLAGS="$LDFLAGS -L$GNUSTEP_LDIR/$LIBRARY_COMBO -L$GNUSTEP_LDIR"
-
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -2108,6 +2005,105 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+# Make sure we can run config.sub.
+$ac_config_sub sun4 >/dev/null 2>&1 ||
+  { { echo "$as_me:$LINENO: error: cannot run $ac_config_sub" >&5
+echo "$as_me: error: cannot run $ac_config_sub" >&2;}
+   { (exit 1); exit 1; }; }
+
+echo "$as_me:$LINENO: checking build system type" >&5
+echo $ECHO_N "checking build system type... $ECHO_C" >&6
+if test "${ac_cv_build+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_build_alias=$build_alias
+test -z "$ac_cv_build_alias" &&
+  ac_cv_build_alias=`$ac_config_guess`
+test -z "$ac_cv_build_alias" &&
+  { { echo "$as_me:$LINENO: error: cannot guess build type; you must specify one" >&5
+echo "$as_me: error: cannot guess build type; you must specify one" >&2;}
+   { (exit 1); exit 1; }; }
+ac_cv_build=`$ac_config_sub $ac_cv_build_alias` ||
+  { { echo "$as_me:$LINENO: error: $ac_config_sub $ac_cv_build_alias failed" >&5
+echo "$as_me: error: $ac_config_sub $ac_cv_build_alias failed" >&2;}
+   { (exit 1); exit 1; }; }
+
+fi
+echo "$as_me:$LINENO: result: $ac_cv_build" >&5
+echo "${ECHO_T}$ac_cv_build" >&6
+build=$ac_cv_build
+build_cpu=`echo $ac_cv_build | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\1/'`
+build_vendor=`echo $ac_cv_build | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\2/'`
+build_os=`echo $ac_cv_build | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
+
+
+echo "$as_me:$LINENO: checking host system type" >&5
+echo $ECHO_N "checking host system type... $ECHO_C" >&6
+if test "${ac_cv_host+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_host_alias=$host_alias
+test -z "$ac_cv_host_alias" &&
+  ac_cv_host_alias=$ac_cv_build_alias
+ac_cv_host=`$ac_config_sub $ac_cv_host_alias` ||
+  { { echo "$as_me:$LINENO: error: $ac_config_sub $ac_cv_host_alias failed" >&5
+echo "$as_me: error: $ac_config_sub $ac_cv_host_alias failed" >&2;}
+   { (exit 1); exit 1; }; }
+
+fi
+echo "$as_me:$LINENO: result: $ac_cv_host" >&5
+echo "${ECHO_T}$ac_cv_host" >&6
+host=$ac_cv_host
+host_cpu=`echo $ac_cv_host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\1/'`
+host_vendor=`echo $ac_cv_host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\2/'`
+host_os=`echo $ac_cv_host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
+
+
+echo "$as_me:$LINENO: checking target system type" >&5
+echo $ECHO_N "checking target system type... $ECHO_C" >&6
+if test "${ac_cv_target+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_target_alias=$target_alias
+test "x$ac_cv_target_alias" = "x" &&
+  ac_cv_target_alias=$ac_cv_host_alias
+ac_cv_target=`$ac_config_sub $ac_cv_target_alias` ||
+  { { echo "$as_me:$LINENO: error: $ac_config_sub $ac_cv_target_alias failed" >&5
+echo "$as_me: error: $ac_config_sub $ac_cv_target_alias failed" >&2;}
+   { (exit 1); exit 1; }; }
+
+fi
+echo "$as_me:$LINENO: result: $ac_cv_target" >&5
+echo "${ECHO_T}$ac_cv_target" >&6
+target=$ac_cv_target
+target_cpu=`echo $ac_cv_target | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\1/'`
+target_vendor=`echo $ac_cv_target | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\2/'`
+target_os=`echo $ac_cv_target | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
+
+
+# The aliases save the names the user supplied, while $host etc.
+# will get canonicalized.
+test -n "$target_alias" &&
+  test "$program_prefix$program_suffix$program_transform_name" = \
+    NONENONEs,x,x, &&
+  program_prefix=${target_alias}-
+
+#--------------------------------------------------------------------
+# The following is so that headers and custom libraries
+# in the GNUstep root are used before the standard ones
+#--------------------------------------------------------------------
+# Set location of GNUstep dirs for later use
+GNUSTEP_HDIR=$GNUSTEP_SYSTEM_ROOT/Headers
+if test "$GNUSTEP_FLATTENED" = yes; then
+  GNUSTEP_LDIR=$GNUSTEP_SYSTEM_ROOT/Libraries
+else
+  clean_target_os=`$GNUSTEP_SYSTEM_ROOT/Makefiles/clean_os.sh $target_os`
+  clean_target_cpu=`$GNUSTEP_SYSTEM_ROOT/Makefiles/clean_cpu.sh $target_cpu`
+  obj_dir=$clean_target_cpu/$clean_target_os
+  GNUSTEP_LDIR=$GNUSTEP_SYSTEM_ROOT/Libraries/$obj_dir
+fi
+CPPFLAGS="$CPPFLAGS -I$GNUSTEP_HDIR"
+LDFLAGS="$LDFLAGS -L$GNUSTEP_LDIR/$LIBRARY_COMBO -L$GNUSTEP_LDIR"
 
 #--------------------------------------------------------------------
 # Look for WindowMaker's wraster library
@@ -2736,6 +2732,21 @@ if test $gs_cv_have_wraster = no; then
   GRAPHIC_CFLAGS=
   GRAPHIC_LFLAGS=
 fi
+
+
+# Check whether --with-library-flags or --without-library-flags was given.
+if test "${with_library_flags+set}" = set; then
+  withval="$with_library_flags"
+
+fi;
+
+# Check whether --with-dps_include or --without-dps_include was given.
+if test "${with_dps_include+set}" = set; then
+  withval="$with_dps_include"
+
+fi;
+GRAPHIC_LFLAGS="$GRAPHIC_LFLAGS $with_library_flags"
+GRAPHIC_CFLAGS="$GRAPHIC_CFLAGS $with_include_flags"
 
 #--------------------------------------------------------------------
 # Find for X windows
@@ -4060,34 +4071,8 @@ fi
 #--------------------------------------------------------------------
 # Find for DPS
 #--------------------------------------------------------------------
-
-# Check whether --with-dps_library or --without-dps_library was given.
-if test "${with_dps_library+set}" = set; then
-  withval="$with_dps_library"
-
-else
-  with_dps_library=
-fi;
-
-# Check whether --with-dps_include or --without-dps_include was given.
-if test "${with_dps_include+set}" = set; then
-  withval="$with_dps_include"
-
-else
-  with_dps_include=
-fi;
-
-# Add the target header file directory as an include path so that the
-# check for dpsNXargs.h below looks at the appropriate target includes
-ORIG_CPPFLAGS=${CPPFLAGS}
-if test -n "$with_dps_include"; then
-  GRAPHIC_CFLAGS="-I$with_dps_include $GRAPHIC_CFLAGS"
-fi
-if test -n "$with_dps_library"; then
-  GRAPHIC_LFLAGS="-L$with_dps_library $GRAPHIC_LFLAGS"
-fi
+save_CPPFLAGS=${CPPFLAGS}
 CPPFLAGS="${CPPFLAGS} ${GRAPHIC_CFLAGS}"
-
 
 
 for ac_header in DPS/dpsclient.h DPS/dpsNXargs.h
@@ -4203,9 +4188,7 @@ fi
 
 done
 
-
-# Restore back to the original
-CPPFLAGS=${ORIG_CPPFLAGS}
+CPPFLAGS="${save_CPPFLAGS}"
 
 #--------------------------------------------------------------------
 # Extended font support & UTF8 support
@@ -4384,7 +4367,7 @@ if test "$have_xft" = yes -a "$ac_cv_header_X11_Xft_Xft_h" = yes; then
   WITH_XFT=yes
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_XFT
+#define HAVE_XFT 1
 _ACEOF
 
   echo "$as_me:$LINENO: checking for XftDrawStringUtf8 in -lXft" >&5
@@ -4451,7 +4434,7 @@ fi
   if test "$have_utf8" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_UTF8
+#define HAVE_UTF8 1
 _ACEOF
 
   fi
@@ -4473,7 +4456,7 @@ fi;
 if test "x$enable_xim" = "xyes"; then
 
 cat >>confdefs.h <<\_ACEOF
-#define USE_XIM
+#define USE_XIM 1
 _ACEOF
 
 fi
@@ -5064,6 +5047,10 @@ if test `eval echo '${'$as_ac_Header'}'` = yes; then
 #define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
 
+cat >>confdefs.h <<\_ACEOF
+#define XSHM 1
+_ACEOF
+
 fi
 
 done
@@ -5139,13 +5126,140 @@ CPPFLAGS="${save_header}"
 LIBS="${save_libs}"
 
 #--------------------------------------------------------------------
+# libart graphics libraries
+#--------------------------------------------------------------------
+save_header=${CPPFLAGS}
+save_libs=${LIBS}
+CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
+LIBS="${GRAPHIC_LIBS} ${LIBS}"
+LIBART_LIBS=
+echo "$as_me:$LINENO: checking for main in -lart_lgpl_2" >&5
+echo $ECHO_N "checking for main in -lart_lgpl_2... $ECHO_C" >&6
+if test "${ac_cv_lib_art_lgpl_2_main+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lart_lgpl_2  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+main ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_art_lgpl_2_main=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_lib_art_lgpl_2_main=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_art_lgpl_2_main" >&5
+echo "${ECHO_T}$ac_cv_lib_art_lgpl_2_main" >&6
+if test $ac_cv_lib_art_lgpl_2_main = yes; then
+  have_libart_lgpl_2=yes
+else
+  have_libart_lgpl_2=no
+fi
+
+if test "$have_libart_lgpl_2" = yes; then
+  LIBART_LIBS="$LIBART_LIBS -lart_lgpl_2"
+fi
+echo "$as_me:$LINENO: checking for main in -lfreetype" >&5
+echo $ECHO_N "checking for main in -lfreetype... $ECHO_C" >&6
+if test "${ac_cv_lib_freetype_main+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lfreetype  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+main ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_freetype_main=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_lib_freetype_main=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_freetype_main" >&5
+echo "${ECHO_T}$ac_cv_lib_freetype_main" >&6
+if test $ac_cv_lib_freetype_main = yes; then
+  have_freetype=yes
+else
+  have_freetype=no
+fi
+
+if test "$have_freetype" = yes; then
+  LIBART_LIBS="$LIBART_LIBS -lfreetype"
+fi
+CPPFLAGS="${save_header}"
+LIBS="${save_libs}"
+
+#--------------------------------------------------------------------
 # Set definitions
 #--------------------------------------------------------------------
 WITH_WRASTER=no
 if test $gs_cv_have_wraster = yes -a $set_x_paths = no; then
 
 cat >>confdefs.h <<\_ACEOF
-#define WITH_WRASTER
+#define WITH_WRASTER 1
 _ACEOF
 
   WITH_WRASTER=yes
@@ -5158,123 +5272,57 @@ fi
 #--------------------------------------------------------------------
 # Which projects should we build?
 #--------------------------------------------------------------------
-exlib=no
-exdps=no
-ex11=no
-ewin32=no
-ewinlib=no
-if test $gs_cv_have_wraster = yes -o "$x_includes" != "NONE"; then
-  exlib=yes
-  ex11=yes
+BUILD_SERVER=x11
+BUILD_GRAPHICS=xlib
+if test "$have_gdi32" = yes; then
+  BUILD_SERVER=win32
+  BUILD_GRAPHICS=winlib
 fi
 
-# Check whether --enable-xlib or --disable-xlib was given.
-if test "${enable_xlib+set}" = set; then
-  enableval="$enable_xlib"
+# Check whether --enable-server or --disable-server was given.
+if test "${enable_server+set}" = set; then
+  enableval="$enable_server"
 
 else
-  enable_xlib=$exlib
+  enable_server=$BUILD_SERVER
 fi;
-# Check whether --enable-xdps or --disable-xdps was given.
-if test "${enable_xdps+set}" = set; then
-  enableval="$enable_xdps"
+# Check whether --enable-graphics or --disable-graphics was given.
+if test "${enable_graphics+set}" = set; then
+  enableval="$enable_graphics"
 
 else
-  enable_xdps=$exdps
-fi;
-# Check whether --enable-x11 or --disable-x11 was given.
-if test "${enable_x11+set}" = set; then
-  enableval="$enable_x11"
-
-else
-  enable_x11=$ex11
-fi;
-# Check whether --enable-win32 or --disable-win32 was given.
-if test "${enable_win32+set}" = set; then
-  enableval="$enable_win32"
-
-else
-  enable_xwin32=$exwin32
-fi;
-# Check whether --enable-winlib or --disable-winlib was given.
-if test "${enable_winlib+set}" = set; then
-  enableval="$enable_winlib"
-
-else
-  enable_xwinlib=$exwinlib
+  enable_graphics="$BUILD_GRAPHICS"
 fi;
 
+BUILD_SERVER=$enable_server
+BUILD_GRAPHICS="$enable_graphics"
 echo "$as_me:$LINENO: checking Backend Server" >&5
 echo $ECHO_N "checking Backend Server... $ECHO_C" >&6
-if test "x$enable_win32" = "xyes"; then
-  BUILD_WIN32=yes
 
 
-cat >>confdefs.h <<\_ACEOF
-#define BUILD_WIN32
+cat >>confdefs.h <<_ACEOF
+#define BUILD_SERVER $BUILD_SERVER
 _ACEOF
 
-  echo "$as_me:$LINENO: result: win32" >&5
-echo "${ECHO_T}win32" >&6
-elif test "x$enable_x11" = "xyes"; then
-  BUILD_X11=yes
-
-
-cat >>confdefs.h <<\_ACEOF
-#define BUILD_X11
-_ACEOF
-
-  echo "$as_me:$LINENO: result: x11" >&5
-echo "${ECHO_T}x11" >&6
-else
-  echo "$as_me:$LINENO: result: None" >&5
-echo "${ECHO_T}None" >&6
-  { { echo "$as_me:$LINENO: error: No Backend server configured. Report bug to bug-gnustep@gnu.org" >&5
-echo "$as_me: error: No Backend server configured. Report bug to bug-gnustep@gnu.org" >&2;}
-   { (exit 1); exit 1; }; }
-fi
+echo "$as_me:$LINENO: result: $BUILD_SERVER" >&5
+echo "${ECHO_T}$BUILD_SERVER" >&6
 
 echo "$as_me:$LINENO: checking Backend Graphics" >&5
 echo $ECHO_N "checking Backend Graphics... $ECHO_C" >&6
-if test "x$enable_winlib" = "xyes"; then
-  BUILD_WINLIB=yes
 
 
-cat >>confdefs.h <<\_ACEOF
-#define BUILD_WINLIB
+cat >>confdefs.h <<_ACEOF
+#define BUILD_GRAPHICS $BUILD_GRAPHICS
 _ACEOF
 
-  echo "$as_me:$LINENO: result: win32" >&5
-echo "${ECHO_T}win32" >&6
-  enable_xdps=no
-  enable_xlib=no
-elif test "x$enable_xdps" = "xyes"; then
-  BUILD_XDPS=yes
+echo "$as_me:$LINENO: result: $BUILD_GRAPHICS" >&5
+echo "${ECHO_T}$BUILD_GRAPHICS" >&6
 
-
-cat >>confdefs.h <<\_ACEOF
-#define BUILD_XDPS
-_ACEOF
-
-  echo "$as_me:$LINENO: result: xdps" >&5
-echo "${ECHO_T}xdps" >&6
+if test x"$BUILD_GRAPHICS" = "xxdps"; then
   GRAPHIC_LIBS="-ldpstk -ldps -lpsres -lXt $X_PRE_LIBS $GRAPHIC_LIBS"
-  enable_xlib=no
-elif test "x$enable_xlib" = "xyes"; then
-  BUILD_XLIB=yes
-
-
-cat >>confdefs.h <<\_ACEOF
-#define BUILD_XLIB
-_ACEOF
-
-  echo "$as_me:$LINENO: result: xlib" >&5
-echo "${ECHO_T}xlib" >&6
-else
-  echo "$as_me:$LINENO: result: None" >&5
-echo "${ECHO_T}None" >&6
-  { echo "$as_me:$LINENO: WARNING: No Backend graphics lib. Report bug to bug-gnustep@gnu.org" >&5
-echo "$as_me: WARNING: No Backend graphics lib. Report bug to bug-gnustep@gnu.org" >&2;}
+elif test x"$BUILD_GRAPHICS" = "xart"; then
+  BUILD_ART=yes
+  GRAPHIC_LIBS="$LIBART_LIBS $GRAPHIC_LIBS"
 fi
 
 #--------------------------------------------------------------------
@@ -5853,6 +5901,13 @@ s,@ECHO_C@,$ECHO_C,;t t
 s,@ECHO_N@,$ECHO_N,;t t
 s,@ECHO_T@,$ECHO_T,;t t
 s,@LIBS@,$LIBS,;t t
+s,@CC@,$CC,;t t
+s,@CFLAGS@,$CFLAGS,;t t
+s,@LDFLAGS@,$LDFLAGS,;t t
+s,@CPPFLAGS@,$CPPFLAGS,;t t
+s,@ac_ct_CC@,$ac_ct_CC,;t t
+s,@EXEEXT@,$EXEEXT,;t t
+s,@OBJEXT@,$OBJEXT,;t t
 s,@build@,$build,;t t
 s,@build_cpu@,$build_cpu,;t t
 s,@build_vendor@,$build_vendor,;t t
@@ -5865,13 +5920,6 @@ s,@target@,$target,;t t
 s,@target_cpu@,$target_cpu,;t t
 s,@target_vendor@,$target_vendor,;t t
 s,@target_os@,$target_os,;t t
-s,@CC@,$CC,;t t
-s,@CFLAGS@,$CFLAGS,;t t
-s,@LDFLAGS@,$LDFLAGS,;t t
-s,@CPPFLAGS@,$CPPFLAGS,;t t
-s,@ac_ct_CC@,$ac_ct_CC,;t t
-s,@EXEEXT@,$EXEEXT,;t t
-s,@OBJEXT@,$OBJEXT,;t t
 s,@CPP@,$CPP,;t t
 s,@X_CFLAGS@,$X_CFLAGS,;t t
 s,@X_PRE_LIBS@,$X_PRE_LIBS,;t t
@@ -5882,11 +5930,8 @@ s,@WITH_WRASTER@,$WITH_WRASTER,;t t
 s,@GRAPHIC_LIBS@,$GRAPHIC_LIBS,;t t
 s,@GRAPHIC_CFLAGS@,$GRAPHIC_CFLAGS,;t t
 s,@GRAPHIC_LFLAGS@,$GRAPHIC_LFLAGS,;t t
-s,@BUILD_WIN32@,$BUILD_WIN32,;t t
-s,@BUILD_X11@,$BUILD_X11,;t t
-s,@BUILD_WINLIB@,$BUILD_WINLIB,;t t
-s,@BUILD_XDPS@,$BUILD_XDPS,;t t
-s,@BUILD_XLIB@,$BUILD_XLIB,;t t
+s,@BUILD_SERVER@,$BUILD_SERVER,;t t
+s,@BUILD_GRAPHICS@,$BUILD_GRAPHICS,;t t
 s,@BACKEND_NAME@,$BACKEND_NAME,;t t
 CEOF
 

@@ -50,6 +50,7 @@ ADDITIONAL_LIB_DIRS += $(GRAPHIC_LFLAGS)
 # on having libraries specified).
 #
 libgnustep-$(BACKEND_NAME)_BUNDLE_LIBS = $(GRAPHIC_LIBS)
+
 ifeq ($(BACKEND_BUNDLE),)
 libgnustep-$(BACKEND_NAME)_LIBRARIES_DEPEND_UPON = $(GRAPHIC_LIBS)
 endif

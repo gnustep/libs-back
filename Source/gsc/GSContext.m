@@ -168,6 +168,7 @@ static unsigned int unique_index = 0;
   GSIArrayEmpty((GSIArray)gstack);
   NSZoneFree([self zone], gstack);
   NSFreeMapTable(gtable);
+  DESTROY(gstate);
   [super dealloc];
 }
 

@@ -1,3 +1,20 @@
+2002-05-05  Adam Fedor  <fedor@gnu.org>
+
+	* configure.ac: Simplify backend selection using --enable-server
+	and --enable-graphics. Add --with-library-flags and
+	--with-include-flags for adding additonal flags. Revert last
+	change to XShm.h test. Add check for art libraries.
+	* Source/GNUmakefile: Conform to new configure output
+	* Source/GSBackend.m: Idem.
+	* Headers/x11/wraster.h: Idem.
+
+	* GNUmakefile.postamble (after-distclean): Remove config.h
+	* Source/gsc/GSContext.m (-dealloc): Destroy gstate.
+	* Source/x11/XGServerWindow.m([XGServer
+	-_addExposedRectangle::]): Use current context class
+	([XGServer -flushwindowrect::]): Idem. (patches from 
+	alexander@malmberg.org).
+
 2002-05-04  Adam Fedor  <fedor@gnu.org>
 
 	* configure.ac: Improved check for XShm.h

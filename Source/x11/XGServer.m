@@ -213,6 +213,7 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
 
 @end
 
+
 /**
    <unit>
    <heading>XGServer</heading>

@@ -34,28 +34,15 @@
 + (void) initializeBackend;
 @end
 
-/* Call the correct initalization routines for the choosen
-   backend. This depends both on configuration data and defaults.
-   There is also a method to get a different backend class for different
-   configure parameters (so you could only load in the backend configurations
-   you wanted. But that is not implemented yet). */
-
-#ifdef BUILD_X11
+#if BUILD_SERVER == x11
 #include <x11/XGServer.h>
-#endif
-#ifdef BUILD_XLIB
-#include <xlib/XGContext.h>
-#endif
-#ifdef BUILD_XDPS
-#include <xdps/NSDPSContext.h>
-#endif
-#ifdef BUILD_WIN32
+#elif BUILD_SERVER == win32
 #include <win32/WIN32Server.h>
 #endif
-#ifdef BUILD_WINLIB
-#include <winlib/WIN32Context.h>
-#endif
 
+/* Call the correct initalization routines for the choosen
+   backend. This depends both on configuration data and defaults.
+*/
 @implementation GSBackend
 
 + (void) initializeBackend
@@ -65,28 +52,18 @@
   NSUserDefaults *defs = [NSUserDefaults standardUserDefaults];
 
   /* Load in only one server */
-#ifdef BUILD_X11
+#if BUILD_SERVER == x11
   [XGServer initializeBackend];
-#else
-#ifdef BUILD_WIN32
+#elif BUILD_SERVER == win32
   [WIN32Server initializeBackend];
 #else
   [NSException raise: NSInternalInconsistencyException
 	       format: @"No Window Server configured in backend"];
 #endif
-#endif
 
   /* The way the frontend is currently structured
      it's not possible to have more than one */
-#ifdef BUILD_XDPS
-  context = @"xdps";
-#endif
-#ifdef BUILD_WINLIB
-  context = @"win32";
-#endif
-#ifdef BUILD_XLIB
-  context = @"xlib";
-#endif
+  context = [NSString stringWithCString: STRINGIFY(BUILD_GRAPHICS)];
 
   /* What backend context? */
   if ([defs stringForKey: @"GSContext"])
@@ -94,7 +71,9 @@
 
   if ([context isEqual: @"xdps"])
     contextClass = objc_get_class("NSDPSContext");
-  else if ([context isEqual: @"win32"])
+  else if ([context isEqual: @"art"])
+    contextClass = objc_get_class("ARTContext");
+  else if ([context isEqual: @"winlib"])
     contextClass = objc_get_class("WIN32Context");
   else
     contextClass = objc_get_class("XGContext");

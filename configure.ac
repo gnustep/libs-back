@@ -39,6 +39,7 @@ AC_CONFIG_AUX_DIR($GNUSTEP_SYSTEM_ROOT/Makefiles)
 #--------------------------------------------------------------------
 # Determine the host, build, and target systems
 #--------------------------------------------------------------------
+AC_PROG_CC
 AC_CANONICAL_TARGET([])
 
 #--------------------------------------------------------------------
@@ -57,8 +58,6 @@ else
 fi
 CPPFLAGS="$CPPFLAGS -I$GNUSTEP_HDIR"
 LDFLAGS="$LDFLAGS -L$GNUSTEP_LDIR/$LIBRARY_COMBO -L$GNUSTEP_LDIR"
-
-AC_PROG_CC
 
 #--------------------------------------------------------------------
 # Look for WindowMaker's wraster library
@@ -106,6 +105,13 @@ if test $gs_cv_have_wraster = no; then
   GRAPHIC_LFLAGS=
 fi
 
+AC_ARG_WITH(library-flags, 
+        [  --with-library-flags=fg Library flags for libraries])
+AC_ARG_WITH(dps_include,  
+	[  --with-include-flags=fg Include flags])
+GRAPHIC_LFLAGS="$GRAPHIC_LFLAGS $with_library_flags"
+GRAPHIC_CFLAGS="$GRAPHIC_CFLAGS $with_include_flags"
+
 #--------------------------------------------------------------------
 # Find for X windows
 #--------------------------------------------------------------------
@@ -151,28 +157,10 @@ AC_SUBST(X_PRE_LIBS)
 #--------------------------------------------------------------------
 # Find for DPS
 #--------------------------------------------------------------------
-AC_ARG_WITH(dps_library, 
-           [  --with-dps-library=DIR  DPS library file are in DIR], ,
-           with_dps_library=)
-AC_ARG_WITH(dps_include,  
-	[  --with-dps-include=DIR  DPS include files are in DIR], ,
-        with_dps_include=)
-
-# Add the target header file directory as an include path so that the
-# check for dpsNXargs.h below looks at the appropriate target includes
-ORIG_CPPFLAGS=${CPPFLAGS}
-if test -n "$with_dps_include"; then
-  GRAPHIC_CFLAGS="-I$with_dps_include $GRAPHIC_CFLAGS"
-fi
-if test -n "$with_dps_library"; then
-  GRAPHIC_LFLAGS="-L$with_dps_library $GRAPHIC_LFLAGS"
-fi
+save_CPPFLAGS=${CPPFLAGS}
 CPPFLAGS="${CPPFLAGS} ${GRAPHIC_CFLAGS}"
-
 AC_CHECK_HEADERS([DPS/dpsclient.h DPS/dpsNXargs.h])
-
-# Restore back to the original
-CPPFLAGS=${ORIG_CPPFLAGS}
+CPPFLAGS="${save_CPPFLAGS}"
 
 #--------------------------------------------------------------------
 # Extended font support & UTF8 support
@@ -187,10 +175,10 @@ AC_CHECK_HEADER(X11/Xft/Xft.h)
 if test "$have_xft" = yes -a "$ac_cv_header_X11_Xft_Xft_h" = yes; then
   GRAPHIC_LIBS="-lXft ${GRAPHIC_LIBS}"
   WITH_XFT=yes
-  AC_DEFINE(HAVE_XFT,,[Define if you have the Xft library])
+  AC_DEFINE(HAVE_XFT,1,[Define if you have the Xft library])
   AC_CHECK_LIB(Xft, XftDrawStringUtf8, have_utf8=yes, have_utf8=no)
   if test "$have_utf8" = yes; then
-    AC_DEFINE(HAVE_UTF8,,[Define if you have XftDrawStringUtf8])
+    AC_DEFINE(HAVE_UTF8,1,[Define if you have XftDrawStringUtf8])
   fi
 fi
 CPPFLAGS="${save_header}"
@@ -204,7 +192,7 @@ AC_ARG_ENABLE(xim,
   [  --disable-xim           Disable XIM support],,
   enable_xim=yes)
 if test "x$enable_xim" = "xyes"; then
- AC_DEFINE(USE_XIM,,[Define to enable XIM support])
+ AC_DEFINE(USE_XIM,1,[Define to enable XIM support])
 fi
 
 #--------------------------------------------------------------------
@@ -347,7 +335,8 @@ fi
 
 save_CPPFLAGS=${CPPFLAGS}
 CPPFLAGS="$CPPFLAGS $GRAPHIC_CFLAGS"
-AC_CHECK_HEADERS(X11/extensions/XShm.h,,,
+AC_CHECK_HEADERS(X11/extensions/XShm.h,
+	AC_DEFINE(XSHM,1,[Define if you have X11/extensions/XShm.h]),,
 	[#include <X11/Xlib.h>])
 CPPFLAGS="$save_CPPFLAGS"
 
@@ -366,11 +355,30 @@ CPPFLAGS="${save_header}"
 LIBS="${save_libs}"
 
 #--------------------------------------------------------------------
+# libart graphics libraries
+#--------------------------------------------------------------------
+save_header=${CPPFLAGS}
+save_libs=${LIBS}
+CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
+LIBS="${GRAPHIC_LIBS} ${LIBS}"
+LIBART_LIBS=
+AC_CHECK_LIB(art_lgpl_2, main, have_libart_lgpl_2=yes, have_libart_lgpl_2=no)
+if test "$have_libart_lgpl_2" = yes; then
+  LIBART_LIBS="$LIBART_LIBS -lart_lgpl_2"
+fi
+AC_CHECK_LIB(freetype, main, have_freetype=yes, have_freetype=no)
+if test "$have_freetype" = yes; then
+  LIBART_LIBS="$LIBART_LIBS -lfreetype"
+fi
+CPPFLAGS="${save_header}"
+LIBS="${save_libs}"
+
+#--------------------------------------------------------------------
 # Set definitions
 #--------------------------------------------------------------------
 WITH_WRASTER=no
 if test $gs_cv_have_wraster = yes -a $set_x_paths = no; then
-  AC_DEFINE(WITH_WRASTER,,[Define if you have libwraster])
+  AC_DEFINE(WITH_WRASTER,1,[Define if you have libwraster])
   WITH_WRASTER=yes
 fi
 AC_SUBST(WITH_WRASTER)
@@ -381,71 +389,39 @@ AC_SUBST(GRAPHIC_LFLAGS)
 #--------------------------------------------------------------------
 # Which projects should we build?
 #--------------------------------------------------------------------
-exlib=no
-exdps=no
-ex11=no
-ewin32=no
-ewinlib=no
-if test $gs_cv_have_wraster = yes -o "$x_includes" != "NONE"; then
-  exlib=yes
-  ex11=yes
+BUILD_SERVER=x11
+BUILD_GRAPHICS=xlib
+if test "$have_gdi32" = yes; then
+  BUILD_SERVER=win32
+  BUILD_GRAPHICS=winlib
 fi
 
-AC_ARG_ENABLE(xlib, 
-  [  --enable-xlib           Build xlib graphics context],,
-  enable_xlib=$exlib)
-AC_ARG_ENABLE(xdps, 
-  [  --enable-xdps           Build xdps graphics context],,
-  enable_xdps=$exdps)
-AC_ARG_ENABLE(x11, 
-  [  --enable-x11            Build x11 server],,
-  enable_x11=$ex11)
-AC_ARG_ENABLE(win32, 
-  [  --enable-win32          Build win32 server],,
-  enable_xwin32=$exwin32)
-AC_ARG_ENABLE(winlib, 
-  [  --enable-winlib         Build win32 graphics context],,
-  enable_xwinlib=$exwinlib)
+AC_ARG_ENABLE(server, 
+  [  --enable-server=SRV     Build server type: x11, win32],,
+  enable_server=$BUILD_SERVER)
+AC_ARG_ENABLE(graphics, 
+  [  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art],,
+  enable_graphics="$BUILD_GRAPHICS")
 
+BUILD_SERVER=$enable_server
+BUILD_GRAPHICS="$enable_graphics"
 AC_MSG_CHECKING(Backend Server)
-if test "x$enable_win32" = "xyes"; then
-  BUILD_WIN32=yes
-  AC_SUBST(BUILD_WIN32)
-  AC_DEFINE(BUILD_WIN32,,[Define to build the Win32 server])
-  AC_MSG_RESULT(win32)
-elif test "x$enable_x11" = "xyes"; then
-  BUILD_X11=yes
-  AC_SUBST(BUILD_X11)
-  AC_DEFINE(BUILD_X11,,[Define to build the X11 server])
-  AC_MSG_RESULT(x11)
-else
-  AC_MSG_RESULT(None)
-  AC_MSG_ERROR(No Backend server configured. Report bug to bug-gnustep@gnu.org)
-fi
+AC_SUBST(BUILD_SERVER)
+AC_DEFINE_UNQUOTED(BUILD_SERVER,$BUILD_SERVER,
+	[Define to type of window server to build])
+AC_MSG_RESULT($BUILD_SERVER)
 
 AC_MSG_CHECKING(Backend Graphics)
-if test "x$enable_winlib" = "xyes"; then
-  BUILD_WINLIB=yes
-  AC_SUBST(BUILD_WINLIB)
-  AC_DEFINE(BUILD_WINLIB,,[Define to build Win32 graphics])
-  AC_MSG_RESULT(win32)
-  enable_xdps=no
-  enable_xlib=no
-elif test "x$enable_xdps" = "xyes"; then
-  BUILD_XDPS=yes
-  AC_SUBST(BUILD_XDPS)
-  AC_DEFINE(BUILD_XDPS,,[Define to build Xdps graphics])
-  AC_MSG_RESULT(xdps)
+AC_SUBST(BUILD_GRAPHICS)
+AC_DEFINE_UNQUOTED(BUILD_GRAPHICS,$BUILD_GRAPHICS,
+	[Define to type of graphics context to build])
+AC_MSG_RESULT($BUILD_GRAPHICS)
+
+if test x"$BUILD_GRAPHICS" = "xxdps"; then
   GRAPHIC_LIBS="-ldpstk -ldps -lpsres -lXt $X_PRE_LIBS $GRAPHIC_LIBS"
-  enable_xlib=no 
-elif test "x$enable_xlib" = "xyes"; then
-  BUILD_XLIB=yes
-  AC_SUBST(BUILD_XLIB)
-  AC_DEFINE(BUILD_XLIB,,[Define to build Xlib graphics])
-  AC_MSG_RESULT(xlib)
-else
-  AC_MSG_RESULT(None)
-  AC_MSG_WARN(No Backend graphics lib. Report bug to bug-gnustep@gnu.org)
+elif test x"$BUILD_GRAPHICS" = "xart"; then
+  BUILD_ART=yes
+  GRAPHIC_LIBS="$LIBART_LIBS $GRAPHIC_LIBS"
 fi
 
 #--------------------------------------------------------------------

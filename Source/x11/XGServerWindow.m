@@ -1984,7 +1984,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 	  /* Temporary protocol until we standardize the backing buffer */
 	  NSRect rect = NSMakeRect(rectangle.x, rectangle.y, 
 				   rectangle.width, rectangle.height);
-	  [[GSCurrentServer() class] handleExposeRect: rect
+	  [[GSCurrentContext() class] handleExposeRect: rect
 			     forDriver: window->gdriver];
 	}
       else
@@ -2057,7 +2057,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       if ((window->gdriverProtocol & GDriverHandlesBacking))
 	{
 	  /* Temporary protocol until we standardize the backing buffer */
-	  [[GSCurrentServer() class] handleExposeRect: rect
+	  [[GSCurrentContext() class] handleExposeRect: rect
 			     forDriver: window->gdriver];
 	}
 	else

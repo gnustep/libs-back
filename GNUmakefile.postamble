@@ -56,7 +56,7 @@ before-install:: $(INSTALL_ROOT_DIR)$(GNUSTEP_MAKEFILES)/Additional
 
 # Things to do after distcleaning
 after-distclean::
-	rm -f config.status config.log config.cache TAGS config.make back.make
+	rm -f config.status config.log config.cache TAGS config.h config.make back.make
 
 back.make: back.make.in
 	./configure
