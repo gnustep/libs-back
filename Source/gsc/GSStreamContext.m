@@ -40,6 +40,11 @@
 #include <Foundation/NSValue.h>
 #include <string.h>
 
+@interface GSFontInfo (experimental_glyph_printing_extension)
+// This method is currently only present in the libart backend
+-(const char *) nameOfGlyph: (NSGlyph)g;
+@end
+
 /* Print a floating point number regardless of localization */
 void
 fpfloat(FILE *stream, float f)
@@ -269,7 +274,7 @@ fpfloat(FILE *stream, float f)
   GSFontInfo *font = gstate->font;
   if ([font respondsToSelector: @selector(nameOfGlyph:)])
     {
-      int i;
+      unsigned int i;
       
       for (i = 0; i < length; i++)
 	{
@@ -282,7 +287,7 @@ fpfloat(FILE *stream, float f)
 	 just mapped to characters. This is the case for the xlib backend
 	 (at least for now). */
       char string[length+1];
-      int i;
+      unsigned int i;
       
       for (i = 0; i < length; i++)
 	{
@@ -881,7 +886,9 @@ writeHex(FILE *gstream, const unsigned char *data, int count)
       // We need to do a format conversion.
       // We do this on the fly, sending data to the context as soon as
       // it is computed.
-      int i, j, alpha;
+      int i, j;
+      // Preset this variable to keep compiler happy.
+      int alpha = 0;
       unsigned char val;
 
       for(j=0; j<bytes; j++) 
@@ -924,7 +931,7 @@ writeHex(FILE *gstream, const unsigned char *data, int count)
 
   - (void) output: (const char*)s length: (size_t)length
 {
-  int i;
+  unsigned int i;
 
   for (i = 0; i < length; i++)
     {
