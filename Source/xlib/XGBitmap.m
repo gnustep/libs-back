@@ -723,7 +723,7 @@ _bitmap_combine_alpha(RContext *context,
         case rgb_colorspace:
           if(num_of_colours != 3)
             {
-	      NSLog(@"Bad number of colour planes - d", num_of_colours);
+	      NSLog(@"Bad number of colour planes - %d", num_of_colours);
 	      NSLog(@"RGB colourspace requires three planes excluding alpha");
 	      return -1;
             }

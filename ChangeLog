@@ -1,3 +1,13 @@
+2004-09-24  Adrian Robert <arobert@cogsci.ucsd.edu>
+
+	* Source/x11/XGServerEvent.m (process_key_event): Modifier detection:
+	If default "GSModifiersAreKeys" is YES, ignore 'shift' and/or other
+	state and just map keypress to first modifier for they key.
+	* Documentation/Back/DefaultsSummary.gsdoc: Document new default
+	"GSModifiersAreKeys".
+	* Source/xlib/XGBitmap.m (_bitmap_combine_alpha()): corrected typo
+	in error message.
+
 2004-10-30  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/XGContext.m  (+initializeBackend): Use anti-aliaesd
