@@ -33,7 +33,7 @@
 #include "bench.h"
 #endif
 
-#include "xrtools.h"
+#include "x11/wraster.h"
 
 #ifdef XSHM
 extern Pixmap R_CreateXImageMappedPixmap(RContext *context, RXImage *ximage);

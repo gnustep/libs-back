@@ -1,3 +1,13 @@
+2002-03-29  Adam Fedor  <fedor@gnu.org>
+
+	* Source/gsc/GSGState.m (-GSSendBezierPath:): Append path in all
+	cases.
+	(- GSRectFillList): Implement.
+	* Source/x11/XGServerWindow.m: 
+	([XGServer -windowbounds:]): Don't get screen bounds.
+
+	* Source/x11/*.c: Fix includes.
+
 2002-03-27  Adam Fedor  <fedor@gnu.org>
 
 	* Source/x11/GNUmakefile: Get headers from right place.

@@ -37,8 +37,6 @@
       path = [NSBezierPath new]; \
     }
 
-#define AINDEX 5
-
 @implementation GSGState
 
 /* Designated initializer. */
@@ -578,15 +576,16 @@
 
 - (void) GSSendBezierPath: (NSBezierPath *)newpath
 {
-  if (path)
-    [path appendBezierPath: path];
-  else
-    ASSIGN(path, newpath);
+  CHECK_PATH;
+  [path appendBezierPath: path];
 }
 
 - (void) GSRectFillList: (const NSRect *)rects : (int) count
 {
-  [self notImplemented: _cmd];
+  int i;
+  for (i=0; i < count; i++)
+    [self DPSrectfill: NSMinX(rects[i]) : NSMinY(rects[i])
+	  : NSWidth(rects[i]) : NSHeight(rects[i])];
 }
 
 - (void)DPSimage: (NSAffineTransform*) matrix 

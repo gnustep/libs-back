@@ -32,10 +32,8 @@
 
 #include <math.h>
 
-#include "StdCmap.h"
-
-#include "xrtools.h"
-
+#include "x11/wraster.h"
+#include "x11/StdCmap.h"
 
 extern void _wraster_change_filter(int type);
 

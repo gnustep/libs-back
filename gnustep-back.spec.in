@@ -4,6 +4,7 @@ Copyright: LGPL
 Group: Development/Libraries
 Source: ftp://ftp.gnustep.org/pub/gnustep/core/%{gs_name}-%{gs_version}.tar.gz
 Requires: gnustep-gui
+Obsoletes: gnustep-xgps
 
 %description 
 This is a backend for the GNUstep gui Library which allows you to use

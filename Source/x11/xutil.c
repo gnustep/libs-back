@@ -35,7 +35,7 @@
 #include <sys/shm.h>
 #endif /* XSHM */
 
-#include "xrtools.h"
+#include "x11/wraster.h"
 
 
 #ifdef XSHM

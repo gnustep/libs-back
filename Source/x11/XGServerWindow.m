@@ -43,7 +43,6 @@
 #include "x11/XGDragView.h"
 #include "x11/XGInputServer.h"
 
-#define MAX_SCREENS	100
 #define XDPY (((RContext *)context)->dpy)
 #define XDRW (((RContext *)context)->drawable)
 #define XSCR (((RContext *)context)->screen_number)
@@ -1714,8 +1713,6 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   NSRect rect;
 
   window = WINDOW_WITH_TAG(win);
-  if (!window && win < MAX_SCREENS)
-    window = [self _rootWindowForScreen: win];
   if (!window)
     return NSZeroRect;
 
@@ -1855,8 +1852,6 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   gswindow_device_t *window;
 
   window = WINDOW_WITH_TAG(win);
-  if (!window && win < MAX_SCREENS)
-    window = [self _rootWindowForScreen: win];
   if (!window)
     return 0;
 
@@ -1986,7 +1981,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
     }
 
   /* FIXME: Doesn't take into account any offset added to the window
-     (from PSsetXgcdrawable) or possible scaling (unlikely in X-windows,
+     (from PSsetgcdrawable) or possible scaling (unlikely in X-windows,
      but what about other devices?) */
   rect.origin.y = NSHeight(window->xframe) - NSMaxY(rect);
 
@@ -2056,11 +2051,11 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 		     GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
 
   if (ret != GrabSuccess)
-    NSLog(@"Failed to grab pointer\n");
+    NSDebugLLog(@"XGTrace", @"Failed to grab pointer\n");
   else
     {
       grab_window = window;
-      NSDebugLLog(@"NSWindow", @"Grabbed pointer\n");
+      NSDebugLLog(@"XGTrace", @"Grabbed pointer\n");
     }
   return (ret == GrabSuccess) ? YES : NO;
 }
@@ -2580,11 +2575,12 @@ _computeDepth(int class, int bpp)
   Display *display;
   int res_x, res_y;
 
- if (screen_num < 0 || screen_num >= ScreenCount(XDPY))
-   {
-     NSLog(@"Invalidparam: no screen %d", screen_num);
-     return NSMakeSize(0,0);
-   }
+  display = XDPY;
+  if (screen_num < 0 || screen_num >= ScreenCount(XDPY))
+    {
+      NSLog(@"Invalidparam: no screen %d", screen_num);
+      return NSMakeSize(0,0);
+    }
   // This does not take virtual displays into account!! 
   res_x = DisplayWidth(display, screen_num) / 
       (DisplayWidthMM(display, screen_num) / 25.4);

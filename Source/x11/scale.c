@@ -34,7 +34,7 @@
 
 #include <assert.h>
 
-#include "xrtools.h"
+#include "x11/wraster.h"
 
 
 /*

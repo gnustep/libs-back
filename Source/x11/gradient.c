@@ -28,7 +28,7 @@
 
 #include <assert.h>
 
-#include "xrtools.h"
+#include "x11/wraster.h"
 
 
 static RImage *renderHGradient(unsigned width, unsigned height, 
