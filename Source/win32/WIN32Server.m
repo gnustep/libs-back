@@ -275,9 +275,7 @@ DWORD windowStyleForGSStyle(int style)
   RECT r;
   DWORD wstyle = windowStyleForGSStyle(style);
 
-  frame = [NSWindow contentRectForFrameRect: frame styleMask: _styleMask];
   r = GSScreenRectToMS(frame);
-  AdjustWindowRectEx(&r, wstyle, NO, 0);
 
   //NSLog(@"Creating at %d, %d, %d, %d", r.left, r.top, r.right - r.left, r.bottom - r.top);
   hwnd = CreateWindowEx(0,
