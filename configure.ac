@@ -303,6 +303,26 @@ fi
 CPPFLAGS="$save_CPPFLAGS"
 
 #--------------------------------------------------------------------
+# XKB extension
+#--------------------------------------------------------------------
+save_CPPFLAGS=${CPPFLAGS}
+save_LIBS=${LIBS}
+CPPFLAGS="$X_CFLAGS"
+LIBS="$X_LIBS -lX11"
+
+have_xkb=no
+AC_CHECK_HEADERS(X11/XKBlib.h,
+	have_xkb=yes,,
+	[#include <X11/XKBlib.h>])
+AC_CHECK_FUNCS(XkbGetControls)
+if test "$ac_cv_header_X11_XKBlib_h" = yes -a "$ac_cv_func_XkbGetControls" = yes; then
+  AC_DEFINE(XKB,1,[Define if your X server supports XKB])
+fi
+
+CPPFLAGS="$save_CPPFLAGS"
+LIBS="$save_LIBS"
+
+#--------------------------------------------------------------------
 # Window's graphics library
 #--------------------------------------------------------------------
 save_header=${CPPFLAGS}

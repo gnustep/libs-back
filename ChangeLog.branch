@@ -1,0 +1,18 @@
+2004-04-17  Kazunobu Kuriyama <kazunobu.kuriyama@nifty.com>
+
+	Support of [NSEvent -isARepeat] for X Window System when libX11
+	has the symbols defined in X11/XKBlib.h
+
+	* configure.ac: Added a test for XKB.
+	* configure: Regenerated.
+	* Source/x11/XGServerEvent.m: #include <X11/XKBlib.h> if the macro
+	  XKB is defined.
+	* Source/x11/XGServerEvent.m (detect_repeat_delay_and_interval()):
+	  Created.
+	* Source/x11/XGServerEvent.m (is_a_repeat_key_event()): Created.
+	* Source/x11/XGServerEvent.m (process_key_event()): Call
+	  is_a_repeat_key_event() to support -isARepeat.
+
+2004-01-13  Adam Fedor <fedor@gnu.org>
+
+	* Branch kazunobu_input_management created

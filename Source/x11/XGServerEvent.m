@@ -64,6 +64,10 @@
 # include <Foundation/NSNotification.h>
 #endif
 
+#ifdef XKB
+#include <X11/XKBlib.h>
+#endif
+
 #define	cWin	((gswindow_device_t*)generic.cachedWindow)
 
 extern Atom     WM_STATE;
@@ -126,6 +130,11 @@ static unsigned process_modifier_flags(unsigned int state);
 static void initialize_keyboard (void);
 
 static void set_up_num_lock (void);
+
+static BOOL detect_repeat_delay_and_interval(XEvent *xEvent,
+					     Time   *delay,
+					     Time   *interval);
+static BOOL is_a_repeat_key_event(XEvent *xEvent);
 
 static inline int check_modifier (XEvent *xEvent, KeyCode key_code) 
 {
@@ -1477,6 +1486,81 @@ keysym_is_X_modifier (KeySym keysym)
     }
 }
 
+static BOOL
+detect_repeat_delay_and_interval(XEvent *xEvent,
+				 Time	*delay,
+				 Time	*interval)
+{
+#ifdef XKB
+  XkbDescPtr    xkb_desc = NULL;
+  Status	result;
+
+  xkb_desc = XkbAllocKeyboard();
+  if (xkb_desc == NULL)
+    {
+      return NO;
+    }
+
+  result = XkbGetControls(xEvent->xany.display,
+			  XkbRepeatKeysMask,
+			  xkb_desc);
+  if (result == BadAlloc)
+    {
+      XkbFreeKeyboard(xkb_desc, 0, YES), xkb_desc = NULL;
+      return NO;
+    }
+  if (result != Success)
+    {
+      XkbFreeControls(xkb_desc, 0, YES), xkb_desc->ctrls = NULL;
+      XkbFreeKeyboard(xkb_desc, 0, YES), xkb_desc = NULL;
+      return NO;
+    }
+
+  *delay    = xkb_desc->ctrls->repeat_delay;
+  *interval = xkb_desc->ctrls->repeat_interval;
+
+  XkbFreeControls(xkb_desc, 0, YES), xkb_desc->ctrls = NULL;
+  XkbFreeKeyboard(xkb_desc, 0, YES), xkb_desc = NULL;
+
+  return YES;
+#else
+  return NO;
+#endif
+}
+
+static BOOL
+is_a_repeat_key_event(XEvent *xEvent)
+{
+#ifdef XKB
+  static Time prev_event_time = 0;
+  Time	delay;
+  Time	interval;
+  BOOL	result;
+
+  if (xEvent->xany.type != KeyPress)
+    {
+      return NO;
+    }
+  if (detect_repeat_delay_and_interval(xEvent, &delay, &interval) == NO)
+    {
+      return NO;
+    }
+  if (xEvent->xkey.time - prev_event_time < interval)
+    {
+      result = YES;
+    }
+  else
+    {
+      result = NO;
+    }
+  prev_event_time = xEvent->xkey.time;
+
+  return result;
+#else
+  return NO;
+#endif
+}
+
 static NSEvent*
 process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType)
 {
@@ -1639,7 +1723,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType)
 		   context: GSCurrentContext()
 		   characters: keys
 		   charactersIgnoringModifiers: ukeys
-		   isARepeat: NO /* isARepeat can't be supported with X */
+		   isARepeat: is_a_repeat_key_event(xEvent)
 		   keyCode: keyCode];
 
   return event;
