@@ -1,3 +1,14 @@
+2002-04-15  Adam Fedor  <fedor@gnu.org>
+
+	* Source/x11/XGServerWindow.m ([XGServer
+	-_addExposedRectangle::]): Use current server class
+	([XGServer -flushwindowrect::]): Idem.
+	(Suggestion by alexander@malmberg.org)
+
+	* Source/x11/XIMInputServer.m (-initWithDelegate:display:name:): 
+	Use defaultCStringEncoding if UTF8 doesn't work.
+	(Patch from stoyan@on.com.ua).
+
 2002-04-14  Adam Fedor  <fedor@gnu.org>
 
 	* Headers/x11/XGServerWindow.h: Add graphics driver protocol
