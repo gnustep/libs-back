@@ -4634,7 +4634,28 @@ echo "${ECHO_T}$ac_cv_header_GL_glx_h" >&6
 fi
 
 
-   if test "$have_glx" = yes -a "$ac_cv_header_GL_glx_h" = yes; then
+   echo "$as_me:$LINENO: checking for GLX_RGBA_TYPE" >&5
+echo $ECHO_N "checking for GLX_RGBA_TYPE... $ECHO_C" >&6
+   cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <GL/glx.h>
+      #ifdef GLX_RGBA_TYPE
+        yes
+      #endif
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  egrep "yes" >/dev/null 2>&1; then
+  have_glx_rgba=yes
+else
+  have_glx_rgba=no
+fi
+rm -f conftest*
+
+   echo "$as_me:$LINENO: result: $have_glx_rgba" >&5
+echo "${ECHO_T}$have_glx_rgba" >&6
+   if test "$have_glx" = yes -a "$ac_cv_header_GL_glx_h" = yes -a "$have_glx_rgba" = yes; then
      GRAPHIC_LIBS="-lGL ${GRAPHIC_LIBS}"
      WITH_GLX=yes
 

@@ -209,7 +209,15 @@ if test "x$enable_glx" = "xyes"; then
    LIBS="${GRAPHIC_LIBS} ${LIBS}"
    AC_CHECK_LIB(GL, glXMakeContextCurrent, have_glx=yes, have_glx=no)
    AC_CHECK_HEADER(GL/glx.h)
-   if test "$have_glx" = yes -a "$ac_cv_header_GL_glx_h" = yes; then
+   AC_MSG_CHECKING([for GLX_RGBA_TYPE])
+   AC_EGREP_CPP(yes, 
+     [#include <GL/glx.h>
+      #ifdef GLX_RGBA_TYPE
+        yes
+      #endif
+      ], have_glx_rgba=yes, have_glx_rgba=no)
+   AC_MSG_RESULT([$have_glx_rgba])
+   if test "$have_glx" = yes -a "$ac_cv_header_GL_glx_h" = yes -a "$have_glx_rgba" = yes; then
      GRAPHIC_LIBS="-lGL ${GRAPHIC_LIBS}"
      WITH_GLX=yes
      AC_DEFINE(HAVE_GLX,1,[Define if you have the glx library])
