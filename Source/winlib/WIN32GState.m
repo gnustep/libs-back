@@ -22,19 +22,20 @@
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111 USA.
    */
 
+// Currently the use of alpha blending is switched off by default.
+#define USE_ALPHABLEND
+
+// Define this so we pick up AlphaBlend, when loading windows.h
+#ifdef USE_ALPHABLEND
+#define WINVER 0x0500
+#endif
+
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
 #include <AppKit/NSColor.h>
 #include <AppKit/NSFont.h>
 #include <AppKit/NSGraphics.h>
 
-// Currently the use of alpha blending is switched off by default.
-//#define USE_ALPHABLEND
-
-// Define this so we pick up AlphaBlend, when loading windows.h
-#ifdef USE_ALPHABLEND
-#define WINVER 0x0500
-#endif
 #include "winlib/WIN32GState.h"
 #include "winlib/WIN32Context.h"
 #include "winlib/WIN32FontInfo.h"
@@ -374,6 +375,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 		       NSString *colorSpaceName,
 		       const unsigned char *const data[5])
 {
+  const unsigned char *bits = data[0];
   HBITMAP hbitmap;
   BITMAPINFO *bitmap;
   BITMAPINFOHEADER *bmih;
@@ -448,15 +450,28 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
     }
   else if (bitsPerPixel == 32)
     {
-      BITMAPV4HEADER *bmih;
+      BITMAPV4HEADER	*bmih;
+      unsigned char	*tmp;
+      unsigned int	pixels = pixelsHigh * pixelsWide;
+      unsigned int	i = 0;
 
       bmih = (BITMAPV4HEADER*)bitmap;
       bmih->bV4Size = sizeof(BITMAPV4HEADER);
       bmih->bV4V4Compression = BI_BITFIELDS;
-      bmih->bV4RedMask = 0x000000FF;
+      bmih->bV4BlueMask = 0x000000FF;
       bmih->bV4GreenMask = 0x0000FF00;
-      bmih->bV4BlueMask = 0x00FF0000;
+      bmih->bV4RedMask = 0x00FF0000;
       bmih->bV4AlphaMask = 0xFF000000;
+      tmp = objc_malloc(pixels * 4);
+      while (i < pixels*4)
+	{
+	  tmp[i+0] = bits[i+2];
+	  tmp[i+1] = bits[i+1];
+	  tmp[i+2] = bits[i+0];
+	  tmp[i+3] = bits[i+3];
+	  i += 4;
+	}
+      bits = tmp;
     }
   else if (bitsPerPixel == 16)
     {
@@ -474,14 +489,16 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
       NSLog(@"Unsure how to handle images with %d bits", bitsPerPixel);
     }
 
-  if (!SetDIBits(hDC, hbitmap, 0, pixelsHigh, data[0], 
-		 bitmap, fuColorUse))
+  if (!SetDIBits(hDC, hbitmap, 0, pixelsHigh, bits, bitmap, fuColorUse))
     {
-      objc_free(bitmap);
       DeleteObject(hbitmap);
-      return NULL;
+      hbitmap = NULL;
     }
 
+  if (bits != data[0])
+    {
+      objc_free(bits);
+    }
   objc_free(bitmap);
   return hbitmap;
 }

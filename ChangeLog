@@ -1,3 +1,8 @@
+2005-04-04 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/winlib/WIN32GState.m: tunr on alpha blending and swap colors
+	to correct format.
+
 2005-04-01  Adam Fedor  <fedor@gnu.org>
 
 	* Source/win32/WIN32Server.m: Re-add 2005-02-23 change.
