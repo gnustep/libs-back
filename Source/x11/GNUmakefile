@@ -47,9 +47,6 @@ x11_C_FILES = \
 StdCmap.c \
 context.c \
 convert.c \
-draw.c \
-gradient.c \
-misc.c \
 raster.c \
 scale.c \
 xdnd.c \

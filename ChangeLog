@@ -1,3 +1,13 @@
+2002-04-01  Adam Fedor  <fedor@gnu.org>
+
+	* Source/xlib/GSContext (-GSCurrentCTM): Implement
+	(-GSSetCTM:): Likewise.
+	(-GSConcatCTM:): Likewise.
+	* Source/xlib/XGGState.m ([XGGState -DPSsetmiterlimit:]): Implement
+	to do nothing.
+
+	* Source/x11/GNUmakefile: Remove unsed draw.c, gradient.c, misc.c
+
 2002-03-31  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m

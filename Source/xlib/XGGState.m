@@ -1537,6 +1537,11 @@ typedef enum {
     }
 }
 
+- (void) DPSsetmiterlimit: (float)limit
+{
+  /* Do nothing. X11 does its own thing and doesn't give us a choice */
+}
+
 /* ----------------------------------------------------------------------- */
 /* Paint operations */
 /* ----------------------------------------------------------------------- */

@@ -562,18 +562,17 @@ static unsigned int unique_index = 0;
 
 - (NSAffineTransform *) GSCurrentCTM
 {
-  [self notImplemented: _cmd];
-  return nil;
+  return [gstate GSCurrentCTM];
 }
 
 - (void) GSSetCTM: (NSAffineTransform *)ctm
 {
-  [self notImplemented: _cmd];
+  [gstate GSSetCTM: ctm];
 }
 
 - (void) GSConcatCTM: (NSAffineTransform *)ctm
 {
-  [self notImplemented: _cmd];
+  [gstate GSConcatCTM: ctm];
 }
 
 /* ----------------------------------------------------------------------- */
