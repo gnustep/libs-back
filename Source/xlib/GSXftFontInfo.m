@@ -590,7 +590,7 @@ static NSArray *faFromFc(FcPattern *pat)
   FcPatternAddDouble(fontPattern, FC_SIZE, (double)(matrix[0]));
   // Should do this only when size > 8
   FcPatternAddBool(fontPattern, FC_AUTOHINT, FcTrue);
-  pattern = XftFontMatch(xdpy, DefaultScreen(xdpy), fontPattern, &fc_result);
+  pattern = XftFontMatch(xdpy, defaultScreen, fontPattern, &fc_result);
   // tide up
   FcPatternDestroy(fontPattern);
   
