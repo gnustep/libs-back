@@ -765,12 +765,12 @@ static unsigned int unique_index = 0;
 /* ----------------------------------------------------------------------- */
 /* Client functions */
 /* ----------------------------------------------------------------------- */
-- (void) DPSPrintf: (char *)fmt : (va_list)args
+- (void) DPSPrintf: (const char *)fmt : (va_list)args
 {
   /* Do nothing. We can't parse PostScript */
 }
 
-- (void) DPSWriteData: (char *)buf : (unsigned int)count
+- (void) DPSWriteData: (const char *)buf : (unsigned int)count
 {
   /* Do nothing. We can't parse PostScript */
 }
