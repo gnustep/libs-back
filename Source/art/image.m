@@ -214,6 +214,14 @@ seem to cause edges to be off by a pixel
 
   NSPoint p;
 
+  void (*render_run)(render_run_t *ri, int num);
+
+
+  if (wi->has_alpha)
+    render_run = RENDER_RUN_ALPHA_A;
+  else
+    render_run = RENDER_RUN_ALPHA;
+
 
   p = [matrix transformPoint: NSMakePoint(0, 0)];
   fx[0] = p.x; fy[0] = p.y;
@@ -383,12 +391,12 @@ seem to cause edges to be off by a pixel
 	  de *= r_de * l_de;
 
 	  delta = (rtx * r_de + rtx_frac) * l_de
-	          - (ltx * l_de + ltx_frac) * r_de;
+		  - (ltx * l_de + ltx_frac) * r_de;
 	  dtx = delta / de;
 	  dtx_frac = delta % de;
 
 	  delta = (rty * r_de + rty_frac) * l_de
-	          - (lty * l_de + lty_frac) * r_de;
+		  - (lty * l_de + lty_frac) * r_de;
 	  dty = delta / de;
 	  dty_frac = delta % de;
 
@@ -413,18 +421,18 @@ seem to cause edges to be off by a pixel
 		ty++, ty_frac -= de;
 	      x0 = clip_x0;
 	    }
-	  if (x1 >= clip_x1) x1 = clip_x1 - 1;
+	  if (x1 >= clip_x1) x1 = clip_x1 - 1; /* TODO? */
 
 	  ri.dst = wi->data + x0 * DI.bytes_per_pixel
-	           + cy * wi->bytes_per_line;
+		   + cy * wi->bytes_per_line;
 	  ri.dsta = wi->alpha + x0 + cy * wi->sx;
 
-	  if (wi->has_alpha)
+	  if (!clip_span)
 	    {
 	      for (; x0 < x1; x0++, ri.dst += DI.bytes_per_pixel, ri.dsta++)
 		{
 		  ifunc(ii, &ri, tx, ty);
-		  RENDER_RUN_ALPHA_A(&ri, 1);
+		  render_run(&ri, 1);
 
 		  tx += dtx;
 		  ty += dty;
@@ -442,23 +450,52 @@ seem to cause edges to be off by a pixel
 	    }
 	  else
 	    {
-	      for (; x0 < x1; x0++, ri.dst += DI.bytes_per_pixel)
-		{
-		  ifunc(ii, &ri, tx, ty);
-		  RENDER_RUN_ALPHA(&ri, 1);
+	      unsigned int *span, *end;
+	      BOOL state = NO;
 
-		  tx += dtx;
-		  ty += dty;
-		  tx_frac += dtx_frac;
-		  if (tx_frac < 0)
-		    tx--, tx_frac += de;
-		  if (tx_frac >= de)
-		    tx++, tx_frac -= de;
-		  ty_frac += dty_frac;
-		  if (ty_frac < 0)
-		    ty--, ty_frac += de;
-		  if (ty_frac >= de)
-		    ty++, ty_frac -= de;
+	      span = &clip_span[clip_index[cy - clip_y0]];
+	      end = &clip_span[clip_index[cy - clip_y0 + 1]];
+
+	      x0 -= clip_x0;
+	      x1 -= clip_x0;
+	      while (span != end && *span < x0)
+		{
+		  state = !state;
+		  span++;
+		  if (span == end)
+		    break;
+		}
+	      if (span != end)
+		{
+		  for (; x0 < x1; x0++, ri.dst += DI.bytes_per_pixel, ri.dsta++)
+		    {
+		      if (x0 == *span)
+			{
+			  span++;
+			  state = !state;
+			  if (span == end)
+			    break;
+			}
+		    
+		      if (state)
+			{
+			  ifunc(ii, &ri, tx, ty);
+			  render_run(&ri, 1);
+			}
+
+		      tx += dtx;
+		      ty += dty;
+		      tx_frac += dtx_frac;
+		      if (tx_frac < 0)
+			tx--, tx_frac += de;
+		      if (tx_frac >= de)
+			tx++, tx_frac -= de;
+		      ty_frac += dty_frac;
+		      if (ty_frac < 0)
+			ty--, ty_frac += de;
+		      if (ty_frac >= de)
+			ty++, ty_frac -= de;
+		    }
 		}
 	    }
 	}
@@ -498,6 +535,7 @@ seem to cause edges to be off by a pixel
 
   /* optimize common case */
   if (identity_transform && is_rgb &&
+      !clip_span &&
       bitsPerSample == 8 && !isPlanar &&
       bytesPerRow == samplesPerPixel * pixelsWide &&
       ((samplesPerPixel == 3 && bitsPerPixel == 24 && !hasAlpha) ||
@@ -526,7 +564,7 @@ seem to cause edges to be off by a pixel
 	  for (x = 0; x < pixelsWide; x++)
 	    {
 	      if (x + ox < clip_x0 || x + ox >= clip_x1 ||
-	          y + oy < clip_y0 || y + oy >= clip_y1)
+		  y + oy < clip_y0 || y + oy >= clip_y1)
 		{
 		  if (hasAlpha)
 		    src += 4;
@@ -535,7 +573,7 @@ seem to cause edges to be off by a pixel
 		  continue;
 		}
 	      ri.dst = wi->data + (x + ox) * DI.bytes_per_pixel
-	               + (y + oy) * wi->bytes_per_line;
+		       + (y + oy) * wi->bytes_per_line;
 	      ri.dsta = wi->alpha + (x + ox) + (y + oy) * wi->sx;
 	      ri.r = src[0];
 	      ri.g = src[1];
@@ -544,12 +582,12 @@ seem to cause edges to be off by a pixel
 		{
 		  ri.a = src[3];
 		  /* TODO: find out if input is premultiplied or not */
-/*		  if (ri.a && ri.a != 255)
-		    {
-		      ri.r = (255 * ri.r) / ri.a;
-		      ri.g = (255 * ri.g) / ri.a;
-		      ri.b = (255 * ri.b) / ri.a;
-		    }*/
+/*                if (ri.a && ri.a != 255)
+                    {
+                      ri.r = (255 * ri.r) / ri.a;
+                      ri.g = (255 * ri.g) / ri.a;
+                      ri.b = (255 * ri.b) / ri.a;
+                    }*/
 		  if (alpha_dest)
 		    {
 		      if (src[3] == 255)
@@ -613,7 +651,7 @@ seem to cause edges to be off by a pixel
   if (ii.colorspace != 0)
     {
       [self _image_do_rgb_transform: &ii : matrix :
-        _image_get_color_rgb_cmyk_gray];
+	_image_get_color_rgb_cmyk_gray];
       return;
     }
 
