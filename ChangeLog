@@ -1,3 +1,7 @@
+2005-02-23  Luis Cabellos
+
+	* Source/win32/WIN32Server.m: Use new run loop api under mingw32
+
 2005-02-22  Adam Fedor  <fedor@gnu.org>
 
 	* configure.ac: Rewrite, avoid setting vars unecessarily. Use
