@@ -1,3 +1,10 @@
+2004-11-04  Adrian Robert <arobert@cogsci.ucsd.edu>
+
+	* Source/x11/XGServerEvent.m (-processEvent:): For XdndPosition
+	event (ClientMessage), convert the point from root coordinates
+	using XTranslateCoordinates() instead of relying on cached window
+	position.  Update cached window position from this.
+
 2005-01-12 00:32  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/gsc/GSStreamContext.m (-DPSsetstrokeadjust:):

@@ -571,9 +571,23 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 		Window		source;
 		Atom		action;
 		NSDragOperation	operation;
+                int root_x, root_y;
+                Window root_child;
 
 		NSDebugLLog(@"NSDragging", @"  XdndPosition message\n");
 		source = XDND_POSITION_SOURCE_WIN(&xEvent);
+                /*
+                  Work around a bug/feature in WindowMaker that does not
+                  send ConfigureNotify events for app icons.
+                */
+                XTranslateCoordinates(dpy, xEvent.xclient.window,
+                                      RootWindow(dpy, cWin->screen),
+                                      0, 0,
+                                      &root_x, &root_y,
+                                      &root_child);
+                cWin->xframe.origin.x = root_x;
+                cWin->xframe.origin.y = root_y;
+
 		eventLocation.x = XDND_POSITION_ROOT_X(&xEvent) - 
 		  NSMinX(cWin->xframe);
 		eventLocation.y = XDND_POSITION_ROOT_Y(&xEvent) - 
