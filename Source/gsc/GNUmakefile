@@ -41,6 +41,7 @@ gsc_OBJC_FILES = \
 GSContext.m \
 GSGState.m \
 GSStreamContext.m \
+GSStreamGState.m \
 externs.m
 
 gsc_C_FILES = gscolors.c

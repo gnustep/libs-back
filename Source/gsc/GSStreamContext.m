@@ -1,9 +1,9 @@
 /* -*- C++ -*-
-   GSStreamContext - Drawing context using the XR Library.
+   GSStreamContext - Drawing context to a stream.
 
-   Copyright (C) 1995 Free Software Foundation, Inc.
+   Copyright (C) 1995, 2002 Free Software Foundation, Inc.
 
-   Written by:  Adam Fedor <fedor@boulder.colorado.edu>
+   Written by:  Adam Fedor <fedor@gnu.org>
    Date: Nov 1995
    
    This file is part of the GNU Objective C User Interface Library.
@@ -26,6 +26,7 @@
 #include "config.h"
 #include "gsc/GSContext.h"
 #include "gsc/GSStreamContext.h"
+#include "gsc/GSStreamGState.h"
 #include <Foundation/NSArray.h>
 #include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>
@@ -53,6 +54,7 @@
 
 - initWithContextInfo: (NSDictionary *)info
 {
+  [super initWithContextInfo: info];
   if (info && [info objectForKey: @"NSOutputFile"])
     {
       NSString *path = [info objectForKey: @"NSOutputFile"];
@@ -71,7 +73,10 @@
       return nil;
     }
 
-  [super initWithContextInfo: info];
+  /* Create a default gstate */
+  gstate = [[GSStreamGState allocWithZone: [self zone]] 
+	      initWithDrawContext: self];
+
   return self;
 }
 
@@ -80,76 +85,40 @@
   return NO;
 }
 
-- (GSGState *) currentGState
-{
-  return nil;
-}
-
 @end
 
 @implementation GSStreamContext (Ops)
 /* ----------------------------------------------------------------------- */
 /* Color operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPScurrentalpha: (float*)a
-{
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
-}
-
-- (void) DPScurrentcmykcolor: (float*)c : (float*)m : (float*)y : (float*)k
-{
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
-}
-
-- (void) DPScurrentgray: (float*)gray
-{
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
-}
-
-- (void) DPScurrenthsbcolor: (float*)h : (float*)s : (float*)b
-{
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
-}
-
-- (void) DPScurrentrgbcolor: (float*)r : (float*)g : (float*)b
-{
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
-}
-
 - (void) DPSsetalpha: (float)a
 {
+  [super DPSsetalpha: a];
   fprintf(gstream, "%g setalpha\n", a);
 }
 
 - (void) DPSsetcmykcolor: (float)c : (float)m : (float)y : (float)k
 {
+  [super DPSsetcmykcolor: c : m : y : k];
   fprintf(gstream, "%g %g %g %g setcmykcolor\n", c, m, y, k);
 }
 
 - (void) DPSsetgray: (float)gray
 {
+  [super DPSsetgray: gray];
   fprintf(gstream, "%g setgray\n", gray);
 }
 
 - (void) DPSsethsbcolor: (float)h : (float)s : (float)b
 {
+  [super DPSsethsbcolor: h : s : b];
   fprintf(gstream, "%g %g %g sethsbcolor\n", h, s, b);
 }
 
 - (void) DPSsetrgbcolor: (float)r : (float)g : (float)b
 {
+  [super DPSsetrgbcolor: r : g : b];
   fprintf(gstream, "%g %g %g setrgbcolor\n", r, g, b);
-}
-
-
-- (void) GSSetFillColorspace: (NSDictionary *)dict
-{
-  [self notImplemented: _cmd];
-}
-
-- (void) GSSetStrokeColorspace: (NSDictionary *)dict
-{
-  [self notImplemented: _cmd];
 }
 
 - (void) GSSetFillColor: (float *)values
@@ -168,39 +137,52 @@
 /* ----------------------------------------------------------------------- */
 - (void) DPSashow: (float)x : (float)y : (const char*)s
 {
-  fprintf(gstream, "%g %g (%s) ashow\n", x, y, s);
+  fprintf(gstream, "%g %g (", x, y);
+  [self output:s];
+  fprintf(gstream, ") ashow\n");
 }
 
 - (void) DPSawidthshow: (float)cx : (float)cy : (int)c : (float)ax : (float)ay : (const char*)s
 {
-  fprintf(gstream, "%g %g %d %g %g (%s) awidthshow\n", cx, cy, c, ax, ay, s);
+  fprintf(gstream, "%g %g %d %g %g (",cx, cy, c, ax, ay);
+  [self output:s];
+  fprintf(gstream, ") awidthshow\n");
 }
 
 - (void) DPScharpath: (const char*)s : (int)b
 {
-  fprintf(gstream, "(%s) %d charpath\n", s, b);
+  fprintf(gstream, "(");
+  [self output:s];
+  fprintf(gstream, ") %d charpath\n", b);
 }
 
 - (void) DPSshow: (const char*)s
 {
-  fprintf(gstream, "(%s) show\n", s);
+  fprintf(gstream, "(");
+  [self output:s];
+  fprintf(gstream, ") show\n");
 }
 
 - (void) DPSwidthshow: (float)x : (float)y : (int)c : (const char*)s
 {
-  fprintf(gstream, "%g %g %d (%s) widthshow\n", x, y, c, s);
+  fprintf(gstream, "%g %g %d (", x, y, c);
+  [self output:s];
+  fprintf(gstream, ") widthshow\n");
 }
 
 - (void) DPSxshow: (const char*)s : (const float*)numarray : (int)size
 {
+  [self notImplemented: _cmd];
 }
 
 - (void) DPSxyshow: (const char*)s : (const float*)numarray : (int)size
 {
+  [self notImplemented: _cmd];
 }
 
 - (void) DPSyshow: (const char*)s : (const float*)numarray : (int)size
 {
+  [self notImplemented: _cmd];
 }
 
 
@@ -222,33 +204,6 @@
   [self notImplemented: _cmd];
 }
 
-- (NSAffineTransform *) GSGetTextCTM
-{
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
-  return nil;
-}
-
-- (NSPoint) GSGetTextPosition
-{
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
-  return NSMakePoint(0,0);
-}
-
-- (void) GSSetTextCTM: (NSAffineTransform *)ctm
-{
-  [self notImplemented: _cmd];
-}
-
-- (void) GSSetTextDrawingMode: (GSTextDrawingMode)mode
-{
-  [self notImplemented: _cmd];
-}
-
-- (void) GSSetTextPosition: (NSPoint)loc
-{
-  [self notImplemented: _cmd];
-}
-
 - (void) GSShowText: (const char *)string : (size_t)length
 {
   [self notImplemented: _cmd];
@@ -263,38 +218,38 @@
 /* ----------------------------------------------------------------------- */
 /* Gstate Handling */
 /* ----------------------------------------------------------------------- */
-- (void) DPScurrentgstate: (int)gst
-{
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
-}
-
 - (void) DPSgrestore
 {
+  [super DPSgrestore];
   fprintf(gstream, "grestore\n");
 }
 
 - (void) DPSgsave
 {
+  [super DPSgsave];
   fprintf(gstream, "gsave\n");
 }
 
 - (void) DPSgstate
 {
+  [super DPSgsave];
+  fprintf(gstream, "gstaten");
 }
 
 - (void) DPSinitgraphics
 {
+  [super DPSinitgraphics];
   fprintf(gstream, "initgraphics\n");
 }
 
 - (void) DPSsetgstate: (int)gst
 {
+  [self notImplemented: _cmd];
 }
-
 
 - (int) GSDefineGState
 {
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
+  [self notImplemented: _cmd];
   return 0;
 }
 
@@ -308,55 +263,9 @@
   [self notImplemented: _cmd];
 }
 
-- (void) GSCreateGState: (int)gst
-{
-  [self notImplemented: _cmd];
-}
-
-- (void) GSSetGState: (int)gst
-{
-  [self notImplemented: _cmd];
-}
-
-
 /* ----------------------------------------------------------------------- */
 /* Gstate operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPScurrentflat: (float*)flatness
-{
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
-}
-
-- (void) DPScurrentlinecap: (int*)linecap
-{
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
-}
-
-- (void) DPScurrentlinejoin: (int*)linejoin
-{
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
-}
-
-- (void) DPScurrentlinewidth: (float*)width
-{
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
-}
-
-- (void) DPScurrentmiterlimit: (float*)limit
-{
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
-}
-
-- (void) DPScurrentpoint: (float*)x : (float*)y
-{
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
-}
-
-- (void) DPScurrentstrokeadjust: (int*)b
-{
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
-}
-
 - (void) DPSsetdash: (const float*)pat : (int)size : (float)offset
 {
   int i;
@@ -368,36 +277,43 @@
 
 - (void) DPSsetflat: (float)flatness
 {
+  [super DPSsetflat: flatness];
   fprintf(gstream, "%g setflat\n", flatness);
 }
 
 - (void) DPSsethalftonephase: (float)x : (float)y
 {
+  [super DPSsethalftonephase: x : y];
   fprintf(gstream, "%g %g sethalftonephase\n", x, y);
 }
 
 - (void) DPSsetlinecap: (int)linecap
 {
+  [super DPSsetlinecap: linecap];
   fprintf(gstream, "%d setlinecap\n", linecap);
 }
 
 - (void) DPSsetlinejoin: (int)linejoin
 {
+  [super DPSsetlinejoin: linejoin];
   fprintf(gstream, "%d setlinejoin\n", linejoin);
 }
 
 - (void) DPSsetlinewidth: (float)width
 {
+  [super DPSsetlinewidth: width];
   fprintf(gstream, "%g setlinewidth\n", width);
 }
 
 - (void) DPSsetmiterlimit: (float)limit
 {
+  [super DPSsetmiterlimit: limit];
   fprintf(gstream, "%g setmiterlimit\n", limit);
 }
 
 - (void) DPSsetstrokeadjust: (int)b
 {
+  [super DPSsetstrokeadjust: b];
   fprintf(gstream, "%d setstrokeadjust\n", b);
 }
 
@@ -407,35 +323,33 @@
 /* ----------------------------------------------------------------------- */
 - (void) DPSconcat: (const float*)m
 {
+  [super DPSconcat: m];
   fprintf(gstream, "[%g %g %g %g %g %g] concat\n",
           m[0], m[1], m[2], m[3], m[4], m[5]);
 }
 
 - (void) DPSinitmatrix
 {
+  [super DPSinitmatrix];
   fprintf(gstream, "initmatrix\n");
 }
 
 - (void) DPSrotate: (float)angle
 {
+  [super DPSrotate: angle];
   fprintf(gstream, "%g rotate\n", angle);
 }
 
 - (void) DPSscale: (float)x : (float)y
 {
+  [super DPSscale: x : y];
   fprintf(gstream, "%g %g scale\n", x, y);
 }
 
 - (void) DPStranslate: (float)x : (float)y
 {
+  [super DPStranslate: x : y];
   fprintf(gstream, "%g %g translate\n", x, y);
-}
-
-
-- (NSAffineTransform *) GSCurrentCTM
-{
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
-  return nil;
 }
 
 - (void) GSSetCTM: (NSAffineTransform *)ctm
@@ -584,28 +498,27 @@
   [self notImplemented: _cmd];
 }
 
-
 /* ----------------------------------------------------------------------- */
 /* Window system ops */
 /* ----------------------------------------------------------------------- */
 - (void) DPScurrentgcdrawable: (void**)gc : (void**)draw : (int*)x : (int*)y
 {
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
+  NSLog(@"DPSinvalidcontext: getting gcdrawable from stream context");
 }
 
 - (void) DPScurrentoffset: (int*)x : (int*)y
 {
-  NSLog(@"DPSinvalidcontext: getting values from stream context");
+  NSLog(@"DPSinvalidcontext: getting drawable offset from stream context");
 }
 
 - (void) DPSsetgcdrawable: (void*)gc : (void*)draw : (int)x : (int)y
 {
-  NSLog(@"DPSinvalidcontext: setting drawable from stream context");
+  NSLog(@"DPSinvalidcontext: setting gcdrawable from stream context");
 }
 
 - (void) DPSsetoffset: (short int)x : (short int)y
 {
-  NSLog(@"DPSinvalidcontext: setting drawable from stream context");
+  NSLog(@"DPSinvalidcontext: setting drawable offset from stream context");
 }
 
 
