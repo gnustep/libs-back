@@ -41,7 +41,8 @@ win32_C_FILES = \
 
 # The Objective-C source files to be compiled
 win32_OBJC_FILES = \
-WIN32Server.m 
+WIN32Server.m  \
+WIN32ServerEvent.m
 
 -include GNUmakefile.preamble
 
