@@ -497,7 +497,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 					   XA_CARDINAL, 32, -1, &count);
       // If the two are not identical, the flag on the root window, was
       // a left over from an old window manager.
-      if (*win1 == *win)
+      if (win1 && *win1 == *win)
         {
 	  wmflags |= XGWM_GNOME;
 
@@ -519,7 +519,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 					   XA_WINDOW, 32, -1, &count);
       // If the two are not identical, the flag on the root window, was
       // a left over from an old window manager.
-      if (*win1 == *win)
+      if (win1 && *win1 == *win)
         {
 	  wmflags |= XGWM_EWMH;
 
