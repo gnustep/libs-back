@@ -1,3 +1,13 @@
+2002-06-02  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m
+	Treat NSBackingStoreRetained the same as NSBackingStoreBuffered, 
+	just as the X backends do. 
+	* Source/winlib/WIN32GState.m
+	Reimplemented creation of bitmaps. This should now work for all 
+	bitmaps with >16 bits per pixel. The bitmaps that are still missing 
+	are due to clipping problems, as can be seen by switching clipping off.
+	
 2002-05-12  Adam Fedor  <fedor@gnu.org>
 
 	* Source/gsc/GSGState.m (-DPSsetalpha:): Call setColor:state:.
