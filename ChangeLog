@@ -1,3 +1,12 @@
+2004-01-25  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/shfill.m (-DPSshfill:):
+	* Source/winlib/Win32GState.m (-DPSimage::::):
+	* Source/xlib/XGGState.m (-DPSimage::::): Replaced
+	appendTransform: with prependTransform:. 
+	* Source/art/image.m (-DPSimage:): Replaced prependTransform: with
+	appendTransform:. 
+
 2004-01-25 13:52  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/image.m (-_image_do_rgb_transform:::): Fix off-by-one

@@ -1741,7 +1741,7 @@ typedef enum {
   if (matrix)
     {
       old_ctm = [ctm copy];
-      [ctm appendTransform: matrix];
+      [ctm prependTransform: matrix];
     }
 
   // --- Get our drawable info -----------------------------------------
