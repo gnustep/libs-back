@@ -39,7 +39,8 @@ art_OBJC_FILES = \
   ftfont.m \
   image.m \
   composite.m \
-  path.m
+  path.m \
+  shfill.m
 
 art_HEADER_FILES_DIR = ../../Headers/art
 art_HEADER_FILES_INSTALL_DIR = gnustep/art
