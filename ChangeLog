@@ -1,3 +1,8 @@
+2005-02-12 13:58  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Headers/x11/XGServerWindow.h: Make the border and depth ivars
+	unsigned.
+
 2005-02-12 13:54  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/x11/XGServerWindow.m (setNormalHints): If the window isn't
