@@ -173,42 +173,57 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 {
   HDC otherDC;
   HDC hDC;
-  POINT p;
   RECT rect;
   int h;
-  int y1;
+  int x;
+  int y;
+  NSRect r;
+  RECT rect2;
 
-  p = GSViewPointToWin(self, aPoint);
   rect = GSViewRectToWin(source, aRect);
   h = rect.bottom - rect.top;
 
-  if (viewIsFlipped)
-    y1 = p.y;
-  else
-    y1 = p.y - h;
+  r.size = aRect.size;
+  r.origin = aPoint;
+  rect2 = GSViewRectToWin(self, r);
+  x = rect2.left;
+  y = rect2.top;
+  if (source->ctm->matrix.m22 < 0 && ctm->matrix.m22 > 0) y += h;
+  if (source->ctm->matrix.m22 > 0 && ctm->matrix.m22 < 0) y -= h;
 
   otherDC = [source getHDC];
   if (!otherDC)
     {
       return;
-    } 
-  hDC = [self getHDC];
-  if (!hDC)
+    }
+  if (self == source)
     {
-      [source releaseHDC: otherDC]; 
-      return;
+      hDC = otherDC;
     } 
+  else 
+    {
+      hDC = [self getHDC];
+      if (!hDC)
+	{
+	  [source releaseHDC: otherDC]; 
+	  return;
+	} 
+    }
     
-  if (!BitBlt(hDC, p.x, y1, (rect.right - rect.left), h, 
+  if (!BitBlt(hDC, x, y, (rect.right - rect.left), h, 
 	      otherDC, rect.left, rect.top, SRCCOPY))
     {
       NSLog(@"Copy bitmap failed %d", GetLastError());
       NSLog(@"Orig Copy Bits to %f, %f from %@", aPoint.x, aPoint.y, 
 	    NSStringFromRect(aRect)); 
-      NSLog(@"Copy Bits to %d %d from %d %d size %d %d", p.x , y1, 
+      NSLog(@"Copy Bits to %d %d from %d %d size %d %d", x , y, 
 	    rect.left, rect.top, (rect.right - rect.left), h);
     }
-  [self releaseHDC: hDC];
+
+  if (self != source)
+    {
+      [self releaseHDC: hDC];
+    }
   [source releaseHDC: otherDC]; 
 }
 

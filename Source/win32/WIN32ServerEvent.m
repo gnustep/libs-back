@@ -414,6 +414,8 @@ static void invalidateWindow(HWND hwnd, RECT rect);
       
     case WM_ERASEBKGND: 
       NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "ERASEBKGND", hwnd);
+      // Handle background painting ourselves.
+      return (LRESULT)1;
       break;
     case WM_PAINT: 
       {
@@ -860,15 +862,36 @@ process_mouse_event(HWND hwnd, WPARAM wParam, LPARAM lParam,
 static void 
 invalidateWindow(HWND hwnd, RECT rect)
 {
-  NSWindow *window = GSWindowWithNumber((int)hwnd);
-  NSRect r = MSWindowRectToGS((HWND)hwnd, rect);
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
 
-  /*
-  NSLog(@"Invalidated window %d %@ (%d, %d, %d, %d)", hwnd, 
-	    NSStringFromRect(r), rect.left, rect.top, rect.right, rect.bottom);
-  */
-  // Repaint the window's client area. 
-  [[window contentView] setNeedsDisplayInRect: r];
+  if (win->useHDC)
+    {
+      HDC hdc = GetDC((HWND)hwnd);
+      WINBOOL result;
+
+      result = BitBlt(hdc, rect.left, rect.top, 
+		      (rect.right - rect.left), (rect.bottom - rect.top), 
+		      win->hdc, rect.left, rect.top, SRCCOPY);
+      if (!result)
+        {
+	  NSLog(@"validated window %d %@", hwnd, 
+		NSStringFromRect(MSWindowRectToGS((HWND)hwnd, rect)));
+	  NSLog(@"validateWindow failed %d", GetLastError());
+      }
+      ReleaseDC((HWND)hwnd, hdc);
+    }
+  else 
+    {
+      NSWindow *window = GSWindowWithNumber((int)hwnd);
+      NSRect r = MSWindowRectToGS((HWND)hwnd, rect);
+      
+      /*
+	NSLog(@"Invalidated window %d %@ (%d, %d, %d, %d)", hwnd, 
+	NSStringFromRect(r), rect.left, rect.top, rect.right, rect.bottom);
+      */
+      // Repaint the window's client area. 
+      [[window contentView] setNeedsDisplayInRect: r];
+    }
 }
 
 LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,

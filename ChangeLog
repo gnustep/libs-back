@@ -1,3 +1,16 @@
+2003-12-23  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/winlib/WIN32GState.m (-copyBits:fromRect:toPoint:): Made
+	save against self and source being the same object and corrected
+	computation for flipped views. This code is copied over from xlib.
+	* Source/winlib/WIN32FontEnumerator.m Reimplemented the whole file.
+	* Source/winlib/WIN32FontInfo.m (-setupAttributes) assign font
+	family ivar and use common functions with font enumerator.
+	* Source/win32/WIN32ServerEvent.m (WIN32Server
+	-windowEventProc::::) flag that we handle erasing of the
+	background ourselves. (invalidateWindow) copy from backing store
+	if possible.
+
 2003-12-03  Adam Fedor  <fedor@gnu.org>
 
 	* Headers/win32/WIN32Server.h: Add ivars currentFocus, desiredFocus.
