@@ -1,4 +1,9 @@
-2004-11-04  Adrian Robert <arobert@cogsci.ucsd.edu>
+2005-01-20 17:58  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/xlib/XGGState.m (-DPSrectstroke::::): Don't decrease
+	the width/height.
+
+2005-01-15  Adrian Robert <arobert@cogsci.ucsd.edu>
 
 	* Source/x11/XGServerEvent.m (-processEvent:): For XdndPosition
 	event (ClientMessage), convert the point from root coordinates
