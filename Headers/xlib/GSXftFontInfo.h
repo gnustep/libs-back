@@ -34,6 +34,11 @@
 
 #include <AppKit/GSFontInfo.h>
 
+@interface FcFontEnumerator : GSFontEnumerator
+{
+}
+@end
+
 @interface GSXftFontInfo : GSFontInfo
 {
   XftFont *font_info;
