@@ -62,6 +62,7 @@
   if (info && [info objectForKey: @"NSOutputFile"])
     {
       NSString *path = [info objectForKey: @"NSOutputFile"];
+      NSLog(@"Printing to %s", [path fileSystemRepresentation]);
       gstream = fopen([path fileSystemRepresentation], "w");
       if (!gstream)
         {
@@ -217,7 +218,17 @@
 
 - (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t)length
 {
-  [self notImplemented: _cmd];
+// HACK to get some print output until the new glyph text system is fully implemented
+  char string[length+1];
+  int i;
+
+  for (i = 0; i < length; i++)
+  {
+      string[i] = glyphs[i];
+  } 
+  string[length] = 0;
+  [self DPSshow: string];
+//  [self notImplemented: _cmd];
 }
 
 
@@ -330,8 +341,20 @@
 - (void) DPSconcat: (const float*)m
 {
   [super DPSconcat: m];
-  fprintf(gstream, "[%g %g %g %g %g %g] concat\n",
-          m[0], m[1], m[2], m[3], m[4], m[5]);
+
+  if ((m[0] == 1.0) && (m[1] == 0.0) &&
+      (m[2] == 0.0) && (m[3] == 1.0))
+    {
+      if ((m[4] != 0.0) || (m[5] != 0.0))
+	{
+	  fprintf(gstream, "%g %g translate\n", m[4], m[5]);
+	}
+    }
+  else 
+    {
+      fprintf(gstream, "[%g %g %g %g %g %g] concat\n",
+	      m[0], m[1], m[2], m[3], m[4], m[5]);
+    }
 }
 
 - (void) DPSinitmatrix
