@@ -7,6 +7,7 @@
 	* Source/GNUmakefile: Conform to new configure output
 	* Source/GSBackend.m: Idem.
 	* Headers/x11/wraster.h: Idem.
+	* Source/x11/XIMInputServer.m: Correct define for HAVE_UTF8
 
 	* GNUmakefile.postamble (after-distclean): Remove config.h
 	* Source/gsc/GSContext.m (-dealloc): Destroy gstate.
