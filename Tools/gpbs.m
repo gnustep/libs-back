@@ -29,6 +29,10 @@
 #include <signal.h>
 #include <unistd.h>
 
+#ifdef __MINGW__
+#include	"process.h"
+#endif
+
 @class PasteboardServer;
 @class PasteboardObject;
 
@@ -1058,10 +1062,18 @@ init(int argc, char** argv)
     {
       signal((int)count, ihandler);
     }
+#ifdef SIGPIPE
   signal(SIGPIPE, SIG_IGN);
+#endif 
+#ifdef SIGTTOU
   signal(SIGTTOU, SIG_IGN);
+#endif 
+#ifdef SIGTTIN
   signal(SIGTTIN, SIG_IGN);
+#endif 
+#ifdef SIGHUP
   signal(SIGHUP, SIG_IGN);
+#endif 
   signal(SIGTERM, ihandler);
 
   if (debug == 0)
@@ -1069,6 +1081,21 @@ init(int argc, char** argv)
       /*
        *  Now fork off child process to run in background.
        */
+#ifdef __MINGW__
+    {
+      char	**a = malloc((argc+2) * sizeof(char*));
+
+      memcpy(a, argv, argc*sizeof(char*));
+      a[argc] = "--no-fork";
+      a[argc+1] = 0;
+      if (_spawnv(_P_NOWAIT, argv[0], a) == -1)
+	{
+	  fprintf(stderr, "gpbs - spawn failed - bye.\n");
+	  exit(1);
+	}
+      exit(0);
+    }
+#else
       switch (fork())
 	{
 	  case -1:
@@ -1093,6 +1120,7 @@ init(int argc, char** argv)
 	      }
 	    exit(0);
 	}
+#endif 
     }
 }
 
