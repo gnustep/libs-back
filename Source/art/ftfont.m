@@ -67,6 +67,9 @@ from the back-art-subpixel-text defaults key
 static int subpixel_text;
 
 
+static BOOL anti_alias_by_default;
+
+
 @class FTFaceInfo;
 
 @interface FTFontInfo : GSFontInfo <FTFontInfo>
@@ -290,7 +293,12 @@ static void add_face(NSString *family, NSString *face, NSDictionary *d,
   if ([d objectForKey: @"RenderHints_hack"])
     fi->render_hints_hack=strtol([[d objectForKey: @"RenderHints_hack"] cString],NULL,0);
   else
-    fi->render_hints_hack=0x10202;
+    {
+      if (anti_alias_by_default)
+	fi->render_hints_hack=0x10202;
+      else
+	fi->render_hints_hack=0x00202;
+    }
 
   fi->familyName = [family copy];
 
@@ -1362,8 +1370,6 @@ static int filters[3][7]=
   if (FTC_CMapCache_New(ftc_manager, &ftc_cmapcache))
     NSLog(@"FTC_CMapCache_New failed");
 
-  load_font_configuration();
-
   {
     NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
     NSString *s;
@@ -1371,6 +1377,8 @@ static int filters[3][7]=
     int i;
 
     subpixel_text = [ud integerForKey: @"back-art-subpixel-text"];
+
+    anti_alias_by_default = [ud boolForKey: @"GSFontAntiAlias"];
 
     /* To make it easier to find an optimal (or at least good) filter,
     the filters are configurable (for now). */
@@ -1412,6 +1420,8 @@ static int filters[3][7]=
 	  }
       }
   }
+
+  load_font_configuration();
 }
 
 
