@@ -1,3 +1,8 @@
+2003-06-12 21:44  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Handle 2.0.* correctly in the freetype
+	version check.
+
 2003-06-12 19:22  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/x11/XWindowBuffer.m: Add XWindowBufferUseXShm defaults
