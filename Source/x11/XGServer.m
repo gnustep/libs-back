@@ -506,4 +506,9 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
     [[GSCurrentContext() class] waitAllContexts];
 }
 
+- (void) beep
+{
+  XBell(dpy, 50);
+}
+
 @end

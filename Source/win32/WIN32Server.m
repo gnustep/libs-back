@@ -213,6 +213,11 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   return (void *)win;
 }
 
+- (void) beep
+{
+  Beep(400, 500);
+}  
+
 @end
 
 static inline

@@ -80,9 +80,4 @@
   [gstate setOffset: NSMakePoint(x, y)];
 }
 
-- (void) NSBeep
-{
-  Beep(400, 500);
-}
-
 @end

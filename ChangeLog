@@ -1,3 +1,11 @@
+2002-06-03  Adam Fedor  <fedor@gnu.org>
+
+	* Source/win32/WIN32Server.m (-beep): Implement
+	* Source/winlib/WIN32Context.m (-NSBeep): Remove.
+
+	* Source/x11/XGServer.m (-beep): Implement.
+	* Source/xlib/XGContext.m (-NSBeep): Remove.
+
 2002-06-02  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/WIN32Server.m
