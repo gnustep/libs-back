@@ -36,6 +36,9 @@
 #include <AppKit/NSCursor.h>
 #include <AppKit/NSGraphics.h>
 #include <AppKit/NSWindow.h>
+#include <AppKit/NSImage.h>
+#include <AppKit/NSBitmapImageRep.h>
+#include <X11/extensions/shape.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -1605,8 +1608,68 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   XFlush(dpy);
 }
 
+#define ALPHA_THRESHOLD 158
+
+/* Restrict the displayed part of the window to the given image.
+   This only yields usefull results if the window is borderless and 
+   displays the image itself */
+- (void) restrictWindow: (int)win toImage: (NSImage*)image
+{
+  gswindow_device_t	*window;
+  Pixmap pixmap = 0;
+
+  window = WINDOW_WITH_TAG(win);
+  if (win == 0 || window == NULL)
+    {
+      NSLog(@"Invalidparam: Restricting invalid window %d", win);
+      return;
+    }
+
+  if ([[image backgroundColor] alphaComponent] * 256 <= ALPHA_THRESHOLD)
+    {
+      // The mask computed here is only correct for unscaled images.
+      NSImageRep *rep = [image bestRepresentationForDevice: nil];
+
+      if ([rep isKindOfClass: [NSBitmapImageRep class]])
+        {
+	    if (![(NSBitmapImageRep*)rep isPlanar] && 
+		([(NSBitmapImageRep*)rep samplesPerPixel] == 4))
+	      {
+		pixmap = xgps_cursor_mask(dpy, GET_XDRAWABLE(window),
+					  [(NSBitmapImageRep*)rep bitmapData], 
+					  [rep pixelsWide], [rep pixelsHigh], 
+					  [(NSBitmapImageRep*)rep samplesPerPixel]);
+	      }
+	}
+    }
+
+  XShapeCombineMask(dpy, window->ident, ShapeBounding, 0, 0,
+		    pixmap, ShapeSet);
+
+  if (pixmap)
+    {
+      XFreePixmap(dpy, pixmap);
+    }
+}
+
+/* This method is a fast implementation of move that only works 
+   correctly for borderless windows. Use with caution. */
 - (void) movewindow: (NSPoint)loc : (int)win
 {
+  gswindow_device_t	*window;
+
+  window = WINDOW_WITH_TAG(win);
+  if (win == 0 || window == NULL)
+    {
+      NSLog(@"Invalidparam: Moving invalid window %d", win);
+      return;
+    }
+
+  window->siz_hints.x = (int)loc.x;
+  window->siz_hints.y = (int)(DisplayHeight(dpy, window->screen) - 
+			      loc.y - window->siz_hints.height);
+  XMoveWindow (dpy, window->ident, window->siz_hints.x, window->siz_hints.y);
+  setNormalHints(dpy, window);
 }
 
 - (void) placewindow: (NSRect)rect : (int)win
@@ -1662,7 +1725,6 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 
   NSDebugLLog(@"Moving", @"Place %d - o:%@, x:%@", window->number,
     NSStringFromRect(rect), NSStringFromRect(xVal));
-  
   XMoveResizeWindow (dpy, window->ident,
     window->siz_hints.x, window->siz_hints.y,
     window->siz_hints.width, window->siz_hints.height);
