@@ -27,6 +27,7 @@ copyright 2002 Alexander Malmberg <alexander@malmberg.org>
 #include <Foundation/NSValue.h>
 #include <Foundation/NSPathUtilities.h>
 #include <Foundation/NSFileManager.h>
+#include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSDebug.h>
 #include <AppKit/GSFontInfo.h>
 #include <AppKit/NSAffineTransform.h>
@@ -55,6 +56,15 @@ copyright 2002 Alexander Malmberg <alexander@malmberg.org>
 #include FT_OUTLINE_H
 
 
+/*
+from the back-art-subpixel-text defaults key
+0: normal rendering
+1: subpixel, rgb
+2: subpixel, bgr
+*/
+static int subpixel_text;
+
+
 @interface FTFontInfo : GSFontInfo <FTFontInfo>
 {
   const char *filename;
@@ -62,6 +72,10 @@ copyright 2002 Alexander Malmberg <alexander@malmberg.org>
 
   FTC_ImageDesc fallback;
 }
+@end
+
+
+@interface FTFontInfo_subpixel : FTFontInfo
 @end
 
 
@@ -443,7 +457,14 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   NSArray *rfi;
   FTFaceInfo *font_entry;
 
+  if (subpixel_text)
+    {
+      [self release];
+      self = [FTFontInfo_subpixel alloc];
+    }
+
   self = [super init];
+
 
   NSDebugLLog(@"ftfont", @"[%@ -initWithFontName: %@  matrix: (%g %g %g %g %g %g)]\n",
 	      self, name,
@@ -1287,8 +1308,423 @@ add code to avoid loading bitmaps for glyphs */
     NSLog(@"FTC_CMapCache_New failed");
 
   load_font_configuration();
+
+  subpixel_text = [[NSUserDefaults standardUserDefaults]
+    integerForKey: @"back-art-subpixel-text"];
 }
 
+
+@end
+
+
+@implementation FTFontInfo_subpixel
+
+-(void) drawString: (const char *)s
+	at: (int)x : (int)y
+	to: (int)x0 : (int)y0 : (int)x1 : (int)y1 : (unsigned char *)buf : (int)bpl
+	color:(unsigned char)r : (unsigned char)g : (unsigned char)b : (unsigned char)alpha
+	transform: (NSAffineTransform *)transform
+	drawinfo: (draw_info_t *)di
+{
+  const unsigned char *c;
+  unsigned char ch;
+  unsigned int uch;
+
+  FTC_CMapDescRec cmap;
+  unsigned int glyph;
+
+  int use_sbit;
+
+  FTC_SBit sbit;
+  FTC_ImageDesc cur;
+
+  FT_Matrix ftmatrix;
+  FT_Vector ftdelta;
+
+  BOOL subpixel = NO;
+
+
+  if (!alpha)
+    return;
+
+  /* TODO: if we had guaranteed upper bounds on glyph image size we
+     could do some basic clipping here */
+
+  x1 -= x0;
+  y1 -= y0;
+  x -= x0;
+  y -= y0;
+
+
+/*	NSLog(@"[%@ draw using matrix: (%g %g %g %g %g %g)]\n",
+		self,
+		matrix[0], matrix[1], matrix[2],
+		matrix[3], matrix[4], matrix[5]
+		);*/
+
+  cur = imgd;
+  {
+    float xx, xy, yx, yy;
+
+    xx = matrix[0] * transform->matrix.m11 + matrix[1] * transform->matrix.m21;
+    yx = matrix[0] * transform->matrix.m12 + matrix[1] * transform->matrix.m22;
+    xy = matrix[2] * transform->matrix.m11 + matrix[3] * transform->matrix.m21;
+    yy = matrix[2] * transform->matrix.m12 + matrix[3] * transform->matrix.m22;
+
+    /* if we're drawing 'normal' text (unscaled, unrotated, reasonable
+       size), we can and should use the sbit cache */
+    if (fabs(xx - ((int)xx)) < 0.01 && fabs(yy - ((int)yy)) < 0.01 &&
+	fabs(xy) < 0.01 && fabs(yx) < 0.01 &&
+	xx < 72 && yy < 72 && xx > 0.5 && yy > 0.5)
+      {
+	use_sbit = 1;
+	cur.font.pix_width = xx;
+	cur.font.pix_height = yy;
+
+/*	if (cur.font.pix_width < 16 && cur.font.pix_height < 16 &&
+	    cur.font.pix_width > 6 && cur.font.pix_height > 6)
+	  cur.type = ftc_image_mono;
+	else*/
+	  cur.type = ftc_image_grays, subpixel = YES, cur.font.pix_width *= 3, x *= 3;
+//			imgd.type|=|ftc_image_flag_unhinted; /* TODO? when? */
+      }
+    else
+      {
+	float f;
+	use_sbit = 0;
+
+	f = fabs(xx * yy - xy * yx);
+	if (f > 1)
+	  f = sqrt(f);
+	else
+	  f = 1.0;
+
+	f = (int)f;
+
+	cur.font.pix_width = cur.font.pix_height = f;
+	ftmatrix.xx = xx / f * 65536.0;
+	ftmatrix.xy = xy / f * 65536.0;
+	ftmatrix.yx = yx / f * 65536.0;
+	ftmatrix.yy = yy / f * 65536.0;
+	ftdelta.x = ftdelta.y = 0;
+      }
+  }
+
+
+/*	NSLog(@"drawString: '%s' at: %i:%i  to: %i:%i:%i:%i:%p\n",
+		s, x, y, x0, y0, x1, y1, buf);*/
+
+  cmap.face_id = imgd.font.face_id;
+  cmap.u.encoding = ft_encoding_unicode;
+  cmap.type = FTC_CMAP_BY_ENCODING;
+
+  for (c = s; *c; c++)
+    {
+/* TODO: do the same thing in outlineString:... */
+      ch = *c;
+      if (ch < 0x80)
+	{
+	  uch = ch;
+	}
+      else if (ch < 0xc0)
+	{
+	  uch = 0xfffd;
+	}
+      else if (ch < 0xe0)
+	{
+#define ADD_UTF_BYTE(shift, internal) \
+  ch = *++c; \
+  if (ch >= 0x80 && ch < 0xc0) \
+    { \
+      uch |= (ch & 0x3f) << shift; \
+      internal \
+    } \
+  else \
+    { \
+      uch = 0xfffd; \
+      c--; \
+    }
+
+	  uch = (ch & 0x1f) << 6;
+	  ADD_UTF_BYTE(0, )
+	}
+      else if (ch < 0xf0)
+	{
+	  uch = (ch & 0x0f) << 12;
+	  ADD_UTF_BYTE(6, ADD_UTF_BYTE(0, ))
+	}
+      else if (ch < 0xf8)
+	{
+	  uch = (ch & 0x07) << 18;
+	  ADD_UTF_BYTE(12, ADD_UTF_BYTE(6, ADD_UTF_BYTE(0, )))
+	}
+      else if (ch < 0xfc)
+	{
+	  uch = (ch & 0x03) << 24;
+	  ADD_UTF_BYTE(18, ADD_UTF_BYTE(12, ADD_UTF_BYTE(6, ADD_UTF_BYTE(0, ))))
+	}
+      else if (ch < 0xfe)
+	{
+	  uch = (ch & 0x01) << 30;
+	  ADD_UTF_BYTE(24, ADD_UTF_BYTE(18, ADD_UTF_BYTE(12, ADD_UTF_BYTE(6, ADD_UTF_BYTE(0, )))))
+	}
+      else
+	uch = 0xfffd;
+#undef ADD_UTF_BYTE
+
+      glyph = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, uch);
+      cur.font.face_id = imgd.font.face_id;
+      if (!glyph)
+	{
+	  cmap.face_id = fallback.font.face_id;
+	  glyph = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, uch);
+	  if (glyph)
+	    cur.font.face_id = fallback.font.face_id;
+	  cmap.face_id = imgd.font.face_id;
+	}
+
+      if (use_sbit)
+	{
+	  if (FTC_SBitCache_Lookup(ftc_sbitcache, &cur, glyph, &sbit, NULL))
+	    continue;
+
+	  if (!sbit->buffer)
+	    {
+	      x += sbit->xadvance;
+	      continue;
+	    }
+
+	  if (sbit->format == ft_pixel_mode_grays)
+	    {
+	      int gx = x + sbit->left, gy = y - sbit->top;
+	      int px0 = (gx - 2 < 0? gx - 4 : gx - 2) / 3;
+	      int px1 = (gx + sbit->width + 2 < 0? gx + sbit->width + 2: gx + sbit->width + 4) / 3;
+	      int llip = gx - px0 * 3;
+	      int sbpl = sbit->pitch;
+	      int sx = sbit->width, sy = sbit->height;
+	      int psx = px1 - px0;
+	      const unsigned char *src = sbit->buffer;
+	      unsigned char *dst = buf;
+	      unsigned char scratch[psx * 3];
+	      int mode = subpixel_text == 2? 2 : 0;
+
+	      if (gy < 0)
+		{
+		  sy += gy;
+		  src -= sbpl * gy;
+		  gy = 0;
+		}
+	      else if (gy > 0)
+		{
+		  dst += bpl * gy;
+		}
+
+	      sy += gy;
+	      if (sy > y1)
+		sy = y1;
+
+	      if (px1 > x1)
+	        px1 = x1;
+	      if (px0 < 0)
+		{
+		  px0 = -px0;
+		}
+	      else
+		{
+		  px1 -= px0;
+		  dst += px0 * DI.bytes_per_pixel;
+		  px0 = 0;
+		}
+
+	      if (px1 <= 0)
+		{
+		  x += sbit->xadvance;
+		  continue;
+		}
+
+	      for (; gy < sy; gy++, src += sbpl, dst += bpl)
+		{
+		  int i, j;
+		  for (i = 0, j = -llip; i < psx * 3; i+=3)
+		    {
+		      scratch[i+mode] =
+			((j > -1 && j<sx    ? src[j    ] * 3 : 0)
+		       + (j >  0 && j<sx + 1? src[j - 1] * 2 : 0)
+		       + (j >  1 && j<sx + 2? src[j - 2]     : 0)
+		       + (j > -2 && j<sx - 1? src[j + 1] * 2 : 0)
+		       + (j > -3 && j<sx - 2? src[j + 2]     : 0)) / 9;
+		      j++;
+		      scratch[i+1] =
+			((j > -1 && j<sx    ? src[j    ] * 3 : 0)
+		       + (j >  0 && j<sx + 1? src[j - 1] * 2 : 0)
+		       + (j >  1 && j<sx + 2? src[j - 2]     : 0)
+		       + (j > -2 && j<sx - 1? src[j + 1] * 2 : 0)
+		       + (j > -3 && j<sx - 2? src[j + 2]     : 0)) / 9;
+		      j++;
+		      scratch[i+(mode^2)] =
+			((j > -1 && j<sx    ? src[j    ] * 3 : 0)
+		       + (j >  0 && j<sx + 1? src[j - 1] * 2 : 0)
+		       + (j >  1 && j<sx + 2? src[j - 2]     : 0)
+		       + (j > -2 && j<sx - 1? src[j + 1] * 2 : 0)
+		       + (j > -3 && j<sx - 2? src[j + 2]     : 0)) / 9;
+		      j++;
+		    }
+		  DI.render_blit_subpixel(dst,
+					  scratch + px0 * 3, r, g, b, alpha,
+					  px1);
+		}
+	    }
+	  else if (sbit->format == ft_pixel_mode_mono)
+	    {
+	      int gx = x + sbit->left, gy = y - sbit->top;
+	      int sbpl = sbit->pitch;
+	      int sx = sbit->width, sy = sbit->height;
+	      const unsigned char *src = sbit->buffer;
+	      unsigned char *dst = buf;
+	      int src_ofs = 0;
+
+	      if (gy < 0)
+		{
+		  sy += gy;
+		  src -= sbpl * gy;
+		  gy = 0;
+		}
+	      else if (gy > 0)
+		{
+		  dst += bpl * gy;
+		}
+
+	      sy += gy;
+	      if (sy > y1)
+		sy = y1;
+
+	      if (gx < 0)
+		{
+		  sx += gx;
+		  src -= gx / 8;
+		  src_ofs = (-gx) & 7;
+		  gx = 0;
+		}
+	      else if (gx > 0)
+		{
+		  dst += DI.bytes_per_pixel * gx;
+		}
+
+	      sx += gx;
+	      if (sx > x1)
+		sx = x1;
+	      sx -= gx;
+
+	      if (sx > 0)
+		{
+		  if (alpha >= 255)
+		    for (; gy < sy; gy++, src += sbpl, dst += bpl)
+		      RENDER_BLIT_MONO_OPAQUE(dst, src, src_ofs, r, g, b, sx);
+		  else
+		    for (; gy < sy; gy++, src += sbpl, dst += bpl)
+		      RENDER_BLIT_MONO(dst, src, src_ofs, r, g, b, alpha, sx);
+		}
+	    }
+	  else
+	    {
+	      NSLog(@"unhandled font bitmap format %i", sbit->format);
+	    }
+
+	  x += sbit->xadvance;
+	}
+      else
+	{
+	  FT_Face face;
+	  FT_Glyph gl;
+	  FT_BitmapGlyph gb;
+
+	  if (FTC_Manager_Lookup_Size(ftc_manager, &cur.font, &face, 0))
+	    continue;
+
+	  /* TODO: for rotations of 90, 180, 270, and integer
+	     scales hinting might still be a good idea. */
+	  if (FT_Load_Glyph(face, glyph, FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP))
+	    continue;
+
+	  if (FT_Get_Glyph(face->glyph, &gl))
+	    continue;
+
+	  if (FT_Glyph_Transform(gl, &ftmatrix, &ftdelta))
+	    {
+	      NSLog(@"glyph transformation failed!");
+	      continue;
+	    }
+	  if (FT_Glyph_To_Bitmap(&gl, ft_render_mode_normal, 0, 1))
+	    {
+	      FT_Done_Glyph(gl);
+	      continue;
+	    }
+	  gb = (FT_BitmapGlyph)gl;
+
+
+	  if (gb->bitmap.pixel_mode == ft_pixel_mode_grays)
+	    {
+	      int gx = x + gb->left, gy = y - gb->top;
+	      int sbpl = gb->bitmap.pitch;
+	      int sx = gb->bitmap.width, sy = gb->bitmap.rows;
+	      const unsigned char *src = gb->bitmap.buffer;
+	      unsigned char *dst = buf;
+
+	      if (gy < 0)
+		{
+		  sy += gy;
+		  src -= sbpl * gy;
+		  gy = 0;
+		}
+	      else if (gy > 0)
+		{
+		  dst += bpl * gy;
+		}
+
+	      sy += gy;
+	      if (sy > y1)
+		sy = y1;
+
+	      if (gx < 0)
+		{
+		  sx += gx;
+		  src -= gx;
+		  gx = 0;
+		}
+	      else if (gx > 0)
+		{
+		  dst += DI.bytes_per_pixel * gx;
+		}
+
+	      sx += gx;
+	      if (sx > x1)
+		sx = x1;
+	      sx -= gx;
+
+	      if (sx > 0)
+		{
+		  if (alpha >= 255)
+		    for (; gy < sy; gy++, src += sbpl, dst += bpl)
+		      RENDER_BLIT_ALPHA_OPAQUE(dst, src, r, g, b, sx);
+		  else
+		    for (; gy < sy; gy++, src += sbpl, dst += bpl)
+		      RENDER_BLIT_ALPHA(dst, src, r, g, b, alpha, sx);
+		}
+	    }
+/* TODO: will this case ever appear? */
+/*			else if (gb->bitmap.pixel_mode==ft_pixel_mode_mono)*/
+	  else
+	    {
+	      NSLog(@"unhandled font bitmap format %i", gb->bitmap.pixel_mode);
+	    }
+
+	  ftdelta.x += gl->advance.x >> 10;
+	  ftdelta.y += gl->advance.y >> 10;
+
+	  FT_Done_Glyph(gl);
+	}
+    }
+}
 
 @end
 
