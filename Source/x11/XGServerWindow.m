@@ -481,6 +481,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 		  XFree(d);
 		  wmflags |= XGWM_WINDOWMAKER;
 		}
+	      XFree(win);
 	    }
 	}
       else
@@ -508,6 +509,11 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 	  generic.wintypes.win_type_atom = 
 	      XInternAtom(dpy, "_WIN_LAYER", False);
 	}
+      if (win1)
+        {
+	  XFree(win1);
+	}
+      XFree(win);
     }
 
   /* Now check for NET (EWMH) compliant window manager */
@@ -553,6 +559,11 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 	  generic.wintypes.win_topmenu_atom = 
 	      XInternAtom(dpy, "_KDE_NET_WM_WINDOW_TYPE_TOPMENU", False);
 	}
+      if (win1)
+        {
+	  XFree(win1);
+	}
+      XFree(win);
     }
 
   NSDebugLLog(@"WM", 
@@ -796,6 +807,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   XStringListToTextProperty((char**)&classhint.res_name, 1, &windowName);
   XSetWMName(dpy, ROOT, &windowName);
   XSetWMIconName(dpy, ROOT, &windowName);
+  XFree(windowName.value);
 
   /*
    * Record the information used to start this app.
@@ -819,6 +831,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   // Store the host name of the machine we a running on
   XStringListToTextProperty((char**)&host_name, 1, &windowName);
   XSetWMClientMachine(dpy, ROOT, &windowName);
+  XFree(windowName.value);
 
   if ((generic.wm & XGWM_WINDOWMAKER) != 0)
     {
@@ -1297,6 +1310,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       XStringListToTextProperty((char**)&title, 1, &windowName);
       XSetWMName(dpy, window->ident, &windowName);
       XSetWMIconName(dpy, window->ident, &windowName);
+      XFree(windowName.value);
     }
 }
 
