@@ -42,6 +42,8 @@
 #include "gsc/GSStreamContext.h"
 #include "gsc/GSGState.h"
 
+#include "math.h"
+
 #define GSI_ARRAY_TYPES       GSUNION_OBJ
 
 #if     GS_WITH_GC == 0
@@ -133,7 +135,8 @@ static unsigned int unique_index = 0;
 
   contextType = [info objectForKey: 
 		  NSGraphicsContextRepresentationFormatAttributeName];
-  if (contextType && [contextType isEqual: NSGraphicsContextPSFormat])
+  if ([self isMemberOfClass: [GSStreamContext class]] == NO
+      && contextType && [contextType isEqual: NSGraphicsContextPSFormat])
     {
       /* Don't call self, since we aren't initialized */
       [super dealloc];

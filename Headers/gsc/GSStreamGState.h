@@ -1,11 +1,11 @@
-/* GSStreamContext - Output Postscript to a stream
+/* GSGStreamState - Implements graphic state drawing for PS stream
 
-   Copyright (C) 1999 Free Software Foundation, Inc.
+   Copyright (C) 2002 Free Software Foundation, Inc.
 
-   Written by:  Adam Fedor <fedor@gnu.org>
-   Date: Mar 1999
+   Written by: Adam Fedor <fedor@gnu.org>
+   Date: Sep 2002
    
-   This file is part of the GNU Objective C User Interface library.
+   This file is part of the GNU Objective C User Interface Library.
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -22,17 +22,20 @@
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111 USA.
    */
 
-#ifndef _GSStreamContext_h_INCLUDE
-#define _GSStreamContext_h_INCLUDE
+#ifndef _GSStreamGState_h_INCLUDE
+#define _GSStreamGState_h_INCLUDE
 
-#include <stdio.h>
-#include "gsc/GSContext.h"
+#include <gsc/GSGState.h>
 
-@interface GSStreamContext : GSContext
+@interface GSStreamGState : GSGState
 {
-  FILE *gstream;
+@public
+  int clinecap, clinejoin;
+  float clinewidth, cmiterlimit;
+  float cstrokeadjust;
 }
 
 @end
 
-#endif /* _GSStreamContext_h_INCLUDE */
+#endif /* _GSStreamGState_h_INCLUDE */
+

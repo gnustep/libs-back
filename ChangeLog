@@ -1,3 +1,14 @@
+2002-09-06  Adam Fedor  <fedor@gnu.org>
+
+	* Source/gsc/GSContext.m (-initWithContextInfo:): Fix
+	for GSStreamContext subclass.
+	* Source/GSStreamGState.m: New file.
+	* Source/GSStreamContext.m: Make a subclass of GSContext.
+	Call superclass implementation where appropriate.
+
+	* Source/GSStreamContext.m: Fix for 'show'ing parenthesis
+	characters (patch from Stefan Urbanek).
+	
 2002-09-01  Adam Fedor  <fedor@gnu.org>
 
 	* Version: 0.8.1
