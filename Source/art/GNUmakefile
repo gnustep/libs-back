@@ -42,7 +42,8 @@ art_OBJC_FILES = \
   ARTContext.m blit.m ftfont.m \
   ARTWindowBuffer.m \
   image.m \
-  composite.m
+  composite.m \
+  path.m
 
 art_HEADER_FILES_DIR = ../../Headers/art
 art_HEADER_FILES_INSTALL_DIR = gnustep/art
