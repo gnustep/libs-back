@@ -1235,7 +1235,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 
 	      // We shouldn't get here unless we forgot to trap an event above
 	default:
-
+#ifdef XSHM
 	  if (xEvent.type == XShmGetEventBase(dpy)+ShmCompletion
 	      && [gcontext respondsToSelector: @selector(gotShmCompletion:)])
 	    {
@@ -1243,7 +1243,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 			  ((XShmCompletionEvent *)&xEvent)->drawable];
 	      break;
 	    }
-
+#endif
 	  NSLog(@"Received an untrapped event\n");
 	  break;
 	}
