@@ -1,5 +1,14 @@
 2003-07-16  Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/x11/XGServer.m
+	Added [XGScreenContext dealloc] to clean up RContext.
+	* Source/x11/XGServerWindow.m
+	[_checkWindowManager] better clean up of memory.
+	[_setupRootWindow] and [titlewindow::] free the value of the
+	XTextProperty. 
+	
+2003-07-16  Fred Kiefer <FredKiefer@gmx.de>
+
 	* Tools/xpbs.m
 	[XPbOwner xSelectionNotify:] and [XPbOwner xProvideSelection:]
 	explicit conversion of transferd strings from/to
