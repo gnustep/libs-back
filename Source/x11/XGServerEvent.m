@@ -127,42 +127,28 @@ static void initialize_keyboard (void);
 
 static void set_up_num_lock (void);
 
-// checks if given keycode is set in bit vector
-static inline int check_key (XEvent *xEvent, KeyCode key_code) 
-{
-    return (key_code == 0) ?
-        0 : (xEvent->xkeymap.key_vector[key_code / 8] & (1 << (key_code % 8)));
-}
-
-// checks whether a GNUstep modifier is pressed when we're only able to check
-// whether X keycodes are pressed
+// checks whether a GNUstep modifier (key_sym) is pressed when we're only able
+// to check whether X keycodes are pressed in xEvent->xkeymap;
 static int check_modifier (XEvent *xEvent, KeySym key_sym,
                            XModifierKeymap *modmap)
 {
-  int m;
-  int c;
-  KeyCode key_code;
+    char *key_vector;
+    int by,bi;
 
-  // if key_sym is a modifier, check each of its keycodes
-  for (m=0; m<8; m++)
-    {
-      key_code = modmap->modifiermap[m * modmap->max_keypermod];
-      if ((key_code != 0)
-          && XKeycodeToKeysym(xEvent->xkeymap.display, key_code, 0) == key_sym)
-        {
-          for (c=0; c<modmap->max_keypermod; c++)
-            {
-              if (check_key(xEvent,
-                            modmap->modifiermap[m * modmap->max_keypermod + c]))
+    // implementation fails if key_sym is only accessible by a multi-key
+    // combination, however this is not expected for GNUstep modifier keys;
+    // to fix implementation, would need to first determine modifier state by
+    // a first-pass scann of the full key vector, then use the state in place
+    // of "0" below in XKeycodeToKeysym
+    key_vector = xEvent->xkeymap.key_vector;
+    for (by=0; by<32; by++) {
+        for (bi=0; bi<8; bi++) {
+            if ((key_vector[by] & (1 << bi)) &&
+                (XKeycodeToKeysym(xEvent->xkeymap.display,by*8+bi,0)==key_sym))
                 return 1;
-            }
-          return 0; // no dice
         }
     }
-  // wasn't a modifier; just check the first keycode for this keysym,
-  // which ignores other possibilities but that's the best we can do
-  // w/o XtKeysymToKeycodeList
-  return check_key(xEvent, XKeysymToKeycode(xEvent->xkeymap.display, key_sym));
+    return 0;
 }
 
 @implementation XGServer (EventOps)
@@ -1554,10 +1540,30 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType)
   if (_is_keyboard_initialized == NO)
     initialize_keyboard ();
 
+  /* Process location */
+  window = [XGServer _windowWithTag: [[NSApp keyWindow] windowNumber]];
+  eventLocation.x = xEvent->xbutton.x;
+  if (window)
+    {
+      eventLocation.y = window->siz_hints.height - xEvent->xbutton.y;
+    }
+  else
+    {
+      eventLocation.y = xEvent->xbutton.y;
+    }
+    
+  /* Process characters */
+  keys = [context->inputServer lookupStringForEvent: (XKeyEvent *)xEvent
+		 window: window
+		 keysym: &keysym];
+
+  /* Process keycode */
+  keyCode = ((XKeyEvent *)xEvent)->keycode;
+  //ximKeyCode = XKeysymToKeycode([XGServer currentXDisplay],keysym);
+
   /* Process NSFlagsChanged events.  We can't use a switch because we
      are not comparing to constants. Make sure keyCode is not 0 since
      XIM events can potentially return 0 keyCodes. */
-  keysym = XLookupKeysym((XKeyEvent *)xEvent, 0);
   if (keysym != NoSymbol)
     {
       if (keysym == _control_keysyms[0]) 
@@ -1612,27 +1618,6 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType)
 
   /* Process modifiers */
   eventFlags = process_modifier_flags (xEvent->xkey.state);
-
-  /* Process location */
-  window = [XGServer _windowWithTag: [[NSApp keyWindow] windowNumber]];
-  eventLocation.x = xEvent->xbutton.x;
-  if (window)
-    {
-      eventLocation.y = window->siz_hints.height - xEvent->xbutton.y;
-    }
-  else
-    {
-      eventLocation.y = xEvent->xbutton.y;
-    }
-    
-  /* Process characters */
-  keys = [context->inputServer lookupStringForEvent: (XKeyEvent *)xEvent
-		 window: window
-		 keysym: &keysym];
-
-  /* Process keycode */
-  keyCode = ((XKeyEvent *)xEvent)->keycode;
-  //ximKeyCode = XKeysymToKeycode([XGServer currentXDisplay],keysym);
 
   /* Add NSNumericPadKeyMask if the key is in the KeyPad */
   if (IsKeypadKey (keysym))
