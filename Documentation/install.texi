@@ -34,10 +34,10 @@ specific options are at the end of this list (if any).
 The backend comes with several different window server and graphics
 drawing implementations. If you do nothing, the default ones will be
 chosen. You can can change this using configure. For instance,
-to choose the gslib graphical drawing implementation, run
+to choose the art graphical drawing implementation, run
 
 @example
-configure --enable-gslib
+configure --enable-graphics=art
 @end example
 
 Type @code{configure --help} for a list of graphical drawing
@@ -45,22 +45,22 @@ implementations.
 
 You can also change the name of the backend when configuring it. This is
 convienient if you want to have a different backend with different
-configurations. For instance, to create an xlib and and xdps backend,
+configurations. For instance, to create an xlib and and art backend,
 you could do this:
 
 @example
-configure --enable-xlib --with-name=xlib
+configure --enable-graphics=xlib --with-name=xlib
 make install
 
 make distclean
-configure --enable-xdps --with-name=xdps
+configure --enable-graphics=art --with-name=art
 make install
 @end example
 
 Before running an application, choose one backend using the defaults program:
 
 @example
-defaults write NSGlobalDomain GSBackend libgnustep-xdps
+defaults write NSGlobalDomain GSBackend libgnustep-xlib
 @end example
 
 @node Compilation, Installing, Configuration, Top
