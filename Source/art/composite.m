@@ -20,6 +20,8 @@
    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+#include <math.h>
+
 #include <AppKit/NSAffineTransform.h>
 
 #include "ARTGState.h"
@@ -29,6 +31,7 @@
 
 
 @implementation ARTGState (composite)
+
 
 /* Figure out what blit function we should use. If one or both of the
 windows are known to be totally opaque, we can optimize in many ways
@@ -206,6 +209,203 @@ if necessary. Returns new operation, or -1 it it's a noop. */
 }
 
 
+static void copy_oo(composite_run_t *c, int num)
+{
+	memcpy(c->dst,c->src,num*DI.bytes_per_pixel);
+}
+
+static void copy_oa(composite_run_t *c, int num)
+{
+	memcpy(c->dst,c->src,num*DI.bytes_per_pixel);
+	if (DI.inline_alpha)
+	{
+		unsigned char *dsta=c->dst+DI.inline_alpha_ofs;
+		for (;num;num--,dsta+=4)
+			*dsta=0xff;
+	}
+	else
+		memset(c->dsta,0xff,num);
+}
+
+static void copy_aa(composite_run_t *c, int num)
+{
+	memcpy(c->dst,c->src,num*DI.bytes_per_pixel);
+	if (!DI.inline_alpha)
+		memcpy(c->dsta,c->srca,num);
+}
+
+
+/*
+Handle compositing in transformed coordinate spaces. _rect_setup sets up
+the a rect_trace_t structure, and each call to _rect_advance returns YES
+and the left and right points on the next row, or NO if all rows are done.
+*/
+typedef struct
+{
+  int x[4], y[4];
+  int cy, ey;
+
+  int left_delta;
+  int lx, lx_frac, ldx, ldx_frac, l_de, le;
+  int rx, rx_frac, rdx, rdx_frac, r_de, re;
+
+  int cx0, cx1;
+} rect_trace_t;
+
+static void _rect_setup(rect_trace_t *t, NSRect r, int cx0, int cx1,
+		 NSAffineTransform *ctm, int up, int *y0, int wi_sy)
+{
+  float fx[4], fy[4];
+  NSPoint p;
+
+  t->cx0 = cx0;
+  t->cx1 = cx1;
+
+  p = r.origin;
+  p = [ctm pointInMatrixSpace: p];
+  fx[0] = p.x; fy[0] = p.y;
+  p = r.origin; p.x += r.size.width;
+  p = [ctm pointInMatrixSpace: p];
+  fx[1] = p.x; fy[1] = p.y;
+  p = r.origin; p.x += r.size.width; p.y += r.size.height;
+  p = [ctm pointInMatrixSpace: p];
+  fx[2] = p.x; fy[2] = p.y;
+  p = r.origin; p.y += r.size.height;
+  p = [ctm pointInMatrixSpace: p];
+  fx[3] = p.x; fy[3] = p.y;
+
+  if (fabs(fx[0] - floor(fx[0] + .5)) < 0.001) fx[0] = floor(fx[0] + .5);
+  if (fabs(fx[1] - floor(fx[1] + .5)) < 0.001) fx[1] = floor(fx[1] + .5);
+  if (fabs(fx[2] - floor(fx[2] + .5)) < 0.001) fx[2] = floor(fx[2] + .5);
+  if (fabs(fx[3] - floor(fx[3] + .5)) < 0.001) fx[3] = floor(fx[3] + .5);
+  if (fabs(fy[0] - floor(fy[0] + .5)) < 0.001) fy[0] = floor(fy[0] + .5);
+  if (fabs(fy[1] - floor(fy[1] + .5)) < 0.001) fy[1] = floor(fy[1] + .5);
+  if (fabs(fy[2] - floor(fy[2] + .5)) < 0.001) fy[2] = floor(fy[2] + .5);
+  if (fabs(fy[3] - floor(fy[3] + .5)) < 0.001) fy[3] = floor(fy[3] + .5);
+
+  t->x[0] = floor(fx[0]); t->y[0] = wi_sy - floor(fy[0]);
+  t->x[1] = floor(fx[1]); t->y[1] = wi_sy - floor(fy[1]);
+  t->x[2] = floor(fx[2]); t->y[2] = wi_sy - floor(fy[2]);
+  t->x[3] = floor(fx[3]); t->y[3] = wi_sy - floor(fy[3]);
+
+  /* If we're tracing the 'other way', we just flip the y-coordinates
+  and unflip when returning them */
+  if (up)
+    {
+      t->y[0] = -t->y[0];
+      t->y[1] = -t->y[1];
+      t->y[2] = -t->y[2];
+      t->y[3] = -t->y[3];
+    }
+
+  t->cy = t->y[t->le = 0];
+  if (t->y[1] < t->cy) t->cy = t->y[t->le = 1];
+  if (t->y[2] < t->cy) t->cy = t->y[t->le = 2];
+  if (t->y[3] < t->cy) t->cy = t->y[t->le = 3];
+  t->re = t->le;
+
+  t->ey = t->y[0];
+  if (t->y[1] > t->ey) t->ey = t->y[1];
+  if (t->y[2] > t->ey) t->ey = t->y[2];
+  if (t->y[3] > t->ey) t->ey = t->y[3];
+
+  if (t->x[(t->le + 1) & 3] < t->x[(t->le - 1) & 3])
+    t->left_delta = 1;
+  else
+    t->left_delta = -1;
+
+  /* silence the compiler */
+  t->lx = t->lx_frac = t->ldx = t->ldx_frac = t->l_de = 0;
+  t->rx = t->rx_frac = t->rdx = t->rdx_frac = t->r_de = 0;
+
+  if (up)
+    *y0 = -t->cy;
+  else
+    *y0 = t->cy;
+}
+
+static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
+{
+  int next;
+
+  if (t->cy > t->ey)
+    return NO;
+
+      if (t->cy == t->y[t->le])
+	{
+	  next = (t->le + t->left_delta) & 3;
+	  if (t->y[t->le] == t->y[next])
+	    {
+	      t->le = next;
+	      next = (t->le + t->left_delta) & 3;
+	    }
+	  t->l_de = t->y[next] - t->y[t->le];
+	  if (!t->l_de)
+	    return NO;
+	  t->lx = t->x[t->le];
+	  t->lx_frac = 0;
+	  t->ldx = (t->x[next] - t->x[t->le]) / t->l_de;
+	  t->ldx_frac = (t->x[next] - t->x[t->le]) % t->l_de;
+
+	  t->le = next;
+	}
+      else
+	{
+	  t->lx += t->ldx;
+	  t->lx_frac += t->ldx_frac;
+	  if (t->lx_frac < 0)
+	    t->lx--, t->lx_frac += t->l_de;
+	  if (t->lx_frac > t->l_de)
+	    t->lx++, t->lx_frac -= t->l_de;
+	}
+
+      if (t->cy == t->y[t->re])
+	{
+	  next = (t->re - t->left_delta) & 3;
+	  if (t->y[t->re] == t->y[next])
+	    {
+	      t->re = next;
+	      next = (t->re - t->left_delta) & 3;
+	    }
+	  t->r_de = t->y[next] - t->y[t->re];
+	  if (!t->r_de)
+	    return NO;
+	  t->rx = t->x[t->re];
+	  t->rx_frac = t->r_de - 1; /* TODO? */
+	  t->rdx = (t->x[next] - t->x[t->re]) / t->r_de;
+	  t->rdx_frac = (t->x[next] - t->x[t->re]) % t->r_de;
+
+	  t->re = next;
+	}
+      else
+	{
+	  t->rx += t->rdx;
+	  t->rx_frac += t->rdx_frac;
+	  if (t->rx_frac < 0)
+	    t->rx--, t->rx_frac += t->r_de;
+	  if (t->rx_frac > t->r_de)
+	    t->rx++, t->rx_frac -= t->r_de;
+	}
+
+      if (t->rx > t->lx && t->rx >= t->cx0 && t->lx < t->cx1)
+	{
+	  *x0 = t->lx - t->cx0;
+	  if (*x0 < 0)
+	    *x0 = 0;
+	  *x1 = t->rx - t->cx0;
+	  if (*x1 > t->cx1 - t->cx0)
+	    *x1 = t->cx1 - t->cx0;
+	}
+      else
+	{
+	  *x0 = *x1 = 0;
+	}
+
+      t->cy++;
+
+  return YES;
+}
+
 
 - (void) compositeGState: (GSGState *)source
                 fromRect: (NSRect)aRect
@@ -213,16 +413,19 @@ if necessary. Returns new operation, or -1 it it's a noop. */
                       op: (NSCompositingOperation)op
 {
   ARTGState *ags = (ARTGState *)source;
-  NSRect sr, dr;
   unsigned char *dst, *dst_alpha, *src, *src_alpha;
 
   void (*blit_func)(composite_run_t *c, int num) = NULL;
 
-  int sx, sy;
-  int x0, y0, x1, y1;
+  NSPoint sp, dp;
+
+  int cx0,cy0,cx1,cy1;
+  int sx0,sy0;
 
   int sbpl, dbpl;
   int asbpl, adbpl;
+
+  rect_trace_t state;
 
   /* 0 = top->down, 1 = bottom->up */
   /*
@@ -234,13 +437,20 @@ if necessary. Returns new operation, or -1 it it's a noop. */
   */
   /* currently 2=top->down, be careful with overlapping rows */
   /* order=1 is handled generically by flipping sbpl and dbpl and
-     adjusting the pointers. only order=2 needs to be handled for
-     each operator */
+     adjusting the pointers. order=2 is handled specially */
   int order;
+
+  int delta;
 
 
   if (!wi || !wi->data || !ags->wi || !ags->wi->data) return;
   if (all_clipped) return;
+
+
+/*  NSLog(@"composite op=%i  (%g %g)+(%g %g)->(%g %g)",op,
+    aRect.origin.x,aRect.origin.y,
+    aRect.size.width,aRect.size.height,
+    aPoint.x,aPoint.y);*/
 
 
   {
@@ -276,46 +486,33 @@ if necessary. Returns new operation, or -1 it it's a noop. */
   dbpl = wi->bytes_per_line;
   sbpl = ags->wi->bytes_per_line;
 
-  sr = aRect;
-  sr = [ags->ctm rectInMatrixSpace: sr];
-  sr.origin.y = ags->wi->sy - sr.origin.y - sr.size.height;
-  sx = sr.origin.x;
-  sy = sr.origin.y;
+  cx0 = clip_x0;
+  cy0 = clip_y0;
+  cx1 = clip_x1;
+  cy1 = clip_y1;
 
-  dr = aRect;
-  dr.origin = aPoint;
-  dr = [ctm rectInMatrixSpace: dr];
-  dr.origin.y = wi->sy - dr.origin.y - dr.size.height;
+  sp = [ags->ctm pointInMatrixSpace: aRect.origin];
+  sp.x = floor(sp.x);
+  sp.y = floor(ags->wi->sy - sp.y);
+  dp = [ctm pointInMatrixSpace: aPoint];
+  dp.x = floor(dp.x);
+  dp.y = floor(wi->sy - dp.y);
 
-  x0 = dr.origin.x;
-  y0 = dr.origin.y;
-  x1 = dr.origin.x + dr.size.width;
-  y1 = dr.origin.y + dr.size.height;
+  if (dp.x - cx0 > sp.x)
+    cx0 = dp.x - sp.x;
+  if (dp.y - cy0 > sp.y)
+    cy0 = dp.y - sp.y;
 
-  if (clip_x0 > x0) /* TODO: ??? */
-    {
-      sx += clip_x0 - x0;
-      x0 = clip_x0;
-    }
-  if (clip_y0 > y0)
-    {
-      sy += clip_y0 - y0;
-      y0 = clip_y0;
-    }
+  if (cx1 - dp.x > ags->wi->sx - sp.x)
+    cx1 = dp.x + ags->wi->sx - sp.x;
+  if (cy1 - dp.y > ags->wi->sy - sp.y)
+    cy1 = dp.y + ags->wi->sy - sp.y;
 
-  if (x1 > clip_x1)
-    x1 = clip_x1;
-  if (y1 > clip_y1)
-    y1 = clip_y1;
+  sx0 = sp.x - dp.x + cx0;
+  sy0 = sp.y - dp.y + cy0;
 
-  if (x0 >= x1 || y0 >= y1) return;
-
-  /* TODO: clip source? how?
-     we should at least clip the source to the source window to avoid
-     crashes */
-
-  dst = wi->data + x0 * DI.bytes_per_pixel + y0 * dbpl;
-  src = ags->wi->data + sx * DI.bytes_per_pixel + sy * sbpl;
+  dst = wi->data + cx0 * DI.bytes_per_pixel + cy0 * dbpl;
+  src = ags->wi->data + sx0 * DI.bytes_per_pixel + sy0 * sbpl;
 
   if (ags->wi->has_alpha && op == NSCompositeCopy)
     {
@@ -329,7 +526,7 @@ if necessary. Returns new operation, or -1 it it's a noop. */
       if (DI.inline_alpha)
 	src_alpha = src;
       else
-	src_alpha = ags->wi->alpha + sx + sy * ags->wi->sx;
+	src_alpha = ags->wi->alpha + sx0 + sy0 * ags->wi->sx;
       asbpl = ags->wi->sx;
     }
   else
@@ -343,7 +540,7 @@ if necessary. Returns new operation, or -1 it it's a noop. */
       if (DI.inline_alpha)
 	dst_alpha = dst;
       else
-	dst_alpha = wi->alpha + x0 + y0 * wi->sx;
+	dst_alpha = wi->alpha + cx0 + cy0 * wi->sx;
       adbpl = wi->sx;
     }
   else
@@ -352,60 +549,54 @@ if necessary. Returns new operation, or -1 it it's a noop. */
       adbpl = 0;
     }
 
-  y1 -= y0;
-  x1 -= x0;
+  cy1 -= cy0;
+  cx1 -= cx0;
+
+  if (cx0<0 || cy0<0 || cx0+cx1>wi->sx || cy0+cy1>wi->sy ||
+      sx0<0 || sy0<0 || sx0+cx1>ags->wi->sx || sy0+cy1>ags->wi->sy)
+  {
+    NSLog(@"Warning: invalid coordinates in composite: (%g %g)+(%g %g) -> (%g %g) got (%i %i) (%i %i) +(%i %i)",
+	  aRect.origin.x,aRect.origin.x,aRect.size.width,aRect.size.height,aPoint.x,aPoint.y,
+	  cx0,cy0,sx0,sy0,cx1,cy1);
+    return;
+  }
+
+  if (cx1<=0 || cy1<=0)
+    return;
 
   /* To handle overlapping areas properly, we sometimes need to do
      things bottom-up instead of top-down. If so, we flip the
      coordinates here. */
   order = 0;
-  if (ags == self && sy <= y0)
+  if (ags == self && sy0 <= cy0)
     {
       order = 1;
-      dst += dbpl * (y1 - 1);
-      src += sbpl * (y1 - 1);
-      dst_alpha += adbpl * (y1 - 1);
-      src_alpha += asbpl * (y1 - 1);
+      dst += dbpl * (cy1 - 1);
+      src += sbpl * (cy1 - 1);
+      dst_alpha += adbpl * (cy1 - 1);
+      src_alpha += asbpl * (cy1 - 1);
       dbpl = -dbpl;
       sbpl = -sbpl;
       adbpl = -adbpl;
       asbpl = -asbpl;
-      if (sy == y0)
-	{ /* TODO: pure horizontal, not handled properly in all
-	     cases */
-	  if ((sx >= x0 && sx <= x0 + x1) || (x0 >= sx && x0 <= sx + x1))
-	    order = 2;
+      if (sy0 == cy0)
+	{
+	  if ((sx0 >= cx0 && sx0 <= cx0 + cx1) || (cx0 >= sx0 && cx0 <= sx0 + cx1))
+	    {
+	      order = 2;
+	    }
 	}
     }
 
   if (op == NSCompositeCopy)
-    { /* TODO: for inline alpha, make sure even opaque destinations have
-	 alpha properly filled in */
-      int y;
-
-      if (!DI.inline_alpha && wi->has_alpha)
-	{
-	  if (ags->wi->has_alpha)
-	    for (y = 0; y < y1; y++, dst_alpha += adbpl, src_alpha += asbpl)
-	      memmove(dst_alpha, src_alpha, x1);
-	  else
-	    for (y = 0; y < y1; y++, dst_alpha += adbpl)
-	      memset(dst_alpha, 0xff, x1);
-	}
-
-      x1 *= DI.bytes_per_pixel;
-      for (y = 0; y < y1; y++, dst += dbpl, src += sbpl)
-	memmove(dst, src, x1);
-      /* TODO: worth the complexity? */
-/*	{
-		int y;
-		x1 *= DI.bytes_per_pixel;
-		for (y = 0; y < y1; y++, dst += dbpl, src += sbpl)
-			memcpy(dst, src, x1);
-	}*/
-      return;
+    {
+      if (ags->wi->has_alpha)
+	blit_func = copy_aa;
+      else if (wi->has_alpha)
+	blit_func = copy_oa;
+      else
+	blit_func = copy_oo;
     }
-
 
   if (!blit_func)
     {
@@ -418,47 +609,217 @@ if necessary. Returns new operation, or -1 it it's a noop. */
       return;
     }
 
+  {
+    int ry;
+    int x0, x1;
+    _rect_setup(&state, aRect, sx0, sx0 + cx1, ags->ctm, order, &ry, ags->wi->sy);
+    if (order)
+      {
+	if (ry < sy0)
+	  return;
+	delta = sy0 + cy1 - ry;
+      }
+    else
+      {
+	if (ry >= sy0 + cy1)
+	  return;
+	delta = ry - sy0;
+      }
+
+    if (delta > 0)
+      {
+	src += sbpl * delta;
+	src_alpha += asbpl * delta;
+	dst += dbpl * delta;
+	dst_alpha += adbpl * delta;
+      }
+    else if (delta < 0)
+      {
+	delta = -delta;
+	while (delta)
+	  {
+	    if (!_rect_advance(&state,&x0,&x1))
+	      {
+	        break;
+	      }
+	    delta--;
+	  }
+	if (delta)
+	  return;
+      }
+  }
+
   /* this breaks the alpha pointer in some, but that's ok since in
      all those cases, the alpha pointer isn't used (inline alpha or
      no alpha) */
   if (order == 2)
     {
-      unsigned char tmpbuf[x1 * DI.bytes_per_pixel];
-      unsigned char tmpbufa[x1];
+      unsigned char tmpbuf[cx1 * DI.bytes_per_pixel];
+      unsigned char tmpbufa[cx1];
       int y;
       composite_run_t c;
+      int x0, x1;
 
       c.dst = dst;
       c.dsta = dst_alpha;
       c.src = tmpbuf;
       c.srca = tmpbufa;
-      for (y = 0; y < y1; y++, c.dst += dbpl, src += sbpl)
+      for (y = cy1 - delta - 1; y >= 0; y--)
 	{
-	  memcpy(tmpbuf, src, x1 * DI.bytes_per_pixel);
-	  if (ags->wi->has_alpha)
-	    memcpy(tmpbufa, src_alpha, x1);
-	  blit_func(&c, x1);
+	  if (!_rect_advance(&state,&x0,&x1))
+	    break;
+	  x1 -= x0;
+
+	  c.dst += x0 * DI.bytes_per_pixel;
+	  c.dsta += x0;
+
+	  if (x1)
+	    {
+	      memcpy(tmpbuf, src + x0 * DI.bytes_per_pixel, x1 * DI.bytes_per_pixel);
+	      if (ags->wi->has_alpha && !DI.inline_alpha)
+		memcpy(tmpbufa, src_alpha + x0, x1);
+
+	      if (!clip_span)
+		{
+		  blit_func(&c, x1);
+		  c.dst += dbpl - x0 * DI.bytes_per_pixel;
+		  c.dsta += adbpl - x0;
+		}
+	      else
+		{
+		  unsigned int *span, *end;
+		  BOOL state = NO;
+
+		  span = &clip_span[clip_index[y + cy0 - clip_y0]];
+		  end = &clip_span[clip_index[y + cy0 - clip_y0 + 1]];
+
+		  x0 = x0 + cx0 - clip_x0;
+		  x1 += x0;
+		  while (span != end && *span < x0)
+		    {
+		      state = !state;
+		      span++;
+		      if (span == end)
+			break;
+		    }
+		  if (span != end)
+		    {
+		      while (span != end && *span < x1)
+			{
+			  if (state)
+			    blit_func(&c, *span - x0);
+			  c.dst += (*span - x0) * DI.bytes_per_pixel;
+			  c.dsta += (*span - x0);
+			  c.src += (*span - x0) * DI.bytes_per_pixel;
+			  c.srca += (*span - x0);
+			  x0 = *span;
+
+			  state = !state;
+			  span++;
+			  if (span == end)
+			    break;
+			}
+		      if (state)
+			blit_func(&c, x1 - x0);
+		    }
+		  x0 = x0 - cx0 + clip_x0;
+		  c.dst += dbpl - x0 * DI.bytes_per_pixel;
+		  c.dsta += adbpl - x0;
+		  c.src = tmpbuf;
+		  c.srca = tmpbufa;
+		}
+	    }
+
+	  src += sbpl;
 	  src_alpha += asbpl;
-	  c.dsta += adbpl;
 	}
     }
   else
     {
       int y;
       composite_run_t c;
+      int x0, x1;
 
       c.dst = dst;
       c.dsta = dst_alpha;
       c.src = src;
       c.srca = src_alpha;
-      for (y = 0; y < y1; y++, c.dst += dbpl, c.src += sbpl)
+      if (order)
+	y = cy1 - delta - 1;
+      else
+	y = delta;
+      for (; y < cy1 && y >= 0; order? y-- : y++)
 	{
-	  blit_func(&c, x1);
-	  c.srca += asbpl;
-	  c.dsta += adbpl;
+	  if (!_rect_advance(&state,&x0,&x1))
+	      break;
+	  x1 -= x0;
+	  if (x1 <= 0)
+	    {
+	      c.dst += dbpl;
+	      c.dsta += adbpl;
+	      c.src += sbpl;
+	      c.srca += asbpl;
+	      continue;
+	    }
+	  c.dst += x0 * DI.bytes_per_pixel;
+	  c.dsta += x0;
+	  c.src += x0 * DI.bytes_per_pixel;
+	  c.srca += x0;
+	  if (!clip_span)
+	    {
+	      blit_func(&c, x1);
+	      c.dst += dbpl - x0 * DI.bytes_per_pixel;
+	      c.dsta += adbpl - x0;
+	      c.src += sbpl - x0 * DI.bytes_per_pixel;
+	      c.srca += asbpl - x0;
+	    }
+	  else
+	    {
+	      unsigned int *span, *end;
+	      BOOL state = NO;
+
+	      span = &clip_span[clip_index[y + cy0 - clip_y0]];
+	      end = &clip_span[clip_index[y + cy0 - clip_y0 + 1]];
+
+	      x0 = x0 + cx0 - clip_x0;
+	      x1 += x0;
+	      while (span != end && *span < x0)
+		{
+		  state = !state;
+		  span++;
+		  if (span == end)
+		    break;
+		}
+	      if (span != end)
+		{
+		  while (span != end && *span < x1)
+		    {
+		      if (state)
+		        blit_func(&c, *span - x0);
+		      c.dst += (*span - x0) * DI.bytes_per_pixel;
+		      c.dsta += (*span - x0);
+		      c.src += (*span - x0) * DI.bytes_per_pixel;
+		      c.srca += (*span - x0);
+		      x0 = *span;
+
+		      state = !state;
+		      span++;
+		      if (span == end)
+			break;
+		    }
+		  if (state)
+		    blit_func(&c, x1 - x0);
+		}
+	      x0 = x0 - cx0 + clip_x0;
+	      c.dst += dbpl - x0 * DI.bytes_per_pixel;
+	      c.dsta += adbpl - x0;
+	      c.src += sbpl -  x0 * DI.bytes_per_pixel;
+	      c.srca += asbpl - x0;
+	    }
 	}
     }
 }
+
 
 - (void) dissolveGState: (GSGState *)source
                fromRect: (NSRect)aRect
@@ -471,49 +832,26 @@ if necessary. Returns new operation, or -1 it it's a noop. */
 	aPoint.x, aPoint.y, delta);
 }
 
+
 - (void) compositerect: (NSRect)aRect
                     op: (NSCompositingOperation)op
 {
 /* much setup code shared with compositeGState:... */
-  NSRect dr;
-  unsigned char *dst;
+  unsigned char *dst, *dst_alpha;
+  int dbpl, adbpl;
 
-  int x0, y0, x1, y1;
-
-  int dbpl;
+  int cx0, cy0, cx1, cy1;
 
   void (*blit_func)(composite_run_t *c, int num);
+
+  rect_trace_t state;
+
+  int delta;
+
 
   if (!wi || !wi->data) return;
   if (all_clipped) return;
 
-  dbpl = wi->bytes_per_line;
-
-  dr = aRect;
-  dr = [ctm rectInMatrixSpace: dr];
-  dr.origin.y = wi->sy - dr.origin.y - dr.size.height;
-
-  x0 = dr.origin.x;
-  y0 = dr.origin.y;
-  x1 = dr.origin.x + dr.size.width;
-  y1 = dr.origin.y + dr.size.height;
-
-  if (clip_x0 > x0)
-    x0 = clip_x0;
-  if (clip_y0 > y0)
-    y0 = clip_y0;
-
-  if (x1 > clip_x1)
-    x1 = clip_x1;
-  if (y1 > clip_y1)
-    y1 = clip_y1;
-
-  if (x0 >= x1 || y0 >= y1) return;
-
-  dst = wi->data + x0 * DI.bytes_per_pixel + y0 * dbpl;
-
-  y1 -= y0;
-  x1 -= x0;
 
   {
     BOOL dest_needs_alpha;
@@ -526,7 +864,7 @@ if necessary. Returns new operation, or -1 it it's a noop. */
     if (op == -1)
       return;
 
-    if (dest_needs_alpha)
+    if (dest_needs_alpha || op == NSCompositeClear)
       {
 	[wi needsAlpha];
 	if (!wi->has_alpha)
@@ -534,42 +872,167 @@ if necessary. Returns new operation, or -1 it it's a noop. */
       }
   }
 
+
+  dbpl = wi->bytes_per_line;
+  adbpl = wi->sx;
+
+  cx0 = clip_x0; cy0 = clip_y0;
+  cx1 = clip_x1; cy1 = clip_y1;
+
+  dst = wi->data + cx0 * DI.bytes_per_pixel + cy0 * dbpl;
+  dst_alpha = wi->alpha + cx0 + cy0 * wi->sx;
+
+  cx1 -= cx0;
+  cy1 -= cy0;
+
+  {
+    int ry;
+    int x0, x1;
+    _rect_setup(&state, aRect, cx0, cx0 + cx1, ctm, 0, &ry, wi->sy);
+    if (ry >= cy0 + cy1)
+      return;
+    delta = ry - cy0;
+
+    if (delta > 0)
+      {
+	dst += dbpl * delta;
+	dst_alpha += adbpl * delta;
+      }
+    else if (delta < 0)
+      {
+	delta = -delta;
+	while (delta)
+	  {
+	    if (!_rect_advance(&state,&x0,&x1))
+	        break;
+	    delta--;
+	  }
+	if (delta)
+	  return;
+      }
+  }
+
+
+#define DO_STUFF( HANDLE_SPAN ) \
+{ \
+  int y; \
+  int x0, x1; \
+  int n; \
+ \
+  if (clip_span) \
+    { \
+      for (y = delta; y < cy1; y++) \
+	{ \
+	  unsigned int *span, *end; \
+	  BOOL clip_state = NO; \
+ \
+	  if (!_rect_advance(&state,&x0,&x1)) \
+	    break; \
+ \
+	  x1 -= x0; \
+	  if (!x1) \
+	    { \
+	      dst += dbpl; \
+	      dst_alpha += adbpl; \
+	      continue; \
+	    } \
+ \
+	  dst += x0 * DI.bytes_per_pixel; \
+	  dst_alpha += x0; \
+ \
+	  span = &clip_span[clip_index[y + cy0 - clip_y0]]; \
+	  end = &clip_span[clip_index[y + cy0 - clip_y0 + 1]]; \
+ \
+	  x0 = x0 + cx0 - clip_x0; \
+	  x1 += x0; \
+	  while (span != end && *span < x0) \
+	    { \
+	      clip_state = !clip_state; \
+	      span++; \
+	      if (span == end) \
+		break; \
+	    } \
+	  if (span != end) \
+	    { \
+	      while (span != end && *span < x1) \
+		{ \
+		  if (clip_state) \
+		    { \
+		      n = (*span - x0); \
+		      HANDLE_SPAN \
+		    } \
+		  dst += (*span - x0) * DI.bytes_per_pixel; \
+		  dst_alpha += (*span - x0); \
+		  x0 = *span; \
+ \
+		  clip_state = !clip_state; \
+		  span++; \
+		  if (span == end) \
+		    break; \
+		} \
+	      if (clip_state) \
+		{ \
+		  n = x1 - x0; \
+		  HANDLE_SPAN \
+		} \
+	    } \
+	  x0 = x0 - cx0 + clip_x0; \
+ \
+	  dst += dbpl - x0 * DI.bytes_per_pixel; \
+	  dst_alpha += adbpl - x0; \
+	} \
+    } \
+  else \
+    { \
+      for (y = delta; y < cy1; y++) \
+	{ \
+	  if (!_rect_advance(&state,&x0,&x1)) \
+	    break; \
+ \
+	  x1 -= x0; \
+	  if (!x1) \
+	    { \
+	      dst += dbpl; \
+	      dst_alpha += adbpl; \
+	      continue; \
+	    } \
+ \
+	  dst += x0 * DI.bytes_per_pixel; \
+	  dst_alpha += x0; \
+ \
+	  n = x1; \
+	  HANDLE_SPAN \
+ \
+	  dst += dbpl - x0 * DI.bytes_per_pixel; \
+	  dst_alpha += adbpl - x0; \
+	} \
+    } \
+}
+
   if (op == NSCompositeClear)
     {
-      int y;
-      [wi needsAlpha];
-      if (!wi->has_alpha)
-	return;
-      if (!DI.inline_alpha)
-	{
-	  unsigned char *dsta;
-	  dsta = wi->alpha + x0 + y0 * wi->sx;
-	  for (y = 0; y < y1; y++, dsta += wi->sx)
-	    memset(dsta, 0, x1);
-	}
-      x1 *= DI.bytes_per_pixel;
-      for (y = 0; y < y1; y++, dst += dbpl)
-	memset(dst, 0, x1);
+      DO_STUFF(
+	memset(dst, 0, n * DI.bytes_per_pixel);
+	if (!DI.inline_alpha)
+	  memset(dst_alpha, 0, n);
+      )
       return;
     }
   else if (op == NSCompositeHighlight)
     {
-      int y, n;
-      /* This must be reversible, which limits what we can
-	 do. */
-      x1 *= DI.bytes_per_pixel;
-      for (y = 0; y < y1; y++, dst += dbpl)
+      DO_STUFF(
 	{
 	  unsigned char *d = dst;
-	  for (n = x1; n; n--, d++)
+	  n *= DI.bytes_per_pixel;
+	  for (; n; n--, d++)
 	    (*d) ^= 0xff;
 	}
+      )
       return;
     }
   else if (op == NSCompositeCopy)
     {
       render_run_t ri;
-      int y;
       ri.dst = dst;
       /* We don't want to blend, so we premultiply and fill the
 	 alpha channel manually. */
@@ -577,40 +1040,34 @@ if necessary. Returns new operation, or -1 it it's a noop. */
       ri.r = (fill_color[0] * ri.a + 0xff) >> 8;
       ri.g = (fill_color[1] * ri.a + 0xff) >> 8;
       ri.b = (fill_color[2] * ri.a + 0xff) >> 8;
-      for (y = 0; y < y1; y++, ri.dst += dbpl)
-	DI.render_run_opaque(&ri, x1);
-
       if (ri.a != 255)
 	[wi needsAlpha];
-      if (wi->has_alpha)
-	{
-	  if (DI.inline_alpha)
-	    {
-	      int n;
-	      unsigned char *p;
-	      for (y = 0; y < y1; y++, dst += dbpl)
-		{ /* TODO: needs to change to support inline
-		     alpha for non-32-bit modes */
-		  for (p = dst, n = x1; n; n--, p += 4)
-		    dst[DI.inline_alpha_ofs] = ri.a;
-		}
-	    }
-	  else
-	    {
-	      unsigned char *dsta;
-	      dsta = wi->alpha + x0 + y0 * wi->sx;
-	      for (y = 0; y < y1; y++, dsta += wi->sx)
-		memset(dsta, ri.a, x1);
-	    }
-	}
+      if (!wi->has_alpha)
+	return;
+
+      DO_STUFF(
+	ri.dst = dst;
+	DI.render_run_opaque(&ri, n);
+	if (DI.inline_alpha)
+	  {
+	    /* TODO: needs to change to support inline
+	       alpha for non-32-bit modes */
+	    unsigned char *p;
+	    for (p = dst; n; n--, p += 4)
+	      p[DI.inline_alpha_ofs] = ri.a;
+	  }
+	else
+	  {
+	    memset(dst_alpha, ri.a, n);
+	  }
+      )
       return;
     }
   else if (blit_func)
     {
       /* this is slightly ugly, but efficient */
-      unsigned char buf[DI.bytes_per_pixel * x1];
-      unsigned char abuf[fill_color[3] == 255? 1 : x1];
-      int y;
+      unsigned char buf[DI.bytes_per_pixel * cx1];
+      unsigned char abuf[fill_color[3] == 255? 1 : cx1];
       composite_run_t c;
 
       c.src = buf;
@@ -618,11 +1075,6 @@ if necessary. Returns new operation, or -1 it it's a noop. */
 	c.srca = abuf;
       else
 	c.srca = NULL;
-      c.dst = dst;
-      if (wi->has_alpha)
-	c.dsta = wi->alpha + x0 + y0 * wi->sx;
-      else
-	c.dsta = NULL;
 
       {
 	render_run_t ri;
@@ -636,7 +1088,7 @@ if necessary. Returns new operation, or -1 it it's a noop. */
 	ri.r = (fill_color[0] * ri.a + 0xff) >> 8;
 	ri.g = (fill_color[1] * ri.a + 0xff) >> 8;
 	ri.b = (fill_color[2] * ri.a + 0xff) >> 8;
-	DI.render_run_opaque(&ri, x1);
+	DI.render_run_opaque(&ri, cx1);
 	if (fill_color[3] != 255)
 	  {
 	    if (DI.inline_alpha)
@@ -645,16 +1097,19 @@ if necessary. Returns new operation, or -1 it it's a noop. */
 		unsigned char *s;
 		/* TODO: needs to change to support inline
 		   alpha for non-32-bit modes */
-		for (i = 0, s = buf + DI.inline_alpha_ofs; i < x1; i++, s += 4)
+		for (i = 0, s = buf + DI.inline_alpha_ofs; i < cx1; i++, s += 4)
 		  *s = ri.a;
 	      }
 	    else
-	      memset(abuf, ri.a, x1);
+	      memset(abuf, ri.a, cx1);
 	  }
       }
 
-      for (y = 0; y < y1; y++, c.dst += dbpl, c.dsta += wi->sx)
-	blit_func(&c, x1);
+      DO_STUFF(
+	c.dst = dst;
+	c.dsta = dst_alpha;
+	blit_func(&c, n);
+      )
       return;
     }
 
