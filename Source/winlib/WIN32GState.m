@@ -662,18 +662,19 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
 - (void)DPSrectstroke: (float)x : (float)y : (float)w : (float)h 
 {
-  NSRect rect = NSMakeRect(x, y, w, h);
+  NSRect rect = [ctm rectInMatrixSpace: NSMakeRect(x, y, w, h)]; 
+  NSBezierPath *oldPath = path;
 
-  rect = [ctm rectInMatrixSpace: rect];
+  // Samll adjustment so that the line is visible
   if (rect.size.width > 0)
     rect.size.width--;
   if (rect.size.height > 0)
     rect.size.height--;
   rect.origin.y += 1;
 
-  ASSIGN(path, [NSBezierPath bezierPathWithRect: rect]);
-  //NSLog(@"Stroke rect %@", NSStringFromRect(rect));
+  path = [NSBezierPath bezierPathWithRect: rect];
   [self DPSstroke];
+  path = oldPath;
 }
 
 - (void)DPSrectclip: (float)x : (float)y : (float)w : (float)h 
