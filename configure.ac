@@ -24,6 +24,7 @@
 #
 
 AC_INIT
+AC_PREREQ(2.57)
 AC_CONFIG_SRCDIR([back.make.in])
 AC_CONFIG_HEADER(config.h)
 
