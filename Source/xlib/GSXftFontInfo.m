@@ -102,10 +102,17 @@ static NSMutableDictionary	*_globalFontDictionary = nil;
 - (float) widthOfGlyphs: (const NSGlyph *) glyphs lenght: (int) len
 {
   XGlyphInfo extents;
+  unichar buf[len];
+  int i;
+
+  for (i = 0; i < len; i++)
+    {
+      buf[i] = glyphs[i];
+    }
 
   XftTextExtents16 ([XGServer currentXDisplay],
 		    font_info,
-		    glyphs, 
+		    buf,
 		    len,
 		    &extents);
 
@@ -251,6 +258,13 @@ static NSMutableDictionary	*_globalFontDictionary = nil;
   Region xregion = [state xClipRegion];
   int defaultScreen = DefaultScreen(xdpy);
   Colormap colmap = DefaultColormap(xdpy, defaultScreen);
+  unichar buf[len];
+  int i;
+
+  for (i = 0; i < len; i++)
+    {
+      buf[i] = glyphs[i];
+    }
 
   /* ready to draw */
   xftdraw = XftDrawCreate(xdpy, draw,
@@ -281,7 +295,7 @@ static NSMutableDictionary	*_globalFontDictionary = nil;
 
   /* do it */
   XftDrawString16(xftdraw, &xftcolor, font_info, 
-		  xp.x, xp.y, (XftChar16*)glyphs, len);
+		  xp.x, xp.y, (XftChar16*)buf, len);
 
   /* tidy up */
   XftDrawDestroy(xftdraw);
