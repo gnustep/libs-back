@@ -58,6 +58,10 @@
 
 #include FT_OUTLINE_H
 
+#if (FREETYPE_MAJOR<=2) && (FREETYPE_MINOR<=1) && (FREETYPE_PATCH<=2)
+#define FT212_STUFF
+#endif
+
 
 /* TODO: finish screen font handling */
 
@@ -79,9 +83,15 @@ static BOOL anti_alias_by_default;
 @interface FTFontInfo : GSFontInfo <FTFontInfo>
 {
 @public
+#ifdef FT212_STUFF
   FTC_ImageDesc imgd;
 
   FTC_ImageDesc fallback;
+#else
+  FTC_ImageTypeRec imgd;
+
+  FTC_ImageTypeRec fallback;
+#endif
 
   FTFaceInfo *face_info;
 
@@ -561,7 +571,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   NSArray *rfi = (NSArray *)fid;
   int i, c = [rfi count];
 
-//	NSLog(@"ft_get_face: %@ '%s'", rfi, [[rfi objectAtIndex: 0] cString]);
+//  NSLog(@"ft_get_face: %@ '%s'", rfi, [[rfi objectAtIndex: 0] cString]);
 
   err = FT_New_Face(lib, [[rfi objectAtIndex: 0] cString], 0, pface);
   if (err)
@@ -748,7 +758,11 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   int use_sbit;
 
   FTC_SBit sbit;
+#ifdef FT212_STUFF
   FTC_ImageDesc cur;
+#else
+  FTC_ImageTypeRec cur;
+#endif
 
   FT_Matrix ftmatrix;
   FT_Vector ftdelta;
@@ -800,23 +814,47 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	    int rh = face_info->render_hints_hack;
 	    if (rh & 0x10000)
 	      {
+#ifdef FT212_STUFF
 		cur.type = ftc_image_grays;
+#else
+		cur.flags = ftc_image_grays;
+#endif
 		rh = (rh >> 8) & 0xff;
 	      }
 	    else
 	      {
+#ifdef FT212_STUFF
 		cur.type = ftc_image_mono;
+#else
+		cur.flags = ftc_image_mono;
+#endif
 		rh = rh & 0xff;
 	      }
 	    if (rh & 1)
+#ifdef FT212_STUFF
 	      cur.type |= ftc_image_flag_autohinted;
+#else
+	      cur.flags |= ftc_image_flag_autohinted;
+#endif
 	    if (!(rh & 2))
+#ifdef FT212_STUFF
 	      cur.type |= ftc_image_flag_unhinted;
+#else
+	      cur.flags |= ftc_image_flag_unhinted;
+#endif
 	  }
 	else if (xx < 8)
+#ifdef FT212_STUFF
 	  cur.type = ftc_image_grays | ftc_image_flag_unhinted;
+#else
+	  cur.flags = ftc_image_grays | ftc_image_flag_unhinted;
+#endif
 	else
+#ifdef FT212_STUFF
 	  cur.type = ftc_image_grays;
+#else
+	  cur.flags = ftc_image_grays;
+#endif
       }
     else
       {
@@ -1163,7 +1201,11 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   int use_sbit;
 
   FTC_SBit sbit;
+#ifdef FT212_STUFF
   FTC_ImageDesc cur;
+#else
+  FTC_ImageTypeRec cur;
+#endif
 
   FT_Matrix ftmatrix;
   FT_Vector ftdelta;
@@ -1215,23 +1257,47 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	    int rh = face_info->render_hints_hack;
 	    if (rh & 0x10000)
 	      {
+#ifdef FT212_STUFF
 		cur.type = ftc_image_grays;
+#else
+		cur.flags = ftc_image_grays;
+#endif
 		rh = (rh >> 8) & 0xff;
 	      }
 	    else
 	      {
+#ifdef FT212_STUFF
 		cur.type = ftc_image_mono;
+#else
+		cur.flags = ftc_image_mono;
+#endif
 		rh = rh & 0xff;
 	      }
 	    if (rh & 1)
+#ifdef FT212_STUFF
 	      cur.type |= ftc_image_flag_autohinted;
+#else
+	      cur.flags |= ftc_image_flag_autohinted;
+#endif
 	    if (!(rh & 2))
+#ifdef FT212_STUFF
 	      cur.type |= ftc_image_flag_unhinted;
+#else
+	      cur.flags |= ftc_image_flag_unhinted;
+#endif
 	  }
 	else if (xx < 8)
+#ifdef FT212_STUFF
 	  cur.type = ftc_image_grays | ftc_image_flag_unhinted;
+#else
+	  cur.flags = ftc_image_grays | ftc_image_flag_unhinted;
+#endif
 	else
+#ifdef FT212_STUFF
 	  cur.type = ftc_image_grays;
+#else
+	  cur.flags = ftc_image_grays;
+#endif
       }
     else
       {
@@ -1521,7 +1587,11 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
       /* TODO: try to more efficiently? */
       /* TODO: set up all this stuff in -init... for the raw metric case */
       float xx, yy;
+#ifdef FT212_STUFF
       FTC_ImageDesc cur;
+#else
+      FTC_ImageTypeRec cur;
+#endif
       FTC_SBit sbit;
 
       cur = imgd;
@@ -1534,23 +1604,47 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	    int rh = face_info->render_hints_hack;
 	    if (rh & 0x10000)
 	      {
+#ifdef FT212_STUFF
 		cur.type = ftc_image_grays;
+#else
+		cur.flags = ftc_image_grays;
+#endif
 		rh = (rh >> 8) & 0xff;
 	      }
 	    else
 	      {
+#ifdef FT212_STUFF
 		cur.type = ftc_image_mono;
+#else
+		cur.flags = ftc_image_mono;
+#endif
 		rh = rh & 0xff;
 	      }
 	    if (rh & 1)
+#ifdef FT212_STUFF
 	      cur.type |= ftc_image_flag_autohinted;
+#else
+	      cur.flags |= ftc_image_flag_autohinted;
+#endif
 	    if (!(rh & 2))
+#ifdef FT212_STUFF
 	      cur.type |= ftc_image_flag_unhinted;
+#else
+	      cur.flags |= ftc_image_flag_unhinted;
+#endif
 	  }
 	else if (xx < 8)
+#ifdef FT212_STUFF
 	  cur.type = ftc_image_grays | ftc_image_flag_unhinted;
+#else
+	  cur.flags = ftc_image_grays | ftc_image_flag_unhinted;
+#endif
 	else
+#ifdef FT212_STUFF
 	  cur.type = ftc_image_grays;
+#else
+	  cur.flags = ftc_image_grays;
+#endif
 
       if ((error=FTC_SBitCache_Lookup(ftc_sbitcache, &cur, glyph, &sbit, NULL)))
 	{
@@ -1605,7 +1699,11 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
 - (NSRect) boundingRectForGlyph: (NSGlyph)glyph
 {
+#ifdef FT212_STUFF
   FTC_ImageDesc *cur;
+#else
+  FTC_ImageTypeRec *cur;
+#endif
   FT_BBox bbox;
   FT_Glyph g;
   FT_Error error;
@@ -1682,7 +1780,11 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
   FTC_SBit sbit;
 
+#ifdef FT212_STUFF
   FTC_ImageDesc *cur;
+#else
+  FTC_ImageTypeRec *cur;
+#endif
 
 
   cmap.face_id = imgd.font.face_id;
@@ -1895,7 +1997,11 @@ add code to avoid loading bitmaps for glyphs */
   unichar *uch;
   int ulen;
 
+#ifdef FT212_STUFF
   FTC_ImageDesc cur;
+#else
+  FTC_ImageTypeRec cur;
+#endif
 
 
   FT_Matrix ftmatrix;
@@ -2065,7 +2171,11 @@ static int filters[3][7]=
   int use_sbit;
 
   FTC_SBit sbit;
+#ifdef FT212_STUFF
   FTC_ImageDesc cur;
+#else
+  FTC_ImageTypeRec cur;
+#endif
 
   FT_Matrix ftmatrix;
   FT_Vector ftdelta;
@@ -2113,7 +2223,11 @@ static int filters[3][7]=
 	    cur.font.pix_width > 6 && cur.font.pix_height > 6)
 	  cur.type = ftc_image_mono;
 	else*/
+#ifdef FT212_STUFF
 	  cur.type = ftc_image_grays, subpixel = YES, cur.font.pix_width *= 3, x *= 3;
+#else
+	  cur.flags = ftc_image_grays, subpixel = YES, cur.font.pix_width *= 3, x *= 3;
+#endif
 //			imgd.type|=|ftc_image_flag_unhinted; /* TODO? when? */
       }
     else

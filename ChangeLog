@@ -1,3 +1,8 @@
+2003-06-07 23:05  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Add some ifdef:s to get it to compile with
+	both freetype <=2.1.2 and >=2.1.3.
+
 2003-06-06  Adam Fedor  <fedor@gnu.org>
 
 	* Source/x11/XGServerWindow.m (setWindowHintsForStyle): Specifically
