@@ -1,4 +1,4 @@
-2004-09-24  Adrian Robert <arobert@cogsci.ucsd.edu>
+2004-11-04  Adrian Robert <arobert@cogsci.ucsd.edu>
 
 	* Source/x11/XGServerEvent.m (process_key_event): Modifier detection:
 	If default "GSModifiersAreKeys" is YES, ignore 'shift' and/or other
