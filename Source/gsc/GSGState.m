@@ -83,7 +83,9 @@
   fillColorS   = nil;
   strokeColorS = nil;
   fillColor    = gsMakeColor(gray_colorspace, 0, 0, 0, 0);
+  fillColor.field[AINDEX] = 1.0;
   strokeColor    = gsMakeColor(gray_colorspace, 0, 0, 0, 0);
+  strokeColor.field[AINDEX] = 1.0;
 
   charSpacing = 0;
   textMode    = GSTextFill;
