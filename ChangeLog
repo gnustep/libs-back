@@ -1,3 +1,10 @@
+2003-05-17 14:49  Alexander Malmberg <alexander@malmberg.org>
+
+	* configure.ac: Make sure to add -lm when adding -ltiff (wasn't done
+	in one case).
+
+	* configure: Regenerate.
+
 2003-05-11 19:21  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Report errors in more cases.
