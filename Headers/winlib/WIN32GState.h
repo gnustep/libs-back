@@ -43,6 +43,7 @@
 
   HGDIOBJ oldBrush;
   HGDIOBJ oldPen;
+  HRGN oldClipRegion;
 }
 
 - (void) setWindow: (HWND)number;
