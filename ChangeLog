@@ -1,5 +1,7 @@
 2002-05-12  Adam Fedor  <fedor@gnu.org>
 
+	* diffing (Index): 
+
 	* Source/gsc/GSGState.m (-DPSsetalpha:): Call setColor:state:.
 	Clamp value to 0<x<1
 	(-DPSsetcmykcolor::::): Idem.
@@ -7,15 +9,19 @@
 	(-DPSsethsbcolor:::):Idem.
 	(-DPSsetrgbcolor:::):Idem.
 	(-GSSetFontSize:): Use given size.
-	(-initWithDrawContext:): Set initial alpha to 1.
+	(-initWithDrawContext:): Call DPSinitgraphics
+	(-DPSinitgraphics): Init all our graphics state.  
 	* Source/gsc/gscolors.c (gsHSBToRGB): Fix for h==1.
 	(gsColorToCMYK): Implement.
-	(gsColorToHSB): Idem. (Patches from alexander@malmberg.org).
+	(gsColorToHSB): Idem. (Patches and suggestions from
+	alexander@malmberg.org, rearranged a little).
 
 	* Source/xlib/XGFontManager.m (load_cache): Use NSBundle to find
 	font_cacher.
 
 	* Source/xlib/XGGState.m (GSSetFont:) Rename from setFont.
+	(-DPSinitgraphics): Call super.
+	* Source/winlib/WIN32GState.m (-DPSinitgraphics): Call super.
 
 	* Tools/GNUmakefile: Build font_cacher if BUILD_GRAPHICS=xlib
 

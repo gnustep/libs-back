@@ -540,10 +540,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 
 - (void)DPSinitgraphics 
 {
-  [ctm makeIdentityMatrix];
-  DESTROY(path);
-  fillColor = gsMakeColor(gray_colorspace, 0, 0, 0, 0);
-  [self setColor: fillColor state: COLOR_BOTH];
+  [super DPSinitgraphics];
 }
 
 - (void) DPSsetdash: (const float*)pattern : (int)count : (float)phase
