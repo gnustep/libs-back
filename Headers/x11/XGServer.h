@@ -47,23 +47,22 @@ typedef enum {
 
 @interface XGServer : GSDisplayServer
 {
-@public
-  void			*context;
-  Window		grabWindow;
-  XGDrawMechanism	drawMechanism;
-  struct XGGeneric	generic;
-  id                    inputServer;
+  Display           *dpy;
+  int               defScreen;
+  NSMapTable        *screenList;
+  Window	    grabWindow;
+  struct XGGeneric  generic;
+  id                inputServer;
 }
 
 + (Display*) currentXDisplay;
-- (XGDrawMechanism) drawMechanism;
-- (Display*)xDisplay;
-- (Window)xDisplayRootWindow;
-- (Window)xAppRootWindow;
+- (Display*) xDisplay;
+- (Window) xAppRootWindow;
 
-- (XColor)xColorFromColor: (XColor)color;
-
-- (void *) xrContext;
+- (void *) xrContextForScreen: (int)screen_number;
+- (XGDrawMechanism) drawMechanismForScreen: (int)screen_number;
+- (Window) xDisplayRootWindowForScreen: (int)screen_number;
+- (XColor) xColorFromColor: (XColor)color forScreen: (int)screen_number;
 
 + (void) waitAllContexts;
 @end

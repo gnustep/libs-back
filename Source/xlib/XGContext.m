@@ -106,35 +106,7 @@
   /* Create a default gstate */
   gstate = [[XGGState allocWithZone: [self zone]] initWithDrawContext: self];
 
-  drawMechanism = [(XGServer *)server drawMechanism];
   return self;
-}
-
-/**
-   Returns the XGDrawMechanism, which roughly describes the depth of
-   the screen and how pixels should be drawn to the screen for maximum
-   speed.
-*/
-- (XGDrawMechanism) drawMechanism
-{
-  return drawMechanism;
-}
-
-/**
-   Returns a pointer to a structure which describes aspects of the
-   X windows display 
-*/
-- (void *) xrContext
-{
-  return [(XGServer *)server xrContext];
-}
-
-/**
-  Returns a pointer to the X windows display variable
-*/
-- (Display *) xDisplay
-{
-  return [(XGServer *)server xDisplay];
 }
 
 - (void) flushGraphics

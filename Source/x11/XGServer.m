@@ -62,31 +62,18 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
 - (void) setupRunLoopInputSourcesForMode: (NSString*)mode; 
 @end
 
-#define XDPY (((RContext *)context)->dpy)
-#define XSCR (((RContext *)context)->screen_number)
-
-/**
-   <unit>
-   <heading>XGServer</heading>
-   </unit>
-*/
-@implementation XGServer 
-
-/* Initialize AppKit backend */
-+ (void)initializeBackend
+@interface XGScreenContext : NSObject
 {
-  NSDebugLog(@"Initializing GNUstep x11 backend.\n");
-  [GSDisplayServer setDefaultServerClass: [XGServer class]];
+  RContext        *rcontext;
+  XGDrawMechanism drawMechanism;
 }
 
-/**
-   Returns a pointer to the current X-Windows display variable for
-   the current context.
-*/
-+ (Display*) currentXDisplay
-{
-  return [(XGServer*)GSCurrentServer() xDisplay];
-}
+- initForDisplay: (Display *)dpy screen: (int)screen_number;
+- (XGDrawMechanism) drawMechanism;
+- (RContext *) context;
+@end
+
+@implementation XGScreenContext
 
 - (RContextAttributes *) _getXDefaults
 {
@@ -113,16 +100,148 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
   return attribs;
 }
 
-- _initXContext
+- initForDisplay: (Display *)dpy screen: (int)screen_number
 {
-  Display		*dpy;
-  int			screen_number;
-  NSString		*display_name;
-  NSRange               disnum;
-  RContext		*rcontext;
   RContextAttributes	*attribs;
   XColor		testColor;
   unsigned char		r, g, b;
+
+   /* Get the visual information */
+  attribs = NULL;
+  //attribs = [self _getXDefaults];
+  rcontext = RCreateContext(dpy, screen_number, attribs);
+
+  /*
+   * If we have shared memory available, only use it when the XGPS-Shm
+   * default is set to YES
+   */
+  if (rcontext->attribs->use_shared_memory == True
+    && [[NSUserDefaults standardUserDefaults] boolForKey: @"XGPS-Shm"] != YES)
+    rcontext->attribs->use_shared_memory = False;
+
+  /*
+   *	Crude tests to see if we can accelerate creation of pixels from
+   *	8-bit red, green and blue color values.
+   */
+  if (rcontext->depth == 12 || rcontext->depth == 16)
+    {
+      drawMechanism = XGDM_FAST16;
+      r = 8;
+      g = 9;
+      b = 7;
+      testColor.pixel = (((r << 5) + g) << 6) + b;
+      XQueryColor(rcontext->dpy, rcontext->cmap, &testColor);
+      if (((testColor.red >> 11) != r)
+	|| ((testColor.green >> 11) != g)
+	|| ((testColor.blue >> 11) != b))
+	{
+	  NSLog(@"WARNING - XGServer is unable to use the "
+	    @"fast algorithm for writing to a 16-bit display on "
+	    @"this host - perhaps you'd like to adjust the code "
+	    @"to work ... and submit a patch.");
+	  drawMechanism = XGDM_PORTABLE;
+	}
+    }
+  else if (rcontext->depth == 15)
+    {
+      drawMechanism = XGDM_FAST15;
+      r = 8;
+      g = 9;
+      b = 7;
+      testColor.pixel = (((r << 5) + g) << 5) + b;
+      XQueryColor(rcontext->dpy, rcontext->cmap, &testColor);
+      if (((testColor.red >> 11) != r)
+	|| ((testColor.green >> 11) != g)
+	|| ((testColor.blue >> 11) != b))
+	{
+	  NSLog(@"WARNING - XGServer is unable to use the "
+	    @"fast algorithm for writing to a 15-bit display on "
+	    @"this host - perhaps you'd like to adjust the code "
+	    @"to work ... and submit a patch.");
+	  drawMechanism = XGDM_PORTABLE;
+	}
+    }
+  else if (rcontext->depth == 24 || rcontext->depth == 32)
+    {
+      drawMechanism = XGDM_FAST32;
+      r = 32;
+      g = 33;
+      b = 31;
+      testColor.pixel = (((r << 8) + g) << 8) + b;
+      XQueryColor(rcontext->dpy, rcontext->cmap, &testColor);
+      if (((testColor.red >> 8) == r)
+        && ((testColor.green >> 8) == g)
+        && ((testColor.blue >> 8) == b))
+	{
+	  drawMechanism = XGDM_FAST32;
+	}
+      else if (((testColor.red >> 8) == b)
+	&& ((testColor.green >> 8) == g)
+	&& ((testColor.blue >> 8) == r))
+	{
+	  drawMechanism = XGDM_FAST32_BGR;
+	}
+      else
+	{
+	  NSLog(@"WARNING - XGServer is unable to use the "
+	    @"fast algorithm for writing to a 32-bit display on "
+	    @"this host - perhaps you'd like to adjust the code "
+	    @"to work ... and submit a patch.");
+	  drawMechanism = XGDM_PORTABLE;
+	}
+    }
+  else
+    {
+      NSLog(@"WARNING - XGServer is unable to use a "
+	@"fast algorithm for writing to the display on "
+	@"this host - perhaps you'd like to adjust the code "
+	@"to work ... and submit a patch.");
+      drawMechanism = XGDM_PORTABLE;
+    }
+  return self;
+}
+
+- (XGDrawMechanism) drawMechanism
+{
+  return drawMechanism;
+}
+
+- (RContext *) context
+{
+  return rcontext;
+}
+
+@end
+
+/**
+   <unit>
+   <heading>XGServer</heading>
+   </unit>
+*/
+@implementation XGServer 
+
+/* Initialize AppKit backend */
++ (void)initializeBackend
+{
+  NSDebugLog(@"Initializing GNUstep x11 backend.\n");
+  [GSDisplayServer setDefaultServerClass: [XGServer class]];
+}
+
+/**
+   Returns a pointer to the current X-Windows display variable for
+   the current context.
+*/
++ (Display*) currentXDisplay
+{
+  return [(XGServer*)GSCurrentServer() xDisplay];
+}
+
+- _initXContext
+{
+  int			screen_number;
+  NSString		*display_name;
+  NSRange               disnum;
+  XGScreenContext       *screen;
   
   display_name = [server_info objectForKey: GSDisplayName];
   if (display_name == nil)
@@ -236,99 +355,15 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
 		    forKey: GSDisplayNumber];
   [server_info setObject: [display_name pathExtension] forKey: GSScreenNumber];
 
-  /* Get the visual information */
-  attribs = NULL;
-  //attribs = [self _getXDefaults];
-  rcontext = RCreateContext(dpy, screen_number, attribs);
-  context  = (void *)rcontext;
+  /* Setup screen*/
+  if (screenList == NULL)
+    screenList = NSCreateMapTable(NSIntMapKeyCallBacks,
+                                 NSObjectMapValueCallBacks, 20);
 
-  /*
-   * If we have shared memory available, only use it when the XGPS-Shm
-   * default is set to YES
-   */
-  if (rcontext->attribs->use_shared_memory == True
-    && [[NSUserDefaults standardUserDefaults] boolForKey: @"XGPS-Shm"] != YES)
-    rcontext->attribs->use_shared_memory = False;
-
-  /*
-   *	Crude tests to see if we can accelerate creation of pixels from
-   *	8-bit red, green and blue color values.
-   */
-  if (rcontext->depth == 12 || rcontext->depth == 16)
-    {
-      drawMechanism = XGDM_FAST16;
-      r = 8;
-      g = 9;
-      b = 7;
-      testColor.pixel = (((r << 5) + g) << 6) + b;
-      XQueryColor(rcontext->dpy, rcontext->cmap, &testColor);
-      if (((testColor.red >> 11) != r)
-	|| ((testColor.green >> 11) != g)
-	|| ((testColor.blue >> 11) != b))
-	{
-	  NSLog(@"WARNING - XGServer is unable to use the "
-	    @"fast algorithm for writing to a 16-bit display on "
-	    @"this host - perhaps you'd like to adjust the code "
-	    @"to work ... and submit a patch.");
-	  drawMechanism = XGDM_PORTABLE;
-	}
-    }
-  else if (rcontext->depth == 15)
-    {
-      drawMechanism = XGDM_FAST15;
-      r = 8;
-      g = 9;
-      b = 7;
-      testColor.pixel = (((r << 5) + g) << 5) + b;
-      XQueryColor(rcontext->dpy, rcontext->cmap, &testColor);
-      if (((testColor.red >> 11) != r)
-	|| ((testColor.green >> 11) != g)
-	|| ((testColor.blue >> 11) != b))
-	{
-	  NSLog(@"WARNING - XGServer is unable to use the "
-	    @"fast algorithm for writing to a 15-bit display on "
-	    @"this host - perhaps you'd like to adjust the code "
-	    @"to work ... and submit a patch.");
-	  drawMechanism = XGDM_PORTABLE;
-	}
-    }
-  else if (rcontext->depth == 24 || rcontext->depth == 32)
-    {
-      drawMechanism = XGDM_FAST32;
-      r = 32;
-      g = 33;
-      b = 31;
-      testColor.pixel = (((r << 8) + g) << 8) + b;
-      XQueryColor(rcontext->dpy, rcontext->cmap, &testColor);
-      if (((testColor.red >> 8) == r)
-        && ((testColor.green >> 8) == g)
-        && ((testColor.blue >> 8) == b))
-	{
-	  drawMechanism = XGDM_FAST32;
-	}
-      else if (((testColor.red >> 8) == b)
-	&& ((testColor.green >> 8) == g)
-	&& ((testColor.blue >> 8) == r))
-	{
-	  drawMechanism = XGDM_FAST32_BGR;
-	}
-      else
-	{
-	  NSLog(@"WARNING - XGServer is unable to use the "
-	    @"fast algorithm for writing to a 32-bit display on "
-	    @"this host - perhaps you'd like to adjust the code "
-	    @"to work ... and submit a patch.");
-	  drawMechanism = XGDM_PORTABLE;
-	}
-    }
-  else
-    {
-      NSLog(@"WARNING - XGServer is unable to use a "
-	@"fast algorithm for writing to the display on "
-	@"this host - perhaps you'd like to adjust the code "
-	@"to work ... and submit a patch.");
-      drawMechanism = XGDM_PORTABLE;
-    }
+  screen = [[XGScreenContext alloc] initForDisplay: dpy screen: screen_number];
+  AUTORELEASE(screen);
+  NSMapInsert(screenList, (void *)screen_number, (void *)screen);
+  defScreen = screen_number;
 
   XSetErrorHandler(XGErrorHandler);
 
@@ -365,8 +400,49 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
   NSDebugLog(@"Destroying X11 Server");
   DESTROY(inputServer);
   [self _destroyServerWindows];
-  XCloseDisplay(XDPY);
+  NSFreeMapTable(screenList);
+  XCloseDisplay(dpy);
   [super dealloc];
+}
+
+/**
+  Returns a pointer to the X windows display variable
+*/
+- (Display *) xDisplay
+{
+  return dpy;
+}
+
+- (XGScreenContext *) _screenContextForScreen: (int)screen_number
+{
+  int count = ScreenCount(dpy);
+  XGScreenContext *screen;
+
+  if (screen_number >= count)
+    {
+      [NSException raise: NSInvalidArgumentException
+		   format: @"Request for invalid screen"];
+    }
+
+  screen = NSMapGet(screenList, (void *)screen_number);
+  if (screen == NULL)
+    {
+      XGScreenContext *screen;
+      screen = [[XGScreenContext alloc] 
+		 initForDisplay: dpy screen: screen_number];
+      AUTORELEASE(screen);
+      NSMapInsert(screenList, (void *)screen_number, (void *)screen);
+    }
+  return screen;
+}
+
+/**
+   Returns a pointer to a structure which describes aspects of the
+   X windows display 
+*/
+- (void *) xrContextForScreen: (int)screen_number
+{
+  return [[self _screenContextForScreen: screen_number] context];
 }
 
 /**
@@ -374,34 +450,37 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
    the screen and how pixels should be drawn to the screen for maximum
    speed.
 */
-- (XGDrawMechanism) drawMechanism
+- (XGDrawMechanism) drawMechanismForScreen: (int)screen_number
 {
-  return drawMechanism;
-}
-
-/**
-   Returns a pointer to a structure which describes aspects of the
-   X windows display 
-*/
-- (void *) xrContext
-{
-  return context;
-}
-
-/*
-  Returns a pointer to the X windows display variable
-*/
-- (Display *) xDisplay
-{
-  return XDPY;
+ return [[self _screenContextForScreen: screen_number] drawMechanism];
 }
 
 /**
    Returns the root window of the display 
 */
-- (Window) xDisplayRootWindow
+- (Window) xDisplayRootWindowForScreen: (int)screen_number;
 {
-  return RootWindow(XDPY, XSCR);
+  return RootWindow(dpy, screen_number);
+}
+
+/**
+   Returns the closest color in the current colormap to the indicated
+   X color
+*/
+- (XColor)xColorFromColor: (XColor)color forScreen: (int)screen_number
+{
+  Status ret;
+  RColor rcolor;
+  RContext *context = [self xrContextForScreen: screen_number];
+  XAllocColor(dpy, context->cmap, &color);
+  rcolor.red   = color.red / 256;
+  rcolor.green = color.green / 256;
+  rcolor.blue  = color.blue / 256;
+  ret = RGetClosestXColor(context, &rcolor, &color);
+  if (ret == False)
+    NSLog(@"Failed to alloc color (%d,%d,%d)\n",
+          (int)rcolor.red, (int)rcolor.green, (int)rcolor.blue);
+  return color;
 }
 
 /**
@@ -413,25 +492,6 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
   return generic.appRootWindow;
 }
 
-/**
-   Returns the closest color in the current colormap to the indicated
-   X color
-*/
-- (XColor)xColorFromColor: (XColor)color
-{
-  Status ret;
-  RColor rcolor;
-  Colormap colormap = XDefaultColormap(XDPY, XSCR);
-  XAllocColor(XDPY, colormap, &color);
-  rcolor.red   = color.red / 256;
-  rcolor.green = color.green / 256;
-  rcolor.blue  = color.blue / 256;
-  ret = RGetClosestXColor((RContext *)context, &rcolor, &color);
-  if (ret == False)
-    NSLog(@"Failed to alloc color (%d,%d,%d)\n",
-          (int)rcolor.red, (int)rcolor.green, (int)rcolor.blue);
-  return color;
-}
 
 /**
   Wait for all contexts to finish processing. Only used with XDPS graphics.

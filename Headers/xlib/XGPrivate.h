@@ -33,6 +33,7 @@
 #include "x11/wraster.h"
 #endif
 
+#include "x11/XGServer.h"
 #include "xlib/XGContext.h"
 #include "xlib/xrtools.h"
 #include <AppKit/GSFontInfo.h>

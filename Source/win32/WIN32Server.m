@@ -543,6 +543,11 @@ DWORD windowStyleForGSStyle(int style)
   return MSScreenPointToGS(p.x, p.y);
 }
 
+- (NSPoint) mouseLocationOnScreen: (int)screen window: (void *)win
+{
+  return [self mouselocation];
+}
+
 - (BOOL) capturemouse: (int) winNum
 {
   SetCapture((HWND)winNum);

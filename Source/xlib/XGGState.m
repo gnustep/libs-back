@@ -103,8 +103,7 @@ static	Region	emptyRegion;
 {
   [super initWithDrawContext: drawContext];
 
-  context = (void *)[(XGContext *)drawContext xrContext];
-  NSParameterAssert((RContext *)context);
+  drawMechanism = -1;
   draw = 0;
   alpha_buffer = 0;
   color.field[AINDEX] = 1.0;
@@ -145,6 +144,7 @@ static	Region	emptyRegion;
 
 - (void) setWindowDevice: (void *)device
 {
+  XGServer *srv;
   gswindow_device_t *gs_win;
 
   gs_win = (gswindow_device_t *)windevice = device;
@@ -152,6 +152,11 @@ static	Region	emptyRegion;
   [self setGraphicContext: gs_win->gc];
   alpha_buffer = 0;
   drawingAlpha = NO;
+
+  /* We know the current server sent us this */
+  srv = (XGServer *)GSCurrentServer();
+  context = [srv xrContextForScreen: gs_win->screen];
+  drawMechanism = [srv drawMechanismForScreen: gs_win->screen];
 
   if (gs_win != NULL && gs_win->alpha_buffer != 0)
     {
@@ -235,7 +240,12 @@ static	Region	emptyRegion;
   float alpha = color.field[AINDEX];
   color = acolor;
   acolor = xrColorToRGB(acolor);
-  gcv.foreground = xrRGBToPixel((RContext *)context, acolor);
+  if (context == NULL)
+    {
+      /* Window device isn't set yet */
+      return;
+    }
+  gcv.foreground = xrRGBToPixel(context, acolor);
   [self setGCValues: gcv withMask: GCForeground];
   color.field[AINDEX] = alpha;
 }
@@ -484,12 +494,12 @@ static	Region	emptyRegion;
   if (draw == dest_win->ident && dest_win->visibility < 0)
     {
       /* Non-backingstore window isn't visible, so just make up the image */
-      dest_im = RCreateXImage((RContext *)context, dest_win->depth, 
+      dest_im = RCreateXImage(context, dest_win->depth, 
 			      XGWidth(drect), XGHeight(drect));
     }
   else
     {
-      dest_im = RGetXImage((RContext *)context, draw, XGMinX(drect), XGMinY (drect), 
+      dest_im = RGetXImage(context, draw, XGMinX(drect), XGMinY (drect), 
                            XGWidth (drect), XGHeight (drect));
     }
 
@@ -534,7 +544,7 @@ static	Region	emptyRegion;
       
     _pixmap_combine_alpha((RContext *)context, source_im, source_alpha, 
                           dest_im, dest_alpha, xdrect,
-                          op, [(XGContext *)drawcontext drawMechanism], delta);
+                          op, drawMechanism, delta);
   }
   
 
@@ -1837,7 +1847,7 @@ typedef enum {
 			cspace, one_is_black,
 			isPlanar, hasAlpha, fast_min,
 			dest_im, dest_alpha, sr, dr,
-			0, [(XGContext *)drawcontext drawMechanism]);
+			0, drawMechanism);
 
   /* Draw into the window/buffer */
   RPutXImage((RContext *)context, draw, xgcntxt, dest_im, 0, 0, 

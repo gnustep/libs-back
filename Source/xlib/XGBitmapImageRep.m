@@ -82,6 +82,7 @@
 
 - _initFromWrasterFile: (NSString *)filename number: (int)imageNumber
 {
+  int screen;
   RImage *image;
   RContext *context;
 
@@ -93,7 +94,8 @@
     }
 
   NSDebugLLog(@"NSImage", @"Loading %@ using wraster routines", filename);
-  context = [(XGContext *)GSCurrentContext() xrContext];
+  screen = [[[GSCurrentServer() screenList] objectAtIndex: 0] intValue];
+  context = [(XGServer *)GSCurrentServer() xrContextForScreen: screen];
   image = RLoadImage(context, (char *)[filename cString], imageNumber);
   if (!image)
     {
