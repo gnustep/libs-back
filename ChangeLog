@@ -1,3 +1,11 @@
+2005-01-11 21:57  Alexander Malmberg <alexander@malmberg.org>
+
+	* Headers/x11/XWindowBuffer.h: Make the pending_rect ivar a struct
+	of int:s.
+	* Source/x11/XWindowBuffer.m: Add casts to remove pointer sign
+	warnings.
+	(-_exposeRect:, -_gotShmCompletion): Update uses of pending_rect.
+
 2005-01-11 20:27  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ARTGState.h: Add strokeadjust ivar.

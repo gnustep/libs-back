@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2005 Free Software Foundation, Inc.
 
    Author:  Alexander Malmberg <alexander@malmberg.org>
 
@@ -80,7 +80,10 @@ that there's only one XWindowBuffer for each window. */
   again. The pending updates are stored here, and when we get the
   ShmCompletion event, we handle them. */
   int pending_put;     /* There are pending updates */
-  NSRect pending_rect; /* in this rectangle. */
+  struct
+  {
+    int x, y, w, h;
+  } pending_rect; /* in this rectangle. */
 
   int pending_event;   /* We're waiting for the ShmCompletion event. */
 

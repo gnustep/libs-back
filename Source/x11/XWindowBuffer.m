@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2003, 2004, 2005 Free Software Foundation, Inc.
 
    Author:  Alexander Malmberg <alexander@malmberg.org>
 
@@ -366,7 +366,7 @@ no_xshm:
     {
       wi->sx = wi->ximage->width;
       wi->sy = wi->ximage->height;
-      wi->data = wi->ximage->data;
+      wi->data = (unsigned char *)wi->ximage->data;
       wi->bytes_per_line = wi->ximage->bytes_per_line;
       wi->bits_per_pixel = wi->ximage->bits_per_pixel;
       wi->bytes_per_pixel = wi->bits_per_pixel / 8;
@@ -392,24 +392,23 @@ extern int XShmGetEventBase(Display *d);
   pending_event = 0;
   if (pending_put)
     {
-      NSRect r = pending_rect;
       pending_put = 0;
-      if (r.origin.x + r.size.width>window->xframe.size.width)
+      if (pending_rect.x + pending_rect.w > window->xframe.size.width)
 	{
-	  r.size.width = window->xframe.size.width - r.origin.x;
-	  if (r.size.width <= 0)
+	  pending_rect.w = window->xframe.size.width - pending_rect.x;
+	  if (pending_rect.w <= 0)
 	    return;
 	}
-      if (r.origin.y + r.size.height>window->xframe.size.height)
+      if (pending_rect.y + pending_rect.h > window->xframe.size.height)
 	{
-	  r.size.height = window->xframe.size.height - r.origin.y;
-	  if (r.size.height <= 0)
+	  pending_rect.h = window->xframe.size.height - pending_rect.y;
+	  if (pending_rect.h <= 0)
 	    return;
 	}
       if (!XShmPutImage(display, drawable, gc, ximage,
-			r.origin.x, r.origin.y,
-			r.origin.x, r.origin.y,
-			r.size.width, r.size.height,
+			pending_rect.x, pending_rect.y,
+			pending_rect.x, pending_rect.y,
+			pending_rect.w, pending_rect.h,
 			1))
 	{
 	  NSLog(@"XShmPutImage failed?");
@@ -422,7 +421,7 @@ extern int XShmGetEventBase(Display *d);
 //	XFlush(window->display);
 }
 
--(void) _exposeRect: (NSRect)r
+-(void) _exposeRect: (NSRect)rect
 {
 /* TODO: Somehow, we can get negative coordinates in the rectangle. So far
 I've tracked them back to [NSWindow flushWindow]. Should probably figure
@@ -434,20 +433,38 @@ Also, just about every resize of a window causes a few calls here with
 rects in the new size before we are updated.
 
 For now, we just intersect with our known size to avoid problems with X.
+
+And, to avoid problems with clever optimizations and float vs. double
+accuracy, we do the test using int:s.
 */
-  NSRect r2;
+  int x, y, w, h;
 
-  r = NSIntersectionRect(r, NSMakeRect(0, 0,
-    window->xframe.size.width, window->xframe.size.height));
-  if (NSIsEmptyRect(r))
+  x = floor(rect.origin.x);
+  y = floor(rect.origin.y);
+  w = ceil(rect.size.width + rect.origin.x - x);
+  h = ceil(rect.size.height + rect.origin.y - y);
+
+  if (x < 0)
+    {
+      w += x;
+      x = 0;
+    }
+  if (y < 0)
+    {
+      h += y;
+      y = 0;
+    }
+  if (x + w > window->xframe.size.width)
+    {
+      w = window->xframe.size.width - x;
+    }
+  if (y + h > window->xframe.size.height)
+    {
+      h = window->xframe.size.height - y;
+    }
+
+  if (w <= 0 || h <= 0)
     return;
-
-  r2.origin.x=floor(r.origin.x);
-  r2.origin.y=floor(r.origin.y);
-  r2.size.width=ceil(r.size.width+r.origin.x-r2.origin.x);
-  r2.size.height=ceil(r.size.height+r.origin.y-r2.origin.y);
-
-  r=r2;
 
   if (use_shm)
     {
@@ -518,7 +535,8 @@ static int warn = 0;
 	  else
 	    {
 //		NSLog(@"  updating");
-	      p = XCreatePixmapFromBitmapData(display, window->ident, buf, sx, sy, 1, 0, 1);
+	      p = XCreatePixmapFromBitmapData(display, window->ident,
+					      (char *)buf, sx, sy, 1, 0, 1);
 	      free(old_shape);
 	      old_shape = buf;
 	      old_shape_size = dsize;
@@ -533,21 +551,38 @@ static int warn = 0;
 	  if (!pending_put)
 	    {
 	      pending_put = 1;
-	      pending_rect = r;
+	      pending_rect.x = x;
+	      pending_rect.y = y;
+	      pending_rect.w = w;
+	      pending_rect.h = h;
 	    }
 	  else
 	    {
-	      pending_rect = NSUnionRect(pending_rect, r);
+	      if (x < pending_rect.x)
+		{
+		  pending_rect.w += pending_rect.x - x;
+		  pending_rect.x = x;
+		}
+	      if (x + w > pending_rect.x + pending_rect.w)
+		{
+		  pending_rect.w = x + w - pending_rect.x;
+		}
+	      if (y < pending_rect.y)
+		{
+		  pending_rect.h += pending_rect.y - y;
+		  pending_rect.y = y;
+		}
+	      if (y + h > pending_rect.y + pending_rect.h)
+		{
+		  pending_rect.h = y + h - pending_rect.y;
+		}
 	    }
 	}
       else
 	{
 	  pending_put = 0;
 	  if (!XShmPutImage(display, drawable, gc, ximage,
-			    r.origin.x, r.origin.y,
-			    r.origin.x, r.origin.y,
-			    r.size.width, r.size.height,
-			    1))
+			    x, y, x, y, w, h, 1))
 	    {
 	      NSLog(@"XShmPutImage failed?");
 	    }
@@ -571,9 +606,7 @@ static int warn = 0;
     }
   else if (ximage)
     XPutImage(display, drawable, gc, ximage,
-	      r.origin.x, r.origin.y,
-	      r.origin.x, r.origin.y,
-	      r.size.width, r.size.height);
+	      x, y, x, y, w, h);
 }
 
 -(void) needsAlpha
