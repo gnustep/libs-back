@@ -51,9 +51,23 @@
 @interface XGGLPixelFormat : NSOpenGLPixelFormat
 {
 @public
-  GLXFBConfig  *conf_tab;
+  union {
+    GLXFBConfig  *tab;
+    XVisualInfo  *visual;
+  } conf;
   int		n_elem;
 }
 @end
+
+static inline int
+GSglxMinorVersion(Display *dpy)
+{
+  int major, minor;
+  Bool result; 
+  result = glXQueryVersion (dpy, &major, &minor);
+  if (result == False)
+    return -1;
+  return minor;
+}
 
 #endif

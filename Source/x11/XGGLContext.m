@@ -188,7 +188,11 @@ static XGGLContext *currentGLContext;
 {
   MAKE_DISPLAY(dpy);
 
-  glXMakeContextCurrent(dpy, None, None, NULL);
+  if (GSglxMinorVersion (dpy) >= 3)
+    glXMakeContextCurrent(dpy, None, None, NULL);
+  else
+    glXMakeCurrent(dpy, None, NULL);
+
   currentGLContext = nil;
 }
 
@@ -271,8 +275,13 @@ static XGGLContext *currentGLContext;
       MAKE_DISPLAY(dpy);
       ASSIGN(format, (XGGLPixelFormat *)_format);
       //FIXME: allow index mode and sharing
-      glx_context = glXCreateNewContext(dpy, format->conf_tab[0], 
-					GLX_RGBA_TYPE, NULL, YES);
+
+      if (GSglxMinorVersion (dpy) >= 3)
+	glx_context = glXCreateNewContext(dpy, format->conf.tab[0], 
+					  GLX_RGBA_TYPE, NULL, YES);
+      else
+	glx_context = glXCreateContext(dpy, format->conf.visual, 0, GL_TRUE);
+
       return self;
     }
   else
@@ -307,9 +316,18 @@ static XGGLContext *currentGLContext;
   NSAssert(glx_context != None && glx_drawable != None,
 	   NSInternalInconsistencyException);
 
-  NSDebugMLLog(@"GLX", @"before glXMakeContextCurrent");
-  glXMakeContextCurrent(dpy, glx_drawable, glx_drawable, glx_context);
-  NSDebugMLLog(@"GLX", @"after glXMakeContextCurrent");
+  if (GSglxMinorVersion (dpy) >= 3)
+    {
+      NSDebugMLLog(@"GLX", @"before glXMakeContextCurrent");
+      glXMakeContextCurrent(dpy, glx_drawable, glx_drawable, glx_context);
+      NSDebugMLLog(@"GLX", @"after glXMakeContextCurrent");
+    }
+  else
+    {
+      NSDebugMLLog(@"GLX", @"before glXMakeCurrent");
+      glXMakeCurrent(dpy, glx_drawable, glx_context);
+      NSDebugMLLog(@"GLX", @"after glXMakeCurrent");
+    }
 
 //   NSAssert(glx_context != None,   NSInternalInconsistencyException);
 
