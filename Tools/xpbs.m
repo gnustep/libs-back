@@ -986,9 +986,10 @@ xErrorHandler(Display *d, XErrorEvent *e)
 					     XCompoundTextStyle, &textProperty);
 	  if (status == Success)
 	    {
+	      NSAssert(textProperty.format == 8, @"textProperty.format == 8");
 	      numItems = textProperty.nitems;
-	      data = malloc(numItems);
-	      memcpy(data, textProperty.value, 1);      
+	      data = malloc(numItems + 1);
+	      memcpy(data, textProperty.value, numItems + 1);
 	      XFree((void *)textProperty.value);
 	    }
 	}
