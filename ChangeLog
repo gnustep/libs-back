@@ -1,3 +1,9 @@
+2002-05-02  Adam Fedor  <fedor@gnu.org>
+
+	* configure.ac: Updated to autoconf 2.53 from configure.in
+	* configure, config.h.in: Regenerate.
+	* acconfig.h: Remove
+
 2002-05-01  Adam Fedor  <fedor@gnu.org>
 
 	* config.make.in: Add newline at end - causes Solaris sed to barf.
