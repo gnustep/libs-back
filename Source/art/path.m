@@ -912,6 +912,7 @@ static void clip_svp_callback(void *data, int y, int start,
   /* optimize axis- and pixel-aligned rectangles */
   {
     unsigned char *dst = CLIP_DATA;
+    unsigned char *dsta = wi->alpha + clip_x0 + clip_y0 * wi->sx;
     render_run_t ri;
 
     x0 -= clip_x0;
@@ -919,7 +920,10 @@ static void clip_svp_callback(void *data, int y, int start,
     if (x0 <= 0)
       x0 = 0;
     else
-      dst += x0 * DI.bytes_per_pixel;
+      {
+	dst += x0 * DI.bytes_per_pixel;
+	dsta += x0;
+      }
     if (x1 > clip_sx) x1 = clip_sx;
 
     x1 -= x0;
@@ -931,7 +935,10 @@ static void clip_svp_callback(void *data, int y, int start,
     if (y0 <= 0)
       y0 = 0;
     else
-      dst += y0 * wi->bytes_per_line;
+      {
+	dst += y0 * wi->bytes_per_line;
+	dsta += y0 * wi->sx;
+      }
     if (y1 > clip_sy) y1 = clip_sy;
 
     if (y1 <= y0)
@@ -944,7 +951,7 @@ static void clip_svp_callback(void *data, int y, int start,
     ri.a = fill_color[3];
     if (wi->has_alpha)
       {
-	ri.dsta = wi->alpha + x0 + y0 * wi->sx;
+	ri.dsta = dsta;
 
 	if (fill_color[3] == 255)
 	  {

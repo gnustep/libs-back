@@ -373,7 +373,7 @@ if necessary. Returns new operation, or -1 it it's a noop. */
       if (sy == y0)
 	{ /* TODO: pure horizontal, not handled properly in all
 	     cases */
-	  if ((sx >= x0 && sx <= x0 + x1) || (x0 >= sx && x0 <= x0 + x1))
+	  if ((sx >= x0 && sx <= x0 + x1) || (x0 >= sx && x0 <= sx + x1))
 	    order = 2;
 	}
     }
@@ -424,25 +424,21 @@ if necessary. Returns new operation, or -1 it it's a noop. */
   if (order == 2)
     {
       unsigned char tmpbuf[x1 * DI.bytes_per_pixel];
+      unsigned char tmpbufa[x1];
       int y;
       composite_run_t c;
 
       c.dst = dst;
       c.dsta = dst_alpha;
-      c.src = src;
-      c.srca = src_alpha;
-      for (y = 0; y < y1; y++, c.dst += dbpl, c.src += sbpl)
+      c.src = tmpbuf;
+      c.srca = tmpbufa;
+      for (y = 0; y < y1; y++, c.dst += dbpl, src += sbpl)
 	{
-	  /* don't need to copy alpha since it is either
-	     separate and won't be written to or part of the
-	     data */
-	  /* TODO: this only holds if there's no destination
-	     alpha, which is no longer true. ignore for now; why
-	     would someone sourceover something on itself? */
-	  /* TODO: this looks broken. where is tmpbuf used? */
 	  memcpy(tmpbuf, src, x1 * DI.bytes_per_pixel);
+	  if (ags->wi->has_alpha)
+	    memcpy(tmpbufa, src_alpha, x1);
 	  blit_func(&c, x1);
-	  c.srca += asbpl;
+	  src_alpha += asbpl;
 	  c.dsta += adbpl;
 	}
     }
