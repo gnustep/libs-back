@@ -34,9 +34,9 @@
 + (void) initializeBackend;
 @end
 
-#if BUILD_SERVER == x11
+#if BUILD_SERVER == SERVER_x11
 #include <x11/XGServer.h>
-#elif BUILD_SERVER == win32
+#elif BUILD_SERVER == SERVER_win32
 #include <win32/WIN32Server.h>
 #endif
 
@@ -52,9 +52,9 @@
   NSUserDefaults *defs = [NSUserDefaults standardUserDefaults];
 
   /* Load in only one server */
-#if BUILD_SERVER == x11
+#if BUILD_SERVER == SERVER_x11
   [XGServer initializeBackend];
-#elif BUILD_SERVER == win32
+#elif BUILD_SERVER == SERVER_win32
   [WIN32Server initializeBackend];
 #else
   [NSException raise: NSInternalInconsistencyException

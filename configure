@@ -5301,7 +5301,7 @@ echo $ECHO_N "checking Backend Server... $ECHO_C" >&6
 
 
 cat >>confdefs.h <<_ACEOF
-#define BUILD_SERVER $BUILD_SERVER
+#define BUILD_SERVER SERVER_$BUILD_SERVER
 _ACEOF
 
 echo "$as_me:$LINENO: result: $BUILD_SERVER" >&5
@@ -5324,6 +5324,9 @@ elif test x"$BUILD_GRAPHICS" = "xart"; then
   BUILD_ART=yes
   GRAPHIC_LIBS="$LIBART_LIBS $GRAPHIC_LIBS"
 fi
+
+
+
 
 #--------------------------------------------------------------------
 # Set the name of the backend

@@ -407,7 +407,7 @@ BUILD_SERVER=$enable_server
 BUILD_GRAPHICS="$enable_graphics"
 AC_MSG_CHECKING(Backend Server)
 AC_SUBST(BUILD_SERVER)
-AC_DEFINE_UNQUOTED(BUILD_SERVER,$BUILD_SERVER,
+AC_DEFINE_UNQUOTED(BUILD_SERVER,SERVER_$BUILD_SERVER,
 	[Define to type of window server to build])
 AC_MSG_RESULT($BUILD_SERVER)
 
@@ -423,6 +423,11 @@ elif test x"$BUILD_GRAPHICS" = "xart"; then
   BUILD_ART=yes
   GRAPHIC_LIBS="$LIBART_LIBS $GRAPHIC_LIBS"
 fi
+
+AH_TOP([
+#define SERVER_x11   1
+#define SERVER_win32 2
+])
 
 #--------------------------------------------------------------------
 # Set the name of the backend
