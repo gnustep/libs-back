@@ -1,3 +1,10 @@
+2003-03-01  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m
+	In [setupAttributes] moved the call to open the XFT font further
+	to the back as Derek Zhou claims that this takes over the
+	ownership of the pattern, which then results in strange behaviour.
+	
 2003-02-27  Fred Kiefer <FredKiefer@gmx.de>
 
 	* configure.ac
