@@ -1,3 +1,9 @@
+2004-01-10  Adam Fedor  <fedor@gnu.org>
+
+	* Source/x11/XGServerWindow.m ([XGServer -orderwindow:::]): 
+	When orderWin == 0, make sure the window does not go in front
+	of the current key window.
+
 2004-01-10 16:25  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/blit.m: Replace uses DI_16_B5G5R5A1 and DI_16_B5G6R5
