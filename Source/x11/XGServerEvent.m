@@ -74,7 +74,11 @@ static unsigned int _num_lock_mask;
 static char _control_pressed = 0;
 static char _command_pressed = 0;
 static char _alt_pressed = 0;
-// Keys used for the modifiers (you may set them with user preferences)
+/*
+Keys used for the modifiers (you may set them with user preferences).
+Note that the first and second key code for a modifier must be different.
+Otherwise, the _*_pressed tracking will be confused.
+*/
 static KeyCode _control_keycodes[2];
 static KeyCode _command_keycodes[2];
 static KeyCode _alt_keycodes[2];
@@ -955,38 +959,38 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	case KeymapNotify:
 	  NSDebugLLog(@"NSEvent", @"%d KeymapNotify\n",
 		      xEvent.xkeymap.window);
-	  // Check if control is pressed 
+	  // Check if control is pressed
 	  _control_pressed = 0;
-	  if (_control_keycodes[0] 
+	  if (_control_keycodes[0]
 	      && check_modifier (&xEvent, _control_keycodes[0]))
 	    {
 	      _control_pressed |= 1;
 	    }
-	  if (_control_keycodes[1] 
+	  if (_control_keycodes[1]
 	      && check_modifier (&xEvent, _control_keycodes[1]))
 	    {
 	      _control_pressed |= 2;
 	    }
 	  // Check if command is pressed
 	  _command_pressed = 0;
-	  if (_command_keycodes[0] 
+	  if (_command_keycodes[0]
 	      && check_modifier (&xEvent, _command_keycodes[0]))
 	    {
 	      _command_pressed |= 1;
 	    }
-	  if (_command_keycodes[1] 
+	  if (_command_keycodes[1]
 	      && check_modifier (&xEvent, _command_keycodes[1]))
 	    {
-	      _command_pressed = 2;
+	      _command_pressed |= 2;
 	    }
 	  // Check if alt is pressed
 	  _alt_pressed = 0;
-	  if (_alt_keycodes[0] 
+	  if (_alt_keycodes[0]
 	      && check_modifier (&xEvent, _alt_keycodes[0]))
 	    {
 	      _alt_pressed |= 1;
 	    }
-	  if (_alt_keycodes[1] 
+	  if (_alt_keycodes[1]
 	      && check_modifier (&xEvent, _alt_keycodes[1]))
 	    {
 	      _alt_pressed |= 2;
@@ -1111,8 +1115,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	    deltaX = - eventLocation.x;
 	    deltaY = - eventLocation.y;
 	    eventLocation = NSMakePoint(xEvent.xmotion.x,
-					NSHeight(cWin->xframe) 
-- xEvent.xmotion.y);
+					NSHeight(cWin->xframe) - xEvent.xmotion.y);
 	    deltaX += eventLocation.x;
 	    deltaY += eventLocation.y;
 
@@ -1367,6 +1370,9 @@ initialize_keyboard (void)
   if (_control_keycodes[1] == 1) 
     _control_keycodes[1] = XKeysymToKeycode (display, XK_Control_R);
 
+  if (_control_keycodes[0] == _control_keycodes[1])
+    _control_keycodes[1] = 0;
+
   // Initialize Command
   _command_keycodes[0] = default_key_code (display, defaults, 
 					      @"GSFirstCommandKey");
@@ -1377,6 +1383,9 @@ initialize_keyboard (void)
 					   @"GSSecondCommandKey");
   if (_command_keycodes[1] == 1) 
     _command_keycodes[1] = 0;  
+
+  if (_command_keycodes[0] == _command_keycodes[1])
+    _command_keycodes[1] = 0;
 
   // Initialize Alt
   _alt_keycodes[0] = default_key_code (display, defaults, 
@@ -1391,6 +1400,10 @@ initialize_keyboard (void)
 				       @"GSSecondAlternateKey");
   if (_alt_keycodes[1] == 1) 
     _alt_keycodes[1] = 0;  
+
+  if (_alt_keycodes[0] == _alt_keycodes[1])
+    _alt_keycodes[1] = 0;
+
   
   set_up_num_lock ();
   
@@ -1763,6 +1776,7 @@ process_modifier_flags(unsigned int state)
 
   return eventModifierFlags;
 }
+
 
 - (NSDate*) timedOutEvent: (void*)data
                      type: (RunLoopEventType)type
