@@ -1,3 +1,7 @@
+2002-09-01  Adam Fedor  <fedor@gnu.org>
+
+	* Version: 0.8.1
+
 2002-09-01 12:58  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/ARTContext.m ([ARTGState -GSCurrentDevice:::]): Check
