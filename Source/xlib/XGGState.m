@@ -143,19 +143,15 @@ static	Region	emptyRegion;
   return self;
 }
 
-- (void) setWindow: (int)number;
+- (void) setWindowDevice: (void *)device
 {
   gswindow_device_t *gs_win;
 
-  window = number;
+  gs_win = (gswindow_device_t *)windevice = device;
+  draw = GET_XDRAWABLE(gs_win);
+  [self setGraphicContext: gs_win->gc];
   alpha_buffer = 0;
   drawingAlpha = NO;
-  gs_win = [XGServer _windowWithTag: window];
-  if (gs_win == NULL)
-    {
-      DPS_ERROR(DPSinvalidid, @"Setting invalid window on gstate");
-      return;
-    }
 
   if (gs_win != NULL && gs_win->alpha_buffer != 0)
     {
@@ -266,16 +262,6 @@ static	Region	emptyRegion;
   return font;
 }
 
-- (void) setOffset: (NSPoint)theOffset
-{
-  offset = theOffset;
-}
-
-- (NSPoint) offset
-{
-  return offset;
-}
-
 - (void) copyGraphicContext
 {
   GC source;
@@ -339,9 +325,9 @@ static	Region	emptyRegion;
   return (draw ? YES : NO);
 }
 
-- (int) window
+- (void *) windevice
 {
-  return window;
+  return windevice;
 }
 
 - (Drawable) drawable
@@ -439,7 +425,7 @@ static	Region	emptyRegion;
   if (!source)
     source = self;
   
-  source_win = [XGServer _windowWithTag: source->window];
+  source_win = (gswindow_device_t *)source->windevice;
   if (!source_win)
     {
       DPS_ERROR(DPSinvalidid, @"Invalid composite source gstate");
@@ -456,7 +442,7 @@ static	Region	emptyRegion;
 
   // --- get destination information ----------------------------------------------
 
-  dest_win = [XGServer _windowWithTag: window];
+  dest_win = (gswindow_device_t *)windevice;
   if (!dest_win)
     {
       DPS_ERROR(DPSinvalidid, @"Invalid composite gstate");
@@ -596,7 +582,7 @@ static	Region	emptyRegion;
 #define CHECK_ALPHA						\
   do {								\
     gswindow_device_t *source_win;				\
-    source_win = [XGServer _windowWithTag: [(XGGState *)source window]];	\
+    source_win = (gswindow_device_t *)[(XGGState *)source windevice];	\
     source_alpha = (source_win && source_win->alpha_buffer);	\
   } while (0)
 
@@ -1231,7 +1217,7 @@ static	Region	emptyRegion;
 {
   gswindow_device_t *gs_win;
   color.field[AINDEX] = a;
-  gs_win = [XGServer _windowWithTag: window];
+  gs_win = (gswindow_device_t *)windevice;
   if (!gs_win)
     return;
   if (a < 1.0)
@@ -1757,7 +1743,7 @@ typedef enum {
     }
 
   // --- Get our drawable info -----------------------------------------
-  dest_win = [XGServer _windowWithTag: window];
+  dest_win = (gswindow_device_t *)windevice;
   if (!dest_win)
     {
       DPS_ERROR(DPSinvalidid, @"Invalid image gstate");

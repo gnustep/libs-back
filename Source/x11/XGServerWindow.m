@@ -844,7 +844,8 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
    only done if the Window is buffered or retained. */
 - (void) _createBuffer: (gswindow_device_t *)window
 {
-  if (window->type == NSBackingStoreNonretained)
+  if (window->type == NSBackingStoreNonretained
+      || (window->gdriverProtocol & GDriverHandlesBacking))
     return;
 
   if (window->depth == 0)
@@ -1059,9 +1060,10 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       NSMapRemove(windowmaps, (void*)window->ident);
     }
 
-  if (window->buffer)
+  if (window->buffer && (window->gdriverProtocol & GDriverHandlesBacking) == 0)
     XFreePixmap (XDPY, window->buffer);
-  if (window->alpha_buffer)
+  if (window->alpha_buffer 
+      && (window->gdriverProtocol & GDriverHandlesBacking) == 0)
     XFreePixmap (XDPY, window->alpha_buffer);
   if (window->region)
     XDestroyRegion (window->region);
@@ -1207,6 +1209,12 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
     return;
 
   NSDebugLLog(@"XGTrace", @"DPSwindowbacking: %@ : %d", type, win);
+
+  if ((window->gdriverProtocol & GDriverHandlesBacking))
+    {
+      window->type = type;
+      return;
+    }
 
   if (window->buffer && type == NSBackingStoreNonretained)
     {
@@ -1360,13 +1368,14 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 	        window->xframe.origin.x,  window->xframe.origin.y, 
 	        window->xframe.size.width,  window->xframe.size.height);
   
-  if (window->buffer && (old_width != width || old_height != height))
+  if (window->buffer && (old_width != width || old_height != height)
+      && (window->gdriverProtocol & GDriverHandlesBacking) == 0)
     {
       [isa waitAllContexts];
       XFreePixmap(XDPY, window->buffer);
       window->buffer = 0;
       if (window->alpha_buffer)
-	XFreePixmap(XDPY, window->alpha_buffer);
+	XFreePixmap (XDPY, window->alpha_buffer);
       window->alpha_buffer = 0;
     }
 
@@ -1376,11 +1385,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
     }
 
   ctxt = GSCurrentContext();
-  [ctxt contextDevice: window->number];
-  DPSsetgcdrawable(ctxt, window->gc, 
-		   (window->buffer) 
-		   ? (void *)window->buffer : (void *)window->ident,
-		   0, NSHeight(window->xframe));
+  GSSetDevice(ctxt, window, 0, NSHeight(window->xframe));
   DPSinitmatrix(ctxt);
   DPSinitclip(ctxt);
 }
@@ -1973,9 +1978,18 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       valuemask = (GCFunction | GCPlaneMask | GCClipMask | GCForeground);
       XChangeGC(XDPY, window->gc, valuemask, &values);
       [isa waitAllContexts];
-      XCopyArea (XDPY, window->buffer, window->ident, window->gc,
-		 rectangle.x, rectangle.y, rectangle.width, rectangle.height,
-		 rectangle.x, rectangle.y);
+      if ((window->gdriverProtocol & GDriverHandlesExpose))
+	{
+	  /* Temporary protocol until we standardize the backing buffer */
+	  NSRect rect = NSMakeRect(rectangle.x, rectangle.y, 
+				   rectangle.width, rectangle.height);
+	  [NSGraphicsContext handleExposeRect: rect
+			     forDriver: window->gdriver];
+	}
+      else
+	XCopyArea (XDPY, window->buffer, window->ident, window->gc,
+		   rectangle.x, rectangle.y, rectangle.width, rectangle.height,
+		   rectangle.x, rectangle.y);
     }
   else
     {
@@ -2039,8 +2053,15 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   if (width > 0 || height > 0)
     {
       [isa waitAllContexts];
-      XCopyArea (XDPY, window->buffer, window->ident, window->gc, 
-		 xi, yi, width, height, xi, yi);
+      if ((window->gdriverProtocol & GDriverHandlesBacking))
+	{
+	  /* Temporary protocol until we standardize the backing buffer */
+	  [NSGraphicsContext handleExposeRect: rect
+			     forDriver: window->gdriver];
+	}
+	else
+	  XCopyArea (XDPY, window->buffer, window->ident, window->gc, 
+		     xi, yi, width, height, xi, yi);
     }
 
   XFlush(XDPY);

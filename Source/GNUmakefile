@@ -42,17 +42,17 @@ endif
 # The list of subproject directories
 #
 SUBPROJECTS = gsc
-ifneq ($(BUILD_XLIB),)
-SUBPROJECTS += xlib
-endif
-ifneq ($(BUILD_XDPS),)
-SUBPROJECTS += xdps
-endif
 ifneq ($(BUILD_X11),)
 SUBPROJECTS += x11
 endif
 ifneq ($(BUILD_WIN32),)
 SUBPROJECTS += win32
+endif
+ifneq ($(BUILD_XLIB),)
+SUBPROJECTS += xlib
+endif
+ifneq ($(BUILD_XDPS),)
+SUBPROJECTS += xdps
 endif
 ifneq ($(BUILD_WINLIB),)
 SUBPROJECTS += winlib

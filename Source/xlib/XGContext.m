@@ -156,13 +156,6 @@
   XBell([(XGServer *)server xDisplay], 50);
 }
 
-/* Private backend methods */
-- (void) contextDevice: (int)num
-{
-  [(XGGState *)gstate setWindow: num];
-}
-
-
 @end
 
 @implementation XGContext (Ops)
@@ -170,13 +163,11 @@
 /* ----------------------------------------------------------------------- */
 /* Window system ops */
 /* ----------------------------------------------------------------------- */
-- (void) DPScurrentgcdrawable: (void **)gc : (void **)draw 
-			     : (int *)x : (int *)y
+- (void) GSCurrentDevice: (void **)device : (int *)x : (int *)y
 {
-  if (gc)
-    *gc = (void *)[(XGGState *)gstate graphicContext];
-  if (draw)
-    *draw = (void *)[(XGGState *)gstate drawable];
+  void *windevice = [(XGGState *)gstate windevice];
+  if (device)
+    *device =  windevice;
   if (x && y)
     {
       NSPoint offset = [gstate offset];
@@ -185,10 +176,9 @@
     }
 }
 
-- (void) DPSsetgcdrawable: (void *)gc : (void *)draw : (int)x : (int)y
+- (void) GSSetDevice: (void *)device : (int)x : (int)y
 {
-  [(XGGState *)gstate setGraphicContext: (GC)gc];
-  [(XGGState *)gstate setDrawable: (Drawable)draw];
+  [(XGGState *)gstate setWindowDevice: device];
   [gstate setOffset: NSMakePoint(x, y)];
 }
 
