@@ -9,7 +9,14 @@
 
 @section Noteworthy changes in version @samp{0.7.7}
 
-First release. Most components extracted from xgps.
+First release. Most components extracted from xgps. The old backends,
+xgps and xdps were depreciated in favor of this new backend, simply named
+back, which can be configured for a variety of window server and
+graphics implementations, and also allow for improved code sharing.
+
+In addition there is now a window server backend for Windows computers, 
+although it is in a very alpha state.
+
 
 @c ====================================================================
 @c Keep the next line just below the list of changes in most recent version.
