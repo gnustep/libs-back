@@ -1,3 +1,9 @@
+2003-06-30 18:11  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/xlib/XGFont.m (-xCharStructForGlyph:):	Don't try to treat
+	NSGlyph pointers as unichar pointers; break on non-little-endian
+	systems.
+
 2003-06-29 17:34  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m (-initWithFontName:matrix:screenFont:): Round
