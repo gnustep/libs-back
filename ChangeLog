@@ -1,3 +1,8 @@
+2005-02-12  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m  (-setalpha::): Support for window
+	alpha handling on X servers that implement this.
+
 2005-02-12 13:58  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Headers/x11/XGServerWindow.h: Make the border and depth ivars
