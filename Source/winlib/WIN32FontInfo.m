@@ -53,7 +53,11 @@
 
 - (void) dealloc
 {
-
+  if (hFont)
+    {
+      DeleteObject(hFont);
+      hFont = NULL;
+    }
   [super dealloc];
 }
 
@@ -61,9 +65,12 @@
 {
   SIZE size;
   HDC hdc;
+  HFONT old;
 
   hdc = GetDC(NULL);
+  old = SelectObject(hdc, hFont);
   GetTextExtentPoint32(hdc, s, len, &size);
+  SelectObject(hdc, old);
   ReleaseDC(NULL, hdc);
 
   return size.cx;
@@ -90,10 +97,13 @@
   HDC hdc;
   float w;
   ABCFLOAT abc;
+  HFONT old;
 
   hdc = GetDC(NULL);
+  old = SelectObject(hdc, hFont);
   //GetCharWidthFloat(hdc, glyph, glyph, &w);
   GetCharABCWidthsFloat(hdc, glyph, glyph, &abc);
+  SelectObject(hdc, old);
   ReleaseDC(NULL, hdc);
 
   //NSLog(@"Width for %d is %f or %f", glyph, w, (abc.abcfA + abc.abcfB + abc.abcfC));
@@ -103,7 +113,30 @@
 
 - (NSRect) boundingRectForGlyph: (NSGlyph)glyph
 {
-  return NSMakeRect(0, 0, 0, 0);
+  HDC hdc;
+  HFONT old;
+  GLYPHMETRICS gm;
+  NSRect rect;
+
+  hdc = GetDC(NULL);
+  old = SelectObject(hdc, hFont);
+  if (GDI_ERROR != GetGlyphOutline(hdc, glyph, 
+				   GGO_METRICS, // || GGO_GLYPH_INDEX
+				   &gm, 0, NULL, NULL))
+    {
+      rect = NSMakeRect(gm.gmptGlyphOrigin.x, 
+			gm.gmptGlyphOrigin.y - gm.gmBlackBoxY,
+			gm.gmCellIncX, gm.gmCellIncY);
+    }
+  else
+    {
+      rect  = NSMakeRect(0, 0, 0, 0);
+    }
+
+  SelectObject(hdc, old);
+  ReleaseDC(NULL, hdc);
+
+  return rect;
 }
 
 - (BOOL) glyphIsEncoded: (NSGlyph)glyph
@@ -131,7 +164,11 @@
 - (void) draw:(const char*)s lenght: (int)len 
 	 onDC: (HDC)hdc at: (POINT)p
 {
+  HFONT old;
+
+  old = SelectObject(hdc, hFont);
   TextOut(hdc, p.x, p.y - ascender, s, len); 
+  SelectObject(hdc, old);
 }
 
 @end
@@ -142,9 +179,37 @@
 {
   HDC hdc;
   TEXTMETRIC metric;
+  HFONT old;
+  LOGFONT logfont;
+  NSString *weightString;
+  NSRange range;
+
+  //NSLog(@"Creating Font %@ of size %f", fontName, matrix[0]);
+  memset(&logfont, 0, sizeof(LOGFONT));
+  // FIXME This hack gets the font size about right, but what is the real solution?
+  logfont.lfHeight = (int)(matrix[0] * 4 / 3);
+
+  range = [fontName rangeOfString: @"Bold"];
+  if (range.length)
+    logfont.lfWeight = FW_BOLD;
+
+  range = [fontName rangeOfString: @"Italic"];
+  if (range.length)
+    logfont.lfItalic = 1; 
+
+  logfont.lfQuality = ANTIALIASED_QUALITY;
+  strncpy(logfont.lfFaceName, [fontName cString], LF_FACESIZE);
+  hFont = CreateFontIndirect(&logfont);
+  if (!hFont)
+    {
+      NSLog(@"Could not create font %@", fontName);
+      return NO;
+    }
 
   hdc = GetDC(NULL);
+  old = SelectObject(hdc, hFont);
   GetTextMetrics(hdc, &metric);
+  SelectObject(hdc, old);
   ReleaseDC(NULL, hdc);
 
   // Fill the afmDitionary and ivars
@@ -154,6 +219,7 @@
   isFixedPitch = TMPF_FIXED_PITCH & metric.tmPitchAndFamily;
   isBaseFont = NO;
   ascender = metric.tmAscent;
+  //NSLog(@"Resulted in height %d and ascent %d", metric.tmHeight, metric.tmAscent);
   [fontDictionary setObject: [NSNumber numberWithFloat: ascender] 
 		  forKey: NSAFMAscender];
   descender = -metric.tmDescent;
@@ -164,6 +230,58 @@
 			(float)(0 - metric.tmAscent),
 			(float)metric.tmMaxCharWidth,
 			(float)metric.tmHeight);
+
+  // The MS names are a bit different from the NS ones!
+  switch (metric.tmWeight)
+    {
+      case FW_THIN:
+	weight = 1;
+	break;
+      case FW_EXTRALIGHT:
+	weight = 2;
+	break;
+      case FW_LIGHT:
+	weight = 3;
+	break;
+      case FW_REGULAR:
+	weight = 5;
+	break;
+      case FW_MEDIUM:
+	weight = 6;
+	break;
+      case FW_DEMIBOLD:
+	weight = 7;
+	break;
+      case FW_BOLD:
+	weight = 9;
+	break;
+      case FW_EXTRABOLD:
+	weight = 10;
+	break;
+      case FW_BLACK:
+	weight = 12;
+	break;
+    default:
+	// Try to map the range 0 to 1000 into 1 to 14.
+	weight = (int)(metric.tmWeight * 14 / 1000);
+	break;
+    }
+
+  if (weight >= 9)
+    traits |= NSBoldFontMask;
+  else
+    traits |= NSUnboldFontMask;
+
+  if (metric.tmItalic)
+    traits |= NSItalicFontMask;
+  else
+    traits |= NSUnitalicFontMask;
+
+  weightString = [GSFontInfo stringForWeight: weight];
+  if (weightString != nil)
+    {
+      [fontDictionary setObject: weightString forKey: NSAFMWeight];
+    }
 
   // Should come from metric.tmCharSet
   mostCompatibleStringEncoding = NSISOLatin1StringEncoding;
