@@ -1105,7 +1105,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 	      || (style & NSMiniaturizableWindowMask))
 	    {
 	      *t = generic.parent_offset.y;
-	      }
+	    }
 	}
     }
   else if ((generic.wm & XGWM_WINDOWMAKER) != 0)
@@ -1126,7 +1126,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 	      || (style & NSMiniaturizableWindowMask))
 	    {
 	      *t = 22;
-	      }
+	    }
 	}
     }
   else if ((generic.wm & XGWM_EWMH) != 0)
@@ -1147,7 +1147,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 	      || (style & NSMiniaturizableWindowMask))
 	    {
 	      *t = 20;
-	      }
+	    }
 	}
     }
   else
