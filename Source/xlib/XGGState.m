@@ -1715,13 +1715,16 @@ typedef enum {
   /* get the colour space */
   if (colorSpaceName)
     {
-      if ([colorSpaceName isEqualToString: NSDeviceRGBColorSpace])
+      if ([colorSpaceName isEqualToString: NSDeviceRGBColorSpace] ||
+	  [colorSpaceName isEqualToString: NSCalibratedRGBColorSpace])
 	cspace = rgb_colorspace;
       else if([colorSpaceName isEqualToString: NSDeviceCMYKColorSpace])
 	cspace = cmyk_colorspace;
-      else if([colorSpaceName isEqualToString: NSDeviceWhiteColorSpace])
+      else if([colorSpaceName isEqualToString: NSDeviceWhiteColorSpace] ||
+	      [colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace])
 	cspace = gray_colorspace;
-      else if([colorSpaceName isEqualToString: NSDeviceBlackColorSpace]) 
+      else if([colorSpaceName isEqualToString: NSDeviceBlackColorSpace] ||
+	      [colorSpaceName isEqualToString: NSCalibratedBlackColorSpace])
         {
 	  cspace = gray_colorspace;
 	  one_is_black = YES;

@@ -1,3 +1,8 @@
+2004-02-08 23:20  Gregory John Casamento <greg_casamento@yahoo.com>
+
+	* Source/xlib/XGGState.m: Added necessary calibrated
+	colorspaces to the DPSimage: method.
+	
 2004-02-04 01:48  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/x11/XGServerEvent.m: Remove uses of the now deprecated
