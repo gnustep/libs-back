@@ -155,21 +155,22 @@ static int use_shape_hack = 0; /* this is an ugly hack :) */
 
 	  if (!wi->shminfo.shmid == -1)
 	    NSLog(@"shmget() failed"); /* TODO */
-/*				printf("shminfo.shmid=%08x  %i bytes (%ix%i)\n",
-					wi->shminfo.shmid, wi->ximage->bytes_per_line * wi->ximage->height,
-					wi->ximage->width, wi->ximage->height);*/
 	  wi->shminfo.shmaddr = wi->ximage->data = shmat(wi->shminfo.shmid, 0, 0);
+
+	  wi->shminfo.readOnly = 1;
+	  if (!XShmAttach(wi->display, &wi->shminfo))
+	    NSLog(@"XShmAttach() failed");
+
+	  /* On some systems (eg. freebsd), X can't attach to the shared
+	  segment if it's marked for destruction, so we make sure it's
+	  attached before marking it. */
+	  XSync(wi->display,False);
 
 	  /* Mark the segment as destroyed now. Since we're
 	     attached, it won't actually be destroyed, but if we
 	     crashed before doing this, it wouldn't be destroyed
 	     despite nobody being attached anymore. */
 	  shmctl(wi->shminfo.shmid, IPC_RMID, 0);
-
-//			printf("addr=%p\n", wi->shminfo.shmaddr);
-	  wi->shminfo.readOnly = 1;
-	  if (!XShmAttach(wi->display, &wi->shminfo))
-	    NSLog(@"XShmAttach() failed");
 	}
       else
 	{
