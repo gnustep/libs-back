@@ -1039,9 +1039,13 @@ NSMutableDictionary	*pasteboards = nil;
       [permenant addObject: [self pasteboardWithName: NSFindPboard]];
 
       /*
-       * Ensure that the X pasteboard system is initialised.
+       * Ensure that the OS pasteboard system is initialised.
        */
+#if defined(__WIN32__) || defined(__CYGWIN__)
+      xPbClass = NSClassFromString(@"Win32PbOwner");
+#else      
       xPbClass = NSClassFromString(@"XPbOwner");
+#endif
       [xPbClass class];
     }
   return self;
