@@ -107,13 +107,12 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 }
 
 - (void) copyBits: (WIN32GState*)source fromRect: (NSRect)aRect 
-				      toPoint: (NSPoint)aPoint
+	  toPoint: (NSPoint)aPoint
 {
   HDC otherDC;
   HDC hdc;
   POINT p;
   RECT rect;
-  WINBOOL result;
   int h;
   int y1;
 
@@ -130,14 +129,15 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   otherDC = [source getHDC];
   hdc = [self getHDC];
     
-  //NSLog(@"Copy Bits to %d %d from %d %d size %d %d", p.x , y1, rect.left, rect.top, 
-  //	(rect.right - rect.left), h);
-  result = BitBlt(hdc, p.x, y1, (rect.right - rect.left), h, 
-		  otherDC, rect.left, rect.top, SRCCOPY);
-  if (!result)
-    NSLog(@"Copy bitmap failed %d", GetLastError());
-  [source releaseHDC: otherDC]; 
+  if (!BitBlt(hdc, p.x, y1, (rect.right - rect.left), h, 
+	      otherDC, rect.left, rect.top, SRCCOPY))
+    {
+      NSLog(@"Copy Bits to %d %d from %d %d size %d %d", p.x , y1, rect.left, rect.top, 
+	    (rect.right - rect.left), h);
+      NSLog(@"Copy bitmap failed %d", GetLastError());
+    }
   [self releaseHDC: hdc];
+  [source releaseHDC: otherDC]; 
 }
 
 - (void) compositeGState: (GSGState *)source 
@@ -242,6 +242,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
     {
       HBITMAP hbitmap;
       BITMAP bitmap;
+      HGDIOBJ old;
       HDC hdc2;
       POINT p;
       int h;
@@ -257,15 +258,16 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
       bitmap.bmBits = (LPVOID)data;
 
       h = pixelsHigh;
-      //NSLog(@"DPSimage with %d %d %d %d to %d, %d", pixelsWide, pixelsHigh, 
-      //    bytesPerRow, bitsPerPixel, p.x, p.y - h);
       hbitmap = CreateBitmapIndirect(&bitmap);
       if (!hbitmap)
 	NSLog(@"Created bitmap failed %d", GetLastError());
 
+      if (window == NULL)
+	NSLog(@"No window in DPSImage");
+
       hdc = GetDC((HWND)window);
       hdc2 = CreateCompatibleDC(hdc); 
-      SelectObject(hdc2, hbitmap);
+      old = SelectObject(hdc2, hbitmap);
       //SetMapMode(hdc2, GetMapMode(hdc));
       ReleaseDC((HWND)window, hdc);
 
@@ -277,8 +279,13 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 
       if (!BitBlt(hdc, p.x, y1, pixelsWide, pixelsHigh,
 		  hdc2, 0, 0, SRCCOPY))
-	NSLog(@"Copy bitmap failed %d", GetLastError());
+	{
+	  NSLog(@"DPSimage with %d %d %d %d to %d, %d", pixelsWide, pixelsHigh, 
+		bytesPerRow, bitsPerPixel, p.x, y1);
+	  NSLog(@"Copy bitmap failed %d", GetLastError());
+	}
 
+      SelectObject(hdc2, old);
       DeleteDC(hdc2);
       DeleteObject(hbitmap);
 
@@ -482,6 +489,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 	    SetPolyFillMode(hdc, ALTERNATE);
 	    region = PathToRegion(hdc);
 	    ExtSelectClipRgn(hdc, region, RGN_COPY);
+	    DeleteObject(clipRegion);
 	    clipRegion = region;
 	    break;
 	  }
@@ -492,6 +500,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 	    SetPolyFillMode(hdc, WINDING);
 	    region = PathToRegion(hdc);
 	    ExtSelectClipRgn(hdc, region, RGN_COPY);
+	    DeleteObject(clipRegion);
 	    clipRegion = region;
 	    break;
 	  }
@@ -543,12 +552,24 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 
   hdc = [self getHDC];
   SelectClipRgn(hdc, NULL);
+  DeleteObject(clipRegion);
   clipRegion = NULL;
   [self releaseHDC: hdc];
 }
 
 - (void)DPSrectfill: (float)x : (float)y : (float)w : (float)h 
 {
+  HDC hdc;
+  HBRUSH brush;
+  RECT rect;
+
+  rect = GSViewRectToWin(self, NSMakeRect(x, y, w, h));
+  hdc = [self getHDC];
+  brush = GetCurrentObject(hdc, OBJ_BRUSH);
+  FillRect(hdc, &rect, brush);
+  [self releaseHDC: hdc];
+
+  /*
   NSPoint origin = [ctm pointInMatrixSpace: NSMakePoint(x, y)];
   NSSize  size = [ctm sizeInMatrixSpace: NSMakeSize(w, h)];
 
@@ -560,6 +581,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   //NSLog(@"Fill rect %@", NSStringFromRect(NSMakeRect(origin.x, origin.y, 
   //					  size.width, size.height)));
   [self DPSfill];
+  */
 }
 
 - (void)DPSrectstroke: (float)x : (float)y : (float)w : (float)h 
@@ -581,7 +603,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 					  size.width, size.height)]);
   //NSLog(@"Stroke rect %@", NSStringFromRect(NSMakeRect(origin.x, origin.y, 
   //					  size.width, size.height)));
-[self DPSstroke];
+  [self DPSstroke];
 }
 
 - (void)DPSrectclip: (float)x : (float)y : (float)w : (float)h 
@@ -589,6 +611,8 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   NSPoint origin = [ctm pointInMatrixSpace: NSMakePoint(x, y)];
   NSSize  size = [ctm sizeInMatrixSpace: NSMakeSize(w, h)];
 
+  size.width++;
+  size.height++;
   if (viewIsFlipped)
     origin.y -= size.height;
   ASSIGN(path, [NSBezierPath bezierPathWithRect: 
@@ -689,7 +713,6 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 
 - (void) setStyle: (HDC)hdc
 {
-  HANDLE old;
   HPEN pen;
   HBRUSH brush;
   LOGBRUSH br; 
@@ -703,8 +726,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   brush = CreateBrushIndirect(&br);
   */
   brush = CreateSolidBrush(color);
-  old = SelectObject(hdc, brush);
-  DeleteObject(old);
+  oldBrush = SelectObject(hdc, brush);
 
   switch (joinStyle)
     {
@@ -753,13 +775,12 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 	}
     }
 
-  pen =  ExtCreatePen(penStyle | join | cap, 
-		      lineWidth,
-		      &br,
-		      0, NULL);
+  pen = ExtCreatePen(penStyle | join | cap, 
+		     lineWidth,
+		     &br,
+		     0, NULL);
 
-  old = SelectObject(hdc, pen);
-  DeleteObject(old);
+  oldPen = SelectObject(hdc, pen);
 
   SetMiterLimit(hdc, miterlimit, NULL);
 
@@ -767,11 +788,28 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   SelectClipRgn(hdc, clipRegion);
 }
 
+- (void) restoreStyle: (HDC)hdc
+{
+  HGDIOBJ old;
+
+  old = SelectObject(hdc, oldBrush);
+  DeleteObject(old);
+
+  old = SelectObject(hdc, oldPen);
+  DeleteObject(old);
+}
+
 - (HDC) getHDC
 {
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)window, GWL_USERDATA);
+  WIN_INTERN *win;
   HDC hdc;
 
+  if (NULL == window)
+    {
+      return NULL;
+    }
+
+  win = (WIN_INTERN *)GetWindowLong((HWND)window, GWL_USERDATA);
   if (win && win->useHDC)
     {
       hdc = win->hdc;
@@ -788,6 +826,11 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 {
   WIN_INTERN *win;
 
+  if (NULL == window)
+    {
+      return;
+    }
+  [self restoreStyle: hdc];
   win = (WIN_INTERN *)GetWindowLong((HWND)window, GWL_USERDATA);
   if (win && !win->useHDC)
     ReleaseDC((HWND)window, hdc);
