@@ -69,16 +69,19 @@
 + (void)initializeBackend
 {
   Class fontClass = Nil;
+  Class fontEnumerator = Nil;
 
   NSDebugLog(@"Initializing GNUstep xlib backend.\n");
 
   [NSGraphicsContext setDefaultContextClass: [XGContext class]];
-  [GSFontEnumerator setDefaultClass: [XGFontEnumerator class]];
 
 #ifdef HAVE_XFT
   if ([[NSUserDefaults standardUserDefaults] boolForKey: @"GSFontAntiAlias"])
     {
       fontClass = [GSXftFontInfo class];
+#ifdef HAVE_FC
+      fontEnumerator = [FcFontEnumerator class];      
+#endif
     }
 #endif
   if (fontClass == Nil)
@@ -86,6 +89,11 @@
       fontClass = [XGFontInfo class];
     }
   [GSFontInfo setDefaultClass: fontClass];
+  if (fontEnumerator == Nil)
+    {
+      fontEnumerator = [XGFontEnumerator class];
+    }
+  [GSFontEnumerator setDefaultClass: fontEnumerator];
 }
 
 - (id) initWithContextInfo: (NSDictionary *)info
