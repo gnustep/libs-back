@@ -7,13 +7,17 @@
 @include version.texi
 @end ifset
 
-@section Noteworthy changes in version @samp{0.8.5}
+@section Noteworthy changes in version @samp{0.8.6}
 
-Text system improvements. See the gnustep-gui NEWS for changes.
+Bug fixes. See the gnustep-gui NEWS for changes.
 
 @c ====================================================================
 @c Keep the next line just below the list of changes in most recent version.
 @ifclear ANNOUNCE-ONLY
+
+@section Noteworthy changes in version @samp{0.8.5}
+
+Text system improvements. See the gnustep-gui NEWS for changes.
 
 @section Noteworthy changes in version @samp{0.8.3}
 
