@@ -29,9 +29,11 @@
 #include <Foundation/NSConnection.h>
 #include <Foundation/NSRunLoop.h>
 #include <Foundation/NSTimer.h>
+#include <Foundation/NSUserDefaults.h>
 #include <AppKit/AppKitExceptions.h>
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSGraphics.h>
+#include <AppKit/NSMenu.h>
 #include <AppKit/NSWindow.h>
 #include <AppKit/NSView.h>
 #include <AppKit/NSEvent.h>
@@ -106,6 +108,8 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 */
 - (id) initWithAttributes: (NSDictionary *)info
 {
+  NSUserDefaults	*defs = [NSUserDefaults standardUserDefaults];
+
   [self _initWin32Context];
   [super initWithAttributes: info];
 
@@ -113,6 +117,14 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   [self setupRunLoopInputSourcesForMode: NSConnectionReplyMode]; 
   [self setupRunLoopInputSourcesForMode: NSModalPanelRunLoopMode]; 
   [self setupRunLoopInputSourcesForMode: NSEventTrackingRunLoopMode]; 
+
+  flags.useWMTaskbar = YES;
+  if ([defs stringForKey: @"GSUseWMTaskbar"] != nil
+    && [defs boolForKey: @"GSUseWMTaskbar"] == NO)
+    {
+      flags.useWMTaskbar = NO;
+    }
+
   return self;
 }
 
@@ -390,9 +402,36 @@ DWORD windowStyleForGSStyle(unsigned int style)
 - (void) orderwindow: (int) op : (int) otherWin : (int) winNum
 {
   NSDebugLLog(@"WTrace", @"orderwindow: %d : %d : %d", op, otherWin, winNum);
+
+  if (flags.useWMTaskBar)
+    {
+      /* When using this policy, we make these changes:
+         - don't show the application icon window
+	 - Never order out the main menu, just minimize it, so that
+	 when the user clicks on it in the taskbar it will activate the
+	 application.
+      */
+      int special;
+      special = [[NSApp iconWindow] windowNumber];
+      if (winNum == special)
+	{
+	  return;
+	}
+      special = [[[NSApp mainMenu] window] windowNumber];
+      if (winNum == special && op == NSWindowOut)
+	{
+	  ShowWindow((HWND)winNum, SW_MINIMIZE); 
+	  return;
+	}
+    }
+
   if (op != NSWindowOut)
     {
-      ShowWindow((HWND)winNum, SW_SHOW); 
+      int flag = SW_SHOW;
+      if (IsIconic((HWND)winNum))
+        flag = SW_RESTORE;
+      ShowWindow((HWND)winNum, flag); 
+      return;
     }
 
   switch (op)

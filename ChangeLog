@@ -1,3 +1,13 @@
+2003-12-26  Adam Fedor  <fedor@gnu.org>
+
+	* Focus fixes.
+	* Headers/win32/WIN32Server.h: Add flags ivar
+	* Source/win32/WIN32Server.m (orderwindow:::): If useWMTaskBar
+	flag set, don't show app icon and don't order out menu window.
+	* Source/win32/WIN32ServerEvent.m (windowEventProc:::): 
+	On activation message, activate app, on deactivation message,
+	deactivate app (if message comes from menu window).
+
 2003-12-25  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/WIN32Server.m (-_initWin32Context) set a default

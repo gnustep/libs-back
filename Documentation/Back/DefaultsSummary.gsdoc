@@ -83,6 +83,17 @@
           problem with the X-Server.
           </p>
 	  </desc>
+	  </desc>
+	  <term>GSUseWMTaskBar</term>
+	  <desc>
+          <p> [W32 backend only]
+          A string value which defaults to <code>YES</code>. If enabled, the
+	  backend assumes that miniwindows are displayed in a task bar. In
+	  this case, the app icon is not shown and the main menu behavior
+	  is changed so it is not ordered out, but minimized, so clicking
+	  on the minimized menu will activate the application.
+          </p>
+	  </desc>
 	  <term>GSXEnableFontSet</term>
 	  <desc>
           <p> A string value which defaults to <code>NO</code>. If set to

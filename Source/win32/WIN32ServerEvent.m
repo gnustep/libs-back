@@ -370,9 +370,22 @@ static void invalidateWindow(HWND hwnd, RECT rect);
       if (LOWORD(wParam))
 	currentActive = hwnd;
       break;
-    case WM_ACTIVATEAPP: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d: %s", "ACTIVATEAPP", 
-		  hwnd, (wParam) ? "activate" : "deactivate");
+    case WM_ACTIVATEAPP:
+      {
+	int special;
+	BOOL active = [NSApp isActive];
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d: %s (app is %s)", 
+		    "ACTIVATEAPP", hwnd, (wParam) ? "activate" : "deactivate",
+		    (active) ? "active" : "deactivated");
+	special = [[[NSApp mainMenu] window] windowNumber];
+	if (active == NO && wParam)
+          {
+
+	  [NSApp activateIgnoringOtherApps: YES];
+         }
+	else if (special == (int)hwnd && active == YES && wParam == 0)
+	  [NSApp deactivate];
+      }
       break;
     case WM_MOUSEACTIVATE: 
       NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEACTIVATE", hwnd);
