@@ -110,6 +110,16 @@
 	  <code>OverTheSpot</code>.
           </p>
 	  </desc>
+	  <term>GSX11HandlesWindowDecorations</term>
+	  <desc>
+	  <p> [X11-based backends only]
+	  A boolean value, by default <code>YES</code>, which indicates if
+	  the backend should let the window manager handle window
+	  decorations. When set to <code>NO</code>, GNUstep-GUI will handle
+	  the window decorations, which is particularly useful if you aren't
+	  running any window manager.
+	  </p>
+	  </desc>
 	  <term>GraphicCompositing</term>
 	  <desc>
           <p> [Xlib backend only]
