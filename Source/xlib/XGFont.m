@@ -368,7 +368,7 @@ static BOOL XGInitAtoms(Display *dpy)
 
       if (min1 == 0 && max1 == 0)
         {
-	  if (glyph >= min2 && glyph <= max2)
+	  if (index >= min2 && index <= max2)
 	    pc = &(font_info->per_char[index - min2]);
         }
       else 
