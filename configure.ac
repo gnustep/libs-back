@@ -23,10 +23,12 @@
 # 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
-AC_INIT(back.make.in)
+AC_INIT
+AC_CONFIG_SRCDIR([back.make.in])
+AC_CONFIG_HEADER(config.h)
 
 if test -z "$GNUSTEP_SYSTEM_ROOT"; then
-  AC_MSG_ERROR(You must run the GNUstep.sh script before configuring)
+  AC_MSG_ERROR([You must run the GNUstep.sh script before configuring])
 fi
 
 #--------------------------------------------------------------------
@@ -34,12 +36,10 @@ fi
 #--------------------------------------------------------------------
 AC_CONFIG_AUX_DIR($GNUSTEP_SYSTEM_ROOT/Makefiles)
 
-AC_CONFIG_HEADER(config.h)
-
 #--------------------------------------------------------------------
 # Determine the host, build, and target systems
 #--------------------------------------------------------------------
-AC_CANONICAL_SYSTEM
+AC_CANONICAL_TARGET([])
 
 #--------------------------------------------------------------------
 # The following is so that headers and custom libraries
@@ -169,22 +169,10 @@ if test -n "$with_dps_library"; then
 fi
 CPPFLAGS="${CPPFLAGS} ${GRAPHIC_CFLAGS}"
 
-AC_HAVE_HEADERS(DPS/dpsclient.h DPS/dpsNXargs.h)
+AC_CHECK_HEADERS([DPS/dpsclient.h DPS/dpsNXargs.h])
 
 # Restore back to the original
 CPPFLAGS=${ORIG_CPPFLAGS}
-
-AC_SUBST(DPS_DEFINE)
-
-#--------------------------------------------------------------------
-# XIM support
-#--------------------------------------------------------------------
-AC_ARG_ENABLE(xim, 
-  [  --enable-xim            Enable XIM support],,
-  enable_xim=yes)
-if test "x$enable_xim" = "xyes"; then
- AC_DEFINE(USE_XIM)
-fi
 
 #--------------------------------------------------------------------
 # Extended font support & UTF8 support
@@ -199,10 +187,10 @@ AC_CHECK_HEADER(X11/Xft/Xft.h)
 if test "$have_xft" = yes -a "$ac_cv_header_X11_Xft_Xft_h" = yes; then
   GRAPHIC_LIBS="-lXft ${GRAPHIC_LIBS}"
   WITH_XFT=yes
-  AC_DEFINE(HAVE_XFT)
+  AC_DEFINE(HAVE_XFT,,[Define if you have the Xft library])
   AC_CHECK_LIB(Xft, XftDrawStringUtf8, have_utf8=yes, have_utf8=no)
   if test "$have_utf8" = yes; then
-    AC_DEFINE(HAVE_UTF8)
+    AC_DEFINE(HAVE_UTF8,,[Define if you have XftDrawStringUtf8])
   fi
 fi
 CPPFLAGS="${save_header}"
@@ -216,7 +204,7 @@ AC_ARG_ENABLE(xim,
   [  --disable-xim           Disable XIM support],,
   enable_xim=yes)
 if test "x$enable_xim" = "xyes"; then
- AC_DEFINE(USE_XIM)
+ AC_DEFINE(USE_XIM,,[Define to enable XIM support])
 fi
 
 #--------------------------------------------------------------------
@@ -359,7 +347,8 @@ fi
 
 save_CPPFLAGS=${CPPFLAGS}
 CPPFLAGS="$CPPFLAGS $GRAPHIC_CFLAGS"
-AC_CHECK_HEADER(X11/extensions/XShm.h, AC_DEFINE(XSHM))
+AC_CHECK_HEADER(X11/extensions/XShm.h, AC_DEFINE(XSHM,,
+				       [Define for XShm support]))
 CPPFLAGS="$save_CPPFLAGS"
 
 #--------------------------------------------------------------------
@@ -381,7 +370,7 @@ LIBS="${save_libs}"
 #--------------------------------------------------------------------
 WITH_WRASTER=no
 if test $gs_cv_have_wraster = yes -a $set_x_paths = no; then
-  AC_DEFINE(WITH_WRASTER)
+  AC_DEFINE(WITH_WRASTER,,[Define if you have libwraster])
   WITH_WRASTER=yes
 fi
 AC_SUBST(WITH_WRASTER)
@@ -422,12 +411,12 @@ AC_MSG_CHECKING(Backend Server)
 if test "x$enable_win32" = "xyes"; then
   BUILD_WIN32=yes
   AC_SUBST(BUILD_WIN32)
-  AC_DEFINE(BUILD_WIN32)
+  AC_DEFINE(BUILD_WIN32,,[Define to build the Win32 server])
   AC_MSG_RESULT(win32)
 elif test "x$enable_x11" = "xyes"; then
   BUILD_X11=yes
   AC_SUBST(BUILD_X11)
-  AC_DEFINE(BUILD_X11)
+  AC_DEFINE(BUILD_X11,,[Define to build the X11 server])
   AC_MSG_RESULT(x11)
 else
   AC_MSG_RESULT(None)
@@ -438,21 +427,21 @@ AC_MSG_CHECKING(Backend Graphics)
 if test "x$enable_winlib" = "xyes"; then
   BUILD_WINLIB=yes
   AC_SUBST(BUILD_WINLIB)
-  AC_DEFINE(BUILD_WINLIB)
+  AC_DEFINE(BUILD_WINLIB,,[Define to build Win32 graphics])
   AC_MSG_RESULT(win32)
   enable_xdps=no
   enable_xlib=no
 elif test "x$enable_xdps" = "xyes"; then
   BUILD_XDPS=yes
   AC_SUBST(BUILD_XDPS)
-  AC_DEFINE(BUILD_XDPS)
+  AC_DEFINE(BUILD_XDPS,,[Define to build Xdps graphics])
   AC_MSG_RESULT(xdps)
   GRAPHIC_LIBS="-ldpstk -ldps -lpsres -lXt $X_PRE_LIBS $GRAPHIC_LIBS"
   enable_xlib=no 
 elif test "x$enable_xlib" = "xyes"; then
   BUILD_XLIB=yes
   AC_SUBST(BUILD_XLIB)
-  AC_DEFINE(BUILD_XLIB)
+  AC_DEFINE(BUILD_XLIB,,[Define to build Xlib graphics])
   AC_MSG_RESULT(xlib)
 else
   AC_MSG_RESULT(None)
@@ -473,4 +462,5 @@ fi
 AC_MSG_RESULT($BACKEND_NAME)
 AC_SUBST(BACKEND_NAME)
 
-AC_OUTPUT(back.make config.make)
+AC_CONFIG_FILES([back.make config.make])
+AC_OUTPUT
