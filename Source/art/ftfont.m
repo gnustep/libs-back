@@ -288,12 +288,9 @@ static void add_face(NSString *family, NSString *face, NSDictionary *d,
   fi->traits = traits;
 
   if ([d objectForKey: @"RenderHints_hack"])
-  {
     fi->render_hints_hack=strtol([[d objectForKey: @"RenderHints_hack"] cString],NULL,0);
-    printf("explicit '%@' -> %i\n",[d objectForKey: @"RenderHints_hack"],fi->render_hints_hack);
-  }
   else
-    fi->render_hints_hack=0x10002;
+    fi->render_hints_hack=0x10202;
 
   fi->familyName = [family copy];
 
@@ -615,10 +612,11 @@ extern void GSToUnicode();
   y -= y0;
 
 
-/*	NSLog(@"[%@ draw using matrix: (%g %g %g %g %g %g)]\n",
+/*	NSLog(@"[%@ draw using matrix: (%g %g %g %g %g %g)] transform=%@\n",
 		self,
 		matrix[0], matrix[1], matrix[2],
-		matrix[3], matrix[4], matrix[5]
+		matrix[3], matrix[4], matrix[5],
+		transform
 		);*/
 
   cur = imgd;
