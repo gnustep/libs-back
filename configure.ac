@@ -292,10 +292,14 @@ AC_HAVE_FUNCS(usleep)
 
 save_CPPFLAGS=${CPPFLAGS}
 CPPFLAGS="$CPPFLAGS $GRAPHIC_CFLAGS"
+have_xshm=no
 AC_CHECK_HEADERS(X11/extensions/XShm.h,
-	AC_DEFINE(XSHM,1,[Define if you have X11/extensions/XShm.h]),,
+	have_xshm=yes,,
 	[#include <X11/Xlib.h>])
 AC_CHECK_FUNCS(shmctl)
+if test "$ac_cv_header_X11_extensions_XShm_h" = yes -a "$ac_cv_func_shmctl" = yes; then
+  AC_DEFINE(XSHM,1,[Define if you have X11 XShm extensions])
+fi
 CPPFLAGS="$save_CPPFLAGS"
 
 #--------------------------------------------------------------------

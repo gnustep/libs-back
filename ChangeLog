@@ -1,9 +1,17 @@
 2004-01-10  Adam Fedor  <fedor@gnu.org>
 
+	* configure.ac: Check if XShm is really implemented (it isn't on
+	Cygwin even though the headers are there).
+	* Source/x11/XGServerEvent.m ([XGServer -processEvent:event]): 
+	ifdef around XShm call.
+
+2004-01-10  Adam Fedor  <fedor@gnu.org>
+
 	* Prevent orderwindow:relativeTo: from making a window key.
 	* Headers/x11/XGGeneric.h: Add Ivar.
 	* Source/x11/XGServerEvent.m (-_handleTakeFocusAtom:forContext:): 
 	Don't take focus if we ordered this window previously.
+
 	* Source/x11/XGServerWindow.m ([XGServer -orderwindow:::]): 
 	Set desiredOrderWindow.
 	([XGServer -setinputfocus:]): Reset it.

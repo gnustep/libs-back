@@ -5618,6 +5618,7 @@ done
 
 save_CPPFLAGS=${CPPFLAGS}
 CPPFLAGS="$CPPFLAGS $GRAPHIC_CFLAGS"
+have_xshm=no
 
 for ac_header in X11/extensions/XShm.h
 do
@@ -5665,11 +5666,7 @@ if test `eval echo '${'$as_ac_Header'}'` = yes; then
   cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
-
-cat >>confdefs.h <<\_ACEOF
-#define XSHM 1
-_ACEOF
-
+ have_xshm=yes
 fi
 
 done
@@ -5758,6 +5755,13 @@ _ACEOF
 fi
 done
 
+if test "$ac_cv_header_X11_extensions_XShm_h" = yes -a "$ac_cv_func_shmctl" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define XSHM 1
+_ACEOF
+
+fi
 CPPFLAGS="$save_CPPFLAGS"
 
 #--------------------------------------------------------------------
