@@ -1,3 +1,10 @@
+2002-08-28  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSGState.m
+	New method [currentPoint], gets used in [DPScurrentpoint::].
+	Corrected [DPSarc:::::] and [DPSarcn:::::] to draw the arc in user
+	space and transfrom it afterwards and implemented  [DPSarct:::::].
+
 2002-08-28 18:55  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/x11/XGBitmapImageRep.m, Source/xlib/XGBitmapImageRep.m,
