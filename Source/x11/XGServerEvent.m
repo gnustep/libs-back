@@ -496,13 +496,26 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 		    /*
 		     * WM is asking us to take the keyboard focus
 		     */
-		    NSDebugLLog(@"Focus", @"check focus: %d", cWin->number);
 		    nswin = [NSApp keyWindow];
-		    if (nswin == nil
-			|| [nswin windowNumber] != cWin->number)
+		    NSDebugLLog(@"Focus", @"take focus:%d (current=%d key=%d)",
+				cWin->number, 
+				generic.currentFocusWindow,
+				[nswin windowNumber]);
+		    if (generic.desiredFocusWindow
+			&& cWin->number != generic.desiredFocusWindow)
 		      {
-			generic.desiredFocusWindow = 0;
-			generic.focusRequestNumber = 0;
+			NSDebugLLog(@"Focus", @"  but desired focus is %d",
+				    generic.desiredFocusWindow);
+		      }
+		    generic.desiredFocusWindow = 0;
+		    generic.focusRequestNumber = 0;
+		    /* Only send an event if we don't have a key
+		       window already (If we have a key window, that
+		       means the AppKit originated whatever event got us
+		       here). This would happen if the app was inactive
+		       and this is a call for the app to activate */
+		    if (nswin == nil)
+		      {
 			eventLocation = NSMakePoint(0,0);
 			e = [NSEvent otherEventWithType:NSAppKitDefined
 				     location: eventLocation
@@ -513,16 +526,6 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 				     subtype: GSAppKitWindowFocusIn
 				     data1: 0
 				     data2: 0];
-		      }
-		    else if (generic.desiredFocusWindow != 0)
-		      {
-			/*
-			 * We reassert our desire to have input
-			 * focus in our existing key window.
-			 */
-			[self setinputstate: GSTitleBarKey 
-			                   : [nswin windowNumber]];
-			[self setinputfocus: [nswin windowNumber]];
 		      }
 		  }
 	      }
@@ -908,7 +911,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	      }
 	    cWin = [XGServer _windowForXWindow: xEvent.xfocus.window];
 	    NSDebugLLog(@"Focus", @"%d lost focus on %d\n",
-			xEvent.xfocus.window, cWin->number);
+			xEvent.xfocus.window, (cWin) ? cWin->number : 0);
 	  }
 	  break;
 
