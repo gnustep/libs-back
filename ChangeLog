@@ -1,3 +1,8 @@
+2003-11-05  Adam Fedor  <fedor@gnu.org>
+
+	* Source/x11/XGServerEvent.m ([XGServer -processEvent:]): New
+	method broken off from -receivedEvent:type:extra:forMode:.
+
 2003-11-05 03:29  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/x11/XGServerEvent.m (-receivedEvent:type:extra:forMode:):

@@ -83,6 +83,8 @@ void __objc_xgcontextevent_linking (void)
 {
 }
 
+static SEL    procSel = 0;
+static void (*procEvent)(id, SEL, XEvent*) = 0;
 
 @interface XGServer (Private)
 - (void) receivedEvent: (void*)data
@@ -94,6 +96,7 @@ void __objc_xgcontextevent_linking (void)
                      type: (RunLoopEventType)type
                   forMode: (NSString*)mode;
 - (int) XGErrorHandler: (Display*)display : (XErrorEvent*)err;
+- (void) processEvent: (XEvent *) event;
 @end
 
 
@@ -209,6 +212,12 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 		   watcher: (id<RunLoopEvents>)self
 		   forMode: mode];
 #endif
+  if (procSel == 0)
+    {
+      procSel = @selector(processEvent:);
+      procEvent = (void (*)(id, SEL, XEvent*))
+	[self methodForSelector: procSel];
+    }
 }
 
 #if LIB_FOUNDATION_LIBRARY
@@ -234,20 +243,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
                  extra: (void*)extra
                forMode: (NSString*)mode
 {
-  static int		clickCount = 1;
-  static unsigned int	eventFlags;
-  NSEvent		*e = nil;
   XEvent		xEvent;
-  static NSPoint	eventLocation;
-  NSWindow              *nswin;
-  Window		xWin;
-  NSEventType		eventType;
-  NSGraphicsContext     *gcontext;
-  float                 deltaX;
-  float                 deltaY;
-
-  /* FIXME: How do you guarentee a context is associated with an event? */
-  gcontext = GSCurrentContext();
 
   // loop and grab all of the events from the X queue
   while (XPending(dpy) > 0)
@@ -261,6 +257,27 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	  continue;
 	}
 #endif
+
+      (*procEvent)(self, procSel, &xEvent);
+    }
+}
+
+- (void) processEvent: (XEvent *) event
+{
+  static int		clickCount = 1;
+  static unsigned int	eventFlags;
+  NSEvent		*e = nil;
+  XEvent		xEvent;
+  static NSPoint	eventLocation;
+  NSWindow              *nswin;
+  Window		xWin;
+  NSEventType		eventType;
+  NSGraphicsContext     *gcontext;
+  float                 deltaX;
+  float                 deltaY;
+
+  gcontext = GSCurrentContext();
+  xEvent = *event;
 
       switch (xEvent.type)
 	{
@@ -1272,7 +1289,6 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
       if (e)
 	[event_queue addObject: e];
       e = nil;
-    }
 }
 
 // Return the key_code corresponding to the user defaults string
