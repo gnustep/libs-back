@@ -390,8 +390,8 @@ within one pixel.) */
   matrix[1]=-ctm->matrix.m12;
   matrix[2]= ctm->matrix.m21;
   matrix[3]=-ctm->matrix.m22;
-  matrix[4]= ctm->matrix.tx;
-  matrix[5]=-ctm->matrix.ty + wi->sy;
+  matrix[4]= ctm->matrix.tX;
+  matrix[5]=-ctm->matrix.tY + wi->sy;
 
   /* If the matrix is 'inverted', ie. if the determinant is negative,
      we need to flip the order of the vertices. Since it's a rectangle
@@ -1128,8 +1128,8 @@ static void clip_svp_callback(void *data, int y, int start,
   matrix[1] =-ctm->matrix.m12;
   matrix[2] = ctm->matrix.m21;
   matrix[3] =-ctm->matrix.m22;
-  matrix[4] = ctm->matrix.tx;
-  matrix[5] =-ctm->matrix.ty + wi->sy;
+  matrix[4] = ctm->matrix.tX;
+  matrix[5] =-ctm->matrix.tY + wi->sy;
 
   vp2 = art_vpath_affine_transform(vp, matrix);
   art_free(vp);
