@@ -20,8 +20,11 @@
  * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111 USA.
  */
 
-#include "cairo/CairoFontInfo.h"
 #include <AppKit/NSAffineTransform.h>
+#include "cairo/CairoFontInfo.h"
+#include "cairo/CairoFontEnumerator.h"
+#include "cairo/CairoFontManager.h"
+
 #include <math.h>
 #include <cairo.h>
 
@@ -49,22 +52,47 @@
   _cachedGlyphs = malloc(sizeof(unsigned int) * size);
 }
 
-- (void) createCairoFontWithIdentity: (void *)ident
+- (BOOL) setupAttributes
 {
-  /* subclass should override */
   cairo_matrix_t *font_matrix;
   cairo_font_extents_t font_extents;
 
-  cairo_select_font(_cf,[_faceInfo cairoCName],[_faceInfo cairoSlant],
+  /* do not forget to check for font specific
+   * cache size from face info FIXME FIXME
+   */
+  ASSIGN(_faceInfo, [CairoFontManager fontWithName: fontName]);
+  if (!_faceInfo)
+    {
+      return NO;
+    }
+
+  _cachedSizes = NULL;
+  [self setCacheSize: [_faceInfo cacheSize]];
+
+  /* setting GSFontInfo:
+   * weight, traits, familyName,
+   * mostCompatibleStringEncoding, encodingScheme,
+   */
+
+  weight = [_faceInfo weight];
+  traits = [_faceInfo traits];
+  familyName = [[_faceInfo familyName] copy];
+  mostCompatibleStringEncoding = NSUTF8StringEncoding;
+  encodingScheme = @"iso10646-1";
+
+  /* setting GSFontInfo:
+   * xHeight, pix_width, pix_height
+   */
+  _cf = cairo_create();
+  cairo_select_font(_cf, [_faceInfo cairoCName], [_faceInfo cairoSlant],
 		    [_faceInfo cairoWeight]);
   xrFont = cairo_current_font(_cf);
+
   font_matrix = cairo_matrix_create();
   cairo_matrix_set_affine(font_matrix, matrix[0], matrix[1], matrix[2],
 			  -matrix[3], matrix[4], matrix[5]);
   cairo_transform_font(_cf, font_matrix);
-  /*
-     NSLog(@"%g %g %g %g %g %g",matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
-   */
+  cairo_matrix_destroy(font_matrix);
 
   cairo_current_font_extents(_cf, &font_extents);
   ascender = font_extents.ascent;
@@ -72,7 +100,10 @@
   xHeight = font_extents.height;
   maximumAdvancement = NSMakeSize(font_extents.max_x_advance, 
 				  font_extents.max_y_advance);
-  cairo_matrix_destroy(font_matrix);
+  fontBBox = NSMakeRect(0, descender, 
+			maximumAdvancement.width, ascender + descender);
+
+  return YES;
 }
 
 - (id) initWithFontName: (NSString *)name 
@@ -82,32 +113,9 @@
   //NSLog(@"initWithFontName %@",name);
   [super init];
 
-  /* do not forget to check for font specific
-   * cache size from face info FIXME FIXME
-   */
-  ASSIGN(_faceInfo, [CairoFontManager fontWithName: name]);
-  if (!_faceInfo)
-    {
-      RELEASE(self);
-      return nil;
-    }
-
-  _cachedSizes = NULL;
-  [self setCacheSize: [_faceInfo cacheSize]];
   _screenFont = p_screenFont;
-
-  /* setting GSFontInfo:
-   * weight, traits, fontName, familyName,
-   * matrix, mostCompatibleStringEncoding, encodingScheme,
-   */
-
-  weight = [_faceInfo weight];
-  traits = [_faceInfo traits];
   fontName = [name copy];
-  familyName = [[_faceInfo familyName] copy];
   memcpy(matrix, fmatrix, sizeof(matrix));
-  mostCompatibleStringEncoding = NSUTF8StringEncoding;
-  encodingScheme = @"iso10646-1";
 
   if (_screenFont)
     {
@@ -119,16 +127,12 @@
 	matrix[3] = ceil(matrix[3]);
     }
 
-  /* setting GSFontInfo:
-   * xHeight, pix_width, pix_height
-   */
+  if (![self setupAttributes])
+    {
+      RELEASE(self);
+      return nil;
+    }
 
-  _cf = cairo_create ();
-  [self createCairoFontWithIdentity: _faceInfo];
-
-  fontBBox = NSMakeRect(0, descender, 
-			maximumAdvancement.width, ascender + descender);
-  //NSLog(NSStringFromRect(fontBBox));
   return self;
 }
 
@@ -149,7 +153,6 @@
 
 - (NSSize) advancementForGlyph: (NSGlyph)glyph
 {
-  /* subclass should override */
   cairo_glyph_t cglyph;
   cairo_text_extents_t ctext;
   int entry;
@@ -169,13 +172,11 @@
   _cachedGlyphs[entry] = glyph;
   _cachedSizes[entry] = NSMakeSize(ctext.x_advance, ctext.y_advance);
 
-  //NSLog(NSStringFromSize(_cachedSizes[entry]));
   return _cachedSizes[entry];
 }
 
 - (NSRect) boundingRectForGlyph: (NSGlyph)glyph
 {
-  /* subclass should override */
   cairo_glyph_t cglyph;
   cairo_text_extents_t ctext;
 
@@ -189,32 +190,12 @@
 		    ctext.width, ctext.height);
 }
 
-- (NSPoint) positionOfGlyph: (NSGlyph)g 
-	    precededByGlyph: (NSGlyph)prev 
-		  isNominal: (BOOL *)nominal
-{
-  NSSize size;
-
-  /* subclass should override */
-  if (nominal)
-    *nominal = YES;
-
-  if (g == NSControlGlyph || prev == NSControlGlyph)
-    {
-      return NSZeroPoint;
-    }
-
-  size = [self advancementForGlyph: prev];
-  return NSMakePoint(size.width, size.height);
-}
-
 - (float) widthOfString: (NSString *)string
 {
-  /* subclass should override */
   cairo_text_extents_t ctext;
 
   cairo_text_extents(_cf, [string UTF8String], &ctext);
-  //NSLog (@"widthOfString %@ = %g", string, ctext.width);
+
   return ctext.width;
 }
 
@@ -299,9 +280,34 @@
 #endif
 }
 
-- (void) set
+- (void) drawGlyphs: (const NSGlyph*)glyphs
+	     length: (int)length 
+	         on: (cairo_t*)ct
+		atX: (double)dx
+		  y: (double)dy
 {
-  NSLog(@"ignore -set method of font '%@'\n", fontName);
-}
+  static cairo_glyph_t *cglyphs = NULL;
+  static int maxlength = 0;
+  size_t i;
+  cairo_text_extents_t gext;
 
+  if (length > maxlength)
+    {
+      maxlength = length;
+      cglyphs = realloc(cglyphs, sizeof(cairo_glyph_t) * maxlength);
+    }
+
+  for (i = 0; i < length; i++)
+    {
+      cglyphs[i].index = glyphs[i] + -29;	/* experimental */
+      cglyphs[i].x = dx;
+      cglyphs[i].y = dy;
+      cairo_glyph_extents(ct, cglyphs + i, 1, &gext);
+      dx += gext.x_advance;
+      dy += gext.y_advance;
+    }
+
+  cairo_show_glyphs(ct, cglyphs, length);
+}
+ 
 @end

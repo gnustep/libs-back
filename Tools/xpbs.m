@@ -683,7 +683,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
 		    XFree(req_name);
 		    XFree(act_name);
 		    RELEASE(md);
-		    return;
+		    return nil;
 		  }
 		[md appendBytes: (void *)data length: count];
 	      }
@@ -851,13 +851,10 @@ xErrorHandler(Display *d, XErrorEvent *e)
 - (BOOL) xProvideSelection: (XSelectionRequestEvent*)xEvent
 {
   NSArray	*types = [_pb types];
-  unsigned	numOsTypes = [types count];
-  NSString	*osType = nil;
   Atom		xType = XG_NULL;
   unsigned char	*data = 0;
   int		format = 0;
   int		numItems = 0;
-  unsigned	i;
 
   if (xEvent->target == XG_TARGETS)
     {
@@ -997,7 +994,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	   [types containsObject: NSStringPboardType])
     {
       NSString *s = [_pb stringForType: NSStringPboardType];
-      NSData *d;
+      NSData *d = nil;
 
       xType = xEvent->target;
       format = 8;

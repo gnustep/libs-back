@@ -21,6 +21,7 @@
 
 #include <AppKit/NSBezierPath.h>
 #include <AppKit/NSColor.h>
+#include <AppKit/NSGraphics.h>
 #include "cairo/CairoGState.h"
 #include "cairo/CairoFontInfo.h"
 #include "cairo/CairoSurface.h"
@@ -28,7 +29,6 @@
 #include "NSBezierPathCairo.h"
 #include <math.h>
 
-#define NEEDS_CSMK() NSLog(@"Need CSMK %@ %s", [self description], sel_get_name(_cmd))
 #define FIXME()  NSLog(@":::FIXME::: %@ %s", [self description], sel_get_name(_cmd))
 
 static cairo_matrix_t *local_matrix;
@@ -182,12 +182,27 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
 
 - (void) DPScurrentgray: (float *)gray
 {
-  NEEDS_CSMK();
+  double dr, dg, db;
+
+  cairo_current_rgb_color(_ct, &dr, &dg, &db);
+  *gray = (dr + dg + db) / 3.0;
 }
 
 - (void) DPScurrenthsbcolor: (float *)h : (float *)s : (float *)b
 {
-  NEEDS_CSMK();
+  NSColor *color;
+  double dr, dg, db;
+  float alpha;
+
+  cairo_current_rgb_color(_ct, &dr, &dg, &db);
+  color = [NSColor colorWithCalibratedRed: dr
+		                    green: dg
+		                     blue: db
+		                    alpha: 1.0];
+  [color getHue: h
+	 saturation: s
+	 brightness: b
+	 alpha: &alpha];
 }
 
 - (void) DPScurrentrgbcolor: (float *)r : (float *)g : (float *)b
@@ -207,7 +222,12 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
 
 - (void) DPSsetcmykcolor: (float)c : (float)m : (float)y : (float)k
 {
-  NEEDS_CSMK();
+  double r, g, b;
+
+  r = 1 - c;
+  g = 1 - m;
+  b = 1 - y;
+  cairo_set_rgb_color(_ct, r, g, b);
 }
 
 - (void) DPSsetgray: (float)gray
@@ -363,32 +383,15 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
 
 - (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t)length
 {
-  static cairo_glyph_t *cglyphs = NULL;
-  static int maxlength = 0;
-  size_t i;
   double dx, dy;
-  cairo_text_extents_t gext;
 
   cairo_current_point(_ct, &dx, &dy);
 
-  /* experimental, should do this in fontinfo */
-  if (length > maxlength)
-    {
-      maxlength = length;
-      cglyphs = realloc(cglyphs, sizeof(cairo_glyph_t) * maxlength);
-    }
-
-  for (i = 0; i < length; i++)
-    {
-      cglyphs[i].index = glyphs[i] + -29;	/* experimental */
-      cglyphs[i].x = dx;
-      cglyphs[i].y = dy;
-      cairo_glyph_extents(_ct, cglyphs + i, 1, &gext);
-      dx += gext.x_advance;
-      dy += gext.y_advance;
-    }
-
-  cairo_show_glyphs(_ct, cglyphs, length);
+  [_font drawGlyphs: glyphs
+             length: length
+                 on: _ct
+                atX: dx
+                  y: dy];
 }
 
 /*
@@ -1001,11 +1004,19 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
   cairo_format_t format;
   NSAffineTransformStruct tstruct;
   cairo_t *ict;
+  cairo_surface_t *surface;
 
 /*
   NSLog(@"%@ DPSimage %dx%d (%p)", self, pixelsWide, pixelsHigh,
         cairo_current_target_surface (_ct));
 */
+  if (isPlanar || !([colorSpaceName isEqualToString: NSDeviceRGBColorSpace] ||
+		    [colorSpaceName isEqualToString: NSCalibratedRGBColorSpace]))
+    {
+      NSLog(@"Image format not support");
+      return;
+    }
+
   switch (bitsPerSample * samplesPerPixel)
     {
     case 32:
@@ -1015,18 +1026,18 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
       format = CAIRO_FORMAT_RGB24;
       break;
     default:
-      NSLog(@"not support");
-      exit(1);
+      NSLog(@"Image format not support");
+      return;
     }
 //      [self DPSinitclip];
 
-  tstruct =[matrix transformStruct];
+  tstruct = [matrix transformStruct];
   /*
      NSLog(@"%g %g %g %g %g %g",
      tstruct.m11, tstruct.m12,
      tstruct.m21, tstruct.m22,
      tstruct.tX, tstruct.tY);
-   */
+  */
 
   ict = cairo_create();
   [_surface setAsTargetOfCairo: ict];
@@ -1036,18 +1047,21 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
 			  tstruct.m21, tstruct.m22, tstruct.tX, tstruct.tY);
   cairo_concat_matrix(ict, local_matrix);
 
+  surface = cairo_surface_create_for_image((void*)data, 
+					   format,
+					   pixelsWide,
+					   pixelsHigh,
+					   bytesPerRow);
   cairo_matrix_set_identity(local_matrix);
   cairo_matrix_scale(local_matrix, 1, -1);
   cairo_matrix_translate(local_matrix, 0, -pixelsHigh);
-/*
-  cairo_move_to(ict, 10, 10);
-  cairo_set_rgb_color(ict, 0, 1, 0);
-  cairo_rel_line_to(ict, 0, pixelsHigh - 20);
-  cairo_rel_line_to(ict, pixelsWide - 20, 0);
-  cairo_rel_line_to(ict, 0, -pixelsHigh + 20);
-  cairo_fill(ict);
+  cairo_surface_set_matrix(surface, local_matrix);
+  cairo_show_surface(ict,
+		     surface,
+		     pixelsWide,
+		     pixelsHigh);
+  cairo_surface_destroy(surface);
   cairo_destroy(ict);
-*/
 }
 
 - (void) compositerect: (NSRect)aRect op: (NSCompositingOperation)op
@@ -1062,30 +1076,52 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
 		fromRect: (NSRect)aRect 
 		 toPoint: (NSPoint)aPoint 
 		      op: (NSCompositingOperation)op
+		fraction: (float)delta
 {
   cairo_surface_t *src;
 
-  _set_op(_ct, op);
-  cairo_save(_ct);
-  cairo_translate(_ct, aPoint.x, aPoint.y);
   /*
     NSLog(NSStringFromRect(aRect));
     NSLog(@"src %p(%p,%@) des %p(%p,%@)",source,cairo_current_target_surface(source->_ct),NSStringFromSize([source->_surface size]),
     self,cairo_current_target_surface(_ct),NSStringFromSize([_surface size]));
   */
-  src = cairo_current_target_surface(source->_ct);
+  cairo_save(_ct);
+  _set_op(_ct, op);
+  cairo_set_alpha(_ct, delta);
+  cairo_translate(_ct, aPoint.x, aPoint.y);
+
   cairo_matrix_set_identity(local_matrix);
   cairo_matrix_scale(local_matrix, 1, -1);
   cairo_matrix_translate(local_matrix, 0, -[source->_surface size].height);
+  // cairo_matrix_translate(local_matrix, NSMinX(aRect), NSMinY(aRect));
+  src = cairo_current_target_surface(source->_ct);
   cairo_surface_set_matrix(src, local_matrix);
   cairo_show_surface(_ct, src, NSWidth(aRect), NSHeight(aRect));
-  
-/*
-  [[NSColor redColor] set];
-  aRect.origin = NSZeroPoint;
-  NSFrameRect(aRect);
-*/
   cairo_restore(_ct);
+}
+
+- (void) compositeGState: (CairoGState *)source 
+		fromRect: (NSRect)aRect 
+		 toPoint: (NSPoint)aPoint 
+		      op: (NSCompositingOperation)op
+{
+  [self compositeGState: source 
+	       fromRect: aRect 
+		toPoint: aPoint 
+		     op: op
+	       fraction: 1.0];
+}
+
+- (void) dissolveGState: (CairoGState *)source
+	       fromRect: (NSRect)aRect
+		toPoint: (NSPoint)aPoint 
+		  delta: (float)delta
+{
+  [self compositeGState: source 
+	       fromRect: aRect 
+		toPoint: aPoint 
+		     op: NSCompositeSourceOver
+	       fraction: delta];
 }
 
 @end
