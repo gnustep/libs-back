@@ -914,7 +914,7 @@ static	Region	emptyRegion;
     {
       ll.y = y;
     }
-  if (ur.y > y + height)
+  if (ur.y > y + (int)height)
     {
       ur.y = y + height;
     }
