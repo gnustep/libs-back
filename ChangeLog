@@ -1,3 +1,7 @@
+2003-05-11 19:21  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Report errors in more cases.
+
 2003-05-07  Adam Fedor  <fedor@gnu.org>
 
 	* configure.ac: Check for freetype separetely and add to xlib flags
