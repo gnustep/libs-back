@@ -174,6 +174,31 @@ AC_CHECK_HEADERS([DPS/dpsclient.h DPS/dpsNXargs.h])
 CPPFLAGS="${save_CPPFLAGS}"
 
 #--------------------------------------------------------------------
+# freetype libraries
+#--------------------------------------------------------------------
+save_header=${CPPFLAGS}
+save_libs=${LIBS}
+CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
+LIBS="${GRAPHIC_LIBS} ${LIBS}"
+
+FREETYPE_LIBS="`freetype-config --libs`"
+FREETYPE_CFLAGS="`freetype-config --cflags`"
+
+CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
+LIBS="${LIBS} ${FREETYPE_LIBS}"
+
+AC_CHECK_LIB(freetype, main, have_freetype=yes, have_freetype=no)
+if test "$have_freetype" = yes; then
+  AC_CHECK_HEADER(ft2build.h,have_freetype=yes, have_freetype=no)
+fi
+if test "$have_freetype" = yes; then
+  GRAPHIC_CFLAGS="$GRAPHIC_CFLAGS $FREETYPE_CFLAGS"
+  GRAPHIC_LIBS="$FREETYPE_LIBS $GRAPHIC_LIBS"
+fi
+CPPFLAGS="${save_header}"
+LIBS="${save_libs}"
+
+#--------------------------------------------------------------------
 # Extended font support & UTF8 support
 #--------------------------------------------------------------------
 WITH_XFT=no
@@ -194,7 +219,7 @@ if test "$have_xft" = yes -a "$ac_cv_header_X11_Xft_Xft_h" = yes; then
   AC_CHECK_LIB(fontconfig, FcPatternCreate, have_fc=yes, have_fc=no)
   AC_CHECK_HEADER(fontconfig/fontconfig.h)
   if test "$have_fc" = yes -a "$ac_cv_header_fontconfig_fontconfig_h" = yes; then
-    GRAPHIC_LIBS="${GRAPHIC_LIBS} -lfontconfig"
+    GRAPHIC_LIBS="-lfontconfig ${GRAPHIC_LIBS}"
     AC_DEFINE(HAVE_FC,1,[Define if you have FcPatternCreate])
   fi
 fi
@@ -396,27 +421,6 @@ CPPFLAGS="${save_header}"
 LIBS="${save_libs}"
 
 #--------------------------------------------------------------------
-# freetype libraries
-#--------------------------------------------------------------------
-save_header=${CPPFLAGS}
-save_libs=${LIBS}
-CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
-LIBS="${GRAPHIC_LIBS} ${LIBS}"
-
-FREETYPE_LIBS="`freetype-config --libs`"
-FREETYPE_CFLAGS="`freetype-config --cflags`"
-
-CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
-LIBS="${LIBS} ${FREETYPE_LIBS}"
-
-AC_CHECK_LIB(freetype, main, have_freetype=yes, have_freetype=no)
-if test "$have_freetype" = yes; then
-  AC_CHECK_HEADER(ft2build.h,have_freetype=yes, have_freetype=no)
-fi
-CPPFLAGS="${save_header}"
-LIBS="${save_libs}"
-
-#--------------------------------------------------------------------
 # libart graphics libraries
 #--------------------------------------------------------------------
 save_header=${CPPFLAGS}
@@ -424,8 +428,8 @@ save_libs=${LIBS}
 CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
 LIBS="${GRAPHIC_LIBS} ${LIBS}"
 
-LIBART_LIBS="`libart2-config --libs` $FREETYPE_LIBS"
-LIBART_CFLAGS="`libart2-config --cflags` $FREETYPE_CFLAGS"
+LIBART_LIBS="`libart2-config --libs`"
+LIBART_CFLAGS="`libart2-config --cflags`"
 
 CPPFLAGS="${CPPFLAGS} ${LIBART_CFLAGS}"
 LIBS="${LIBS} ${LIBART_LIBS}"
@@ -433,6 +437,10 @@ LIBS="${LIBS} ${LIBART_LIBS}"
 AC_CHECK_LIB(art_lgpl_2, main, have_libart_lgpl_2=yes, have_libart_lgpl_2=no)
 if test "$have_libart_lgpl_2" = yes; then
   AC_CHECK_HEADER(libart_lgpl/libart.h,have_libart_lgpl_2=yes, have_libart_lgpl_2=no)
+fi
+if test "$have_libart_lgpl_2" = yes; then
+  GRAPHIC_LIBS="$LIBART_LIBS $GRAPHIC_LIBS"
+  GRAPHIC_CFLAGS="$LIBART_CFLAGS $GRAPHIC_CFLAGS"
 fi
 CPPFLAGS="${save_header}"
 LIBS="${save_libs}"
@@ -484,19 +492,11 @@ AC_MSG_RESULT($BUILD_GRAPHICS)
 if test x"$BUILD_GRAPHICS" = "xxdps"; then
   GRAPHIC_LIBS="-ldpstk -ldps -lpsres -lXt $X_PRE_LIBS $GRAPHIC_LIBS"
 elif test x"$BUILD_GRAPHICS" = "xart"; then
-  GRAPHIC_LIBS="$LIBART_LIBS $GRAPHIC_LIBS"
-  GRAPHIC_CFLAGS="$LIBART_CFLAGS $GRAPHIC_CFLAGS"
-
   if test "$have_freetype" = no; then
     AC_MSG_ERROR([can't find freetype, required for graphics=art!])
   fi
   if test "$have_libart_lgpl_2" = no; then
     AC_MSG_ERROR([can't find libart, required for graphics=art!])
-  fi
-elif test x"$BUILD_GRAPHICS" = "xxlib"; then
-  if test "$have_freetype" = yes; then
-    GRAPHIC_LIBS="$FREETYPE_LIBS $GRAPHIC_LIBS"
-    GRAPHIC_CFLAGS="$FREETYPE_CFLAGS $GRAPHIC_CFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
   GRAPHIC_LIBS="$WIN32_LIBS $GRAPHIC_LIBS"
