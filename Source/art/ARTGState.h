@@ -34,7 +34,7 @@
 #endif
 
 
-#include <libart_lgpl/libart.h>
+#include <libart_lgpl/art_vpath_dash.h>
 
 
 @class ARTWindowBuffer;
@@ -59,7 +59,26 @@
 #define CLIP_DATA (wi->data+clip_x0*wi->bytes_per_pixel+clip_y0*wi->bytes_per_line)
 	int clip_sx,clip_sy;
 
-	ArtSVP *clip_path;
+	/*
+	Clipping spans are stored this way. clip_index has an index to the
+	spans (in clip_span) for each line. clip_span has the x-starting
+	coordinate for each span. A line starts 'off', each coordinate flips
+	the state. The spans are stored in increasing y order, so
+	clip_index[y+1]-1 is the index of the last span coordinate. Thus, if
+	clip_index[y]==clip_index[y+1], the entire line is clipped.
+	clip_index actually has clip_sy+1 entries, so clip_index[y+1] is
+	valid for _all_ lines.
+
+	All coordinates are in device space and counted inside the clipping
+	rectangle.
+
+	To make things easier, each line also ends in the off state (so the
+	last entry in clip_span might be a dummy entry at the end of the
+	line).
+	*/
+	unsigned int *clip_span;
+	unsigned int *clip_index;
+	int clip_num_span;
 }
 
 @end
