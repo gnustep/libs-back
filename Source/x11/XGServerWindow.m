@@ -1988,10 +1988,15 @@ static BOOL didCreatePixmaps;
 		   level == NSFloatingWindowLevel ||
 		   level == NSTornOffMenuWindowLevel)
 	    {
+#ifdef USE_KDE_OVERRIDE
 	      data[0] = generic.wintypes.win_override_atom;
 	      //data[0] = generic.wintypes.win_utility_atom;
 	      data[1] = generic.wintypes.win_menu_atom;
 	      len = 2;
+#else
+	      data[0] = generic.wintypes.win_menu_atom;
+	      len = 1;
+#endif
 	    }
 	  else if (level == NSDockWindowLevel ||
 		   level == NSStatusWindowLevel)
@@ -2001,9 +2006,14 @@ static BOOL didCreatePixmaps;
 	  // Does this belong into a different category?
 	  else if (level == NSPopUpMenuWindowLevel)
 	    {
+#ifdef USE_KDE_OVERRIDE
 	      data[0] = generic.wintypes.win_override_atom;
 	      data[1] = generic.wintypes.win_floating_atom;
 	      len = 2;
+#else
+	      data[0] = generic.wintypes.win_floating_atom;
+	      len = 1;
+#endif
 	    }
 	  else if (level == NSDesktopWindowLevel)
 	    {
