@@ -36,6 +36,10 @@
   HWND currentFocus;
   HWND desiredFocus;
   HWND currentActive;
+
+  struct {
+    BOOL useWMTaskBar;
+  } flags;
 }
 @end
 
