@@ -1,3 +1,7 @@
+2003-09-02  Adam Fedor  <fedor@gnu.org>
+
+	* Tools/gpbs.m (init): Don't mess with file descriptors on MinGW.
+
 2003-09-02  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Tools/xpbs.m
