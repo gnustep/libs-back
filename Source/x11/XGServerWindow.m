@@ -135,7 +135,7 @@ setNormalHints(Display *d, gswindow_device_t *w)
   if (w->siz_hints.flags & PResizeInc)
     NSDebugLLog(@"XGTrace", @"Hint incr %d: %d, %d",
       w->number, w->siz_hints.width_inc, w->siz_hints.height_inc);
-  XSetNormalHints(d, w->ident, &w->siz_hints);
+  XSetWMNormalHints(d, w->ident, &w->siz_hints);
 }
 
 /*
@@ -542,6 +542,16 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 	      XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DIALOG", False);
 	  generic.wintypes.win_normal_atom = 
 	      XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_NORMAL", False);
+	  // New in wmspec 1.2
+	  generic.wintypes.win_utility_atom = 
+	      XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_UTILITY", False);
+	  generic.wintypes.win_splash_atom = 
+	      XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_SPLASH", False);
+	  //KDE extensions
+	  generic.wintypes.win_override_atom = 
+	      XInternAtom(dpy, "_KDE_NET_WM_WINDOW_TYPE_OVERRIDE", False);
+	  generic.wintypes.win_topmenu_atom = 
+	      XInternAtom(dpy, "_KDE_NET_WM_WINDOW_TYPE_TOPMENU", False);
 	}
     }
 
@@ -1922,27 +1932,53 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 	}
       else if ((generic.wm & XGWM_EWMH) != 0)
 	{
-	  Atom flag = generic.wintypes.win_normal_atom;
-	  
+	  int len;
+	  long data[2];
+
+	  data[0] = generic.wintypes.win_normal_atom;
+	  data[1] = None;
+	  len = 1;
+
 	  if (level == NSModalPanelWindowLevel)
-	    flag = generic.wintypes.win_modal_atom;
-	  // For strang reasons this level does not work out for the main menu
-	  else if (//level == NSMainMenuWindowLevel || 
-		   level == NSSubmenuWindowLevel ||
+	    {
+	      data[0] = generic.wintypes.win_modal_atom;
+	    }
+	  else if (level == NSMainMenuWindowLevel)
+	    {
+	      // For strange reasons menu level does not work out for the main menu
+	      //data[0] = generic.wintypes.win_topmenu_atom;
+	      data[0] = generic.wintypes.win_dock_atom;
+	      //len = 2;
+	    }
+	  else if (level == NSSubmenuWindowLevel ||
 		   level == NSFloatingWindowLevel ||
-		   level == NSTornOffMenuWindowLevel ||
-		   level == NSPopUpMenuWindowLevel)
-	    flag = generic.wintypes.win_menu_atom;
-	  else if (level == NSDockWindowLevel)
-	    flag =generic.wintypes.win_dock_atom;
-	  else if (level == NSStatusWindowLevel)
-	    flag = generic.wintypes.win_floating_atom;
+		   level == NSTornOffMenuWindowLevel)
+	    {
+	      data[0] = generic.wintypes.win_override_atom;
+	      //data[0] = generic.wintypes.win_utility_atom;
+	      data[1] = generic.wintypes.win_menu_atom;
+	      len = 2;
+	    }
+	  else if (level == NSDockWindowLevel ||
+		   level == NSStatusWindowLevel)
+	    {
+	      data[0] =generic.wintypes.win_dock_atom;
+	    }
+	  // Does this belong into a different category?
+	  else if (level == NSPopUpMenuWindowLevel)
+	    {
+	      data[0] = generic.wintypes.win_override_atom;
+	      data[1] = generic.wintypes.win_floating_atom;
+	      len = 2;
+	    }
 	  else if (level == NSDesktopWindowLevel)
-	    flag = generic.wintypes.win_desktop_atom;
+	    {
+	      data[0] = generic.wintypes.win_desktop_atom;
+	    }
 
 	  XChangeProperty(dpy, window->ident, generic.wintypes.win_type_atom,
 			  XA_ATOM, 32, PropModeReplace, 
-			  (unsigned char *)&flag, 1);
+			  (unsigned char *)&data, len);
 	}
       else if ((generic.wm & XGWM_GNOME) != 0)
 	{
