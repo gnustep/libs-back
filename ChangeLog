@@ -1,3 +1,9 @@
+2002-06-24  Adam Fedor  <fedor@gnu.org>
+
+	* Source/x11/XGServerWindow.m ([XGServer -windowdevice:]): Use
+	usleep instead of loop to wait for resize (rewritten
+	patch from georg@vhf.de).
+
 Sat Jun 22 14:28:28 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 
 	* Source/gsc/GSGState.m ([-DPScurrentpoint::]): Use -invert, not
