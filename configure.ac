@@ -389,7 +389,7 @@ CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
 LIBS="${GRAPHIC_LIBS} ${LIBS}"
 AC_CHECK_LIB(gdi32, main, have_gdi32=yes, have_gdi32=no)
 if test "$have_gdi32" = yes; then
-  GRAPHIC_LIBS="-lgdi32 ${GRAPHIC_LIBS}"
+  WIN32_LIBS="-lgdi32"
 fi
 CPPFLAGS="${save_header}"
 LIBS="${save_libs}"
@@ -476,6 +476,8 @@ elif test x"$BUILD_GRAPHICS" = "xart"; then
   if test "$have_libart_lgpl_2" = no; then
     AC_MSG_ERROR([can't find libart, required for graphics=art!])
   fi
+elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
+  GRAPHIC_LIBS="$WIN32_LIBS $GRAPHIC_LIBS"
 fi
 
 AH_TOP([
