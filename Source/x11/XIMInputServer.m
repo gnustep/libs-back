@@ -95,7 +95,7 @@
       encoding = [NSString defaultCStringEncoding];
     }
 
-#if USE_XIM
+#ifdef USE_XIM
   if ([self ximInit: dpy] == NO)
     {
       NSLog(@"Unable to initialize XIM, using standard keyboard events");
@@ -289,7 +289,7 @@
     return;
 
   /* Make sure we have an ic for this window */
-#if USE_XIM
+#ifdef USE_XIM
   if (windev->ic == NULL)
     {
       windev->ic = [self ximCreateIC: windev->ident];

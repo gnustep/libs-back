@@ -44,7 +44,7 @@
 #include "xlib/XGGState.h"
 #include "xlib/xrtools.h"
 
-#if HAVE_XFT
+#ifdef HAVE_XFT
 #include "xlib/XftFontInfo.h"
 #endif
 
@@ -76,7 +76,7 @@
   [NSGraphicsContext setDefaultContextClass: [XGContext class]];
   [GSFontEnumerator setDefaultClass: [XGFontEnumerator class]];
 
-#if HAVE_XFT
+#ifdef HAVE_XFT
   if ([[NSUserDefaults standardUserDefaults] boolForKey: @"GSFontAntiAlias"])
     {
       fontClass = [XftFontInfo class];

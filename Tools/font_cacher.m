@@ -283,6 +283,7 @@
   for (i = 0; i < available; i++) 
     {
       char *name = fonts[i];
+      NSDebugLLog(@"Fonts", @"%s", name);
 
       NS_DURING
         [self processFont: name];

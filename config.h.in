@@ -54,6 +54,9 @@
 /* Define to 1 if you have the <wraster.h> header file. */
 #undef HAVE_WRASTER_H
 
+/* Define to 1 if you have the <X11/extensions/XShm.h> header file. */
+#undef HAVE_X11_EXTENSIONS_XSHM_H
+
 /* Define if you have the Xft library */
 #undef HAVE_XFT
 
@@ -80,9 +83,6 @@
 
 /* Define if you have libwraster */
 #undef WITH_WRASTER
-
-/* Define for XShm support */
-#undef XSHM
 
 /* Define to 1 if the X Window System is missing or not being used. */
 #undef X_DISPLAY_MISSING
