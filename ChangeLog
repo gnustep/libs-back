@@ -1,3 +1,8 @@
+2003-06-06  Adam Fedor  <fedor@gnu.org>
+
+	* Source/x11/XGServerWindow.m (setWindowHintsForStyle): Specifically
+	check for success of XGetWindowProperty call.
+
 2003-05-25  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.8.6
