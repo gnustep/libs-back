@@ -115,7 +115,7 @@ static void _image_get_color_rgb_8(image_info_t *ii, render_run_t *ri,
   if (x < 0) x = 0;
   if (y < 0) y = 0;
   if (x >= ii->width) x = ii->width - 1;
-  if (x >= ii->height) y = ii->height - 1;
+  if (y >= ii->height) y = ii->height - 1;
 
   ofs = ii->bytes_per_row * y + x * ii->bits_per_pixel / 8;
   if (ii->is_planar)
@@ -150,7 +150,7 @@ static void _image_get_color_rgb_cmyk_gray(image_info_t *ii, render_run_t *ri,
   if (x < 0) x = 0;
   if (y < 0) y = 0;
   if (x >= ii->width) x = ii->width - 1;
-  if (x >= ii->height) y = ii->height - 1;
+  if (y >= ii->height) y = ii->height - 1;
 
   ofs = y * ii->bytes_per_row;
   bit_ofs = x * ii->bits_per_pixel;

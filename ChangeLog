@@ -1,3 +1,8 @@
+2002-09-12 02:29  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/art/image.m (_image_get_color_rgb_8,
+	_image_get_color_rgb_cmyk_gray): Fix clamping of y.
+
 2002-09-10 22:11  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Headers/x11/XWindowBuffer.h: Add more documentation.
