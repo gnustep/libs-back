@@ -30,6 +30,7 @@
 #include "gsc/GSGState.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include "x11/XGServer.h"
 #include "xlib/xrtools.h"
 
 @class NSBezierPath;
@@ -40,6 +41,7 @@
 @public
   void      *context;
   void      *windevice;
+  XGDrawMechanism drawMechanism;
   GC	    xgcntxt;
   XGCValues gcv;
   Drawable  draw;

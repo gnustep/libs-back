@@ -121,9 +121,6 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
   return (xEvent->xkeymap.key_vector[key_code / 8] & (1 << (key_code % 8)));  
 }
 
-#define XDPY (((RContext *)context)->dpy)
-#define XSCR (((RContext *)context)->screen_number)
-
 @implementation XGServer (X11Methods)
 
 - (int) XGErrorHandler: (Display*)display : (XErrorEvent*)err
@@ -174,7 +171,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 
 - (void) setupRunLoopInputSourcesForMode: (NSString*)mode
 {
-  int		xEventQueueFd = XConnectionNumber(XDPY);
+  int		xEventQueueFd = XConnectionNumber(dpy);
   NSRunLoop	*currentRunLoop = [NSRunLoop currentRunLoop];
 
 #if defined(LIB_FOUNDATION_LIBRARY)
@@ -253,9 +250,9 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
   gcontext = GSCurrentContext();
 
   // loop and grab all of the events from the X queue
-  while (XPending(XDPY) > 0)
+  while (XPending(dpy) > 0)
     {
-      XNextEvent(XDPY, &xEvent);
+      XNextEvent(dpy, &xEvent);
 
 #ifdef USE_XIM
       if (XFilterEvent(&xEvent, None)) 
@@ -369,10 +366,10 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 		  if (cWin->parent == None)
 		    break;
 		  xEvent.xbutton.window = cWin->parent;
-		  XUngrabPointer(XDPY, CurrentTime);
-		  XSendEvent(XDPY, cWin->parent, True,
+		  XUngrabPointer(dpy, CurrentTime);
+		  XSendEvent(dpy, cWin->parent, True,
 			     ButtonPressMask, &xEvent );
-		  XFlush(XDPY);
+		  XFlush(dpy);
 		  break;
 		}
 	    }
@@ -461,7 +458,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	      {
 		generic.lastTime = (Time)xEvent.xclient.data.l[1];
 		NSDebugLLog(@"NSEvent", @"WM Protocol - %s\n",
-			    XGetAtomName(XDPY, xEvent.xclient.data.l[0]));
+			    XGetAtomName(dpy, xEvent.xclient.data.l[0]));
 
 		if (xEvent.xclient.data.l[0] == generic.delete_win_atom)
 		  {
@@ -496,36 +493,17 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 		else if (xEvent.xclient.data.l[0]
 			 == generic.take_focus_atom)
 		  {
-		    Window		rootWin;
-		    Window		childWin;
+		    int win;
+		    NSPoint p;
 		    gswindow_device_t *w = 0;
-		    int		currentX;
-		    int		currentY;
-		    int		winX;
-		    int		winY;
-		    unsigned	mask;
-		    BOOL		ok;
 
 		    /*
 		     * WM is asking us to take the keyboard focus
 		     */
 		    NSDebugLLog(@"Focus", @"check focus: %d",
 				cWin->number);
-		    ok = XQueryPointer (XDPY, [self xDisplayRootWindow],
-					&rootWin, &childWin, &currentX, &currentY,
-					&winX, &winY, &mask);
-		    if (ok != 0 && childWin != 0)
-		      {
-			w = [XGServer _windowForXWindow: childWin];
-			if (w == 0)
-			  {
-				/*
-				 * Is the mouse in the border of a window?
-				 */
-			    w = [XGServer _windowForXParent: childWin];
-			  }
-		      }
-		    if (w == 0)
+		    p = [self mouseLocationOnScreen: -1 window:(void *)&win];
+		    if (win == 0)
 		      {
 			/*
 			 * If we can't locate the window under the mouse,
@@ -538,10 +516,10 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 			  }
 			if (nswin != nil)
 			  {
-			    w = [XGServer _windowWithTag:
-					     [nswin windowNumber]];
+			    win = [nswin windowNumber];
 			  }
 		      }
+		    w = [XGServer _windowWithTag: win];
 		    if (w != 0)
 		      {
 			cWin = w;
@@ -1176,7 +1154,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	case PropertyNotify:
 	  NSDebugLLog(@"NSEvent", @"%d PropertyNotify - '%s'\n",
 		      xEvent.xproperty.window,
-		      XGetAtomName(XDPY, xEvent.xproperty.atom));
+		      XGetAtomName(dpy, xEvent.xproperty.atom));
 	  break;
 
 	      // a client successfully reparents a window
@@ -1218,7 +1196,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 		  parent = new_parent;
 		  NSLog(@"QueryTree window is %d (root %d cwin root %d)", 
 			parent, root, cWin->root);
-		  if (!XQueryTree(XDPY, parent, &root, &new_parent, 
+		  if (!XQueryTree(dpy, parent, &root, &new_parent, 
 				  &children, &nchildren))
 		    {
 		      new_parent = None;
@@ -1235,7 +1213,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 		  if (new_parent && new_parent != cWin->root)
 		    {
 		      XWindowAttributes wattr;
-		      XGetWindowAttributes(XDPY, parent, &wattr);
+		      XGetWindowAttributes(dpy, parent, &wattr);
 		      if (wattr.x || wattr.y)
 			{
 			  generic.parent_offset.x = wattr.x;
@@ -1749,7 +1727,7 @@ process_modifier_flags(unsigned int state)
    */
   if (window->map_state != IsViewable)
     {
-      XSync(XDPY, False);
+      XSync(dpy, False);
       [self receivedEvent: 0 type: 0 extra: 0 forMode: nil];
     }
   /*
@@ -1784,6 +1762,11 @@ process_modifier_flags(unsigned int state)
  */
 - (NSPoint) mouselocation
 {
+  return [self mouseLocationOnScreen: defScreen window: NULL];
+}
+
+- (NSPoint) mouseLocationOnScreen: (int)screen window: (int *)win
+{
   Window	rootWin;
   Window	childWin;
   int		currentX;
@@ -1793,13 +1776,43 @@ process_modifier_flags(unsigned int state)
   unsigned	mask;
   BOOL		ok;
   NSPoint       p;
-
-  ok = XQueryPointer (XDPY, [self xDisplayRootWindow],
+  int           height;
+  int           screen_number;
+  
+  screen_number = (screen >= 0) ? screen : defScreen;
+  ok = XQueryPointer (dpy, [self xDisplayRootWindowForScreen: screen_number],
     &rootWin, &childWin, &currentX, &currentY, &winX, &winY, &mask);
-  p = NSMakePoint(0,0);
-  if (ok)
+  p = NSMakePoint(-1,-1);
+  if (ok == False)
     {
-      p = NSMakePoint(currentX, DisplayHeight(XDPY, XSCR) - currentY);
+      /* Mouse not on the specified screen_number */
+      XWindowAttributes attribs;
+      ok = XGetWindowAttributes(dpy, rootWin, &attribs);
+      if (ok == False)
+	{
+	  return p;
+	}
+      screen_number = XScreenNumberOfScreen(attribs.screen);
+      if (screen >= 0 && screen != screen_number)
+	{
+	  /* Mouse not on the requred screen, return an invalid point */
+	  return p;
+	}
+      height = attribs.height;
+    }
+  else
+    height = DisplayHeight(dpy, screen_number);
+  p = NSMakePoint(currentX, height - currentY);
+  if (win)
+    {
+      gswindow_device_t *w = 0;
+      w = [XGServer _windowForXWindow: childWin];
+      if (w == NULL)
+	w = [XGServer _windowForXParent: childWin];
+      if (w)
+	*win = w->number;
+      else
+	*win = 0;
     }
   return p;
 }

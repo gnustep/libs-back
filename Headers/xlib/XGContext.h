@@ -28,20 +28,10 @@
 #define _XGContext_h_INCLUDE
 
 #include "gsc/GSContext.h"
-#include "x11/XGServer.h"
-#include <X11/Xatom.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
 
 @interface XGContext : GSContext
 {
-  XGDrawMechanism	drawMechanism;
 }
-
-- (XGDrawMechanism) drawMechanism;
-- (Display*) xDisplay;
-- (void *) xrContext;
-
 @end
 
 #endif /* _XGContext_h_INCLUDE */

@@ -1,3 +1,28 @@
+2002-04-23  Adam Fedor  <fedor@gnu.org>
+
+	* Headers/x11/XGServer.h: Rework to handle multiple screens.
+	* Headers/xlib/XGContext.h: Simplify.
+
+	* Source/win32/WIN32Server.m (-mouseLocationOnScreen:window:): 
+	Implement.
+
+	* Source/x11/XGServer.m: Rework to handle multiple screens. New
+	XScreenContext class.
+	(-initXContext): Use it.
+	(-_screenContextForScreen:): Implement.
+	(-xrContextForScreen:): Idem.
+	(-drawMechanismForScreen:): Idem.
+	(-xDisplayRootWindowForScreen:): Idem.
+	(-xColorFromColor:forScreen:): Idem.
+	* Source/x11/XGServerEvent.m (-mouseLocationOnScreen:window:):
+	Implement.
+	* Source/x11/XGServerWindow.m (-window::::): Use screen arg.
+	(_blankCursor): Use default screen for drawable (?).
+	(imagecursor::::::): Idem.
+
+	* Source/xlib/XGBitmapImageRep.m: Update for new server interface.
+	* Source/xlib/XGGState.m: Idem.
+
 2002-04-22  Georg Fleischmann
 
 	* back/Source/xlib/XGGState.m
