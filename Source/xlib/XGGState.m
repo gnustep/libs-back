@@ -151,7 +151,7 @@ static	Region	emptyRegion;
   XGServer *srv;
   gswindow_device_t *gs_win;
 
-  gs_win = (gswindow_device_t *)windevice = device;
+  gs_win = windevice = device;
   draw = GET_XDRAWABLE(gs_win);
   [self setGraphicContext: gs_win->gc];
   alpha_buffer = 0;
