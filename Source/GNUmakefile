@@ -41,22 +41,8 @@ endif
 #
 # The list of subproject directories
 #
-SUBPROJECTS = gsc
-ifneq ($(BUILD_X11),)
-SUBPROJECTS += x11
-endif
-ifneq ($(BUILD_WIN32),)
-SUBPROJECTS += win32
-endif
-ifneq ($(BUILD_XLIB),)
-SUBPROJECTS += xlib
-endif
-ifneq ($(BUILD_XDPS),)
-SUBPROJECTS += xdps
-endif
-ifneq ($(BUILD_WINLIB),)
-SUBPROJECTS += winlib
-endif
+SUBPROJECTS = gsc $(BUILD_SERVER) $(BUILD_GRAPHICS)
+
 libgnustep-$(BACKEND_NAME)_SUBPROJECTS=$(SUBPROJECTS)
 
 libgnustep-$(BACKEND_NAME)_OBJC_FILES=GSBackend.m

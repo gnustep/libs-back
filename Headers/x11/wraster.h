@@ -46,7 +46,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-#ifdef HAVE_X11_EXTENSIONS_XSHM_H
+#ifdef XSHM
 #include <X11/extensions/XShm.h>
 #endif
 

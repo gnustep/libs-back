@@ -1,19 +1,10 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to build the Win32 server */
-#undef BUILD_WIN32
+/* Define to type of graphics context to build */
+#undef BUILD_GRAPHICS
 
-/* Define to build Win32 graphics */
-#undef BUILD_WINLIB
-
-/* Define to build the X11 server */
-#undef BUILD_X11
-
-/* Define to build Xdps graphics */
-#undef BUILD_XDPS
-
-/* Define to build Xlib graphics */
-#undef BUILD_XLIB
+/* Define to type of window server to build */
+#undef BUILD_SERVER
 
 /* Define to 1 if you have the <DPS/dpsclient.h> header file. */
 #undef HAVE_DPS_DPSCLIENT_H
@@ -83,6 +74,9 @@
 
 /* Define if you have libwraster */
 #undef WITH_WRASTER
+
+/* Define if you have X11/extensions/XShm.h */
+#undef XSHM
 
 /* Define to 1 if the X Window System is missing or not being used. */
 #undef X_DISPLAY_MISSING
