@@ -2216,12 +2216,11 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
    */
   if (win == generic.desiredFocusWindow && generic.focusRequestNumber != 0)
     {
-      NSDebugLLog(@"Focus", @"Resetting focus to %d", window->number);
+      NSDebugLLog(@"Focus", @"Focus already set on %d", window->number);
+      return;
     }
-  else
-    {
-      NSDebugLLog(@"Focus", @"Setting focus to %d", window->number);
-    }
+  
+  NSDebugLLog(@"Focus", @"Setting focus to %d", window->number);
   generic.desiredFocusWindow = win;
   generic.focusRequestNumber = XNextRequest(dpy);
   XSetInputFocus(dpy, window->ident, RevertToParent, generic.lastTime);

@@ -27,7 +27,7 @@
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
 #include <AppKit/NSColor.h>
-#include <AppKit/NSFont.h>
+#include <AppKit/GSFontInfo.h>
 #include <AppKit/NSGraphics.h>
 #include "gsc/GSContext.h"
 #include "gsc/GSGState.h"
@@ -41,11 +41,11 @@
 
 /* Just temporary until we improve NSColor */
 @interface NSColor (PrivateColor)
-+ colorWithValues: (float *)values colorSpaceName: colorSpace;
++ colorWithValues: (const float *)values colorSpaceName: colorSpace;
 @end
 
 @implementation NSColor (PrivateColor)
-+ colorWithValues: (float *)values colorSpaceName: colorSpace
++ colorWithValues: (const float *)values colorSpaceName: colorSpace
 {
   NSColor *color = nil;
   if ([colorSpace isEqual: NSDeviceWhiteColorSpace])
@@ -278,10 +278,11 @@
 }
 
 
-- (void) GSSetFillColorspace: (NSDictionary *)dict
+- (void) GSSetFillColorspace: (void *)spaceref
 {
   device_color_t col;
   float values[6];
+  NSDictionary *dict = (NSDictionary *)spaceref;
   NSString *colorSpace = [dict objectForKey: GSColorSpaceName];
   if (fillColorS)
     RELEASE(fillColorS);
@@ -292,10 +293,11 @@
   [self setColor: &col state: COLOR_FILL];
 }
 
-- (void) GSSetStrokeColorspace: (NSDictionary *)dict
+- (void) GSSetStrokeColorspace: (void *)spaceref
 {
   device_color_t col;
   float values[6];
+  NSDictionary *dict = (NSDictionary *)spaceref;
   NSString *colorSpace = [dict objectForKey: GSColorSpaceName];
   if (strokeColorS)
     RELEASE(strokeColorS);
@@ -306,7 +308,7 @@
   [self setColor: &col state: COLOR_STROKE];
 }
 
-- (void) GSSetFillColor: (float *)values
+- (void) GSSetFillColor: (const float *)values
 {
   device_color_t dcolor;
   NSColor *color;
@@ -329,7 +331,7 @@
   [self setColor: &dcolor state: COLOR_FILL];
 }
 
-- (void) GSSetStrokeColor: (float *)values
+- (void) GSSetStrokeColor: (const float *)values
 {
   device_color_t dcolor;
   NSColor *color;
@@ -401,20 +403,15 @@
   charSpacing = extra;
 }
 
-- (void) GSSetFont: (NSFont*)newFont
+- (void) GSSetFont: (GSFontInfo *)fontref
 {
-  if (font == newFont)
+  if (font == fontref)
     return;
-  ASSIGN(font, newFont);
+  ASSIGN(font, fontref);
 }
 
 - (void) GSSetFontSize: (float)size
 {
-  NSFont *newFont;
-  if (font == nil)
-    return;
-  newFont = [NSFont fontWithName: [font fontName] size: size];
-  [self GSSetFont: newFont];
 }
 
 - (NSAffineTransform *) GSGetTextCTM

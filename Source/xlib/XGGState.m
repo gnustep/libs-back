@@ -356,9 +356,6 @@ static	Region	emptyRegion;
   NSRect	flushRect;
   Drawable	from;
 
-  flushRect.size = aRect.size;
-  flushRect.origin = aPoint;
-
   CHECK_GC;
   if (draw == 0)
     {
@@ -373,6 +370,8 @@ static	Region	emptyRegion;
     }
 
   src = XGViewRectToX(source, aRect);
+  flushRect.size = aRect.size;
+  flushRect.origin = aPoint;
   dst = XGViewRectToX(self, flushRect);
   NSDebugLLog(@"XGGraphics", @"Copy area from %@ to %@",
 	      NSStringFromRect(aRect), NSStringFromPoint(aPoint));
@@ -1195,10 +1194,9 @@ typedef enum {
   int len;
   int width;
   NSSize scale;
-  XGFontInfo *font_info = [font fontInfo];
   NSPoint point = [path currentPoint];
 
-  if (font_info == nil)
+  if (font == nil)
     {
       NSLog(@"DPS (xgps): no font set\n");
       return;
@@ -1225,10 +1223,10 @@ typedef enum {
       // FIXME: We should put this line before the loop
       // and do all computation in display space.
       xp = XGWindowPointToX(self, point);
-      width = [font_info widthOf: s+i lenght: 1];
+      width = [(XGFontInfo *)font widthOf: s+i lenght: 1];
       // Hack: Only draw when alpha is not zero
       if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
-	[font_info draw: s+i lenght: 1 
+	[(XGFontInfo *)font draw: s+i lenght: 1 
 		   onDisplay: XDPY drawable: draw
 		   with: xgcntxt at: xp];
 
@@ -1237,7 +1235,7 @@ typedef enum {
 	  NSAssert(alpha_buffer, NSInternalInconsistencyException);
 	  
 	  [self setAlphaColor: fillColor.field[AINDEX]];
-	  [font_info draw: s+i lenght: 1 
+	  [(XGFontInfo *)font draw: s+i lenght: 1 
 		     onDisplay: XDPY drawable: alpha_buffer
 		     with: agcntxt at: xp];
 	}
@@ -1264,7 +1262,7 @@ typedef enum {
       if (relative == YES)
 	{
 	  delta.x += width * scale.width;
-	  delta.y += [font_info ascender] * scale.height;
+	  delta.y += [font ascender] * scale.height;
 	}
       if (c && *(s+i) == c)
 	{
@@ -1306,9 +1304,8 @@ typedef enum {
   int width;
   NSSize scale;
   XPoint xp;
-  XGFontInfo *font_info = [font fontInfo];
 
-  if (font_info == nil)
+  if (font == nil)
     {
       NSLog(@"DPS (xgps): no font set\n");
       return;
@@ -1325,11 +1322,11 @@ typedef enum {
     [self setColor: &fillColor state: COLOR_FILL];
 
   len = strlen(s);
-  width = [font_info widthOf: s lenght: len];
+  width = [(XGFontInfo *)font widthOf: s lenght: len];
   xp = XGWindowPointToX(self, [path currentPoint]);
   // Hack: Only draw when alpha is not zero
   if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
-    [font_info draw: s lenght: len 
+    [(XGFontInfo *)font draw: s lenght: len 
 	       onDisplay: XDPY drawable: draw
 	       with: xgcntxt at: xp];
 
@@ -1338,7 +1335,7 @@ typedef enum {
       NSAssert(alpha_buffer, NSInternalInconsistencyException);
 
       [self setAlphaColor: fillColor.field[AINDEX]];
-      [font_info draw: s lenght: len 
+      [(XGFontInfo *)font draw: s lenght: len 
 		 onDisplay: XDPY drawable: alpha_buffer
 		 with: agcntxt at: xp];
     }
@@ -1381,21 +1378,17 @@ typedef enum {
     isRelative: NO];
 }
 
-- (void) GSSetFont: (NSFont*)newFont
+- (void) GSSetFont: (GSFontInfo *)newFont
 {
-  XGFontInfo *font_info;
-
   if (font == newFont)
     return;
-
-  ASSIGN(font, newFont);
+  [super GSSetFont: newFont];
 
   COPY_GC_ON_CHANGE;
   if (xgcntxt == 0)
     return;
 
-  font_info = (XGFontInfo *)[font fontInfo];
-  [font_info setActiveFor: XDPY gc: xgcntxt];
+  [(XGFontInfo *)font setActiveFor: XDPY gc: xgcntxt];
 }
 
 /* ----------------------------------------------------------------------- */

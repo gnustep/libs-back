@@ -40,10 +40,10 @@
 - (void) DPSsethsbcolor: (float)h : (float)s : (float)b;
 - (void) DPSsetrgbcolor: (float)r : (float)g : (float)b;
 
-- (void) GSSetFillColorspace: (NSDictionary *)dict;
-- (void) GSSetStrokeColorspace: (NSDictionary *)dict;
-- (void) GSSetFillColor: (float *)values;
-- (void) GSSetStrokeColor: (float *)values;
+- (void) GSSetFillColorspace: (void *)spaceref;
+- (void) GSSetStrokeColorspace: (void *)spaceref;
+- (void) GSSetFillColor: (const float *)values;
+- (void) GSSetStrokeColor: (const float *)values;
 
 /* ----------------------------------------------------------------------- */
 /* Text operations */
@@ -59,7 +59,7 @@
 - (void) DPSyshow: (const char*)s : (const float*)numarray : (int)size;
 
 - (void) GSSetCharacterSpacing: (float)extra;
-- (void) GSSetFont: (NSFont*)font;
+- (void) GSSetFont: (GSFontInfo *)fontref;
 - (void) GSSetFontSize: (float)size;
 - (NSAffineTransform *) GSGetTextCTM;
 - (NSPoint) GSGetTextPosition;

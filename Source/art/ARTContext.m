@@ -202,7 +202,7 @@ very expensive
 	if ([path isEmpty]) return;
 	p=[self currentPoint];
 
-	[(id<FTFontInfo>)[font fontInfo]
+	[(id<FTFontInfo>)font
 		outlineString: s
 		at: p.x:p.y
 		gstate: self];
@@ -223,7 +223,7 @@ very expensive
 
   x = p.x;
   y = wi->sy - p.y;
-  [(id<FTFontInfo>)[font fontInfo]
+  [(id<FTFontInfo>)font
     drawString: s
     at: x:y
     to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
@@ -252,7 +252,7 @@ very expensive
 
   x = p.x;
   y = wi->sy - p.y;
-  [(id<FTFontInfo>)[font fontInfo]
+  [(id<FTFontInfo>)font
     drawString: s
     at: x:y
     to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
@@ -276,7 +276,7 @@ very expensive
 
   x = p.x;
   y = wi->sy - p.y;
-  [(id<FTFontInfo>)[font fontInfo]
+  [(id<FTFontInfo>)font
     drawString: s
     at: x:y
     to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
@@ -300,7 +300,7 @@ very expensive
 
   x = p.x;
   y = wi->sy - p.y;
-  [(id<FTFontInfo>)[font fontInfo]
+  [(id<FTFontInfo>)font
     drawString: s
     at: x:y
     to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
