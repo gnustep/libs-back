@@ -112,7 +112,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   color = gsColorToRGB(color);
   if (cState & COLOR_FILL)
     wfcolor = RGB(color.field[0]*255, color.field[1]*255, color.field[2]*255);
-  if (cState & COLOR_STOKE)
+  if (cState & COLOR_STROKE)
     wscolor = RGB(color.field[0]*255, color.field[1]*255, color.field[2]*255);
 }
 
