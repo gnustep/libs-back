@@ -294,8 +294,9 @@ static BOOL XGInitAtoms(Display *dpy)
 
       if (enc != nil)
         {
-	  mostCompatibleStringEncoding = [GSFontInfo encodingForRegistry: reg
-						     encoding: enc];
+	  mostCompatibleStringEncoding = GSEncodingForRegistry(reg, enc);
+	  if (mostCompatibleStringEncoding == GSUndefinedEncoding)
+	    mostCompatibleStringEncoding = NSASCIIStringEncoding;
 	  encodingScheme = [NSString stringWithFormat: @"%@-%@", 
 				     reg, enc];
 	  NSDebugLog(@"Found encoding %d for %@", 

@@ -30,7 +30,9 @@
 #include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>
 #include <Foundation/NSException.h>
+#include <base/Unicode.h>
 #include <AppKit/NSWindow.h>
+#include <AppKit/GSFontInfo.h>
 
 #include "x11/XGInputServer.h"
 #include <X11/Xlocale.h>
@@ -60,7 +62,6 @@
 		   name: (NSString *)name
 {
   char *locale;
-  NSString *localeEncoding;
   delegate = aDelegate;
   ASSIGN(server_name, name);
   dbuf = RETAIN([NSMutableData dataWithCapacity: BUF_LEN]);
@@ -69,32 +70,23 @@
      for X. Also just get CTYPE locale (which is typically the one that
      deals with character handling */
   locale = setlocale(LC_CTYPE, "");
-  localeEncoding = [NSString stringWithCString: locale];
   if (XSupportsLocale() != True) 
     {
-      NSLog(@"Xlib does not support locale setting %@", localeEncoding);
+      NSLog(@"Xlib does not support locale setting %s", locale);
       /* FIXME: Should we reset the locale or just hope that X 
 	 can deal with it? */
     }
-  localeEncoding = [[[localeEncoding componentsSeparatedByString: @"."] 
-                                       lastObject] lowercaseString];
-  NSDebugLLog(@"XIM", @"XIM locale encoding is %@", localeEncoding);
-  // FIXME: Use [GSFontInfo +encodingForRegistry:encoding:]?
-  if ([localeEncoding isEqualToString:@"big5"])
-    {
-      encoding = NSBIG5StringEncoding;
-    }
-#ifdef HAVE_UTF8
-  else if ([localeEncoding isEqualToString:@"utf8"]
-	   || [localeEncoding isEqualToString:@"utf-8"] )
-    {
-      encoding = NSUTF8StringEncoding;
-    }
+  encoding = GSEncodingFromLocale(locale);
+#ifndef HAVE_UTF8
+  if (encoding == NSUTF8StringEncoding)
+    encoding = GSUndefinedEncoding;
 #endif
-  else
+  if (encoding == GSUndefinedEncoding)
     {
       encoding = [NSString defaultCStringEncoding];
     }
+  NSDebugLLog(@"XIM", @"XIM locale encoding for %s is %@", locale,
+	      GetEncodingName(encoding));
 
 #ifdef USE_XIM
   if ([self ximInit: dpy] == NO)
