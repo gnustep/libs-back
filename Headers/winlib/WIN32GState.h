@@ -39,6 +39,9 @@
   float lineWidth;
   float miterlimit;
   HRGN clipRegion;
+
+  HGDIOBJ oldBrush;
+  HGDIOBJ oldPen;
 }
 
 - (void) setWindow: (HWND)number;
