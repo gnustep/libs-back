@@ -34,6 +34,7 @@
 #include <Foundation/NSDebug.h>
 #include <AppKit/GSFontInfo.h>
 #include <AppKit/NSAffineTransform.h>
+#include <AppKit/NSBezierPath.h>
 
 //#include "gsc/GSContext.h"
 #include "gsc/GSGState.h"
@@ -1823,6 +1824,21 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 }
 
 
+-(NSGlyph) glyphWithName: (NSString *)glyphName
+{
+  FT_Face face;
+  NSGlyph g;
+
+  if (FTC_Manager_Lookup_Size(ftc_manager, &imgd.font, &face, 0))
+    return NSNullGlyph;
+
+  g = FT_Get_Name_Index(face, (FT_String *)[glyphName lossyCString]);
+  if (g)
+    return g + 1;
+
+  return NSNullGlyph;
+}
+
 
 /*
 
@@ -1920,6 +1936,8 @@ p(t)=q(t)
 
 */
 
+/* TODO: try to combine charpath and NSBezierPath handling? */
+
 static int charpath_move_to(FT_Vector *to, void *user)
 {
   GSGState *self = (GSGState *)user;
@@ -1972,12 +1990,73 @@ static int charpath_cubic_to(FT_Vector *c1, FT_Vector *c2, FT_Vector *to, void *
   return 0;
 }
 
-
-static FT_Outline_Funcs funcs = {
+static FT_Outline_Funcs charpath_funcs = {
 move_to:charpath_move_to,
 line_to:charpath_line_to,
 conic_to:charpath_conic_to,
 cubic_to:charpath_cubic_to,
+shift:10,
+delta:0,
+};
+
+
+static int bezierpath_move_to(FT_Vector *to, void *user)
+{
+  NSBezierPath *path = (NSBezierPath *)user;
+  NSPoint d;
+  d.x = to->x / 65536.0;
+  d.y = to->y / 65536.0;
+  [path closePath]; /* TODO: this isn't completely correct */
+  [path moveToPoint: d];
+  return 0;
+}
+
+static int bezierpath_line_to(FT_Vector *to, void *user)
+{
+  NSBezierPath *path = (NSBezierPath *)user;
+  NSPoint d;
+  d.x = to->x / 65536.0;
+  d.y = to->y / 65536.0;
+  [path lineToPoint: d];
+  return 0;
+}
+
+static int bezierpath_conic_to(FT_Vector *c1, FT_Vector *to, void *user)
+{
+  NSBezierPath *path = (NSBezierPath *)user;
+  NSPoint a, b, c, d;
+  a = [path currentPoint];
+  d.x = to->x / 65536.0;
+  d.y = to->y / 65536.0;
+  b.x = c1->x / 65536.0;
+  b.y = c1->y / 65536.0;
+  c.x = (b.x * 2 + d.x) / 3.0;
+  c.y = (b.y * 2 + d.y) / 3.0;
+  b.x = (b.x * 2 + a.x) / 3.0;
+  b.y = (b.y * 2 + a.y) / 3.0;
+  [path curveToPoint: d controlPoint1: b controlPoint2: c];
+  return 0;
+}
+
+static int bezierpath_cubic_to(FT_Vector *c1, FT_Vector *c2, FT_Vector *to, void *user)
+{
+  NSBezierPath *path = (NSBezierPath *)user;
+  NSPoint b, c, d;
+  b.x = c1->x / 65536.0;
+  b.y = c1->y / 65536.0;
+  c.x = c2->x / 65536.0;
+  c.y = c2->y / 65536.0;
+  d.x = to->x / 65536.0;
+  d.y = to->y / 65536.0;
+  [path curveToPoint: d controlPoint1: b controlPoint2: c];
+  return 0;
+}
+
+static FT_Outline_Funcs bezierpath_funcs = {
+move_to:bezierpath_move_to,
+line_to:bezierpath_line_to,
+conic_to:bezierpath_conic_to,
+cubic_to:bezierpath_cubic_to,
 shift:10,
 delta:0,
 };
@@ -2061,13 +2140,75 @@ add code to avoid loading bitmaps for glyphs */
       ftdelta.x += gl->advance.x >> 10;
       ftdelta.y += gl->advance.y >> 10;
 
-      FT_Outline_Decompose(&og->outline, &funcs, func_param);
+      FT_Outline_Decompose(&og->outline, &charpath_funcs, func_param);
 
       FT_Done_Glyph(gl);
 
     }
 
+  if (ulen)
+    {
+      [(GSGState *)func_param DPSmoveto: ftdelta.x / 64.0 : ftdelta.y / 64.0];
+    }
+
   free(uch);
+}
+
+
+-(void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs
+			     count: (int)count
+		      toBezierPath: (NSBezierPath *)path
+{
+  int i;
+  NSGlyph glyph;
+
+  FT_Matrix ftmatrix;
+  FT_Vector ftdelta;
+
+  NSPoint p = [path currentPoint];
+
+  ftmatrix.xx = 65536;
+  ftmatrix.xy = 0;
+  ftmatrix.yx = 0;
+  ftmatrix.yy = 65536;
+  ftdelta.x = p.x * 64.0;
+  ftdelta.y = p.y * 64.0;
+
+  for (i = 0; i < count; i++, glyphs++)
+    {
+      FT_Face face;
+      FT_Glyph gl;
+      FT_OutlineGlyph og;
+
+      glyph = *glyphs - 1;
+
+      if (FTC_Manager_Lookup_Size(ftc_manager, &imgd.font, &face, 0))
+	continue;
+      if (FT_Load_Glyph(face, glyph, FT_LOAD_DEFAULT))
+	continue;
+
+      if (FT_Get_Glyph(face->glyph, &gl))
+	continue;
+
+      if (FT_Glyph_Transform(gl, &ftmatrix, &ftdelta))
+	{
+	  NSLog(@"glyph transformation failed!");
+	  continue;
+	}
+      og = (FT_OutlineGlyph)gl;
+
+      ftdelta.x += gl->advance.x >> 10;
+      ftdelta.y += gl->advance.y >> 10;
+
+      FT_Outline_Decompose(&og->outline, &bezierpath_funcs, path);
+
+      FT_Done_Glyph(gl);
+    }
+
+  if (count)
+    {
+      [path moveToPoint: NSMakePoint(ftdelta.x / 64.0, ftdelta.y / 64.0)];
+    }
 }
 
 
