@@ -1520,10 +1520,15 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
        */
       if ((window->win_attrs.window_style & NSIconWindowMask) != 0)
 	{
+#if 0
+	  /* This doesn't appear to do anything useful, and, at least
+	     with WindowMaker, can cause the app to flicker and spuriously
+	     lose focus if the app icon is already visible.  */
 	  if (op != NSWindowOut)
 	    {
 	      XMapRaised(dpy, ROOT);
 	    }
+#endif
 	  return;
 	}
       if ((window->win_attrs.window_style & NSMiniWindowMask) != 0)
