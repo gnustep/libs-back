@@ -140,7 +140,34 @@ setNormalHints(Display *d, gswindow_device_t *w)
   if (w->siz_hints.flags & PResizeInc)
     NSDebugLLog(@"XGTrace", @"Hint incr %d: %d, %d",
       w->number, w->siz_hints.width_inc, w->siz_hints.height_inc);
-  XSetWMNormalHints(d, w->ident, &w->siz_hints);
+  if (handlesWindowDecorations
+      && !(w->win_attrs.window_style & NSResizableWindowMask))
+    {
+      /* Some silly window managers (*cough* metacity *cough*) ignore
+	 our "non-resizable" hints unless we set the min and max
+	 sizes equal to the current size, hence the ugly code here.  */
+      CARD32 oldFlags;
+      int old_w0, old_h0, old_w1, old_h1;
+      
+      old_w0 = w->siz_hints.min_width;
+      old_h0 = w->siz_hints.max_width;
+      old_w1 = w->siz_hints.min_height;
+      old_h1 = w->siz_hints.max_height;
+      oldFlags = w->siz_hints.flags;
+
+      w->siz_hints.flags |= PMinSize | PMaxSize;
+      w->siz_hints.min_width = w->siz_hints.max_width = w->xframe.size.width;
+      w->siz_hints.min_height = w->siz_hints.max_height = w->xframe.size.height;
+      XSetWMNormalHints(d, w->ident, &w->siz_hints);
+
+      w->siz_hints.min_width = old_w0;
+      w->siz_hints.max_width = old_h0;
+      w->siz_hints.min_height = old_w1;
+      w->siz_hints.max_height = old_h1;
+      w->siz_hints.flags = oldFlags;
+    }
+  else
+    XSetWMNormalHints(d, w->ident, &w->siz_hints);
 }
 
 /*
@@ -1852,7 +1879,6 @@ static BOOL didCreatePixmaps;
   XMoveResizeWindow (dpy, window->ident,
     window->siz_hints.x, window->siz_hints.y,
     window->siz_hints.width, window->siz_hints.height);
-  setNormalHints(dpy, window);
 
   /* Update xframe right away. We optimistically assume that we'll get the
   frame we asked for. If we're right, -gui can update/redraw right away,
@@ -1860,6 +1886,11 @@ static BOOL didCreatePixmaps;
   If we're wrong, the ConfigureNotify will have the exact coordinates, and
   at that point, we'll send new GSAppKitWindow* events to -gui. */
   window->xframe = xVal;
+
+  /* Update the hints.  Note that we do this _after_ updating xframe since
+     the hint setting code needs the new xframe to work around problems
+     with min/max sizes and resizability in some window managers.  */
+  setNormalHints(dpy, window);
 
   if (resize == YES)
     {

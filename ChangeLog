@@ -1,3 +1,12 @@
+2005-02-12 13:54  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/x11/XGServerWindow.m (setNormalHints): If the window isn't
+	resizable, force the min and max sizes to be equal to the current
+	size.
+	(-placewindow::): Set the hints after updating xframe.
+
+	Fixes bug #11713.
+
 2005-02-10 00:50  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Tools/gpbs.m (init): Remove the program name from the arguments
