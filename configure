@@ -2819,7 +2819,8 @@ if test "x$enable_winlib" = "xyes"; then
 #define BUILD_WINLIB 1
 EOF
 
-  echo "$ac_t""win32" 1>&6
+  echo "$ac_t""winlib" 1>&6
+  GRAPHIC_LIBS=-lgdi32
   enable_xdps=no
   enable_xlib=no
 fi

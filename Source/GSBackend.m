@@ -50,10 +50,10 @@
 #include <xdps/NSDPSContext.h>
 #endif
 #ifdef BUILD_WIN32
-// win32 header here
+#include <win32/WIN32Server.h>
 #endif
 #ifdef BUILD_WINLIB
-// winlib header here
+#include <winlib/WIN32Context.h>
 #endif
 
 @implementation GSBackend
@@ -69,7 +69,7 @@
   [XGServer initializeBackend];
 #else
 #ifdef BUILD_WIN32
-// win32 initialize here
+  [WIN32Server initializeBackend];
 #else
   [NSException raise: NSInternalInconsistencyException
 	       format: @"No Window Server configured in backend"];
@@ -82,7 +82,7 @@
   context = @"xdps";
 #endif
 #ifdef BUILD_WINLIB
-  context = @"xwin32";
+  context = @"win32";
 #endif
 #ifdef BUILD_XLIB
   context = @"xlib";
