@@ -1,3 +1,9 @@
+2002-11-08  Adam Fedor  <fedor@gnu.org>
+
+	* Source/x11/XGServerEvent.m ([XGServer
+	-receivedEvent:type:extra:forMode:] (ClientMessage:TAKE_FOCUS)):
+	Reassert focus and/or send FocusIn event in all cases.
+
 2002-10-29  Adam Fedor  <fedor@gnu.org>
 
 	* Source/x11/XGServerWindow.m ([XGServer -_checkWindowManager]):

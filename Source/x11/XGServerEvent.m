@@ -501,19 +501,43 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 				cWin->number, 
 				generic.currentFocusWindow,
 				[nswin windowNumber]);
-		    if (generic.desiredFocusWindow
-			&& cWin->number != generic.desiredFocusWindow)
+		    if ([NSApp isActive]
+			&& ((generic.currentFocusWindow
+			     && cWin->number == generic.currentFocusWindow)
+			    || (generic.desiredFocusWindow
+				&& cWin->number != generic.desiredFocusWindow)))
 		      {
-			NSDebugLLog(@"Focus", @"  but desired focus is %d",
+			/*
+			 * Reassert our desire to have input
+			 * focus in our existing key window.
+			 * Case 1 can occur when we switch workspaces
+			 * and the WM tells us to take back focus on
+			 * our current key window, or (Case 2) if we
+			 * asked for a window to be key but didn't get
+			 * it (perhaps because it wasn't on-screen
+			 * yet?). 
+			 */
+			int number;
+			NSDebugLLog(@"Focus", @"  desired focus is %d",
 				    generic.desiredFocusWindow);
+			number = generic.desiredFocusWindow;
+			generic.focusRequestNumber = 0;
+			generic.desiredFocusWindow = 0;
+			if (number == 0)
+			  number = cWin->number;
+			[self setinputstate: GSTitleBarKey : number];
+			[self setinputfocus: number];
 		      }
-		    /* Only send an event if we don't have a key
-		       window already (If we have a key window, that
-		       means the AppKit originated whatever event got us
-		       here). This would happen if the app was inactive
-		       and this is a call for the app to activate */
-		    if (nswin == nil)
+		    else
 		      {
+			/*
+			 * Here the app asked for this (if nswin==nil)
+			 * or there was a click on the title bar or
+			 * some other reason (window mapped, etc). We don't
+			 * necessarily want to do this for the last reason
+			 * but we just have to deal with that since we
+			 * can never be sure if it's necessary.
+			 */
 			eventLocation = NSMakePoint(0,0);
 			e = [NSEvent otherEventWithType:NSAppKitDefined
 				     location: eventLocation
@@ -867,7 +891,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	      /*
 	       * This is a response to our own request - so we mark the
 	       * request as complete.
-		     */
+	       */
 	      generic.desiredFocusWindow = 0;
 	      generic.focusRequestNumber = 0;
 	    }
