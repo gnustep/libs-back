@@ -641,6 +641,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
   self = [super init];
 
+  screenFont = p_screenFont;
 
   NSDebugLLog(@"ftfont", @"[%@ -initWithFontName: %@  matrix: (%g %g %g %g %g %g)] %i\n",
 	      self, name,
@@ -670,10 +671,18 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   mostCompatibleStringEncoding = NSUTF8StringEncoding;
   encodingScheme = @"iso10646-1";
 
+  if (screenFont)
+    {
+      /* Round up; makes the text more legible. */
+      matrix[0] = ceil(matrix[0]);
+      if (matrix[3] < 0.0)
+	matrix[3] = floor(matrix[3]);
+      else
+	matrix[3] = ceil(matrix[3]);
+    }
+
   imgd.font.pix_width = fabs(matrix[0]);
   imgd.font.pix_height = fabs(matrix[3]);
-
-  screenFont = p_screenFont;
 
   rfi = font_entry->files;
   if (screenFont && font_entry->num_sizes &&
