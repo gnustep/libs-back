@@ -111,7 +111,6 @@ gpbs_log (int prio)
 @end
 static Class	xPbClass;
 
-int debug = 0;
 int verbose = 0;
 
 #define MAXHIST 100
@@ -1123,11 +1122,12 @@ ihandler(int sig)
 }
 
 static void
-init(int argc, char** argv)
+init(int argc, char** argv, char **env)
 {
   NSUserDefaults *defs;
   NSArray	*args = [[NSProcessInfo processInfo] arguments];
   unsigned	count, c;
+  BOOL		shouldFork = YES;
 
   for (count = 1; count < [args count]; count++)
     {
@@ -1144,7 +1144,7 @@ init(int argc, char** argv)
 	}
       else if ([a isEqualToString: @"--no-fork"] == YES)
 	{
-	  debug++;
+	  shouldFork = NO;
 	}
       else if ([a isEqualToString: @"--verbose"] == YES)
 	{
@@ -1181,25 +1181,24 @@ init(int argc, char** argv)
 #endif 
   signal(SIGTERM, ihandler);
 
-  if (debug == 0)
-    {
-      /*
-       *  Now fork off child process to run in background.
-       */
-#ifdef __MINGW__
+  if (shouldFork == YES)
     {
       char	**a = malloc((argc+2) * sizeof(char*));
 
       memcpy(a, argv, argc*sizeof(char*));
       a[argc] = "--no-fork";
       a[argc+1] = 0;
+
+      /*
+       *  Now fork off child process to run in background.
+       */
+#ifdef __MINGW__
       if (_spawnv(_P_NOWAIT, argv[0], a) == -1)
 	{
 	  fprintf(stderr, "gpbs - spawn failed - bye.\n");
 	  exit(EXIT_FAILURE);
 	}
       exit(EXIT_SUCCESS);
-    }
 #else
       is_daemon = 1;
       switch (fork())
@@ -1226,43 +1225,54 @@ init(int argc, char** argv)
 	      }
 	    exit(EXIT_SUCCESS);
 	}
-#endif 
-    }
 
-#ifndef __MINGW__
-  /*
-   *	Ensure we don't have any open file descriptors which may refer
-   *	to sockets bound to ports we may try to use.
-   *
-   *	Use '/dev/null' for stdin and stdout.
-   */
-  for (c = 0; c < FD_SETSIZE; c++)
-    {
-      if (is_daemon || (c != 2))
+      /*
+       *	Ensure we don't have any open file descriptors which may refer
+       *	to sockets bound to ports we may try to use.
+       *
+       *	Use '/dev/null' for stdin and stdout.
+       */
+      for (c = 0; c < FD_SETSIZE; c++)
 	{
-	  (void)close(c);
+	  if (is_daemon || (c != 2))
+	    {
+	      (void)close(c);
+	    }
 	}
-    }
-  if (open("/dev/null", O_RDONLY) != 0)
-    {
-      sprintf(ebuf, "failed to open stdin from /dev/null (%s)\n",
-	strerror(errno));
-      gpbs_log(LOG_CRIT);
-      exit(EXIT_FAILURE);
-    }
-  if (open("/dev/null", O_WRONLY) != 1)
-    {
-      sprintf(ebuf, "failed to open stdout from /dev/null (%s)\n",
-	strerror(errno));
-      gpbs_log(LOG_CRIT);
-      exit(EXIT_FAILURE);
-    }
-  if (is_daemon && open("/dev/null", O_WRONLY) != 2)
-    {
-      sprintf(ebuf, "failed to open stderr from /dev/null (%s)\n",
-	strerror(errno));
-      gpbs_log(LOG_CRIT);
-      exit(EXIT_FAILURE);
+      if (open("/dev/null", O_RDONLY) != 0)
+	{
+	  sprintf(ebuf, "failed to open stdin from /dev/null (%s)\n",
+	    strerror(errno));
+	  gpbs_log(LOG_CRIT);
+	  exit(EXIT_FAILURE);
+	}
+      if (open("/dev/null", O_WRONLY) != 1)
+	{
+	  sprintf(ebuf, "failed to open stdout from /dev/null (%s)\n",
+	    strerror(errno));
+	  gpbs_log(LOG_CRIT);
+	  exit(EXIT_FAILURE);
+	}
+      if (is_daemon && open("/dev/null", O_WRONLY) != 2)
+	{
+	  sprintf(ebuf, "failed to open stderr from /dev/null (%s)\n",
+	    strerror(errno));
+	  gpbs_log(LOG_CRIT);
+	  exit(EXIT_FAILURE);
+	}
+
+      /*
+       * Try to re-execute the program in case we are running using the
+       * pth library (which would be messed up by having closed descriptors).
+       */
+      if ([[NSBundle mainBundle] executablePath] != nil)
+	{
+	  execve([[[NSBundle mainBundle] executablePath] cString], a, env);
+	  sprintf(ebuf, "failed to exec to '%s' (%s)\n",
+	    argv[0], strerror(errno));
+	  gpbs_log(LOG_CRIT);
+	  exit(EXIT_FAILURE);
+	}
     }
 #endif
 
@@ -1285,7 +1295,7 @@ main(int argc, char** argv, char **env)
   [NSProcessInfo initializeWithArguments:argv count:argc environment:env];
 #endif
 
-  init(argc, argv);
+  init(argc, argv, env);
 
   // [NSObject enableDoubleReleaseCheck: YES];
 
