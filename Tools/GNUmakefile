@@ -49,6 +49,8 @@ gpbs_C_FILES += xdnd.c
 endif
 endif
 
+MAN1_PAGES = gpbs.1.gz
+
 -include GNUmakefile.preamble
 
 -include GNUmakefile.local

@@ -22,13 +22,29 @@ before-all::
 # before-install::
 
 # Things to do after installing
-# after-install::
+after-install::
+	if [ ! -f $(GNUSTEP_DOCUMENTATION_MAN) ]; then \
+	  $(MKDIRS) $(GNUSTEP_DOCUMENTATION_MAN); \
+	fi; \
+	if [ ! -f $(GNUSTEP_DOCUMENTATION_MAN)/man1 ]; then \
+	  $(MKDIRS) $(GNUSTEP_DOCUMENTATION_MAN)/man1; \
+	fi; \
+	for file in $(MAN1_PAGES) __done; do \
+	  if [ $$file != __done ]; then \
+	    $(INSTALL_DATA) $$file $(GNUSTEP_DOCUMENTATION_MAN)/man1/$$file; \
+	  fi; \
+	done;
 
 # Things to do before uninstalling
 # before-uninstall::
 
 # Things to do after uninstalling
-# after-uninstall::
+after-uninstall::
+	for file in $(MAN1_PAGES) __done; do \
+	  if [ $$file != __done ]; then \
+	    rm -f $(GNUSTEP_DOCUMENTATION_MAN)/man1/$$file; \
+	  fi; \
+	done;
 
 # Things to do before cleaning
 # before-clean::
