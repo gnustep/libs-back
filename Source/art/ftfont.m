@@ -582,7 +582,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
 
 @implementation FTFontInfo
-- initWithFontName: (NSString*)name
+- initWithFontName: (NSString *)name
 	matrix: (const float *)fmatrix
 	screenFont: (BOOL)p_screenFont
 {
@@ -628,15 +628,14 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   mostCompatibleStringEncoding = NSUTF8StringEncoding;
   encodingScheme = @"iso10646-1";
 
-  imgd.font.pix_width = matrix[0];
-  imgd.font.pix_height = matrix[3];
+  imgd.font.pix_width = fabs(matrix[0]);
+  imgd.font.pix_height = fabs(matrix[3]);
 
   screenFont = p_screenFont;
 
   rfi = font_entry->files;
   if (screenFont && font_entry->num_sizes &&
-      ((imgd.font.pix_width == imgd.font.pix_height) ||
-       (imgd.font.pix_width == -imgd.font.pix_height)))
+      imgd.font.pix_width == imgd.font.pix_height)
     {
       int i;
       for (i = 0; i < font_entry->num_sizes; i++)
@@ -705,7 +704,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 }
 
 
-extern void GSToUnicode();
+#include <gnustep/base/Unicode.h>
 
 /* TODO: the current point probably needs updating after drawing is done */
 
@@ -2433,6 +2432,7 @@ static int filters[3][7]=
 /*
 GSLayoutManager glyph generation code.
 */
+#include <Foundation/NSCharacterSet.h>
 #include <AppKit/GSLayoutManager_internal.h>
 #include <AppKit/NSTextStorage.h>
 
@@ -2490,8 +2490,6 @@ fb04 'ffl'
 	unsigned int c=run->head.char_length;
 	unichar buf[c];
 
-
-//	printf("_generateGlyphsForRun: %p %i+%i\n",run,pos,run->head.char_length);
 
 	[[_textStorage string] getCharacters: buf
 		range: NSMakeRange(pos,c)];
