@@ -81,22 +81,33 @@ static BOOL anti_alias_by_default;
 
 @class FTFaceInfo;
 
+#define CACHE_SIZE 257
+
 @interface FTFontInfo : GSFontInfo <FTFontInfo>
 {
 @public
 #ifdef FT212_STUFF
   FTC_ImageDesc imgd;
 
-  FTC_ImageDesc fallback;
+  FTC_ImageDesc advancementImgd;
 #else
   FTC_ImageTypeRec imgd;
 
-  FTC_ImageTypeRec fallback;
+  FTC_ImageTypeRec advancementImgd;
 #endif
 
   FTFaceInfo *face_info;
 
   BOOL screenFont;
+
+
+  /*
+  Profiling (2003-11-14) shows that calls to -advancementForGlyph: accounted
+  for roughly 20% of layout time. This cache reduces it to (currently)
+  insignificant levels.
+  */
+  unsigned int cachedGlyph[CACHE_SIZE];
+  NSSize cachedSize[CACHE_SIZE];
 
 
   /* Glyph generation */
@@ -727,11 +738,6 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
   imgd.font.face_id = (FTC_FaceID)rfi;
 
-  /* TODO: make this configurable */
-/*	fallback = imgd;
-	fallback.font.face_id = @"/usr/local/share/fonts/truetype/CODE2000.TTF";*/
-
-
   if ((error=FTC_Manager_Lookup_Size(ftc_manager, &imgd.font, &face, &size)))
     {
       NSLog(@"FTC_Manager_Lookup_Size() failed for '%@', error %08x!\n", name, error);
@@ -772,6 +778,68 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
       FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, 'i'),
       fontName);*/
   }
+
+    {
+      float xx, yy;
+#ifdef FT212_STUFF
+      FTC_ImageDesc cur;
+#else
+      FTC_ImageTypeRec cur;
+#endif
+
+      cur = imgd;
+
+      xx = matrix[0];
+      yy = matrix[3];
+
+	if (xx == yy && xx < 16 && xx >= 8)
+	  {
+	    int rh = face_info->render_hints_hack;
+	    if (rh & 0x10000)
+	      {
+#ifdef FT212_STUFF
+		cur.type = ftc_image_grays;
+#else
+		cur.flags = FT_LOAD_TARGET_NORMAL;
+#endif
+		rh = (rh >> 8) & 0xff;
+	      }
+	    else
+	      {
+#ifdef FT212_STUFF
+		cur.type = ftc_image_mono;
+#else
+		cur.flags = FT_LOAD_TARGET_MONO;
+#endif
+		rh = rh & 0xff;
+	      }
+	    if (rh & 1)
+#ifdef FT212_STUFF
+	      cur.type |= ftc_image_flag_autohinted;
+#else
+	      cur.flags |= FT_LOAD_FORCE_AUTOHINT;
+#endif
+	    if (!(rh & 2))
+#ifdef FT212_STUFF
+	      cur.type |= ftc_image_flag_unhinted;
+#else
+	      cur.flags |= FT_LOAD_NO_HINTING;
+#endif
+	  }
+	else if (xx < 8)
+#ifdef FT212_STUFF
+	  cur.type = ftc_image_grays | ftc_image_flag_unhinted;
+#else
+	  cur.flags = FT_LOAD_TARGET_NORMAL | FT_LOAD_NO_HINTING;
+#endif
+	else
+#ifdef FT212_STUFF
+	  cur.type = ftc_image_grays;
+#else
+	  cur.flags = FT_LOAD_TARGET_NORMAL;
+#endif
+      advancementImgd = cur;
+    }
 
   return self;
 }
@@ -1003,14 +1071,6 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
       glyph = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, uch);
       cur.font.face_id = imgd.font.face_id;
-      if (!glyph)
-	{
-	  cmap.face_id = fallback.font.face_id;
-	  glyph = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, uch);
-	  if (glyph)
-	    cur.font.face_id = fallback.font.face_id;
-	  cmap.face_id = imgd.font.face_id;
-	}
 
       if (use_sbit)
 	{
@@ -1398,7 +1458,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
       if (use_sbit)
 	{
-	  if ((error=FTC_SBitCache_Lookup(ftc_sbitcache, &cur, glyph, &sbit, NULL)))
+	  if ((error = FTC_SBitCache_Lookup(ftc_sbitcache, &cur, glyph, &sbit, NULL)))
 	    {
 	      NSLog(@"FTC_SBitCache_Lookup() failed with error %08x (%08x, %08x, %ix%i, %08x)\n",
 		error, glyph, cur.font.face_id, cur.font.pix_width, cur.font.pix_height,
@@ -1410,7 +1470,6 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 		);
 	      continue;
 	    }
-
 
 	  if (!sbit->buffer)
 	    {
@@ -1659,82 +1718,29 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   glyph--;
   if (screenFont)
     {
-      /* TODO: try to more efficiently? */
-      /* TODO: set up all this stuff in -init... for the raw metric case */
-      float xx, yy;
-#ifdef FT212_STUFF
-      FTC_ImageDesc cur;
-#else
-      FTC_ImageTypeRec cur;
-#endif
+      int entry = glyph % CACHE_SIZE;
       FTC_SBit sbit;
 
-      cur = imgd;
+      if (cachedGlyph[entry] == glyph)
+	return cachedSize[entry];
 
-      xx = matrix[0];
-      yy = matrix[3];
-
-	if (xx == yy && xx < 16 && xx >= 8)
-	  {
-	    int rh = face_info->render_hints_hack;
-	    if (rh & 0x10000)
-	      {
-#ifdef FT212_STUFF
-		cur.type = ftc_image_grays;
-#else
-		cur.flags = FT_LOAD_TARGET_NORMAL;
-#endif
-		rh = (rh >> 8) & 0xff;
-	      }
-	    else
-	      {
-#ifdef FT212_STUFF
-		cur.type = ftc_image_mono;
-#else
-		cur.flags = FT_LOAD_TARGET_MONO;
-#endif
-		rh = rh & 0xff;
-	      }
-	    if (rh & 1)
-#ifdef FT212_STUFF
-	      cur.type |= ftc_image_flag_autohinted;
-#else
-	      cur.flags |= FT_LOAD_FORCE_AUTOHINT;
-#endif
-	    if (!(rh & 2))
-#ifdef FT212_STUFF
-	      cur.type |= ftc_image_flag_unhinted;
-#else
-	      cur.flags |= FT_LOAD_NO_HINTING;
-#endif
-	  }
-	else if (xx < 8)
-#ifdef FT212_STUFF
-	  cur.type = ftc_image_grays | ftc_image_flag_unhinted;
-#else
-	  cur.flags = FT_LOAD_TARGET_NORMAL | FT_LOAD_NO_HINTING;
-#endif
-	else
-#ifdef FT212_STUFF
-	  cur.type = ftc_image_grays;
-#else
-	  cur.flags = FT_LOAD_TARGET_NORMAL;
-#endif
-
-      if ((error=FTC_SBitCache_Lookup(ftc_sbitcache, &cur, glyph, &sbit, NULL)))
+      if ((error=FTC_SBitCache_Lookup(ftc_sbitcache, &advancementImgd, glyph, &sbit, NULL)))
 	{
 	  NSLog(@"FTC_SBitCache_Lookup() failed with error %08x (%08x, %08x, %ix%i, %08x)\n",
-	    error, glyph, cur.font.face_id, cur.font.pix_width, cur.font.pix_height,
+	    error, glyph, advancementImgd.font.face_id,
+	    advancementImgd.font.pix_width, advancementImgd.font.pix_height,
 #ifdef FT212_STUFF
-	    cur.type
+	    advancementImgd.type
 #else
-	    cur.flags
+	    advancementImgd.flags
 #endif
 	    );
 	  return NSZeroSize;
 	}
 
-      return NSMakeSize(sbit->xadvance, sbit->yadvance);
+      cachedGlyph[entry] = glyph;
+      cachedSize[entry] = NSMakeSize(sbit->xadvance, sbit->yadvance);
+      return cachedSize[entry];
     }
   else
     {
@@ -1879,14 +1885,6 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
       ch = [string characterAtIndex: i];
       cur = &imgd;
       glyph = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, ch);
-      if (!glyph)
-	{
-	  cmap.face_id = fallback.font.face_id;
-	  glyph = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, ch);
-	  if (glyph)
-	    cur = &fallback;
-	  cmap.face_id = imgd.font.face_id;
-	}
 
       /* TODO: shouldn't use sbit cache for this */
       if (1)
@@ -2194,14 +2192,6 @@ add code to avoid loading bitmaps for glyphs */
 
       glyph = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, *c);
       cur.font.face_id = imgd.font.face_id;
-      if (!glyph)
-	{
-	  cmap.face_id = fallback.font.face_id;
-	  glyph = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, *c);
-	  if (glyph)
-	    cur.font.face_id = fallback.font.face_id;
-	  cmap.face_id = imgd.font.face_id;
-	}
 
       if (FTC_Manager_Lookup_Size(ftc_manager, &cur.font, &face, 0))
 	continue;
