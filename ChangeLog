@@ -1,3 +1,7 @@
+2003-02-06 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Tools/gpbs.m (ihandler): Fix for mingw, which doesn't have kill()
+
 2003-02-02 22:00  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m (-initWithFontName:matrix:screenFont:): Use
