@@ -2698,6 +2698,33 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
     case GSIBeamCursor:
       cursor->c = XCreateFontCursor(dpy, XC_xterm);
       break;
+    case GSCrosshairCursor:
+      cursor->c = XCreateFontCursor(dpy, XC_crosshair);
+      break;
+    case GSDisappearingItemCursor:
+      cursor->c = XCreateFontCursor(dpy, XC_shuttle);
+      break;
+    case GSPointingHandCursor:
+      cursor->c = XCreateFontCursor(dpy, XC_hand1);
+      break;
+    case GSResizeDownCursor:
+      cursor->c = XCreateFontCursor(dpy, XC_bottom_side);
+      break;
+    case GSResizeLeftCursor:
+      cursor->c = XCreateFontCursor(dpy, XC_left_side);
+      break;
+    case GSResizeLeftRightCursor:
+      cursor->c = XCreateFontCursor(dpy, XC_sb_h_double_arrow);
+      break;
+    case GSResizeRightCursor:
+      cursor->c = XCreateFontCursor(dpy, XC_right_side);
+      break;
+    case GSResizeUpCursor:
+      cursor->c = XCreateFontCursor(dpy, XC_top_side);
+      break;
+    case GSResizeUpDownCursor:
+      cursor->c = XCreateFontCursor(dpy, XC_sb_v_double_arrow);
+      break;
     default:
       cursor->c = XCreateFontCursor(dpy, XC_left_ptr);     
       break;
