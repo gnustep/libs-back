@@ -62,6 +62,9 @@ static void invalidateWindow(HWND hwnd, RECT rect);
 
 @interface WIN32Server (Internal)
 - (NSEvent *) handleGotFocus: (HWND)hwnd;
+- (NSEvent *) handleMoveSize: (HWND)hwnd
+                            : (GSAppKitSubtype) subtype;
+- (void) resizeBackingStoreFor: (HWND)hwnd;
 - (LRESULT) windowEventProc: (HWND)hwnd : (UINT)uMsg 
 		       : (WPARAM)wParam : (LPARAM)lParam;
 @end
@@ -169,11 +172,89 @@ static void invalidateWindow(HWND hwnd, RECT rect);
   return e;
 }
 
+/**
+*/
+- (NSEvent *) handleMoveSize: (HWND)hwnd
+                            : (GSAppKitSubtype) subtype
+{
+  NSPoint eventLocation;
+  NSRect rect;
+  RECT r;
+  NSEvent *ev = nil;
+
+  GetWindowRect(hwnd, &r);
+  rect = MSScreenRectToGS(r);
+  eventLocation = rect.origin;
+
+  NSWindow *window = GSWindowWithNumber((int)hwnd);
+  if (window)
+    {
+      if( subtype == GSAppKitWindowMoved )
+	{
+	  ev = [NSEvent otherEventWithType: NSAppKitDefined
+			          location: eventLocation
+			     modifierFlags: 0
+			         timestamp: 0
+			      windowNumber: (int)hwnd
+			           context: GSCurrentContext()
+			           subtype: GSAppKitWindowMoved
+			             data1: rect.origin.x
+                                     data2: rect.origin.y];
+	}
+      else if( subtype == GSAppKitWindowResized )
+	{
+	  ev = [NSEvent otherEventWithType: NSAppKitDefined
+                                  location: eventLocation
+                             modifierFlags: 0
+                                 timestamp: 0
+                              windowNumber: (int) hwnd
+                                   context: GSCurrentContext()
+                                   subtype: GSAppKitWindowResized
+                                     data1: rect.size.width
+                                     data2: rect.size.height];
+	}
+      else
+	{
+	  return nil;
+	}
+    }
+  return ev;
+}
+
+- (void) resizeBackingStoreFor: (HWND)hwnd
+{
+  RECT r;
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
+  
+  // FIXME: We should check if the size really did change.
+  if (win->useHDC)
+    {
+      HDC hdc, hdc2;
+      HBITMAP hbitmap;
+      HGDIOBJ old;
+      
+      old = SelectObject(win->hdc, win->old);
+      DeleteObject(old);
+      DeleteDC(win->hdc);
+      win->hdc = NULL;
+      win->old = NULL;
+      
+      GetClientRect((HWND)hwnd, &r);
+      NSDebugLLog(@"NSEvent", @"Change backing store to %d %d", r.right - r.left, r.bottom - r.top);
+      hdc = GetDC((HWND)hwnd);
+      hdc2 = CreateCompatibleDC(hdc);
+      hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, r.bottom - r.top);
+      win->old = SelectObject(hdc2, hbitmap);
+      win->hdc = hdc2;
+      
+      ReleaseDC((HWND)hwnd, hdc);
+    }
+}
+
 - (LRESULT) windowEventProc: (HWND)hwnd : (UINT)uMsg 
 		       : (WPARAM)wParam : (LPARAM)lParam
 { 
   NSEvent *ev = nil;
-  NSPoint eventLoc;
 
   switch (uMsg) 
     { 
@@ -281,17 +362,20 @@ static void invalidateWindow(HWND hwnd, RECT rect);
       NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "WINDOWPOSCHANGED", hwnd);
       break;
     case WM_MOVE:
-      eventLoc = MSWindowPointToGS(hwnd,  GET_X_LPARAM(lParam), 
-				   GET_Y_LPARAM(lParam));
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d to %@", "MOVE", hwnd,
-		  NSStringFromPoint(eventLoc));
-      break;
+      {
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOVE", hwnd);
+	ev = [self handleMoveSize: hwnd : GSAppKitWindowMoved];
+	break;
+      }
     case WM_MOVING: 
       NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOVING", hwnd);
       break;
     case WM_SIZE: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SIZE", hwnd);
-      break;
+      {
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SIZE", hwnd);
+	ev = [self handleMoveSize: hwnd : GSAppKitWindowResized];
+	break;
+      }
     case WM_SIZING: 
       NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SIZING", hwnd);
       break;
@@ -300,61 +384,14 @@ static void invalidateWindow(HWND hwnd, RECT rect);
       break;
     case WM_EXITSIZEMOVE: 
       {
-	NSPoint eventLocation;
-	NSRect rect;
-	RECT r;
-	WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
-	
-	// FIXME: We should check if the size really did change.
-	if (win->useHDC)
-	  {
-	    HDC hdc, hdc2;
-	    HBITMAP hbitmap;
-	    HGDIOBJ old;
-
-	    old = SelectObject(win->hdc, win->old);
-	    DeleteObject(old);
-	    DeleteDC(win->hdc);
-	    win->hdc = NULL;
-	    win->old = NULL;
-
-	    GetClientRect((HWND)hwnd, &r);
-	    NSDebugLLog(@"NSEvent", @"Change backing store to %d %d", r.right - r.left, r.bottom - r.top);
-	    hdc = GetDC((HWND)hwnd);
-	    hdc2 = CreateCompatibleDC(hdc);
-	    hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, r.bottom - r.top);
-	    win->old = SelectObject(hdc2, hbitmap);
-	    win->hdc = hdc2;
-	    
-	    ReleaseDC((HWND)hwnd, hdc);
-	  }
-
-	GetWindowRect(hwnd, &r);
-	rect = MSScreenRectToGS(r);
-	eventLocation = rect.origin;
 	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "EXITSIZEMOVE", hwnd);
-	ev = [NSEvent otherEventWithType: NSAppKitDefined
-		      location: eventLocation
-		      modifierFlags: 0
-		      timestamp: 0
-		      windowNumber: (int)hwnd
-		      context: GSCurrentContext()
-		      subtype: GSAppKitWindowResized
-		      data1: rect.size.width
-		      data2: rect.size.height];
+	[self resizeBackingStoreFor: hwnd];
+	ev = [self handleMoveSize: hwnd : GSAppKitWindowMoved];
 	if (ev != nil)
 	  {
 	    [GSCurrentServer() postEvent: ev atStart: NO];
 	  }
-	ev = [NSEvent otherEventWithType: NSAppKitDefined
-		      location: eventLocation
-		      modifierFlags: 0
-		      timestamp: 0
-		      windowNumber: (int)hwnd
-		      context: GSCurrentContext()
-		      subtype: GSAppKitWindowMoved
-		      data1: rect.origin.x
-		      data2: rect.origin.y];
+	ev = [self handleMoveSize: hwnd : GSAppKitWindowResized];
 	if (ev != nil)
 	  {
 	    [GSCurrentServer() postEvent: ev atStart: NO];
@@ -434,13 +471,15 @@ static void invalidateWindow(HWND hwnd, RECT rect);
       {
 	RECT rect;
 
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "PAINT", hwnd);
 	if (GetUpdateRect(hwnd, &rect, NO))
 	  {
 	    invalidateWindow(hwnd, rect);
-	    ValidateRect(hwnd, &rect);
+	    // validate the whole window, for in some cases an infinite series
+            // of WM_PAINT is triggered
+            ValidateRect(hwnd, NULL);
 	  }
 
-	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "PAINT", hwnd);
 	return 0;
       }
     case WM_SYNCPAINT: 
