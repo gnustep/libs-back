@@ -26,7 +26,9 @@
 #include <Foundation/NSObjCRuntime.h>
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
+#include <AppKit/NSColor.h>
 #include <AppKit/NSFont.h>
+#include <AppKit/NSGraphics.h>
 #include "gsc/GSContext.h"
 #include "gsc/GSGState.h"
 #include "math.h"
@@ -37,6 +39,31 @@
       path = [NSBezierPath new]; \
     }
 
+/* Just temporary until we improve NSColor */
+@interface NSColor (PrivateColor)
++ colorWithValues: (float *)values colorSpaceName: colorSpace;
+@end
+
+@implementation NSColor (PrivateColor)
++ colorWithValues: (float *)values colorSpaceName: colorSpace
+{
+  NSColor *color = nil;
+  if ([colorSpace isEqual: NSDeviceWhiteColorSpace])
+    color = [NSColor colorWithDeviceWhite: values[0] alpha: values[1]];
+  else if ([colorSpace isEqual: NSDeviceRGBColorSpace])
+    color = [NSColor colorWithDeviceRed: values[0] green: values[1]
+		     blue: values[2] alpha: values[3]];
+  else if ([colorSpace isEqual: NSDeviceCMYKColorSpace])
+    color = [NSColor colorWithDeviceCyan: values[0] magenta: values[1]
+		     yellow: values[2] black: values[3] alpha: values[4]];
+  else
+    DPS_ERROR(DPSundefined, @"Cannot convert colorspace");
+  return color;
+}
+@end
+
+
+
 @implementation GSGState
 
 /* Designated initializer. */
@@ -46,9 +73,21 @@
 
   drawcontext = drawContext;
   ctm = [[NSAffineTransform allocWithZone: GSObjCZone(self)] init];
-  path = nil;
-  font = nil;
   offset = NSMakePoint(0, 0);
+  path   = nil;
+  font   = nil;
+
+  /* Initialize colors. By default the same color is used for filling and 
+     stroking unless fill and/or stroke color is set explicitly */
+  cstate       = COLOR_BOTH;
+  fillColorS   = nil;
+  strokeColorS = nil;
+  fillColor    = gsMakeColor(gray_colorspace, 0, 0, 0, 0);
+  strokeColor    = gsMakeColor(gray_colorspace, 0, 0, 0, 0);
+
+  charSpacing = 0;
+  textMode    = GSTextFill;
+  textCtm     = [[NSAffineTransform allocWithZone: GSObjCZone(self)] init];
   return self;
 }
 
@@ -57,6 +96,9 @@
   TEST_RELEASE(font);
   TEST_RELEASE(path);
   RELEASE(ctm);
+  RELEASE(textCtm);
+  RELEASE(fillColorS);
+  RELEASE(strokeColorS);
   [super dealloc];
 }
 
@@ -67,11 +109,16 @@
   if (path)
     self->path = [path copyWithZone: zone];
 
-  self->ctm = [ctm copyWithZone: zone];
+  self->ctm     = [ctm copyWithZone: zone];
+  self->textCtm = [ctm copyWithZone: zone];
 
-  // Just retain the font  
+  // Just retain the other objects
   if (font != nil)
     RETAIN(font);
+  if (fillColorS != nil)
+    RETAIN(fillColorS);
+  if (strokeColorS != nil)
+    RETAIN(strokeColorS);
 
   return self;
 }
@@ -83,18 +130,6 @@
   return [new deepen];
 }
 
-- (void) setFont: (NSFont*)newFont
-{
-  if (font == newFont)
-    return;
-  ASSIGN(font, newFont);
-}
-
-- (NSFont*) currentFont
-{
-  return font;
-}
-
 - (void) setOffset: (NSPoint)theOffset
 {
   offset = theOffset;
@@ -103,6 +138,22 @@
 - (NSPoint) offset
 {
   return offset;
+}
+
+/** Subclasses should override this method to be notified of changes
+    in the current color */
+- (void) setColor: (device_color_t)color state: (color_state_t)cState
+{
+  float alpha;
+  alpha = fillColor.field[AINDEX];
+  if (cState & COLOR_FILL)
+    fillColor = color;
+  fillColor.field[AINDEX] = alpha;
+  alpha = strokeColor.field[AINDEX];
+  if (cState & COLOR_STROKE)
+    strokeColor = color;
+  strokeColor.field[AINDEX] = alpha;
+  cstate = cState;
 }
 
 - (void) compositeGState: (GSGState *)source
@@ -151,73 +202,138 @@
 /* ----------------------------------------------------------------------- */
 - (void) DPScurrentalpha: (float*)a
 {
-  [self notImplemented: _cmd];
+  *a = fillColor.field[AINDEX];
 }
 
 - (void) DPScurrentcmykcolor: (float*)c : (float*)m : (float*)y : (float*)k
 {
-  [self notImplemented: _cmd];
+  device_color_t new = fillColor;
+  new = gsColorToCMYK(new);
+  *c = new.field[0];
+  *m = new.field[1];
+  *y = new.field[2];
+  *k = new.field[3];
 }
 
 - (void) DPScurrentgray: (float*)gray
 {
-  [self notImplemented: _cmd];
+  device_color_t gcolor;
+  gcolor = gsColorToGray(fillColor);
+  *gray = gcolor.field[0];
 }
 
 - (void) DPScurrenthsbcolor: (float*)h : (float*)s : (float*)b
 {
-  [self notImplemented: _cmd];
+  device_color_t gcolor;
+  gcolor = gsColorToHSB(fillColor);
+  *h = gcolor.field[0]; *s = gcolor.field[1]; *b = gcolor.field[2];
 }
 
 - (void) DPScurrentrgbcolor: (float*)r : (float*)g : (float*)b
 {
-  [self notImplemented: _cmd];
+  device_color_t gcolor;
+  gcolor = gsColorToRGB(fillColor);
+  *r = gcolor.field[0]; *g = gcolor.field[1]; *b = gcolor.field[2];
 }
 
 - (void) DPSsetalpha: (float)a
 {
-  [self notImplemented: _cmd];
+  fillColor.field[AINDEX] = strokeColor.field[AINDEX] = a;
+  /* Is this necessary?
+  [self setColor: fillColor state: COLOR_FILL];
+  [self setColor: strokeColor state: COLOR_STROKE];
+  */
 }
 
 - (void) DPSsetcmykcolor: (float)c : (float)m : (float)y : (float)k
 {
-  [self notImplemented: _cmd];
+  [self setColor: gsMakeColor(cmyk_colorspace, c, m, y, k) state: COLOR_BOTH];
 }
 
 - (void) DPSsetgray: (float)gray
 {
-  [self notImplemented: _cmd];
+  [self setColor: gsMakeColor(gray_colorspace, gray, 0, 0, 0) state: COLOR_BOTH];
 }
 
 - (void) DPSsethsbcolor: (float)h : (float)s : (float)b
 {
-  [self notImplemented: _cmd];
+  [self setColor: gsMakeColor(hsb_colorspace, h, s, b, 0) state: COLOR_BOTH];
 }
 
 - (void) DPSsetrgbcolor: (float)r : (float)g : (float)b
 {
-  [self notImplemented: _cmd];
+  [self setColor: gsMakeColor(rgb_colorspace, r, g, b, 0) state: COLOR_BOTH];
 }
 
 
 - (void) GSSetFillColorspace: (NSDictionary *)dict
 {
-  [self notImplemented: _cmd];
+  float values[6];
+  NSString *colorSpace = [dict objectForKey: GSColorSpaceName];
+  if (fillColorS)
+    RELEASE(fillColorS);
+  memset(values, 0, sizeof(float)*6);
+  fillColorS = [NSColor colorWithValues: values colorSpaceName:colorSpace];
+  RETAIN(fillColorS);
+  [self setColor: gsMakeColor(rgb_colorspace, 0, 0, 0, 0) state: COLOR_FILL];
 }
 
 - (void) GSSetStrokeColorspace: (NSDictionary *)dict
 {
-  [self notImplemented: _cmd];
+  float values[6];
+  NSString *colorSpace = [dict objectForKey: GSColorSpaceName];
+  if (strokeColorS)
+    RELEASE(strokeColorS);
+  memset(values, 0, sizeof(float)*6);
+  strokeColorS = [NSColor colorWithValues: values colorSpaceName:colorSpace];
+  RETAIN(strokeColorS);
+  [self setColor: gsMakeColor(rgb_colorspace, 0, 0, 0, 0) state: COLOR_STROKE];
 }
 
 - (void) GSSetFillColor: (float *)values
 {
-  [self notImplemented: _cmd];
+  device_color_t dcolor;
+  NSColor *color;
+  NSString *colorSpace;
+  if (fillColorS == nil)
+    {
+      DPS_ERROR(DPSundefined, @"No fill colorspace defined, assume DeviceRGB");
+      colorSpace = NSDeviceRGBColorSpace;
+    }
+  else
+    colorSpace = [fillColorS colorSpaceName];
+  RELEASE(fillColorS);
+  fillColorS = [NSColor colorWithValues: values colorSpaceName:colorSpace];
+  RETAIN(fillColorS);
+  color = [fillColorS colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+  [color getRed: &dcolor.field[0]
+	  green: &dcolor.field[1]
+	   blue: &dcolor.field[2]
+	  alpha: &dcolor.field[AINDEX]];
+  [self setColor: dcolor state: COLOR_FILL];  
 }
 
 - (void) GSSetStrokeColor: (float *)values
 {
-  [self notImplemented: _cmd];
+  device_color_t dcolor;
+  NSColor *color;
+  NSString *colorSpace;
+  if (strokeColorS == nil)
+    {
+      DPS_ERROR(DPSundefined, @"No stroke colorspace defined, assume DeviceRGB");
+      colorSpace = NSDeviceRGBColorSpace;
+    }
+  else
+    colorSpace = [strokeColorS colorSpaceName];
+  RELEASE(strokeColorS);
+  strokeColorS = [NSColor colorWithValues: values colorSpaceName:colorSpace];
+  RETAIN(strokeColorS);
+  color = [strokeColorS colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+  [color getRed: &dcolor.field[0]
+	  green: &dcolor.field[1]
+	   blue: &dcolor.field[2]
+	  alpha: &dcolor.field[AINDEX]];
+  [self setColor: dcolor state: COLOR_STROKE];  
 }
 
 /* ----------------------------------------------------------------------- */
@@ -260,6 +376,62 @@
 }
 
 - (void) DPSyshow: (const char*)s : (const float*)numarray : (int)size
+{
+  [self subclassResponsibility: _cmd];
+}
+
+- (void) GSSetCharacterSpacing: (float)extra
+{
+  charSpacing = extra;
+}
+
+- (void) GSSetFont: (NSFont*)newFont
+{
+  if (font == newFont)
+    return;
+  ASSIGN(font, newFont);
+}
+
+- (void) GSSetFontSize: (float)size
+{
+  NSFont *newFont;
+  if (font == nil)
+    return;
+  newFont = [NSFont fontWithName: [font fontName] size: [font pointSize]];
+  [self GSSetFont: newFont];
+}
+
+- (NSAffineTransform *) GSGetTextCTM
+{
+  return textCtm;
+}
+
+- (NSPoint) GSGetTextPosition
+{
+  return [textCtm pointInMatrixSpace: NSMakePoint(0,0)];
+}
+
+- (void) GSSetTextCTM: (NSAffineTransform *)newCtm
+{
+  ASSIGN(textCtm, newCtm);
+}
+
+- (void) GSSetTextDrawingMode: (GSTextDrawingMode)mode
+{
+  textMode = mode;
+}
+
+- (void) GSSetTextPosition: (NSPoint)loc
+{
+  [textCtm translateToPoint: loc];
+}
+
+- (void) GSShowText: (const char *)string : (size_t) length
+{
+  [self subclassResponsibility: _cmd];
+}
+
+- (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t) length
 {
   [self subclassResponsibility: _cmd];
 }
@@ -444,7 +616,8 @@
   [path closePath];
 }
 
-- (void)DPScurveto: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)x3 : (float)y3 
+- (void)DPScurveto: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)x3 
+		  : (float)y3 
 {
   NSPoint p1 = [ctm pointInMatrixSpace: NSMakePoint(x1, y1)];
   NSPoint p2 = [ctm pointInMatrixSpace: NSMakePoint(x2, y2)];
@@ -520,7 +693,8 @@
     }
 }
 
-- (void)DPSrcurveto: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)x3 : (float)y3 
+- (void)DPSrcurveto: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)x3 
+		   : (float)y3 
 {
   NSPoint p1 = [ctm deltaPointInMatrixSpace: NSMakePoint(x1, y1)];
   NSPoint p2 = [ctm deltaPointInMatrixSpace: NSMakePoint(x2, y2)];

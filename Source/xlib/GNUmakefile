@@ -36,9 +36,6 @@ include ../../config.make
 
 SUBPROJECT_NAME=xlib
 
-# The C source files to be compiled
-xlib_C_FILES = xrtools.c 
-
 # The Objective-C source files to be compiled
 xlib_OBJC_FILES = \
 XGBitmapImageRep.m \

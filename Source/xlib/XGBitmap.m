@@ -38,6 +38,7 @@
 #include <X11/Xutil.h>
 
 #include <Foundation/NSDebug.h>
+#include "gsc/gscolors.h"
 #include "xlib/XGPrivate.h"
 
 /* Macros that make it easier to convert

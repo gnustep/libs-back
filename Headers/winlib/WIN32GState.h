@@ -33,7 +33,8 @@
 {
 @public
   HWND window;
-  COLORREF color;
+  COLORREF wfcolor;
+  COLORREF wscolor;
   int joinStyle;
   int lineCap;
   float lineWidth;

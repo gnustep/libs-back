@@ -43,10 +43,13 @@ GSGState.m \
 GSStreamContext.m \
 externs.m
 
+gsc_C_FILES = gscolors.c
+
 gsc_HEADER_FILES_DIR = ../../Headers/gsc
 gsc_HEADER_FILES_INSTALL_DIR = gnustep/gsc
 
 gsc_HEADER_FILES = \
+gscolors.h \
 GSContext.h \
 GSGState.h \
 GSGStateOps.h

@@ -1,3 +1,21 @@
+2002-05-09  Adam Fedor  <fedor@gnu.org>
+
+	* Headers/gsc/GSGState.h: Add color and text ivars.
+	* Headers/winlib/WIN32GState.h: Idem.
+	* Headers/xlib/XGGState.h: Idem.
+
+	* Source/gsc/GSContext.m: Implement font/text methods.
+	* Source/gsc/GSGState.m (-setColor:state:) Implement
+	Implement color DPS and GS ops to use it.
+	Implement text/font ops.
+
+	* Source/winlib/WIN32GState.m (-setColor:state:) Implement.
+	Remove color ops (now in GSGState)
+
+	* Source/xlib/XGGState.m (-setColor:state:) Implement.
+	(-setAlphaColor:) New.
+	Remove color ops (now in GSGState)
+
 2002-05-07  Adam Fedor  <fedor@gnu.org>
 
 	* Source/gsc/GSStreamContext.m (-GSSetFont:): Don't flip

@@ -31,7 +31,6 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include "x11/XGServer.h"
-#include "xlib/xrtools.h"
 
 @class NSBezierPath;
 @class NSFont;
@@ -43,11 +42,11 @@
   void      *windevice;
   XGDrawMechanism drawMechanism;
   GC	    xgcntxt;
+  GC	    agcntxt;
   XGCValues gcv;
   Drawable  draw;
   Drawable  alpha_buffer;
   Region clipregion;
-  xr_device_color_t color;
 
   BOOL drawingAlpha;
   BOOL sharedGC;  /* Do we own the GC or share it? */
@@ -58,7 +57,6 @@
 - (void) setGCValues: (XGCValues)values withMask: (int)mask;
 - (void) setClipMask;
 - (Region) xClipRegion;
-- (void) setColor: (xr_device_color_t)acolor;
 
 - (BOOL) hasDrawable;
 - (BOOL) hasGraphicContext;
@@ -66,9 +64,6 @@
 - (Drawable) drawable;
 - (GC) graphicContext;
 - (NSRect) clipRect;
-
-- (void) setFont: (NSFont*)font;
-- (NSFont*) currentFont;
 
 - (XPoint) viewPointToX: (NSPoint)aPoint;
 - (XRectangle) viewRectToX: (NSRect)aRect;

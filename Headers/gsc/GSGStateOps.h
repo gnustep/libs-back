@@ -58,6 +58,17 @@
 - (void) DPSxyshow: (const char*)s : (const float*)numarray : (int)size;
 - (void) DPSyshow: (const char*)s : (const float*)numarray : (int)size;
 
+- (void) GSSetCharacterSpacing: (float)extra;
+- (void) GSSetFont: (NSFont*)font;
+- (void) GSSetFontSize: (float)size;
+- (NSAffineTransform *) GSGetTextCTM;
+- (NSPoint) GSGetTextPosition;
+- (void) GSSetTextCTM: (NSAffineTransform *)ctm;
+- (void) GSSetTextDrawingMode: (GSTextDrawingMode)mode;
+- (void) GSSetTextPosition: (NSPoint)loc;
+- (void) GSShowText: (const char *)string : (size_t) length;
+- (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t) length;
+
 /* ----------------------------------------------------------------------- */
 /* Gstate operations */
 /* ----------------------------------------------------------------------- */

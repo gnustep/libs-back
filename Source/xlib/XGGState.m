@@ -33,7 +33,6 @@
 #include "xlib/XGGState.h"
 #include "xlib/XGContext.h"
 #include "xlib/XGPrivate.h"
-#include "xlib/xrtools.h"
 #include "math.h"
 
 #define XDPY (((RContext *)context)->dpy)
@@ -49,10 +48,9 @@ static BOOL shouldDrawAlpha = YES;
   if (sharedGC == YES) \
     [self copyGraphicContext]
 
-#define AINDEX 5
 
 u_long   
-xrRGBToPixel(RContext* context, xr_device_color_t color)
+xrRGBToPixel(RContext* context, device_color_t color)
 {
   XColor cc;
   RColor rcolor;
@@ -69,6 +67,7 @@ xrRGBToPixel(RContext* context, xr_device_color_t color)
 - (void) _paintPath: (ctxt_object_t) drawType;
 - (void) createGraphicContext;
 - (void) copyGraphicContext;
+- (void) setAlphaColor: (float)color;
 @end
 
 @implementation XGGState
@@ -106,8 +105,8 @@ static	Region	emptyRegion;
   drawMechanism = -1;
   draw = 0;
   alpha_buffer = 0;
-  color.field[AINDEX] = 1.0;
   xgcntxt = None;
+  agcntxt = None;
   return self;
 }
 
@@ -117,6 +116,8 @@ static	Region	emptyRegion;
     {
       XFreeGC(XDPY, xgcntxt);
     }
+  if (agcntxt)
+    XFreeGC(XDPY, agcntxt);
   if (clipregion)
     XDestroyRegion(clipregion);
   [super dealloc];
@@ -129,6 +130,9 @@ static	Region	emptyRegion;
   // Copy the GC 
   if (draw != 0)
     [self copyGraphicContext];
+
+  /* Force a new one to be created */
+  agcntxt = None;
 
   // Copy the clipregion
   if (clipregion)
@@ -235,19 +239,33 @@ static	Region	emptyRegion;
   return region;
 }
 
-- (void) setColor: (xr_device_color_t)acolor;
+- (void) setColor: (device_color_t)color state: (color_state_t)cState
 {
-  float alpha = color.field[AINDEX];
-  color = acolor;
-  acolor = xrColorToRGB(acolor);
+  [super setColor: color state: cState];
   if (context == NULL)
     {
       /* Window device isn't set yet */
       return;
     }
-  gcv.foreground = xrRGBToPixel(context, acolor);
+  color = gsColorToRGB(color);
+  gcv.foreground = xrRGBToPixel(context, color);
   [self setGCValues: gcv withMask: GCForeground];
-  color.field[AINDEX] = alpha;
+}
+
+- (void) setAlphaColor: (float)value
+{
+  device_color_t color;
+  if (context == NULL)
+    {
+      /* Window device isn't set yet */
+      return;
+    }
+  color = gsMakeColor(gray_colorspace, value, 0, 0, 0);
+  gcv.foreground = xrRGBToPixel(context, color);
+  if (agcntxt == None)
+    agcntxt = XCreateGC(XDPY, draw, GCForeground, &gcv);
+  else
+    XChangeGC(XDPY, agcntxt, GCForeground, &gcv);
 }
 
 - (void) setFont: (NSFont*)newFont
@@ -387,18 +405,15 @@ static	Region	emptyRegion;
   if (dest_win->alpha_buffer == 0 
       && dest_win->type != NSBackingStoreNonretained)    
     {    
-      xr_device_color_t old_color;
       dest_win->alpha_buffer = XCreatePixmap(XDPY, draw, 
 					     NSWidth(dest_win->xframe),
 					     NSHeight(dest_win->xframe), 
 					     dest_win->depth);
       
      /* Fill alpha also (opaque by default) */
-      old_color = color;
-      [self DPSsetgray: 1];
-      XFillRectangle(XDPY, dest_win->alpha_buffer, xgcntxt, 0, 0,
+      [self setAlphaColor: 1];
+      XFillRectangle(XDPY, dest_win->alpha_buffer, agcntxt, 0, 0,
 		     NSWidth(dest_win->xframe), NSHeight(dest_win->xframe));
-      [self setColor: old_color];
     }
   if (shouldDrawAlpha && dest_win->alpha_buffer != 0)
     {
@@ -826,17 +841,14 @@ static	Region	emptyRegion;
     {
     case path_stroke:
       // Hack: Only draw when alpha is not zero
-      if (drawingAlpha == NO || color.field[AINDEX] != 0.0)
+      if (drawingAlpha == NO || strokeColor.field[AINDEX] != 0.0)
 	XDrawLines(XDPY, draw, xgcntxt, pts, count, CoordModeOrigin);
       if (drawingAlpha)
 	{
-	  xr_device_color_t old_color;
 	  NSAssert(alpha_buffer, NSInternalInconsistencyException);
 	  
-	  old_color = color;
-	  [self DPSsetgray: color.field[AINDEX]];
-	  XDrawLines(XDPY, alpha_buffer, xgcntxt, pts, count, CoordModeOrigin);
-	  [self setColor: old_color];
+	  [self setAlphaColor: strokeColor.field[AINDEX]];
+	  XDrawLines(XDPY, alpha_buffer, agcntxt, pts, count, CoordModeOrigin);
 	}
       break;
     case path_eofill:
@@ -845,19 +857,16 @@ static	Region	emptyRegion;
       /* NO BREAK */
     case path_fill:
       // Hack: Only draw when alpha is not zero
-      if (drawingAlpha == NO || color.field[AINDEX] != 0.0)
+      if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
 	XFillPolygon(XDPY, draw, xgcntxt, pts, count, Complex, 
 		     CoordModeOrigin);
       if (drawingAlpha)
 	{
-	  xr_device_color_t old_color;
 	  NSAssert(alpha_buffer, NSInternalInconsistencyException);
 	  
-	  old_color = color;
-	  [self DPSsetgray: color.field[AINDEX]];
-	  XFillPolygon(XDPY, alpha_buffer, xgcntxt, pts, count, Complex, 
+	  [self setAlphaColor: fillColor.field[AINDEX]];
+	  XFillPolygon(XDPY, alpha_buffer, agcntxt, pts, count, Complex, 
 		       CoordModeOrigin);
-	  [self setColor: old_color];
 	}
       
       if (gcv.fill_rule == EvenOddRule)
@@ -1001,17 +1010,14 @@ static	Region	emptyRegion;
 	}
       
       // Hack: Only draw when alpha is not zero
-      if (drawingAlpha == NO || color.field[AINDEX] != 0.0)
+      if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
 	XDrawSegments (XDPY, draw, xgcntxt, segments, nseg);
       if (drawingAlpha)
 	{
-	  xr_device_color_t old_color;
 	  NSAssert (alpha_buffer, NSInternalInconsistencyException);
 	  
-	  old_color = color;
-	  [self DPSsetgray: color.field[AINDEX]];
-	  XDrawSegments (XDPY, alpha_buffer, xgcntxt, segments, nseg);
-	  [self setColor: old_color];
+	  [self setAlphaColor: fillColor.field[AINDEX]];
+	  XDrawSegments (XDPY, alpha_buffer, agcntxt, segments, nseg);
 	}
       nseg = 0;
     } // for y
@@ -1176,83 +1182,15 @@ static	Region	emptyRegion;
 
 @implementation XGGState (Ops)
 
-- (void) DPScurrentalpha: (float *)alpha
-{
-  if (alpha)
-    *alpha = color.field[AINDEX];
-}
-
-- (void)DPScurrentcmykcolor: (float *)c : (float *)m : (float *)y : (float *)k 
-{
-  xr_device_color_t new = color;
-  new = xrColorToCMYK(new);
-  *c = new.field[0];
-  *m = new.field[1];
-  *y = new.field[2];
-  *k = new.field[3];
-}
-
-- (void)DPSsetcmykcolor: (float)c : (float)m : (float)y : (float)k 
-{
-  color.space = cmyk_colorspace;
-  color.field[0] = c;
-  color.field[1] = m;
-  color.field[2] = y;
-  color.field[3] = k;
-  [self setColor:color];
-}
-
-- (void)DPScurrentgray: (float *)gray 
-{
-  xr_device_color_t gcolor;
-  gcolor = xrColorToGray(color);
-  *gray = gcolor.field[0];
-}
-
-- (void)DPScurrenthsbcolor: (float *)h : (float *)s : (float *)b 
-{
-  xr_device_color_t gcolor;
-  gcolor = xrColorToHSB(color);
-  *h = gcolor.field[0]; *s = gcolor.field[1]; *b = gcolor.field[2];
-}
-
-- (void)DPScurrentrgbcolor: (float *)r : (float *)g : (float *)b 
-{
-  xr_device_color_t gcolor;
-  gcolor = xrColorToRGB(color);
-  *r = gcolor.field[0]; *g = gcolor.field[1]; *b = gcolor.field[2];
-}
-
 - (void) DPSsetalpha: (float)a
 {
   gswindow_device_t *gs_win;
-  color.field[AINDEX] = a;
+  [super DPSsetalpha: a];
   gs_win = (gswindow_device_t *)windevice;
   if (!gs_win)
     return;
-  if (a < 1.0)
+  if (fillColor.field[AINDEX] < 1.0)
     [self _alphaBuffer: gs_win];
-}
-
-- (void)DPSsetgray: (float)gray 
-{
-  color.space = gray_colorspace;
-  color.field[0] = gray;
-  [self setColor: color];
-}
-
-- (void)DPSsethsbcolor: (float)h : (float)s : (float)b 
-{
-  color.space = hsb_colorspace;
-  color.field[0] = h; color.field[1] = s; color.field[2] = b;
-  [self setColor: color];
-}
-
-- (void)DPSsetrgbcolor: (float)r : (float)g : (float)b 
-{
-  color.space = rgb_colorspace;
-  color.field[0] = r; color.field[1] = g; color.field[2] = b;
-  [self setColor: color];
 }
 
 /* ----------------------------------------------------------------------- */
@@ -1292,6 +1230,9 @@ typedef enum {
       return;
     }
 
+  if ((cstate & COLOR_FILL) == 0)
+    [self setColor: fillColor state: COLOR_FILL];
+
   /* Use only delta transformations (no offset) */
   len = strlen(s);
   scale = [ctm sizeInMatrixSpace: NSMakeSize(1,1)];
@@ -1305,22 +1246,19 @@ typedef enum {
       xp = XGWindowPointToX(self, point);
       width = [font_info widthOf: s+i lenght: 1];
       // Hack: Only draw when alpha is not zero
-      if (drawingAlpha == NO || color.field[AINDEX] != 0.0)
+      if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
 	[font_info draw: s+i lenght: 1 
 		   onDisplay: XDPY drawable: draw
 		   with: xgcntxt at: xp];
 
       if (drawingAlpha)
 	{
-	  xr_device_color_t old_color;
 	  NSAssert(alpha_buffer, NSInternalInconsistencyException);
 	  
-	  old_color = color;
-	  [self DPSsetgray: color.field[AINDEX]];
+	  [self setAlphaColor: fillColor.field[AINDEX]];
 	  [font_info draw: s+i lenght: 1 
 		     onDisplay: XDPY drawable: alpha_buffer
-		     with: xgcntxt at: xp];
-	  [self setColor: old_color];
+		     with: agcntxt at: xp];
 	}
       /* Note we update the current point according to the current 
 	 transformation scaling, although the text isn't currently
@@ -1401,28 +1339,27 @@ typedef enum {
       DPS_WARN(DPSinvalidid, @"No Drawable defined for show");
       return;
     }
+  
+  if ((cstate & COLOR_FILL) == 0)
+    [self setColor: fillColor state: COLOR_FILL];
 
   len = strlen(s);
   width = [font_info widthOf: s lenght: len];
   xp = XGWindowPointToX(self, [path currentPoint]);
   // Hack: Only draw when alpha is not zero
-  if (drawingAlpha == NO || color.field[AINDEX] != 0.0)
+  if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
     [font_info draw: s lenght: len 
 	       onDisplay: XDPY drawable: draw
 	       with: xgcntxt at: xp];
 
   if (drawingAlpha)
     {
-      xr_device_color_t old_color;
       NSAssert(alpha_buffer, NSInternalInconsistencyException);
 
-      old_color = color;
-      [self DPSsetgray: color.field[AINDEX]];
+      [self setAlphaColor: fillColor.field[AINDEX]];
       [font_info draw: s lenght: len 
 		 onDisplay: XDPY drawable: alpha_buffer
-		 with: xgcntxt at: xp];
-
-      [self setColor: old_color];
+		 with: agcntxt at: xp];
     }
   /* Note we update the current point according to the current 
      transformation scaling, although the text isn't currently
@@ -1489,10 +1426,10 @@ typedef enum {
     XDestroyRegion(clipregion);
   clipregion = 0;
   /* FIXME: reset the GC */
-  color.space = gray_colorspace; 
-  color.field[0] = 0.0;
-  [self setColor: color];
-  color.field[AINDEX] = 1.0;
+  fillColor = gsMakeColor(gray_colorspace, 0, 0, 0, 0);
+  [self setColor: fillColor state: COLOR_BOTH];
+  fillColor.field[AINDEX] = 1.0;
+  strokeColor.field[AINDEX] = 1.0;
 }
 
 - (void)DPSsetdash: (const float *)pat : (int)size : (float)pat_offset 
@@ -1571,11 +1508,17 @@ typedef enum {
 
 - (void)DPSeofill 
 {
+  if ((cstate & COLOR_FILL) == 0)
+    [self setColor: fillColor state: COLOR_FILL];
+
   [self _paintPath: path_eofill];
 }
 
 - (void)DPSfill 
 {
+  if ((cstate & COLOR_FILL) == 0)
+    [self setColor: fillColor state: COLOR_FILL];
+
   [self _paintPath: path_fill];
 }
 
@@ -1622,23 +1565,23 @@ typedef enum {
       return;
     }
 
+  if ((cstate & COLOR_FILL) == 0)
+    [self setColor: fillColor state: COLOR_FILL];
+
   bounds = XGViewRectToX(self, NSMakeRect(x, y, w, h));
   // Hack: Only draw when alpha is not zero
-  if (drawingAlpha == NO || color.field[AINDEX] != 0.0)
+  if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
     XFillRectangle(XDPY, draw, xgcntxt,
 		   bounds.x, bounds.y, bounds.width, bounds.height);
 
   if (drawingAlpha)
     {
       /* Fill alpha also */
-      xr_device_color_t old_color;
       NSAssert(alpha_buffer, NSInternalInconsistencyException);
       
-      old_color = color;
-      [self DPSsetgray: color.field[AINDEX]];
-      XFillRectangle(XDPY, alpha_buffer, xgcntxt,
+      [self setAlphaColor: fillColor.field[AINDEX]];
+      XFillRectangle(XDPY, alpha_buffer, agcntxt,
 		 bounds.x, bounds.y, bounds.width, bounds.height);
-      [self setColor: old_color];
     }
 }
 
@@ -1653,32 +1596,35 @@ typedef enum {
       return;
     }
 
+  if ((cstate & COLOR_STROKE) == 0)
+    [self setColor: fillColor state: COLOR_STROKE];
+
   bounds = XGViewRectToX(self, NSMakeRect(x, y, w, h));
   if (bounds.width > 0)
     bounds.width--;
   if (bounds.height > 0)
     bounds.height--;
   // Hack: Only draw when alpha is not zero
-  if (drawingAlpha == NO || color.field[AINDEX] != 0.0)
+  if (drawingAlpha == NO || strokeColor.field[AINDEX] != 0.0)
     XDrawRectangle(XDPY, draw, xgcntxt,
 		   bounds.x, bounds.y, bounds.width, bounds.height);
 
   if (drawingAlpha)
     {
       /* Fill alpha also */
-      xr_device_color_t old_color;
       NSAssert(alpha_buffer, NSInternalInconsistencyException);
 
-      old_color = color;
-      [self DPSsetgray: color.field[AINDEX]];
-      XDrawRectangle(XDPY, alpha_buffer, xgcntxt,
+      [self setAlphaColor: strokeColor.field[AINDEX]];
+      XDrawRectangle(XDPY, alpha_buffer, agcntxt,
 		 bounds.x, bounds.y, bounds.width, bounds.height);
-      [self setColor: old_color];
     }
 }
 
 - (void)DPSstroke 
 {
+  if ((cstate & COLOR_STROKE) == 0)
+    [self setColor: fillColor state: COLOR_STROKE];
+
   [self _paintPath: path_stroke];
 }
 
