@@ -81,7 +81,7 @@
       switch(*ptr)
 	{
 	// it means all the same on GLX - there is no diffrent here
-    case NSOpenGLPFASingleRenderer:
+	case NSOpenGLPFASingleRenderer:
 	case NSOpenGLPFAAllRenderers:
 	case NSOpenGLPFAAccelerated:
 	  append(GLX_USE_GL,YES);
@@ -122,32 +122,34 @@
 	  //append(GLX_ACCUM_GREEN_SIZE, *ptr/3);
 	  //append(GLX_ACCUM_BLUE_SIZE, *ptr/3);
 	AccumSize=*ptr;  
-	switch (AccumSize){
-	  	case 8:
+	switch (AccumSize)
+		{
+		case 8:
 		 	append(GLX_ACCUM_RED_SIZE, 3);
 		 	append(GLX_ACCUM_GREEN_SIZE, 3);
 		 	append(GLX_ACCUM_BLUE_SIZE, 2);
 		 	append(GLX_ACCUM_ALPHA_SIZE, 0);
 		 	break;
-	   	case 16:
+		case 15:
+		case 16:
 		 	append(GLX_ACCUM_RED_SIZE, 5);
 		 	append(GLX_ACCUM_GREEN_SIZE, 5);
-		 	append(GLX_ACCUM_BLUE_SIZE, 6);
+		 	append(GLX_ACCUM_BLUE_SIZE, 5);
 		 	append(GLX_ACCUM_ALPHA_SIZE, 0);
 			break;
-	   	case 24:
+		case 24:
 			append(GLX_ACCUM_RED_SIZE, 8);
-	  		append(GLX_ACCUM_GREEN_SIZE, 8);
-	  		append(GLX_ACCUM_BLUE_SIZE, 8);
+			append(GLX_ACCUM_GREEN_SIZE, 8);
+			append(GLX_ACCUM_BLUE_SIZE, 8);
 			append(GLX_ACCUM_ALPHA_SIZE, 0);
 			break;
-       		case 32:
+		case 32:
 			append(GLX_ACCUM_RED_SIZE, 8);
-	  		append(GLX_ACCUM_GREEN_SIZE, 8);
-	  		append(GLX_ACCUM_BLUE_SIZE, 8);
-		    	append(GLX_ACCUM_ALPHA_SIZE, 8);
+			append(GLX_ACCUM_GREEN_SIZE, 8);
+			append(GLX_ACCUM_BLUE_SIZE, 8);
+			append(GLX_ACCUM_ALPHA_SIZE, 8);
 			break;
-	  	};
+		}
 		break;
 	//can not be handle by X11
 	case NSOpenGLPFAMinimumPolicy:
