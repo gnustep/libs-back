@@ -95,7 +95,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   // FIXME
   NSTimer *timer;
 
-  timer = [NSTimer timerWithTimeInterval: 0.1
+  timer = [NSTimer timerWithTimeInterval: 0.01
 		   target: self
 		   selector: @selector(callback:)
 		   userInfo: nil
