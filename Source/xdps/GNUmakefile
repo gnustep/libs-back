@@ -50,12 +50,6 @@ NSDPSContext.m \
 NSDPSContextOps.m \
 PXKFontManager.m
 
-xdps_HEADER_FILES_DIR = ../../Headers/xdps
-xdps_HEADER_FILES_INSTALL_DIR = gnustep/xdps
-
-xdps_HEADER_FILES = \
-NSDPSContext.h
-
 -include GNUmakefile.preamble
 
 include $(GNUSTEP_MAKEFILES)/subproject.make

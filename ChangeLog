@@ -1,3 +1,26 @@
+2003-07-30  David Ayers  <d.ayers@inode.at>
+
+	* Created tag 'pre-header-reorg-20030731'.
+
+	* Source/art/GNUmakefile: Do not make headers publilc.
+	* Source/gsc/GNUmakefile: Ditto.
+	* Source/x11/GNUmakefile: Ditto.
+	* Source/xdps/GNUmakefile: Ditto.
+	* Source/xlib/GNUmakefile: Ditto.
+
+	* Headers/win32/*.h: Update includes for new header structure.
+	* Headers/winlib/*.h: Ditto.
+	* Headers/x11/XGServer.h: Ditto.
+	* Headers/xlib/*.h: Ditto.
+	
+	* Source/art/ftfont.m: Ditto.
+	* Source/gsc/*.m: Ditto.
+	* Source/x11/*.m: Ditto.
+	* Source/xdps/*.m: Ditto.
+	* Source/xlib/*.m: Ditto.
+
+	* Tools/gpbs.m: Ditto.
+
 2003-07-26  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServer.m

@@ -43,7 +43,7 @@
 #include <Foundation/NSData.h>
 #include <Foundation/NSValue.h>
 // For the encoding functions
-#include <base/Unicode.h>
+#include <GNUstepBase/Unicode.h>
 
 static Atom XA_SLANT = (Atom)0;
 static Atom XA_SETWIDTH_NAME = (Atom)0;

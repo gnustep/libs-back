@@ -27,7 +27,7 @@
 #ifndef _XGServer_h_INCLUDE
 #define _XGServer_h_INCLUDE
 
-#include <AppKit/GSDisplayServer.h>
+#include <GNUstepGUI/GSDisplayServer.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>

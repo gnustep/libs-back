@@ -25,7 +25,7 @@
 #ifndef _WIN32Server_h_INCLUDE
 #define _WIN32Server_h_INCLUDE
 
-#include <AppKit/GSDisplayServer.h>
+#include <GNUstepGUI/GSDisplayServer.h>
 
 #include <windows.h>
 

@@ -29,7 +29,7 @@
 #define __AFMFileFontInfo_h__
 
 #include <Foundation/NSMapTable.h>
-#include <AppKit/GSFontInfo.h>
+#include <GNUstepGUI/GSFontInfo.h>
 #include "parseAFM.h"
 
 typedef struct {

@@ -24,7 +24,7 @@
 
 #include <Foundation/Foundation.h>
 #include <AppKit/NSPasteboard.h>
-#include <AppKit/GSPasteboardServer.h>
+#include <GNUstepGUI/GSPasteboardServer.h>
 
 #include <signal.h>
 #include <unistd.h>

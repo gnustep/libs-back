@@ -35,7 +35,7 @@
 
 #include "x11/XGServer.h"
 #include "xlib/XGContext.h"
-#include <AppKit/GSFontInfo.h>
+#include <GNUstepGUI/GSFontInfo.h>
 
 /* Font function (defined in XGFontManager) */
 extern NSString	*XGXFontName(NSString *fontName, float size);

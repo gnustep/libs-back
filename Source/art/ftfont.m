@@ -32,7 +32,7 @@
 #include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSBundle.h>
 #include <Foundation/NSDebug.h>
-#include <AppKit/GSFontInfo.h>
+#include <GNUstepGUI/GSFontInfo.h>
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
 
@@ -754,7 +754,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 }
 
 
-#include <gnustep/base/Unicode.h>
+#include <GNUstepBase/Unicode.h>
 
 /* TODO: the current point probably needs updating after drawing is done */
 
@@ -2766,7 +2766,7 @@ GSLayoutManager glyph generation code.
 TODO: clean this up
 */
 #include <Foundation/NSCharacterSet.h>
-#include <AppKit/GSLayoutManager_internal.h>
+#include <GNUstepGUI/GSLayoutManager_internal.h>
 #include <AppKit/NSTextStorage.h>
 #include <AppKit/NSTextAttachment.h>
 

@@ -25,7 +25,7 @@
 #ifndef _WIN32FontEnumerator_h_INCLUDE
 #define _WIN32FontEnumerator_h_INCLUDE
 
-#include "AppKit/GSFontInfo.h"
+#include "GNUstepGUI/GSFontInfo.h"
 
 @interface WIN32FontEnumerator : GSFontEnumerator
 {

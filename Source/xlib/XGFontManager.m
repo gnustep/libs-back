@@ -32,7 +32,7 @@
 #include <config.h>
 #include <stdio.h>
 
-#include <AppKit/GSFontInfo.h>
+#include <GNUstepGUI/GSFontInfo.h>
 #include <Foundation/NSArchiver.h>
 #include <Foundation/NSBundle.h>
 #include <Foundation/NSFileManager.h>

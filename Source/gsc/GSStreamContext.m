@@ -27,7 +27,7 @@
 #include "gsc/GSContext.h"
 #include "gsc/GSStreamContext.h"
 #include "gsc/GSStreamGState.h"
-#include <AppKit/GSFontInfo.h>
+#include <GNUstepGUI/GSFontInfo.h>
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
 #include <AppKit/NSView.h>

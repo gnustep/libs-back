@@ -12,7 +12,7 @@
 #define __XGFontSetFontInfo_h
 
 #include <X11/Xlib.h>
-#include <AppKit/GSFontInfo.h>
+#include <GNUstepGUI/GSFontInfo.h>
 
 #ifdef X_HAVE_UTF8_STRING
 
