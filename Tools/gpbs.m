@@ -1358,6 +1358,16 @@ main(int argc, char** argv, char **env)
     {
       NSLog(@"GNU pasteboard server startup.\n");
     }
+
+  if ([[NSUserDefaults standardUserDefaults]
+	  stringForKey: @"GSStartupNotification"])
+    {
+      [[NSDistributedNotificationCenter defaultCenter]
+	postNotificationName: [[NSUserDefaults standardUserDefaults]
+				  stringForKey: @"GSStartupNotification"]
+		      object: nil];
+    }
+
   [[NSRunLoop currentRunLoop] run];
   RELEASE(server);
   RELEASE(pool);
