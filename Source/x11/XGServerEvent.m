@@ -507,8 +507,6 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 			NSDebugLLog(@"Focus", @"  but desired focus is %d",
 				    generic.desiredFocusWindow);
 		      }
-		    generic.desiredFocusWindow = 0;
-		    generic.focusRequestNumber = 0;
 		    /* Only send an event if we don't have a key
 		       window already (If we have a key window, that
 		       means the AppKit originated whatever event got us
@@ -904,10 +902,18 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	      {
 		nswin = GSWindowWithNumber(cWin->number);
 	      }
-	    NSDebugLLog(@"Focus", @"Focus went to %p\n", nswin);
+	    NSDebugLLog(@"Focus", @"Focus went to %d (xwin %d)\n", 
+			(cWin) ? cWin->number : 0, fw);
 	    if (nswin == nil)
 	      {
-		[NSApp deactivate]; 
+		if (fw == 0)
+		  {
+		    /* What? This is bogus. Focus has to go somewhere. */
+		  }
+		else
+		  {
+		    [NSApp deactivate];
+		  }
 	      }
 	    cWin = [XGServer _windowForXWindow: xEvent.xfocus.window];
 	    NSDebugLLog(@"Focus", @"%d lost focus on %d\n",
