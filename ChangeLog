@@ -1,3 +1,8 @@
+2003-07-03 22:03  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Give more information when reporting
+	FTC_SBitCache_Lookup() errors.
+
 2003-07-02 17:28  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m (-initWithFontName:matrix:screenFont:):
