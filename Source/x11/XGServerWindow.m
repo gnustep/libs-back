@@ -868,7 +868,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   XSetWindowBackgroundPixmap(XDPY, window->ident, window->buffer);
 }
 
-- (int) window: (NSRect)frame : (NSBackingStoreType)type
+- (int) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style
 {
   static int		last_win_num = 0;
   gswindow_device_t	*window;
@@ -951,9 +951,11 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   /*
    * Prepare size/position hints, but don't set them now - ordering
    * the window in should automatically do it.
-   * Note: These hints are most likely wrong, but should be fixed up
-   * when DPSstylewindow is called.
    */
+  window->win_attrs.flags |= GSWindowStyleAttr;
+  window->win_attrs.window_style = style;
+  frame = [self _XFrameToOSFrame: window->xframe for: window];
+  frame = [self _OSFrameToXHints: frame for: window];
   window->siz_hints.x = NSMinX(frame);
   window->siz_hints.y = NSMinY(frame);
   window->siz_hints.width = NSWidth(frame);
@@ -1022,7 +1024,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       return;
     }
 
-  NSDebugLLog(@"XGTrace", @"DPSwindow: %d", win);
+  NSDebugLLog(@"XGTrace", @"DPStermwindow: %d", win);
   if (window->ic)
     {
       [inputServer ximCloseIC: window->ic];
@@ -1172,6 +1174,11 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 	  setWindowHintsForStyle (XDPY, window->ident, style);
 	}
     }
+}
+
+- (void) windowbacking: (NSBackingStoreType)type
+{
+  [self subclassResponsibility: _cmd];
 }
 
 - (void) titlewindow: (NSString *)window_title : (int) win

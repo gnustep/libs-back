@@ -62,8 +62,7 @@ xlib_HEADER_FILES = \
 XGContext.h \
 XGPrivate.h \
 XGGeometry.h \
-XGGState.h \
-XGGStateOps.h
+XGGState.h 
 
 -include GNUmakefile.preamble
 

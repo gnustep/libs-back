@@ -1,4 +1,12 @@
 2002-03-27  Adam Fedor  <fedor@gnu.org>
 
+	* Source/x11/GNUmakefile: Get headers from right place.
+	* Source/xlib/GNUmakefile: Remove invalid header.
+	
+	* Source/x11/XGServerWindow.m (-window:::): Change method to
+	match frontend (including setting of style).
+
+2002-03-27  Adam Fedor  <fedor@gnu.org>
+
 	* Version: Initial version (most code extracted from xgps).
 
