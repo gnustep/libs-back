@@ -1,3 +1,11 @@
+2005-03-29  Adrian Robert <arobert@cogsci.ucsd.edu>
+
+	* Source/art/ftfont.h, Source/art/ftfont.m, Source/art/ftfont-old.m:
+	Support DPSxshow, xyshow, ashow, widthshow, and awidthshow in same
+	drawString:... method that was just implementing DPSshow, and drop
+	the stub that was slated to handle the former methods.
+	* Source/art/ARTContext.m: Use the methods defined above.
+
 2005-03-28 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/win32/WIN32Server.m: fix for locating window at point.

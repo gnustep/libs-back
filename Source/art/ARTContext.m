@@ -54,12 +54,6 @@ of crashing, they just print a warning.
                 toPoint: (NSPoint)aPoint
                   delta: (float)delta
 
-- (void) DPSashow: (float)x : (float)y : (const char*)s
-- (void) DPSawidthshow: (float)cx : (float)cy : (int)c : (float)ax : (float)ay 
-- (void) DPSwidthshow: (float)x : (float)y : (int)c : (const char*)s
-DPSxshow, DPSyshow, DPSxyshow
-
-
 ** Other unimplemented stuff **
 
 FontInfo:
@@ -187,17 +181,67 @@ very expensive
 /* ----------------------------------------------------------------------- */
 /* Text operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPSashow: (float)x : (float)y : (const char*)s
-{ /* TODO: adds (x,y) in user space to each glyph's x/y advancement */
-	NSLog(@"ignoring DPSashow: %g : %g : '%s'",x,y,s);
+- (void) DPSashow: (float)ax : (float)ay : (const char*)s
+{ /* adds (x,y) in user space to each glyph's x/y advancement */
+  NSPoint p;
+  int x, y;
+  float numarray[2];
+
+  if (!wi || !wi->data) return;
+  if (all_clipped)
+    return;
+
+  if ([path isEmpty]) return;
+  p = [path currentPoint];
+
+  numarray[0] = ax; numarray[1] = ay;
+
+  x = p.x;
+  y = wi->sy - p.y;
+  [(id<FTFontInfo>)font
+    drawString: s
+    at: x:y
+    to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
+      : (wi->has_alpha? wi->alpha + clip_x0 + clip_y0 * wi->sx : NULL) : wi->sx
+    color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
+    transform: ctm
+    deltas: numarray : 1 : 4
+    widthChar: 0
+    drawinfo: &DI];
+  UPDATE_UNBUFFERED
 }
 
 - (void) DPSawidthshow: (float)cx : (float)cy : (int)c : (float)ax : (float)ay 
 		      : (const char*)s
-{ /* TODO: add (ax,ay) in user space to each glyph's x/y advancement and
- additionally add (cx,cy) to the character c's advancement */
-	NSLog(@"ignoring DPSawidthshow: %g : %g : %i : %g : %g : '%s'",
-		cx,cy,c,ax,ay,s);
+{ /* adds (ax,ay) in user space to every glyph's advancement and (cx,cy)
+     to character c's x/y advancement */
+  NSPoint p;
+  int x, y;
+  float numarray[4];
+
+  if (!wi || !wi->data) return;
+  if (all_clipped)
+    return;
+
+  if ([path isEmpty]) return;
+  p = [path currentPoint];
+
+  numarray[0] = ax; numarray[1] = ay;
+  numarray[2] = cx; numarray[3] = cy;
+
+  x = p.x;
+  y = wi->sy - p.y;
+  [(id<FTFontInfo>)font
+    drawString: s
+    at: x:y
+    to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
+      : (wi->has_alpha? wi->alpha + clip_x0 + clip_y0 * wi->sx : NULL) : wi->sx
+    color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
+    transform: ctm
+    deltas: numarray : 1 : 12
+    widthChar: c
+    drawinfo: &DI];
+  UPDATE_UNBUFFERED
 }
 
 - (void) DPScharpath: (const char*)s : (int)b
@@ -235,13 +279,40 @@ very expensive
       : (wi->has_alpha? wi->alpha + clip_x0 + clip_y0 * wi->sx : NULL) : wi->sx
     color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
     transform: ctm
+    deltas: NULL : 0 : 0
+    widthChar: 0
     drawinfo: &DI];
   UPDATE_UNBUFFERED
 }
 
-- (void) DPSwidthshow: (float)x : (float)y : (int)c : (const char*)s
-{ /* TODO: add (x,y) user-space to the character c's advancement */
-	NSLog(@"ignoring DPSwidthshow: %g : %g : %i : '%s'",x,y,c,s);
+- (void) DPSwidthshow: (float)cx : (float)cy : (int)c : (const char*)s
+{ /* adds (x,y) in user space to character c's x/y advancement */
+  NSPoint p;
+  int x, y;
+  float numarray[2];
+
+  if (!wi || !wi->data) return;
+  if (all_clipped)
+    return;
+
+  if ([path isEmpty]) return;
+  p = [path currentPoint];
+
+  numarray[0] = cx; numarray[1] = cy;
+
+  x = p.x;
+  y = wi->sy - p.y;
+  [(id<FTFontInfo>)font
+    drawString: s
+    at: x:y
+    to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
+      : (wi->has_alpha? wi->alpha + clip_x0 + clip_y0 * wi->sx : NULL) : wi->sx
+    color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
+    transform: ctm
+    deltas: numarray : 1 : 8
+    widthChar: c
+    drawinfo: &DI];
+  UPDATE_UNBUFFERED
 }
 
 - (void) DPSxshow: (const char*)s : (const float*)numarray : (int)size
@@ -262,9 +333,12 @@ very expensive
     drawString: s
     at: x:y
     to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
+      : (wi->has_alpha? wi->alpha + clip_x0 + clip_y0 * wi->sx : NULL) : wi->sx
     color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
     transform: ctm
-    deltas: numarray : size : 1];
+    deltas: numarray : size : 1
+    widthChar: 0
+    drawinfo: &DI];
   UPDATE_UNBUFFERED
 }
 
@@ -286,9 +360,12 @@ very expensive
     drawString: s
     at: x:y
     to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
+      : (wi->has_alpha? wi->alpha + clip_x0 + clip_y0 * wi->sx : NULL) : wi->sx
     color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
     transform: ctm
-    deltas: numarray : size : 3];
+    deltas: numarray : size : 3
+    widthChar: 0
+    drawinfo: &DI];
   UPDATE_UNBUFFERED
 }
 
@@ -310,9 +387,12 @@ very expensive
     drawString: s
     at: x:y
     to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
+      : (wi->has_alpha? wi->alpha + clip_x0 + clip_y0 * wi->sx : NULL) : wi->sx
     color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
     transform: ctm
-    deltas: numarray : size : 2];
+    deltas: numarray : size : 2
+    widthChar: 0
+    drawinfo: &DI];
   UPDATE_UNBUFFERED
 }
 

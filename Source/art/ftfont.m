@@ -873,17 +873,18 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
 /* TODO: the current point probably needs updating after drawing is done */
 
--(void) drawString: (const char *)s
-	at: (int)x:(int)y
-	to: (int)x0:(int)y0:(int)x1:(int)y1:(unsigned char *)buf:(int)bpl
-	color:(unsigned char)r:(unsigned char)g:(unsigned char)b:(unsigned char)alpha
-	transform: (NSAffineTransform *)transform
-	deltas: (const float *)delta_data : (int)delta_size : (int)delta_flags;
-{
-/* TODO */
-}
-
-
+/* draw string at point, clipped, w/given color and alpha, and possible deltas:
+   flags & 0x1: data contains x offsets, use instead of glyph x advance
+   flags & 0x2: data contains y offsets, use instead of glyph y advance
+   flags & 0x4: data contains a single x and y offset, which should be added to
+                font's advancements for each glyph; results are undefined if
+                this option is combined with either x or y offsets (0x1,0x2)
+   flags & 0x8: data contains a single x and y offset, which should be added to
+                font's advancement for glyph identified by 'wch'; if combined
+                with 0x4 deltas contain exactly two offsets for x and y, the
+                first for every character, the second for 'wch'; results are
+                undefined if 0x8 is combined with 0x2 or 0x1
+ */
 -(void) drawString: (const char *)s
 	at: (int)x : (int)y
 	to: (int)x0 : (int)y0 : (int)x1 : (int)y1
@@ -891,11 +892,14 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	: (unsigned char *)abuf : (int)abpl
 	color:(unsigned char)r : (unsigned char)g : (unsigned char)b : (unsigned char)alpha
 	transform: (NSAffineTransform *)transform
+	deltas: (const float *)delta_data : (int)delta_size : (int)delta_flags
+        widthChar: (int) wch
 	drawinfo: (draw_info_t *)di
 {
   const unsigned char *c;
   unsigned char ch;
   unsigned int uch;
+  int d;
 
   unsigned int glyph;
 
@@ -1049,7 +1053,44 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
 	  if (!sbit->buffer)
 	    {
-	      x += sbit->xadvance;
+              if (!delta_flags)
+                {
+                x += sbit->xadvance;
+                }
+              else
+                {
+                  if (delta_flags & 0x1)
+                    x += delta_data[d++];
+                  if (delta_flags & 0x2)
+                    y += (transform->matrix.m22 < 0) ?
+                        delta_data[d++] : -delta_data[d++];
+                  if (delta_flags & 0x4)
+                    {
+                      x += sbit->xadvance + delta_data[0];
+                      y += /*sbit->yadvance +*/ (transform->matrix.m22 < 0) ?
+                          delta_data[1] : -delta_data[1];
+                      if ((delta_flags & 0x8) && (uch == wch))
+                        {
+                          x += delta_data[2];
+                          y += (transform->matrix.m22 < 0) ?
+                              delta_data[3] : -delta_data[3];
+                        }
+                    }
+                  else if (delta_flags & 0x8)
+                    {
+                      if (uch == wch)
+                        {
+                          x += sbit->xadvance + delta_data[0];
+                          y += /*sbit->yadvance +*/ (transform->matrix.m22 < 0) ?
+                            delta_data[1] : -delta_data[1];
+                        }
+                      else
+                        {
+                          x += sbit->xadvance;
+                          /*y += sbit->yadvance;*/
+                        }
+                    }
+                }
 	      continue;
 	    }
 
@@ -1158,7 +1199,44 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	      NSLog(@"unhandled font bitmap format %i", sbit->format);
 	    }
 
-	  x += sbit->xadvance;
+          if (!delta_flags)
+            {
+              x += sbit->xadvance;
+            }
+          else
+            {
+              if (delta_flags & 0x1)
+                  x += delta_data[d++];
+              if (delta_flags & 0x2)
+                  y += (transform->matrix.m22 < 0) ?
+                        delta_data[d++] : -delta_data[d++];
+              if (delta_flags & 0x4)
+                {
+                  x += sbit->xadvance + delta_data[0];
+                  y += /*sbit->yadvance +*/ (transform->matrix.m22 < 0) ?
+                          delta_data[1] : -delta_data[1];
+                  if ((delta_flags & 0x8) && (uch == wch))
+                    {
+                      x += delta_data[2];
+                      y += (transform->matrix.m22 < 0) ?
+                              delta_data[3] : -delta_data[3];
+                    }
+                }
+              else if (delta_flags & 0x8)
+                {
+                  if (uch == wch)
+                    {
+                      x += sbit->xadvance + delta_data[0];
+                      y += /*sbit->yadvance +*/ (transform->matrix.m22 < 0) ?
+                          delta_data[1] : -delta_data[1];
+                    }
+                  else
+                    {
+                      x += sbit->xadvance;
+                      /*y += sbit->yadvance;*/
+                    }
+                }
+            }
 	}
       else
 	{
@@ -1265,8 +1343,41 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	      NSLog(@"unhandled font bitmap format %i", gb->bitmap.pixel_mode);
 	    }
 
-	  ftdelta.x += gl->advance.x >> 10;
-	  ftdelta.y += gl->advance.y >> 10;
+          if (!delta_flags)
+            {
+              ftdelta.x += gl->advance.x >> 10;
+              ftdelta.y += gl->advance.y >> 10;
+            }
+          else
+            {
+              if (delta_flags & 0x1)
+                ftdelta.x += delta_data[d++] * 64.0;
+              if (delta_flags & 0x2)
+                ftdelta.y += delta_data[d++] * 64.0;
+              if (delta_flags & 0x4)
+                {
+                  ftdelta.x += (gl->advance.x >> 10) + delta_data[0] * 64.0;
+                  ftdelta.y += (gl->advance.y >> 10) + delta_data[1] * 64.0;
+                  if ((delta_flags & 0x8) && (uch == wch))
+                    {
+                      ftdelta.x += delta_data[2] * 64.0;
+                      ftdelta.y += delta_data[3] * 64.0;
+                    }
+                }
+              else if (delta_flags & 0x8)
+                {
+                  if (uch == wch)
+                    {
+                      ftdelta.x += (gl->advance.x >> 10) + delta_data[0] * 64.0;
+                      ftdelta.y += (gl->advance.y >> 10) + delta_data[1] * 64.0;
+                    }
+                  else
+                    {
+                      ftdelta.x += gl->advance.x >> 10;
+                      ftdelta.y += gl->advance.y >> 10;
+                    }
+                }
+            }
 
 	  FT_Done_Glyph(gl);
 	}
