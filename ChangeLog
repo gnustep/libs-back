@@ -1,8 +1,11 @@
 2004-01-10  Adam Fedor  <fedor@gnu.org>
 
 	* Source/x11/XGServerWindow.m ([XGServer -orderwindow:::]): 
-	When orderWin == 0, make sure the window does not go in front
+	When otherWin == 0, make sure the window does not go in front
 	of the current key window.
+
+	* Source/win32/WIN32Server.m ([WIN -orderwindow:op:otherWin:winNum]): 
+	Allow otherWin < 0.
 
 2004-01-10 16:25  Alexander Malmberg <alexander@malmberg.org>
 

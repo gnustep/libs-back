@@ -447,8 +447,10 @@ DWORD windowStyleForGSStyle(unsigned int style)
 		   SWP_NOSIZE | SWP_NOMOVE);
       break;
     case NSWindowAbove:
-      if (otherWin == 0)
+      if (otherWin <= 0)
 	{
+	  /* FIXME: Need to find the current key window (otherWin == 0
+	     means keep the window below the current key.)  */
 	  otherWin = winNum;
 	  winNum = (int)HWND_TOP;
 	}
