@@ -1,4 +1,9 @@
-2004-11-09 23:15  Alexander Malmberg <alexander@malmberg.org>
+2004-11-09 22:42  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/x11/XGBitmapImageRep.m: Remove dead file.
+	* Source/x11/GNUmakefile: Remove reference.
+
+2004-11-09 22:15  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m (fix_path): Don't prepend the path to absolute
 	file names.

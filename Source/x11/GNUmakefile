@@ -58,7 +58,6 @@ XGServerEvent.m \
 XGServerWindow.m \
 XGDragView.m \
 XIMInputServer.m \
-XGBitmapImageRep.m \
 XWindowBuffer.m\
 XGGLFormat.m\
 XGGLContext.m
