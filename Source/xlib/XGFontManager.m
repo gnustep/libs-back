@@ -35,6 +35,7 @@
 #include <GNUstepGUI/GSFontInfo.h>
 #include <Foundation/NSArchiver.h>
 #include <Foundation/NSBundle.h>
+#include <Foundation/NSException.h>
 #include <Foundation/NSFileManager.h>
 #include <Foundation/NSPathUtilities.h>
 #include <Foundation/NSProcessInfo.h>
@@ -134,7 +135,18 @@ load_cache(NSString *cacheName, BOOL async)
   NSNumber	*v;
   id		o;
 
-  o = [NSUnarchiver unarchiveObjectWithFile: cacheName];
+  NS_DURING
+    {
+      o = [NSUnarchiver unarchiveObjectWithFile: cacheName];
+    }
+  NS_HANDLER
+    {
+      NSLog(@"Exception while attempting to load font cache file %@ - %@: %@",
+	    cacheName, [localException name], [localException reason]);
+      o = nil;
+    }
+  NS_ENDHANDLER
+
   if ((o == nil)
     || ((v = [o objectForKey: @"Version"]) == nil)
     || ([v intValue] != 2))
@@ -173,7 +185,9 @@ load_cache(NSString *cacheName, BOOL async)
   else
     {
       // Ensure archive is written in latest format.
-      [NSArchiver archiveRootObject: o toFile: cacheName];
+      // No longer needed as NSString coding format did not change in 
+      // the last two years. 
+      //[NSArchiver archiveRootObject: o toFile: cacheName];
     }
 
   ASSIGN(cache, o);
