@@ -683,7 +683,7 @@ writeHex(FILE *gstream, const unsigned char *data, int count)
 	      return;
 	    }
 	}
-      fprintf(gstream, "%d %d %d [%d 0 0 -%d 0 %d]\n",
+      fprintf(gstream, "%d %d %d [%d 0 0 %d 0 %d]\n",
 	      pixelsWide, pixelsHigh, bitsPerSample, pixelsWide,
 	      (flipped) ? pixelsHigh : -pixelsHigh, pixelsHigh);
       fprintf(gstream, "{currentfile %d string readhexstring pop}\n",
