@@ -24,7 +24,6 @@
 
 #include <Foundation/Foundation.h>
 #include <AppKit/NSPasteboard.h>
-#include <AppKit/GSPasteboardServer.h>
 
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
