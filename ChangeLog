@@ -1,7 +1,5 @@
 2002-05-12  Adam Fedor  <fedor@gnu.org>
 
-	* diffing (Index): 
-
 	* Source/gsc/GSGState.m (-DPSsetalpha:): Call setColor:state:.
 	Clamp value to 0<x<1
 	(-DPSsetcmykcolor::::): Idem.
