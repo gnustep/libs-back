@@ -1,3 +1,10 @@
+2003-02-09  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSStreamContext.m
+	[DPSconcat:] simplify the output for common cases.
+	[GSShowGlyphs::] added hack implementation, so that some usefull
+	output is still provided.
+
 2003-02-08 21:10  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Add somewhat experimental -nameOfGlyph:
