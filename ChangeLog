@@ -1,3 +1,10 @@
+2003-09-22 13:03  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/image.m (-_image_do_rgb_transform:::): Check if the
+	coordinates involved are too large to handle normally. If they
+	are, scale down the numbers a bit (gives less accuracy, but no
+	overflow).
+
 2003-09-20  Adam Fedor  <fedor@gnu.org>
 
 	* Headers/xlib/XGGState.h: Add GSReadRect def.

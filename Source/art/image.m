@@ -269,6 +269,17 @@ seem to cause edges to be off by a pixel
   else
     left_delta = -1;
 
+/*  printf("x/y (%i %i) (%i %i) (%i %i) (%i %i)  t (%i %i) (%i %i) (%i %i) (%i %i)  le=%i\n",
+	x[0],y[0],
+	x[1],y[1],
+	x[2],y[2],
+	x[3],y[3],
+	tx[0],ty[0],
+	tx[1],ty[1],
+	tx[2],ty[2],
+	tx[3],ty[3],
+	le);*/
+
   /* silence the compiler */
   lx = lx_frac = ldx = ldx_frac = l_de = 0;
   rx = rx_frac = rdx = rdx_frac = r_de = 0;
@@ -375,12 +386,18 @@ seem to cause edges to be off by a pixel
 	    rty++, rty_frac -= r_de;
 	}
 
+/*      printf("cy=%i  left(x=%i, tx=%i, ty=%i)  right(x=%i, tx=%i, ty=%i)\n",
+	     cy,
+	     lx,ltx,lty,
+	     rx,rtx,rty);*/
+
       if (cy >= clip_y0 && rx > lx)
 	{
 	  render_run_t ri;
 	  int x0, x1, de;
 	  int tx, ty, tx_frac, ty_frac, dtx, dty, dtx_frac, dty_frac;
 	  int delta;
+	  int scale_factor;
 
 	  x0 = lx;
 	  x1 = rx;
@@ -388,26 +405,53 @@ seem to cause edges to be off by a pixel
 
 	  tx = ltx;
 	  ty = lty;
-	  tx_frac = ltx_frac * de * r_de;
-	  ty_frac = lty_frac * de * r_de;
-	  de *= r_de * l_de;
+	  if (r_de * l_de > 0x10000)
+	    {
+	      /*
+	      If the numbers involved are really large, scale things down
+	      a bit. This loses some accuracy, but should keep things in
+	      range.
+	      */
+	      scale_factor = 10;
+	      tx_frac = ltx_frac * ((de * r_de) >> scale_factor);
+	      ty_frac = lty_frac * ((de * r_de) >> scale_factor);
+	      de *= (r_de * l_de) >> scale_factor;
+	    }
+	  else
+	    {
+	      tx_frac = ltx_frac * de * r_de;
+	      ty_frac = lty_frac * de * r_de;
+	      scale_factor = 0;
+	      de *= r_de * l_de;
+	    }
 
-	  delta = (rtx * r_de + rtx_frac) * l_de
-		  - (ltx * l_de + ltx_frac) * r_de;
+	  delta = ((rtx * r_de + rtx_frac) >> scale_factor) * l_de
+		  - ((ltx * l_de + ltx_frac) >> scale_factor) * r_de;
 	  dtx = delta / de;
 	  dtx_frac = delta % de;
 
-	  delta = (rty * r_de + rty_frac) * l_de
-		  - (lty * l_de + lty_frac) * r_de;
+	  delta = ((rty * r_de + rty_frac) >> scale_factor) * l_de
+		  - ((lty * l_de + lty_frac) >> scale_factor) * r_de;
 	  dty = delta / de;
 	  dty_frac = delta % de;
+
+/*	  printf("r_de=%i l_de=%i de=%i   dtx=%i dtx_frac=%i  dty=%i dty_frac=%i\n",
+		 r_de,l_de,de,dtx,dtx_frac,dty,dty_frac);
+	  printf(" start at x(%i %i) y(%i %i)\n",
+		 tx,tx_frac,ty,ty_frac);*/
 
 	  /*
 	    x0 x1 / x2 -> y0 y1 / y2  z
 	    ((y0 * y2 + y1) * x2 - (x0 * x2 + x1) * y2) / (x2 * y2 * z)
 	  */
 
-	  if (x0 < clip_x0)
+	  /*
+	  TODO: Would like to use this code instead for speed, but
+	  the multiplications dtx*(clip_x0-x0) may overflow. Need to figure
+	  out a way of doing this safely, or add checks for 'large numbers'
+	  so we can use this in most cases, at least.
+	  */
+/*	  if (x0 < clip_x0)
 	    {
 	      tx += dtx * (clip_x0 - x0);
 	      ty += dty * (clip_x0 - x0);
@@ -422,6 +466,25 @@ seem to cause edges to be off by a pixel
 	      while (ty_frac >= de)
 		ty++, ty_frac -= de;
 	      x0 = clip_x0;
+	    }*/
+	  if (x0 < clip_x0)
+	    {
+	      tx += dtx * (clip_x0 - x0);
+	      ty += dty * (clip_x0 - x0);
+	      while (x0 < clip_x0)
+		{
+		  tx_frac += dtx_frac;
+		  if (tx_frac < 0)
+		    tx--, tx_frac += de;
+		  if (tx_frac >= de)
+		    tx++, tx_frac -= de;
+		  ty_frac += dty_frac;
+		  if (ty_frac < 0)
+		    ty--, ty_frac += de;
+		  if (ty_frac >= de)
+		    ty++, ty_frac -= de;
+		  x0++;
+		}
 	    }
 	  if (x1 >= clip_x1) x1 = clip_x1 - 1; /* TODO? */
 
