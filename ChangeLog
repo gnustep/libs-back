@@ -1,3 +1,9 @@
+2002-09-24 14:38  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Use GSFontAntiAlias defaults value to decide
+	whether	antialiasing should be enabled in the default rendering
+	hints.
+
 2002-09-24 13:22  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/x11/XWindowBuffer.m (+windowBufferForWindow:depthInfo:):
