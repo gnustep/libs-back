@@ -1,4 +1,9 @@
-2003-08-09  Fred Kiefer <FredKiefer@gmx.de>
+2003-08-19  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/xpbs.m
+	Made some of the NSLog messages	more explicit on what did go wrong.
+
+2003-08-17  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Tools/gpbs.m
 	[PasteboardServer init] made sure that class XPbOwner gets
@@ -9,7 +14,7 @@
 	[XPbOwner pasteboardChangedOwner:] removed the remaining ifdef tests for
 	X_HAVE_UTF8_STRING. Removed function xTypeToOs() as this was not used.
 
-2003-08-08  Fred Kiefer <FredKiefer@gmx.de>
+2003-08-16  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/XGFontManager.m 
 	In load_cache() enclosed loading of archive in exception handling and
