@@ -149,10 +149,12 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   return window;
 }
 
-- (void) setColor: (device_color_t)color state: (color_state_t)cState
+- (void) setColor: (device_color_t *)acolor state: (color_state_t)cState
 {
-  [super setColor: color state: cState];
-  color = gsColorToRGB(color);
+  device_color_t color;
+  [super setColor: acolor state: cState];
+  color = *acolor;
+  gsColorToRGB(&color);
   if (cState & COLOR_FILL)
     wfcolor = RGB(color.field[0]*255, color.field[1]*255, color.field[2]*255);
   if (cState & COLOR_STROKE)

@@ -37,12 +37,12 @@ typedef struct _device_color {
 } device_color_t;
 
 /* Internal conversion of colors to pixels values */
-extern device_color_t gsMakeColor(device_colorspace_t space, 
+extern void gsMakeColor(device_color_t *dst, device_colorspace_t space,
 				  float a, float b, float c, float d);
-extern device_color_t gsColorToRGB(device_color_t color);
-extern device_color_t gsColorToGray(device_color_t color);
-extern device_color_t gsColorToCMYK(device_color_t color);
-extern device_color_t gsColorToHSB(device_color_t color);
+extern void gsColorToRGB(device_color_t *color);
+extern void gsColorToGray(device_color_t *color);
+extern void gsColorToCMYK(device_color_t *color);
+extern void gsColorToHSB(device_color_t *color);
 
 #endif
 

@@ -1,3 +1,11 @@
+2002-08-25 20:48  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Headers/gsc/GSGState.h, Headers/gsc/gscolors.h,
+	Source/art/ARTContext.m, Source/gsc/GSGState.m, Source/gsc/gscolors.c,
+	Source/winlib/WIN32GState.m, Source/xlib/XGGState.m: Optimize color
+	handling by passing around pointers to device_color_t structures
+	(instead of the structures themselves).
+
 2002-08-23 01:54  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/ARTWindowBuffer.m (+artWindowBufferForWindow:): Mark
