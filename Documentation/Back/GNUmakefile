@@ -30,6 +30,7 @@ DOCUMENT_NAME = Back
 
 Back_AGSDOC_FILES = \
 	Back.gsdoc \
+	DefaultsSummary.gsdoc \
 	WindowFocus.gsdoc
 
 Back_AGSDOC_FLAGS = \

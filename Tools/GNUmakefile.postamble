@@ -32,6 +32,8 @@ after-install::
 	for file in $(MAN1_PAGES) __done; do \
 	  if [ $$file != __done ]; then \
 	    $(INSTALL_DATA) $$file $(GNUSTEP_DOCUMENTATION_MAN)/man1/$$file; \
+	    which gzip && rm -f $(GNUSTEP_DOCUMENTATION_MAN)/man1/$$file.gz \
+	    && gzip -9 $(GNUSTEP_DOCUMENTATION_MAN)/man1/$$file; \
 	  fi; \
 	done;
 
@@ -42,7 +44,7 @@ after-install::
 after-uninstall::
 	for file in $(MAN1_PAGES) __done; do \
 	  if [ $$file != __done ]; then \
-	    rm -f $(GNUSTEP_DOCUMENTATION_MAN)/man1/$$file; \
+	    rm -f $(GNUSTEP_DOCUMENTATION_MAN)/man1/$$file.gz; \
 	  fi; \
 	done;
 
