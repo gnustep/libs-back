@@ -211,7 +211,6 @@
   TEXTMETRIC metric;
   HFONT old;
   LOGFONT logfont;
-  NSString *weightString;
   NSRange range;
 
   //NSLog(@"Creating Font %@ of size %f", fontName, matrix[0]);
@@ -242,19 +241,13 @@
   SelectObject(hdc, old);
   ReleaseDC(NULL, hdc);
 
-  // Fill the afmDitionary and ivars
-  [fontDictionary setObject: fontName forKey: NSAFMFontName];
-  //ASSIGN(familyName, XGFontFamily(xdpy, font_info));
-  //[fontDictionary setObject: familyName forKey: NSAFMFamilyName];
+  // Fill the ivars
+  // NSAFMFamilyName
   isFixedPitch = TMPF_FIXED_PITCH & metric.tmPitchAndFamily;
   isBaseFont = NO;
   ascender = metric.tmAscent;
   //NSLog(@"Resulted in height %d and ascent %d", metric.tmHeight, metric.tmAscent);
-  [fontDictionary setObject: [NSNumber numberWithFloat: ascender] 
-		  forKey: NSAFMAscender];
   descender = -metric.tmDescent;
-  [fontDictionary setObject: [NSNumber numberWithFloat: descender]
-		  forKey: NSAFMDescender];
 
   fontBBox = NSMakeRect((float)(0),
 			(float)(0 - metric.tmAscent),
@@ -306,12 +299,6 @@
     traits |= NSItalicFontMask;
   else
     traits |= NSUnitalicFontMask;
-
-  weightString = [GSFontInfo stringForWeight: weight];
-  if (weightString != nil)
-    {
-      [fontDictionary setObject: weightString forKey: NSAFMWeight];
-    }
 
   // Should come from metric.tmCharSet
   mostCompatibleStringEncoding = NSISOLatin1StringEncoding;
