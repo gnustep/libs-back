@@ -1,3 +1,11 @@
+2003-03-26 00:24  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/x11/XWindowBuffer.m (-dealloc): Free the shared memory
+	pixmap (if one was allocated).
+
+	* Source/art/composite.m: When checking whether the overlap handling
+	should be used, compare windows, not gstates.
+
 2003-03-22  Willem Rein Oudshoorn  <woudshoo@xs4all.nl>
 
 	* Source/x11/XGServerWindow.m ([XGServer -orderwindow:::]): 
