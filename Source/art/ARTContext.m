@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2003, 2004, 2005 Free Software Foundation, Inc.
 
    Author:  Alexander Malmberg <alexander@malmberg.org>
 
@@ -420,12 +420,6 @@ very expensive
 	*limit=miter_limit;
 }
 
-- (void) DPScurrentstrokeadjust: (int*)b
-{
-	/* TODO We never stroke-adjust, see DPSsetstrokeadjust. */
-	*b=0;
-}
-
 - (void) DPSsetdash: (const float*)pat : (int)size : (float)offs
 {
 	int i;
@@ -505,13 +499,15 @@ very expensive
 	miter_limit=limit;
 }
 
+
+- (void) DPScurrentstrokeadjust: (int*)b
+{
+  *b = strokeadjust;
+}
+
 - (void) DPSsetstrokeadjust: (int)b
 {
-	/* Since we anti-alias stroke-adjustment isn't really applicable.
-	TODO:
-	However, it might be useful to handle stroke-adjusting by snapping
-	to whole pixels when rendering to avoid anti-aliasing of rectangles
-	and straight lines. */
+  strokeadjust = b;
 }
 
 @end
