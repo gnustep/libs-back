@@ -211,25 +211,26 @@ very expensive
 
 - (void) DPSshow: (const char*)s
 {
-	NSPoint p;
-	int x,y;
+  NSPoint p;
+  int x, y;
 
-	if (!wi || !wi->data) return;
-	if (all_clipped)
-		return;
+  if (!wi || !wi->data) return;
+  if (all_clipped)
+    return;
 
-	if ([path isEmpty]) return;
-	p=[path currentPoint];
+  if ([path isEmpty]) return;
+  p = [path currentPoint];
 
-	x=p.x;
-	y=wi->sy-p.y;
-	[(id<FTFontInfo>)[font fontInfo]
-		drawString: s
-		at: x:y
-		to: clip_x0:clip_y0:clip_x1:clip_y1:CLIP_DATA:wi->bytes_per_line
-		color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
-		transform: ctm
-		drawinfo: &DI];
+  x = p.x;
+  y = wi->sy - p.y;
+  [(id<FTFontInfo>)[font fontInfo]
+    drawString: s
+    at: x:y
+    to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
+    color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
+    transform: ctm
+    drawinfo: &DI];
+  UPDATE_UNBUFFERED
 }
 
 - (void) DPSwidthshow: (float)x : (float)y : (int)c : (const char*)s
@@ -239,71 +240,74 @@ very expensive
 
 - (void) DPSxshow: (const char*)s : (const float*)numarray : (int)size
 {
-	NSPoint p;
-	int x,y;
+  NSPoint p;
+  int x, y;
 
-	if (!wi || !wi->data) return;
-	if (all_clipped)
-		return;
+  if (!wi || !wi->data) return;
+  if (all_clipped)
+    return;
 
-	if ([path isEmpty]) return;
-	p=[path currentPoint];
+  if ([path isEmpty]) return;
+  p = [path currentPoint];
 
-	x=p.x;
-	y=wi->sy-p.y;
-	[(id<FTFontInfo>)[font fontInfo]
-		drawString: s
-		at: x:y
-		to: clip_x0:clip_y0:clip_x1:clip_y1:CLIP_DATA:wi->bytes_per_line
-		color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
-		transform: ctm
-		deltas: numarray : size : 1];
+  x = p.x;
+  y = wi->sy - p.y;
+  [(id<FTFontInfo>)[font fontInfo]
+    drawString: s
+    at: x:y
+    to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
+    color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
+    transform: ctm
+    deltas: numarray : size : 1];
+  UPDATE_UNBUFFERED
 }
 
 - (void) DPSxyshow: (const char*)s : (const float*)numarray : (int)size
 {
-	NSPoint p;
-	int x,y;
+  NSPoint p;
+  int x, y;
 
-	if (!wi || !wi->data) return;
-	if (all_clipped)
-		return;
+  if (!wi || !wi->data) return;
+  if (all_clipped)
+    return;
 
-	if ([path isEmpty]) return;
-	p=[path currentPoint];
+  if ([path isEmpty]) return;
+  p = [path currentPoint];
 
-	x=p.x;
-	y=wi->sy-p.y;
-	[(id<FTFontInfo>)[font fontInfo]
-		drawString: s
-		at: x:y
-		to: clip_x0:clip_y0:clip_x1:clip_y1:CLIP_DATA:wi->bytes_per_line
-		color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
-		transform: ctm
-		deltas: numarray : size : 3];
+  x = p.x;
+  y = wi->sy - p.y;
+  [(id<FTFontInfo>)[font fontInfo]
+    drawString: s
+    at: x:y
+    to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
+    color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
+    transform: ctm
+    deltas: numarray : size : 3];
+  UPDATE_UNBUFFERED
 }
 
 - (void) DPSyshow: (const char*)s : (const float*)numarray : (int)size
 {
-	NSPoint p;
-	int x,y;
+  NSPoint p;
+  int x, y;
 
-	if (!wi || !wi->data) return;
-	if (all_clipped)
-		return;
+  if (!wi || !wi->data) return;
+  if (all_clipped)
+    return;
 
-	if ([path isEmpty]) return;
-	p=[path currentPoint];
+  if ([path isEmpty]) return;
+  p = [path currentPoint];
 
-	x=p.x;
-	y=wi->sy-p.y;
-	[(id<FTFontInfo>)[font fontInfo]
-		drawString: s
-		at: x:y
-		to: clip_x0:clip_y0:clip_x1:clip_y1:CLIP_DATA:wi->bytes_per_line
-		color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
-		transform: ctm
-		deltas: numarray : size : 2];
+  x = p.x;
+  y = wi->sy - p.y;
+  [(id<FTFontInfo>)[font fontInfo]
+    drawString: s
+    at: x:y
+    to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
+    color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
+    transform: ctm
+    deltas: numarray : size : 2];
+  UPDATE_UNBUFFERED
 }
 
 

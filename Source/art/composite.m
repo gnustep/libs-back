@@ -818,6 +818,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
 	    }
 	}
     }
+  UPDATE_UNBUFFERED
 }
 
 
@@ -1016,7 +1017,6 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
 	if (!DI.inline_alpha)
 	  memset(dst_alpha, 0, n);
       )
-      return;
     }
   else if (op == NSCompositeHighlight)
     {
@@ -1028,7 +1028,6 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
 	    (*d) ^= 0xff;
 	}
       )
-      return;
     }
   else if (op == NSCompositeCopy)
     {
@@ -1061,7 +1060,6 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
 	    memset(dst_alpha, ri.a, n);
 	  }
       )
-      return;
     }
   else if (blit_func)
     {
@@ -1110,13 +1108,15 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
 	c.dsta = dst_alpha;
 	blit_func(&c, n);
       )
-      return;
     }
-
-  NSLog(@"unimplemented compositerect: (%g %g)+(%g %g)  op: %i",
-	aRect.origin.x, aRect.origin.y,
-	aRect.size.width, aRect.size.height,
-	op);
+  else
+    {
+      NSLog(@"unimplemented compositerect: (%g %g)+(%g %g)  op: %i",
+	    aRect.origin.x, aRect.origin.y,
+	    aRect.size.width, aRect.size.height,
+	    op);
+    }
+  UPDATE_UNBUFFERED
 }
 
 @end
