@@ -1274,8 +1274,8 @@ init(int argc, char** argv, char **env)
 	  gpbs_log(LOG_CRIT);
 	  exit(EXIT_FAILURE);
 	}
-    }
 #endif
+    }
 
     /*
      * Make gpbs logging go to syslog unless overridden by user.
