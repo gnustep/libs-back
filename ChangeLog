@@ -1,3 +1,12 @@
+2002-11-15  Frederic De Jaeger <dejaeger@free.fr>
+
+	* Source/x11/XGGLFormat.m, Source/x11/XGGLContext.m
+	  Headers/x11/XGOpenGL.h: New files.
+	* Source/x11/Makefile: Updated.
+	* configure.ac: add a test for GLX
+	* Source/x11/XGServer.m (glContextClass,
+          glPixelFormatClass): Implement.
+
 2002-11-08  Adam Fedor  <fedor@gnu.org>
 
 	* Source/x11/XGServerEvent.m ([XGServer
