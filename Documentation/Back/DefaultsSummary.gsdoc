@@ -83,7 +83,6 @@
           problem with the X-Server.
           </p>
 	  </desc>
-	  </desc>
 	  <term>GSUseWMTaskBar</term>
 	  <desc>
           <p> [W32 backend only]

@@ -26,18 +26,17 @@ GNUSTEP_INSTALLATION_DIR = $(GNUSTEP_SYSTEM_ROOT)
 include $(GNUSTEP_MAKEFILES)/common.make
 
 # The documents to be generated
-DOCUMENT_NAME = Back
+DOCUMENT_NAME = General
 
-Back_AGSDOC_FILES = \
+General_AGSDOC_FILES = \
 	Back.gsdoc \
 	DefaultsSummary.gsdoc \
 	WindowFocus.gsdoc
 
-Back_AGSDOC_FLAGS = \
-	-DocumentationDirectory Back \
+General_AGSDOC_FLAGS = \
 	-Up Back
 
-Back_DOC_INSTALL_DIR = Developer/Back/Reference
+General_DOC_INSTALL_DIR = Developer/Back
 
 -include GNUmakefile.preamble
 
