@@ -1,3 +1,8 @@
+2002-09-28 17:30  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/art/ftfont.m (load_font_configuration): Handle the
+	'Family' key.
+
 2002-09-26 16:08  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Implement handling of the 'ScreenFonts' key
