@@ -31,8 +31,7 @@ emulate the DPS functions required by the front-end system.
 
 @ifset GNUSTEP-BACK-FTP-MACHINE
 The gstep-back-@value{GNUSTEP-BACK-VERSION}.tar.gz distribution
-file has been placed on @samp{@value{GNUSTEP-BACK-FTP-MACHINE}} in
-@samp{@value{GNUSTEP-BACK-FTP-DIRECTORY}}.
+file has been placed at @url{ftp://@value{GNUSTEP-BACK-FTP-MACHINE}/@value{GNUSTEP-BACK-FTP-DIRECTORY}}.
 @end ifset
 
 @section Where do I send bug reports?

@@ -682,7 +682,7 @@ static NSArray *faFromFc(FcPattern *pat)
   if ((xfontname == nil) ||
       (font_info = XftFontOpenXlfd(xdpy, defaultScreen, [xfontname UTF8String])) == NULL)
     {
-      NSLog(@"Unable to open fixed font");
+      NSLog(@"Unable to open fixed font %@", xfontname);
       return NO;
     }
   else
