@@ -119,6 +119,6 @@ typedef struct _gswindow_device_t {
 @end
 
 extern Pixmap
-xgps_cursor_mask(Display *xdpy, Drawable draw, const char *data, 
+xgps_cursor_mask(Display *xdpy, Drawable draw, const unsigned char *data,
 		 int w, int h, int colors);
 #endif

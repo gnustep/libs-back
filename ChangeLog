@@ -1,3 +1,18 @@
+2005-01-21 21:51  Alexander Malmberg  <alexander@malmberg.org>
+
+	Various warning and whitespace cleanups.
+
+	* Headers/x11/XGServerWindow.h,
+ 	* Source/art/ftfont.m,
+	* Source/gsc/GSGState.m,
+	* Source/win32/WIN32Server.m,
+	* Source/x11/XGDragView.m,
+	* Source/x11/XGServerEvent.m,
+	* Source/x11/XGServerWindow.m: Change signedness of various
+	variables.
+	* Tools/gpbs.m: Add missing ctype.h include.
+	* Source/x11/XGDrawView.m (-_setCursor): Initialize variables.
+
 2005-01-20 22:39  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/ARTContext.m (-initWithContextInfo:): Enable stroke

@@ -195,10 +195,6 @@ typedef struct {
 #define _XA_MOTIF_WM_HINTS "_MOTIF_WM_HINTS"
 
 
-Pixmap
-xgps_cursor_mask(Display *xdpy, Drawable draw, const char *data,
-                  int w, int h, int colors);
-
 /* Now the code */
 
 /* Set the style `styleMask' for the XWindow `window' using motif
@@ -586,7 +582,8 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 
 - (gswindow_device_t *)_rootWindowForScreen: (int)screen
 {
-  int x, y, width, height;
+  int x, y;
+  unsigned int width, height;
   gswindow_device_t *window;
 
   /* Screen number is negative to avoid conflict with windows */
@@ -1500,7 +1497,7 @@ static BOOL didCreatePixmaps;
   data = [rep bitmapData];
   screen = [[[self screenList] objectAtIndex: 0] intValue];
   xIconPixmap = XCreatePixmap(dpy,
-                      [self xDisplayRootWindowForScreen:screen],
+                      [self xDisplayRootWindowForScreen: screen],
                       [rep pixelsWide], [rep pixelsHigh],
                       DefaultDepth(dpy, screen));
   pixgc = XCreateGC(dpy, xIconPixmap, 0, NULL);
@@ -2510,7 +2507,7 @@ static BOOL   cursor_hidden = NO;
 #define ALPHA_THRESHOLD 158
 
 Pixmap
-xgps_cursor_mask(Display *xdpy, Drawable draw, const char *data, 
+xgps_cursor_mask(Display *xdpy, Drawable draw, const unsigned char *data,
 		  int w, int h, int colors)
 {
   int j, i;
@@ -2701,7 +2698,8 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
     *cid = (void *)cursor;
 }
 
-- (void) imagecursor: (NSPoint)hotp : (int) w :  (int) h : (int)colors : (const char *)image : (void **)cid
+- (void) imagecursor: (NSPoint)hotp : (int) w :  (int) h : (int)colors
+		    : (const unsigned char *)image : (void **)cid
 {
   Cursor cursor;
   Pixmap source, mask;
