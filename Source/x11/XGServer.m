@@ -309,6 +309,16 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 /**
    <unit>
    <heading>XGServer</heading>
+
+   <p> XGServer is a concrete subclass of GSDisplayServer that handles
+   X-Window client communications. The class is broken into four sections.
+   The main class handles setting up and closing down the display, as well
+   as providing wrapper methods to access display and screen pointers. The
+   WindowOps category handles window creating, display, movement, and
+   other functions detailed in the GSDisplayServer(WindowOps) category.
+   The EventOps category handles events received from X-Windows and the
+   window manager. It implements the methods defined in the
+   GSDisplayServer(EventOps) category. The last section 
    </unit>
 */
 @implementation XGServer 

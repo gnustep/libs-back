@@ -319,7 +319,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 }
 @end
 
-@implementation XGServer (DPSWindow)
+@implementation XGServer (WindowOps)
 
 /*
  * Where a window has been reparented by the wm, we use this method to

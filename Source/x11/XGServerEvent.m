@@ -28,11 +28,13 @@
 #include <AppKit/AppKitExceptions.h>
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSGraphics.h>
+#include <AppKit/NSMenu.h>
 #include <AppKit/NSWindow.h>
 #include <Foundation/NSException.h>
 #include <Foundation/NSArray.h>
 #include <Foundation/NSDictionary.h>
 #include <Foundation/NSData.h>
+#include <Foundation/NSNotification.h>
 #include <Foundation/NSValue.h>
 #include <Foundation/NSString.h>
 #include <Foundation/NSUserDefaults.h>
@@ -97,6 +99,8 @@ static void (*procEvent)(id, SEL, XEvent*) = 0;
                   forMode: (NSString*)mode;
 - (int) XGErrorHandler: (Display*)display : (XErrorEvent*)err;
 - (void) processEvent: (XEvent *) event;
+- (NSEvent *)_handleTakeFocusAtom: (XEvent)xEvent 
+		       forContext: (NSGraphicsContext *)gcontext;
 @end
 
 
@@ -124,7 +128,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
   return (xEvent->xkeymap.key_vector[key_code / 8] & (1 << (key_code % 8)));  
 }
 
-@implementation XGServer (X11Methods)
+@implementation XGServer (EventOps)
 
 - (int) XGErrorHandler: (Display*)display : (XErrorEvent*)err
 {
@@ -511,62 +515,8 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 		else if ((Atom)xEvent.xclient.data.l[0]
 			 == generic.take_focus_atom)
 		  {
-		    /*
-		     * WM is asking us to take the keyboard focus
-		     */
-		    nswin = [NSApp keyWindow];
-		    NSDebugLLog(@"Focus", @"take focus:%d (current=%d key=%d)",
-				cWin->number, 
-				generic.currentFocusWindow,
-				[nswin windowNumber]);
-		    if ([NSApp isActive]
-			&& ((generic.currentFocusWindow
-			     && cWin->number == generic.currentFocusWindow)
-			    || (generic.desiredFocusWindow
-				&& cWin->number != generic.desiredFocusWindow)))
-		      {
-			/*
-			 * Reassert our desire to have input
-			 * focus in our existing key window.
-			 * Case 1 can occur when we switch workspaces
-			 * and the WM tells us to take back focus on
-			 * our current key window, or (Case 2) if we
-			 * asked for a window to be key but didn't get
-			 * it (perhaps because it wasn't on-screen
-			 * yet?). 
-			 */
-			int number;
-			NSDebugLLog(@"Focus", @"  desired focus is %d",
-				    generic.desiredFocusWindow);
-			number = generic.desiredFocusWindow;
-			generic.focusRequestNumber = 0;
-			generic.desiredFocusWindow = 0;
-			if (number == 0)
-			  number = generic.currentFocusWindow;
-			[self setinputstate: GSTitleBarKey : number];
-			[self setinputfocus: number];
-		      }
-		    else
-		      {
-			/*
-			 * Here the app asked for this (if nswin==nil)
-			 * or there was a click on the title bar or
-			 * some other reason (window mapped, etc). We don't
-			 * necessarily want to do this for the last reason
-			 * but we just have to deal with that since we
-			 * can never be sure if it's necessary.
-			 */
-			eventLocation = NSMakePoint(0,0);
-			e = [NSEvent otherEventWithType:NSAppKitDefined
-				     location: eventLocation
-				     modifierFlags: 0
-				     timestamp: 0
-				     windowNumber: cWin->number
-				     context: gcontext
-				     subtype: GSAppKitWindowFocusIn
-				     data1: 0
-				     data2: 0];
-		      }
+		    e = [self _handleTakeFocusAtom: xEvent 
+			                forContext: gcontext];
 		  }
 	      }
 	    else if (xEvent.xclient.message_type == dnd.XdndEnter)
@@ -960,6 +910,12 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	    cWin = [XGServer _windowForXWindow: xEvent.xfocus.window];
 	    NSDebugLLog(@"Focus", @"%d lost focus on %d\n",
 			xEvent.xfocus.window, (cWin) ? cWin->number : 0);
+	    generic.currentFocusWindow = 0;
+	    if (cWin && generic.desiredFocusWindow == cWin->number)
+	      {
+		/* Request not valid anymore since we lost focus */
+		generic.focusRequestNumber = 0;
+	      }
 	  }
 	  break;
 
@@ -1054,6 +1010,8 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	      if (generic.desiredFocusWindow == cWin->number
 		  && generic.focusRequestNumber == 0)
 		{
+		  NSDebugLLog(@"Focus", @"Refocusing %d on map notify", 
+			      cWin->number);
 		  [self setinputfocus: cWin->number];
 		}
 	      /*
@@ -1290,6 +1248,79 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	[event_queue addObject: e];
       e = nil;
 }
+
+/*
+ * WM is asking us to take the keyboard focus
+ */
+- (NSEvent *)_handleTakeFocusAtom: (XEvent)xEvent 
+		       forContext: (NSGraphicsContext *)gcontext
+{
+  int key_num;
+  NSWindow *key_win;
+  NSEvent *e = nil;
+  key_win = [NSApp keyWindow];
+  key_num = [key_win windowNumber];
+  NSDebugLLog(@"Focus", @"take focus:%d (current=%d key=%d)",
+	      cWin->number, generic.currentFocusWindow, key_num);
+
+  /* Invalidate the previous request. It's possible the app lost focus
+     before this request was fufilled and we are being focused again,
+     or ??? */
+  {
+    generic.focusRequestNumber = 0;
+    generic.desiredFocusWindow = 0;
+  }
+  /* We'd like to send this event directly to the front-end to handle,
+     but the front-end polls events so slowly compared the speed at
+     which X events could potentially come that we could easily get
+     out of sync, particularly when there are a lot of window
+     events */
+  if ([NSApp isHidden])
+    {
+      /* This often occurs when hidding an app, since a bunch of
+	 windows get hidden at once, and the WM is searching for a
+	 window to take focus after each one gets hidden. */
+      NSDebugLLog(@"Focus", @"WM take focus while hiding");
+    }
+  else if (cWin->number == key_num)
+    {
+      NSDebugLLog(@"Focus", @"Reasserting key window");
+      [GSServerForWindow(key_win) setinputfocus: key_num];
+    }
+  else if (key_num 
+	   && cWin->number == [[[NSApp mainMenu] window] windowNumber])
+    {
+      /* This might occur when the window manager just wants someone
+	 to become key, so it tells the main menu (typically the first
+	 menu in the list), but since we already have a window that
+	 was key before, use that instead */
+      NSDebugLLog(@"Focus", @"Key window is already %d", key_num);
+      [GSServerForWindow(key_win) setinputfocus: key_num];
+    }
+  else
+    {
+      NSPoint eventLocation;
+      /*
+       * Here the app asked for this (if key_win==nil) or there was a
+       * click on the title bar or some other reason (window mapped,
+       * etc). We don't necessarily want to forward the event for the
+       * last reason but we just have to deal with that since we can
+       * never be sure if it's necessary.
+       */
+      eventLocation = NSMakePoint(0,0);
+      e = [NSEvent otherEventWithType:NSAppKitDefined
+		   location: eventLocation
+		   modifierFlags: 0
+		   timestamp: 0
+		   windowNumber: cWin->number
+		   context: gcontext
+		   subtype: GSAppKitWindowFocusIn
+		   data1: 0
+		   data2: 0];
+    }
+  return e;
+}
+
 
 // Return the key_code corresponding to the user defaults string
 // Return 1 (which is an invalid keycode) if the user default 
