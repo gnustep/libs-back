@@ -36,14 +36,32 @@
 #include <math.h>
 
 static inline
+int WindowHeight(HWND window)
+{
+  RECT rect;
+
+  if (!window)
+    {
+      NSLog(@"No window for coordinate transformation.");
+      return 0;
+    }
+
+  if (!GetClientRect(window, &rect))
+    {
+      NSLog(@"No window rectangle for coordinate transformation.");
+      return 0;
+    }
+
+  return rect.bottom - rect.top;
+}
+
+static inline
 POINT GSWindowPointToMS(WIN32GState *s, NSPoint p)
 {
   POINT p1;
-  RECT rect;
   int h;
 
-  GetClientRect((HWND)[s window], &rect);
-  h = rect.bottom - rect.top;
+  h = WindowHeight([s window]);
 
   p.x += s->offset.x;
   p.y += s->offset.y;
@@ -57,12 +75,10 @@ static inline
 RECT GSWindowRectToMS(WIN32GState *s, NSRect r)
 {
   RECT r1;
-  RECT rect;
   int h;
 
-  GetClientRect((HWND)[s window], &rect);
-  h = rect.bottom - rect.top;
- 
+  h = WindowHeight([s window]);
+
   r.origin.x += s->offset.x;
   r.origin.y += s->offset.y;
 
@@ -98,7 +114,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 
 - (void) setWindow: (HWND)number
 {
-  window = (HWND)number;
+  window = number;
 }
 
 - (HWND) window
@@ -116,7 +132,8 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
     wscolor = RGB(color.field[0]*255, color.field[1]*255, color.field[2]*255);
 }
 
-- (void) copyBits: (WIN32GState*)source fromRect: (NSRect)aRect 
+- (void) copyBits: (WIN32GState*)source 
+	 fromRect: (NSRect)aRect 
 	  toPoint: (NSPoint)aPoint
 {
   HDC otherDC;
@@ -126,7 +143,6 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   int h;
   int y1;
 
-  //NSLog(@"Orig Copy Bits to %f, %f from %@", aPoint.x, aPoint.y, NSStringFromRect(aRect)); 
   p = GSViewPointToWin(self, aPoint);
   rect = GSViewRectToWin(source, aRect);
   h = rect.bottom - rect.top;
@@ -142,9 +158,11 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   if (!BitBlt(hdc, p.x, y1, (rect.right - rect.left), h, 
 	      otherDC, rect.left, rect.top, SRCCOPY))
     {
-      NSLog(@"Copy Bits to %d %d from %d %d size %d %d", p.x , y1, rect.left, rect.top, 
-	    (rect.right - rect.left), h);
       NSLog(@"Copy bitmap failed %d", GetLastError());
+      NSLog(@"Orig Copy Bits to %f, %f from %@", aPoint.x, aPoint.y, 
+	    NSStringFromRect(aRect)); 
+      NSLog(@"Copy Bits to %d %d from %d %d size %d %d", p.x , y1, 
+	    rect.left, rect.top, (rect.right - rect.left), h);
     }
   [self releaseHDC: hdc];
   [source releaseHDC: otherDC]; 
@@ -210,20 +228,26 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   [self releaseHDC: hdc];
 }
 
-- (void)DPSimage: (NSAffineTransform*) matrix 
-		: (int) pixelsWide : (int) pixelsHigh
-		: (int) bitsPerSample : (int) samplesPerPixel 
-		: (int) bitsPerPixel : (int) bytesPerRow : (BOOL) isPlanar
-		: (BOOL) hasAlpha : (NSString *) colorSpaceName
-		: (const unsigned char *const [5]) data
-{
-  NSRect rect;
-  NSAffineTransform *old_ctm = nil;
-  HDC hdc;
 
-  rect = NSZeroRect;
-  rect.size.width = (float) pixelsWide;
-  rect.size.height = (float) pixelsHigh;
+static
+HBITMAP GSCreateBitmap(HDC hdc, int pixelsWide, int pixelsHigh,
+		       int bitsPerSample, int samplesPerPixel,
+		       int bitsPerPixel, int bytesPerRow,
+		       BOOL isPlanar, BOOL hasAlpha,
+		       NSString *colorSpaceName,
+		       const unsigned char *const data[5])
+{
+  HBITMAP hbitmap;
+  BITMAPINFO *bitmap;
+  BITMAPINFOHEADER *bmih;
+  int xres, yres;
+  UINT fuColorUse;
+
+  if (isPlanar || ![colorSpaceName isEqualToString: NSDeviceRGBColorSpace])
+    {
+      NSLog(@"Bitmap type currently not supported %d %@", isPlanar, colorSpaceName);
+      return NULL;
+    }
 
   // default is 8 bit grayscale 
   if (!bitsPerSample)
@@ -237,77 +261,174 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   if (!bytesPerRow)
     bytesPerRow = (bitsPerPixel * pixelsWide) / 8;
 
-  /* make sure its sane - also handles row padding if hint missing */
+  // make sure its sane - also handles row padding if hint missing
   while((bytesPerRow * 8) < (bitsPerPixel * pixelsWide))
     bytesPerRow++;
 
+  if (!(GetDeviceCaps(hdc, RASTERCAPS) &  RC_DI_BITMAP)) 
+    {
+      return NULL;
+    }
+
+  hbitmap = CreateCompatibleBitmap(hdc, pixelsWide, pixelsHigh);
+  if (!hbitmap)
+    {
+      return NULL;
+    }
+
+  bitmap = objc_malloc(sizeof(BITMAPINFOHEADER) + bitsPerPixel * sizeof(RGBQUAD));
+  bmih = (BITMAPINFOHEADER*)bitmap;
+
+  bmih->biSize = sizeof(BITMAPINFOHEADER);
+  bmih->biWidth = pixelsWide;
+  bmih->biHeight = -pixelsHigh;
+  bmih->biPlanes = 1;
+  bmih->biBitCount = bitsPerPixel;
+  bmih->biCompression = BI_RGB;
+  bmih->biSizeImage = 0;
+  xres = GetDeviceCaps(hdc, HORZRES) / GetDeviceCaps(hdc, HORZSIZE);
+  yres = GetDeviceCaps(hdc, VERTRES) / GetDeviceCaps(hdc, VERTSIZE);
+  bmih->biXPelsPerMeter = xres;
+  bmih->biYPelsPerMeter = yres;
+  bmih->biClrUsed = 0;
+  bmih->biClrImportant = 0;
+  fuColorUse = 0;
+
+  if (bitsPerPixel <= 8)
+    {
+      // FIXME How to get a colour palette?
+      NSLog(@"Need to define colour map for images with %d bits", bitsPerPixel);
+      //bitmap->bmiColors;
+      fuColorUse = DIB_RGB_COLORS;
+    }
+  else if (bitsPerPixel == 32)
+    {
+      BITMAPV4HEADER *bmih;
+
+      bmih = (BITMAPV4HEADER*)bitmap;
+      bmih->bV4Size = sizeof(BITMAPV4HEADER);
+      bmih->bV4V4Compression = BI_BITFIELDS;
+      bmih->bV4RedMask = 0x000000FF;
+      bmih->bV4GreenMask = 0x0000FF00;
+      bmih->bV4BlueMask = 0x00FF0000;
+      bmih->bV4AlphaMask = 0xFF000000;
+    }
+  else if (bitsPerPixel == 16)
+    {
+/*
+      BITMAPV4HEADER *bmih;
+
+      bmih = (BITMAPV4HEADER*)bitmap;
+      bmih->bV4Size = sizeof(BITMAPV4HEADER);
+      bmih->bV4V4Compression = BI_BITFIELDS;
+      bmih->bV4RedMask = 0xF000;
+      bmih->bV4GreenMask = 0x0F00;
+      bmih->bV4BlueMask = 0x00F0;
+      bmih->bV4AlphaMask = 0x000F;
+*/
+      NSLog(@"Unsure how to handle images with %d bits", bitsPerPixel);
+    }
+
+  if (!SetDIBits(hdc, hbitmap, 0, pixelsHigh, data[0], 
+		 bitmap, fuColorUse))
+    {
+      objc_free(bitmap);
+      DeleteObject(hbitmap);
+      return NULL;
+    }
+
+  objc_free(bitmap);
+  return hbitmap;
+}
+
+- (void)DPSimage: (NSAffineTransform*) matrix 
+		: (int) pixelsWide : (int) pixelsHigh
+		: (int) bitsPerSample : (int) samplesPerPixel 
+		: (int) bitsPerPixel : (int) bytesPerRow : (BOOL) isPlanar
+		: (BOOL) hasAlpha : (NSString *) colorSpaceName
+		: (const unsigned char *const [5]) data
+{
+  NSAffineTransform *old_ctm = nil;
+  HDC hdc;
+  HBITMAP hbitmap;
+  HGDIOBJ old;
+  HDC hdc2;
+  POINT p;
+  int h;
+  int y1;
+
+  if (window == NULL)
+    {
+      NSLog(@"No window in DPSImage");
+    }
+
+  hdc = GetDC((HWND)window);
+  if (!hdc)
+    {
+      NSLog(@"No DC for window %d in DPSImage. Error %d", 
+	    (int)window, GetLastError());
+    }
+
+  hbitmap = GSCreateBitmap(hdc, pixelsWide, pixelsHigh,
+			   bitsPerSample, samplesPerPixel,
+			   bitsPerPixel, bytesPerRow,
+			   isPlanar, hasAlpha,
+			   colorSpaceName, data);
+  if (!hbitmap)
+    {
+      NSLog(@"Created bitmap failed %d", GetLastError());
+    }
+
+  hdc2 = CreateCompatibleDC(hdc); 
+  if (!hdc2)
+    {
+      NSLog(@"No Compatible DC for window %d in DPSImage. Error %d", 
+	    (int)window, GetLastError());
+    }
+  old = SelectObject(hdc2, hbitmap);
+  if (!old)
+    {
+      NSLog(@"SelectObject failed for window %d in DPSImage. Error %d", 
+	    (int)window, GetLastError());
+    }
+
+  //SetMapMode(hdc2, GetMapMode(hdc));
+  ReleaseDC((HWND)window, hdc);
+
+  hdc = [self getHDC];
+
+  h = pixelsHigh;
   // Apply the additional transformation
   if (matrix)
     {
       old_ctm = [ctm copy];
       [ctm appendTransform: matrix];
     }
-
-  if (!isPlanar && [colorSpaceName isEqualToString: NSDeviceRGBColorSpace])
-    {
-      HBITMAP hbitmap;
-      BITMAP bitmap;
-      HGDIOBJ old;
-      HDC hdc2;
-      POINT p;
-      int h;
-      int y1;
-
-      p = GSViewPointToWin(self, NSMakePoint(0, 0));
-      bitmap.bmType = 0;
-      bitmap.bmWidth = pixelsWide;
-      bitmap.bmHeight = pixelsHigh;
-      bitmap.bmWidthBytes = bytesPerRow;
-      bitmap.bmPlanes = 1;
-      bitmap.bmBitsPixel = bitsPerPixel;
-      bitmap.bmBits = (LPVOID)data;
-
-      h = pixelsHigh;
-      hbitmap = CreateBitmapIndirect(&bitmap);
-      if (!hbitmap)
-	NSLog(@"Created bitmap failed %d", GetLastError());
-
-      if (window == NULL)
-	NSLog(@"No window in DPSImage");
-
-      hdc = GetDC((HWND)window);
-      hdc2 = CreateCompatibleDC(hdc); 
-      old = SelectObject(hdc2, hbitmap);
-      //SetMapMode(hdc2, GetMapMode(hdc));
-      ReleaseDC((HWND)window, hdc);
-
-      hdc = [self getHDC];
-      if (viewIsFlipped)
-	y1 = p.y;
-      else
-	y1 = p.y - h;
-
-      if (!BitBlt(hdc, p.x, y1, pixelsWide, pixelsHigh,
-		  hdc2, 0, 0, SRCCOPY))
-	{
-	  NSLog(@"DPSimage with %d %d %d %d to %d, %d", pixelsWide, pixelsHigh, 
-		bytesPerRow, bitsPerPixel, p.x, y1);
-	  NSLog(@"Copy bitmap failed %d", GetLastError());
-	}
-
-      SelectObject(hdc2, old);
-      DeleteDC(hdc2);
-      DeleteObject(hbitmap);
-
-      [self releaseHDC: hdc];
-    }
-
+  p = GSViewPointToWin(self, NSMakePoint(0, 0));
   if (old_ctm != nil)
     {
       RELEASE(ctm);
       // old_ctm is already retained
       ctm = old_ctm;
     }
+  if (viewIsFlipped)
+    y1 = p.y;
+  else
+    y1 = p.y - h;
+
+  if (!BitBlt(hdc, p.x, y1, pixelsWide, pixelsHigh,
+	      hdc2, 0, 0, SRCCOPY))
+    {
+      NSLog(@"Copy bitmap failed %d", GetLastError());
+      NSLog(@"DPSimage with %d %d %d %d to %d, %d", pixelsWide, pixelsHigh, 
+	    bytesPerRow, bitsPerPixel, p.x, y1);
+    }
+  
+  [self releaseHDC: hdc];
+
+  SelectObject(hdc2, old);
+  DeleteDC(hdc2);
+  DeleteObject(hbitmap);
 }
 
 @end
@@ -385,7 +506,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 
 	    SetPolyFillMode(hdc, ALTERNATE);
 	    region = PathToRegion(hdc);
-	    ExtSelectClipRgn(hdc, region, RGN_COPY);
+//	    ExtSelectClipRgn(hdc, region, RGN_COPY);
 	    DeleteObject(clipRegion);
 	    clipRegion = region;
 	    break;
@@ -396,7 +517,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 
 	    SetPolyFillMode(hdc, WINDING);
 	    region = PathToRegion(hdc);
-	    ExtSelectClipRgn(hdc, region, RGN_COPY);
+//	    ExtSelectClipRgn(hdc, region, RGN_COPY);
 	    DeleteObject(clipRegion);
 	    clipRegion = region;
 	    break;
@@ -700,6 +821,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 
   if (NULL == window)
     {
+      NSLog(@"No window in getHDC");
       return NULL;
     }
 
@@ -707,11 +829,20 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   if (win && win->useHDC)
     {
       hdc = win->hdc;
+      //NSLog(@"getHDC found DC %d", hdc);
     }
   else
     {
       hdc = GetDC((HWND)window);    
+      //NSLog(@"getHDC using window DC %d", hdc);
     }
+  
+  if (!hdc)
+    {
+      NSLog(@"No DC in getHDC");
+      return NULL;	
+    }
+
   [self setStyle: hdc];
   return hdc;
 }
@@ -720,10 +851,12 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 {
   WIN_INTERN *win;
 
-  if (NULL == window)
+  if (NULL == window ||
+      NULL == hdc)
     {
       return;
     }
+
   [self restoreStyle: hdc];
   win = (WIN_INTERN *)GetWindowLong((HWND)window, GWL_USERDATA);
   if (win && !win->useHDC)
