@@ -122,11 +122,6 @@
   return nil;
 }
 
-- (void) NSBeep
-{
-  XBell([(XGServer *)server xDisplay], 50);
-}
-
 @end
 
 @implementation XGContext (Ops)
