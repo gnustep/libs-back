@@ -100,7 +100,7 @@
 #ifdef X_HAVE_UTF8_STRING
 	  fontClass = [XGFontSetFontInfo class];
 #else
-	  NSLog("Can't use GSXEnableFontSet: You need XFree86 >= 4.0.2");
+	  NSLog(@"Can't use GSXEnableFontSet: You need XFree86 >= 4.0.2");
 	  fontClass = [XGFontInfo class];
 #endif
 	}
