@@ -236,32 +236,46 @@
   *r = gcolor.field[0]; *g = gcolor.field[1]; *b = gcolor.field[2];
 }
 
+#define CLAMP(x) \
+  if (x < 0.0) x = 0.0; \
+  if (x > 1.0) x = 1.0;
+
 - (void) DPSsetalpha: (float)a
 {
+  CLAMP(a)
   fillColor.field[AINDEX] = strokeColor.field[AINDEX] = a;
-  /* Is this necessary?
   [self setColor: fillColor state: COLOR_FILL];
   [self setColor: strokeColor state: COLOR_STROKE];
-  */
 }
 
 - (void) DPSsetcmykcolor: (float)c : (float)m : (float)y : (float)k
 {
+  CLAMP(c)
+  CLAMP(m)
+  CLAMP(y)
+  CLAMP(k)
   [self setColor: gsMakeColor(cmyk_colorspace, c, m, y, k) state: COLOR_BOTH];
 }
 
 - (void) DPSsetgray: (float)gray
 {
+  CLAMP(gray)
   [self setColor: gsMakeColor(gray_colorspace, gray, 0, 0, 0) state: COLOR_BOTH];
 }
 
 - (void) DPSsethsbcolor: (float)h : (float)s : (float)b
 {
+  CLAMP(h)
+  CLAMP(s)
+  CLAMP(b)
   [self setColor: gsMakeColor(hsb_colorspace, h, s, b, 0) state: COLOR_BOTH];
 }
 
 - (void) DPSsetrgbcolor: (float)r : (float)g : (float)b
 {
+  CLAMP(r)
+  CLAMP(g)
+  CLAMP(b)
   [self setColor: gsMakeColor(rgb_colorspace, r, g, b, 0) state: COLOR_BOTH];
 }
 
@@ -397,7 +411,7 @@
   NSFont *newFont;
   if (font == nil)
     return;
-  newFont = [NSFont fontWithName: [font fontName] size: [font pointSize]];
+  newFont = [NSFont fontWithName: [font fontName] size: size];
   [self GSSetFont: newFont];
 }
 

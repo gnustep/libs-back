@@ -39,7 +39,7 @@ TOOL_NAME = gpbs
 gpbs_OBJC_FILES = gpbs.m
 font_cacher_OBJC_FILES = font_cacher.m
 
-ifneq ($(BUILD_X11),)
+ifeq ($(BUILD_GRAPHICS),xlib)
 TOOL_NAME += font_cacher
 gpbs_OBJC_FILES += xpbs.m 
 ifeq ($(BACKEND_BUNDLE),yes)

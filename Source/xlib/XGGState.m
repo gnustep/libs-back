@@ -268,28 +268,6 @@ static	Region	emptyRegion;
     XChangeGC(XDPY, agcntxt, GCForeground, &gcv);
 }
 
-- (void) setFont: (NSFont*)newFont
-{
-  XGFontInfo *font_info;
-
-  if (font == newFont)
-    return;
-
-  ASSIGN(font, newFont);
-
-  COPY_GC_ON_CHANGE;
-  if (xgcntxt == 0)
-    return;
-
-  font_info = (XGFontInfo *)[font fontInfo];
-  [font_info setActiveFor: XDPY gc: xgcntxt];
-}
-
-- (NSFont*) currentFont
-{
-  return font;
-}
-
 - (void) copyGraphicContext
 {
   GC source;
@@ -1398,6 +1376,23 @@ typedef enum {
   [self _showString: s
     xCharAdj: 0 yCharAdj: 0 char: 0 adjArray: numarray arrType: show_array_y
     isRelative: NO];
+}
+
+- (void) GSSetFont: (NSFont*)newFont
+{
+  XGFontInfo *font_info;
+
+  if (font == newFont)
+    return;
+
+  ASSIGN(font, newFont);
+
+  COPY_GC_ON_CHANGE;
+  if (xgcntxt == 0)
+    return;
+
+  font_info = (XGFontInfo *)[font fontInfo];
+  [font_info setActiveFor: XDPY gc: xgcntxt];
 }
 
 /* ----------------------------------------------------------------------- */
