@@ -7,7 +7,7 @@
 @include version.texi
 @end ifset
 
-@section Noteworthy changes in version @samp{0.8.3}
+@section Noteworthy changes in version @samp{0.8.5}
 
 Text system improvements. See the gnustep-gui NEWS for changes.
 

@@ -1,3 +1,7 @@
+2003-03-24  Adam Fedor  <fedor@gnu.org>
+
+	* Version: 0.8.5
+
 2003-03-11  Adam Fedor  <fedor@gnu.org>
 
 	* configure.ac: Only add libgdi32 for winlib
