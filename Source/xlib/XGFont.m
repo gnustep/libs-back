@@ -217,9 +217,9 @@ static BOOL XGInitAtoms(Display *dpy)
   // This font must already be active!
   unsigned char buf[len];
   int i;
-  for (i=0;i<len;i++)
+  for (i = 0; i < len; i++)
     {
-      buf[i]=glyphs[i];
+      buf[i] = glyphs[i];
     }
   XDrawString(xdpy, draw, xgcntxt, xp.x, xp.y, buf, len);
 }
@@ -244,9 +244,9 @@ static BOOL XGInitAtoms(Display *dpy)
 {
   unsigned char buf[len];
   int i;
-  for (i=0;i<len;i++)
+  for (i = 0; i < len; i++)
     {
-      buf[i]=glyphs[i];
+      buf[i] = glyphs[i];
     }
   return XTextWidth(font_info, buf, len);
 }
