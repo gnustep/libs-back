@@ -2239,6 +2239,11 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       gswindow_device_t *window = WINDOW_WITH_TAG(win);
       XEvent		event;
 
+      if (win == 0 || window == 0)
+	{
+	  return;
+	}
+
       event.xclient.type = ClientMessage;
       event.xclient.message_type = generic.titlebar_state_atom;
       event.xclient.format = 32;
