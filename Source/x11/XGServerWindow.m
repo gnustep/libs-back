@@ -27,6 +27,10 @@
 #include <Foundation/NSString.h>
 #include <Foundation/NSArray.h>
 #include <Foundation/NSValue.h>
+#include <Foundation/NSProcessInfo.h>
+#include <Foundation/NSUserDefaults.h>
+#include <Foundation/NSAutoreleasePool.h>
+#include <Foundation/NSDebug.h>
 #include <AppKit/DPSOperators.h>
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSCursor.h>
