@@ -1,3 +1,8 @@
+2003-11-23  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerEvent.m (process_modifier_flags()) treat caps
+	lock as alpha shift and not as shift modifier. 
+
 2003-11-20  Adam Fedor  <fedor@gnu.org>
 
 	* Source/xlib/XGBitmap.m (_pixmap_combine_alpha): Use RGetClosestXColor

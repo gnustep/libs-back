@@ -1748,7 +1748,7 @@ process_modifier_flags(unsigned int state)
     eventModifierFlags = eventModifierFlags | NSShiftKeyMask;
 
   if (state & LockMask)
-    eventModifierFlags = eventModifierFlags | NSShiftKeyMask;
+    eventModifierFlags = eventModifierFlags | NSAlphaShiftKeyMask;
 
   if (_control_pressed != 0)
     eventModifierFlags = eventModifierFlags | NSControlKeyMask;
