@@ -1,3 +1,8 @@
+2002-08-23 01:54  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/art/ARTWindowBuffer.m (+artWindowBufferForWindow:): Mark
+	the segment for destruction after X has attached to it.
+
 2002-08-23 01:44  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/ARTContext.m: Implement handling of non-rectangle
