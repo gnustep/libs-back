@@ -1,3 +1,8 @@
+2003-10-02  Adam Fedor  <fedor@gnu.org>
+
+	* Source/xlib/XGGState.m (-DPSrectclip::::): Clear path.
+	* Source/winlib/WIN32GState.m (-DPSrectclip::::): Idem.
+
 2003-09-30  Adam Fedor  <fedor@gnu.org>
 
 	* Source/gsc/GSGState.m ([GSGState -DPSrectclip::::]): Clear

@@ -695,6 +695,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
     {
       clipRegion = region;
     }
+  [self DPSnewpath];
 }
 
 - (void)DPSshow: (const char *)s 
