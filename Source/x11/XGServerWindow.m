@@ -194,6 +194,11 @@ typedef struct {
 /* The atom */
 #define _XA_MOTIF_WM_HINTS "_MOTIF_WM_HINTS"
 
+
+Pixmap
+xgps_cursor_mask(Display *xdpy, Drawable draw, const char *data,
+                  int w, int h, int colors);
+
 /* Now the code */
 
 /* Set the style `styleMask' for the XWindow `window' using motif
@@ -1499,6 +1504,85 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   DPSinitclip(ctxt);
 }
 
+/*
+Build a Pixmap of our icon so the windowmaker dock will remember our
+icon when we quit.
+
+ICCCM really only allows 1-bit pixmaps for IconPixmapHint, but this code is
+only used if windowmaker is the window manager, and windowmaker can handle
+real color pixmaps.
+*/
+static Pixmap xIconPixmap;
+static Pixmap xIconMask;
+static BOOL didCreatePixmaps;
+
+-(int) _createAppIconPixmaps
+{
+  NSImage *image;
+  NSBitmapImageRep *rep;
+  int i, j, w, h, samples, screen;
+  unsigned char *data;
+  XColor pixelColor;
+  GC pixgc;
+  RColor pixelRColor;
+  RContext *rcontext;
+
+  NSAssert(!didCreatePixmaps, @"called _createAppIconPixmap twice");
+  
+  didCreatePixmaps = YES;
+  
+  image = [NSApp applicationIconImage];
+  rep = (NSBitmapImageRep *)[image bestRepresentationForDevice:nil];
+  
+  if (![rep isKindOfClass: [NSBitmapImageRep class]])
+    return 0;
+
+  if ([rep bitsPerSample] != 8
+      || (![[rep colorSpaceName] isEqual: NSDeviceRGBColorSpace]
+	  && ![[rep colorSpaceName] isEqual: NSCalibratedRGBColorSpace])
+      || [rep isPlanar])
+    return 0;
+  
+  data = [rep bitmapData];
+  screen = [[[self screenList] objectAtIndex: 0] intValue];
+  xIconPixmap = XCreatePixmap(dpy,
+                      [self xDisplayRootWindowForScreen:screen],
+                      [rep pixelsWide], [rep pixelsHigh],
+                      DefaultDepth(dpy, screen));
+  pixgc = XCreateGC(dpy, xIconPixmap, 0, NULL);
+
+  h = [rep pixelsHigh];
+  w = [rep pixelsWide];
+  samples = [rep samplesPerPixel];
+  rcontext = [self xrContextForScreen: screen];
+
+  for (i = 0; i < h; i++)
+    {
+      unsigned char *d = data;
+      for (j = 0; j < w; j++)
+	{
+	  pixelRColor.red = d[0];
+	  pixelRColor.green = d[1];
+	  pixelRColor.blue = d[2];
+
+	  RGetClosestXColor(rcontext, &pixelRColor, &pixelColor);
+	  XSetForeground(dpy, pixgc, pixelColor. pixel);
+	  XDrawPoint(dpy, xIconPixmap, pixgc, j, i);
+	  d += samples;
+	}
+      data += [rep bytesPerRow];
+    }
+  
+  XFreeGC(dpy, pixgc);
+ 
+  xIconMask = xgps_cursor_mask(dpy, ROOT, [rep bitmapData],
+			       [rep pixelsWide],
+			       [rep pixelsHigh],
+			       [rep samplesPerPixel]);
+
+  return 1;
+}   
+
 - (void) orderwindow: (int)op : (int)otherWin : (int)winNum
 {
   gswindow_device_t	*window;
@@ -1531,12 +1615,29 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       if ((window->win_attrs.window_style & NSIconWindowMask) != 0
 	&& generic.flags.useWindowMakerIcons == 1)
 	{
-	  XWMHints		gen_hints;
+	  XWMHints gen_hints;
 
 	  gen_hints.flags = WindowGroupHint | StateHint | IconWindowHint;
 	  gen_hints.initial_state = WithdrawnState;
 	  gen_hints.window_group = ROOT;
 	  gen_hints.icon_window = window->ident;
+
+	  if (!didCreatePixmaps)
+	    {
+	      [self _createAppIconPixmaps];
+	    }  
+
+	  if (xIconPixmap)
+	    {
+	      gen_hints.flags |= IconPixmapHint;
+	      gen_hints.icon_pixmap = xIconPixmap;
+	    }
+	  if (xIconMask);
+	    {
+	      gen_hints.flags |= IconMaskHint;
+	      gen_hints.icon_mask = xIconMask;
+	    }
+
 	  XSetWMHints(dpy, ROOT, &gen_hints);
 	}
 

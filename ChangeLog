@@ -1,3 +1,10 @@
+2004-07-26 15:37  Matt Rice <ratmice@yahoo.com>
+		  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/x11/XGServerWindow.m (-_createAppIconPixmaps): New method.
+	(-orderwindow:::): Use -_createAppIconPixmaps to set IconPixmapHint
+	if we're using windowmaker.
+
 2004-07-14  Adam Fedor  <fedor@gnu.org>
 
 	* Documentation/Back/Standards.txt: update.
