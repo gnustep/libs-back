@@ -43,6 +43,29 @@
 #include "win32/WIN32Server.h"
 #include "win32/WIN32Geometry.h"
 
+/*
+ This standard windows macros are missing in MinGW.  The definition
+ here is almost correct, but will fail for multi monitor systems
+*/
+#ifndef GET_X_LPARAM
+#define GET_X_LPARAM(p) LOWORD(p)
+#endif
+#ifndef GET_Y_LPARAM
+#define GET_Y_LPARAM(p) HIWORD(p)
+#endif
+
+static NSEvent *process_key_event(HWND hwnd, WPARAM wParam, LPARAM lParam, 
+				  NSEventType eventType);
+static NSEvent *process_mouse_event(HWND hwnd, WPARAM wParam, LPARAM lParam, 
+				    NSEventType eventType);
+static void invalidateWindow(HWND hwnd, RECT rect);
+
+@interface WIN32Server (Internal)
+- (NSEvent *) handleGotFocus: (HWND)hwnd;
+- (LRESULT) windowEventProc: (HWND)hwnd : (UINT)uMsg 
+		       : (WPARAM)wParam : (LPARAM)lParam;
+@end
+
 @implementation WIN32Server (EventOps)
 
 - (void) callback: (id) sender
@@ -106,16 +129,464 @@
 
 @end
 
-/*
- This standard windows macros are missing in MinGW
- The definition here is almost correct, but will fail for multi monitor systems
-*/
-#ifndef GET_X_LPARAM
-#define GET_X_LPARAM(p) LOWORD(p)
-#endif
-#ifndef GET_Y_LPARAM
-#define GET_Y_LPARAM(p) HIWORD(p)
-#endif
+@implementation WIN32Server (Internal)
+
+/* This message comes when the window already got focus, so we send a focus
+   in event to the front end, but also mark the window as having current focus
+   so that the front end doesn't try to focus the window again. */
+- (NSEvent *) handleGotFocus: (HWND)hwnd
+{
+  int key_num, win_num;
+  NSEvent *e = nil;
+  NSPoint eventLocation;
+
+  key_num = [[NSApp keyWindow] windowNumber];
+  win_num = (int)hwnd;
+  NSDebugLLog(@"Focus", @"Got focus:%d (current = %d, key = %d)", 
+	      win_num, currentFocus, key_num);
+  currentFocus = hwnd;
+  eventLocation = NSMakePoint(0,0);
+  if (currentFocus == desiredFocus)
+    {
+      /* This was from a request from the front end. Mark as done. */
+      desiredFocus = 0;
+      NSDebugLLog(@"Focus", @"  result of focus request");
+    }
+  else
+    {
+      /* We need to do this directly and not send an event to the frontend - 
+	 that's too slow and allows the window state to get out of sync,
+	 causing bad recursion problems */
+      NSWindow *window = GSWindowWithNumber((int)hwnd);
+      if ([window canBecomeKeyWindow] == YES)
+	{
+	  NSDebugLLog(@"Focus", @"Making %d key", win_num);
+	  [window makeKeyWindow];
+	  [window makeMainWindow];
+	  [NSApp activateIgnoringOtherApps: YES];
+	}
+    }
+  return e;
+}
+
+- (LRESULT) windowEventProc: (HWND)hwnd : (UINT)uMsg 
+		       : (WPARAM)wParam : (LPARAM)lParam
+{ 
+  NSEvent *ev = nil;
+  NSPoint eventLoc;
+
+  switch (uMsg) 
+    { 
+    case WM_SETTEXT: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SETTEXT", hwnd);
+      break;
+    case WM_NCCREATE: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCCREATE", hwnd);
+      break;
+    case WM_NCCALCSIZE: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCCALCSIZE", hwnd);
+      break;
+    case WM_NCACTIVATE: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d: %s", "NCACTIVATE", 
+		  hwnd, (wParam) ? "active" : "deactive");
+      break;
+    case WM_NCPAINT: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCPAINT", hwnd);
+      break;
+    case WM_NCHITTEST: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCHITTEST", hwnd);
+      break;
+    case WM_SHOWWINDOW: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d: %s %d", "SHOWWINDOW", 
+		  hwnd, (wParam) ? "show" : "hide", lParam);
+      break;
+    case WM_NCMOUSEMOVE: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCMOUSEMOVE", hwnd);
+      break;
+    case WM_NCLBUTTONDOWN: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCLBUTTONDOWN", hwnd);
+      break;
+    case WM_NCLBUTTONUP: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCLBUTTONUP", hwnd);
+      break;
+    case WM_NCDESTROY: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCDESTROY", hwnd);
+      break;
+    case WM_GETTEXT: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "GETTEXT", hwnd);
+      break;
+    case WM_STYLECHANGING: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "STYLECHANGING", hwnd);
+      break;
+    case WM_STYLECHANGED: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "STYLECHANGED", hwnd);
+      break;
+
+    case WM_GETMINMAXINFO:
+      {
+	WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
+	MINMAXINFO *mm;
+
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "GETMINMAXINFO", hwnd);
+	if (win != NULL)
+	  {
+	    mm = (MINMAXINFO*)lParam;
+	    mm->ptMinTrackSize = win->minmax.ptMinTrackSize;
+	    mm->ptMaxTrackSize = win->minmax.ptMaxTrackSize;
+	    return 0;
+	  }
+      }
+    case WM_CREATE: 
+      {
+	WIN_INTERN *win;
+	NSBackingStoreType type = (NSBackingStoreType)((LPCREATESTRUCT)lParam)->lpCreateParams;
+
+	// Initialize the window. 
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "CREATE", hwnd);
+	/* For windows with backingstore we create a compatible DC, that 
+	   is stored in the extra fields for this window. Drawing operations 
+	   work on this buffer. */
+	win = objc_malloc(sizeof(WIN_INTERN));
+	SetWindowLong(hwnd, GWL_USERDATA, (int)win);
+	
+	if (type != NSBackingStoreNonretained)
+	  {
+	    HDC hdc, hdc2;
+	    HBITMAP hbitmap;
+	    RECT r;
+
+	    GetClientRect((HWND)hwnd, &r);
+	    hdc = GetDC(hwnd);
+	    hdc2 = CreateCompatibleDC(hdc);
+	    hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, 
+					     r.bottom - r.top);
+	    win->old = SelectObject(hdc2, hbitmap);
+
+	    win->hdc = hdc2;
+	    win->useHDC = YES;
+	    
+	    ReleaseDC(hwnd, hdc);
+	  }
+	else
+	  {
+	    win->useHDC = NO;
+	  }
+	
+	break;
+      }
+    case WM_WINDOWPOSCHANGING: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "WINDOWPOSCHANGING", hwnd);
+      break;
+    case WM_WINDOWPOSCHANGED: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "WINDOWPOSCHANGED", hwnd);
+      break;
+    case WM_MOVE:
+      eventLoc = MSWindowPointToGS(hwnd,  GET_X_LPARAM(lParam), 
+				   GET_Y_LPARAM(lParam));
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d to %@", "MOVE", hwnd,
+		  NSStringFromPoint(eventLoc));
+      break;
+    case WM_MOVING: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOVING", hwnd);
+      break;
+    case WM_SIZE: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SIZE", hwnd);
+      break;
+    case WM_SIZING: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SIZING", hwnd);
+      break;
+    case WM_ENTERSIZEMOVE: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "ENTERSIZEMOVE", hwnd);
+      break;
+    case WM_EXITSIZEMOVE: 
+      {
+	NSPoint eventLocation;
+	NSRect rect;
+	RECT r;
+	WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
+	
+	// FIXME: We should check if the size really did change.
+	if (win->useHDC)
+	  {
+	    HDC hdc, hdc2;
+	    HBITMAP hbitmap;
+	    HGDIOBJ old;
+
+	    old = SelectObject(win->hdc, win->old);
+	    DeleteObject(old);
+	    DeleteDC(win->hdc);
+	    win->hdc = NULL;
+	    win->old = NULL;
+
+	    GetClientRect((HWND)hwnd, &r);
+	    NSDebugLLog(@"NSEvent", @"Change backing store to %d %d", r.right - r.left, r.bottom - r.top);
+	    hdc = GetDC((HWND)hwnd);
+	    hdc2 = CreateCompatibleDC(hdc);
+	    hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, r.bottom - r.top);
+	    win->old = SelectObject(hdc2, hbitmap);
+	    win->hdc = hdc2;
+	    
+	    ReleaseDC((HWND)hwnd, hdc);
+	  }
+
+	GetWindowRect(hwnd, &r);
+	rect = MSScreenRectToGS(r);
+	eventLocation = rect.origin;
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "EXITSIZEMOVE", hwnd);
+	ev = [NSEvent otherEventWithType: NSAppKitDefined
+		      location: eventLocation
+		      modifierFlags: 0
+		      timestamp: 0
+		      windowNumber: (int)hwnd
+		      context: GSCurrentContext()
+		      subtype: GSAppKitWindowResized
+		      data1: rect.size.width
+		      data2: rect.size.height];
+	if (ev != nil)
+	  {
+	    [GSCurrentServer() postEvent: ev atStart: NO];
+	  }
+	ev = [NSEvent otherEventWithType: NSAppKitDefined
+		      location: eventLocation
+		      modifierFlags: 0
+		      timestamp: 0
+		      windowNumber: (int)hwnd
+		      context: GSCurrentContext()
+		      subtype: GSAppKitWindowMoved
+		      data1: rect.origin.x
+		      data2: rect.origin.y];
+	if (ev != nil)
+	  {
+	    [GSCurrentServer() postEvent: ev atStart: NO];
+	  }
+	// Make sure DefWindowProc gets called
+	ev = nil;
+	break;
+      }
+    case WM_ACTIVATE: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d: %s %d", "ACTIVATE", 
+		  hwnd, (LOWORD(wParam)) ? "activate" : "deactivate",
+		  HIWORD(wParam));
+      if (LOWORD(wParam))
+	currentActive = hwnd;
+      break;
+    case WM_ACTIVATEAPP: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d: %s", "ACTIVATEAPP", 
+		  hwnd, (wParam) ? "activate" : "deactivate");
+      break;
+    case WM_MOUSEACTIVATE: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEACTIVATE", hwnd);
+      break;
+    case WM_SETFOCUS: 
+      {
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SETFOCUS", hwnd);
+	ev = [self handleGotFocus: hwnd];
+	break;
+      }
+    case WM_KILLFOCUS: 
+      {
+	NSPoint eventLocation = NSMakePoint(0,0);
+
+	if (wParam == (int)hwnd)
+  	  return 0;
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KILLFOCUS", hwnd);
+	NSDebugLLog(@"Focus", @"Got KILLFOCUS (focus out) for %d", hwnd);
+	ev = [NSEvent otherEventWithType:NSAppKitDefined
+		      location: eventLocation
+		      modifierFlags: 0
+		      timestamp: 0
+		      windowNumber: (int)hwnd
+		      context: GSCurrentContext()
+		      subtype: GSAppKitWindowFocusOut
+		      data1: 0
+		      data2: 0];
+	break;
+      }
+    case WM_SETCURSOR: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SETCURSOR", hwnd);
+      break;
+    case WM_QUERYOPEN: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "QUERYOPEN", hwnd);
+      break;
+    case WM_CAPTURECHANGED: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "CAPTURECHANGED", hwnd);
+      break;
+      
+    case WM_ERASEBKGND: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "ERASEBKGND", hwnd);
+      break;
+    case WM_PAINT: 
+      {
+	RECT rect;
+
+	if (GetUpdateRect(hwnd, &rect, NO))
+	  {
+	    invalidateWindow(hwnd, rect);
+	    ValidateRect(hwnd, &rect);
+	  }
+
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "PAINT", hwnd);
+	return 0;
+      }
+    case WM_SYNCPAINT: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SYNCPAINT", hwnd);
+      break;
+      
+    case WM_CLOSE: 
+      {
+	NSPoint eventLocation = NSMakePoint(0,0);
+
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "CLOSE", hwnd);
+	ev = [NSEvent otherEventWithType: NSAppKitDefined
+		      location: eventLocation
+		      modifierFlags: 0
+		      timestamp: 0
+		      windowNumber: (int)hwnd
+		      context: GSCurrentContext()
+		      subtype: GSAppKitWindowClose
+		      data1: 0
+		      data2: 0];
+	break;
+      }
+    case WM_DESTROY:
+      { 
+	WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
+
+	// Clean up window-specific data objects. 
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "DESTROY", hwnd);
+	
+	if (win->useHDC)
+	  {
+	    HGDIOBJ old;
+	    
+	    old = SelectObject(win->hdc, win->old);
+	    DeleteObject(old);
+	    DeleteDC(win->hdc);
+	  }
+	objc_free(win);
+	break;
+      }
+    case WM_KEYDOWN:
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KEYDOWN", hwnd);
+      ev = process_key_event(hwnd, wParam, lParam, NSKeyDown);
+      break;
+    case WM_KEYUP:
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KEYUP", hwnd);
+      ev = process_key_event(hwnd, wParam, lParam, NSKeyUp);
+      break;
+
+    case WM_MOUSEMOVE: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEMOVE", hwnd);
+      ev = process_mouse_event(hwnd, wParam, lParam, NSMouseMoved);
+      break;
+    case WM_LBUTTONDOWN: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONDOWN", hwnd);
+      ev = process_mouse_event(hwnd, wParam, lParam, NSLeftMouseDown);
+      break;
+    case WM_LBUTTONUP: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONUP", hwnd);
+      ev = process_mouse_event(hwnd, wParam, lParam, NSLeftMouseUp);
+      break;
+    case WM_LBUTTONDBLCLK: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONDBLCLK", hwnd);
+      break;
+    case WM_MBUTTONDOWN: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONDOWN", hwnd);
+      ev = process_mouse_event(hwnd, wParam, lParam, NSOtherMouseDown);
+      break;
+    case WM_MBUTTONUP: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONUP", hwnd);
+      ev = process_mouse_event(hwnd, wParam, lParam, NSOtherMouseUp);
+      break;
+    case WM_MBUTTONDBLCLK: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONDBLCLK", hwnd);
+      break;
+    case WM_RBUTTONDOWN: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONDOWN", hwnd);
+      ev = process_mouse_event(hwnd, wParam, lParam, NSRightMouseDown);
+      break;
+    case WM_RBUTTONUP: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONUP", hwnd);
+      ev = process_mouse_event(hwnd, wParam, lParam, NSRightMouseUp);
+      break;
+    case WM_RBUTTONDBLCLK: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONDBLCLK", hwnd);
+      break;
+    case WM_MOUSEWHEEL: 
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEWHEEL", hwnd);
+      ev = process_mouse_event(hwnd, wParam, lParam, NSScrollWheel);
+      break;
+
+    case WM_QUIT:
+      NSLog(@"Got Message %s for %d", "QUIT", hwnd);
+      break;
+    case WM_USER:
+      NSLog(@"Got Message %s for %d", "USER", hwnd);
+      break;
+    case WM_APP:
+      NSLog(@"Got Message %s for %d", "APP", hwnd);
+      break;
+
+    case WM_ENTERMENULOOP:
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "ENTERMENULOOP", hwnd);
+      break;
+    case WM_EXITMENULOOP:
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "EXITMENULOOP", hwnd);
+      break;
+    case WM_INITMENU:
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "INITMENU", hwnd);
+      break;
+    case WM_MENUSELECT:
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MENUSELECT", hwnd);
+      break;
+    case WM_ENTERIDLE:
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "ENTERIDLE", hwnd);
+      break;
+ 
+    case WM_COMMAND:
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "COMMAND", hwnd);
+      break;
+    case WM_SYSKEYDOWN:
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SYSKEYDOWN", hwnd);
+      break;
+    case WM_SYSKEYUP:
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SYSKEYUP", hwnd);
+      break;
+    case WM_SYSCOMMAND:
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SYSCOMMAND", hwnd);
+      break;
+    case WM_HELP:
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "HELP", hwnd);
+      break;
+    case WM_POWERBROADCAST:
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "POWERBROADCAST", hwnd);
+      break;
+    case WM_TIMECHANGE:
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "TIMECHANGE", hwnd);
+      break;
+    case WM_DEVICECHANGE:
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "DEVICECHANGE", hwnd);
+      break;
+    case WM_GETICON:
+      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "GETICON", hwnd);
+      break;
+
+    default: 
+      // Process all other messages. 
+      NSDebugLLog(@"NSEvent", @"Got unhandled Message %d for %d", uMsg, hwnd);
+      break;
+    } 
+
+  if (ev != nil)
+    {
+      [GSCurrentServer() postEvent: ev atStart: NO];
+      return 0;
+    }
+
+  return DefWindowProc(hwnd, uMsg, wParam, lParam); 
+}
+
+@end
 
 static unichar 
 process_char(WPARAM wParam, unsigned *eventModifierFlags)
@@ -400,445 +871,10 @@ invalidateWindow(HWND hwnd, RECT rect)
   [[window contentView] setNeedsDisplayInRect: r];
 }
 
-NSEvent *
-_handle_take_focus (HWND hwnd)
-{
-  int key_num, win_num;
-  NSEvent *e = nil;
-  NSPoint eventLocation;
-
-  key_num = [[NSApp keyWindow] windowNumber];
-  win_num = (int)hwnd;
-  NSDebugLLog(@"Focus", @"take focus:%d (key = %d)", win_num, key_num);
-  eventLocation = NSMakePoint(0,0);
-  e = [NSEvent otherEventWithType: NSAppKitDefined
-	           location: eventLocation
-		   modifierFlags: 0
-		   timestamp: 0
-		   windowNumber: win_num
-		   context: GSCurrentContext()
-		   subtype: GSAppKitWindowFocusIn
-		   data1: 0
-		   data2: 0];
-  return e;
-}
-
 LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 			     WPARAM wParam, LPARAM lParam)
-{ 
-  NSEvent *ev = nil;
-  
-  /*
-      {
-	NSWindow *window = GSWindowWithNumber((int)hwnd);
-	RECT r;
-	NSRect rect;
+{
+  WIN32Server	*ctxt = (WIN32Server *)GSCurrentServer();
 
-	NSLog(@"%d Frame %@", hwnd, NSStringFromRect([window frame]));
-	GetWindowRect(hwnd, &r);
-	rect = MSScreenRectToGS(r);
-	NSLog(@"%d Real frame %@", uMsg, NSStringFromRect(rect));
-      }
-  */
-  switch (uMsg) 
-    { 
-    case WM_SETTEXT: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SETTEXT", hwnd);
-      break;
-    case WM_NCCREATE: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCCREATE", hwnd);
-      break;
-    case WM_NCCALCSIZE: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCCALCSIZE", hwnd);
-      break;
-    case WM_NCACTIVATE: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCACTIVATE", hwnd);
-      break;
-    case WM_NCPAINT: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCPAINT", hwnd);
-      break;
-    case WM_NCHITTEST: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCHITTEST", hwnd);
-      break;
-    case WM_SHOWWINDOW: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SHOWWINDOW", hwnd);
-      break;
-    case WM_NCMOUSEMOVE: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCMOUSEMOVE", hwnd);
-      break;
-    case WM_NCLBUTTONDOWN: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCLBUTTONDOWN", hwnd);
-      break;
-    case WM_NCLBUTTONUP: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCLBUTTONUP", hwnd);
-      break;
-    case WM_NCDESTROY: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCDESTROY", hwnd);
-      break;
-    case WM_GETTEXT: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "GETTEXT", hwnd);
-      break;
-    case WM_STYLECHANGING: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "STYLECHANGING", hwnd);
-      break;
-    case WM_STYLECHANGED: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "STYLECHANGED", hwnd);
-      break;
-
-    case WM_GETMINMAXINFO:
-      {
-	WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
-	MINMAXINFO *mm;
-
-	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "GETMINMAXINFO", hwnd);
-	if (win != NULL)
-	  {
-	    mm = (MINMAXINFO*)lParam;
-	    mm->ptMinTrackSize = win->minmax.ptMinTrackSize;
-	    mm->ptMaxTrackSize = win->minmax.ptMaxTrackSize;
-	    return 0;
-	  }
-      }
-    case WM_CREATE: 
-      {
-	WIN_INTERN *win;
-	NSBackingStoreType type = (NSBackingStoreType)((LPCREATESTRUCT)lParam)->lpCreateParams;
-
-	// Initialize the window. 
-	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "CREATE", hwnd);
-	/* For windows with backingstore we create a compatible DC, that 
-	   is stored in the extra fields for this window. Drawing operations 
-	   work on this buffer. */
-	win = objc_malloc(sizeof(WIN_INTERN));
-	SetWindowLong(hwnd, GWL_USERDATA, (int)win);
-	
-	if (type != NSBackingStoreNonretained)
-	  {
-	    HDC hdc, hdc2;
-	    HBITMAP hbitmap;
-	    RECT r;
-
-	    GetClientRect((HWND)hwnd, &r);
-	    hdc = GetDC(hwnd);
-	    hdc2 = CreateCompatibleDC(hdc);
-	    hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, 
-					     r.bottom - r.top);
-	    win->old = SelectObject(hdc2, hbitmap);
-
-	    win->hdc = hdc2;
-	    win->useHDC = YES;
-	    
-	    ReleaseDC(hwnd, hdc);
-	  }
-	else
-	  {
-	    win->useHDC = NO;
-	  }
-	
-	break;
-      }
-    case WM_WINDOWPOSCHANGING: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "WINDOWPOSCHANGING", hwnd);
-      break;
-    case WM_WINDOWPOSCHANGED: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "WINDOWPOSCHANGED", hwnd);
-      break;
-    case WM_MOVE: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d to ?", "MOVE", hwnd);
-      break;
-    case WM_MOVING: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOVING", hwnd);
-      break;
-    case WM_SIZE: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SIZE", hwnd);
-      break;
-    case WM_SIZING: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SIZING", hwnd);
-      break;
-    case WM_ENTERSIZEMOVE: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "ENTERSIZEMOVE", hwnd);
-      break;
-    case WM_EXITSIZEMOVE: 
-      {
-	NSPoint eventLocation;
-	NSRect rect;
-	RECT r;
-	WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
-	
-	// FIXME: We should check if the size really did change.
-	if (win->useHDC)
-	  {
-	    HDC hdc, hdc2;
-	    HBITMAP hbitmap;
-	    HGDIOBJ old;
-
-	    old = SelectObject(win->hdc, win->old);
-	    DeleteObject(old);
-	    DeleteDC(win->hdc);
-	    win->hdc = NULL;
-	    win->old = NULL;
-
-	    GetClientRect((HWND)hwnd, &r);
-	    NSDebugLLog(@"NSEvent", @"Change backing store to %d %d", r.right - r.left, r.bottom - r.top);
-	    hdc = GetDC((HWND)hwnd);
-	    hdc2 = CreateCompatibleDC(hdc);
-	    hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, r.bottom - r.top);
-	    win->old = SelectObject(hdc2, hbitmap);
-	    win->hdc = hdc2;
-	    
-	    ReleaseDC((HWND)hwnd, hdc);
-	  }
-
-	GetWindowRect(hwnd, &r);
-	rect = MSScreenRectToGS(r);
-	eventLocation = rect.origin;
-	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "EXITSIZEMOVE", hwnd);
-	ev = [NSEvent otherEventWithType: NSAppKitDefined
-		      location: eventLocation
-		      modifierFlags: 0
-		      timestamp: 0
-		      windowNumber: (int)hwnd
-		      context: GSCurrentContext()
-		      subtype: GSAppKitWindowResized
-		      data1: rect.size.width
-		      data2: rect.size.height];
-	if (ev != nil)
-	  {
-	    [GSCurrentServer() postEvent: ev atStart: NO];
-	  }
-	ev = [NSEvent otherEventWithType: NSAppKitDefined
-		      location: eventLocation
-		      modifierFlags: 0
-		      timestamp: 0
-		      windowNumber: (int)hwnd
-		      context: GSCurrentContext()
-		      subtype: GSAppKitWindowMoved
-		      data1: rect.origin.x
-		      data2: rect.origin.y];
-	if (ev != nil)
-	  {
-	    [GSCurrentServer() postEvent: ev atStart: NO];
-	  }
-	// Make sure DefWindowProc gets called
-	ev = nil;
-	break;
-      }
-    case WM_ACTIVATE: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "ACTIVATE", hwnd);
-      break;
-    case WM_ACTIVATEAPP: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "ACTIVATEAPP", hwnd);
-      break;
-    case WM_MOUSEACTIVATE: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEACTIVATE", hwnd);
-      break;
-    case WM_SETFOCUS: 
-      {
-	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SETFOCUS", hwnd);
-	if (wParam == (int)hwnd)
-  	  return 0;
-	ev = _handle_take_focus(hwnd);
-	break;
-      }
-    case WM_KILLFOCUS: 
-      {
-	NSPoint eventLocation = NSMakePoint(0,0);
-
-	if (wParam == (int)hwnd)
-  	  return 0;
-	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KILLFOCUS", hwnd);
-	NSDebugLLog(@"Focus", @"Got KILLFOCUS (focus out) for %d", hwnd);
-	ev = [NSEvent otherEventWithType:NSAppKitDefined
-		      location: eventLocation
-		      modifierFlags: 0
-		      timestamp: 0
-		      windowNumber: (int)hwnd
-		      context: GSCurrentContext()
-		      subtype: GSAppKitWindowFocusOut
-		      data1: 0
-		      data2: 0];
-	break;
-      }
-    case WM_SETCURSOR: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SETCURSOR", hwnd);
-      break;
-    case WM_QUERYOPEN: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "QUERYOPEN", hwnd);
-      break;
-    case WM_CAPTURECHANGED: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "CAPTURECHANGED", hwnd);
-      break;
-      
-    case WM_ERASEBKGND: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "ERASEBKGND", hwnd);
-      break;
-    case WM_PAINT: 
-      {
-	RECT rect;
-
-	if (GetUpdateRect(hwnd, &rect, NO))
-	  {
-	    invalidateWindow(hwnd, rect);
-	    ValidateRect(hwnd, &rect);
-	  }
-
-	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "PAINT", hwnd);
-	return 0;
-      }
-    case WM_SYNCPAINT: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SYNCPAINT", hwnd);
-      break;
-      
-    case WM_CLOSE: 
-      {
-	NSPoint eventLocation = NSMakePoint(0,0);
-
-	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "CLOSE", hwnd);
-	ev = [NSEvent otherEventWithType: NSAppKitDefined
-		      location: eventLocation
-		      modifierFlags: 0
-		      timestamp: 0
-		      windowNumber: (int)hwnd
-		      context: GSCurrentContext()
-		      subtype: GSAppKitWindowClose
-		      data1: 0
-		      data2: 0];
-	break;
-      }
-    case WM_DESTROY:
-      { 
-	WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
-
-	// Clean up window-specific data objects. 
-	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "DESTROY", hwnd);
-	
-	if (win->useHDC)
-	  {
-	    HGDIOBJ old;
-	    
-	    old = SelectObject(win->hdc, win->old);
-	    DeleteObject(old);
-	    DeleteDC(win->hdc);
-	  }
-	objc_free(win);
-	break;
-      }
-    case WM_KEYDOWN:
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KEYDOWN", hwnd);
-      ev = process_key_event(hwnd, wParam, lParam, NSKeyDown);
-      break;
-    case WM_KEYUP:
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KEYUP", hwnd);
-      ev = process_key_event(hwnd, wParam, lParam, NSKeyUp);
-      break;
-
-    case WM_MOUSEMOVE: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEMOVE", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSMouseMoved);
-      break;
-    case WM_LBUTTONDOWN: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONDOWN", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSLeftMouseDown);
-      break;
-    case WM_LBUTTONUP: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONUP", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSLeftMouseUp);
-      break;
-    case WM_LBUTTONDBLCLK: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONDBLCLK", hwnd);
-      break;
-    case WM_MBUTTONDOWN: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONDOWN", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSOtherMouseDown);
-      break;
-    case WM_MBUTTONUP: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONUP", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSOtherMouseUp);
-      break;
-    case WM_MBUTTONDBLCLK: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONDBLCLK", hwnd);
-      break;
-    case WM_RBUTTONDOWN: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONDOWN", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSRightMouseDown);
-      break;
-    case WM_RBUTTONUP: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONUP", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSRightMouseUp);
-      break;
-    case WM_RBUTTONDBLCLK: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONDBLCLK", hwnd);
-      break;
-    case WM_MOUSEWHEEL: 
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEWHEEL", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSScrollWheel);
-      break;
-
-    case WM_QUIT:
-      NSLog(@"Got Message %s for %d", "QUIT", hwnd);
-      break;
-    case WM_USER:
-      NSLog(@"Got Message %s for %d", "USER", hwnd);
-      break;
-    case WM_APP:
-      NSLog(@"Got Message %s for %d", "APP", hwnd);
-      break;
-
-    case WM_ENTERMENULOOP:
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "ENTERMENULOOP", hwnd);
-      break;
-    case WM_EXITMENULOOP:
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "EXITMENULOOP", hwnd);
-      break;
-    case WM_INITMENU:
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "INITMENU", hwnd);
-      break;
-    case WM_MENUSELECT:
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MENUSELECT", hwnd);
-      break;
-    case WM_ENTERIDLE:
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "ENTERIDLE", hwnd);
-      break;
- 
-    case WM_COMMAND:
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "COMMAND", hwnd);
-      break;
-    case WM_SYSKEYDOWN:
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SYSKEYDOWN", hwnd);
-      break;
-    case WM_SYSKEYUP:
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SYSKEYUP", hwnd);
-      break;
-    case WM_SYSCOMMAND:
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SYSCOMMAND", hwnd);
-      break;
-    case WM_HELP:
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "HELP", hwnd);
-      break;
-    case WM_POWERBROADCAST:
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "POWERBROADCAST", hwnd);
-      break;
-    case WM_TIMECHANGE:
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "TIMECHANGE", hwnd);
-      break;
-    case WM_DEVICECHANGE:
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "DEVICECHANGE", hwnd);
-      break;
-    case WM_GETICON:
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "GETICON", hwnd);
-      break;
-
-    default: 
-      // Process all other messages. 
-      NSDebugLLog(@"NSEvent", @"Got Message %d for %d", uMsg, hwnd);
-      break;
-    } 
-
-  if (ev != nil)
-    {
-      [GSCurrentServer() postEvent: ev atStart: NO];
-      return 0;
-    }
-
-  return DefWindowProc(hwnd, uMsg, wParam, lParam); 
+  return [ctxt windowEventProc: hwnd : uMsg : wParam : lParam];
 }

@@ -31,8 +31,11 @@
 
 @interface WIN32Server : GSDisplayServer
 {
-@public
-   HINSTANCE hinstance;   
+  HINSTANCE hinstance;
+
+  HWND currentFocus;
+  HWND desiredFocus;
+  HWND currentActive;
 }
 @end
 

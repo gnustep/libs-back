@@ -573,8 +573,18 @@ DWORD windowStyleForGSStyle(unsigned int style)
 {
   NSDebugLLog(@"WTrace", @"setinputfocus: %d", winNum);
   NSDebugLLog(@"Focus", @"Setting input focus to %d");
-  if (winNum)
-    SetFocus((HWND)winNum);
+  if (winNum == 0)
+    {
+      NSDebugLLog(@"Focus", @" invalid focus window");
+      return;
+    }
+  if (currentFocus == (HWND)winNum)
+    {
+      NSDebugLLog(@"Focus", @" window already has focus");
+      return;
+    }
+  desiredFocus = (HWND)winNum;
+  SetFocus((HWND)winNum);
 }
 
 - (NSPoint) mouselocation
