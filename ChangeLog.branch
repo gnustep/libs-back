@@ -4,6 +4,7 @@
 	has the symbols defined in X11/XKBlib.h
 
 	* configure.ac: Added a test for XKB.
+	* config.h.in: Added #undef XKB.
 	* configure: Regenerated.
 	* Source/x11/XGServerEvent.m: #include <X11/XKBlib.h> if the macro
 	  XKB is defined.
