@@ -126,7 +126,7 @@ static BOOL XGInitAtoms(Display *dpy)
 - (void) dealloc
 {
   if (font_info != NULL)
-    XUnloadFont([XGServer currentXDisplay], font_info->fid);
+    XFreeFont([XGServer currentXDisplay], font_info);
   [super dealloc];
 }
 
@@ -208,6 +208,14 @@ static BOOL XGInitAtoms(Display *dpy)
   XDrawString(xdpy, draw, xgcntxt, xp.x, xp.y, s, len);
 }
 
+- (void) drawGlyphs: (const NSGlyph *) glyphs lenght: (int) len
+	  onDisplay: (Display*) xdpy drawable: (Drawable) draw
+	       with: (GC) xgcntxt at: (XPoint) xp
+{
+  // This font must already be active!
+  XDrawString16(xdpy, draw, xgcntxt, xp.x, xp.y, glyphs, len);
+}
+
 - (float) widthOfString: (NSString*)string
 {
   NSData *d = [string dataUsingEncoding: mostCompatibleStringEncoding
@@ -222,6 +230,11 @@ static BOOL XGInitAtoms(Display *dpy)
 - (float) widthOf: (const char*) s lenght: (int) len
 {
   return XTextWidth(font_info, s, len);
+}
+
+- (float) widthOfGlyphs: (const NSGlyph *) glyphs lenght: (int) len
+{
+  return XTextWidth16(font_info, glyphs, len);
 }
 
 - (void) setActiveFor: (Display*) xdpy gc: (GC) xgcntxt
