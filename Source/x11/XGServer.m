@@ -241,6 +241,25 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 	  drawMechanism = XGDM_PORTABLE;
 	}
     }
+  else if (rcontext->depth == 8)
+    {
+      drawMechanism = XGDM_FAST8;
+      r = 2;
+      g = 3;
+      b = 1;
+      testColor.pixel = (((r << 3) + g) << 2) + b;
+      XQueryColor(rcontext->dpy, rcontext->cmap, &testColor);
+      if (((testColor.red >> 13) != r)
+	|| ((testColor.green >> 13) != g)
+	|| ((testColor.blue >> 14) != b))
+	{
+	  NSLog(@"WARNING - XGServer is unable to use the "
+	    @"fast algorithm for writing to an 8-bit display on "
+	    @"this host - the most likely reason being "
+	    @"the StandardColormap RGB_BEST_MAP has not been installed.");
+	  drawMechanism = XGDM_PORTABLE;
+	}
+    }
   else
     {
       NSLog(@"WARNING - XGServer is unable to use a "

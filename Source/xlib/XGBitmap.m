@@ -136,7 +136,8 @@ _pixmap_combine_alpha(RContext *context,
   if (drawMechanism == XGDM_FAST15
       || drawMechanism == XGDM_FAST16
       || drawMechanism == XGDM_FAST32
-      || drawMechanism == XGDM_FAST32_BGR)
+      || drawMechanism == XGDM_FAST32_BGR
+      || drawMechanism == XGDM_FAST8)
     {
       VARIABLES_DECLARATION;
       unsigned	row;
@@ -154,6 +155,9 @@ _pixmap_combine_alpha(RContext *context,
 	  break;
 	case XGDM_FAST32_BGR:
 	  InitRGBShiftsAndMasks(0,8,8,8,16,8,0,8);
+	  break;
+	case XGDM_FAST8:
+	  InitRGBShiftsAndMasks(5,3,2,3,0,2,0,8);
 	  break;
 	default:
 	  NSLog(@"Huh? Backend confused about XGDrawMechanism");
@@ -907,7 +911,8 @@ _bitmap_combine_alpha(RContext *context,
     if (drawMechanism == XGDM_FAST15
 	|| drawMechanism == XGDM_FAST16
 	|| drawMechanism == XGDM_FAST32
-	|| drawMechanism == XGDM_FAST32_BGR)
+	|| drawMechanism == XGDM_FAST32_BGR
+	|| drawMechanism == XGDM_FAST8)
       {
 	VARIABLES_DECLARATION;
 	unsigned	row;
@@ -925,6 +930,9 @@ _bitmap_combine_alpha(RContext *context,
 	    break;
 	  case XGDM_FAST32_BGR:
 	    InitRGBShiftsAndMasks(0,8,8,8,16,8,0,8);
+	    break;
+	  case XGDM_FAST8:
+	    InitRGBShiftsAndMasks(5,3,2,3,0,2,0,8);
 	    break;
 	  default:
 	    NSLog(@"Huh? Backend confused about XGDrawMechanism");
@@ -1186,7 +1194,8 @@ _pixmap_read_alpha(RContext *context,
   if (drawMechanism == XGDM_FAST15
       || drawMechanism == XGDM_FAST16
       || drawMechanism == XGDM_FAST32
-      || drawMechanism == XGDM_FAST32_BGR)
+      || drawMechanism == XGDM_FAST32_BGR
+      || drawMechanism == XGDM_FAST8)
     {
       VARIABLES_DECLARATION;
       unsigned	row;
@@ -1204,6 +1213,9 @@ _pixmap_read_alpha(RContext *context,
 	  break;
 	case XGDM_FAST32_BGR:
 	  InitRGBShiftsAndMasks(0,8,8,8,16,8,0,8);
+	  break;
+	case XGDM_FAST8:
+	  InitRGBShiftsAndMasks(5,3,2,3,0,2,0,8);
 	  break;
 	default:
 	  NSLog(@"Huh? Backend confused about XGDrawMechanism");

@@ -1,3 +1,12 @@
+2004-09-08  Adam Fedor  <fedor@gnu.org>
+
+	* Headers/x11/XGServer.h: Add 8bit fast drawing.	
+	* Source/x11/XGServer.m ([XGScreenContext
+	-initForDisplay:screen:]): For 8bit, test for RGB_BEST_MAP.
+	* Source/xlib/XGBitmap.m (_pixmap_combine_alpha, 
+	_bitmap_combine_alpha, _pixmap_read_alpha): Add 8 bit case.
+	(patch from Paul Secchia <paul@worldnet.att.net>).
+
 2004-09-05 00:05  Alexander Malmberg <alexander@malmberg.org>
 
 	* Tools/GNUmakefile.preamble: Compile with -Wall.

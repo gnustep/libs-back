@@ -42,6 +42,7 @@ typedef enum {
   XGDM_FAST16,
   XGDM_FAST32,
   XGDM_FAST32_BGR,
+  XGDM_FAST8,
   XGDM_PORTABLE
 } XGDrawMechanism;
 
