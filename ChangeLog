@@ -1,3 +1,7 @@
+2003-05-02  Adam Fedor  <fedor@gnu.org>
+
+	* Documentation/Back/GNUmakefile: Remove GNUSTEP_MAKEFILES
+
 2003-04-27  Adam Fedor  <fedor@gnu.org>
 
 	* Updates for filesystem change.
