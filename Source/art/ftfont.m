@@ -1230,7 +1230,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
   for (; length; length--, glyphs++)
     {
-      glyph = *glyphs;
+      glyph = *glyphs - 1;
 
       if (use_sbit)
 	{
@@ -1449,7 +1449,8 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 {
   FT_Face face;
 
- if (FTC_Manager_Lookup_Size(ftc_manager, &imgd.font, &face, 0))
+  glyph--;
+  if (FTC_Manager_Lookup_Size(ftc_manager, &imgd.font, &face, 0))
     return NO;
 
   if (FT_Load_Glyph(face, glyph, 0))
@@ -1461,6 +1462,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
 - (NSSize) advancementForGlyph: (NSGlyph)glyph
 {
+  glyph--;
   if (screenFont)
     {
       /* TODO: try to more efficiently? */
@@ -1551,6 +1553,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   FT_BBox bbox;
   FT_Glyph g;
 
+  glyph--;
 /* TODO: this is ugly */
   cur = &imgd;
   if (FTC_ImageCache_Lookup(ftc_imagecache, cur, glyph, &g, NULL))
@@ -1576,6 +1579,9 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   FT_Face face;
   FT_Vector vec;
   FT_GlyphSlot glyph;
+
+  g--;
+  prev--;
 
   if (nominal)
     *nominal = YES;
@@ -2426,7 +2432,7 @@ static int filters[3][7]=
   cmap.u.encoding = ft_encoding_unicode;
   cmap.type = FTC_CMAP_BY_ENCODING;
 
-  return FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, ch);
+  return FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, ch) + 1;
 }
 
 -(NSString *) nameOfGlyph: (NSGlyph)glyph
@@ -2435,6 +2441,8 @@ static int filters[3][7]=
   FT_Face face;
 
   char buf[256];
+
+  glyph--;
 
   if (FTC_Manager_Lookup_Size(ftc_manager, &fi->imgd.font, &face, 0))
     return nil;
@@ -2550,39 +2558,39 @@ fb04 'ffl'
 		{
 			if (ch=='f' && ch2=='f' && ch3=='l' && fi->ligature_ffl)
 			{
-				g->g=fi->ligature_ffl;
+				g->g=fi->ligature_ffl + 1;
 				i+=2;
 				continue;
 			}
 			if (ch=='f' && ch2=='f' && ch3=='i' && fi->ligature_ffi)
 			{
-				g->g=fi->ligature_ffi;
+				g->g=fi->ligature_ffi + 1;
 				i+=2;
 				continue;
 			}
 			if (ch=='f' && ch2=='f' && fi->ligature_ff)
 			{
-				g->g=fi->ligature_ff;
+				g->g=fi->ligature_ff + 1;
 				i++;
 				continue;
 			}
 			if (ch=='f' && ch2=='i' && fi->ligature_fi)
 			{
-				g->g=fi->ligature_fi;
+				g->g=fi->ligature_fi + 1;
 				i++;
 				continue;
 			}
 			if (ch=='f' && ch2=='l' && fi->ligature_fl)
 			{
-				g->g=fi->ligature_fl;
+				g->g=fi->ligature_fl + 1;
 				i++;
 				continue;
 			}
 		}
 
-		g->g=FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, ch);
+		g->g=FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, ch) + 1;
 
-		if (!g->g)
+		if (g->g == 1)
 		{
 			unichar *decomp;
 			decomp=uni_is_decomp(ch);
@@ -2596,8 +2604,8 @@ fb04 'ffl'
 					g=run->glyphs+j;
 					memset(&run->glyphs[glyph_size-1],0,sizeof(glyph_t));
 
-					g->g=FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, *decomp);
-					if (!g->g)
+					g->g=FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, *decomp) + 1;
+					if (g->g == 1)
 						break;
 					c++;
 					g++;
@@ -2619,7 +2627,7 @@ fb04 'ffl'
 		}
 	}
 
-	/* TODO: shrink if necessary */
+	/* TODO: shrink allocated array if possible */
 	run->head.glyph_length=j;
 }
 @end
@@ -2635,6 +2643,7 @@ fb04 'ffl'
 static char buf[1024]; /* !!TODO!! */
   FT_Face face;
 
+  g--;
   if (FTC_Manager_Lookup_Size(ftc_manager, &imgd.font, &face, 0))
     return ".notdef";
 
