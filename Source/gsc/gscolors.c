@@ -71,6 +71,7 @@ gsHSBToRGB(device_color_t  color)
   
   switch (i) 
     {
+    default: /* catch h==1.0 */
     case 0:
       red = v;
       green = t;
@@ -118,7 +119,7 @@ gsCMYKToRGB(device_color_t  color)
   y = color.field[2];
   k = color.field[3];
   white = 1 - k;
-	      
+
   if (k == 0)
     {
       red = 1 - c;
@@ -190,7 +191,6 @@ gsColorToGray(device_color_t color)
   return new;
 }
 
-/* FIXME: Not implemented */
 device_color_t 
 gsColorToCMYK(device_color_t color)
 {
@@ -200,10 +200,46 @@ gsColorToCMYK(device_color_t color)
   switch(color.space)
     {
     case gray_colorspace:
-      break;
-    case rgb_colorspace:
+      new.field[0] = 0.0;
+      new.field[1] = 0.0;
+      new.field[2] = 0.0;
+      new.field[3] = color.field[0];
       break;
     case hsb_colorspace:
+      color = gsColorToRGB(color);
+      /* NO BREAK */
+    case rgb_colorspace:
+      new.field[0] = 1.0 - color.field[0];
+      new.field[1] = 1.0 - color.field[1];
+      new.field[2] = 1.0 - color.field[2];
+      new.field[3] = 0;
+
+      /* Add a bit of black if possible (for no reason, really). */
+      new.field[3] = new.field[0];
+      new.field[0] = 0.0;
+      new.field[1] -= new.field[3];
+      new.field[2] -= new.field[3];
+      if (new.field[1] > new.field[2])
+	{
+	  if (new.field[2] < 0.0)
+	    {
+	      new.field[0] -= new.field[2];
+	      new.field[1] -= new.field[2];
+	      new.field[3] += new.field[2];
+	      new.field[2] = 0;
+	    }
+	}
+      else
+	{
+	  if (new.field[1] < 0.0)
+	    {
+	      new.field[0] -= new.field[1];
+	      new.field[2] -= new.field[1];
+	      new.field[3] += new.field[1];
+	      new.field[1] = 0;
+	    }
+	}
+      
       break;
     case cmyk_colorspace: 
       new = color;
@@ -214,7 +250,6 @@ gsColorToCMYK(device_color_t color)
   return new;
 }
 
-/* FIXME: Not implemented */
 device_color_t 
 gsColorToHSB(device_color_t color)
 {
@@ -224,13 +259,65 @@ gsColorToHSB(device_color_t color)
   switch(color.space)
     {
     case gray_colorspace:
+      new.field[0] = 0.0;
+      new.field[1] = 0.0;
+      new.field[2] = color.field[0];
       break;
+    case cmyk_colorspace:
+      color = gsColorToRGB(color);
+      /* NO BREAK */
     case rgb_colorspace:
+      {
+	float r = color.field[0];
+	float g = color.field[1];
+	float b = color.field[2];
+	float _hue_component, _saturation_component, _brightness_component;
+
+	if (r == g && r == b)
+	  {
+	    _hue_component = 0;
+	    _saturation_component = 0;
+	    _brightness_component = r;
+	  }
+	else
+	  {
+	    double H;
+	    double V;
+	    double Temp;
+	    double diff;
+	
+	    V = (r > g ? r : g);
+	    V = (b > V ? b : V);
+	    Temp = (r < g ? r : g);
+	    Temp = (b < Temp ? b : Temp);
+	    diff = V - Temp;
+	    if (V == r)
+	      {
+	        H = (g - b)/diff;
+	      }
+	    else if (V == g)
+	      {
+	        H = (b - r)/diff + 2;
+	      }
+	    else
+	      {
+	        H = (r - g)/diff + 4;
+	      }
+	    if (H < 0)
+	      {
+	        H += 6;
+	      }
+	    _hue_component = H/6;
+	    _saturation_component = diff/V;
+	    _brightness_component = V;
+	  }
+	new.field[0] = _hue_component;
+	new.field[1] = _saturation_component;
+	new.field[2] = _brightness_component;
+      }
       break;
     case hsb_colorspace:
-      new = color;
-      break;
-    case cmyk_colorspace: 
+      new = color = gsColorToRGB(color);
       break;
     default:
       break;

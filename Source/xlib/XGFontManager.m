@@ -34,6 +34,7 @@
 
 #include <AppKit/GSFontInfo.h>
 #include <Foundation/NSArchiver.h>
+#include <Foundation/NSBundle.h>
 #include <Foundation/NSFileManager.h>
 #include <Foundation/NSPathUtilities.h>
 #include <Foundation/NSProcessInfo.h>
@@ -139,7 +140,6 @@ load_cache(NSString *cacheName, BOOL async)
     || ([v intValue] != 2))
     {
       NSString *file_name = [cacheName lastPathComponent];
-      NSDictionary *env = [[NSProcessInfo processInfo] environment];
       NSString *path;
       NSTask *task;
    
@@ -149,13 +149,13 @@ load_cache(NSString *cacheName, BOOL async)
 	    @"take several seconds (or minutes on a slow machine with "
 	    @"lots of fonts)");
 	}
-      if (!env || !(path = [env objectForKey: @"GNUSTEP_SYSTEM_ROOT"]))
+      path = [NSBundle _absolutePathOfExecutable: @"font_cacher"];
+      if (path == nil)
 	{
-	  path = [NSString stringWithCString: 
-	    stringify_it(GNUSTEP_INSTALL_PREFIX)];
+	  NSLog(@"Could not find font_cacher program. Please run manually");
+	  return NO;
 	}
-      path = [path stringByAppendingPathComponent: @"Tools"];
-      path = [path stringByAppendingPathComponent: @"font_cacher"];
+      NSLog(@"Running %@", path);
       task = [NSTask launchedTaskWithLaunchPath: path
 	arguments: [NSArray arrayWithObject: file_name]];
       if (task == nil || async == YES)
