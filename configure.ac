@@ -72,67 +72,9 @@ case "$target_os" in
 esac
 
 #--------------------------------------------------------------------
-# Look for WindowMaker's wraster library
-#--------------------------------------------------------------------
-AC_ARG_WITH(wraster, 
-           [  --with-wraster=PREFIX   get-wraster-flags directory prefix])
-if test "x$with_wraster" = "x"; then
- wprefix=""
-else
- wprefix=${with_wraster}/
-fi
-
-if test "x$with_wraster" != "xnone"; then
-  GRAPHIC_LIBS=`${wprefix}get-wraster-flags --libs`
-  GRAPHIC_CFLAGS=`${wprefix}get-wraster-flags --cflags | sed -e "s|-I/usr/include||"`
-  GRAPHIC_LFLAGS=`${wprefix}get-wraster-flags --ldflags`
-fi
-
-AC_DEFUN(AC_CHECK_WRASTER,
-[dnl
-AC_MSG_CHECKING(for current libwraster support)
-AC_CACHE_VAL(gs_cv_have_wraster,
-[wraster_check_save_header=${CPPFLAGS}
-wraster_check_save_libs=${LIBS}
-CPPFLAGS="$1 $2 ${CPPFLAGS}"
-LIBS="$3 $LIBS"
-
-# Check for RFillImage which is only in version 2.0 of libwraster
-AC_CHECK_LIB(wraster, RFillImage, gs_cv_have_wraster=yes, gs_cv_have_wraster=no)if test "x$with_wraster" = "xnone"; then
-  gs_cv_have_wraster=no
-fi
-if test "$gs_cv_have_wraster" = yes; then
-  AC_CHECK_HEADERS(wraster.h, gs_cv_have_wraster=yes, gs_cv_have_wraster=no)
-fi
-CPPFLAGS="${wraster_check_save_header}"
-LIBS="${wraster_check_save_libs}"
-])
-AC_MSG_RESULT($gs_cv_have_wraster)
-])
-
-AC_CHECK_WRASTER(${GRAPHIC_CFLAGS}, ${GRAPHIC_LFLAGS}, ${GRAPHIC_LIBS})
-if test $gs_cv_have_wraster = no; then
-  GRAPHIC_LIBS=
-  GRAPHIC_CFLAGS=
-  GRAPHIC_LFLAGS=
-fi
-
-AC_ARG_WITH(library-flags, 
-        [  --with-library-flags=fg Library flags for libraries])
-AC_ARG_WITH(dps_include,  
-	[  --with-include-flags=fg Include flags])
-GRAPHIC_LFLAGS="$GRAPHIC_LFLAGS $with_library_flags"
-GRAPHIC_CFLAGS="$GRAPHIC_CFLAGS $with_include_flags"
-
-#--------------------------------------------------------------------
 # Find for X windows
 #--------------------------------------------------------------------
-# If the user specifically set x_include/x_libs, then assume we're
-# using a special X system and discard any previous GRAPHIC_flags
-set_x_paths=no
-if test $gs_cv_have_wraster = no -o $x_includes != NONE; then
-  set_x_paths=yes
-fi
+set_x_paths=yes
 AC_PATH_XTRA
 if test "x$no_x" = xyes; then
   set_x_paths=no
@@ -345,10 +287,6 @@ LIBS="${save_libs}"
 # Set definitions
 #--------------------------------------------------------------------
 WITH_WRASTER=no
-if test $gs_cv_have_wraster = yes -a $set_x_paths = no; then
-  AC_DEFINE(WITH_WRASTER,1,[Define if you have libwraster])
-  WITH_WRASTER=yes
-fi
 AC_SUBST(WITH_WRASTER)
 AC_SUBST(GRAPHIC_LIBS)
 AC_SUBST(GRAPHIC_CFLAGS)
