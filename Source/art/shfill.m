@@ -34,6 +34,7 @@ this code is rather experimental
 #include "blit.h"
 
 #include <Foundation/NSData.h>
+#include <Foundation/NSDebug.h>
 #include <Foundation/NSValue.h>
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSGraphics.h>
@@ -415,26 +416,41 @@ static BOOL function_setup(NSDictionary *d,function_t *f)
 	int i,j;
 
 	if ([v intValue]!=0)
+	{
+		NSDebugLLog(@"GSArt-shfill", @"FunctionType!=0 not supported.");
 		return NO;
+	}
 
 	memset(f,0,sizeof(function_t));
 
 	a=[d objectForKey: @"Size"];
 	f->num_in=[a count];
 	if (!f->num_in)
+	{
+		NSDebugLLog(@"GSArt-shfill", @"Size has no entries.");
 		return NO;
+	}
 
 	f->num_out=[[d objectForKey: @"Range"] count]/2;
 	if (!f->num_out)
+	{
+		NSDebugLLog(@"GSArt-shfill", @"Range has no entries.");
 		return NO;
+	}
 
 	f->bits_per_sample=[[d objectForKey: @"BitsPerSample"] intValue];
 	if (!(f->bits_per_sample==8 || f->bits_per_sample==16))
+	{
+		NSDebugLLog(@"GSArt-shfill", @"BitsPerSample other than 8 or 16 aren't supported.");
 		return NO;
+	}
 
 	data=[d objectForKey: @"DataSource"];
 	if (!data || ![data isKindOfClass: [NSData class]])
+	{
+		NSDebugLLog(@"GSArt-shfill", @"No valid DataSource given.");
 		return NO;
+	}
 	f->data_source=[data bytes];
 
 	f->size=malloc(sizeof(int)*f->num_in);
@@ -455,6 +471,7 @@ static BOOL function_setup(NSDictionary *d,function_t *f)
 		f->encode=NULL;
 		free(f->decode);
 		f->decode=NULL;
+		NSDebugLLog(@"GSArt-shfill", @"Memory allocation failed.");
 		return NO;
 	}
 
@@ -482,6 +499,8 @@ static BOOL function_setup(NSDictionary *d,function_t *f)
 		f->encode=NULL;
 		free(f->decode);
 		f->decode=NULL;
+		NSDebugLLog(@"GSArt-shfill", @"Need %i bytes of data, DataSource only has %i bytes.",
+			j, [data length]);
 		return NO;
 	}
 
@@ -533,9 +552,6 @@ static void function_free(function_t *f)
 }
 
 
-/* just fail silently for now */
-#define ERROR return
-
 -(void) DPSshfill: (NSDictionary *)shader
 {
 	NSNumber *v;
@@ -551,24 +567,34 @@ static void function_free(function_t *f)
 
 	/* only type 1 shaders */
 	if ([v intValue]!=1)
-		ERROR;
+	{
+		NSDebugLLog(@"GSArt-shfill", @"ShadingType!=1 not supported.");
+		return;
+	}
 
 	/* in device rgb space */
 	if ([shader objectForKey: @"ColorSpace"])
 		if (![[shader objectForKey: @"ColorSpace"] isEqual: NSDeviceRGBColorSpace])
-			ERROR;
+		{
+			NSDebugLLog(@"GSArt-shfill", @"Only device RGB ColorSpace supported.");
+			return;
+		}
 
 	function_dict=[shader objectForKey: @"Function"];
 	if (!function_dict)
-		ERROR;
+	{
+		NSDebugLLog(@"GSArt-shfill", @"Function not set.");
+		return;
+	}
 
 	if (!function_setup(function_dict,&function))
-		ERROR;
+		return;
 
 	if (function.num_in!=2 || function.num_out!=3)
 	{
 		function_free(&function);
-		ERROR;
+		NSDebugLLog(@"GSArt-shfill", @"Function doesn't have 2 inputs and 3 outputs.");
+		return;
 	}
 
 	matrix=[ctm copy];
