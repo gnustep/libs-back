@@ -1520,6 +1520,10 @@ typedef enum {
 - (void)DPSsetlinewidth: (float)width 
 {
   int	w;
+  NSSize	ws;
+
+  ws = [ctm sizeInMatrixSpace: NSMakeSize(width,width)];
+  width = (ws.width + ws.height) / 2;
 
   /*
    * Evil hack to get drawing to work - with a line thickness of 1, the

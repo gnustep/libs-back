@@ -1,8 +1,12 @@
+2002-04-22  Georg Fleischmann
+
+	* back/Source/xlib/XGGState.m
+	[XGGState DPSsetlinewidth:]: scale line width.
+
 2002-04-23  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/WIN32Server.m
 	[window::::] corrected and simplified the last change.
-
 
 2002-04-22  Adam Fedor  <fedor@gnu.org>
 
