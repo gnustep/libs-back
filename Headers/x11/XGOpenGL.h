@@ -30,7 +30,7 @@
 #include <AppKit/NSOpenGL.h>
 
 #define id _gs_avoid_id_collision
-#define BOOL _gs_avoid_BOOL_collision
+#define BOOL XWINDOWSBOOL
 #include <GL/glx.h>
 #undef id
 #undef BOOL
