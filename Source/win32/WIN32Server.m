@@ -72,7 +72,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   wc.cbWndExtra = sizeof(WIN_INTERN); 
   wc.hInstance = hinstance; 
   wc.hIcon = NULL;
-  wc.hCursor = NULL;
+  wc.hCursor = LoadCursor(NULL, IDC_ARROW);
   wc.hbrBackground = GetStockObject(WHITE_BRUSH); 
   wc.lpszMenuName =  NULL; 
   wc.lpszClassName = "GNUstepWindowClass"; 
