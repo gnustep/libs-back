@@ -485,12 +485,6 @@
   fprintf(gstream, "stroke\n");
 }
 
-
-- (void) GSSendBezierPath: (NSBezierPath *)path
-{
-  [self notImplemented: _cmd];
-}
-
 - (void) GSRectClipList: (const NSRect *)rects: (int)count
 {
   [self notImplemented: _cmd];
