@@ -1,3 +1,10 @@
+2003-09-20  Adam Fedor  <fedor@gnu.org>
+
+	* Headers/xlib/XGGState.h: Add GSReadRect def.
+	* Headers/xlib/XGPrivate.h: Add _pixmap_read_alpha def.
+	* Source/xlib/XGBitmap.m (_pixmap_read_alpha): Implement.
+	* Source/xlib/XGGstate.m (-GSReadRect:): Idem.
+
 2003-09-15  Adam Fedor  <fedor@gnu.org>
 
 	* Source/gsc/GSGState.m ([GSGState -deepen]): Typo fix - copy

@@ -153,13 +153,9 @@
   XFlush([(XGServer *)server xDisplay]);
 }
 
-//
-// Read the Color at a Screen Position
-//
-- (NSColor *) NSReadPixel: (NSPoint) location
+- (NSDictionary *) GSReadRect: (NSRect)rect
 {
-  [self notImplemented: _cmd];
-  return nil;
+  return [(XGGState *)gstate GSReadRect: rect];
 }
 
 @end

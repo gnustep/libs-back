@@ -37,6 +37,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
+#include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>
 #include "gsc/gscolors.h"
 #include "xlib/XGPrivate.h"
@@ -1137,3 +1138,128 @@ _bitmap_combine_alpha(RContext *context,
     }
   return 0;
 }
+
+NSData *
+_pixmap_read_alpha(RContext *context,
+		   RXImage *source_im, RXImage *source_alpha,
+		   XRectangle srect,
+		   XGDrawMechanism drawMechanism)
+{
+  unsigned long  pixel;
+  NSMutableData *data;
+  unsigned char *bytes;
+  int spp;
+
+  spp = (source_alpha) ? 4 : 3;
+  data = [NSMutableData dataWithLength: srect.width*srect.height*spp];
+  if (data == nil)
+    return nil;
+  bytes = [data mutableBytes];
+
+  if (drawMechanism == XGDM_FAST15
+      || drawMechanism == XGDM_FAST16
+      || drawMechanism == XGDM_FAST32
+      || drawMechanism == XGDM_FAST32_BGR)
+    {
+      VARIABLES_DECLARATION;
+      unsigned	row;
+
+      switch (drawMechanism)
+	{
+	case XGDM_FAST15:
+	  InitRGBShiftsAndMasks(10,5,5,5,0,5,0,8);
+	  break;
+	case XGDM_FAST16:
+	  InitRGBShiftsAndMasks(11,5,5,6,0,5,0,8);
+	  break;
+	case XGDM_FAST32:
+	  InitRGBShiftsAndMasks(16,8,8,8,0,8,0,8);
+	  break;
+	case XGDM_FAST32_BGR:
+	  InitRGBShiftsAndMasks(0,8,8,8,16,8,0,8);
+	  break;
+	default:
+	  NSLog(@"Huh? Backend confused about XGDrawMechanism");
+	  //Try something.  With a bit of luck we see
+	  //which picture goes wrong.
+	  InitRGBShiftsAndMasks(11,5,5,6,0,5,0,8);
+	}
+
+      for (row = 0; row < srect.height; row++)
+	{
+	  unsigned	col;
+
+	  for (col = 0; col < srect.width; col++)
+	    {
+	      unsigned	sr, sg, sb, sa;
+
+	      // Get the source pixel information
+	      pixel = XGetPixel(source_im->image, col, row);
+	      PixelToRGB(pixel, sr, sg, sb);
+	      // Expand to 8 bit value
+	      sr = (sr << (8-_rwidth));
+	      sg = (sg << (8-_gwidth));
+	      sb = (sb << (8-_bwidth));
+
+	      if (source_alpha)
+		{
+		  pixel = XGetPixel(source_alpha->image, col, row);
+		  sa = (pixel >> _ashift) & _amask;
+		}
+	      else
+		sa = _amask;
+
+	      bytes[(row * srect.width + col)*spp]   = sr;
+	      bytes[(row * srect.width + col)*spp+1] = sg;
+	      bytes[(row * srect.width + col)*spp+2] = sb;
+	      if (source_alpha)
+		bytes[(row * srect.width + col)*spp+3] = sa;
+	    }
+	}
+    }
+  else
+    {
+      XColor		c2;
+      unsigned		row;
+
+      /*
+       * This block of code should be totally portable as it uses the
+       * 'official' X mechanism for converting from pixel values to
+       * RGB color values - on the downside, it's very slow.
+       */
+      pixel = (unsigned long)-1;	// Never valid?
+      c2.pixel = pixel;
+
+       for (row = 0; row < srect.height; row++)
+	{
+	  unsigned	col;
+
+	  for (col = 0; col < srect.width; col++)
+	    {
+	      int r, g, b, alpha;
+	      XColor pcolor, acolor;
+	      pcolor.pixel = XGetPixel(source_im->image, col, row);
+	      XQueryColor(context->dpy, context->cmap, &pcolor);
+	      r = pcolor.red >> 8;
+	      g = pcolor.green >> 8;
+	      b = pcolor.blue >> 8;
+	      alpha = 255;
+	      if (source_alpha)
+		{
+		  acolor.pixel = XGetPixel(source_alpha->image, col, row);
+		  XQueryColor(context->dpy, context->cmap, &acolor);
+		  alpha = acolor.red >> 8;
+		}
+
+	      bytes[(row * srect.width + col)*spp]   = r;
+	      bytes[(row * srect.width + col)*spp+1] = g;
+	      bytes[(row * srect.width + col)*spp+2] = b;
+	      if (source_alpha)
+		bytes[(row * srect.width + col)*spp+3] = alpha;
+	    }
+	}
+    }
+
+  return (NSData *)data;
+}
+

@@ -1857,6 +1857,103 @@ typedef enum {
     }
 }
 
+- (NSDictionary *) GSReadRect: (NSRect)rect
+{
+  NSSize ssize;
+  XRectangle srect;    
+  RXImage *source_im;
+  RXImage *source_alpha;
+  gswindow_device_t *source_win;
+  NSMutableDictionary *dict;
+  NSData *data;
+
+  source_win = (gswindow_device_t *)windevice;
+  if (!source_win)
+    {
+      DPS_ERROR(DPSinvalidid, @"Invalid read gstate");
+      return nil;
+    }
+
+  if (source_win->buffer == 0 && source_win->map_state != IsViewable)
+    {
+      /* Can't read anything */
+      DPS_ERROR(DPSinvalidid, @"Invalid window not readable");
+      return nil;
+    }
+
+  dict = [NSMutableDictionary dictionary];
+
+  // --- determine region to read --------------------------------------
+
+  rect.origin = [ctm pointInMatrixSpace: rect.origin];
+  srect = XGWindowRectToX(self, rect);
+  srect = XGIntersectionRect (srect, accessibleRectForWindow (source_win));
+  ssize.width = srect.width;
+  ssize.height = srect.height;
+  [dict setObject: [NSValue valueWithSize: ssize] forKey: @"ImageSize"];
+
+  if (XGIsEmptyRect(srect))
+    return dict;
+
+  [dict setObject: [NSNumber numberWithUnsignedInt: source_win->depth]
+	forKey: @"ImageDepth"];
+
+  // --- get source XImage ----------------------------------------
+  
+  if (draw == source_win->ident && source_win->visibility < 0)
+    {
+      /* Non-backingstore window isn't visible, so just make up the image */
+      NSLog(@"Focused view window not readable");
+      source_im = RCreateXImage(context, source_win->depth, 
+			      XGWidth(srect), XGHeight(srect));
+    }
+  else
+    {
+      source_im = RGetXImage(context, draw, XGMinX(srect), XGMinY (srect), 
+                           XGWidth (srect), XGHeight (srect));
+    }
+
+  if (source_im->image == 0)
+    {
+      // Should not happen, 
+      DPS_ERROR (DPSinvalidaccess, @"unable to fetch source image");
+      return dict;
+    }
+  
+  [self _alphaBuffer: source_win];
+  if (alpha_buffer)
+    {
+      source_alpha = RGetXImage((RContext *)context, alpha_buffer,
+                              XGMinX(srect), XGMinY(srect), 
+                              XGWidth(srect), XGHeight(srect));
+      [dict setObject: [NSNumber numberWithUnsignedInt: 4] 
+	    forKey: @"ImageSPP"];
+      [dict setObject: [NSNumber numberWithUnsignedInt: 1]
+	    forKey: @"ImageAlpha"];
+    }
+  else
+    {
+      source_alpha = NULL;
+      [dict setObject: [NSNumber numberWithUnsignedInt: 3] 
+	    forKey: @"ImageSPP"];
+      [dict setObject: [NSNumber numberWithUnsignedInt: 0]
+	    forKey: @"ImageAlpha"];
+    }
+
+  data = _pixmap_read_alpha(context, source_im, source_alpha, srect,
+			    drawMechanism);
+  [dict setObject: data forKey: @"ImageData"];
+  /* Pixmap routine always returns image in same format (FIXME?).  */
+  [dict setObject: NSDeviceRGBColorSpace forKey: @"ImageColorSpace"];
+  [dict setObject: [NSNumber numberWithUnsignedInt: 8] forKey: @"ImageBPS"];
+
+  // --- clean up ------------------------------------------------------
+  
+  RDestroyXImage((RContext *)context, source_im);
+  RDestroyXImage((RContext *)context, source_alpha);
+  return dict;
+}
+
 @end
 
 
