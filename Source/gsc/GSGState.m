@@ -1007,6 +1007,11 @@ typedef enum {
 	  : NSWidth(rects[i]) : NSHeight(rects[i])];
 }
 
+- (NSDictionary *) GSReadRect: (NSRect)r
+{
+  return nil;
+}
+
 - (void)DPSimage: (NSAffineTransform*) matrix 
 		: (int) pixelsWide : (int) pixelsHigh
 		: (int) bitsPerSample : (int) samplesPerPixel 

@@ -153,11 +153,6 @@
   XFlush([(XGServer *)server xDisplay]);
 }
 
-- (NSDictionary *) GSReadRect: (NSRect)rect
-{
-  return [(XGGState *)gstate GSReadRect: rect];
-}
-
 @end
 
 @implementation XGContext (Ops)

@@ -1715,6 +1715,7 @@ static	Region	emptyRegion;
   gswindow_device_t *source_win;
   NSMutableDictionary *dict;
   NSData *data;
+  NSAffineTransform *matrix;
 
   source_win = (gswindow_device_t *)windevice;
   if (!source_win)
@@ -1739,22 +1740,41 @@ static	Region	emptyRegion;
   srect = XGIntersectionRect (srect, accessibleRectForWindow (source_win));
   ssize.width = srect.width;
   ssize.height = srect.height;
-  [dict setObject: [NSValue valueWithSize: ssize] forKey: @"ImageSize"];
+  [dict setObject: [NSValue valueWithSize: ssize] forKey: @"Size"];
+
+  [dict setObject: NSDeviceRGBColorSpace forKey: @"ColorSpace"];
+  [dict setObject: [NSNumber numberWithUnsignedInt: 8] forKey: @"BitsPerSample"];
+  [dict setObject: [NSNumber numberWithUnsignedInt: source_win->depth]
+	forKey: @"Depth"];
+  [self _alphaBuffer: source_win];
+  if (alpha_buffer)
+    {
+      [dict setObject: [NSNumber numberWithUnsignedInt: 4] 
+	    forKey: @"SamplesPerPixel"];
+      [dict setObject: [NSNumber numberWithUnsignedInt: 1]
+	    forKey: @"HasAlpha"];
+    }
+  else
+    {
+      [dict setObject: [NSNumber numberWithUnsignedInt: 3] 
+	    forKey: @"SamplesPerPixel"];
+      [dict setObject: [NSNumber numberWithUnsignedInt: 0]
+	    forKey: @"HasAlpha"];
+    }
+  matrix = [ctm copy];
+  [matrix translateXBy: -srect.x - offset.x yBy: srect.y + srect.height - offset.y];
+  [dict setObject: matrix forKey: @"Matrix"];
+  DESTROY(matrix);
 
   if (XGIsEmptyRect(srect))
     return dict;
-
-  [dict setObject: [NSNumber numberWithUnsignedInt: source_win->depth]
-	forKey: @"ImageDepth"];
 
   // --- get source XImage ----------------------------------------
   
   if (draw == source_win->ident && source_win->visibility < 0)
     {
-      /* Non-backingstore window isn't visible, so just make up the image */
-      NSLog(@"Focused view window not readable");
-      source_im = RCreateXImage(context, source_win->depth, 
-			      XGWidth(srect), XGHeight(srect));
+      /* Non-backingstore window isn't visible, so we can't read it. */
+      return nil;
     }
   else
     {
@@ -1765,36 +1785,24 @@ static	Region	emptyRegion;
   if (source_im->image == 0)
     {
       // Should not happen, 
-      DPS_ERROR (DPSinvalidaccess, @"unable to fetch source image");
-      return dict;
+      return nil;
     }
   
-  [self _alphaBuffer: source_win];
   if (alpha_buffer)
     {
       source_alpha = RGetXImage((RContext *)context, alpha_buffer,
                               XGMinX(srect), XGMinY(srect), 
                               XGWidth(srect), XGHeight(srect));
-      [dict setObject: [NSNumber numberWithUnsignedInt: 4] 
-	    forKey: @"ImageSPP"];
-      [dict setObject: [NSNumber numberWithUnsignedInt: 1]
-	    forKey: @"ImageAlpha"];
     }
   else
     {
       source_alpha = NULL;
-      [dict setObject: [NSNumber numberWithUnsignedInt: 3] 
-	    forKey: @"ImageSPP"];
-      [dict setObject: [NSNumber numberWithUnsignedInt: 0]
-	    forKey: @"ImageAlpha"];
     }
 
   data = _pixmap_read_alpha(context, source_im, source_alpha, srect,
 			    drawMechanism);
-  [dict setObject: data forKey: @"ImageData"];
+  [dict setObject: data forKey: @"Data"];
   /* Pixmap routine always returns image in same format (FIXME?).  */
-  [dict setObject: NSDeviceRGBColorSpace forKey: @"ImageColorSpace"];
-  [dict setObject: [NSNumber numberWithUnsignedInt: 8] forKey: @"ImageBPS"];
 
   // --- clean up ------------------------------------------------------
   

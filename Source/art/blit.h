@@ -100,6 +100,11 @@ typedef struct draw_info_s
 	int num);
 
 
+  /* dst should be a 32bpp RGBA buffer. */
+  void (*read_pixels_o)(composite_run_t *c, int num);
+  void (*read_pixels_a)(composite_run_t *c, int num);
+
+
   void (*composite_sover_aa)(composite_run_t *c, int num);
   void (*composite_sover_ao)(composite_run_t *c, int num);
 

@@ -139,6 +139,8 @@
 - (void) GSRectClipList: (const NSRect *)rects : (int) count;
 - (void) GSRectFillList: (const NSRect *)rects : (int) count;
 
+- (NSDictionary *) GSReadRect: (NSRect)rect;
+
 - (void)DPSimage: (NSAffineTransform*) matrix 
 		: (int) pixelsWide : (int) pixelsHigh
 		: (int) bitsPerSample : (int) samplesPerPixel 

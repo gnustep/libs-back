@@ -40,7 +40,8 @@ art_OBJC_FILES = \
   image.m \
   composite.m \
   path.m \
-  shfill.m
+  shfill.m \
+  ReadRect.m
 
 -include GNUmakefile.preamble
 
