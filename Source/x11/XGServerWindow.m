@@ -38,7 +38,6 @@
 #include <AppKit/NSWindow.h>
 #include <AppKit/NSImage.h>
 #include <AppKit/NSBitmapImageRep.h>
-#include <X11/extensions/shape.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -50,6 +49,8 @@
 #include "x11/wraster.h"
 #endif
 #include <X11/cursorfont.h>
+
+#include <X11/extensions/shape.h>
 
 #include "x11/XGDragView.h"
 #include "x11/XGInputServer.h"
