@@ -228,7 +228,6 @@ NSMutableDictionary	*pasteboards = nil;
   id			owner;
   id			pboard;
   NSMutableArray	*items;
-  BOOL			hasBeenFiltered;
   BOOL			wantsChangedOwner;
   BOOL			hasGNUDataForType;
   BOOL			hasStdDataForType;
@@ -239,7 +238,6 @@ NSMutableDictionary	*pasteboards = nil;
 			      ref: (int)count;
 - (void) addTypes: (NSArray*)types owner: (id)owner pasteboard: (id)pb;
 - (BOOL) checkConnection: (NSConnection*)c;
-- (BOOL) hasBeenFiltered;
 - (PasteboardData*) itemForType: (NSString*)type;
 - (void) lostOwnership;
 - (id) owner;
@@ -400,11 +398,6 @@ NSMutableDictionary	*pasteboards = nil;
   RELEASE(pboard);
   RELEASE(items);
   [super dealloc];
-}
-
-- (BOOL) hasBeenFiltered
-{
-  return hasBeenFiltered;
 }
 
 - (PasteboardData*) itemForType: (NSString*)type
@@ -898,13 +891,7 @@ NSMutableDictionary	*pasteboards = nil;
 - (BOOL) connection: (NSConnection*)ancestor
   shouldMakeNewConnection: (NSConnection*)newConn;
 - (id) connectionBecameInvalid: (NSNotification*)notification;
-
-- (id<GSPasteboardObj>) pasteboardByFilteringData: (NSData*)data
-					   ofType: (NSString*)type
-					   isFile: (BOOL)flag;
-- (id<GSPasteboardObj>) pasteboardByFilteringTypesInPasteboard: pb;
 - (id<GSPasteboardObj>) pasteboardWithName: (NSString*)name;
-- (id<GSPasteboardObj>) pasteboardWithUniqueName;
 @end
 
 
@@ -981,34 +968,9 @@ NSMutableDictionary	*pasteboards = nil;
   return self;
 }
 
-- (id<GSPasteboardObj>) pasteboardByFilteringData: (NSData*)data
-					   ofType: (NSString*)type
-					   isFile: (BOOL)flag
-{
-  [self notImplemented: _cmd];
-  return nil;
-}
-
-- (id<GSPasteboardObj>) pasteboardByFilteringTypesInPasteboard: pb
-{
-  [self notImplemented: _cmd];
-  return nil;
-}
-
 - (id<GSPasteboardObj>) pasteboardWithName: (NSString*)name
 {
   return [PasteboardObject pasteboardWithName: name];
-}
-
-- (id<GSPasteboardObj>) pasteboardWithUniqueName
-{
-  return [PasteboardObject pasteboardWithName: nil];
-}
-
-- (NSArray*) typesFilterableTo: (NSString*)type
-{
-  [self notImplemented: _cmd];
-  return nil;
 }
 
 @end
@@ -1227,7 +1189,7 @@ main(int argc, char** argv, char **env)
 
       if (host == nil)
         {
-          NSLog(@"gdnc - unknown NSHost argument  ... %@ - quiting.", hostname);
+          NSLog(@"gpbs - unknown NSHost argument  ... %@ - quiting.", hostname);
           exit(EXIT_FAILURE);
         }
       a = [host names];
