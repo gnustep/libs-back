@@ -1,3 +1,10 @@
+2003-10-19  Adam Fedor  <fedor@gnu.org>
+
+	* Source/xlib/XGBitmap.m: Cache color lookup to reduce use
+	of XQueryColor (based on code from Marko Riedel).
+
+	* configure.ac: Add 2.57 prereq
+
 2003-10-15  Adam Fedor  <fedor@gnu.org>
 
 	* configure.ac: Don't look for jpeg/tiff (already linked in by gui).

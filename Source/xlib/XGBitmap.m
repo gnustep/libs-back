@@ -94,6 +94,23 @@
 	(a) = MAX(0, MIN(255, (a))); \
     } while (0)
 
+#define CSIZE 16384
+#define GS_QUERY_COLOR(color)					\
+  do {								\
+    int centry = color.pixel % CSIZE;				\
+    if (empty[centry] == NO && pixels[centry] == color.pixel)	\
+      {								\
+	color = colors[centry];					\
+      }								\
+    else							\
+      {								\
+	empty[centry] = NO;					\
+	XQueryColor(context->dpy, context->cmap, &color);	\
+	pixels[centry] = color.pixel;				\
+	colors[centry] = color;					\
+      }								\
+  } while(0)
+
 /* Composite source image (pixmap) onto a destination image with alpha.
    Only works for op=Sover now
 
@@ -220,9 +237,18 @@ _pixmap_combine_alpha(RContext *context,
     }
   else
     {
+      unsigned long pixels[CSIZE];
+      XColor colors[CSIZE];
+      BOOL empty[CSIZE];
       XColor		c2;
       unsigned		row;
+      int cind;
 
+      for(cind = 0; cind < CSIZE; cind++)
+	{
+	  empty[cind] = YES;
+	}
+      
       /*
        * This block of code should be totally portable as it uses the
        * 'official' X mechanism for converting from pixel values to
@@ -241,7 +267,7 @@ _pixmap_combine_alpha(RContext *context,
 	      XColor pcolor, acolor, c0, c1;
 	      pcolor.pixel = XGetPixel(source_im->image, 
 				       col + srect.x, row + srect.y);
-	      XQueryColor(context->dpy, context->cmap, &pcolor);
+	      GS_QUERY_COLOR(pcolor);
 	      r = pcolor.red >> 8;
 	      g = pcolor.green >> 8;
 	      b = pcolor.blue >> 8;
@@ -250,7 +276,7 @@ _pixmap_combine_alpha(RContext *context,
 		{
 		  acolor.pixel = XGetPixel(source_alpha->image,
 				    col + srect.x, row + srect.y);
-		  XQueryColor(context->dpy, context->cmap, &acolor);
+		  GS_QUERY_COLOR(acolor);
 		  alpha = acolor.red >> 8;
 		}
 	      if (alpha == 0)
@@ -282,7 +308,7 @@ _pixmap_combine_alpha(RContext *context,
 		  if (c0.pixel != oldPixel)
 		    {
 		      oldPixel = c0.pixel;
-		      XQueryColor(context->dpy, context->cmap, &c0);
+		      GS_QUERY_COLOR(c0);
 		    }
 		      
 		  // mix in alpha to produce RGB out
@@ -316,7 +342,7 @@ _pixmap_combine_alpha(RContext *context,
 		  /* Alpha gets mixed the same as all the
 		     other color components */
 		  da.pixel = XGetPixel(dest_alpha->image, col, row);
-		  XQueryColor(context->dpy, context->cmap, &da);
+		  GS_QUERY_COLOR(da);
 		  da.red = acolor.red + da.red * (65536 - acolor.red)/65536;
 		  da.green = da.blue = da.red;
 		  XAllocColor(context->dpy, context->cmap, &da);
@@ -985,6 +1011,15 @@ _bitmap_combine_alpha(RContext *context,
       {
 	XColor		c2, a2;
 	unsigned       row, oldAlpha = 65537;
+	unsigned long pixels[CSIZE];
+	XColor colors[CSIZE];
+	BOOL empty[CSIZE];
+	int cind;
+
+	for(cind = 0; cind < CSIZE; cind++)
+	  {
+	    empty[cind] = YES;
+	  }
 
 	/*
 	 * This block of code should be totally portable as it uses the
@@ -1028,7 +1063,7 @@ _bitmap_combine_alpha(RContext *context,
 			/* Alpha gets mixed the same as all the
 			   other color components */
 			da.pixel = XGetPixel(dest_alpha->image, col, row);
-			XQueryColor(context->dpy, context->cmap, &da);
+			GS_QUERY_COLOR(da);
 			da.red = a2.red + da.red * (65536 - a2.red)/65536;
 			da.green = da.blue = da.red;
 			XAllocColor(context->dpy, context->cmap, &da);
@@ -1063,7 +1098,7 @@ _bitmap_combine_alpha(RContext *context,
 			if (c0.pixel != pixel)
 			  {
 			    pixel = c0.pixel;
-			    XQueryColor(context->dpy, context->cmap, &c0);
+			    GS_QUERY_COLOR(c0);
 			  }
 			
 			// mix in alpha to produce RGB out
@@ -1221,6 +1256,15 @@ _pixmap_read_alpha(RContext *context,
     {
       XColor		c2;
       unsigned		row;
+      unsigned long pixels[CSIZE];
+      XColor colors[CSIZE];
+      BOOL empty[CSIZE];
+      int cind;
+      
+      for(cind = 0; cind < CSIZE; cind++)
+	{
+	  empty[cind] = YES;
+	}
 
       /*
        * This block of code should be totally portable as it uses the
@@ -1239,7 +1283,7 @@ _pixmap_read_alpha(RContext *context,
 	      int r, g, b, alpha;
 	      XColor pcolor, acolor;
 	      pcolor.pixel = XGetPixel(source_im->image, col, row);
-	      XQueryColor(context->dpy, context->cmap, &pcolor);
+	      GS_QUERY_COLOR(pcolor);
 	      r = pcolor.red >> 8;
 	      g = pcolor.green >> 8;
 	      b = pcolor.blue >> 8;
@@ -1247,7 +1291,7 @@ _pixmap_read_alpha(RContext *context,
 	      if (source_alpha)
 		{
 		  acolor.pixel = XGetPixel(source_alpha->image, col, row);
-		  XQueryColor(context->dpy, context->cmap, &acolor);
+		  GS_QUERY_COLOR(acolor);
 		  alpha = acolor.red >> 8;
 		}
 
