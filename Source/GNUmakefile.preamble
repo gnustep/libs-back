@@ -55,3 +55,10 @@ ifeq ($(BACKEND_BUNDLE),)
 libgnustep-$(BACKEND_NAME)_LIBRARIES_DEPEND_UPON = $(GRAPHIC_LIBS)
 endif
 
+
+#
+# The */*.m is a hack to get make_strings to pull in all the .m files in all
+# sub-directories. Even if we aren't including a directory in the build, it is
+# important that the strings files contains all strings.
+#
+MAKE_STRINGS_OPTIONS = --aggressive-match --aggressive-remove */*.m
