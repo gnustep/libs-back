@@ -1,3 +1,10 @@
+2005-04-01  Adam Fedor  <fedor@gnu.org>
+
+	* Source/win32/WIN32Server.m: Re-add 2005-02-23 change.
+
+	* Source/xlib/GSXftFontInfo.m (-setupAttributes): Make log message
+	more verbose.
+
 2005-04-01 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGDragView.m: Complete code changes to factor out as
@@ -9,7 +16,7 @@
 
 	* Headers/x11/XGDragView.h, Source/x11/XGDragView.m: Tag previous 
 	version of file for release.
-	* Source/win32/WIN32Server.m: Revert 2005-2-23 change for this release.
+	* Source/win32/WIN32Server.m: Revert 2005-02-23 change for this release.
 
 2005-03-29 Richard Frith-Macdonald <rfm@gnu.org>
 
