@@ -2434,6 +2434,46 @@ static BOOL didCreatePixmaps;
     }
 }
 
+/** Sets the transparancy value for the whole window */
+- (void) setalpha: (float)alpha: (int) win
+{
+  gswindow_device_t *window = WINDOW_WITH_TAG(win);
+  static Atom opacity_atom = None;
+
+  if (win == 0 || window == 0)
+    {
+      NSDebugLLog(@"XGTrace", @"Setting alpha to unknown win %d", win);
+      return;
+    }
+
+  NSDebugLLog(@"XGTrace", @"setalpha: %d", win);
+  
+  /* Initialize the atom if needed */
+  if (opacity_atom == None)
+    opacity_atom = XInternAtom (window->display, "_NET_WM_WINDOW_OPACITY", False);
+
+  if (alpha == 1.0)
+    {
+      XDeleteProperty(window->display, window->ident, opacity_atom);
+    }
+  else
+    {
+      unsigned int opacity;
+
+      opacity = (unsigned int)(alpha * 0xffffffff);
+      XChangeProperty(window->display, window->ident, opacity_atom,
+		      XA_CARDINAL, 32, PropModeReplace,
+		      (unsigned char*)&opacity, 1L);
+      if (window->parent != window->root)
+        {
+	  XChangeProperty(window->display, window->parent, opacity_atom,
+			  XA_CARDINAL, 32, PropModeReplace,
+			  (unsigned char*)&opacity, 1L);
+	}
+    }
+}
+
+
 - (void *) serverDevice
 {
   return dpy;
