@@ -1,3 +1,9 @@
+2003-08-09  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/xpbs.m
+	Reworked the X interaction so that both STRING and UTF8_STRING are
+	supported both ways. 
+	
 2003-08-08  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Tools/xpbs.m
