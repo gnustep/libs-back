@@ -1,3 +1,9 @@
+2004-11-28 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Tools/gpbs.m: When run as daemon, re-execute with --no-fork flag
+	so that we can work with threading using pth library (default on
+	some BSD versions).
+
 2004-11-10 18:41  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/x11/XWindowBuffer.m (test_xshm): New function.
