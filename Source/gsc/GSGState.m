@@ -733,17 +733,29 @@
 
 - (void) DPSrectclip: (float)x : (float)y : (float)w : (float)h
 {
-  [self subclassResponsibility: _cmd];
+  NSRect rect = NSMakeRect(x, y, w, h);
+
+  rect = [ctm rectInMatrixSpace: rect];
+  ASSIGN(path, [NSBezierPath bezierPathWithRect: rect]);
+  [self DPSclip];
 }
 
 - (void) DPSrectfill: (float)x : (float)y : (float)w : (float)h
 {
-  [self subclassResponsibility: _cmd];
+  NSRect rect = NSMakeRect(x, y, w, h);
+
+  rect = [ctm rectInMatrixSpace: rect];
+  ASSIGN(path, [NSBezierPath bezierPathWithRect: rect]);
+  [self DPSfill];
 }
 
 - (void) DPSrectstroke: (float)x : (float)y : (float)w : (float)h
 {
-  [self subclassResponsibility: _cmd];
+  NSRect rect = NSMakeRect(x, y, w, h);
+
+  rect = [ctm rectInMatrixSpace: rect];
+  ASSIGN(path, [NSBezierPath bezierPathWithRect: rect]);
+  [self DPSstroke];
 }
 
 - (void)DPSreversepath 
