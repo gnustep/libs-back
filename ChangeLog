@@ -1,3 +1,8 @@
+2005-02-05 00:44  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/art/path.m (-_clip_add_svp:): Handle the case where
+	no spans are generated for the path.
+
 2005-01-31 07:30  Christian <christian@tenbyten.com>
 
 	* Tools/gpbs.m: Correct missplaced bracket when built for windows.

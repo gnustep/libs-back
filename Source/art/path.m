@@ -756,6 +756,17 @@ static void clip_svp_callback(void *data, int y, int start,
   else
     {
       art_svp_render_aa(svp, clip_x0, clip_y0, clip_x1, clip_y1, clip_svp_callback, &ci);
+      if (!ci.span)
+	{
+	  /* This can happen if the path is empty, or doesn't intersect the
+	     current clipping path.  The result then is that everything
+	     is clipped.  */
+	  free(ci.index);
+	  all_clipped = YES;
+	  clip_x0 = clip_x1 = clip_sx = 0;
+	  clip_y0 = clip_y1 = clip_sy = 0;
+	  return;
+	}
       clip_span = ci.span;
       clip_index = ci.index;
       clip_index[clip_sy - ci.first_y] = clip_num_span = ci.num_span;
