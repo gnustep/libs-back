@@ -1,3 +1,8 @@
+2002-05-07  Adam Fedor  <fedor@gnu.org>
+
+	* Source/gsc/GSStreamContext.m (-GSSetFont:): Don't flip
+	the font for a flipped view.
+
 2002-05-06  Adam Fedor  <fedor@gnu.org>
 
 	* configure.ac (BUILD_SERVER): Set to predefined define

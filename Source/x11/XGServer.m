@@ -198,6 +198,8 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
 	@"to work ... and submit a patch.");
       drawMechanism = XGDM_PORTABLE;
     }
+  NSDebugLLog(@"XGTrace", @"Draw mech %d for screen %d", drawMechanism,
+	screen_number);
   return self;
 }
 
