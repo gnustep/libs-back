@@ -5591,184 +5591,19 @@ CPPFLAGS="${save_header}"
 LIBS="${save_libs}"
 
 #--------------------------------------------------------------------
-# libart graphics libraries
+# freetype libraries
 #--------------------------------------------------------------------
 save_header=${CPPFLAGS}
 save_libs=${LIBS}
 CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
 LIBS="${GRAPHIC_LIBS} ${LIBS}"
 
-LIBART_LIBS="`libart2-config --libs` `freetype-config --libs`"
-LIBART_CFLAGS="`libart2-config --cflags` `freetype-config --cflags`"
+FREETYPE_LIBS="`freetype-config --libs`"
+FREETYPE_CFLAGS="`freetype-config --cflags`"
 
-CPPFLAGS="${CPPFLAGS} ${LIBART_CFLAGS}"
-LIBS="${LIBS} ${LIBART_LIBS}"
+CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
+LIBS="${LIBS} ${FREETYPE_LIBS}"
 
-echo "$as_me:$LINENO: checking for main in -lart_lgpl_2" >&5
-echo $ECHO_N "checking for main in -lart_lgpl_2... $ECHO_C" >&6
-if test "${ac_cv_lib_art_lgpl_2_main+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lart_lgpl_2  $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-
-
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-main ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_lib_art_lgpl_2_main=yes
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-ac_cv_lib_art_lgpl_2_main=no
-fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-echo "$as_me:$LINENO: result: $ac_cv_lib_art_lgpl_2_main" >&5
-echo "${ECHO_T}$ac_cv_lib_art_lgpl_2_main" >&6
-if test $ac_cv_lib_art_lgpl_2_main = yes; then
-  have_libart_lgpl_2=yes
-else
-  have_libart_lgpl_2=no
-fi
-
-if test "$have_libart_lgpl_2" = yes; then
-  if test "${ac_cv_header_libart_lgpl_libart_h+set}" = set; then
-  echo "$as_me:$LINENO: checking for libart_lgpl/libart.h" >&5
-echo $ECHO_N "checking for libart_lgpl/libart.h... $ECHO_C" >&6
-if test "${ac_cv_header_libart_lgpl_libart_h+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-fi
-echo "$as_me:$LINENO: result: $ac_cv_header_libart_lgpl_libart_h" >&5
-echo "${ECHO_T}$ac_cv_header_libart_lgpl_libart_h" >&6
-else
-  # Is the header compilable?
-echo "$as_me:$LINENO: checking libart_lgpl/libart.h usability" >&5
-echo $ECHO_N "checking libart_lgpl/libart.h usability... $ECHO_C" >&6
-cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-$ac_includes_default
-#include <libart_lgpl/libart.h>
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_header_compiler=yes
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-ac_header_compiler=no
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
-echo "${ECHO_T}$ac_header_compiler" >&6
-
-# Is the header present?
-echo "$as_me:$LINENO: checking libart_lgpl/libart.h presence" >&5
-echo $ECHO_N "checking libart_lgpl/libart.h presence... $ECHO_C" >&6
-cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-#include <libart_lgpl/libart.h>
-_ACEOF
-if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
-  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
-  ac_status=$?
-  egrep -v '^ *\+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null; then
-  if test -s conftest.err; then
-    ac_cpp_err=$ac_c_preproc_warn_flag
-  else
-    ac_cpp_err=
-  fi
-else
-  ac_cpp_err=yes
-fi
-if test -z "$ac_cpp_err"; then
-  ac_header_preproc=yes
-else
-  echo "$as_me: failed program was:" >&5
-  cat conftest.$ac_ext >&5
-  ac_header_preproc=no
-fi
-rm -f conftest.err conftest.$ac_ext
-echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
-echo "${ECHO_T}$ac_header_preproc" >&6
-
-# So?  What about this header?
-case $ac_header_compiler:$ac_header_preproc in
-  yes:no )
-    { echo "$as_me:$LINENO: WARNING: libart_lgpl/libart.h: accepted by the compiler, rejected by the preprocessor!" >&5
-echo "$as_me: WARNING: libart_lgpl/libart.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { echo "$as_me:$LINENO: WARNING: libart_lgpl/libart.h: proceeding with the preprocessor's result" >&5
-echo "$as_me: WARNING: libart_lgpl/libart.h: proceeding with the preprocessor's result" >&2;};;
-  no:yes )
-    { echo "$as_me:$LINENO: WARNING: libart_lgpl/libart.h: present but cannot be compiled" >&5
-echo "$as_me: WARNING: libart_lgpl/libart.h: present but cannot be compiled" >&2;}
-    { echo "$as_me:$LINENO: WARNING: libart_lgpl/libart.h: check for missing prerequisite headers?" >&5
-echo "$as_me: WARNING: libart_lgpl/libart.h: check for missing prerequisite headers?" >&2;}
-    { echo "$as_me:$LINENO: WARNING: libart_lgpl/libart.h: proceeding with the preprocessor's result" >&5
-echo "$as_me: WARNING: libart_lgpl/libart.h: proceeding with the preprocessor's result" >&2;};;
-esac
-echo "$as_me:$LINENO: checking for libart_lgpl/libart.h" >&5
-echo $ECHO_N "checking for libart_lgpl/libart.h... $ECHO_C" >&6
-if test "${ac_cv_header_libart_lgpl_libart_h+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_cv_header_libart_lgpl_libart_h=$ac_header_preproc
-fi
-echo "$as_me:$LINENO: result: $ac_cv_header_libart_lgpl_libart_h" >&5
-echo "${ECHO_T}$ac_cv_header_libart_lgpl_libart_h" >&6
-
-fi
-if test $ac_cv_header_libart_lgpl_libart_h = yes; then
-  have_libart_lgpl_2=yes
-else
-  have_libart_lgpl_2=no
-fi
-
-
-fi
 echo "$as_me:$LINENO: checking for main in -lfreetype" >&5
 echo $ECHO_N "checking for main in -lfreetype... $ECHO_C" >&6
 if test "${ac_cv_lib_freetype_main+set}" = set; then
@@ -5938,6 +5773,188 @@ CPPFLAGS="${save_header}"
 LIBS="${save_libs}"
 
 #--------------------------------------------------------------------
+# libart graphics libraries
+#--------------------------------------------------------------------
+save_header=${CPPFLAGS}
+save_libs=${LIBS}
+CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
+LIBS="${GRAPHIC_LIBS} ${LIBS}"
+
+LIBART_LIBS="`libart2-config --libs` $FREETYPE_LIBS"
+LIBART_CFLAGS="`libart2-config --cflags` $FREETYPE_CFLAGS"
+
+CPPFLAGS="${CPPFLAGS} ${LIBART_CFLAGS}"
+LIBS="${LIBS} ${LIBART_LIBS}"
+
+echo "$as_me:$LINENO: checking for main in -lart_lgpl_2" >&5
+echo $ECHO_N "checking for main in -lart_lgpl_2... $ECHO_C" >&6
+if test "${ac_cv_lib_art_lgpl_2_main+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lart_lgpl_2  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+main ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_art_lgpl_2_main=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_lib_art_lgpl_2_main=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_art_lgpl_2_main" >&5
+echo "${ECHO_T}$ac_cv_lib_art_lgpl_2_main" >&6
+if test $ac_cv_lib_art_lgpl_2_main = yes; then
+  have_libart_lgpl_2=yes
+else
+  have_libart_lgpl_2=no
+fi
+
+if test "$have_libart_lgpl_2" = yes; then
+  if test "${ac_cv_header_libart_lgpl_libart_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for libart_lgpl/libart.h" >&5
+echo $ECHO_N "checking for libart_lgpl/libart.h... $ECHO_C" >&6
+if test "${ac_cv_header_libart_lgpl_libart_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_libart_lgpl_libart_h" >&5
+echo "${ECHO_T}$ac_cv_header_libart_lgpl_libart_h" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking libart_lgpl/libart.h usability" >&5
+echo $ECHO_N "checking libart_lgpl/libart.h usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+$ac_includes_default
+#include <libart_lgpl/libart.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_header_compiler=no
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking libart_lgpl/libart.h presence" >&5
+echo $ECHO_N "checking libart_lgpl/libart.h presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <libart_lgpl/libart.h>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  egrep -v '^ *\+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc in
+  yes:no )
+    { echo "$as_me:$LINENO: WARNING: libart_lgpl/libart.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: libart_lgpl/libart.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: libart_lgpl/libart.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: libart_lgpl/libart.h: proceeding with the preprocessor's result" >&2;};;
+  no:yes )
+    { echo "$as_me:$LINENO: WARNING: libart_lgpl/libart.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: libart_lgpl/libart.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: libart_lgpl/libart.h: check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: libart_lgpl/libart.h: check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: libart_lgpl/libart.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: libart_lgpl/libart.h: proceeding with the preprocessor's result" >&2;};;
+esac
+echo "$as_me:$LINENO: checking for libart_lgpl/libart.h" >&5
+echo $ECHO_N "checking for libart_lgpl/libart.h... $ECHO_C" >&6
+if test "${ac_cv_header_libart_lgpl_libart_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_libart_lgpl_libart_h=$ac_header_preproc
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_libart_lgpl_libart_h" >&5
+echo "${ECHO_T}$ac_cv_header_libart_lgpl_libart_h" >&6
+
+fi
+if test $ac_cv_header_libart_lgpl_libart_h = yes; then
+  have_libart_lgpl_2=yes
+else
+  have_libart_lgpl_2=no
+fi
+
+
+fi
+CPPFLAGS="${save_header}"
+LIBS="${save_libs}"
+
+#--------------------------------------------------------------------
 # Set definitions
 #--------------------------------------------------------------------
 WITH_WRASTER=no
@@ -6006,7 +6023,6 @@ echo "${ECHO_T}$BUILD_GRAPHICS" >&6
 if test x"$BUILD_GRAPHICS" = "xxdps"; then
   GRAPHIC_LIBS="-ldpstk -ldps -lpsres -lXt $X_PRE_LIBS $GRAPHIC_LIBS"
 elif test x"$BUILD_GRAPHICS" = "xart"; then
-  BUILD_ART=yes
   GRAPHIC_LIBS="$LIBART_LIBS $GRAPHIC_LIBS"
   GRAPHIC_CFLAGS="$LIBART_CFLAGS $GRAPHIC_CFLAGS"
 
@@ -6019,6 +6035,11 @@ echo "$as_me: error: can't find freetype, required for graphics=art!" >&2;}
     { { echo "$as_me:$LINENO: error: can't find libart, required for graphics=art!" >&5
 echo "$as_me: error: can't find libart, required for graphics=art!" >&2;}
    { (exit 1); exit 1; }; }
+  fi
+elif test x"$BUILD_GRAPHICS" = "xxlib"; then
+  if test "$have_freetype" = yes; then
+    GRAPHIC_LIBS="$FREETYPE_LIBS $GRAPHIC_LIBS"
+    GRAPHIC_CFLAGS="$FREETYPE_CFLAGS $GRAPHIC_CFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
   GRAPHIC_LIBS="$WIN32_LIBS $GRAPHIC_LIBS"

@@ -395,6 +395,27 @@ CPPFLAGS="${save_header}"
 LIBS="${save_libs}"
 
 #--------------------------------------------------------------------
+# freetype libraries
+#--------------------------------------------------------------------
+save_header=${CPPFLAGS}
+save_libs=${LIBS}
+CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
+LIBS="${GRAPHIC_LIBS} ${LIBS}"
+
+FREETYPE_LIBS="`freetype-config --libs`"
+FREETYPE_CFLAGS="`freetype-config --cflags`"
+
+CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
+LIBS="${LIBS} ${FREETYPE_LIBS}"
+
+AC_CHECK_LIB(freetype, main, have_freetype=yes, have_freetype=no)
+if test "$have_freetype" = yes; then
+  AC_CHECK_HEADER(ft2build.h,have_freetype=yes, have_freetype=no)
+fi
+CPPFLAGS="${save_header}"
+LIBS="${save_libs}"
+
+#--------------------------------------------------------------------
 # libart graphics libraries
 #--------------------------------------------------------------------
 save_header=${CPPFLAGS}
@@ -402,8 +423,8 @@ save_libs=${LIBS}
 CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
 LIBS="${GRAPHIC_LIBS} ${LIBS}"
 
-LIBART_LIBS="`libart2-config --libs` `freetype-config --libs`"
-LIBART_CFLAGS="`libart2-config --cflags` `freetype-config --cflags`"
+LIBART_LIBS="`libart2-config --libs` $FREETYPE_LIBS"
+LIBART_CFLAGS="`libart2-config --cflags` $FREETYPE_CFLAGS"
 
 CPPFLAGS="${CPPFLAGS} ${LIBART_CFLAGS}"
 LIBS="${LIBS} ${LIBART_LIBS}"
@@ -411,10 +432,6 @@ LIBS="${LIBS} ${LIBART_LIBS}"
 AC_CHECK_LIB(art_lgpl_2, main, have_libart_lgpl_2=yes, have_libart_lgpl_2=no)
 if test "$have_libart_lgpl_2" = yes; then
   AC_CHECK_HEADER(libart_lgpl/libart.h,have_libart_lgpl_2=yes, have_libart_lgpl_2=no)
-fi
-AC_CHECK_LIB(freetype, main, have_freetype=yes, have_freetype=no)
-if test "$have_freetype" = yes; then
-  AC_CHECK_HEADER(ft2build.h,have_freetype=yes, have_freetype=no)
 fi
 CPPFLAGS="${save_header}"
 LIBS="${save_libs}"
@@ -466,7 +483,6 @@ AC_MSG_RESULT($BUILD_GRAPHICS)
 if test x"$BUILD_GRAPHICS" = "xxdps"; then
   GRAPHIC_LIBS="-ldpstk -ldps -lpsres -lXt $X_PRE_LIBS $GRAPHIC_LIBS"
 elif test x"$BUILD_GRAPHICS" = "xart"; then
-  BUILD_ART=yes
   GRAPHIC_LIBS="$LIBART_LIBS $GRAPHIC_LIBS"
   GRAPHIC_CFLAGS="$LIBART_CFLAGS $GRAPHIC_CFLAGS"
 
@@ -475,6 +491,11 @@ elif test x"$BUILD_GRAPHICS" = "xart"; then
   fi
   if test "$have_libart_lgpl_2" = no; then
     AC_MSG_ERROR([can't find libart, required for graphics=art!])
+  fi
+elif test x"$BUILD_GRAPHICS" = "xxlib"; then
+  if test "$have_freetype" = yes; then
+    GRAPHIC_LIBS="$FREETYPE_LIBS $GRAPHIC_LIBS"
+    GRAPHIC_CFLAGS="$FREETYPE_CFLAGS $GRAPHIC_CFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
   GRAPHIC_LIBS="$WIN32_LIBS $GRAPHIC_LIBS"
