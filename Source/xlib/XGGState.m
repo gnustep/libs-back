@@ -470,7 +470,8 @@ static	Region	emptyRegion;
     flushRect.size = fromRect.size;
     flushRect.origin = toPoint;
     
-    drect = XGViewRectToX(self, flushRect);     
+    flushRect.origin = [ctm pointInMatrixSpace: flushRect.origin];
+    drect = XGWindowRectToX(self, flushRect);
 
     toXPoint.x = drect.x; 
     toXPoint.y = drect.y; 
@@ -1703,8 +1704,6 @@ typedef enum {
   
 
   // --- Determine screen coverage --------------------------------------
-  if (viewIsFlipped)
-    rect.origin.y -= rect.size.height;
   sr = [self viewRectToX: rect];
 
   // --- Determine region to draw --------------------------------------

@@ -315,6 +315,10 @@ DWORD windowStyleForGSStyle(int style)
   //NSLog(@"Resulted in %d ", GetWindowLong((HWND)winNum, GWL_STYLE));
 }
 
+- (void) setbackgroundcolor: (NSColor *)color : (int)win
+{
+}
+
 /** Changes window's the backing store to type */
 - (void) windowbacking: (NSBackingStoreType)type : (int) winNum
 {

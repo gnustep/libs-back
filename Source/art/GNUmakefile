@@ -18,9 +18,6 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
 #  Library General Public License for more details.
 #
-#  If you are interested in a warranty or support for this source code,
-#  contact Scott Christley at scottc@net-community.com
-#
 #  You should have received a copy of the GNU Library General Public
 #  License along with this library; see the file COPYING.LIB.
 #  If not, write to the Free Software Foundation,
