@@ -1,3 +1,9 @@
+2003-10-08 15:58  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/xlib/XGContext.m (+initializeBackend): Give NSLog an
+	objective-c string (@""), not a c string (""). Reported by Matt
+	Rice.
+
 2003-10-05  Adam Fedor  <fedor@gnu.org>
 
 	* Documentation/GNUmakefile: Make Back documentation
