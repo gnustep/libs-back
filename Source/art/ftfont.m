@@ -296,7 +296,10 @@ static NSArray *fix_path(NSString *path, NSArray *files)
   nfiles = [[NSMutableArray alloc] init];
   for (i = 0; i < c; i++)
     {
-      [nfiles addObject: [path stringByAppendingPathComponent:
+      if ([[files objectAtIndex: i] isAbsolutePath])
+	[nfiles addObject: [files objectAtIndex: i]];
+      else
+	[nfiles addObject: [path stringByAppendingPathComponent:
 	  [files objectAtIndex: i]]];
     }
   return nfiles;
@@ -844,6 +847,15 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 #endif
       advancementImgd = cur;
     }
+
+  /*
+  Here, we simply need to make sure that we don't get any false matches
+  the first time a particular cache entry is used. Thus, we only need to
+  initialize the first entry. For all other entries, cachedGlyph[i] will
+  be 0, and that's a glyph that can't possibly hash to any entry except
+  entry #0, so it won't cause any false matches.
+  */
+  cachedGlyph[0] = 1;
 
   return self;
 }
@@ -2098,11 +2110,11 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   FT_Error error;
 
   if (glyph == NSControlGlyph
-   || glyph == GSAttachmentGlyph
-   || glyph == NSNullGlyph)
+   || glyph == GSAttachmentGlyph)
     return NSZeroSize;
 
-  glyph--;
+  if (glyph != NSNullGlyph)
+    glyph--;
   if (screenFont)
     {
       int entry = glyph % CACHE_SIZE;
@@ -3143,6 +3155,7 @@ static int filters[3][7]=
 -(NSGlyph) glyphForCharacter: (unichar)ch
 {
   FTFontInfo *fi=fontInfo;
+  NSGlyph g;
 
   FTC_CMapDescRec cmap;
 
@@ -3150,7 +3163,11 @@ static int filters[3][7]=
   cmap.u.encoding = ft_encoding_unicode;
   cmap.type = FTC_CMAP_BY_ENCODING;
 
-  return FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, ch) + 1;
+  g = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, ch);
+  if (g)
+    return g + 1;
+  else
+    return NSNullGlyph;
 }
 
 -(NSString *) nameOfGlyph: (NSGlyph)glyph
@@ -3384,4 +3401,5 @@ static char buf[1024]; /* !!TODO!! */
   return buf;
 }
 @end
+
 
