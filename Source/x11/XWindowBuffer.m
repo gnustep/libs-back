@@ -41,6 +41,8 @@ static int num_window_buffers;
 
 static int use_shape_hack = 0; /* this is an ugly hack :) */
 
+static int use_xshm = 1;
+
 
 
 @implementation XWindowBuffer
@@ -148,6 +150,9 @@ static int use_shape_hack = 0; /* this is an ugly hack :) */
         goto no_xshm;
 
 #define WARN @" Falling back to normal XImage:s (will be slower)."
+      if (!use_xshm)
+        goto no_xshm;
+
       /* Use XShm if possible, else fall back to normal XImage:s */
       if (!XShmQueryExtension(wi->display))
 	{
@@ -534,8 +539,11 @@ static int warn = 0;
 
 +(void) initialize
 {
-  use_shape_hack = [[NSUserDefaults standardUserDefaults]
-    boolForKey: @"XWindowBuffer-shape-hack"];
+  NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+  use_shape_hack = [ud boolForKey: @"XWindowBuffer-shape-hack"];
+
+  if ([ud objectForKey: @"XWindowBufferUseXShm"])
+    use_xshm = [ud boolForKey: @"XWindowBufferUseXShm"];
 }
 
 
