@@ -254,6 +254,31 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   return self;
 }
 
+- (void) dealloc
+{
+  // FIXME: context.c does not include a clean up function for Rcontext, 
+  // so we try do it here.
+  if (rcontext)
+    {
+      XFreeGC(rcontext->dpy, rcontext->copy_gc);
+      if (rcontext->drawable)
+        {
+	  XDestroyWindow(rcontext->dpy, rcontext->drawable);
+	}
+      if (rcontext->pixels)
+        {
+	  free(rcontext->pixels);
+	}
+      if (rcontext->colors)
+        {
+	  free(rcontext->colors);
+	}
+      free(rcontext->attribs);
+      free(rcontext);
+    }
+  [super dealloc];
+}
+
 - (XGDrawMechanism) drawMechanism
 {
   return drawMechanism;
