@@ -1,3 +1,10 @@
+2005-01-11 16:01  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Copy old contents to ftfont-old.m and
+	include that file if the freetype version is <2.1.8. Rewrite
+	this file to work with freetype >=2.1.8.
+	* Source/art/ftfont-old.m: New file.
+
 2004-12-30 18:38 Gregory John Casamento <greg_casamento@yahoo.com>
 
 	* Source/x11/XGDragView.m: _handleDrag: method correction for
