@@ -148,7 +148,7 @@
       if (count)
 	{
 	  [dbuf setLength: count];
-	  keys = [[NSString alloc] initWithData: dbuf encoding: encoding];
+	  keys = AUTORELEASE([[NSString alloc] initWithData: dbuf encoding: encoding]);
 	}
     }
   else 
