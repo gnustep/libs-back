@@ -1028,6 +1028,9 @@ ihandler(int sig)
    */
   if ( sig > 0 )
     {
+#ifdef __MINGW__
+      abort();
+#else
       NSLog(@"Re-raising signal %d.", sig);
       
       if( -1 == kill(getpid(), sig) )
@@ -1036,6 +1039,7 @@ ihandler(int sig)
 	  
 	  abort();
 	}
+#endif
     }
   
   exit(EXIT_FAILURE);
