@@ -412,11 +412,12 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
 - (void) compositeGState: (GSGState *)source
                 fromRect: (NSRect)aRect
                  toPoint: (NSPoint)aPoint
-                      op: (NSCompositingOperation)op
+                      op: (NSCompositingOperation)composite_op
 {
   ARTGState *ags = (ARTGState *)source;
   unsigned char *dst, *dst_alpha, *src, *src_alpha;
 
+  int op;
   void (*blit_func)(composite_run_t *c, int num) = NULL;
 
   NSPoint sp, dp;
@@ -459,7 +460,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
     BOOL dst_needs_alpha;
     op = [self _composite_func: !ags->wi->has_alpha : NO
 	     : !wi->has_alpha : &dst_needs_alpha
-	     : op : &blit_func];
+	     : composite_op : &blit_func];
     if (op == -1)
       return;
 

@@ -2706,6 +2706,8 @@ static int filters[3][7]=
 
 /*
 GSLayoutManager glyph generation code.
+
+TODO: clean this up
 */
 #include <Foundation/NSCharacterSet.h>
 #include <AppKit/GSLayoutManager_internal.h>
@@ -2754,7 +2756,7 @@ fb04 'ffl'
 {
 	glyph_t *g;
 	unsigned int glyph_size;
-	int i,j;
+	unsigned int i,j;
 	unichar ch,ch2,ch3;
 
 	FTFontInfo *fi=[run->font fontInfo];
