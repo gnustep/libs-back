@@ -40,7 +40,9 @@
 #include "xlib/GSXftFontInfo.h"
 
 #ifdef HAVE_FC
+#define id _gs_avoid_id_collision
 #include <fontconfig/fontconfig.h>
+#undef id
 
 /*
  * class global dictionary of existing fonts
