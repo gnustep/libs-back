@@ -256,8 +256,17 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 
 - (void) dealloc
 {
+#ifndef HAVE_WRASTER_H
   // FIXME: context.c does not include a clean up function for Rcontext, 
   // so we try do it here.
+
+  /*
+  Note that this can be done only when we use our own version of wraster.
+  If we're using an external version of wraster, the rcontext structure
+  might be different (different fields, or differently used fields), which
+  breaks this code.
+  */
+  
   if (rcontext)
     {
       XFreeGC(rcontext->dpy, rcontext->copy_gc);
@@ -280,6 +289,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
       free(rcontext->attribs);
       free(rcontext);
     }
+#endif
   [super dealloc];
 }
 
