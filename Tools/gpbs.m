@@ -1216,6 +1216,7 @@ init(int argc, char** argv)
 #endif 
     }
 
+#ifndef __MINGW__
   /*
    *	Ensure we don't have any open file descriptors which may refer
    *	to sockets bound to ports we may try to use.
@@ -1250,6 +1251,7 @@ init(int argc, char** argv)
       gpbs_log(LOG_CRIT);
       exit(EXIT_FAILURE);
     }
+#endif
 
     /*
      * Make gpbs logging go to syslog unless overridden by user.
