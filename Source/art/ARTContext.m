@@ -468,42 +468,6 @@ very expensive
 @end
 
 
-static ArtSVP *copy_svp(ArtSVP *svp)
-{
-	int i;
-	ArtSVP *svp2;
-	ArtSVPSeg *dst,*src;
-
-	if (!svp->n_segs)
-		return NULL;
-
-	svp2=malloc(sizeof(ArtSVP)+sizeof(ArtSVPSeg)*(svp->n_segs-1));
-	if (!svp2)
-	{
-		NSLog(@"out of memory copying svp");
-		return NULL;
-	}
-
-	svp2->n_segs=svp->n_segs;
-
-	for (i=0,src=svp->segs,dst=svp2->segs;i<svp->n_segs;i++,src++,dst++)
-	{
-		dst->n_points=src->n_points;
-		dst->dir=src->dir;
-		dst->bbox=src->bbox;
-		if (src->n_points)
-		{
-			dst->points=malloc(sizeof(ArtPoint)*src->n_points);
-			memcpy(dst->points,src->points,sizeof(ArtPoint)*src->n_points);
-		}
-		else
-			dst->points=NULL;
-	}
-
-	return svp2;
-}
-
-
 @interface ARTGState (internal_stuff)
 #ifdef RDS
 -(void) _setup_stuff: (int)window  : (RDSClient *)remote;
@@ -521,8 +485,10 @@ static ArtSVP *copy_svp(ArtSVP *svp)
 	if (dash.dash)
 		free(dash.dash);
 
-	if (clip_path)
-		art_svp_free(clip_path);
+	if (clip_span)
+		free(clip_span);
+	if (clip_index)
+		free(clip_index);
 
 	DESTROY(wi);
 
@@ -550,9 +516,32 @@ static ArtSVP *copy_svp(ArtSVP *svp)
 	}
   }
 
-  if (clip_path)
+  if (clip_span)
   {
-	clip_path=copy_svp(clip_path);
+	unsigned int *n;
+	n=malloc(sizeof(unsigned int)*clip_num_span);
+	if (n)
+	{
+		memcpy(n,clip_span,sizeof(unsigned int)*clip_num_span);
+		clip_span=n;
+		n=malloc(sizeof(unsigned int *)*(clip_sy+1));
+		if (n)
+		{
+			memcpy(n,clip_index,sizeof(unsigned int *)*(clip_sy+1));
+			clip_index = n;
+		}
+		else
+		{
+			free(clip_span);
+			clip_span=clip_index=NULL;
+			clip_num_span=0;
+		}
+	}
+	else
+	{
+		clip_span=clip_index=NULL;
+		clip_num_span=0;
+	}
   }
 
   wi=RETAIN(wi);

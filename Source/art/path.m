@@ -34,6 +34,8 @@ Path handling.
 #include "ARTWindowBuffer.h"
 #include "blit.h"
 
+
+#include <libart_lgpl/libart.h>
 #include <libart_lgpl/art_svp_intersect.h>
 
 
@@ -90,6 +92,20 @@ static void dump_bpath(ArtBpath *vp)
     }
 }
 
+{
+        int i,j;
+        printf("size=%i num=%i\n",ci.span_size,ci.num_span);
+        for (i=0;i<clip_sy;i++)
+        {
+                printf("y=%3i:",i);
+                for (j=clip_index[i];j<clip_index[i+1];j++)
+                {
+                        printf(" %i",clip_span[j]);
+                }
+                printf("\n");
+        }
+}
+
 #endif
 
 
@@ -100,10 +116,12 @@ typedef struct
   render_run_t ri;
 
   unsigned char real_a;
-  int x0, x1;
+  int x0, x1, y0;
   int rowstride, arowstride, bpp;
   void (*run_alpha)(struct render_run_s *ri, int num);
   void (*run_opaque)(struct render_run_s *ri, int num);
+
+  unsigned int *clip_span, *clip_index;
 } svp_render_info_t;
 
 static void render_svp_callback(void *data, int y, int start,
@@ -163,16 +181,158 @@ static void render_svp_callback(void *data, int y, int start,
   ri->ri.dsta = dsta;
 }
 
+static void render_svp_clipped_callback(void *data, int y, int start,
+	ArtSVPRenderAAStep *steps, int n_steps)
+{
+  svp_render_info_t *ri = data;
+  int x0, x1;
+  int num;
+  int alpha;
+  unsigned char *dst, *dsta;
+
+  unsigned int *span, *end;
+  BOOL state;
+
+  alpha = start;
+
+  /* empty line; very common case */
+  if (alpha < 0x10000 && !n_steps)
+    {
+      ri->ri.dst += ri->rowstride;
+      ri->ri.dsta += ri->arowstride;
+      return;
+    }
+
+  /* completely clipped line? */
+  if (ri->clip_index[y - ri->y0] == ri->clip_index[y - ri->y0 + 1])
+    {
+      ri->ri.dst += ri->rowstride;
+      ri->ri.dsta += ri->arowstride;
+      return;
+    }
+
+  span = &ri->clip_span[ri->clip_index[y - ri->y0]];
+  end = &ri->clip_span[ri->clip_index[y - ri->y0 + 1]];
+  state = NO;
+
+  dst = ri->ri.dst + ri->rowstride;
+  dsta = ri->ri.dsta + ri->arowstride;
+
+  x0 = 0;
+  for (; n_steps; n_steps--, steps++)
+    {
+      x1 = steps->x - ri->x0;
+
+      ri->ri.a = (alpha * ri->real_a + 0x800000) >> 24;
+      if (ri->ri.a)
+	{
+	  while (*span < x1)
+	    {
+	      num = *span - x0;
+	      if (state)
+		{
+		  if (ri->ri.a == 255)
+		    ri->run_opaque(&ri->ri, num);
+		  else
+		    ri->run_alpha(&ri->ri, num);
+		}
+	      x0 = *span;
+	      ri->ri.dst += ri->bpp * num;
+	      ri->ri.dsta += num;
+	      state = !state;
+	      span++;
+	      if (span == end)
+		{
+		  ri->ri.dst = dst;
+		  ri->ri.dsta = dsta;
+		  return;
+		}
+	    }
+	  num = x1 - x0;
+	  if (num && state)
+	    {
+	      if (ri->ri.a == 255)
+		ri->run_opaque(&ri->ri, num);
+	      else
+		ri->run_alpha(&ri->ri, num);
+	    }
+	  ri->ri.dst += ri->bpp * num;
+	  ri->ri.dsta += num;
+	}
+      else
+	{
+	  num = x1 - x0;
+	  while (*span <= x1)
+	    {
+	      state = !state;
+	      span++;
+	      if (span == end)
+		{
+		  ri->ri.dst = dst;
+		  ri->ri.dsta = dsta;
+		  return;
+		}
+	    }
+	  ri->ri.dst += ri->bpp * num;
+	  ri->ri.dsta += num;
+	}
+
+      alpha += steps->delta;
+      x0 = x1;
+    }
+  x1 = ri->x1 - ri->x0;
+  num = x1 - x0;
+  ri->ri.a = (alpha * ri->real_a + 0x800000) >> 24;
+  if (ri->ri.a && num)
+    {
+      while (*span < x1)
+	{
+	  num = *span - x0;
+	  if (state)
+	    {
+	      if (ri->ri.a == 255)
+		ri->run_opaque(&ri->ri, num);
+	      else
+		ri->run_alpha(&ri->ri, num);
+	    }
+	  x0 = *span;
+	  ri->ri.dst += ri->bpp * num;
+	  ri->ri.dsta += num;
+	  state = !state;
+	  span++;
+	  if (span == end)
+	    {
+	      ri->ri.dst = dst;
+	      ri->ri.dsta = dsta;
+	      return;
+	    }
+	}
+      num = x1 - x0;
+      if (num && state)
+	{
+	  if (ri->ri.a == 255)
+	    ri->run_opaque(&ri->ri, num);
+	  else
+	    ri->run_alpha(&ri->ri, num);
+	}
+    }
+
+  ri->ri.dst = dst;
+  ri->ri.dsta = dsta;
+}
+
 static void artcontext_render_svp(const ArtSVP *svp, int x0, int y0, int x1, int y1,
 	unsigned char r, unsigned char g, unsigned char b, unsigned char a,
 	unsigned char *dst, int rowstride,
 	unsigned char *dsta, int arowstride, int has_alpha,
-	draw_info_t *di)
+	draw_info_t *di,
+	unsigned int *clip_span, unsigned int *clip_index)
 {
   svp_render_info_t ri;
 
   ri.x0 = x0;
   ri.x1 = x1;
+  ri.y0 = y0;
 
   ri.ri.r = r;
   ri.ri.g = g;
@@ -183,6 +343,9 @@ static void artcontext_render_svp(const ArtSVP *svp, int x0, int y0, int x1, int
 
   ri.ri.dst = dst;
   ri.rowstride = rowstride;
+
+  ri.clip_span = clip_span;
+  ri.clip_index = clip_index;
 
   if (has_alpha)
     {
@@ -197,7 +360,8 @@ static void artcontext_render_svp(const ArtSVP *svp, int x0, int y0, int x1, int
       ri.run_opaque = di->render_run_opaque;
     }
 
-  art_svp_render_aa(svp, x0, y0, x1, y1, render_svp_callback, &ri);
+  art_svp_render_aa(svp, x0, y0, x1, y1,
+    clip_span? render_svp_clipped_callback : render_svp_callback, &ri);
 }
 
 
@@ -292,7 +456,7 @@ within one pixel.) */
   else
     {
       /* This is used when clipping, so we need to make sure we
-	 contain all pixels. */
+         contain all pixels. */
       if (vp[0].x < vp[2].x)
 	*px0 = floor(vp[0].x), *px1 = ceil(vp[2].x);
       else
@@ -351,7 +515,7 @@ within one pixel.) */
 	{
 	case NSMoveToBezierPathElement:
 	  /* When filling, the path must be closed, so if
-	     it isn't already closed, we fix that here. */
+             it isn't already closed, we fix that here. */
 	  if (fill)
 	    {
 	      if (cur_start != -1 && cur_line)
@@ -448,27 +612,112 @@ within one pixel.) */
 
 /** Clipping **/
 
+typedef struct
+{
+  int x0, x1, y0, sy;
+
+  unsigned int *span;
+  unsigned int *index;
+  int span_size, num_span;
+
+  unsigned int *cur_span;
+  unsigned int *cur_index;
+} clip_info_t;
+
+
+static void clip_svp_callback(void *data, int y, int start,
+	ArtSVPRenderAAStep *steps, int n_steps)
+{
+  clip_info_t *ci = data;
+  int x;
+  int alpha;
+  BOOL state, nstate;
+
+  alpha = start;
+
+  ci->index[y - ci->y0] = ci->num_span;
+  if (y-ci->y0<0 || y-ci->y0>=ci->sy)
+  {
+	printf("weird y=%i (%i)\n",y,y-ci->y0);
+  }
+
+  /* empty line; very common case */
+  if (!alpha && !n_steps)
+    {
+      return;
+    }
+
+  x = 0;
+  state = alpha >= 0x10000;
+  if (state)
+    {
+      if (ci->num_span == ci->span_size)
+	{
+	  ci->span_size += 16;
+	  ci->span = realloc(ci->span, sizeof(unsigned int) * ci->span_size);
+	}
+      ci->span[ci->num_span++] = x;
+    }
+
+
+  for (; n_steps; n_steps--, steps++)
+    {
+      alpha += steps->delta;
+      x = steps->x - ci->x0;
+      nstate = alpha >= 0x10000;
+      if (state != nstate)
+	{
+	  if (ci->num_span == ci->span_size)
+	    {
+	      ci->span_size += 16;
+	      ci->span = realloc(ci->span, sizeof(unsigned int) * ci->span_size);
+	    }
+	  ci->span[ci->num_span++] = x;
+	  state = nstate;
+	}
+    }
+  if (state)
+    {
+      if (ci->num_span == ci->span_size)
+	{
+	  ci->span_size += 16;
+	  ci->span = realloc(ci->span, sizeof(unsigned int) * ci->span_size);
+	}
+      ci->span[ci->num_span++] = ci->x1;
+    }
+}
+
 /* will free the passed in svp */
 -(void) _clip_add_svp: (ArtSVP *)svp
 {
-  if (clip_path)
+  clip_info_t ci;
+  ci.span = NULL;
+  ci.index = malloc(sizeof(unsigned int) * (clip_sy + 1));
+  if (!ci.index)
     {
-      ArtSVP *svp2;
-/*		ArtSvpWriter *svpw;
-
-		svpw = art_svp_writer_rewind_new(ART_WIND_RULE_INTERSECT);
-		art_svp_intersector(svp, svpw);
-		art_svp_intersector(clip_path, svpw);
-		svp2 = art_svp_writer_rewind_reap(svpw); */
-      svp2 = art_svp_intersect(svp, clip_path);
-      art_svp_free(svp);
-      art_svp_free(clip_path);
-      clip_path = svp2;
+      NSLog(@"Warning: out of memory calculating clipping spans (%i bytes)",
+	    sizeof(unsigned int) * (clip_sy + 1));
+      return;
+    }
+  ci.span_size = ci.num_span = 0;
+  ci.x0 = clip_x0;
+  ci.x1 = clip_x1;
+  ci.y0 = clip_y0;
+  ci.sy = clip_sy;
+  if (clip_span)
+    {
+      NSLog(@"TODO: _clip_add_svp: with existing clip_span not implemented");
+      free(ci.index);
+      return;
     }
   else
     {
-      clip_path = svp;
+      art_svp_render_aa(svp, clip_x0, clip_y0, clip_x1, clip_y1, clip_svp_callback, &ci);
+      clip_span = ci.span;
+      clip_index = ci.index;
+      clip_index[clip_sy] = clip_num_span = ci.num_span;
     }
+  art_svp_free(svp);
 }
 
 -(void) _clip: (int)rule
@@ -494,26 +743,6 @@ within one pixel.) */
   }
 
   [self _clip_add_svp: svp];
-}
-
--(ArtSVP *) _clip_svp: (ArtSVP *)svp
-{
-  ArtSVP *svp2;
-//  ArtSvpWriter *svpw;
-
-  if (!clip_path)
-    return svp;
-/* TODO */
-/*	svpw = art_svp_writer_rewind_new(ART_WIND_RULE_INTERSECT);
-	art_svp_intersector(svp, svpw);
-	art_svp_intersector(clip_path, svpw);
-	svp2 = art_svp_writer_rewind_reap(svpw);
-	art_svp_free(svp);*/
-
-  svp2 = art_svp_intersect(svp, clip_path);
-  art_svp_free(svp);
-
-  return svp2;
 }
 
 
@@ -588,10 +817,12 @@ within one pixel.) */
   clip_sx = clip_x1 - clip_x0;
   clip_sy = clip_y1 - clip_y0;
 
-  if (clip_path)
+  if (clip_span)
     {
-      art_svp_free(clip_path);
-      clip_path = NULL;
+      free(clip_span);
+      free(clip_index);
+      clip_span = clip_index = NULL;
+      clip_num_span = 0;
     }
 }
 
@@ -624,16 +855,13 @@ within one pixel.) */
     svp = svp2;
   }
 
-  if (clip_path)
-    svp = [self _clip_svp: svp];
-
 
   artcontext_render_svp(svp, clip_x0, clip_y0, clip_x1, clip_y1,
     fill_color[0], fill_color[1], fill_color[2], fill_color[3],
     CLIP_DATA, wi->bytes_per_line,
     wi->has_alpha? wi->alpha + clip_x0 + clip_y0 * wi->sx : NULL, wi->sx,
     wi->has_alpha,
-    &DI);
+    &DI, clip_span, clip_index);
 
   art_svp_free(svp);
 
@@ -665,20 +893,17 @@ within one pixel.) */
 		     axis: &x0 : &y0 : &x1 : &y1
 		     pixel: YES];
 
-  if (!axis_aligned || clip_path)
+  if (!axis_aligned || clip_span)
     {
       /* Not properly aligned. Handle the general case. */
       svp = art_svp_from_vpath(vp);
-
-      if (clip_path)
-	svp = [self _clip_svp: svp];
 
       artcontext_render_svp(svp, clip_x0, clip_y0, clip_x1, clip_y1,
 	fill_color[0], fill_color[1], fill_color[2], fill_color[3],
 	CLIP_DATA, wi->bytes_per_line,
 	wi->has_alpha? wi->alpha + clip_x0 + clip_y0 * wi->sx : NULL, wi->sx,
 	wi->has_alpha,
-	&DI);
+	&DI, clip_span, clip_index);
 
       art_svp_free(svp);
       return;
@@ -768,7 +993,7 @@ within one pixel.) */
   if (do_dash)
     {
       /* try to adjust the offset so dashes appear on pixel boundaries
-	 (otherwise it turns into an antialiased blur) */
+         (otherwise it turns into an antialiased blur) */
       int i;
 
       if (adjust_dash_ofs)
@@ -792,15 +1017,12 @@ within one pixel.) */
 			     temp_scale * line_width, miter_limit, 0.5);
   art_free(vp);
 
-  if (clip_path)
-    svp = [self _clip_svp: svp];
-
   artcontext_render_svp(svp, clip_x0, clip_y0, clip_x1, clip_y1,
     stroke_color[0], stroke_color[1], stroke_color[2], stroke_color[3],
     CLIP_DATA, wi->bytes_per_line,
     wi->has_alpha? wi->alpha + clip_x0 + clip_y0 * wi->sx : NULL, wi->sx,
     wi->has_alpha,
-    &DI);
+    &DI, clip_span, clip_index);
 
   art_svp_free(svp);
 }
