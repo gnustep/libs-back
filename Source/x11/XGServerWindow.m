@@ -707,7 +707,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   XClassHint		classhint; 
   XTextProperty		windowName;
   NSUserDefaults	*defs;
-  const char *host_name = [[pInfo hostName] cString];
+  const char *host_name = [[pInfo hostName] UTF8String];
 
   /*
    * Initialize time of last events to be the start of time - not
@@ -790,11 +790,10 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
    */
   if (rootName == 0)
     {
-      NSString *str;
-      str = [pInfo processName];
-      i = [str cStringLength];
-      rootName = objc_malloc(i+1);
-      [str getCString: rootName];
+      const char	*str = [[pInfo processName] UTF8String];
+
+      rootName = objc_malloc(strlen(str) + 1);
+      strcpy(rootName, str);
     }
   classhint.res_name = rootName;
   classhint.res_class = "GNUstep";
@@ -823,7 +822,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   argv = (char**)objc_malloc(argc*sizeof(char*));
   for (i = 0; i < argc; i++)
     {
-      argv[i] = (char*)[[args objectAtIndex: i] cString];
+      argv[i] = (char*)[[args objectAtIndex: i] UTF8String];
     }
   XSetCommand(dpy, ROOT, argv, argc);
   objc_free(argv);
