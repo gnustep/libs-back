@@ -1,3 +1,8 @@
+2003-01-26 18:17  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/xlib/XGFont.m: Make -GSShowGlyphs::'s helpers actually
+	work.
+
 2003-01-26 17:22  Alexander Malmberg <alexander@malmberg.org>
 
 	* Headers/xlib/XGPrivate.h, Source/xlib/XGFont.m,
