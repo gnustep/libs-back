@@ -1926,10 +1926,9 @@ void artcontext_setup_draw_info(draw_info_t *di,
     {
       NSLog(@"Unrecognized color masks: %08x:%08x:%08x %i",
 	    red_mask, green_mask, blue_mask, bpp);
-      //		NSLog(@"Attempting to use fallback code (currently unimplemented). This will be _very_ slow!");
       NSLog(@"Please report this along with details on your pixel format "
-	    @"(ie. the four numbers above). (Or better yet, implement it "
-	    @"and send me a patch.)");
+	    @"(ie. the four numbers above) to bug-gnustep@gnu.org."
+	    @"Better: implement it and send a patch.)");
       exit(1);
     }
 

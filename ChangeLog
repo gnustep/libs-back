@@ -1,3 +1,8 @@
+2005-03-21  Adam Fedor  <fedor@gnu.org>
+
+	* Source/art/blit.m (artcontext_setup_draw_info): Add mail address
+	to log message.
+
 2005-02-23  Luis Cabellos
 
 	* Source/win32/WIN32Server.m: Use new run loop api under mingw32
