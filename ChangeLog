@@ -1,3 +1,8 @@
+2002-09-14 13:39  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Keep track of the family name in FTFaceInfo
+	so FTFontInfo can set it correctly.
+
 2002-09-14 13:03  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Add support for some simple rendering hints

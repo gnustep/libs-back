@@ -96,6 +96,8 @@ static NSMutableSet *families_seen, *families_pending;
 @interface FTFaceInfo : NSObject
 {
 @public
+  NSString *familyName;
+
   NSArray *files;
   int weight;
   unsigned int traits;
@@ -248,6 +250,7 @@ static void add_face(NSString *family, NSString *face, NSDictionary *d,
 	  return;
 	}
       [families_pending addObject: family];
+      family = [families_pending member: family];
 //      NSLog(@"split %@ to '%@' '%@' %04x %i", full_name, family, face, traits, weight);
     }
 
@@ -291,6 +294,8 @@ static void add_face(NSString *family, NSString *face, NSDictionary *d,
   }
   else
     fi->render_hints_hack=0x10002;
+
+  fi->familyName = [family copy];
 
   NSDebugLLog(@"ftfont", @"adding '%@' '%@'", full_name, fi);
 
@@ -511,6 +516,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   traits = font_entry->traits;
 
   fontName = [name copy];
+  familyName = face_info->familyName;
   memcpy(matrix, fmatrix, sizeof(matrix));
 
   /* TODO: somehow make gnustep-gui send unicode our way. utf8? ugly, but it works */
