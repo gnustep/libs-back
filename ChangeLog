@@ -1,3 +1,11 @@
+2002-09-08  Adam Fedor  <fedor@gnu.org>
+
+	* Source/x11/XGServerWindow.m ([XGServer
+	-_XWinFrameToOSWinFrame:for:]): New.
+	([XGServer -_addExposedRectangle::]): Convert rect to OS coords.
+	([XGServer -_processExposedRectangles:]): Invalidate exposed
+	rects in view. (patch from Frederic De Jaeger).
+
 2002-09-06  Adam Fedor  <fedor@gnu.org>
 
 	* Source/gsc/GSContext.m (-initWithContextInfo:): Fix
