@@ -382,30 +382,40 @@ extern int XShmGetEventBase(Display *d);
 			if (r.size.height<=0)
 				return;
 		}
-		XShmPutImage(display,drawable,gc,ximage,
+		if (!XShmPutImage(display,drawable,gc,ximage,
 			r.origin.x,r.origin.y,
 			r.origin.x,r.origin.y,
 			r.size.width,r.size.height,
-			1);
-		pending_event=1;
+			1))
+		{
+			NSLog(@"XShmPutImage failed?");
+		}
+		else
+		{
+			pending_event=1;
+		}
 	}
 //	XFlush(window->display);
 }
 
 -(void) _exposeRect: (NSRect)r
 {
-	if (r.origin.x+r.size.width>window->xframe.size.width)
-	{
-		r.size.width=window->xframe.size.width-r.origin.x;
-		if (r.size.width<=0)
-			return;
-	}
-	if (r.origin.y+r.size.height>window->xframe.size.height)
-	{
-		r.size.height=window->xframe.size.height-r.origin.y;
-		if (r.size.height<=0)
-			return;
-	}
+/* TODO: Somehow, we can get negative coordinates in the rectangle. So far
+I've tracked them back to [NSWindow flushWindow]. Should probably figure
+out where they're coming from originally, and see if they really should be
+negative. (Seems to happen when a window is created or resized, so possibly
+something is refreshing while coordinates are still invalid.
+
+Also, just about every resize of a window causes a few calls here with
+rects in the new size before we are updated.
+
+For now, we just intersect with our known size to avoid problems with X.
+*/
+
+	r=NSIntersectionRect(r,NSMakeRect(0,0,
+		window->xframe.size.width,window->xframe.size.height));
+	if (NSIsEmptyRect(r))
+		return;
 
 	if (use_shm)
 	{
@@ -501,13 +511,18 @@ static int warn=0;
 		else
 		{
 			pending_put=0;
-			XShmPutImage(display,drawable,gc,ximage,
+			if (!XShmPutImage(display,drawable,gc,ximage,
 				r.origin.x,r.origin.y,
 				r.origin.x,r.origin.y,
 				r.size.width,r.size.height,
-				1);
-//			XFlush(display);
-			pending_event=1;
+				1))
+			{
+				NSLog(@"XShmPutImage failed?");
+			}
+			else
+			{
+				pending_event=1;
+			}
 		}
 
 		/* Performance hack. Check right away for ShmCompletion
