@@ -50,8 +50,15 @@
   */
 {
   MAKE_DISPLAY(dpy);
-  NSAssert(conf_tab != NULL && n_elem > 0, NSInternalInconsistencyException);
-  glXGetFBConfigAttrib(dpy, conf_tab[0], attrib, (int *)vals);
+  NSAssert(((GSglxMinorVersion (dpy) >= 3) 
+	    ? (void *)conf.tab : (void *)conf.visual)
+	   != NULL
+	   && n_elem > 0, NSInternalInconsistencyException);
+
+  if (GSglxMinorVersion (dpy) >= 3)
+    glXGetFBConfigAttrib(dpy, conf.tab[0], attrib, (int *)vals);
+  else
+    glXGetConfig(dpy, conf.visual, attrib, (int *)vals);
 }
 
 - (id)initWithAttributes:(NSOpenGLPixelFormatAttribute *)attribs
@@ -64,6 +71,9 @@
 #define append(a, b) v1 = a;v2 = b;[data appendBytes: &v1 length: sizeof(v1)];\
   [data appendBytes: &v2 length: sizeof(v2)]
 #define append1(a) v1 = a;[data appendBytes: &v1 length: sizeof(v1)]
+
+  if (GSglxMinorVersion (dpy) < 3)
+    append1 (GLX_RGBA);
 
   while(*ptr)
     {
@@ -140,9 +150,16 @@
   append1(None);
 
   //FIXME, what screen number ?
-  conf_tab = glXChooseFBConfig(dpy, DefaultScreen(dpy), [data mutableBytes],
-			       &n_elem);
-  if ( conf_tab == NULL )
+  if (GSglxMinorVersion (dpy) >= 3)
+    conf.tab = glXChooseFBConfig(dpy, DefaultScreen(dpy), [data mutableBytes],
+				 &n_elem);
+  else
+    conf.visual = glXChooseVisual(dpy, DefaultScreen(dpy),
+				  [data mutableBytes]);
+  
+  if ( ((GSglxMinorVersion (dpy) >= 3) 
+	? (void *)conf.tab : (void *)conf.visual)
+       == NULL )
     {
       NSDebugMLLog(@"GLX", @"no pixel format found matching what is required");
       RELEASE(self);
@@ -153,24 +170,37 @@
       
       NSDebugMLLog(@"GLX", @"We found %d pixel formats", n_elem);
 #if 0
-      {	
-	int i;
-	for (i = 0; i < n_elem; ++i )
-	  {
-	    int val;
-	    NSDebugMLLog(@"GLX", @"inspecting %dth", i+1);
-	    glXGetFBConfigAttrib(dpy, conf_tab[i], GLX_BUFFER_SIZE, &val);
-	    NSDebugMLLog(@"GLX", @"buffer size %d", val);
-
-
-	    glXGetFBConfigAttrib(dpy, conf_tab[i], GLX_DOUBLEBUFFER, &val);
-	    NSDebugMLLog(@"GLX", @"double buffer %d", val);
-
-	    glXGetFBConfigAttrib(dpy, conf_tab[i], GLX_DEPTH_SIZE, &val);
-	    NSDebugMLLog(@"GLX", @"depth size %d", val);
-
-	  }
-      }
+      if (GSglxMinorVersion (dpy) >= 3)
+	{	
+	  int i;
+	  for (i = 0; i < n_elem; ++i )
+	    {
+	      int val;
+	      NSDebugMLLog(@"GLX", @"inspecting %dth", i+1);
+	      glXGetFBConfigAttrib(dpy, conf.tab[i], GLX_BUFFER_SIZE, &val);
+	      NSDebugMLLog(@"GLX", @"buffer size %d", val);
+	      
+	      
+	      glXGetFBConfigAttrib(dpy, conf.tab[i], GLX_DOUBLEBUFFER, &val);
+	      NSDebugMLLog(@"GLX", @"double buffer %d", val);
+	      
+	      glXGetFBConfigAttrib(dpy, conf.tab[i], GLX_DEPTH_SIZE, &val);
+	      NSDebugMLLog(@"GLX", @"depth size %d", val);
+	      
+	    }
+	}
+      else
+	{
+	  glXGetConfig(dpy, conf.visual, GLX_BUFFER_SIZE, &val);
+	  NSDebugMLLog(@"GLX", @"buffer size %d", val);
+	  
+	  
+	  glXGetConfig(dpy, conf.visual, GLX_DOUBLEBUFFER, &val);
+	  NSDebugMLLog(@"GLX", @"double buffer %d", val);
+	  
+	  glXGetConfig(dpy, conf.visual, GLX_DEPTH_SIZE, &val);
+	  NSDebugMLLog(@"GLX", @"depth size %d", val);
+	}
 #endif      
       return self;
     }
@@ -180,7 +210,11 @@
 {
   //FIXME 	
   //are we sure that X Connection is still up here ?
-  XFree(conf_tab);
+  MAKE_DISPLAY(dpy);
+  if (GSglxMinorVersion (dpy) >= 3)
+    XFree (conf.tab);
+  else
+    XFree (conf.visual);
   NSDebugMLLog(@"GLX", @"deallocation");
   [super dealloc];
 }
