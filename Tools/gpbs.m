@@ -943,6 +943,7 @@ NSMutableDictionary	*pasteboards = nil;
 
 - (void) dealloc
 {
+  [[NSNotificationCenter defaultCenter] removeObserver: self];  
   RELEASE(permenant);
   [super dealloc];
 }
@@ -1014,8 +1015,30 @@ NSMutableDictionary	*pasteboards = nil;
 static void
 ihandler(int sig)
 {
-  signal(sig, SIG_DFL);
-  abort();
+  int s = 0;
+  
+  /*  We need to re-set ALL signals before we (try to) terminate, not
+   *  just the signal raised. That includes the ones we SIG_IGN.
+   */
+  for (s = 0; s < NSIG; s++)
+    signal(s, SIG_DFL);
+  
+  /* Instead of abort()'ing we re-raise the original signal.  Only if
+   * that fails, we abort().
+   */
+  if ( sig > 0 )
+    {
+      NSLog(@"Re-raising signal %d.", sig);
+      
+      if( -1 == kill(getpid(), sig) )
+	{
+	  NSLog(@"Re-raising failed, aborting.");
+	  
+	  abort();
+	}
+    }
+  
+  exit(EXIT_FAILURE);
 }
 
 static void
@@ -1058,7 +1081,7 @@ init(int argc, char** argv)
 	}
     }
 
-  for (count = 0; count < 32; count++)
+  for (count = 0; count < NSIG; count++)
     {
       signal((int)count, ihandler);
     }
@@ -1209,6 +1232,8 @@ main(int argc, char** argv, char **env)
       NSLog(@"GNU pasteboard server startup.\n");
     }
   [[NSRunLoop currentRunLoop] run];
+
+  RELEASE(server);
   RELEASE(pool);
   exit(0);
 }
