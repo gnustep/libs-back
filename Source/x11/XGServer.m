@@ -273,6 +273,10 @@ _parse_display_name(NSString *name, int *dn, int *sn)
         {
 	  free(rcontext->colors);
 	}
+      if (rcontext->hermes_data)
+        {
+	  free(rcontext->hermes_data);
+	}
       free(rcontext->attribs);
       free(rcontext);
     }
