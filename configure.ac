@@ -347,8 +347,8 @@ fi
 
 save_CPPFLAGS=${CPPFLAGS}
 CPPFLAGS="$CPPFLAGS $GRAPHIC_CFLAGS"
-AC_CHECK_HEADER(X11/extensions/XShm.h, AC_DEFINE(XSHM,,
-				       [Define for XShm support]))
+AC_CHECK_HEADERS(X11/extensions/XShm.h,,,
+	[#include <X11/Xlib.h>])
 CPPFLAGS="$save_CPPFLAGS"
 
 #--------------------------------------------------------------------
