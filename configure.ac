@@ -255,6 +255,10 @@ AC_CHECK_LIB(gdi32, main, have_gdi32=yes, have_gdi32=no)
 if test "$have_gdi32" = yes; then
   WIN32_LIBS="-lgdi32"
 fi
+AC_CHECK_LIB(msimg32, main, have_msimg32=yes, have_msimg32=no)
+if test "$have_msimg32" = yes; then
+  WIN32_LIBS="${WIN32_LIBS} -lmsimg32"
+fi
 CPPFLAGS="${save_header}"
 LIBS="${save_libs}"
 

@@ -1,3 +1,14 @@
+2004-07-06  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/winlib/Win32GState.m (-_compositeGState:...fraction:):
+	Applied alpha blending patch by MA Garcias <lists@tragnarion.com>.
+	Disabled GDI_WIDELINE_BEZIERPATH_BUG.
+	* configure.ac: Added test for msimg32, needed for AlphaBlend.
+	* configure: Regenerated.
+	* Source/xlib/XGGState.m: Moved additional show methods to super class.
+	* Source/gsc/GSGState.m: Implemented additional show methods based
+	on (-showGlyphs::) and simple glyph conversion.
+	
 2004-06-19  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-standardcursor::): Added more

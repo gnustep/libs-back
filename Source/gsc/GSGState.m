@@ -32,6 +32,7 @@
 #include "gsc/GSContext.h"
 #include "gsc/GSGState.h"
 #include "math.h"
+#include <GNUstepBase/Unicode.h>
 
 #define CHECK_PATH \
   if (!path) \
@@ -357,15 +358,117 @@
 /* ----------------------------------------------------------------------- */
 /* Text operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPSashow: (float)x : (float)y : (const char*)s
+/* Show the first lenght characters from C string s at the current point 
+   and return the width of the string. Does not move the point.
+ */
+- (float) _showString: (const char*)s lenght: (int)lenght
 {
   [self subclassResponsibility: _cmd];
+  return 0.0;
+}
+
+typedef enum {
+  show_delta, show_array_x, show_array_y, show_array_xy
+} show_array_t;
+
+/* Omnibus show string routine that combines that characteristics of
+   ashow, awidthshow, widthshow, xshow, xyshow, and yshow */
+- (void) _showString: (const char *)s
+	    xCharAdj: (float)cx
+	    yCharAdj: (float)cy
+		char: (char)c
+	    adjArray: (const float *)arr
+	     arrType: (show_array_t)type
+	  isRelative: (BOOL)relative;
+{
+  NSPoint point = [path currentPoint];
+  unichar *uch;
+  int ulen;
+  int i;
+
+  /* 
+     FIXME: We should use proper glyph generation here.
+  */
+  uch = NULL;
+  ulen = 0;
+  GSToUnicode(&uch, &ulen, s, strlen(s), [font mostCompatibleStringEncoding], 
+	      NSDefaultMallocZone(), 0);
+
+  for (i = 0; i < ulen; i++)
+    {
+      NSPoint delta;
+      NSGlyph glyph;
+
+      glyph = (NSGlyph)uch[i];
+      [self GSShowGlyphs: &glyph : 1];
+      /* Note we update the current point according to the current 
+	 transformation scaling, although the text isn't currently
+	 scaled (FIXME). */
+      if (type == show_array_xy)
+	{
+	  delta.x = arr[2*i]; delta.y = arr[2*i+1];
+	}
+      else if (type == show_array_x)
+	{
+	  delta.x = arr[i]; delta.y = 0;
+	}
+      else if (type == show_array_y)
+	{
+	  delta.x = 0; delta.y = arr[i];
+	}
+      else
+	{
+	  delta.x = arr[0]; delta.y = arr[1];
+	}
+      delta = [ctm deltaPointInMatrixSpace: delta];
+      if (relative == YES)
+	{
+	  NSSize advancement;
+
+	  advancement = [font advancementForGlyph: glyph];
+	  /* Use only delta transformations (no offset). Is this conversion needed?*/
+	  advancement = [ctm sizeInMatrixSpace: NSMakeSize(advancement.width, 
+							   [font ascender])];
+	  delta.x += advancement.width;
+	  delta.y += advancement.height;
+	}
+      if (c && *(s+i) == c)
+	{
+	  NSPoint cdelta;
+
+	  cdelta.x = cx; cdelta.y = cy;
+	  cdelta = [ctm deltaPointInMatrixSpace: cdelta];
+	  delta.x += cdelta.x; delta.y += cdelta.y;
+	}
+      point.x += delta.x;
+      if (type != show_delta)
+        {
+	  point.y += delta.y;
+	}
+      [path moveToPoint: point];
+    }
+  free(uch);
+}
+
+- (void) DPSashow: (float)x : (float)y : (const char*)s
+{
+  float arr[2];
+
+  arr[0] = x; arr[1] = y;
+  [self _showString: s
+    xCharAdj: 0 yCharAdj: 0 char: 0 adjArray: arr arrType: show_delta
+    isRelative: YES];
 }
 
 - (void) DPSawidthshow: (float)cx : (float)cy : (int)c : (float)ax : (float)ay 
 		      : (const char*)s
 {
-  [self subclassResponsibility: _cmd];
+  float arr[2];
+
+  arr[0] = ax; arr[1] = ay;
+  [self _showString: s
+    xCharAdj: cx yCharAdj: cy char: c adjArray: arr arrType: show_delta
+    isRelative: YES];
 }
 
 - (void) DPScharpath: (const char*)s : (int)b
@@ -380,22 +483,33 @@
 
 - (void) DPSwidthshow: (float)x : (float)y : (int)c : (const char*)s
 {
-  [self subclassResponsibility: _cmd];
+  float arr[2];
+
+  arr[0] = 0; arr[1] = 0;
+  [self _showString: s
+    xCharAdj: x yCharAdj: y char: c adjArray: arr arrType: show_delta
+    isRelative: YES];
 }
 
 - (void) DPSxshow: (const char*)s : (const float*)numarray : (int)size
 {
-  [self subclassResponsibility: _cmd];
+  [self _showString: s
+    xCharAdj: 0 yCharAdj: 0 char: 0 adjArray: numarray arrType: show_array_x
+    isRelative: NO];
 }
 
 - (void) DPSxyshow: (const char*)s : (const float*)numarray : (int)size
 {
-  [self subclassResponsibility: _cmd];
+  [self _showString: s
+    xCharAdj: 0 yCharAdj: 0 char: 0 adjArray: numarray arrType: show_array_xy
+    isRelative: NO];
 }
 
 - (void) DPSyshow: (const char*)s : (const float*)numarray : (int)size
 {
-  [self subclassResponsibility: _cmd];
+  [self _showString: s
+    xCharAdj: 0 yCharAdj: 0 char: 0 adjArray: numarray arrType: show_array_y
+    isRelative: NO];
 }
 
 - (void) GSSetCharacterSpacing: (float)extra
