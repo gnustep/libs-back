@@ -524,7 +524,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 			generic.focusRequestNumber = 0;
 			generic.desiredFocusWindow = 0;
 			if (number == 0)
-			  number = cWin->number;
+			  number = generic.currentFocusWindow;
 			[self setinputstate: GSTitleBarKey : number];
 			[self setinputfocus: number];
 		      }

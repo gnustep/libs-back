@@ -7,14 +7,18 @@
 @include version.texi
 @end ifset
 
-@section Noteworthy changes in version @samp{0.8.2}
+@section Noteworthy changes in version @samp{0.8.3}
 
-Improved font handling in art backend. Improved compositing  with
-transformations and clipping in art backend.
+See the gnustep-gui NEWS for changes.
 
 @c ====================================================================
 @c Keep the next line just below the list of changes in most recent version.
 @ifclear ANNOUNCE-ONLY
+
+@section Noteworthy changes in version @samp{0.8.2}
+
+Improved font handling in art backend. Improved compositing  with
+transformations and clipping in art backend.
 
 @section Noteworthy changes in version @samp{0.8.1}
 
