@@ -1,3 +1,8 @@
+2005-02-10 00:50  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Tools/gpbs.m (init): Remove the program name from the arguments
+	passed to the new task.
+
 2005-02-08 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Tools/gpbs.m: Use NSTask to re-execute as daemon.
