@@ -28,7 +28,7 @@
 #ifdef HAVE_GLX
 #include <Foundation/NSDebug.h>
 #include <Foundation/NSException.h>
-#include <AppKit/GSDisplayServer.h>
+#include <GNUstepGUI/GSDisplayServer.h>
 #include <AppKit/NSView.h>
 #include <AppKit/NSWindow.h>
 #include "x11/XGServerWindow.h"

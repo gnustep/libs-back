@@ -42,12 +42,6 @@ art_OBJC_FILES = \
   path.m \
   shfill.m
 
-art_HEADER_FILES_DIR = ../../Headers/art
-art_HEADER_FILES_INSTALL_DIR = gnustep/art
-
-art_HEADER_FILES = \
-ARTContext.h
-
 -include GNUmakefile.preamble
 
 include $(GNUSTEP_MAKEFILES)/subproject.make

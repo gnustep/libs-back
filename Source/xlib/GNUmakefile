@@ -50,15 +50,6 @@ ifeq ($(WITH_XFT),yes)
 xlib_OBJC_FILES += GSXftFontInfo.m
 endif
 
-xlib_HEADER_FILES_DIR = ../../Headers/xlib
-xlib_HEADER_FILES_INSTALL_DIR = gnustep/xlib
-
-xlib_HEADER_FILES = \
-XGContext.h \
-XGPrivate.h \
-XGGeometry.h \
-XGGState.h 
-
 -include GNUmakefile.preamble
 
 include $(GNUSTEP_MAKEFILES)/subproject.make

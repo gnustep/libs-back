@@ -28,7 +28,7 @@
 #include <AppKit/NSColor.h>
 #include <AppKit/NSView.h>
 #include <AppKit/NSWindow.h>
-#include <AppKit/GSDisplayServer.h>
+#include <GNUstepGUI/GSDisplayServer.h>
 #include <Foundation/NSException.h>
 #include <Foundation/NSArray.h>
 #include <Foundation/NSDictionary.h>
@@ -57,7 +57,7 @@
 #ifdef GSIArray
 #undef GSIArray
 #endif
-#include <base/GSIArray.h>
+#include <GNUstepBase/GSIArray.h>
 
 /* Error macros */
 #define CHECK_NULL_OUTPUT(outvar) \

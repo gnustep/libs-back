@@ -63,13 +63,6 @@ XWindowBuffer.m\
 XGGLFormat.m\
 XGGLContext.m
 
-x11_HEADER_FILES_DIR = ../../Headers/x11
-x11_HEADER_FILES_INSTALL_DIR = gnustep/x11
-
-x11_HEADER_FILES = \
-XGServer.h \
-XGServerWindow.h
-
 -include GNUmakefile.preamble
 
 include $(GNUSTEP_MAKEFILES)/subproject.make

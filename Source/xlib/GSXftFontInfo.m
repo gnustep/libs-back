@@ -35,7 +35,7 @@
 #include <Foundation/NSDebug.h>
 #include <Foundation/NSValue.h>
 // For the encoding functions
-#include <base/Unicode.h>
+#include <GNUstepBase/Unicode.h>
 
 #include "xlib/GSXftFontInfo.h"
 

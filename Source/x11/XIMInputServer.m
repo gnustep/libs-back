@@ -31,9 +31,9 @@
 #include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>
 #include <Foundation/NSException.h>
-#include <base/Unicode.h>
+#include <GNUstepBase/Unicode.h>
 #include <AppKit/NSWindow.h>
-#include <AppKit/GSFontInfo.h>
+#include <GNUstepGUI/GSFontInfo.h>
 
 #include "x11/XGInputServer.h"
 #include <X11/Xlocale.h>

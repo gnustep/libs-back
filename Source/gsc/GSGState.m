@@ -27,7 +27,7 @@
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
 #include <AppKit/NSColor.h>
-#include <AppKit/GSFontInfo.h>
+#include <GNUstepGUI/GSFontInfo.h>
 #include <AppKit/NSGraphics.h>
 #include "gsc/GSContext.h"
 #include "gsc/GSGState.h"

@@ -28,7 +28,7 @@
 #include <Foundation/NSDebug.h>
 #include <Foundation/NSException.h>
 #include <Foundation/NSData.h>
-#include <AppKit/GSDisplayServer.h>
+#include <GNUstepGUI/GSDisplayServer.h>
 #include "x11/XGServer.h"
 #include "x11/XGOpenGL.h"
 

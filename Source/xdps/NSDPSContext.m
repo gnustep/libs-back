@@ -38,7 +38,7 @@
 #include <AppKit/NSView.h>
 #include <AppKit/NSWindow.h>
 #include <AppKit/NSWindow.h>
-#include <AppKit/GSFontInfo.h>
+#include <GNUstepGUI/GSFontInfo.h>
 
 #include "x11/XGServer.h"
 #include "xdps/NSDPSContext.h"

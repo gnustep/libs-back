@@ -32,7 +32,7 @@
 #include <X11/Xft/Xft.h>
 #undef id
 
-#include <AppKit/GSFontInfo.h>
+#include <GNUstepGUI/GSFontInfo.h>
 
 @interface FcFontEnumerator : GSFontEnumerator
 {

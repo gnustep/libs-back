@@ -26,7 +26,7 @@
 #define _WIN32FontInfo_h_INCLUDE
 
 #include "windows.h"
-#include "AppKit/GSFontInfo.h"
+#include "GNUstepGUI/GSFontInfo.h"
 
 @interface WIN32FontInfo : GSFontInfo
 {
