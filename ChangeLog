@@ -1,3 +1,8 @@
+2003-08-31  Adam Fedor  <fedor@gnu.org>
+
+	* Tools/gpbs.m (init): Close file descriptors so gpbs can be a proper
+	daemon.
+
 2003-08-26  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.8.9

@@ -1,0 +1,46 @@
+ANNOUNCE
+********
+
+This is version 0.8.9 of the GNUstep GUI Backend (`gnustep-back').
+
+What is the GNUstep GUI Backend?
+================================
+
+   It is a back-end component for the GNUstep GUI Library.  The
+implementation of the GNUstep GUI Library is designed in two parts.  The
+first part is the front-end component which is independent of platform
+and display system.  This front-end is combined with a back-end
+component which handles all of the display system dependent such as
+specific calls to the X Window System.  This design allows the GNUstep
+applications to have the "look and feel" of the underlying display
+system without any changes to the application, and the library can be
+easily ported to other display systems.
+
+   The GNUstep GUI Backend is for platforms using the X-Window System or
+Window's Systems. It works via a DPS emulation engine to emulate the
+DPS functions required by the front-end system.
+
+Noteworthy changes in version `0.8.9'
+=====================================
+
+   * Much improved pasting support between X apps and GNUstep apps.
+
+   * Backend headers are no longer installed (now private).
+
+Where can you get it?  How can you compile it?
+==============================================
+
+   The gstep-back-0.8.9.tar.gz distribution file has been placed on
+`ftp.gnustep.org' in `pub/gnustep/core'.
+
+Where do I send bug reports?
+============================
+
+   Bug reports can be sent to the GNUstep bug list <bug-gnustep@gnu.org>
+
+Obtaining GNU Software
+======================
+
+   Check out the GNUstep web site. (<http://www.gnustep.org/>) and the
+GNU web site. (<http://www.gnu.org/>)
+
