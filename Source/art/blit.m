@@ -1655,7 +1655,7 @@ void artcontext_setup_draw_info(draw_info_t *di,
     if (!gamma)
       gamma = 1.4;
 
-    NSLog(@"gamma=%g",gamma);
+    NSDebugLLog(@"back-art",@"gamma=%g",gamma);
 
     gamma = 1.0 / gamma;
 
