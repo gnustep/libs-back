@@ -1,3 +1,7 @@
+2002-12-31  Adam Fedor  <fedor@gnu.org>
+
+	* Headers/x11/XGOpenGL.h: Redefine BOOL to avoid name collision
+
 2002-11-27  Frederic De Jaeger <dejaeger@free.fr>
 
 	* configure.ac: add the flag --disable-glx.
