@@ -2757,7 +2757,7 @@ fb04 'ffl'
 	glyph_t *g;
 	unsigned int glyph_size;
 	unsigned int i,j;
-	unichar ch,ch2,ch3;
+	unsigned int ch,ch2,ch3;
 
 	FTFontInfo *fi=[run->font fontInfo];
 	FTC_CMapDescRec cmap;
@@ -2839,9 +2839,20 @@ fb04 'ffl'
 			}
 		}
 
+		if (ch>=0xd800 && ch<=0xdfff)
+		{
+			if (ch >= 0xd800 && ch < 0xdc00 && ch2 >= 0xdc00 && ch2 <= 0xdfff)
+			{
+				ch = ((ch & 0x3ff) << 10) + (ch2 & 0x3ff) + 0x10000;
+				i++;
+			}
+			else
+				ch = 0xfffd;
+		}
+
 		g->g=FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, ch) + 1;
 
-		if (g->g == 1)
+		if (g->g == 1 && ch<0x10000)
 		{
 			unichar *decomp;
 			decomp=uni_is_decomp(ch);
