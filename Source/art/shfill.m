@@ -20,6 +20,10 @@
    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+/*
+this code is rather experimental
+*/
+
 #include <math.h>
 
 #include "ARTGState.h"
@@ -264,6 +268,8 @@ static double function_getsample(function_t *f,int sample,int i)
 	}
 
 	v=f->decode[i*2]+v*(f->decode[i*2+1]-f->decode[i*2]);
+	if (v<f->range[i*2]) v=f->range[i*2];
+	if (v>f->range[i*2+1]) v=f->range[i*2+1];
 	return v;
 }
 
@@ -481,24 +487,24 @@ static BOOL function_setup(NSDictionary *d,function_t *f)
 
 	a=[d objectForKey: @"Domain"];
 	for (i=0;i<f->num_in*2;i++)
-		f->domain[i]=[[a objectAtIndex: i] intValue];
+		f->domain[i]=[[a objectAtIndex: i] doubleValue];
 
 	a=[d objectForKey: @"Range"];
 	for (i=0;i<f->num_out*2;i++)
-		f->decode[i]=f->range[i]=[[a objectAtIndex: i] intValue];
+		f->decode[i]=f->range[i]=[[a objectAtIndex: i] doubleValue];
 
 	a=[d objectForKey: @"Decode"];
 	if (a)
 	{
 		for (i=0;i<f->num_out*2;i++)
-			f->decode[i]=[[a objectAtIndex: i] intValue];
+			f->decode[i]=[[a objectAtIndex: i] doubleValue];
 	}
 
 	a=[d objectForKey: @"Encode"];
 	if (a)
 	{
 		for (i=0;i<f->num_in*2;i++)
-			f->encode[i]=[[a objectAtIndex: i] intValue];
+			f->encode[i]=[[a objectAtIndex: i] doubleValue];
 	}
 
 	f->eval=function_eval;
