@@ -395,7 +395,7 @@ static void MPRE(sover_aa) (composite_run_t *c, int num)
 	{
 	  ALPHA_INC(s, src_alpha)
 	  ALPHA_INC(d, dst_alpha)
-	    continue;
+	  continue;
 	}
       if (sa == 255)
 	{
@@ -433,12 +433,12 @@ static void MPRE(sover_ao) (composite_run_t *c, int num)
   for (; num; num--)
     {
       ALPHA_READ(s, src_alpha, sa)
-	if (!sa)
-	  {
-	    ALPHA_INC(s, src_alpha)
-	    BLEND_INC(d)
-	    continue;
-	  }
+      if (!sa)
+	{
+	  ALPHA_INC(s, src_alpha)
+	  BLEND_INC(d)
+	  continue;
+	}
       if (sa == 255)
 	{
 	  BLEND_READ(s, sr, sg, sb)
