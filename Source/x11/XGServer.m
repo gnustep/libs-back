@@ -420,7 +420,11 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   DESTROY(inputServer);
   [self _destroyServerWindows];
   NSFreeMapTable(screenList);
+#ifdef DEBUG
+  /* FIXME: Avoid doing this until we figure out why we always
+     segfault here */
   XCloseDisplay(dpy);
+#endif
   [super dealloc];
 }
 
