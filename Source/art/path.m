@@ -807,6 +807,8 @@ static void clip_svp_callback(void *data, int y, int start,
   ArtSVP *svp;
   int x0, y0, x1, y1;
   int axis_aligned;
+  
+  [self DPSnewpath];
 
   if (all_clipped)
     return;
@@ -845,8 +847,6 @@ static void clip_svp_callback(void *data, int y, int start,
 
   clip_sx = clip_x1 - clip_x0;
   clip_sy = clip_y1 - clip_y0;
-  
-  [self DPSnewpath];
 }
 
 - (void) DPSinitclip;
