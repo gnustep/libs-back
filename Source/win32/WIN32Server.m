@@ -327,7 +327,7 @@ DWORD windowStyleForGSStyle(int style)
       win->useHDC = NO;
     }
 
-  if (type == NSBackingStoreBuffered)
+  if (type != NSBackingStoreNonretained)
     {
       HDC hdc, hdc2;
       HBITMAP hbitmap;
@@ -1004,15 +1004,15 @@ validateWindow(HWND hwnd, RECT rect)
       HDC hdc = GetDC((HWND)hwnd);
       WINBOOL result;
 
-      /*
-      NSLog(@"validated window %d %@", hwnd, 
-	    NSStringFromRect(MSWindowRectToGS((HWND)hwnd, rect)));
-      */
       result = BitBlt(hdc, rect.left, rect.top, 
 		      (rect.right - rect.left), (rect.bottom - rect.top), 
 		      win->hdc, rect.left, rect.top, SRCCOPY);
       if (!result)
-	NSLog(@"validateWindow failed %d", GetLastError());
+        {
+	  NSLog(@"validated window %d %@", hwnd, 
+		NSStringFromRect(MSWindowRectToGS((HWND)hwnd, rect)));
+	  NSLog(@"validateWindow failed %d", GetLastError());
+      }
       ReleaseDC((HWND)hwnd, hdc);
     }
 }
@@ -1120,7 +1120,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 	win = objc_malloc(sizeof(WIN_INTERN));
 	SetWindowLong(hwnd, GWL_USERDATA, (int)win);
 	
-	if (type == NSBackingStoreBuffered)
+	if (type != NSBackingStoreNonretained)
 	  {
 	    HDC hdc, hdc2;
 	    HBITMAP hbitmap;
