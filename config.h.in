@@ -23,11 +23,23 @@
 /* Define if you have FcPatternCreate */
 #undef HAVE_FC
 
+/* Define if you have glitz */
+#undef HAVE_GLITZ_GLX
+
 /* Define if you have the glx library */
 #undef HAVE_GLX
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `Xext' library (-lXext). */
+#undef HAVE_LIBXEXT
+
+/* Define to 1 if you have the `Xft' library (-lXft). */
+#undef HAVE_LIBXFT
+
+/* Define to 1 if you have the `Xmu' library (-lXmu). */
+#undef HAVE_LIBXMU
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -62,7 +74,7 @@
 /* Define if you have XftDrawStringUtf8 */
 #undef HAVE_UTF8
 
-/* Define to 1 if you have the <wraster.h> header file. */
+/* Define to 0 as we don't use wraster anymore */
 #undef HAVE_WRASTER_H
 
 /* Define to 1 if you have the <X11/extensions/XShm.h> header file. */
@@ -89,13 +101,13 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
+/* Define to enable glitz support */
+#undef USE_GLITZ
+
 /* Define to enable XIM support */
 #undef USE_XIM
 
-/* Define if you have libwraster */
-#undef WITH_WRASTER
-
-/* Define if you have X11/extensions/XShm.h */
+/* Define if you have X11 XShm extensions */
 #undef XSHM
 
 /* Define to 1 if the X Window System is missing or not being used. */
