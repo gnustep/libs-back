@@ -1,5 +1,7 @@
 /*
-copyright 2002 Alexander Malmberg <alexander@malmberg.org>
+   Copyright (C) 2002 Free Software Foundation, Inc.
+
+   Author:  Alexander Malmberg <alexander@malmberg.org>
 
    This file is part of GNUstep.
 
