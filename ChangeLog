@@ -1,3 +1,7 @@
+2004-02-28  Adam Fedor  <fedor@gnu.org>
+
+	* Version 0.9.2
+
 2004-02-28  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/WIN32Server.m (-setupRunLoopInputSourcesForMode:): 
