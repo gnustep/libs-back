@@ -1,4 +1,10 @@
-2003-12-02 Leigh Smith   < leigh@bogus.example.com >
+2003-12-02  Adam Fedor  <fedor@gnu.org>
+
+	* Source/win32/WIN32Server.m: Add a bunch of DebugLLog
+	statements (WTrace, NSEvent, Focus).  Move event functions to...
+	* Source/win32/WIN32ServerEvent.m: here.
+
+2003-12-02 Leigh Smith   <leigh@bogus.example.com>
 
 	* Source/winlib/WIN32GState.m ([WIN -_paintPath:drawType]):
 	Corrected bug in Bezier curves, a bug in line widths and adds a

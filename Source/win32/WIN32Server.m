@@ -282,7 +282,10 @@ DWORD windowStyleForGSStyle(unsigned int style)
 
   r = GSScreenRectToMS(frame);
 
-  //NSLog(@"Creating at %d, %d, %d, %d", r.left, r.top, r.right - r.left, r.bottom - r.top);
+  NSDebugLLog(@"WTrace", @"window: %@ : %d : %d : %d", NSStringFromRect(frame),
+	      type, style, screen);
+  NSDebugLLog(@"WTrace", @"         device frame: %d, %d, %d, %d", 
+	      r.left, r.top, r.right - r.left, r.bottom - r.top);
   hwnd = CreateWindowEx(0,
 			"GNUstepWindowClass",
 			"GNUstepWindow",
@@ -295,7 +298,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
 			(HMENU) NULL,
 			hinstance,
 			(void*)type);
-  //NSLog(@"Create Window %d", hwnd);
+  NSDebugLLog(@"WTrace", @"         num/handle: %d", hwnd);
 
   [self _setWindowOwnedByServer: (int)hwnd];
   return (int)hwnd;
@@ -303,6 +306,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
 
 - (void) termwindow: (int) winNum
 {
+  NSDebugLLog(@"WTrace", @"termwindow: %d", winNum);
   DestroyWindow((HWND)winNum); 
 }
 
@@ -310,9 +314,8 @@ DWORD windowStyleForGSStyle(unsigned int style)
 {
   DWORD wstyle = windowStyleForGSStyle(style);
 
-  //NSLog(@"Style Window %d style %d using %d", winNum, style, wstyle);
+  NSDebugLLog(@"WTrace", @"stylewindow: %d : %d", style, winNum);
   SetWindowLong((HWND)winNum, GWL_STYLE, wstyle);
-  //NSLog(@"Resulted in %d ", GetWindowLong((HWND)winNum, GWL_STYLE));
 }
 
 - (void) setbackgroundcolor: (NSColor *)color : (int)win
@@ -324,6 +327,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
 {
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
 
+  NSDebugLLog(@"WTrace", @"windowbacking: %d : %d", type, winNum);
   if (win->useHDC)
     {
       HGDIOBJ old;
@@ -356,12 +360,13 @@ DWORD windowStyleForGSStyle(unsigned int style)
 
 - (void) titlewindow: (NSString*)window_title : (int) winNum
 {
-  //NSLog(@"Settitle %@ for %d", window_title, winNum);
+  NSDebugLLog(@"WTrace", @"titlewindow: %@ : %d", window_title, winNum);
   SetWindowText((HWND)winNum, [window_title cString]);
 }
 
 - (void) miniwindow: (int) winNum
 {
+  NSDebugLLog(@"WTrace", @"miniwindow: %d", winNum);
   ShowWindow((HWND)winNum, SW_MINIMIZE); 
 }
 
@@ -375,6 +380,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
 {
   NSGraphicsContext *ctxt;
 
+  NSDebugLLog(@"WTrace", @"windowdevice: %d", winNum);
   ctxt = GSCurrentContext();
   GSSetDevice(ctxt, (void*)winNum, 0, 0);
   DPSinitmatrix(ctxt);
@@ -383,6 +389,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
 
 - (void) orderwindow: (int) op : (int) otherWin : (int) winNum
 {
+  NSDebugLLog(@"WTrace", @"orderwindow: %d : %d : %d", op, otherWin, winNum);
   if (op != NSWindowOut)
     {
       ShowWindow((HWND)winNum, SW_SHOW); 
@@ -416,6 +423,8 @@ DWORD windowStyleForGSStyle(unsigned int style)
 {
   POINT p;
 
+  NSDebugLLog(@"WTrace", @"movewindow: %@ : %d", NSStringFromPoint(loc), 
+	      winNum);
   p = GSWindowOriginToMS((HWND)winNum, loc);
 
   SetWindowPos((HWND)winNum, NULL, p.x, p.y, 0, 0, 
@@ -428,10 +437,11 @@ DWORD windowStyleForGSStyle(unsigned int style)
   RECT r2;
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
 
+  NSDebugLLog(@"WTrace", @"placewindow: %@ : %d", NSStringFromRect(frame), 
+	      winNum);
   r = GSScreenRectToMS(frame);
   GetWindowRect((HWND)winNum, &r2);
 
-  //NSLog(@"Placing at %d, %d, %d, %d", r.left, r.top, r.right - r.left, r.bottom - r.top);
   SetWindowPos((HWND)winNum, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top, 
 	       SWP_NOZORDER | SWP_NOREDRAW);
 
@@ -477,6 +487,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
 
 - (void) setwindowlevel: (int) level : (int) winNum
 {
+  NSDebugLLog(@"WTrace", @"setwindowlevel: %d : %d", level, winNum);
 }
 
 - (int) windowlevel: (int) winNum
@@ -525,11 +536,6 @@ DWORD windowStyleForGSStyle(unsigned int style)
 - (void) flushwindowrect: (NSRect)rect : (int) winNum
 {
   RECT r = GSWindowRectToMS((HWND)winNum, rect);
-  
-  /*
-  NSLog(@"Will validated window %d %@ (%d, %d, %d, %d)", winNum, 
-	    NSStringFromRect(rect), r.left, r.top, r.right, r.bottom);
-  */
   validateWindow((HWND)winNum, r);
 }
 
@@ -565,6 +571,8 @@ DWORD windowStyleForGSStyle(unsigned int style)
     window */
 - (void) setinputfocus: (int) winNum
 {
+  NSDebugLLog(@"WTrace", @"setinputfocus: %d", winNum);
+  NSDebugLLog(@"Focus", @"Setting input focus to %d");
   if (winNum)
     SetFocus((HWND)winNum);
 }
@@ -589,17 +597,20 @@ DWORD windowStyleForGSStyle(unsigned int style)
 
 - (BOOL) capturemouse: (int) winNum
 {
+  NSDebugLLog(@"WTrace", @"capturemouse: %d", winNum);
   SetCapture((HWND)winNum);
   return YES;
 }
 
 - (void) releasemouse
 {
+  NSDebugLLog(@"WTrace", @"releasemouse");
   ReleaseCapture();
 }
 
 - (void) hidecursor
 {
+  NSDebugLLog(@"WTrace", @"hidecursor");
   ShowCursor(NO);
 }
 
@@ -612,6 +623,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
 {
   HCURSOR hCursor;
 
+  NSDebugLLog(@"WTrace", @"standardcursor: %d", style);
   switch (style)
     {
     case GSArrowCursor:
@@ -660,349 +672,6 @@ DWORD windowStyleForGSStyle(unsigned int style)
 
 @end
 
-@implementation WIN32Server (EventOps)
-
-- (void) callback: (id) sender
-{
-  MSG msg;
-  WINBOOL bRet; 
-
-  while ((bRet = PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) != 0)
-    { 
-
-      if (msg.message == WM_QUIT)
-	{
-	  // Exit the program
-	  return;
-	}
-      if (bRet == -1)
-	{
-	  // handle the error and possibly exit
-	}
-      else
-	{
-	  // Don't translate messages, as this would give extra character messages.
-	  DispatchMessage(&msg); 
-	} 
-    } 
-}
-
-- (BOOL) hasEvent
-{
-  return (GetQueueStatus(QS_ALLEVENTS) != 0);
-}
-
-- (void) receivedEvent: (void*)data
-                  type: (RunLoopEventType)type
-                 extra: (void*)extra
-               forMode: (NSString*)mode
-{
-  [self callback: mode];
-}
-
-
-- (NSEvent*) getEventMatchingMask: (unsigned)mask
-		       beforeDate: (NSDate*)limit
-			   inMode: (NSString*)mode
-			  dequeue: (BOOL)flag
-{
-  [self callback: nil];
-  return [super getEventMatchingMask: mask
-		beforeDate: limit
-		inMode: mode
-		dequeue: flag];
-}
-
-- (void) discardEventsMatchingMask: (unsigned)mask
-		       beforeEvent: (NSEvent*)limit
-{
-  [self callback: nil];
-  [super discardEventsMatchingMask: mask
-			  beforeEvent: limit];
-}
-
-@end
-
-/*
- This standard windows marcors are missing in MinGW
- The definition here is almost correct, but will fail for multi monitor systems
-*/
-#ifndef GET_X_LPARAM
-#define GET_X_LPARAM(p) LOWORD(p)
-#endif
-#ifndef GET_Y_LPARAM
-#define GET_Y_LPARAM(p) HIWORD(p)
-#endif
-
-static unichar 
-process_char(WPARAM wParam, unsigned *eventModifierFlags)
-{
-  switch (wParam)
-    {
-    case VK_RETURN: return NSCarriageReturnCharacter;
-    case VK_TAB:    return NSTabCharacter;
-    case VK_ESCAPE:  return 0x1b;
-    case VK_BACK:   return NSBackspaceCharacter;
-
-      /* The following keys need to be reported as function keys */
-#define WIN_FUNCTIONKEY \
-*eventModifierFlags = *eventModifierFlags | NSFunctionKeyMask;
-    case VK_F1: WIN_FUNCTIONKEY return NSF1FunctionKey;
-    case VK_F2: WIN_FUNCTIONKEY return NSF2FunctionKey;
-    case VK_F3: WIN_FUNCTIONKEY return NSF3FunctionKey;
-    case VK_F4: WIN_FUNCTIONKEY return NSF4FunctionKey;
-    case VK_F5: WIN_FUNCTIONKEY return NSF5FunctionKey;
-    case VK_F6: WIN_FUNCTIONKEY return NSF6FunctionKey;
-    case VK_F7: WIN_FUNCTIONKEY return NSF7FunctionKey;
-    case VK_F8: WIN_FUNCTIONKEY return NSF8FunctionKey;
-    case VK_F9: WIN_FUNCTIONKEY return NSF9FunctionKey;
-    case VK_F10: WIN_FUNCTIONKEY return NSF10FunctionKey;
-    case VK_F11: WIN_FUNCTIONKEY return NSF12FunctionKey;
-    case VK_F12: WIN_FUNCTIONKEY return NSF12FunctionKey;
-    case VK_F13: WIN_FUNCTIONKEY return NSF13FunctionKey;
-    case VK_F14: WIN_FUNCTIONKEY return NSF14FunctionKey;
-    case VK_F15: WIN_FUNCTIONKEY return NSF15FunctionKey;
-    case VK_F16: WIN_FUNCTIONKEY return NSF16FunctionKey;
-    case VK_F17: WIN_FUNCTIONKEY return NSF17FunctionKey;
-    case VK_F18: WIN_FUNCTIONKEY return NSF18FunctionKey;
-    case VK_F19: WIN_FUNCTIONKEY return NSF19FunctionKey;
-    case VK_F20: WIN_FUNCTIONKEY return NSF20FunctionKey;
-    case VK_F21: WIN_FUNCTIONKEY return NSF21FunctionKey;
-    case VK_F22: WIN_FUNCTIONKEY return NSF22FunctionKey;
-    case VK_F23: WIN_FUNCTIONKEY return NSF23FunctionKey;
-    case VK_F24: WIN_FUNCTIONKEY return NSF24FunctionKey;
-
-    case VK_DELETE:      WIN_FUNCTIONKEY return NSDeleteFunctionKey;
-    case VK_HOME:        WIN_FUNCTIONKEY return NSHomeFunctionKey;
-    case VK_LEFT:        WIN_FUNCTIONKEY return NSLeftArrowFunctionKey;
-    case VK_RIGHT:       WIN_FUNCTIONKEY return NSRightArrowFunctionKey;
-    case VK_UP:          WIN_FUNCTIONKEY return NSUpArrowFunctionKey;
-    case VK_DOWN:        WIN_FUNCTIONKEY return NSDownArrowFunctionKey;
-    case VK_PRIOR:       WIN_FUNCTIONKEY return NSPrevFunctionKey;
-    case VK_NEXT:        WIN_FUNCTIONKEY return NSNextFunctionKey;
-    case VK_END:         WIN_FUNCTIONKEY return NSEndFunctionKey;
-    //case VK_BEGIN:       WIN_FUNCTIONKEY return NSBeginFunctionKey;
-    case VK_SELECT:      WIN_FUNCTIONKEY return NSSelectFunctionKey;
-    case VK_PRINT:       WIN_FUNCTIONKEY return NSPrintFunctionKey;
-    case VK_EXECUTE:     WIN_FUNCTIONKEY return NSExecuteFunctionKey;
-    case VK_INSERT:      WIN_FUNCTIONKEY return NSInsertFunctionKey;
-    case VK_HELP:        WIN_FUNCTIONKEY return NSHelpFunctionKey;
-    case VK_CANCEL:      WIN_FUNCTIONKEY return NSBreakFunctionKey;
-    //case VK_MODECHANGE:  WIN_FUNCTIONKEY return NSModeSwitchFunctionKey;
-    case VK_SCROLL:      WIN_FUNCTIONKEY return NSScrollLockFunctionKey;
-    case VK_PAUSE:       WIN_FUNCTIONKEY return NSPauseFunctionKey;
-    case VK_OEM_CLEAR:   WIN_FUNCTIONKEY return NSClearDisplayFunctionKey;
-#undef WIN_FUNCTIONKEY
-    default:
-      return 0;
-    }
-}
-
-static NSEvent*
-process_key_event(HWND hwnd, WPARAM wParam, LPARAM lParam, 
-		  NSEventType eventType)
-{
-  NSEvent *event;
-  BOOL repeat;
-  DWORD pos;
-  NSPoint eventLocation;
-  unsigned int eventFlags;
-  NSTimeInterval time;
-  LONG ltime;
-  unichar unicode[5];
-  unsigned int scan;
-  int result;
-  BYTE keyState[256];
-  NSString *keys, *ukeys;
-  NSGraphicsContext *gcontext;
-  unichar uChar;
-
-  /* FIXME: How do you guarentee a context is associated with an event? */
-  gcontext = GSCurrentContext();
-
-  repeat = (lParam & 0xFFFF) != 0;
-
-  pos = GetMessagePos();
-  eventLocation = MSWindowPointToGS(hwnd,  GET_X_LPARAM(pos), GET_Y_LPARAM(pos));
-
-  ltime = GetMessageTime();
-  time = ltime / 1000;
-
-  GetKeyboardState(keyState);
-  eventFlags = 0;
-  if (keyState[VK_CONTROL] & 128)
-    eventFlags |= NSControlKeyMask;
-  if (keyState[VK_SHIFT] & 128)
-    eventFlags |= NSShiftKeyMask;
-  if (keyState[VK_CAPITAL] & 128)
-    eventFlags |= NSShiftKeyMask;
-  if (keyState[VK_MENU] & 128)
-    eventFlags |= NSAlternateKeyMask;
-  if ((keyState[VK_LWIN] & 128) || (keyState[VK_RWIN] & 128))
-    eventFlags |= NSCommandKeyMask;
-
-
-  switch(wParam)
-    {
-    case VK_SHIFT:
-    case VK_CAPITAL:
-    case VK_CONTROL:
-    case VK_MENU:
-    case VK_NUMLOCK:
-      eventType = NSFlagsChanged;
-      break;
-    case VK_NUMPAD0: 
-    case VK_NUMPAD1: 
-    case VK_NUMPAD2: 
-    case VK_NUMPAD3: 
-    case VK_NUMPAD4: 
-    case VK_NUMPAD5: 
-    case VK_NUMPAD6: 
-    case VK_NUMPAD7: 
-    case VK_NUMPAD8: 
-    case VK_NUMPAD9:
-      eventFlags |= NSNumericPadKeyMask;
-      break;
-    default:
-      break;
-    }
-
-
-  uChar = process_char(wParam, &eventFlags);
-  if (uChar)
-    {
-      keys = [NSString  stringWithCharacters: &uChar  length: 1];
-      ukeys = [NSString  stringWithCharacters: &uChar  length: 1];
-    }
-  else
-    {
-      scan = ((lParam >> 16) & 0xFF);
-      //NSLog(@"Got key code %d %d", scan, wParam);
-      result = ToUnicode(wParam, scan, keyState, unicode, 5, 0);
-      //NSLog(@"To Unicode resulted in %d with %d", result, unicode[0]);
-      if (result == -1)
-	{
-	  // A non spacing accent key was found, we still try to use the result 
-	  result = 1;
-	}
-      keys = [NSString  stringWithCharacters: unicode  length: result];
-      // Now switch modifiers off
-      keyState[VK_LCONTROL] = 0;
-      keyState[VK_RCONTROL] = 0;
-      keyState[VK_LMENU] = 0;
-      keyState[VK_RMENU] = 0;
-      result = ToUnicode(wParam, scan, keyState, unicode, 5, 0);
-      //NSLog(@"To Unicode resulted in %d with %d", result, unicode[0]);
-      if (result == -1)
-	{
-	  // A non spacing accent key was found, we still try to use the result 
-	  result = 1;
-	}
-      ukeys = [NSString  stringWithCharacters: unicode  length: result];
-    }
-
-  event = [NSEvent keyEventWithType: eventType
-		   location: eventLocation
-		   modifierFlags: eventFlags
-		   timestamp: time
-		   windowNumber: (int)hwnd
-		   context: gcontext
-		   characters: keys
-		   charactersIgnoringModifiers: ukeys
-		   isARepeat: repeat
-		   keyCode: wParam];
-
-  return event;
-}
-
-static NSEvent*
-process_mouse_event(HWND hwnd, WPARAM wParam, LPARAM lParam, 
-		    NSEventType eventType)
-{
-  NSEvent *event;
-  NSPoint eventLocation;
-  unsigned int eventFlags;
-  NSTimeInterval time;
-  LONG ltime;
-  DWORD tick;
-  NSGraphicsContext *gcontext;
-  short deltaY = 0;
-  static int clickCount = 1;
-  static LONG lastTime = 0;
-
-  gcontext = GSCurrentContext();
-  eventLocation = MSWindowPointToGS(hwnd,  GET_X_LPARAM(lParam), 
-				    GET_Y_LPARAM(lParam));
-  ltime = GetMessageTime();
-  time = ltime / 1000;
-  tick = GetTickCount();
-  eventFlags = 0;
-  if (wParam & MK_CONTROL)
-    {
-      eventFlags |= NSControlKeyMask;
-    }
-  if (wParam & MK_SHIFT)
-    {
-      eventFlags |= NSShiftKeyMask;
-    }
-  if (GetKeyState(VK_MENU) < 0) 
-    {
-      eventFlags |= NSAlternateKeyMask;
-    }
-  // What about other modifiers?
-
-  if (eventType == NSScrollWheel)
-    {
-      deltaY = GET_WHEEL_DELTA_WPARAM(wParam) / 120;
-      //NSLog(@"Scroll event with delat %d", deltaY);
-    }
-  else if (eventType == NSMouseMoved)
-    {
-      if (wParam & MK_LBUTTON)
-	{
-	  eventType = NSLeftMouseDragged;
-	}
-      else if (wParam & MK_RBUTTON)
-	{
-	  eventType = NSRightMouseDragged;
-	}
-      else if (wParam & MK_MBUTTON)
-	{
-	  eventType = NSOtherMouseDragged;
-	}
-    }
-  else if ((eventType == NSLeftMouseDown) || 
-	   (eventType == NSRightMouseDown) || 
-	   (eventType == NSOtherMouseDown))
-    {
-      if (lastTime + GetDoubleClickTime() > ltime)
-	{
-	  clickCount += 1;
-	}
-      else 
-	{
-	  clickCount = 1;
-	  lastTime = ltime;
-	}
-    }
-
-  event = [NSEvent mouseEventWithType: eventType
-		   location: eventLocation
-		   modifierFlags: eventFlags
-		   timestamp: time
-		   windowNumber: (int)hwnd
-		   context: gcontext
-		   eventNumber: tick
-		   clickCount: clickCount
-		   pressure: 1.0
-		   buttonNumber: 0 /* FIXME */
-		   deltaX: 0.
-		   deltaY: deltaY
-		   deltaZ: 0.];
-
-  return event;
-}
-
 static void 
 validateWindow(HWND hwnd, RECT rect)
 {
@@ -1024,449 +693,4 @@ validateWindow(HWND hwnd, RECT rect)
       }
       ReleaseDC((HWND)hwnd, hdc);
     }
-}
-
-static void 
-invalidateWindow(HWND hwnd, RECT rect)
-{
-  NSWindow *window = GSWindowWithNumber((int)hwnd);
-  NSRect r = MSWindowRectToGS((HWND)hwnd, rect);
-
-  /*
-  NSLog(@"Invalidated window %d %@ (%d, %d, %d, %d)", hwnd, 
-	    NSStringFromRect(r), rect.left, rect.top, rect.right, rect.bottom);
-  */
-  // Repaint the window's client area. 
-  [[window contentView] setNeedsDisplayInRect: r];
-}
-
-LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
-			     WPARAM wParam, LPARAM lParam)
-{ 
-  NSEvent *ev = nil;
-  
-  /*
-      {
-	NSWindow *window = GSWindowWithNumber((int)hwnd);
-	RECT r;
-	NSRect rect;
-
-	NSLog(@"%d Frame %@", hwnd, NSStringFromRect([window frame]));
-	GetWindowRect(hwnd, &r);
-	rect = MSScreenRectToGS(r);
-	NSLog(@"%d Real frame %@", uMsg, NSStringFromRect(rect));
-      }
-  */
-  switch (uMsg) 
-    { 
-    case WM_SETTEXT: 
-      //NSLog(@"Got Message %s for %d", "SETTEXT", hwnd);
-      break;
-    case WM_NCCREATE: 
-      //NSLog(@"Got Message %s for %d", "NCCREATE", hwnd);
-      break;
-    case WM_NCCALCSIZE: 
-      //NSLog(@"Got Message %s for %d", "NCCALCSIZE", hwnd);
-      break;
-    case WM_NCACTIVATE: 
-      //NSLog(@"Got Message %s for %d", "NCACTIVATE", hwnd);
-      break;
-    case WM_NCPAINT: 
-      //NSLog(@"Got Message %s for %d", "NCPAINT", hwnd);
-      break;
-    case WM_NCHITTEST: 
-      //NSLog(@"Got Message %s for %d", "NCHITTEST", hwnd);
-      break;
-    case WM_SHOWWINDOW: 
-      //NSLog(@"Got Message %s for %d", "SHOWWINDOW", hwnd);
-      break;
-    case WM_NCMOUSEMOVE: 
-      //NSLog(@"Got Message %s for %d", "NCMOUSEMOVE", hwnd);
-      break;
-    case WM_NCLBUTTONDOWN: 
-      //NSLog(@"Got Message %s for %d", "NCLBUTTONDOWN", hwnd);
-      break;
-    case WM_NCLBUTTONUP: 
-      //NSLog(@"Got Message %s for %d", "NCLBUTTONUP", hwnd);
-      break;
-    case WM_NCDESTROY: 
-      //NSLog(@"Got Message %s for %d", "NCDESTROY", hwnd);
-      break;
-    case WM_GETTEXT: 
-      //NSLog(@"Got Message %s for %d", "GETTEXT", hwnd);
-      break;
-    case WM_STYLECHANGING: 
-      //NSLog(@"Got Message %s for %d", "STYLECHANGING", hwnd);
-      break;
-    case WM_STYLECHANGED: 
-      //NSLog(@"Got Message %s for %d", "STYLECHANGED", hwnd);
-      break;
-
-    case WM_GETMINMAXINFO:
-      {
-	WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
-	MINMAXINFO *mm;
-
-	//NSLog(@"Got Message %s for %d", "GETMINMAXINFO", hwnd);
-	if (win != NULL)
-	  {
-	    mm = (MINMAXINFO*)lParam;
-	    mm->ptMinTrackSize = win->minmax.ptMinTrackSize;
-	    mm->ptMaxTrackSize = win->minmax.ptMaxTrackSize;
-	    return 0;
-	  }
-      }
-    case WM_CREATE: 
-      {
-	WIN_INTERN *win;
-	NSBackingStoreType type = (NSBackingStoreType)((LPCREATESTRUCT)lParam)->lpCreateParams;
-
-	// Initialize the window. 
-	//NSLog(@"Got Message %s for %d", "CREATE", hwnd);
-	/* For windows with backingstore we create a compatible DC, that 
-	   is stored in the extra fields for this window. Drawing operations 
-	   work on this buffer. */
-	win = objc_malloc(sizeof(WIN_INTERN));
-	SetWindowLong(hwnd, GWL_USERDATA, (int)win);
-	
-	if (type != NSBackingStoreNonretained)
-	  {
-	    HDC hdc, hdc2;
-	    HBITMAP hbitmap;
-	    RECT r;
-
-	    GetClientRect((HWND)hwnd, &r);
-	    hdc = GetDC(hwnd);
-	    hdc2 = CreateCompatibleDC(hdc);
-	    hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, 
-					     r.bottom - r.top);
-	    win->old = SelectObject(hdc2, hbitmap);
-
-	    win->hdc = hdc2;
-	    win->useHDC = YES;
-	    
-	    ReleaseDC(hwnd, hdc);
-	  }
-	else
-	  {
-	    win->useHDC = NO;
-	  }
-	
-	break;
-      }
-    case WM_WINDOWPOSCHANGING: 
-      //NSLog(@"Got Message %s for %d", "WINDOWPOSCHANGING", hwnd);
-      break;
-    case WM_WINDOWPOSCHANGED: 
-      //NSLog(@"Got Message %s for %d", "WINDOWPOSCHANGED", hwnd);
-      break;
-    case WM_MOVE: 
-      //NSLog(@"Got Message %s for %d to %f, %f", "MOVE", hwnd, p.x, p.y);
-      break;
-    case WM_MOVING: 
-      //NSLog(@"Got Message %s for %d", "MOVING", hwnd);
-      break;
-    case WM_SIZE: 
-      //NSLog(@"Got Message %s for %d", "SIZE", hwnd);
-      break;
-    case WM_SIZING: 
-      //NSLog(@"Got Message %s for %d", "SIZING", hwnd);
-      break;
-    case WM_ENTERSIZEMOVE: 
-      //NSLog(@"Got Message %s for %d", "ENTERSIZEMOVE", hwnd);
-      break;
-    case WM_EXITSIZEMOVE: 
-      {
-	NSPoint eventLocation;
-	NSRect rect;
-	RECT r;
-	WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
-	
-	// FIXME: We should check if the size really did change.
-	if (win->useHDC)
-	  {
-	    HDC hdc, hdc2;
-	    HBITMAP hbitmap;
-	    HGDIOBJ old;
-
-	    old = SelectObject(win->hdc, win->old);
-	    DeleteObject(old);
-	    DeleteDC(win->hdc);
-	    win->hdc = NULL;
-	    win->old = NULL;
-
-	    GetClientRect((HWND)hwnd, &r);
-	    //NSLog(@"Change backing store to %d %d", r.right - r.left, r.bottom - r.top);
-	    hdc = GetDC((HWND)hwnd);
-	    hdc2 = CreateCompatibleDC(hdc);
-	    hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, r.bottom - r.top);
-	    win->old = SelectObject(hdc2, hbitmap);
-	    win->hdc = hdc2;
-	    
-	    ReleaseDC((HWND)hwnd, hdc);
-	  }
-
-	GetWindowRect(hwnd, &r);
-	rect = MSScreenRectToGS(r);
-	eventLocation = rect.origin;
-	//NSLog(@"Got Message %s for %d", "EXITSIZEMOVE", hwnd);
-	ev = [NSEvent otherEventWithType: NSAppKitDefined
-		      location: eventLocation
-		      modifierFlags: 0
-		      timestamp: 0
-		      windowNumber: (int)hwnd
-		      context: GSCurrentContext()
-		      subtype: GSAppKitWindowResized
-		      data1: rect.size.width
-		      data2: rect.size.height];
-	if (ev != nil)
-	  {
-	    [GSCurrentServer() postEvent: ev atStart: NO];
-	  }
-	ev = [NSEvent otherEventWithType: NSAppKitDefined
-		      location: eventLocation
-		      modifierFlags: 0
-		      timestamp: 0
-		      windowNumber: (int)hwnd
-		      context: GSCurrentContext()
-		      subtype: GSAppKitWindowMoved
-		      data1: rect.origin.x
-		      data2: rect.origin.y];
-	if (ev != nil)
-	  {
-	    [GSCurrentServer() postEvent: ev atStart: NO];
-	  }
-	// Make sure DefWindowProc gets called
-	ev = nil;
-	break;
-      }
-    case WM_ACTIVATE: 
-      //NSLog(@"Got Message %s for %d", "ACTIVATE", hwnd);
-      break;
-    case WM_ACTIVATEAPP: 
-      //NSLog(@"Got Message %s for %d", "ACTIVATEAPP", hwnd);
-      break;
-    case WM_MOUSEACTIVATE: 
-      //NSLog(@"Got Message %s for %d", "MOUSEACTIVATE", hwnd);
-      break;
-    case WM_SETFOCUS: 
-      {
-	NSPoint eventLocation = NSMakePoint(0,0);
-
-	if (wParam == (int)hwnd)
-	  return 0;
-	//NSLog(@"Got Message %s for %d", "SETFOCUS", hwnd);
-	ev = [NSEvent otherEventWithType:NSAppKitDefined
-		      location: eventLocation
-		      modifierFlags: 0
-		      timestamp: 0
-		      windowNumber: (int)hwnd
-		      context: GSCurrentContext()
-		      subtype: GSAppKitWindowFocusIn
-		      data1: 0
-		      data2: 0];
-	break;
-      }
-    case WM_KILLFOCUS: 
-      {
-	NSPoint eventLocation = NSMakePoint(0,0);
-
-	if (wParam == (int)hwnd)
-	  return 0;
-	//NSLog(@"Got Message %s for %d", "KILLFOCUS", hwnd);
-	ev = [NSEvent otherEventWithType:NSAppKitDefined
-		      location: eventLocation
-		      modifierFlags: 0
-		      timestamp: 0
-		      windowNumber: (int)hwnd
-		      context: GSCurrentContext()
-		      subtype: GSAppKitWindowFocusOut
-		      data1: 0
-		      data2: 0];
-	break;
-      }
-    case WM_SETCURSOR: 
-      //NSLog(@"Got Message %s for %d", "SETCURSOR", hwnd);
-      break;
-    case WM_QUERYOPEN: 
-      //NSLog(@"Got Message %s for %d", "QUERYOPEN", hwnd);
-      break;
-    case WM_CAPTURECHANGED: 
-      //NSLog(@"Got Message %s for %d", "CAPTURECHANGED", hwnd);
-      break;
-      
-    case WM_ERASEBKGND: 
-      //NSLog(@"Got Message %s for %d", "ERASEBKGND", hwnd);
-      //return 0;
-      break;
-    case WM_PAINT: 
-      {
-	RECT rect;
-
-	if (GetUpdateRect(hwnd, &rect, NO))
-	  {
-	    invalidateWindow(hwnd, rect);
-	    ValidateRect(hwnd, &rect);
-	  }
-
-	//NSLog(@"Got Message %s for %d", "PAINT", hwnd);
-	return 0;
-      }
-    case WM_SYNCPAINT: 
-      //NSLog(@"Got Message %s for %d", "SYNCPAINT", hwnd);
-      break;
-      
-    case WM_CLOSE: 
-      {
-	NSPoint eventLocation = NSMakePoint(0,0);
-
-	//NSLog(@"Got Message %s for %d", "CLOSE", hwnd);
-	ev = [NSEvent otherEventWithType: NSAppKitDefined
-		      location: eventLocation
-		      modifierFlags: 0
-		      timestamp: 0
-		      windowNumber: (int)hwnd
-		      context: GSCurrentContext()
-		      subtype: GSAppKitWindowClose
-		      data1: 0
-		      data2: 0];
-	break;
-      }
-    case WM_DESTROY:
-      { 
-	WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
-
-	// Clean up window-specific data objects. 
-	//NSLog(@"Got Message %s for %d", "DESTROY", hwnd);
-	
-	if (win->useHDC)
-	  {
-	    HGDIOBJ old;
-	    
-	    old = SelectObject(win->hdc, win->old);
-	    DeleteObject(old);
-	    DeleteDC(win->hdc);
-	  }
-	objc_free(win);
-	break;
-      }
-    case WM_KEYDOWN:
-      //NSLog(@"Got Message %s for %d", "KEYDOWN", hwnd);
-      ev = process_key_event(hwnd, wParam, lParam, NSKeyDown);
-      break;
-    case WM_KEYUP:
-      //NSLog(@"Got Message %s for %d", "KEYUP", hwnd);
-      ev = process_key_event(hwnd, wParam, lParam, NSKeyUp);
-      break;
-
-    case WM_MOUSEMOVE: 
-      //NSLog(@"Got Message %s for %d", "MOUSEMOVE", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSMouseMoved);
-      break;
-    case WM_LBUTTONDOWN: 
-      //NSLog(@"Got Message %s for %d", "LBUTTONDOWN", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSLeftMouseDown);
-      break;
-    case WM_LBUTTONUP: 
-      //NSLog(@"Got Message %s for %d", "LBUTTONUP", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSLeftMouseUp);
-      break;
-    case WM_LBUTTONDBLCLK: 
-      //NSLog(@"Got Message %s for %d", "LBUTTONDBLCLK", hwnd);
-      break;
-    case WM_MBUTTONDOWN: 
-      //NSLog(@"Got Message %s for %d", "MBUTTONDOWN", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSOtherMouseDown);
-      break;
-    case WM_MBUTTONUP: 
-      //NSLog(@"Got Message %s for %d", "MBUTTONUP", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSOtherMouseUp);
-      break;
-    case WM_MBUTTONDBLCLK: 
-      //NSLog(@"Got Message %s for %d", "MBUTTONDBLCLK", hwnd);
-      break;
-    case WM_RBUTTONDOWN: 
-      //NSLog(@"Got Message %s for %d", "RBUTTONDOWN", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSRightMouseDown);
-      break;
-    case WM_RBUTTONUP: 
-      //NSLog(@"Got Message %s for %d", "RBUTTONUP", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSRightMouseUp);
-      break;
-    case WM_RBUTTONDBLCLK: 
-      //NSLog(@"Got Message %s for %d", "RBUTTONDBLCLK", hwnd);
-      break;
-    case WM_MOUSEWHEEL: 
-      //NSLog(@"Got Message %s for %d", "MOUSEWHEEL", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSScrollWheel);
-      break;
-
-    case WM_QUIT:
-      NSLog(@"Got Message %s for %d", "QUIT", hwnd);
-      break;
-    case WM_USER:
-      NSLog(@"Got Message %s for %d", "USER", hwnd);
-      break;
-    case WM_APP:
-      NSLog(@"Got Message %s for %d", "APP", hwnd);
-      break;
-
-    case WM_ENTERMENULOOP:
-      //NSLog(@"Got Message %s for %d", "ENTERMENULOOP", hwnd);
-      break;
-    case WM_EXITMENULOOP:
-      //NSLog(@"Got Message %s for %d", "EXITMENULOOP", hwnd);
-      break;
-    case WM_INITMENU:
-      //NSLog(@"Got Message %s for %d", "INITMENU", hwnd);
-      break;
-    case WM_MENUSELECT:
-      //NSLog(@"Got Message %s for %d", "MENUSELECT", hwnd);
-      break;
-    case WM_ENTERIDLE:
-      //NSLog(@"Got Message %s for %d", "ENTERIDLE", hwnd);
-      break;
- 
-    case WM_COMMAND:
-      //NSLog(@"Got Message %s for %d", "COMMAND", hwnd);
-      break;
-    case WM_SYSKEYDOWN:
-      //NSLog(@"Got Message %s for %d", "SYSKEYDOWN", hwnd);
-      break;
-    case WM_SYSKEYUP:
-      //NSLog(@"Got Message %s for %d", "SYSKEYUP", hwnd);
-      break;
-    case WM_SYSCOMMAND:
-      //NSLog(@"Got Message %s for %d", "SYSCOMMAND", hwnd);
-      break;
-    case WM_HELP:
-      //NSLog(@"Got Message %s for %d", "HELP", hwnd);
-      break;
-    case WM_POWERBROADCAST:
-      //NSLog(@"Got Message %s for %d", "POWERBROADCAST", hwnd);
-      break;
-    case WM_TIMECHANGE:
-      //NSLog(@"Got Message %s for %d", "TIMECHANGE", hwnd);
-      break;
-    case WM_DEVICECHANGE:
-      NSLog(@"Got Message %s for %d", "DEVICECHANGE", hwnd);
-      break;
-    case WM_GETICON:
-      NSLog(@"Got Message %s for %d", "GETICON", hwnd);
-      break;
-
-    default: 
-      // Process all other messages. 
-      NSLog(@"Got Message %d for %d", uMsg, hwnd);
-      break;
-    } 
-
-  if (ev != nil)
-    {
-      //NSLog(@"Send event %@", ev);
-      [GSCurrentServer() postEvent: ev atStart: NO];
-      return 0;
-    }
-
-  return DefWindowProc(hwnd, uMsg, wParam, lParam); 
 }
