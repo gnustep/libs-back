@@ -57,11 +57,6 @@ NSDragOperation	GSDragOperationForAction(Atom xaction);
 - (void) setupDragInfoFromXEvent: (XEvent *)xEvent;
 - (void) updateDragInfoFromEvent: (NSEvent *)event;
 - (void) resetDragInfo;
-- (void) _sendLocalEvent: (GSAppKitSubtype)subtype
-		  action: (NSDragOperation)action
-	        position: (NSPoint)eventLocation
-	       timestamp: (NSTimeInterval)time
-		toWindow: (NSWindow*)dWindow;
 - (void) dragImage: (NSImage*)anImage
 		at: (NSPoint)screenLocation
 	    offset: (NSSize)initialOffset
@@ -69,14 +64,5 @@ NSDragOperation	GSDragOperationForAction(Atom xaction);
 	pasteboard: (NSPasteboard*)pboard
 	    source: (id)sourceObject
 	 slideBack: (BOOL)slideFlag;
-- (void) postDragEvent: (NSEvent *)theEvent;
-- (void) _setCursor;
-- (void) _handleDrag: (NSEvent*)theEvent;
-- (void) _handleEventDuringDragging: (NSEvent*) theEvent;
-- (void) _updateAndMoveImageToCorrectPosition;
-- (void) _moveDraggedImageToNewPosition;
-- (void) _slideDraggedImageTo: (NSPoint)screenPoint
-                numberOfSteps: (int) steps
-               waitAfterSlide: (BOOL) waitFlag;
 - (Window) _xWindowAcceptingDnDunderX: (int) x Y: (int) y;
 @end
