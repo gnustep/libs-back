@@ -93,6 +93,10 @@ typedef struct draw_info_s
 			   unsigned char r, unsigned char g, unsigned char b,
 			   unsigned char alpha, int num);
 
+  void (*render_blit_subpixel)(unsigned char *dst, const unsigned char *src,
+	unsigned char r, unsigned char g, unsigned char b, unsigned char a,
+	int num);
+
 
   void (*composite_sover_aa)(composite_run_t *c, int num);
   void (*composite_sover_ao)(composite_run_t *c, int num);

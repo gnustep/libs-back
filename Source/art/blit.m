@@ -201,6 +201,39 @@ static void MPRE(blit_mono) (unsigned char *adst,
 }
 
 
+static void MPRE(blit_subpixel) (unsigned char *adst, const unsigned char *asrc,
+	unsigned char r, unsigned char g, unsigned char b, unsigned char a,
+	int num)
+{
+  const unsigned char *src = asrc;
+  BLEND_TYPE *dst = (BLEND_TYPE *)adst;
+  unsigned int nr, ng, nb;
+  unsigned int ar, ag, ab;
+  int alpha = a;
+
+  if (alpha>127) alpha++;
+
+  for (; num; num--)
+    {
+      ar = *src++;
+      ag = *src++;
+      ab = *src++;
+
+      BLEND_READ(dst, nr, ng, nb)
+
+      ar *= alpha;
+      ag *= alpha;
+      ab *= alpha;
+
+      nr = (r * ar + nr * (65280 - ar) + 0xff00) >> 16;
+      ng = (g * ag + ng * (65280 - ag) + 0xff00) >> 16;
+      nb = (b * ab + nb * (65280 - ab) + 0xff00) >> 16;
+      BLEND_WRITE(dst, nr, ng, nb)
+      BLEND_INC(dst)
+    }
+}
+
+
 static void MPRE(run_opaque) (render_run_t *ri, int num)
 {
 #if FORMAT_HOW == DI_16_B5G5R5A1 || FORMAT_HOW == DI_16_B5G6R5
@@ -1464,6 +1497,8 @@ static draw_info_t draw_infos[DI_NUM] = {
   NPRE(blit_mono_opaque,x), \
   NPRE(blit_alpha,x), \
   NPRE(blit_mono,x), \
+  \
+  NPRE(blit_subpixel,x), \
   \
   NPRE(sover_aa,x), \
   NPRE(sover_ao,x), \
