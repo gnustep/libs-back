@@ -30,6 +30,7 @@
 #include <Foundation/NSRunLoop.h>
 #include <Foundation/NSTimer.h>
 #include <Foundation/NSUserDefaults.h>
+#include <Foundation/NSException.h>
 #include <AppKit/AppKitExceptions.h>
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSGraphics.h>
@@ -48,6 +49,9 @@
 #include <sys/file.h>
 #endif
 
+
+static BOOL handlesWindowDecorations = NO;
+
 static void 
 validateWindow(HWND hwnd, RECT rect);
 LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
@@ -58,7 +62,15 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 /* Initialize AppKit backend */
 + (void)initializeBackend
 {
+  NSUserDefaults	*defs;
+
   NSDebugLog(@"Initializing GNUstep win32 backend.\n");
+  defs = [NSUserDefaults standardUserDefaults];
+  if ([defs objectForKey: @"GSWIN32HandlesWindowDecorations"])
+    {
+      handlesWindowDecorations =
+	[defs boolForKey: @"GSWINHandlesWindowDecorations"];
+    }
   [GSDisplayServer setDefaultServerClass: [WIN32Server class]];
 }
 
@@ -187,7 +199,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   if ((int)hwnd == win)
     {
       /*
-       * If the winodw at the point we want is excluded,
+       * If the window at the point we want is excluded,
        * we must look through ALL windows at a lower level
        * until we find one which contains the same point.
        */
@@ -197,7 +209,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
 	  hwnd = GetWindow(hwnd, GW_HWNDNEXT);
 	  GetWindowRect(hwnd, &r);
-	  if (PtInRect(&r, p))
+	  if (PtInRect(&r, p) && IsWindowVisible(hwnd))
 	    {
 	      break;
 	    }
@@ -338,12 +350,30 @@ DWORD windowStyleForGSStyle(unsigned int style)
 
 @implementation WIN32Server (WindowOps)
 
+-(BOOL) handlesWindowDecorations
+{
+  return handlesWindowDecorations;
+}
+
+
 - (int) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style
 	      : (int) screen
 {
   HWND hwnd; 
   RECT r;
-  DWORD wstyle = windowStyleForGSStyle(style);
+  DWORD wstyle;
+  DWORD estyle;
+
+  if (handlesWindowDecorations)
+    {
+      wstyle = windowStyleForGSStyle(style);
+      estyle = (style == 0 ? WS_EX_TOOLWINDOW : 0);
+    }
+  else
+    {
+      wstyle = WS_POPUP;
+      estyle = WS_EX_TOOLWINDOW;
+    }
 
   r = GSScreenRectToMS(frame, style, self);
 
@@ -351,7 +381,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
 	      type, style, screen);
   NSDebugLLog(@"WTrace", @"         device frame: %d, %d, %d, %d", 
 	      r.left, r.top, r.right - r.left, r.bottom - r.top);
-  hwnd = CreateWindowEx(0,
+  hwnd = CreateWindowEx(estyle,
 			"GNUstepWindowClass",
 			"GNUstepWindow",
 			wstyle, 
@@ -378,6 +408,9 @@ DWORD windowStyleForGSStyle(unsigned int style)
 - (void) stylewindow: (unsigned int)style : (int) winNum
 {
   DWORD wstyle = windowStyleForGSStyle(style);
+
+  NSAssert(handlesWindowDecorations,
+    @"-stylewindow:: called when handlesWindowDecorations==NO");
 
   NSDebugLLog(@"WTrace", @"stylewindow: %d : %d", style, winNum);
   SetWindowLong((HWND)winNum, GWL_STYLE, wstyle);
@@ -638,17 +671,28 @@ DWORD windowStyleForGSStyle(unsigned int style)
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
 		     : (unsigned int) style 
 {
-  DWORD wstyle = windowStyleForGSStyle(style);
-  RECT rect = {100, 100, 200, 200};
-  
-  AdjustWindowRectEx(&rect, wstyle, NO, 0);
+  if (handlesWindowDecorations)
+    {
+      DWORD wstyle = windowStyleForGSStyle(style);
+      RECT rect = {100, 100, 200, 200};
+      
+      AdjustWindowRectEx(&rect, wstyle, NO, 0);
 
-  *l = 100 - rect.left;
-  *r = rect.right - 200;
-  *t = 100 - rect.top;
-  *b = rect.bottom - 200;
-
-  //NSLog(@"Sytle %d offset %f %f %f %f", wstyle, *l, *r, *t, *b);
+      *l = 100 - rect.left;
+      *r = rect.right - 200;
+      *t = 100 - rect.top;
+      *b = rect.bottom - 200;
+      //NSLog(@"Style %d offset %f %f %f %f", wstyle, *l, *r, *t, *b);
+    }
+  else
+    {
+      /*
+      If we don't handle decorations, all our windows are going to be
+      border- and decorationless. In that case, -gui won't call this method,
+      but we still use it internally.
+      */
+      *l = *r = *t = *b = 0.0;
+    }
 }
 
 - (void) docedited: (int) edited : (int) winNum
@@ -657,6 +701,10 @@ DWORD windowStyleForGSStyle(unsigned int style)
 
 - (void) setinputstate: (int)state : (int)winNum
 {
+  if (handlesWindowDecorations == NO)
+    {
+      return;
+    }
   if (state == GSTitleBarKey)
     {
       SetActiveWindow((HWND)winNum);

@@ -180,6 +180,25 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
     wscolor = RGB(color.field[0]*255, color.field[1]*255, color.field[2]*255);
 }
 
+static inline
+RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
+{
+  RECT r1;
+  int h;
+
+  h = WindowHeight([s window]);
+
+//  r.origin.x += s->offset.x;
+//  r.origin.y += s->offset.y;
+
+  r1.left = r.origin.x;
+  r1.right = r.origin.x + r.size.width;
+  r1.bottom = h - r.origin.y;
+  r1.top = h - r.origin.y - r.size.height;
+
+  return r1;
+}
+
 - (void) _compositeGState: (WIN32GState *) source
                  fromRect: (NSRect) sourceRect
                   toPoint: (NSPoint) destPoint
@@ -200,6 +219,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 	      NSStringFromRect(sourceRect), NSStringFromPoint(destPoint), op);
 
   rectFrom = GSViewRectToWin(source, sourceRect);
+  //rectFrom = GSXWindowRectToMS(sourceRect);
   h = rectFrom.bottom - rectFrom.top;
 
   destRect.size = sourceRect.size;

@@ -4,6 +4,12 @@
 	* Source/x11/XGDragView.m: Rewrite to be a subclass of GSDragView
 	so that bugfixes from it are in  XGDragView.  Remove lots of
 	redundant code.  Still quite a bit to do.
+	* Source/win32/WIN32Server.m: Add code to draw own window decorations
+	and GSWIN32HandlesWindowDecorations user default to turn it off.
+	Fixed code for detecting window at a screen point to ignore invisible
+	windows (fixes crash in DnD).
+	Altered window type to 'tool' for borderless windows, so that we don't
+	get a button in the taskbar for every window we create.
 
 2005-03-29  Adrian Robert <arobert@cogsci.ucsd.edu>
 
