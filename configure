@@ -2154,7 +2154,7 @@ if test "${enable_xim+set}" = set; then
   enableval="$enable_xim"
   :
 else
-  enable_xim=no
+  enable_xim=yes
 fi
 
 if test "x$enable_xim" = "xyes"; then

@@ -38,8 +38,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-#include "xlib/XGContext.h"
-#include "xlib/xrtools.h"
+#include "xlib/XGPrivate.h"
 #include "x11/XGServerWindow.h"
 #include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>

@@ -2070,17 +2070,18 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 		     GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
 
   if (ret != GrabSuccess)
-    NSDebugLLog(@"XGTrace", @"Failed to grab pointer\n");
+    NSDebugLLog(@"XGTrace", @"Failed to grab pointer %d\n", win);
   else
     {
       grab_window = window;
-      NSDebugLLog(@"XGTrace", @"Grabbed pointer\n");
+      NSDebugLLog(@"XGTrace", @"Grabbed pointer %d\n", win);
     }
   return (ret == GrabSuccess) ? YES : NO;
 }
 
 - (void) releasemouse
 {
+  NSDebugLLog(@"XGTrace", @"Released pointer\n");
   XUngrabPointer(XDPY, CurrentTime);
   grab_window = NULL;
 }

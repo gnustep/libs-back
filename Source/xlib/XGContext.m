@@ -91,7 +91,17 @@
 
 - (id) initWithContextInfo: (NSDictionary *)info
 {
-  [super initWithContextInfo: info];
+  NSString *contextType;
+  contextType = [info objectForKey: 
+		  NSGraphicsContextRepresentationFormatAttributeName];
+
+  self = [super initWithContextInfo: info];
+  if (contextType)
+    {
+      /* Most likely this is a PS or PDF context, so just return what
+	 super gave us */
+      return self;
+    }
 
   /* Create a default gstate */
   gstate = [[XGGState allocWithZone: [self zone]] initWithDrawContext: self];

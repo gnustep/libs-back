@@ -27,6 +27,7 @@
 #include <AppKit/NSBezierPath.h>
 #include <AppKit/NSFont.h>
 #include <AppKit/NSGraphics.h>
+
 #include "xlib/XGGeometry.h"
 #include "xlib/XGContext.h"
 #include "xlib/XGGState.h"
@@ -49,6 +50,19 @@ static BOOL shouldDrawAlpha = YES;
     [self copyGraphicContext]
 
 #define AINDEX 5
+
+u_long   
+xrRGBToPixel(RContext* context, xr_device_color_t color)
+{
+  XColor cc;
+  RColor rcolor;
+  rcolor.red = 255. * color.field[0];
+  rcolor.green = 255. * color.field[1];
+  rcolor.blue = 255. * color.field[2];
+  rcolor.alpha = 0;
+  RGetClosestXColor(context, &rcolor, &cc);
+  return cc.pixel;
+}
 
 @interface XGGState (Private)
 - (void) _alphaBuffer: (gswindow_device_t *)dest_win;
@@ -224,9 +238,10 @@ static	Region	emptyRegion;
 {
   float alpha = color.field[AINDEX];
   color = acolor;
-  color.field[AINDEX] = alpha;
-  gcv.foreground = xrColorToPixel((RContext *)context, color);
+  acolor = xrColorToRGB(acolor);
+  gcv.foreground = xrRGBToPixel((RContext *)context, acolor);
   [self setGCValues: gcv withMask: GCForeground];
+  color.field[AINDEX] = alpha;
 }
 
 - (void) setFont: (NSFont*)newFont
@@ -1174,8 +1189,7 @@ static	Region	emptyRegion;
 - (void)DPScurrentcmykcolor: (float *)c : (float *)m : (float *)y : (float *)k 
 {
   xr_device_color_t new = color;
-  if (new.space != cmyk_colorspace)
-    new = xrConvertToCMYK(new);
+  new = xrColorToCMYK(new);
   *c = new.field[0];
   *m = new.field[1];
   *y = new.field[2];
@@ -1195,21 +1209,21 @@ static	Region	emptyRegion;
 - (void)DPScurrentgray: (float *)gray 
 {
   xr_device_color_t gcolor;
-  gcolor = xrConvertToGray(color);
+  gcolor = xrColorToGray(color);
   *gray = gcolor.field[0];
 }
 
 - (void)DPScurrenthsbcolor: (float *)h : (float *)s : (float *)b 
 {
   xr_device_color_t gcolor;
-  gcolor = xrConvertToHSB(color);
+  gcolor = xrColorToHSB(color);
   *h = gcolor.field[0]; *s = gcolor.field[1]; *b = gcolor.field[2];
 }
 
 - (void)DPScurrentrgbcolor: (float *)r : (float *)g : (float *)b 
 {
   xr_device_color_t gcolor;
-  gcolor = xrConvertToRGB(color);
+  gcolor = xrColorToRGB(color);
   *r = gcolor.field[0]; *g = gcolor.field[1]; *b = gcolor.field[2];
 }
 

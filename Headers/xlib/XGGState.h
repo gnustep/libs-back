@@ -28,6 +28,8 @@
 #include <Foundation/NSArray.h>
 #include <Foundation/NSObject.h>
 #include "gsc/GSGState.h"
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
 #include "xlib/xrtools.h"
 
 @class NSBezierPath;
