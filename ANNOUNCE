@@ -1,7 +1,7 @@
 ANNOUNCE
 ********
 
-This is version 0.9.2 of the GNUstep GUI Backend (`gnustep-back').
+This is version 0.9.3 of the GNUstep GUI Backend (`gnustep-back').
 
 What is the GNUstep GUI Backend?
 ================================
@@ -20,21 +20,20 @@ easily ported to other display systems.
 Window's Systems. It works via a DPS emulation engine to emulate the
 DPS functions required by the front-end system.
 
-Noteworthy changes in version `0.9.2'
+Noteworthy changes in version `0.9.3'
 =====================================
 
-   * Art backend added support for grayscale, one-isblack colorspaces.
+   * A number of W32 window event enhancements
 
-   * Windows pasteboard interaction handling added.
+   * art backend glyph drawing with alpha enhancements.
 
-   * Better focus handling on Windows.
-
-   * Better font and draw handling on Windows.
+   * libwraster is no longer checked for - image functions now in
+     frontend
 
 Where can you get it?  How can you compile it?
 ==============================================
 
-   The gstep-back-0.9.2.tar.gz distribution file has been placed on
+   The gstep-back-0.9.3.tar.gz distribution file has been placed on
 `ftp.gnustep.org' in `pub/gnustep/core'.
 
 Where do I send bug reports?

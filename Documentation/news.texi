@@ -13,6 +13,7 @@
 @itemize @bullet
 @item A number of W32 window event enhancements
 @item art backend glyph drawing with alpha enhancements.
+@item libwraster is no longer checked for - image functions now in frontend
 @end itemize
 
 @c ====================================================================

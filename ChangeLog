@@ -1,11 +1,9 @@
-2004-06-12  Adam Fedor  <fedor@gnu.org>
-
-	* configure.ac: Remove WindowMaker/libwraster check
-
 2004-06-11  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.9.3
 	* Documentation/news.texi: Update.
+
+	* configure.ac: Remove WindowMaker/libwraster check
 
 2004-05-27  Fred Kiefer <FredKiefer@gmx.de>
 
