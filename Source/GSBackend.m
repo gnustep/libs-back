@@ -75,7 +75,9 @@
     contextClass = objc_get_class("ARTContext");
   else if ([context isEqual: @"winlib"])
     contextClass = objc_get_class("WIN32Context");
-  else
+   else if ([context isEqual: @"cairo"])
+    contextClass = objc_get_class("CairoContext");
+ else
     contextClass = objc_get_class("XGContext");
 
   [contextClass initializeBackend];
