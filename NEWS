@@ -1,6 +1,16 @@
 NEWS
 ****
 
+Noteworthy changes in version `0.9.3'
+=====================================
+
+   * A number of W32 window event enhancements
+
+   * art backend glyph drawing with alpha enhancements.
+
+   * libwraster is no longer checked for - image functions now in
+     frontend
+
 Noteworthy changes in version `0.9.2'
 =====================================
 
