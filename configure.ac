@@ -23,6 +23,8 @@
 # 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
+builtin(include, pkg.m4)dnl
+
 AC_INIT
 AC_PREREQ(2.57)
 AC_CONFIG_SRCDIR([back.make.in])
@@ -31,9 +33,6 @@ AC_CONFIG_HEADER(config.h)
 if test -z "$GNUSTEP_SYSTEM_ROOT"; then
   AC_MSG_ERROR([You must run the GNUstep.sh script before configuring])
 fi
-
-GRAPHIC_CFLAGS="$CPPFLAGS"
-GRAPHIC_LFLAGS="$LDFLAGS"
 
 #--------------------------------------------------------------------
 # Use config.guess, config.sub and install-sh provided by gnustep-make
@@ -50,6 +49,9 @@ AC_CANONICAL_TARGET([])
 # The following is so that headers and custom libraries
 # in the GNUstep root are used before the standard ones
 #--------------------------------------------------------------------
+GRAPHIC_CFLAGS="$CPPFLAGS"
+GRAPHIC_LFLAGS="$LDFLAGS"
+
 # Set location of GNUstep dirs for later use
 GNUSTEP_HDIR=$GNUSTEP_SYSTEM_ROOT/Library/Headers
 if test "$GNUSTEP_FLATTENED" = yes; then
@@ -84,30 +86,18 @@ if test "x$no_x" = xyes; then
 fi
 
 if test $set_x_paths = yes; then
-  GRAPHIC_CFLAGS="$GRAPHIC_CFLAGS $X_CFLAGS"
-  GRAPHIC_LFLAGS="$GRAPHIC_LFLAGS $X_LIBS"
-  GRAPHIC_LIBS="$X_EXTRA_LIBS"
+  GRAPHIC_CFLAGS="$X_CFLAGS $GRAPHIC_CFLAGS"
+  CPPFLAGS="$X_CFLAGS $CPPFLAGS"
+  # Note: Don't include $X_LIBS in LDFLAGS as it may conflict with
+  # other libraries installed in /sw, /sw/lib/freetyp2/lib
+  #GRAPHIC_LFLAGS="$X_LIBS $GRAPHIC_LFLAGS"
+  # But do include it here just to find the extra x libraries 
+  LDFLAGS="$X_LIBS $LDFLAGS"
+  LIBS="-lX11 $X_EXTRA_LIBS $LIBS"
 
-  lib_save_header=${CPPFLAGS}
-  lib_save_libs=${LIBS}
-  CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
-  LIBS="${GRAPHIC_LIBS} ${LIBS}"
-  AC_CHECK_LIB(Xext, main, have_xext=1, have_xext=0)
-  if test $have_xext = 1; then
-    GRAPHIC_LIBS="-lX11 -lXext ${GRAPHIC_LIBS}"
-  else
-    GRAPHIC_LIBS="-lX11  ${GRAPHIC_LIBS}"
-  fi
-  LIBS="${GRAPHIC_LIBS} ${LIBS}"
-  AC_CHECK_LIB(Xmu, main, have_xmu=1, have_xmu=0)
-  CPPFLAGS="${lib_save_header}"
-  LIBS="${lib_save_libs}"
-  if test $have_xmu = 1; then
-    GRAPHIC_LIBS="-lXmu ${GRAPHIC_LIBS}"
-  fi
-fi
-if test -r $x_includes/X11/DPS; then
-  GRAPHIC_CFLAGS="-I$x_includes/X11 $GRAPHIC_CFLAGS"
+  AC_CHECK_LIB(Xext, main)
+  AC_CHECK_LIB(Xmu, main)
+  LIBS="$X_LIBS $LIBS"
 fi
 AC_SUBST(X_PRE_LIBS)
 
@@ -129,62 +119,82 @@ fi
 # Find for DPS
 #--------------------------------------------------------------------
 save_CPPFLAGS=${CPPFLAGS}
-CPPFLAGS="${CPPFLAGS} ${GRAPHIC_CFLAGS}"
+if test -r $x_includes/X11/DPS; then
+  CPPFLAGS="-I$x_includes/X11 $CPPFLAGS"
+fi
 AC_CHECK_HEADERS([DPS/dpsclient.h DPS/dpsNXargs.h])
-CPPFLAGS="${save_CPPFLAGS}"
+if test $ac_cv_header_DPS_dpsNXargs_h = no; then
+  CPPFLAGS="${save_CPPFLAGS}"
+fi
 
 #--------------------------------------------------------------------
 # freetype libraries
 #--------------------------------------------------------------------
-save_header=${CPPFLAGS}
-save_libs=${LIBS}
-CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
-LIBS="${GRAPHIC_LIBS} ${LIBS}"
 
 FREETYPE_LIBS="`freetype-config --libs`"
 FREETYPE_CFLAGS="`freetype-config --cflags`"
 
-CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
-LIBS="${LIBS} ${FREETYPE_LIBS}"
-
-AC_CHECK_LIB(freetype, main, have_freetype=yes, have_freetype=no)
-if test "$have_freetype" = yes; then
+have_freetype=no
+if test x"$FREETYPE_LIBS" != x; then
+  save_CPPFLAGS=${CPPFLAGS}
+  CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
   AC_CHECK_HEADER(ft2build.h,have_freetype=yes, have_freetype=no)
+  CPPFLAGS="${save_CPPFLAGS}"
 fi
-if test "$have_freetype" = yes; then
-  GRAPHIC_CFLAGS="$GRAPHIC_CFLAGS $FREETYPE_CFLAGS"
-  GRAPHIC_LIBS="$FREETYPE_LIBS $GRAPHIC_LIBS"
-fi
-CPPFLAGS="${save_header}"
-LIBS="${save_libs}"
 
 #--------------------------------------------------------------------
 # Extended font support & UTF8 support
 #--------------------------------------------------------------------
-WITH_XFT=no
-save_header=${CPPFLAGS}
-save_libs=${LIBS}
-CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
-LIBS="${GRAPHIC_LIBS} ${LIBS}"
-AC_CHECK_LIB(Xft, XftFontOpen, have_xft=yes, have_xft=no)
-AC_CHECK_HEADER(X11/Xft/Xft.h)
-if test "$have_xft" = yes -a "$ac_cv_header_X11_Xft_Xft_h" = yes; then
-  GRAPHIC_LIBS="-lXft ${GRAPHIC_LIBS}"
+PKG_XFT=no
+PKG_CHECK_MODULES(XFT, xft, WITH_XFT=yes, WITH_XFT=no)
+
+if test WITH_XFT = no; then
+  # pkg-config failed for some reason, Check the old way?
+  save_CPPFLAGS=${CPPFLAGS}
+  save_LIBS=${LIBS}
+  if test $have_freetype = yes; then
+    LIBS="$FREETYPE_LIBS $LIBS"
+    CPPFLAGS="$FREETYPE_CFLAGS $CPPFLAGS"
+  fi
+  AC_CHECK_LIB(Xft, XftFontOpen)
+  AC_CHECK_HEADER(X11/Xft/Xft.h)
+  if test "$ac_cv_lib_Xft_XftFontOpen" = yes -a "$ac_cv_header_X11_Xft_Xft_h" = yes; then
+    WITH_XFT=yes
+    XFT_LIBS="-lXft $FREETYPE_LIBS"
+    XFT_CFLAGS="$FREETYPE_CFLAGS"
+  fi
+  CPPFLAGS=${save_CPPFLAGS}
+  LIBS=${save_LIBS}
+else
   WITH_XFT=yes
+  PKG_XFT=yes
+fi
+
+if test $WITH_XFT = yes; then
+  # Now add in some extra defines depending on what we have.
+  save_CPPFLAGS=${CPPFLAGS}
+  save_LIBS=${LIBS}
+  CPPFLAGS="$XFT_CFLAGS $CPPFLAGS"
+  LIBS="$XFT_LIBS $LIBS"
   AC_DEFINE(HAVE_XFT,1,[Define if you have the Xft library])
   AC_CHECK_LIB(Xft, XftDrawStringUtf8, have_utf8=yes, have_utf8=no)
   if test "$have_utf8" = yes; then
     AC_DEFINE(HAVE_UTF8,1,[Define if you have XftDrawStringUtf8])
   fi
+  AC_CHECK_LIB(Xft, XftPatternGetString, have_xftpgs=yes, have_xftpgs=no)
   AC_CHECK_LIB(fontconfig, FcPatternCreate, have_fc=yes, have_fc=no)
   AC_CHECK_HEADER(fontconfig/fontconfig.h)
   if test "$have_fc" = yes -a "$ac_cv_header_fontconfig_fontconfig_h" = yes; then
-    GRAPHIC_LIBS="-lfontconfig ${GRAPHIC_LIBS}"
+    # fontconfig is likely to be included if we found xft via pkg-config, so 
+    # don't include it twice
+    if test $PKG_XFT = no; then
+      XFT_LIBS="${XFT_LIBS} -lfontconfig"
+    fi
     AC_DEFINE(HAVE_FC,1,[Define if you have FcPatternCreate])
   fi
+  CPPFLAGS=${save_CPPFLAGS}
+  LIBS=${save_LIBS}
 fi
-CPPFLAGS="${save_header}"
-LIBS="${save_libs}"
 AC_SUBST(WITH_XFT)
 
 #--------------------------------------------------------------------
@@ -195,10 +205,6 @@ AC_ARG_ENABLE(glx,
   [  --disable-glx           Disable GLX support],,
   enable_glx=yes)
 if test "x$enable_glx" = "xyes"; then
-   save_header=${CPPFLAGS}
-   save_libs=${LIBS}
-   CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
-   LIBS="${GRAPHIC_LIBS} ${LIBS}"
    AC_CHECK_LIB(GL, glXMakeContextCurrent, have_glx=yes, have_glx=no)
    AC_CHECK_HEADER(GL/glx.h)
    AC_MSG_CHECKING([for GLX_RGBA_TYPE])
@@ -210,14 +216,12 @@ if test "x$enable_glx" = "xyes"; then
       ], have_glx_rgba=yes, have_glx_rgba=no)
    AC_MSG_RESULT([$have_glx_rgba])
    if test "$have_glx" = yes -a "$ac_cv_header_GL_glx_h" = yes -a "$have_glx_rgba" = yes; then
-     GRAPHIC_LIBS="-lGL ${GRAPHIC_LIBS}"
+     LIBS="-lGL ${LIBS}"
      WITH_GLX=yes
      AC_DEFINE(HAVE_GLX,1,[Define if you have the glx library])
    fi
-   CPPFLAGS="${save_header}"
-   LIBS="${save_libs}"
-   AC_SUBST(WITH_GLX)
 fi
+AC_SUBST(WITH_GLX)
 
 
 #--------------------------------------------------------------------
@@ -235,8 +239,6 @@ fi
 #--------------------------------------------------------------------
 AC_HAVE_FUNCS(usleep)
 
-save_CPPFLAGS=${CPPFLAGS}
-CPPFLAGS="$CPPFLAGS $GRAPHIC_CFLAGS"
 have_xshm=no
 AC_CHECK_HEADERS(X11/extensions/XShm.h,
 	have_xshm=yes,,
@@ -245,15 +247,10 @@ AC_CHECK_FUNCS(shmctl)
 if test "$ac_cv_header_X11_extensions_XShm_h" = yes -a "$ac_cv_func_shmctl" = yes; then
   AC_DEFINE(XSHM,1,[Define if you have X11 XShm extensions])
 fi
-CPPFLAGS="$save_CPPFLAGS"
 
 #--------------------------------------------------------------------
 # Window's graphics library
 #--------------------------------------------------------------------
-save_header=${CPPFLAGS}
-save_libs=${LIBS}
-CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
-LIBS="${GRAPHIC_LIBS} ${LIBS}"
 AC_CHECK_LIB(gdi32, main, have_gdi32=yes, have_gdi32=no)
 if test "$have_gdi32" = yes; then
   WIN32_LIBS="-lgdi32"
@@ -262,97 +259,56 @@ AC_CHECK_LIB(msimg32, main, have_msimg32=yes, have_msimg32=no)
 if test "$have_msimg32" = yes; then
   WIN32_LIBS="${WIN32_LIBS} -lmsimg32"
 fi
-CPPFLAGS="${save_header}"
-LIBS="${save_libs}"
 
 #--------------------------------------------------------------------
 # libart graphics libraries
 #--------------------------------------------------------------------
-save_header=${CPPFLAGS}
-save_libs=${LIBS}
-CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
-LIBS="${GRAPHIC_LIBS} ${LIBS}"
-
-LIBART_LIBS="`libart2-config --libs`"
-LIBART_CFLAGS="`libart2-config --cflags`"
-
-CPPFLAGS="${CPPFLAGS} ${LIBART_CFLAGS}"
-LIBS="${LIBS} ${LIBART_LIBS}"
-
-AC_CHECK_LIB(art_lgpl_2, main, have_libart_lgpl_2=yes, have_libart_lgpl_2=no)
-if test "$have_libart_lgpl_2" = yes; then
-  AC_CHECK_HEADER(libart_lgpl/libart.h,have_libart_lgpl_2=yes, have_libart_lgpl_2=no)
+AC_MSG_CHECKING([for libart2])
+LIBART_VERSION="`libart2-config --version 2>/dev/null`"
+if test x"$LIBART_VERSION" = x; then
+  LIBART_VERSION="none"
 fi
-if test "$have_libart_lgpl_2" = yes; then
-  GRAPHIC_LIBS="$LIBART_LIBS $GRAPHIC_LIBS"
-  GRAPHIC_CFLAGS="$LIBART_CFLAGS $GRAPHIC_CFLAGS"
+AC_MSG_RESULT([$LIBART_VERSION])
+LIBART_LIBS="`libart2-config --libs 2>/dev/null`"
+LIBART_CFLAGS="`libart2-config --cflags 2>/dev/null`"
+
+if test x"$LIBART_LIBS" = x; then
+  # No libart2-config, is there any point in checking for individual libs?
+  AC_CHECK_LIB(art_lgpl_2, main, have_libart=yes, have_libart=no)
+  if test "$have_libart" = yes; then
+    AC_CHECK_HEADER(libart_lgpl/libart.h,have_libart=yes, have_libart=no)
+  fi
+  if test "$have_libart" = yes; then
+    LIBART_LIBS="-lart_lgpl_2"
+  fi
+else
+  have_libart=yes
 fi
-CPPFLAGS="${save_header}"
-LIBS="${save_libs}"
 
 #--------------------------------------------------------------------
 # Cairo graphics libraries
 #--------------------------------------------------------------------
-save_header=${CPPFLAGS}
-save_libs=${LIBS}
-CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
-LIBS="${GRAPHIC_LIBS} ${LIBS}"
-
-CAIRO_LIBS="`pkg-config --libs cairo`"
-CAIRO_CFLAGS="`pkg-config --cflags cairo`"
-
-CPPFLAGS="${CPPFLAGS} ${CAIRO_CFLAGS}"
-LIBS="${LIBS} ${CAIRO_LIBS}"
-
-AC_CHECK_HEADER(cairo.h,have_cairo=yes, have_cairo=no)
-
-if test "$have_cairo" = yes; then
-  GRAPHIC_LIBS="$CAIRO_LIBS $GRAPHIC_LIBS"
-  GRAPHIC_CFLAGS="$CAIRO_CFLAGS $GRAPHIC_CFLAGS"
-fi
-
-CPPFLAGS="${save_header}"
-LIBS="${save_libs}"
+PKG_CHECK_MODULES(CAIRO, cairo, have_cairo=yes, have_cairo=no)
 
 #--------------------------------------------------------------------
 # Glitz-GLX libraries
 #--------------------------------------------------------------------
 WITH_GLITZ=no
-AC_ARG_ENABLE(glx, 
-  [  --disable-glx           Disable GLX support],,
-  enable_glx=yes)
-
-if test "x$enable_glx" = "xyes"; then
 AC_ARG_ENABLE(glitz, 
   [  --disable-glitz         Disable Glitz support],,
   enable_glitz=yes)
 
 if test "x$enable_glitz" = "xyes"; then
   WITH_GLITZ=yes
-  save_header=${CPPFLAGS}
-  save_libs=${LIBS}
-  CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
-  LIBS="${GRAPHIC_LIBS} ${LIBS}"
-  
-  GLITZ_GLX_LIBS="`pkg-config --libs glitz-glx`"
-  GLITZ_GLX_CFLAGS="`pkg-config --cflags glitz-glx`"
-  
-  CPPFLAGS="${CPPFLAGS} ${GLITZ_GLX_CFLAGS}"
-  LIBS="${LIBS} ${GLITZ_GLX_LIBS}"
-  
-  AC_CHECK_HEADER(glitz-glx.h,have_glitz_glx=yes, have_glitz_glx=no)
-  
-  if test "$have_glitz_glx" = yes; then
-    GRAPHIC_LIBS="$GLITZ_GLX_LIBS $GRAPHIC_LIBS"
-    GRAPHIC_CFLAGS="$GLITZ_GLX_CFLAGS $GRAPHIC_CFLAGS"
+  PKG_CHECK_MODULES(GLITZ, glitz-glx, have_glitz_glx=yes, have_glitz_glx=no)
+  AC_CHECK_HEADER(glitz-glx.h,have_glitz_glx_h=yes, have_glitz_glx_h=no)
+  if test "$have_glitz_glx" = yes -a "$have_glitz_glx_h" = yes; then
+    LIBS="$GLITZ_LIBS $LIBS"
+    GRAPHIC_CFLAGS="$GLITZ_CFLAGS $GRAPHIC_CFLAGS"
+    AC_DEFINE(HAVE_GLITZ_GLX,1,[Define if you have glitz])
   fi
-  
-  CPPFLAGS="${save_header}"
-  LIBS="${save_libs}"
   AC_SUBST(WITH_GLITZ)
-  AC_DEFINE(HAVE_GLITZ_GLX,1,[Define if you have glitz])
   AC_DEFINE(USE_GLITZ,1,[Define to enable glitz support])
-fi
 fi
 
 #--------------------------------------------------------------------
@@ -360,10 +316,11 @@ fi
 #--------------------------------------------------------------------
 WITH_WRASTER=no
 AC_SUBST(WITH_WRASTER)
-AC_SUBST(GRAPHIC_LIBS)
-AC_SUBST(GRAPHIC_CFLAGS)
-AC_SUBST(GRAPHIC_LFLAGS)
+AC_DEFINE(HAVE_WRASTER_H,0,[Define to 0 as we don't use wraster anymore])
 
+# Revert to previous flags (removing added GNUstep flags)
+CPPFLAGS=${GRAPHIC_CFLAGS}
+LDFLAGS=${GRAPHIC_LFLAGS}
 #--------------------------------------------------------------------
 # Which projects should we build?
 #--------------------------------------------------------------------
@@ -384,38 +341,65 @@ AC_ARG_ENABLE(graphics,
 BUILD_SERVER=$enable_server
 BUILD_GRAPHICS="$enable_graphics"
 AC_MSG_CHECKING(Backend Server)
-AC_SUBST(BUILD_SERVER)
-AC_DEFINE_UNQUOTED(BUILD_SERVER,SERVER_$BUILD_SERVER,
-	[Define to type of window server to build])
 AC_MSG_RESULT($BUILD_SERVER)
 
 AC_MSG_CHECKING(Backend Graphics)
-AC_SUBST(BUILD_GRAPHICS)
-AC_DEFINE_UNQUOTED(BUILD_GRAPHICS,$BUILD_GRAPHICS,
-	[Define to type of graphics context to build])
 AC_MSG_RESULT($BUILD_GRAPHICS)
 
 if test x"$BUILD_GRAPHICS" = "xxdps"; then
-  GRAPHIC_LIBS="-ldpstk -ldps -lpsres -lXt $X_PRE_LIBS $GRAPHIC_LIBS"
+  CPPFLAGS="-I$x_includes/X11 $CPPFLAGS"
+  LIBS="-ldpstk -ldps -lpsres -lXt $X_PRE_LIBS $LIBS"
 elif test x"$BUILD_GRAPHICS" = "xart"; then
   if test "$have_freetype" = no; then
-    AC_MSG_ERROR([can't find freetype, required for graphics=art!])
+    AC_MSG_WARN([can't find freetype, required for graphics=art])
+    BUILD_GRAPHICS=xlib
   fi
-  if test "$have_libart_lgpl_2" = no; then
-    AC_MSG_ERROR([can't find libart, required for graphics=art!])
+  if test "$have_libart" = no; then
+    AC_MSG_WARN([can't find libart, required for graphics=art])
+    BUILD_GRAPHICS=xlib
   fi
-elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
-  GRAPHIC_LIBS="$WIN32_LIBS $GRAPHIC_LIBS"
+  if test $BUILD_GRAPHICS = xlib; then
+    if test $BUILD_SERVER = win32; then
+      BUILD_GRAPHICS=winlib
+    fi
+    AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
+  else
+    LIBS="$LIBART_LIBS $FREETYPE_LIBS $LIBS"
+    CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
+  fi
 elif test x"$BUILD_GRAPHICS" = "xcairo"; then
   if test "$have_cairo" = no; then
     AC_MSG_ERROR([can't find cairo, required for graphics=cairo!])
+    BUILD_GRAPHICS=xlib
   fi
+  if test $BUILD_GRAPHICS = xlib; then
+    if test $BUILD_SERVER = win32; then
+      BUILD_GRAPHICS=winlib
+    fi
+    AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
+  else
+    LIBS="$CAIRO_LIBS $LIBS"
+    CPPFLAGS="$CAIRO_CFLAGS $CPPFLAGS"
+  fi
+fi
+if test x"$BUILD_GRAPHICS" = "xwinlib"; then
+  LIBS="$WIN32_LIBS $LIBS"
+fi
+if test x"$BUILD_GRAPHICS" = "xxlib"; then
+  LIBS="$XFT_LIBS $LIBS"
+  CPPFLAGS="$XFT_CFLAGS $CPPFLAGS"
 fi
 
 AH_TOP([
 #define SERVER_x11   1
 #define SERVER_win32 2
 ])
+AC_DEFINE_UNQUOTED(BUILD_SERVER,SERVER_$BUILD_SERVER,
+	[Define to type of window server to build])
+AC_DEFINE_UNQUOTED(BUILD_GRAPHICS,$BUILD_GRAPHICS,
+	[Define to type of graphics context to build])
+AC_SUBST(BUILD_GRAPHICS)
+AC_SUBST(BUILD_SERVER)
 
 #--------------------------------------------------------------------
 # Set the name of the backend

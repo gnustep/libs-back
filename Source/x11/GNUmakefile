@@ -42,7 +42,6 @@ x11_C_FILES = \
 xdnd.c
 else
 x11_C_FILES = \
-StdCmap.c \
 context.c \
 convert.c \
 raster.c \

@@ -1,3 +1,14 @@
+2005-02-22  Adam Fedor  <fedor@gnu.org>
+
+	* configure.ac: Rewrite, avoid setting vars unecessarily. Use
+	pkg-config if possible. Switch back to xlib/winlib when other backends
+	don't satisfy dependancies.
+	* config.make, config.h: Update to match.
+	* GNUmakefile (SUBPROJECTS): Add Fonts
+	* Fonts: New folder with default nfont
+
+	* Source/x11/GNUmakefile: Remove unneeded file.
+
 2005-02-12  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m  (-setalpha::): Support for window

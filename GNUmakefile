@@ -40,7 +40,7 @@ include ./Version
 #
 # The list of subproject directories
 #
-SUBPROJECTS = Source Tools 
+SUBPROJECTS = Source Fonts Tools 
 
 -include GNUmakefile.preamble
 
