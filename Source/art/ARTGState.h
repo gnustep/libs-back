@@ -84,6 +84,14 @@
 @end
 
 
+#define UPDATE_UNBUFFERED \
+  if (wi->window->type==NSBackingStoreNonretained) \
+    { \
+      [wi _exposeRect: NSMakeRect(clip_x0,clip_y0,clip_sx,clip_sy)]; \
+    }
+
+
+
 extern struct draw_info_s ART_DI;
 #define DI ART_DI
 

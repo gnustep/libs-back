@@ -615,6 +615,7 @@ seem to cause edges to be off by a pixel
 		}
 	    }
 	}
+      UPDATE_UNBUFFERED
       return;
     }
 
@@ -633,6 +634,7 @@ seem to cause edges to be off by a pixel
        (samplesPerPixel == 4 && hasAlpha)))
     {
       [self _image_do_rgb_transform: &ii : matrix : _image_get_color_rgb_8];
+      UPDATE_UNBUFFERED
       return;
     }
 
@@ -652,6 +654,7 @@ seem to cause edges to be off by a pixel
     {
       [self _image_do_rgb_transform: &ii : matrix :
 	_image_get_color_rgb_cmyk_gray];
+      UPDATE_UNBUFFERED
       return;
     }
 

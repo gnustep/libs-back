@@ -866,6 +866,8 @@ static void clip_svp_callback(void *data, int y, int start,
   art_svp_free(svp);
 
   [path removeAllPoints];
+
+  UPDATE_UNBUFFERED
 }
 
 - (void) DPSeofill
@@ -906,6 +908,7 @@ static void clip_svp_callback(void *data, int y, int start,
 	&DI, clip_span, clip_index);
 
       art_svp_free(svp);
+      UPDATE_UNBUFFERED
       return;
     }
 
@@ -977,6 +980,7 @@ static void clip_svp_callback(void *data, int y, int start,
 	      RENDER_RUN_ALPHA(&ri, x1);
 	  }
       }
+    UPDATE_UNBUFFERED
   }
 }
 
@@ -1032,6 +1036,7 @@ static void clip_svp_callback(void *data, int y, int start,
     &DI, clip_span, clip_index);
 
   art_svp_free(svp);
+  UPDATE_UNBUFFERED
 }
 
 - (void) DPSrectstroke: (float)x : (float)y : (float)w : (float)h
