@@ -1448,7 +1448,7 @@ initialize_keyboard (void)
     _alt_keysyms[0] = XK_Mode_switch;
 
   _alt_keysyms[1] = key_sym_from_defaults(display, defaults,
-                                          @"GSecondAlternateKey",
+                                          @"GSSecondAlternateKey",
                                           NoSymbol);
 
   if (_alt_keysyms[0] == _alt_keysyms[1])
