@@ -795,7 +795,7 @@ static unsigned int unique_index = 0;
 		     NSHeight(rect) / pixelsHigh);
   trans = [NSAffineTransform transform];
   [trans translateToPoint: rect.origin];
-  [trans scaleBy: scale.width : scale.height];
+  [trans scaleXBy: scale.width  yBy: scale.height];
 
   /* This does essentially what the DPS...image operators do, so
      as to avoid an extra method call */
