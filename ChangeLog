@@ -1,3 +1,8 @@
+2003-09-09  Adam Fedor  <fedor@gnu.org>
+
+	* Source/gsc/GSContext.m (-DPSsetgstate:): Copy gstate so we
+	don't modify original.
+
 2003-09-08 01:39  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/blit.m (artcontext_setup_draw_info): Add some debug

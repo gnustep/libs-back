@@ -401,7 +401,7 @@ static unsigned int unique_index = 0;
       [self DPSexecuserobject: gst];
       RELEASE(gstate);
       ctxt_pop(gstate, opstack, GSGState);
-      RETAIN(gstate);
+      gstate = [gstate copy];
     }
   else
     DESTROY(gstate);
