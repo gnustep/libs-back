@@ -1,3 +1,9 @@
+2003-01-27 18:10  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Clean up includes.
+	(-initWithFontName:matrix:screenFont:):	Use absolute values of the
+	matrix entries when checking if a screen font entry should be used.
+
 2003-01-26 21:24  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/xlib/GSXftFontInfo.m: Update with screen font changes in
