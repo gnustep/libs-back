@@ -185,7 +185,7 @@ if test "x$enable_xim" = "xyes"; then
 fi
 
 #--------------------------------------------------------------------
-# Extended font support
+# Extended font support & UTF8 support
 #--------------------------------------------------------------------
 WITH_XFT=no
 save_header=${CPPFLAGS}
@@ -198,6 +198,10 @@ if test "$have_xft" = yes -a "$ac_cv_header_X11_Xft_Xft_h" = yes; then
   GRAPHIC_LIBS="-lXft ${GRAPHIC_LIBS}"
   WITH_XFT=yes
   AC_DEFINE(HAVE_XFT)
+  AC_CHECK_LIB(Xft, XftDrawStringUtf8, have_utf8=yes, have_utf8=no)
+  if test "$have_utf8" = yes; then
+    AC_DEFINE(HAVE_UTF8)
+  fi
 fi
 CPPFLAGS="${save_header}"
 LIBS="${save_libs}"

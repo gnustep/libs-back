@@ -1,3 +1,7 @@
+2002-04-15  Gregory John Casamento <greg_casamento@yahoo.com>
+	* configure.in: Added check to determine if libXft contains
+	XftDrawStringUtf8 which is used to draw unicode strings.  
+
 2002-04-15  Adam Fedor  <fedor@gnu.org>
 
 	* Source/x11/XGServerWindow.m ([XGServer
