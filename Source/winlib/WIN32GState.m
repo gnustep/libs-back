@@ -28,8 +28,13 @@
 #include <AppKit/NSFont.h>
 #include <AppKit/NSGraphics.h>
 
+// Currently the use of alpha blending is switched off by default.
+//#define USE_ALPHABLEND
+
 // Define this so we pick up AlphaBlend, when loading windows.h
+#ifdef USE_ALPHABLEND
 #define WINVER 0x0500
+#endif
 #include "winlib/WIN32GState.h"
 #include "winlib/WIN32Context.h"
 #include "winlib/WIN32FontInfo.h"
@@ -46,6 +51,7 @@
 // before and after a bezier path forming an oblique
 // angle. The solution is to insert extra MoveToEx()'s
 // before and after the PolyBezierTo().
+// FK: I switched this off, as I think the treatment is worse than the illness.
 #define GDI_WIDELINE_BEZIERPATH_BUG 0
 
 static inline
@@ -230,6 +236,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
     {
     case NSCompositeSourceOver:
       {
+#ifdef USE_ALPHABLEND
 	// Use (0..1) fraction to set a (0..255) alpha constant value
 	BYTE SourceCosntantAlpha = (BYTE)(delta * 255);
 	BLENDFUNCTION blendFunc = {AC_SRC_OVER, 0, SourceCosntantAlpha, AC_SRC_ALPHA};
@@ -239,6 +246,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 			     rectFrom.left, rectFrom.top,
 			     (rectFrom.right - rectFrom.left), h, blendFunc);
 	break;
+#endif
       }
 
     default:
@@ -474,6 +482,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   int h;
   int y1;
 
+/*
   NSDebugLLog(@"WIN32GState", @"DPSImage : pixelsWide = %d : pixelsHigh = %d"
 	      ": bitsPerSample = %d : samplesPerPixel = %d"
 	      ": bitsPerPixel = %d : bytesPerRow = %d "
@@ -483,6 +492,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 	      bitsPerSample, samplesPerPixel,
 	      bitsPerPixel, bytesPerRow,
 	      isPlanar, hasAlpha, colorSpaceName);
+*/
 
   if (window == NULL)
     {
