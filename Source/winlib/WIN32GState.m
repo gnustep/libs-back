@@ -35,6 +35,12 @@
 
 #include <math.h>
 
+// There is a bug in Win32 GDI drawing with lines wider than 0
+// before and after a bezier path forming an oblique
+// angle. The solution is to insert extra MoveToEx()'s
+// before and after the PolyBezierTo().
+#define GDI_WIDELINE_BEZIERPATH_BUG 1
+
 static inline
 int WindowHeight(HWND window)
 {
@@ -522,22 +528,50 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 	      break;
 	    case NSLineToBezierPathElement:
 	      p = GSWindowPointToMS(self, points[0]);
-	      // FIXME This gives one pixel to few
+	      // FIXME This gives one pixel too few
 	      LineTo(hDC, p.x, p.y);
 	      break;
 	    case NSCurveToBezierPathElement:
 	      {
 		POINT bp[3];
 		
-		for (i = 1; i < 3; i++)
+#if GDI_WIDELINE_BEZIERPATH_BUG
+		if(drawType == path_stroke && lineWidth > 1)
+		  {
+		    if(j != 0) 
+		      {
+			NSPoint movePoints[3];
+		    
+			[path elementAtIndex: j-1 associatedPoints:
+				movePoints];
+			p = GSWindowPointToMS(self, movePoints[0]);
+			MoveToEx(hDC, p.x, p.y, NULL);
+		      }
+		  }
+#endif
+		for (i = 0; i < 3; i++)
 		  {
 		    bp[i] = GSWindowPointToMS(self, points[i]);
 		  }
 		PolyBezierTo(hDC, bp, 3);
+#if GDI_WIDELINE_BEZIERPATH_BUG
+		if(drawType == path_stroke && lineWidth > 1)
+		  MoveToEx(hDC, bp[2].x, bp[2].y, NULL);
+#endif
 	      }
 	      break;
 	    case NSClosePathBezierPathElement:
+#if GDI_WIDELINE_BEZIERPATH_BUG
+	      // CloseFigure works from the last MoveTo point which is
+	      // a problem when we need to insert gratuitious moves
+	      // before and after bezier curves to fix draw problems.
+	      [path elementAtIndex: 0 associatedPoints: points];
+	      p = GSWindowPointToMS(self, points[0]);
+	      // FIXME This may also give one pixel too few
+	      LineTo(hDC, p.x, p.y);
+#else
 	      CloseFigure(hDC);
+#endif
 	      break;
 	    default:
 	      break;
@@ -814,10 +848,12 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   int join;
   int cap;
   DWORD penStyle;
+
   SetBkMode(hDC, TRANSPARENT);
-  /*
   br.lbStyle = BS_SOLID;
-  br.lbColor = color;
+  br.lbColor = wfcolor;
+  br.lbHatch = 0;
+  /*
   brush = CreateBrushIndirect(&br);
   */
   brush = CreateSolidBrush(wfcolor);
@@ -913,7 +949,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
   if (NULL == window)
     {
-      //Log(@"No window in getHDC");
+      //NSLog(@"No window in getHDC");
       return NULL;
     }
 
@@ -931,7 +967,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   
   if (!hDC)
     {
-      //Log(@"No DC in getHDC");
+      //NSLog(@"No DC in getHDC");
       return NULL;	
     }
 
