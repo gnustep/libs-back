@@ -1,6 +1,8 @@
 2003-07-27 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Tools/gpbs.m: Use protocols
+	* Source/x11/XGServerWindow.m: Use UTF8String rather than cString
+	to avoid crashes using non-ascii strings ... is this right?
 
 2003-07-16  Fred Kiefer <FredKiefer@gmx.de>
 
