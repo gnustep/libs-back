@@ -30,6 +30,8 @@ GNUSTEP_INSTALLATION_DIR = $(GNUSTEP_SYSTEM_ROOT)
 GNUSTEP_LOCAL_ADDITIONAL_MAKEFILES=../../back.make
 include $(GNUSTEP_MAKEFILES)/common.make
 
+include ../../config.make
+
 SUBPROJECT_NAME=xdps
 
 # The pswrap source files to be compiled
