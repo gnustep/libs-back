@@ -1,3 +1,18 @@
+2004-09-09  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/xpbs.m (-[XPbOwner getSelectionData:type:], -[XPbOwner
+	xProvideSelection:]): Removed some compiler warnings.
+	* Source/cairo/CairoGState.m (-DPSimage:...:): Slightly improved.
+	(-compositeGState:fromRect:toPoint:op:fraction:) New method 
+	(-compositeGState:fromRect:toPoint:op:,
+	-dissolveGState:fromRect:toPoint:delta:) Implemented via new method.
+	Added all missing colour conversions.
+	(GSShowGlyphs::) Use new method on CairoFontInfo.
+	* Header/cairo/CairoFontInfo.h (-drawGlyphs:length:on:atX:y:) New method.
+	* Source/cairo/CairoFontInfo.m (-drawGlyphs:length:on:atX:y:) New method.
+	Moved some includes from header to here, extracted method
+	[setupAttributes] and other cleanup. 
+	
 2004-09-08  Adam Fedor  <fedor@gnu.org>
 
 	* Headers/x11/XGServer.h: Add 8bit fast drawing.	
