@@ -756,8 +756,6 @@ static NSArray *faFromFc(FcPattern *pat)
           if (mostCompatibleStringEncoding == NSUnicodeStringEncoding)
             mostCompatibleStringEncoding = NSUTF8StringEncoding;
 	  RETAIN(encodingScheme);
-	  [fontDictionary setObject: encodingScheme
-			  forKey: NSAFMEncodingScheme];
 	}
     }
   else
@@ -766,19 +764,7 @@ static NSArray *faFromFc(FcPattern *pat)
   // Should use XA_ITALIC_ANGLE, XA_UNDERLINE_POSITION, XA_UNDERLINE_THICKNESS
 #endif
 
-  // Fill the afmDitionary and ivars
-  [fontDictionary setObject: fontName forKey: NSAFMFontName];
-
-  if (familyName != nil)
-    {
-      [fontDictionary setObject: familyName forKey: NSAFMFamilyName];
-    }
-
-  if (weightString != nil)
-    {
-      [fontDictionary setObject: weightString forKey: NSAFMWeight];
-    }
-
+  // Fill the ivars
   if (weight >= 9)
     traits |= NSBoldFontMask;
   else
@@ -789,11 +775,7 @@ static NSArray *faFromFc(FcPattern *pat)
 
   isBaseFont = NO;
   ascender = font_info->ascent;
-  [fontDictionary setObject: [NSNumber numberWithFloat: ascender] 
-		  forKey: NSAFMAscender];
   descender = -(font_info->descent);
-  [fontDictionary setObject: [NSNumber numberWithFloat: descender]
-		  forKey: NSAFMDescender];
   capHeight = ascender - descender;   // TODO
   xHeight = capHeight*0.6;   //Errr... TODO
   fontBBox = NSMakeRect(

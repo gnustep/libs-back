@@ -267,7 +267,6 @@ static BOOL XGInitAtoms(Display *dpy)
 - (BOOL) setupAttributes
 {
   Display *xdpy = [XGServer currentXDisplay];
-  NSString *weightString;
   NSString *reg;
   long height;      
   NSString *xfontname;
@@ -292,18 +291,12 @@ static BOOL XGInitAtoms(Display *dpy)
   else
     NSDebugLog(@"Loaded font: %@", xfontname);
 
-  // Fill the afmDitionary and ivars
-  [fontDictionary setObject: fontName forKey: NSAFMFontName];
+  // Fill the ivars
   ASSIGN(familyName, XGFontFamily(xdpy, font_info));
-  [fontDictionary setObject: familyName forKey: NSAFMFamilyName];
   isFixedPitch = XGFontIsFixedPitch(xdpy, font_info);
   isBaseFont = NO;
   ascender = font_info->ascent;
-  [fontDictionary setObject: [NSNumber numberWithFloat: ascender] 
-		  forKey: NSAFMAscender];
   descender = -(font_info->descent);
-  [fontDictionary setObject: [NSNumber numberWithFloat: descender]
-		  forKey: NSAFMDescender];
   fontBBox = NSMakeRect(
     (float)(0 + font_info->min_bounds.lbearing),
     (float)(0 - font_info->max_bounds.ascent),
@@ -314,13 +307,6 @@ static BOOL XGInitAtoms(Display *dpy)
   minimumAdvancement = NSMakeSize(0,0);
   weight = XGWeightOfFont(xdpy, font_info);
   traits = XGTraitsOfFont(xdpy, font_info);
-
-  weightString = [GSFontInfo stringForWeight: weight];
-  
-  if (weightString != nil)
-    {
-      [fontDictionary setObject: weightString forKey: NSAFMWeight];
-    }
 
   reg = XGFontPropString(xdpy, font_info, XA_CHARSET_REGISTRY);
   if (reg != nil)
@@ -337,8 +323,6 @@ static BOOL XGInitAtoms(Display *dpy)
 	  NSDebugLog(@"Found encoding %d for %@", 
 		     mostCompatibleStringEncoding, encodingScheme);
 	  RETAIN(encodingScheme);
-	  [fontDictionary setObject: encodingScheme
-			  forKey: NSAFMEncodingScheme];
 	}
     }
 
@@ -346,16 +330,12 @@ static BOOL XGInitAtoms(Display *dpy)
   if (height != 0)
     {
       xHeight = (float)height;
-      [fontDictionary setObject: [NSNumber numberWithFloat: xHeight]
-		      forKey: NSAFMXHeight];
     }
 
   height = XGFontPropULong(xdpy, font_info, XA_CAP_HEIGHT);
   if (height != 0)
     {
       capHeight = (float)height;
-      [fontDictionary setObject: [NSNumber numberWithFloat: capHeight]
-		      forKey: NSAFMCapHeight];
     }
   
   // FIXME: italicAngle, underlinePosition, underlineThickness are not set.
