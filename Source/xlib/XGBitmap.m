@@ -54,26 +54,26 @@
 
 #define InitRGBShiftsAndMasks(rs,rw,gs,gw,bs,bw,as,aw) \
      do { \
-        _rshift = rs;              \
-        _rmask  = (1<<rw) -1;      \
-        _rwidth = rw;              \
-        _gshift = gs;              \
-	_gmask  = (1<<gw) -1;      \
-        _gwidth = gw;              \
-	_bshift = bs;              \
-	_bmask  = (1<<bw) -1;      \
-        _bwidth = bw;              \
-        _amask  = (1<<aw) -1;      \
-        _ashift = as;              \
-        _awidth = aw;              \
+	_rshift = (rs);              \
+	_rmask  = (1<<(rw)) -1;      \
+	_rwidth = (rw);              \
+	_gshift = (gs);              \
+	_gmask  = (1<<(gw)) -1;      \
+	_gwidth = (gw);              \
+	_bshift = (bs);              \
+	_bmask  = (1<<(bw)) -1;      \
+	_bwidth = (bw);              \
+	_amask  = (1<<(aw)) -1;      \
+	_ashift = (as);              \
+	_awidth = (aw);              \
        } while(0)
 
 
 #define PixelToRGB(pixel,r,g,b)  \
      do { \
-        r = (pixel >> _rshift) & _rmask; \
-        g = (pixel >> _gshift) & _gmask; \
-        b = (pixel >> _bshift) & _bmask; \
+	(r) = (pixel >> _rshift) & _rmask; \
+	(g) = (pixel >> _gshift) & _gmask; \
+	(b) = (pixel >> _bshift) & _bmask; \
         } while(0)
 
 /* Note that RGBToPixel assumes that the
@@ -88,6 +88,10 @@
                |((b) << _bshift); \
         } while(0)
 
+#define CLAMP(a) \
+    do { \
+	(a) = MAX(0, MIN(255, (a))); \
+    } while (0)
 
 /* Composite source image (pixmap) onto a destination image with alpha.
    Only works for op=Sover now
@@ -107,14 +111,9 @@ _pixmap_combine_alpha(RContext *context,
 		      float fraction)
 {
   unsigned long  pixel;
-  unsigned short oldAlpha = 0;
   unsigned long  oldPixel = 0;
-  unsigned short oldAr = 0;
-  unsigned short oldAg = 0;
-  unsigned short oldAb = 0;
-  unsigned char	 oldBr = 0;
-  unsigned char	 oldBg = 0;
-  unsigned char	 oldBb = 0;
+
+  fraction = MAX(0.0, MIN(1.0, fraction));
 
   if (drawMechanism == XGDM_FAST15
       || drawMechanism == XGDM_FAST16
@@ -144,68 +143,70 @@ _pixmap_combine_alpha(RContext *context,
 	  //which picture goes wrong.
 	  InitRGBShiftsAndMasks(11,5,5,6,0,5,0,8);
 	}
+
       for (row = 0; row < srect.height; row++)
 	{
 	  unsigned	col;
 
 	  for (col = 0; col < srect.width; col++)
 	    {
-	      unsigned r, g, b, alpha;
-	      pixel = XGetPixel(source_im->image, 
-				col+srect.x, row+srect.y);
+	      unsigned 	sr, sg, sb, sa; // source
+	      unsigned 	dr, dg, db, da; // dest
+	      double  	alpha, ialpha;
 
-	      PixelToRGB(pixel,r,g,b);
+	      // Get the source pixel information
+	      pixel = XGetPixel (source_im->image, srect.x+col, srect.y+row);
+	      PixelToRGB (pixel, sr, sg, sb);
 
-	      pixel = 255;
 	      if (source_alpha)
+		{
 		pixel = XGetPixel(source_alpha->image,
-				  col+srect.x, row+srect.y);
-
-	      if (fraction < 1)
-		pixel *= fraction;
-	      alpha = (pixel >> _ashift) & _amask;
-
-	      if (alpha == 0)
-		continue;		// background unchanged.
-	      if (alpha != _amask)
-		{ // We really have something to mix!
-		  unsigned short	ialpha = _amask - alpha;
-		  /*
-		   * Get the background pixel and convert to RGB.
-		   */
-		  pixel = XGetPixel(dest_im->image, col, row);
-		  if (pixel != oldPixel)
-		    {
-		      oldPixel = pixel;
-		      PixelToRGB(pixel, oldBr,oldBg,oldBb);
-		      oldAlpha = 0;
-		    }
-		  if (alpha != oldAlpha)
-		    {
-		      oldAlpha = alpha;
-		      oldAr = ialpha * oldBr;
-		      oldAg = ialpha * oldBg;
-		      oldAb = ialpha * oldBb;
-		    }
-		      
-		  // mix in alpha to produce RGB out
-		  r = (oldAr + (r*alpha))/_amask;
-		  g = (oldAg + (g*alpha))/_amask;
-		  b = (oldAb + (b*alpha))/_amask;
+				    srect.x+col, srect.y+row);
+		  sa = (pixel >> _ashift) & _amask;
 		}
-	      RGBToPixel(r,g,b,pixel);
+	      else
+		sa = _amask;
+
+	      if (sa == 0)	// dest wouldn't be changed
+		continue;
+
+	      if (fraction < 1.0)
+		sa *= fraction;
+
+	      alpha = ((double) sa) / _amask;
+
+	      // Now get dest pixel
+		  pixel = XGetPixel(dest_im->image, col, row);
+	      PixelToRGB (pixel, dr, dg, db);
+
+	      if (dest_alpha)
+		    {
+		  pixel = XGetPixel(dest_alpha->image, col, row);
+		  da = (pixel >> _ashift) & _amask;
+		    }
+	      else  // no alpha channel, background is opaque
+		da = _amask;
+		      
+      	      ialpha = (1.0 - alpha);
+	      dr = (sr * alpha) + (dr * ialpha);
+	      dg = (sg * alpha) + (dg * ialpha);
+	      db = (sb * alpha) + (db * ialpha);
+
+	      // calc final alpha
+	      if (sa == _amask || da == _amask)
+		da = _amask;
+	      else
+		da = sa + (da * ialpha);
+
+	      CLAMP(dr);
+	      CLAMP(dg);
+	      CLAMP(db);
+	      CLAMP(da);
+
+	      RGBToPixel(dr, dg, db, pixel);
 	      XPutPixel(dest_im->image, col, row, pixel);
 	      if (dest_alpha)
-		{
-		  unsigned short dalpha;
-		  unsigned long  dpixel;
-		  /* Alpha gets mixed the same as all the
-		     other color components */
-		  dpixel = XGetPixel(dest_alpha->image, col, row);
-		  dalpha = (dpixel >> _ashift) & _amask;
-		  dalpha = alpha + dalpha * (_amask - alpha)/_amask;
-		  XPutPixel(dest_alpha->image, col, row, dalpha << _ashift );
-		}
+		XPutPixel(dest_alpha->image, col, row, da << _ashift);
 	    }
 	}
     }
@@ -221,7 +222,6 @@ _pixmap_combine_alpha(RContext *context,
        */
       pixel = (unsigned long)-1;	// Never valid?
       c2.pixel = pixel;
-
 
        for (row = 0; row < srect.height; row++)
 	{
@@ -858,14 +858,6 @@ _bitmap_combine_alpha(RContext *context,
 
   {
     unsigned long    	pixel;
-    unsigned short	oldAlpha = 0;
-    unsigned long	oldPixel = 0;
-    unsigned short   	oldAr = 0;
-    unsigned short   	oldAg = 0;
-    unsigned short   	oldAb = 0;
-    unsigned char    	oldBr = 0;
-    unsigned char    	oldBg = 0;
-    unsigned char    	oldBb = 0;
 
     /* Two cases, the *_FAST* method, which
        is covered in the first a part of the if
@@ -915,74 +907,68 @@ _bitmap_combine_alpha(RContext *context,
 	
 	    for (col = 0; col < drect.width; col++)
 	      {
-		unsigned short r = *rptr++;
-		unsigned short g = *gptr++;
-		unsigned short b = *bptr++;
-		unsigned short alpha = *aptr++;;
+		unsigned short	sr = (*rptr++ >> (8 - _rwidth));
+		unsigned short	sg = (*gptr++ >> (8 - _gwidth));
+		unsigned short	sb = (*bptr++ >> (8 - _bwidth));
+		unsigned short	sa = (*aptr++ >> (8 - _awidth));
+		unsigned      	dr, dg, db, da;
+		double 	      	alpha = (double) sa / ((1 << _rwidth) - 1);
+
+		if (sa == 0)	// dest wouldn't be changed
+		  continue;
 
 		/*
-		 * Convert 8-bit components down to the 5-bit values
-		 * that the display system can actually handle.
+		 * Unscale alpha value in each color component
 		 */
-		r >>= (8 - _rwidth);
-		g >>= (8 - _gwidth);
-		b >>= (8 - _bwidth);
-
-		if (has_alpha)
+		if (sa < _amask)
 		  {
-		    if (dest_alpha)
-		      {
-			unsigned short dalpha;
-			unsigned long  dpixel;
-			/* Alpha gets mixed the same as all the
-			   other color components */
-			dpixel = XGetPixel(dest_alpha->image, col, row);
-			dalpha = (dpixel >> _ashift) & _amask;
-			dalpha = alpha + dalpha * (_amask - alpha)/_amask;
-			XPutPixel(dest_alpha->image, col, row, 
-				  dalpha << _ashift);
-		      }
-		    if (alpha == 0)
-		      continue;		// background unchanged.
+		    double  multiplier = (double) _amask / sa;
+		    
+		    sr *= multiplier;
+		    sg *= multiplier;
+		    sb *= multiplier;
+		  }
 		
-		    if (alpha != _amask)
-		      {
-			unsigned short	ialpha = _amask - alpha;
-			/*
-			 * Get the background pixel and convert to RGB.
-			 */
-			pixel = XGetPixel(dest_im->image, col, row);
-			if (pixel != oldPixel)
-			  {
-			    oldPixel = pixel;
-			    PixelToRGB(pixel,oldBr,oldBg,oldBb);
-			    oldAlpha = 0;
-			  }
-			if (alpha != oldAlpha)
-			  {
-			    oldAlpha = alpha;
-			    oldAr = ialpha * oldBr;
-			    oldAg = ialpha * oldBg;
-			    oldAb = ialpha * oldBb;
-			  }
+		// get the destination pixel
+		pixel = XGetPixel(dest_im->image, col, row);
+		PixelToRGB(pixel, dr, dg, db);
+
+		if (dest_alpha)
+		  {
+		    pixel = XGetPixel(dest_alpha->image, col, row);
+		    da = (pixel >> _ashift) & _amask;
+		  }
+		else  // no alpha channel, background is opaque
+		  da = _amask;
 			
-			// mix in alpha to produce RGB out
-			r = (oldAr + (r * alpha)) / _amask;
-			g = (oldAg + (g * alpha)) / _amask;
-			b = (oldAb + (b * alpha)) / _amask;
-		      }
+		if (sa == _amask || da == 0)  // source only
+		      {
+		    dr = sr;
+		    dg = sg;
+		    db = sb;
+		    da = sa;
 		  }
 		else
 		  {
-		    /* Not using alpha, but we still have to set it
-		       in the pixmap */
-		    if (dest_alpha)
-		      XPutPixel(dest_alpha->image, col, row, 
-				_amask << _ashift);
+		    double ialpha = (1.0 - alpha);
+		    dr = (sr * alpha) + (dr * ialpha);
+		    dg = (sg * alpha) + (dg * ialpha);
+		    db = (sb * alpha) + (db * ialpha);
+		    if (da == _amask || da == _amask)
+		      da = _amask;
+		    else
+		      da = sa + (da * ialpha);
 		  }
 
-		RGBToPixel(r,g,b,pixel);
+		CLAMP(dr);
+		CLAMP(dg);
+		CLAMP(db);
+		CLAMP(da);
+
+		RGBToPixel(dr, dg, db, pixel);
 		XPutPixel(dest_im->image, col, row, pixel);
+		if (dest_alpha)
+		  XPutPixel(dest_alpha->image, col, row, da << _ashift);
 	      }
 	  }
       }
