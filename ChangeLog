@@ -1,7 +1,9 @@
-Thu Apr 11 21:57:49 2002  Nicola Pero  <n.pero@mi.flashnet.it>
+Thu Apr 11 22:24:01 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 
-	* Source/x11/XGServerWindow.m: Added missing includes.
-
+	* Source/x11/XGServerEvent.m: Added missing includes.
+	* Source/x11/XGServerWindow.m: Idem.
+	* Source/x11/XGDragView.m: Idem.
+	
 2002-04-11  Richard Frith-Macdonald  <rfm@gnu.org>
 
 	* Tools/gpbs.m: Fixed bug in argument parsing ... was objecting to
