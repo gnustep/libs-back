@@ -238,5 +238,51 @@ bbbb bbbb 0000 0000 0000 0000 aaaa aaaa
 	}
     }
 
+/**** blit_alpha_opaque for 16/15 bpp ****/
+
+/* use mmx. didn't help */
+
+#if 0 && FORMAT_HOW == DI_32_BGRA
+static unsigned char constants[24]={0,0,0,0,0,0,0,0, 255,0,255,0,255,0,255,0, 0,0,0,0,0,0,0,0};
+  constants[16]=b;
+  constants[18]=g;
+  constants[20]=r;
+  asm volatile (
+/*  "  movq (%%eax), %%mm0\n"  // hoistable
+  "  movq 8(%%eax), %%mm1\n"*/ // hoistable
+  "  movq 16(%%eax), %%mm2\n"
+  "1:\n"
+
+                          "movzbl (%%edi), %%eax\n"
+  "testl %%eax,%%eax\n"
+  "jz 2f\n"
+                                                                              "movd (%%esi), %%mm4\n"
+                          "movl %%eax, %%edx\n"
+                          "shll $8, %%edx\n"
+                          "orl %%edx, %%eax\n"
+                                                                              "punpcklbw %%mm0, %%mm4\n"
+                                                        "movq %%mm1, %%mm5\n"
+                          "shll $8, %%edx\n"
+                          "orl %%edx, %%eax\n"
+                          "movd %%eax, %%mm3\n"
+                          "punpcklbw %%mm0, %%mm3\n"
+                                          "psubw %%mm3, %%mm5\n"
+                          "pmullw %%mm2, %%mm3\n"
+                                                               "pmullw %%mm5, %%mm4\n"
+                                            "paddw %%mm3, %%mm4\n"
+                                            "paddw %%mm1, %%mm4\n"
+                                            "psrlw $8,%%mm4\n"
+                                            "packuswb %%mm0,%%mm4\n"
+                                            "movd %%mm4,(%%esi)\n"
+  "2:\n"
+  "incl %%edi\n"
+  "addl $4, %%esi\n"
+  "decl %%ecx\n"
+  "jnz 1b\n"
+//  "  emms\n" // hoistable
+  :
+  : "a" (&constants), "S" (adst), "D" (asrc), "c" (num));
+#else
+
 /**** ****/
 

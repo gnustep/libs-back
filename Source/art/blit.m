@@ -1529,7 +1529,6 @@ ourself.
 /* 24-bit red green blue */
 #define FORMAT_INSTANCE rgb
 #define FORMAT_HOW DI_24_RGB
-#warning RGB
 
 #define BLEND_TYPE unsigned char
 #define BLEND_READ(p,nr,ng,nb) nr=p[0]; ng=p[1]; nb=p[2];
@@ -1555,7 +1554,6 @@ ourself.
 /* 24-bit blue green red */
 #define FORMAT_INSTANCE bgr
 #define FORMAT_HOW DI_24_BGR
-#warning BGR
 
 #define BLEND_TYPE unsigned char
 #define BLEND_READ(p,nr,ng,nb) nb=p[0]; ng=p[1]; nr=p[2];
@@ -1581,7 +1579,6 @@ ourself.
 /* 32-bit red green blue alpha */
 #define FORMAT_INSTANCE rgba
 #define FORMAT_HOW DI_32_RGBA
-#warning RGBA
 
 #define INLINE_ALPHA
 
@@ -1615,7 +1612,6 @@ ourself.
 /* 32-bit blue green red alpha */
 #define FORMAT_INSTANCE bgra
 #define FORMAT_HOW DI_32_BGRA
-#warning BGRA
 
 #define INLINE_ALPHA
 
@@ -1649,7 +1645,6 @@ ourself.
 /* 32-bit alpha red green blue */
 #define FORMAT_INSTANCE argb
 #define FORMAT_HOW DI_32_ARGB
-#warning ARGB
 
 #define INLINE_ALPHA
 
@@ -1683,7 +1678,6 @@ ourself.
 /* 32-bit alpha blue green red */
 #define FORMAT_INSTANCE abgr
 #define FORMAT_HOW DI_32_ABGR
-#warning ABGR
 
 #define INLINE_ALPHA
 
@@ -1717,7 +1711,6 @@ ourself.
 /* 16-bit  5 bits blue, 6 bits green, 5 bits red */
 #define FORMAT_INSTANCE b5g6r5
 #define FORMAT_HOW DI_16_B5_G6_R5
-#warning B5G6R5
 
 #define BLEND_TYPE unsigned short
 #define BLEND_READ(p,nr,ng,nb) \
@@ -1755,7 +1748,6 @@ ourself.
 /* 16-bit  5 bits blue, 5 bits green, 5 bits red */
 #define FORMAT_INSTANCE b5g5r5a1
 #define FORMAT_HOW DI_16_B5_G5_R5_A1
-#warning B5G5R5A1
 
 #define BLEND_TYPE unsigned short
 #define BLEND_READ(p,nr,ng,nb) \
