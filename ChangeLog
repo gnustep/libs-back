@@ -1,3 +1,13 @@
+2004-09-05 00:05  Alexander Malmberg <alexander@malmberg.org>
+
+	* Tools/GNUmakefile.preamble: Compile with -Wall.
+	* Tools/xpbs.m: Rename to +initializePasteboard. Return NO iff
+	XOpenDisplay fails.
+	* Tools/win32pbs.m (+initialize): Rename to +initializePasteboard.
+	Return YES.
+	* Tools/gpbs.m ([PasteboardServer -init]): Call	+initializePasteboard
+	instead of +class. Set xPbClass to nil if the call fails.
+
 2004-09-01  Adam Fedor  <fedor@gnu.org>
 
 	* configure.ac: Prepend don't overwrite CFLAGS and LDFLAGS given
