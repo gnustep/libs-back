@@ -1,3 +1,13 @@
+2003-11-18 16:57  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Remove fallback ivar. Add advancementImgd
+	and a simple glyph size cache for use in -advancementForGlyph:.
+
+	(-initWithFontName:matrix:screenFont:): Set up advancementImgd.
+	(-advancementForGlyph:): Use advancementImgd instead of setting up
+	a FTC_ImageTypeRec on each call. Cache glyph sizes to avoid expensive
+	freetype calls.
+
 2003-11-05  Adam Fedor  <fedor@gnu.org>
 
 	* Source/x11/XGServerEvent.m ([XGServer -processEvent:]): New
