@@ -67,6 +67,7 @@ that there's only one XWindowBuffer for each window. */
   Drawable drawable;
   XImage *ximage;
   Display *display;
+  Pixmap pixmap;
 
   int use_shm;
   XShmSegmentInfo shminfo;
