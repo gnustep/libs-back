@@ -1,3 +1,9 @@
+2002-08-06  Adam Fedor  <fedor@gnu.org>
+
+	* Source/x11/XGServerEvent.m ([XGServer
+	-receivedEvent:type:extra:forMode:]): Add special gotShmCompletion
+	call for libart backend.
+
 2002-08-02  Adam Fedor  <fedor@gnu.org>
 
 	* Merge from 0.8.0 into main branch.
