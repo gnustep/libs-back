@@ -28,6 +28,8 @@
 #include <AppKit/NSFont.h>
 #include <AppKit/NSGraphics.h>
 
+// Define this so we pick up AlphaBlend, when loading windows.h
+#define WINVER 0x0500
 #include "winlib/WIN32GState.h"
 #include "winlib/WIN32Context.h"
 #include "winlib/WIN32FontInfo.h"
@@ -35,11 +37,16 @@
 
 #include <math.h>
 
+#ifndef AC_SRC_ALPHA
+// Missing definitions from wingdi.h
+#define AC_SRC_ALPHA    0x01
+#endif
+
 // There is a bug in Win32 GDI drawing with lines wider than 0
 // before and after a bezier path forming an oblique
 // angle. The solution is to insert extra MoveToEx()'s
 // before and after the PolyBezierTo().
-#define GDI_WIDELINE_BEZIERPATH_BUG 1
+#define GDI_WIDELINE_BEZIERPATH_BUG 0
 
 static inline
 int WindowHeight(HWND window)
@@ -167,64 +174,93 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
     wscolor = RGB(color.field[0]*255, color.field[1]*255, color.field[2]*255);
 }
 
-- (void) copyBits: (WIN32GState*)source 
-	 fromRect: (NSRect)aRect 
-	  toPoint: (NSPoint)aPoint
+- (void) _compositeGState: (WIN32GState *) source
+                 fromRect: (NSRect) sourceRect
+                  toPoint: (NSPoint) destPoint
+                       op: (NSCompositingOperation) op
+                 fraction: (float)delta
 {
-  HDC otherDC;
+  HDC sourceDC;
   HDC hDC;
-  RECT rect;
+  RECT rectFrom;
+  RECT rectTo;
   int h;
   int x;
   int y;
-  NSRect r;
-  RECT rect2;
+  NSRect destRect;
+  BOOL success;
 
-  rect = GSViewRectToWin(source, aRect);
-  h = rect.bottom - rect.top;
+  NSDebugLLog(@"WIN32GState", @"compositeGState: fromRect: %@ toPoint: %@ op: %d",
+	      NSStringFromRect(sourceRect), NSStringFromPoint(destPoint), op);
 
-  r.size = aRect.size;
-  r.origin = aPoint;
-  rect2 = GSViewRectToWin(self, r);
-  x = rect2.left;
-  y = rect2.top;
+  rectFrom = GSViewRectToWin(source, sourceRect);
+  h = rectFrom.bottom - rectFrom.top;
+
+  destRect.size = sourceRect.size;
+  destRect.origin = destPoint;
+  rectTo = GSViewRectToWin( self, destRect );
+  x = rectTo.left;
+  y = rectTo.top;
+
   if (source->ctm->matrix.m22 < 0 && ctm->matrix.m22 > 0) y += h;
   if (source->ctm->matrix.m22 > 0 && ctm->matrix.m22 < 0) y -= h;
 
-  otherDC = [source getHDC];
-  if (!otherDC)
+  sourceDC = [source getHDC];
+  
+  if( !sourceDC )
     {
       return;
     }
-  if (self == source)
+
+  if( self == source )
     {
-      hDC = otherDC;
-    } 
-  else 
+      hDC = sourceDC;
+    }
+  else
     {
       hDC = [self getHDC];
-      if (!hDC)
-	{
-	  [source releaseHDC: otherDC]; 
+      if( !hDC )
+        {
+	  [source releaseHDC: sourceDC];
 	  return;
-	} 
+        }
     }
-    
-  if (!BitBlt(hDC, x, y, (rect.right - rect.left), h, 
-	      otherDC, rect.left, rect.top, SRCCOPY))
+
+  switch (op)
     {
-      NSLog(@"Copy bitmap failed %d", GetLastError());
-      NSLog(@"Orig Copy Bits to %f, %f from %@", aPoint.x, aPoint.y, 
-	    NSStringFromRect(aRect)); 
-      NSLog(@"Copy Bits to %d %d from %d %d size %d %d", x , y, 
-	    rect.left, rect.top, (rect.right - rect.left), h);
+    case NSCompositeSourceOver:
+      {
+	// Use (0..1) fraction to set a (0..255) alpha constant value
+	BYTE SourceCosntantAlpha = (BYTE)(delta * 255);
+	BLENDFUNCTION blendFunc = {AC_SRC_OVER, 0, SourceCosntantAlpha, AC_SRC_ALPHA};
+	success = AlphaBlend(hDC,
+			     x, y, (rectFrom.right - rectFrom.left), h,
+			     sourceDC,
+			     rectFrom.left, rectFrom.top,
+			     (rectFrom.right - rectFrom.left), h, blendFunc);
+	break;
+      }
+
+    default:
+      success = BitBlt( hDC, x, y, (rectFrom.right - rectFrom.left), h,
+			sourceDC, rectFrom.left, rectFrom.top, SRCCOPY );
+      break;
+    }
+
+  if (!success)
+    {
+      NSLog(@"Blit operation failed %d", GetLastError());
+      NSLog(@"Orig Copy Bits to %@ from %@", NSStringFromPoint(destPoint),
+	     NSStringFromRect(destRect));
+      NSLog(@"Copy bits to {%d, %d} from {%d, %d} size {%d, %d}", x, y,
+	    rectFrom.left, rectFrom.top, (rectFrom.right - rectFrom.left), h);
     }
 
   if (self != source)
     {
       [self releaseHDC: hDC];
     }
-  [source releaseHDC: otherDC]; 
+  [source releaseHDC: sourceDC];
 }
 
 - (void) compositeGState: (GSGState *)source 
@@ -232,8 +268,11 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
                  toPoint: (NSPoint)aPoint
                       op: (NSCompositingOperation)op
 {
-  // FIXME
-  [self copyBits: (WIN32GState *)source fromRect: aRect toPoint: aPoint];
+  [self _compositeGState: (WIN32GState *) source
+	        fromRect: aRect
+	         toPoint: aPoint
+	              op: op
+	        fraction: 1];
 }
 
 - (void) dissolveGState: (GSGState *)source
@@ -241,8 +280,11 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
 		toPoint: (NSPoint)aPoint 
 		  delta: (float)delta
 {
-  // FIXME
-  [self copyBits: (WIN32GState *)source fromRect: aRect toPoint: aPoint];
+  [self _compositeGState: (WIN32GState *) source
+	        fromRect: aRect
+	         toPoint: aPoint
+	              op: NSCompositeSourceOver
+	        fraction: delta];
 }
 
 - (void) compositerect: (NSRect)aRect
@@ -431,6 +473,16 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   POINT p;
   int h;
   int y1;
+
+  NSDebugLLog(@"WIN32GState", @"DPSImage : pixelsWide = %d : pixelsHigh = %d"
+	      ": bitsPerSample = %d : samplesPerPixel = %d"
+	      ": bitsPerPixel = %d : bytesPerRow = %d "
+	      ": isPlanar = %d"
+	      ": hasAlpha = %d : colorSpaceName = %@",
+	      pixelsWide, pixelsHigh,
+	      bitsPerSample, samplesPerPixel,
+	      bitsPerPixel, bytesPerRow,
+	      isPlanar, hasAlpha, colorSpaceName);
 
   if (window == NULL)
     {

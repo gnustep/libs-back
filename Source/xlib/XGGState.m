@@ -1175,127 +1175,6 @@ static	Region	emptyRegion;
 /* ----------------------------------------------------------------------- */
 /* Text operations */
 /* ----------------------------------------------------------------------- */
-typedef enum {
-  show_delta, show_array_x, show_array_y, show_array_xy
-} show_array_t;
-
-/* Omnibus show string routine that combines that characteristics of
-   ashow, awidthshow, widthshow, xshow, xyshow, and yshow */
-- (void) _showString: (const char *)s
-	    xCharAdj: (float)cx
-	    yCharAdj: (float)cy
-		char: (char)c
-	    adjArray: (const float *)arr
-	     arrType: (show_array_t)type
-	  isRelative: (BOOL)relative;
-{
-  int i;
-  int len;
-  int width;
-  NSSize scale;
-  NSPoint point = [path currentPoint];
-
-  if (font == nil)
-    {
-      NSLog(@"DPS (xgps): no font set\n");
-      return;
-    }
-
-  COPY_GC_ON_CHANGE; 
-  if (draw == 0)
-    {
-      DPS_WARN(DPSinvalidid, @"No Drawable defined for show");
-      return;
-    }
-
-  if ((cstate & COLOR_FILL) == 0)
-    [self setColor: &fillColor state: COLOR_FILL];
-
-  /* Use only delta transformations (no offset) */
-  len = strlen(s);
-  scale = [ctm sizeInMatrixSpace: NSMakeSize(1,1)];
-  for (i = 0; i < len; i++)
-    {
-      NSPoint	delta;
-      XPoint	xp;
-
-      // FIXME: We should put this line before the loop
-      // and do all computation in display space.
-      xp = XGWindowPointToX(self, point);
-      width = [(XGFontInfo *)font widthOf: s+i lenght: 1];
-      // Hack: Only draw when alpha is not zero
-      if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
-	[(XGFontInfo *)font draw: s+i lenght: 1 
-		   onDisplay: XDPY drawable: draw
-		   with: xgcntxt at: xp];
-
-      if (drawingAlpha)
-	{
-	  NSAssert(alpha_buffer, NSInternalInconsistencyException);
-	  
-	  [self setAlphaColor: fillColor.field[AINDEX]];
-	  [(XGFontInfo *)font draw: s+i lenght: 1 
-		     onDisplay: XDPY drawable: alpha_buffer
-		     with: agcntxt at: xp];
-	}
-      /* Note we update the current point according to the current 
-	 transformation scaling, although the text isn't currently
-	 scaled (FIXME). */
-      if (type == show_array_xy)
-	{
-	  delta.x = arr[2*i]; delta.y = arr[2*i+1];
-	}
-      else if (type == show_array_x)
-	{
-	  delta.x = arr[i]; delta.y = 0;
-	}
-      else if (type == show_array_y)
-	{
-	  delta.x = 0; delta.y = arr[i];
-	}
-      else
-	{
-	  delta.x = arr[0]; delta.y = arr[1];
-	}
-      delta = [ctm deltaPointInMatrixSpace: delta];
-      if (relative == YES)
-	{
-	  delta.x += width * scale.width;
-	  delta.y += [font ascender] * scale.height;
-	}
-      if (c && *(s+i) == c)
-	{
-	  NSPoint cdelta;
-	  cdelta.x = cx; cdelta.y = cy;
-	  cdelta = [ctm deltaPointInMatrixSpace: cdelta];
-	  delta.x += cdelta.x; delta.y += cdelta.y;
-	}
-      point.x += delta.x;
-      if (type != show_delta)
-	point.y += delta.y;
-    }
-  // FIXME: Should we set the current point now?
-}
-
-- (void)DPSashow: (float)x : (float)y : (const char *)s 
-{
-  float arr[2];
-
-  arr[0] = x; arr[1] = y;
-  [self _showString: s
-    xCharAdj: 0 yCharAdj: 0 char: 0 adjArray: arr arrType: show_delta
-    isRelative: YES];
-}
-
-- (void)DPSawidthshow: (float)cx : (float)cy : (int)c : (float)ax : (float)ay : (const char *)s 
-{
-  float arr[2];
-
-  arr[0] = ax; arr[1] = ay;
-  [self _showString: s
-    xCharAdj: cx yCharAdj: cy char: c adjArray: arr arrType: show_delta
-    isRelative: YES];
-}
 
 - (void)DPSshow: (const char *)s 
 {
@@ -1346,7 +1225,6 @@ typedef enum {
   [path relativeMoveToPoint: NSMakePoint(width * scale.width, 0)];
 }
 
-
 - (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t) length
 {
   int width;
@@ -1392,37 +1270,6 @@ typedef enum {
   scale = [ctm sizeInMatrixSpace: NSMakeSize(1, 1)];
   //scale = NSMakeSize(1, 1);
   [path relativeMoveToPoint: NSMakePoint(width * scale.width, 0)];
-}
-
-- (void)DPSwidthshow: (float)x : (float)y : (int)c : (const char *)s 
-{
-  float arr[2];
-
-  arr[0] = 0; arr[1] = 0;
-  [self _showString: s
-    xCharAdj: x yCharAdj: y char: c adjArray: arr arrType: show_delta
-    isRelative: YES];
-}
-
-- (void)DPSxshow: (const char *)s : (const float *)numarray : (int)size 
-{
-  [self _showString: s
-    xCharAdj: 0 yCharAdj: 0 char: 0 adjArray: numarray arrType: show_array_x
-    isRelative: NO];
-}
-
-- (void)DPSxyshow: (const char *)s : (const float *)numarray : (int)size 
-{
-  [self _showString: s
-    xCharAdj: 0 yCharAdj: 0 char: 0 adjArray: numarray arrType: show_array_xy
-    isRelative: NO];
-}
-
-- (void)DPSyshow: (const char *)s : (const float *)numarray : (int)size 
-{
-  [self _showString: s
-    xCharAdj: 0 yCharAdj: 0 char: 0 adjArray: numarray arrType: show_array_y
-    isRelative: NO];
 }
 
 - (void) GSSetFont: (GSFontInfo *)newFont
