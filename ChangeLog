@@ -1,6 +1,9 @@
 2002-04-01  Adam Fedor  <fedor@gnu.org>
 
-	* Source/xlib/GSContext (-GSCurrentCTM): Implement
+	* Source/gsc/GSContext.m (-GSSendBezierPath:): Implement
+	(-GSRectClipList::): Likewise.
+	(-GSRectFillList::): Likewise.
+	(-GSCurrentCTM): Likewise.
 	(-GSSetCTM:): Likewise.
 	(-GSConcatCTM:): Likewise.
 	* Source/xlib/XGGState.m ([XGGState -DPSsetmiterlimit:]): Implement
