@@ -7,15 +7,20 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.9.1}
+
+Color on 8 bit displays works correctly now. WindowMaker properties are
+always set now in case another manager is emulating WindowMaker styles.
+
+@c ====================================================================
+@c Keep the next line just below the list of changes in most recent version.
+@ifclear ANNOUNCE-ONLY
+
 
 @section Noteworthy changes in version @samp{0.9.0}
 
 Some more improvements to copy/paste support following ICCCM specifications
 (like COMPOUND_TEXT support).
-
-@c ====================================================================
-@c Keep the next line just below the list of changes in most recent version.
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.8.9}
 

@@ -1,10 +1,16 @@
 NEWS
 ****
 
+Noteworthy changes in version `0.9.1'
+=====================================
+
+Color on 8 bit displays works correctly now. WindowMaker properties are
+always set now in case another manager is emulating WindowMaker styles.
+
 Noteworthy changes in version `0.9.0'
 =====================================
 
-Some more improvements to copy/paste support following ICCCM
+   Some more improvements to copy/paste support following ICCCM
 specifications (like COMPOUND_TEXT support).
 
 Noteworthy changes in version `0.8.9'
