@@ -35,6 +35,10 @@
 
 - (void) draw: (const char*)s lenght: (int)len 
 	 onDC: (HDC)hdc at: (POINT)p;
+- (void) drawGlyphs: (const NSGlyph*)s
+	     length: (int)len 
+	       onDC: (HDC)hdc
+		 at: (POINT)p;
 @end
 
 #endif/* _WIN32FontInfo_h_INCLUDE */
