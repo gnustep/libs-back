@@ -1,6 +1,15 @@
 NEWS
 ****
 
+Noteworthy changes in version `0.9.5'
+=====================================
+
+   * Added support for window alpha on X servers.
+
+   * Add support for old and new freetype libs.
+
+   * Some improvements to the Windows backend.
+
 Noteworthy changes in version `0.9.4'
 =====================================
 
