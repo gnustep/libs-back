@@ -1,3 +1,11 @@
+2003-02-17  Willem Rein Oudshoorn  <woudshoo@xs4all.nl>
+
+	* Source/x11/XGDragView.m ([XGDragView -drawRect:]): use [self
+	frame] instead of `rect'.  Fixes #101846.
+	([XGDragView -_handleDrag:]): Fixed typo in comment
+	([XGDragView -_handleEventDuringDragging:theEvent]): Removed old 
+	comment.
+	
 2003-02-16 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGDragView.m: Set drag window at NSPopUpMenuWindowLevel
