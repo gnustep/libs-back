@@ -104,7 +104,7 @@ PropGetCheckProperty(Display *dpy, Window window, Atom hint, Atom type,
     return NULL;
 
   if ((type!=AnyPropertyType && type!=type_ret)
-    || (count > 0 && nitems_ret != count)
+    || (count > 0 && nitems_ret != (unsigned long)count)
     || (format != 0 && format != fmt_ret))
     {
       XFree(data);
@@ -680,8 +680,8 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 {
   NSProcessInfo		*pInfo = [NSProcessInfo processInfo];
   NSArray		*args;
-  unsigned		i;
-  int			argc;
+  unsigned int		i;
+  unsigned int		argc;
   char			**argv;
   XClassHint		classhint; 
   XTextProperty		windowName;
@@ -1101,7 +1101,8 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
  * Return the offsets between the window content-view and it's frame
  * depending on the window style.
  */
-- (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b : (int) style
+- (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b 
+		     : (unsigned int) style
 {
   /* First try to get the offset information that we have obtained from
      the WM. This will only work if the application has already created
@@ -1186,7 +1187,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
     }
 }
 
-- (void) stylewindow: (int)style : (int) win
+- (void) stylewindow: (unsigned int)style : (int) win
 {
   gswindow_device_t	*window;
 
@@ -1396,7 +1397,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
    * is there any way to wait until X finished it's stuff?
    * XSync(), XFlush() doesn't do the job!
    */
-  if (height != window->siz_hints.height)
+  if (height != (unsigned int)(window->siz_hints.height))
     {
 #if HAVE_USLEEP
       usleep(1);
@@ -1884,7 +1885,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
     return;
 
   NSDebugLLog(@"XGTrace", @"DPSsetwindowlevel: %d : %d", level, win);
-  if (window->win_attrs.window_level != level
+  if ((int)(window->win_attrs.window_level) != level
     || (window->win_attrs.flags & GSWindowLevelAttr) == 0)
     {
       window->win_attrs.flags |= GSWindowLevelAttr;
@@ -2601,7 +2602,7 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
   XColor fg, bg;
 
   /* FIXME: We might create a blank cursor here? */
-  if (image == NULL || w == 0 || h == 0)
+  if (image == NULL || w <= 0 || h <= 0)
     {
       *cid = NULL;
       return;
@@ -2609,9 +2610,9 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
 
   /* FIXME: Handle this better or return an error? */
   XQueryBestCursor(dpy, ROOT, w, h, &maxw, &maxh);
-  if (w > maxw)
+  if ((unsigned int)w > maxw)
     w = maxw;
-  if (h > maxh)
+  if ((unsigned int)h > maxh)
     h = maxh;
 
   cursor = NSZoneMalloc([self zone], sizeof(xgps_cursor_id_t));
