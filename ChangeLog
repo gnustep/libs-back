@@ -1,3 +1,9 @@
+2003-08-08  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/XGFontManager.m 
+	In load_cache() enclosed loading of archive in exception handling and
+	removed the writing of the archive previously done to update the format.
+
 2003-08-05  Martin Brecher <martin@mb-itconsulting.com>
 
 	* Tools/gpbs.1: Updated, fixed typos, added BUGS and HISTORY
