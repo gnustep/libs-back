@@ -273,8 +273,6 @@ static void MPRE(run_alpha_a) (render_run_t *ri,int num)
 	unsigned char *dst_alpha=ri->dsta;
 #endif
 
-//	printf("run_alpha_a\n");
-
 	a=ri->a;
 	sr=ri->r*a;
 	sg=ri->g*a;
@@ -388,6 +386,7 @@ static void MPRE(sover_ao) (composite_run_t *c,int num)
 		BLEND_READ(s,sr,sg,sb)
 		BLEND_READ(d,dr,dg,db)
 
+		sa = 255 - sa;
 		dr=sr+((dr*sa+0xff)>>8);
 		dg=sg+((dg*sa+0xff)>>8);
 		db=sb+((db*sa+0xff)>>8);
