@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <X11/Xlib.h>
-#include "xrtools.h"
+#include "x11/wraster.h"
 
 #include <assert.h>
 

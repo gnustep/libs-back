@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "xrtools.h"
+#include "x11/wraster.h"
 
 
 #define MIN(a,b)	((a) < (b) ? (a) : (b))
