@@ -93,8 +93,115 @@ static void dump_bpath(ArtBpath *vp)
 #endif
 
 
-@implementation ARTGState (path)
+/* rendering helpers */
 
+typedef struct
+{
+  render_run_t ri;
+
+  unsigned char real_a;
+  int x0, x1;
+  int rowstride, arowstride, bpp;
+  void (*run_alpha)(struct render_run_s *ri, int num);
+  void (*run_opaque)(struct render_run_s *ri, int num);
+} svp_render_info_t;
+
+static void render_svp_callback(void *data, int y, int start,
+	ArtSVPRenderAAStep *steps, int n_steps)
+{
+  svp_render_info_t *ri = data;
+  int x0 = ri->x0, x1;
+  int num;
+  int alpha;
+  unsigned char *dst, *dsta;
+
+  alpha = start;
+
+  /* empty line; very common case */
+  if (alpha < 0x10000 && !n_steps)
+    {
+      ri->ri.dst += ri->rowstride;
+      ri->ri.dsta += ri->arowstride;
+      return;
+    }
+
+  dst = ri->ri.dst + ri->rowstride;
+  dsta = ri->ri.dsta + ri->arowstride;
+
+  for (; n_steps; n_steps--, steps++)
+    {
+      x1 = steps->x;
+      num = x1 - x0;
+
+      ri->ri.a = (alpha * ri->real_a + 0x800000) >> 24;
+      if (ri->ri.a && num)
+	{
+	  if (ri->ri.a == 255)
+	    ri->run_opaque(&ri->ri, num);
+	  else
+	    ri->run_alpha(&ri->ri, num);
+	}
+      ri->ri.dst += ri->bpp * num;
+      ri->ri.dsta += num;
+
+      alpha += steps->delta;
+      x0 = x1;
+    }
+
+  x1 = ri->x1;
+  num = x1 - x0;
+  ri->ri.a = (alpha * ri->real_a + 0x800000) >> 24;
+  if (ri->ri.a && num)
+    {
+      if (ri->ri.a == 255)
+	ri->run_opaque(&ri->ri, num);
+      else
+	ri->run_alpha(&ri->ri, num);
+    }
+
+  ri->ri.dst = dst;
+  ri->ri.dsta = dsta;
+}
+
+static void artcontext_render_svp(const ArtSVP *svp, int x0, int y0, int x1, int y1,
+	unsigned char r, unsigned char g, unsigned char b, unsigned char a,
+	unsigned char *dst, int rowstride,
+	unsigned char *dsta, int arowstride, int has_alpha,
+	draw_info_t *di)
+{
+  svp_render_info_t ri;
+
+  ri.x0 = x0;
+  ri.x1 = x1;
+
+  ri.ri.r = r;
+  ri.ri.g = g;
+  ri.ri.b = b;
+  ri.real_a = ri.ri.a = a;
+
+  ri.bpp = di->bytes_per_pixel;
+
+  ri.ri.dst = dst;
+  ri.rowstride = rowstride;
+
+  if (has_alpha)
+    {
+      ri.ri.dsta = dsta;
+      ri.arowstride = arowstride;
+      ri.run_alpha = di->render_run_alpha_a;
+      ri.run_opaque = di->render_run_opaque_a;
+    }
+  else
+    {
+      ri.run_alpha = di->render_run_alpha;
+      ri.run_opaque = di->render_run_opaque;
+    }
+
+  art_svp_render_aa(svp, x0, y0, x1, y1, render_svp_callback, &ri);
+}
+
+
+@implementation ARTGState (path)
 
 /* Fills in vp. If the rectangle is axis- (and optionally pixel)-aligned,
 also fills in the axis coordinates (x0/y0 is min) and returns 1. Otherwise
