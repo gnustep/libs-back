@@ -47,6 +47,7 @@
 
 #include "x11/XGServer.h"
 #include "x11/XGInputServer.h"
+#include "x11/XGOpenGL.h"
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -526,5 +527,24 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 {
   XBell(dpy, 50);
 }
+
+- glContextClass
+{
+#ifdef HAVE_GLX
+  return [XGGLContext class];
+#else
+  return nil;
+#endif
+}
+
+- glPixelFormatClass
+{
+#ifdef HAVE_GLX
+  return [XGGLPixelFormat class];
+#else
+  return nil;
+#endif
+}
+
 
 @end

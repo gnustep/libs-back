@@ -196,6 +196,25 @@ LIBS="${save_libs}"
 AC_SUBST(WITH_XFT)
 
 #--------------------------------------------------------------------
+# GLX support
+#--------------------------------------------------------------------
+WITH_GLX=no
+save_header=${CPPFLAGS}
+save_libs=${LIBS}
+CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
+LIBS="${GRAPHIC_LIBS} ${LIBS}"
+AC_CHECK_LIB(GL, glXMakeContextCurrent, have_glx=yes, have_glx=no)
+AC_CHECK_HEADER(GL/glx.h)
+if test "$have_glx" = yes -a "$ac_cv_header_GL_glx_h" = yes; then
+  GRAPHIC_LIBS="-lGL ${GRAPHIC_LIBS}"
+  WITH_GLX=yes
+  AC_DEFINE(HAVE_GLX,1,[Define if you have the glx library])
+fi
+CPPFLAGS="${save_header}"
+LIBS="${save_libs}"
+AC_SUBST(WITH_GLX)
+
+#--------------------------------------------------------------------
 # XIM support
 #--------------------------------------------------------------------
 AC_ARG_ENABLE(xim, 
