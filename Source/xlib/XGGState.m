@@ -1595,6 +1595,7 @@ typedef enum {
       XDestroyRegion(region);
     }
   [self setClipMask];
+  [self DPSnewpath];
 }
 
 - (void)DPSrectfill: (float)x : (float)y : (float)w : (float)h 
