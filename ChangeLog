@@ -1,3 +1,8 @@
+2003-09-03  Adam Fedor  <fedor@gnu.org>
+
+	* Source/xdps/GNUmakefile: include config.make (patch from
+	Aredridel <aredridel@nbtsc.org>).
+
 2003-09-02  Adam Fedor  <fedor@gnu.org>
 
 	* Tools/gpbs.m (init): Don't mess with file descriptors on MinGW.
