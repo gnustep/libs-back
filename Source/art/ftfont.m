@@ -1293,6 +1293,14 @@ add code to avoid loading bitmaps for glyphs */
 }
 
 
+static int filters[3][7]=
+{
+{ 0*65536/9, 1*65536/9, 2*65536/9, 3*65536/9, 2*65536/9, 1*65536/9, 0*65536/9},
+{ 0*65536/9, 1*65536/9, 2*65536/9, 3*65536/9, 2*65536/9, 1*65536/9, 0*65536/9},
+{ 0*65536/9, 1*65536/9, 2*65536/9, 3*65536/9, 2*65536/9, 1*65536/9, 0*65536/9}
+};
+
+
 +(void) initializeBackend
 {
   [GSFontEnumerator setDefaultClass: [FTFontEnumerator class]];
@@ -1311,8 +1319,54 @@ add code to avoid loading bitmaps for glyphs */
 
   load_font_configuration();
 
-  subpixel_text = [[NSUserDefaults standardUserDefaults]
-    integerForKey: @"back-art-subpixel-text"];
+  {
+    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+    NSString *s;
+    NSArray *a;
+    int i;
+
+    subpixel_text = [ud integerForKey: @"back-art-subpixel-text"];
+
+    /* To make it easier to find an optimal (or at least good) filter,
+    the filters are configurable (for now). */
+    for (i = 0; i < 3; i++)
+      {
+	s = [ud stringForKey:
+	      [NSString stringWithFormat: @"back-art-subpixel-filter-%i",i]];
+	if (s)
+	  {
+	    int j, c, sum, v;
+	    a = [s componentsSeparatedByString: @" "];
+	    c = [a count];
+	    if (!c)
+	      continue;
+	    if (!(c & 1) || c > 7)
+	      {
+		NSLog(@"invalid number of components in filter (must be odd number, 1<=n<=7)");
+		continue;
+	      }
+	    memset(filters[i], 0, sizeof(filters[0]));
+	    sum = 0;
+	    for (j = 0; j < c; j++)
+	      {
+		v = [[a objectAtIndex: j] intValue];
+		sum += v;
+		filters[i][j + (7 - c) / 2] = v * 65536;
+	      }
+	    if (sum)
+	      {
+		for (j = 0; j < 7; j++)
+		  {
+		    filters[i][j] /= sum;
+		  }
+	      }
+	    NSLog(@"filter %i: %04x %04x %04x %04x %04x %04x %04x",
+	          i,
+		  filters[i][0],filters[i][1],filters[i][2],filters[i][3],
+		  filters[i][4],filters[i][5],filters[i][6]);
+	  }
+      }
+  }
 }
 
 
@@ -1547,29 +1601,43 @@ add code to avoid loading bitmaps for glyphs */
 	      for (; gy < sy; gy++, src += sbpl, dst += bpl)
 		{
 		  int i, j;
+		  int v0, v1, v2;
 		  for (i = 0, j = -llip; i < psx * 3; i+=3)
 		    {
-		      scratch[i+mode] =
-			((j > -1 && j<sx    ? src[j    ] * 3 : 0)
-		       + (j >  0 && j<sx + 1? src[j - 1] * 2 : 0)
-		       + (j >  1 && j<sx + 2? src[j - 2]     : 0)
-		       + (j > -2 && j<sx - 1? src[j + 1] * 2 : 0)
-		       + (j > -3 && j<sx - 2? src[j + 2]     : 0)) / 9;
+		      v0 = (0 +
+		       + (j >  2 && j<sx + 3? src[j - 3] * filters[0][0] : 0)
+		       + (j >  1 && j<sx + 2? src[j - 2] * filters[0][1] : 0)
+		       + (j >  0 && j<sx + 1? src[j - 1] * filters[0][2] : 0)
+		       + (j > -1 && j<sx    ? src[j    ] * filters[0][3] : 0)
+		       + (j > -2 && j<sx - 1? src[j + 1] * filters[0][4] : 0)
+		       + (j > -3 && j<sx - 2? src[j + 2] * filters[0][5] : 0)
+		       + (j > -4 && j<sx - 3? src[j + 3] * filters[0][6] : 0)
+		       ) / 65536;
 		      j++;
-		      scratch[i+1] =
-			((j > -1 && j<sx    ? src[j    ] * 3 : 0)
-		       + (j >  0 && j<sx + 1? src[j - 1] * 2 : 0)
-		       + (j >  1 && j<sx + 2? src[j - 2]     : 0)
-		       + (j > -2 && j<sx - 1? src[j + 1] * 2 : 0)
-		       + (j > -3 && j<sx - 2? src[j + 2]     : 0)) / 9;
+		      v1 = (0 +
+		       + (j >  2 && j<sx + 3? src[j - 3] * filters[1][0] : 0)
+		       + (j >  1 && j<sx + 2? src[j - 2] * filters[1][1] : 0)
+		       + (j >  0 && j<sx + 1? src[j - 1] * filters[1][2] : 0)
+		       + (j > -1 && j<sx    ? src[j    ] * filters[1][3] : 0)
+		       + (j > -2 && j<sx - 1? src[j + 1] * filters[1][4] : 0)
+		       + (j > -3 && j<sx - 2? src[j + 2] * filters[1][5] : 0)
+		       + (j > -4 && j<sx - 3? src[j + 3] * filters[1][6] : 0)
+		       ) / 65536;
 		      j++;
-		      scratch[i+(mode^2)] =
-			((j > -1 && j<sx    ? src[j    ] * 3 : 0)
-		       + (j >  0 && j<sx + 1? src[j - 1] * 2 : 0)
-		       + (j >  1 && j<sx + 2? src[j - 2]     : 0)
-		       + (j > -2 && j<sx - 1? src[j + 1] * 2 : 0)
-		       + (j > -3 && j<sx - 2? src[j + 2]     : 0)) / 9;
+		      v2 = (0 +
+		       + (j >  2 && j<sx + 3? src[j - 3] * filters[2][0] : 0)
+		       + (j >  1 && j<sx + 2? src[j - 2] * filters[2][1] : 0)
+		       + (j >  0 && j<sx + 1? src[j - 1] * filters[2][2] : 0)
+		       + (j > -1 && j<sx    ? src[j    ] * filters[2][3] : 0)
+		       + (j > -2 && j<sx - 1? src[j + 1] * filters[2][4] : 0)
+		       + (j > -3 && j<sx - 2? src[j + 2] * filters[2][5] : 0)
+		       + (j > -4 && j<sx - 3? src[j + 3] * filters[2][6] : 0)
+		       ) / 65536;
 		      j++;
+
+		      scratch[i + mode] = v0>0?v0:0;
+		      scratch[i + 1] = v1>0?v1:0;
+		      scratch[i + (mode ^ 2)] = v2>0?v2:0;
 		    }
 		  DI.render_blit_subpixel(dst,
 					  scratch + px0 * 3, r, g, b, alpha,
