@@ -1,5 +1,13 @@
 2003-12-30  Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/gsc/path.m (-GSSendBezierPath:) preset the count
+	variable, as this is expected by the method [NSBezierPath
+	getLineDash:count:phase:]. 
+	* Source/xlib/XGGState.m (-_doPath::draw:) allways set fill rule
+	for path_fill.
+
+2003-12-30  Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/art/path.m (-DPSrectstroke::::,
 	-_axis_rectangle::::vpath:axis::::pixel:): Adopted to change in 
 	NSAffineTransform.h. 

@@ -835,10 +835,11 @@ static	Region	emptyRegion;
 	}
       break;
     case path_eofill:
-      gcv.fill_rule = EvenOddRule;
-      [self setGCValues: gcv withMask: GCFillRule];
+      fill_rule = EvenOddRule;
       /* NO BREAK */
     case path_fill:
+      gcv.fill_rule = fill_rule;
+      [self setGCValues: gcv withMask: GCFillRule];
       // Hack: Only draw when alpha is not zero
       if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
 	XFillPolygon(XDPY, draw, xgcntxt, pts, count, Complex, 
@@ -851,12 +852,7 @@ static	Region	emptyRegion;
 	  XFillPolygon(XDPY, alpha_buffer, agcntxt, pts, count, Complex, 
 		       CoordModeOrigin);
 	}
-      
-      if (gcv.fill_rule == EvenOddRule)
-	{
-	  gcv.fill_rule = WindingRule;
-	  [self setGCValues: gcv withMask: GCFillRule];
-	}
+
       break;
     case path_eoclip:
       fill_rule = EvenOddRule;
@@ -1487,7 +1483,9 @@ typedef enum {
   // FIXME: How to convert those values?
   dash_offset = (int)pat_offset;
   for (i = 0; i < size; i++)
-    dash_list[i] = (char)pat[i];
+    {
+      dash_list[i] = (char)pat[i];
+    }
 
   // We can only set the dash pattern, if xgcntxt exists.
   if (xgcntxt == 0)

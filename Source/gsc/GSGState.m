@@ -841,7 +841,7 @@
 
 - (void) GSSendBezierPath: (NSBezierPath *)newpath
 {
-  int count;
+  int count = 10;
   float pattern[10];
   float phase;
 
