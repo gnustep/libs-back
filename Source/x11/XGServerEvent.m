@@ -914,7 +914,7 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	    XGetInputFocus(xEvent.xfocus.display, &fw, &rev);
 	    NSDebugLLog(@"NSEvent", @"%d FocusOut\n",
 			xEvent.xfocus.window);
-	    cWin = [XGServer _windowForXWindow: fw];
+	    generic.cachedWindow = [XGServer _windowForXWindow: fw];
 	    if (cWin == 0)
 	      {
 		cWin = [XGServer _windowForXParent: fw];
