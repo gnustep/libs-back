@@ -1,3 +1,7 @@
+2003-02-24  Adam Fedor  <fedor@gnu.org>
+
+	* Version: 0.8.4
+
 2003-02-20  Willem Rein Oudshoorn  <woudshoo@xs4all.nl>
 
 	* Source/xlib/XGFont.m ([XGFontInfo -setupAttributes]): Use
