@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CPP X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EGREP WITH_XFT WITH_GLX WITH_WRASTER GRAPHIC_LIBS GRAPHIC_CFLAGS GRAPHIC_LFLAGS BUILD_SERVER BUILD_GRAPHICS BACKEND_NAME LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CPP X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EGREP WITH_XFT WITH_GLX WITH_GLITZ WITH_WRASTER GRAPHIC_LIBS GRAPHIC_CFLAGS GRAPHIC_LFLAGS BUILD_SERVER BUILD_GRAPHICS BACKEND_NAME LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -851,8 +851,9 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-glx           Disable GLX support
   --disable-xim           Disable XIM support
+  --disable-glitz         Disable Glitz support
   --enable-server=SRV     Build server type: x11, win32
-  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art
+  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -6316,6 +6317,373 @@ CPPFLAGS="${save_header}"
 LIBS="${save_libs}"
 
 #--------------------------------------------------------------------
+# Cairo graphics libraries
+#--------------------------------------------------------------------
+save_header=${CPPFLAGS}
+save_libs=${LIBS}
+CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
+LIBS="${GRAPHIC_LIBS} ${LIBS}"
+
+CAIRO_LIBS="`pkg-config --libs cairo`"
+CAIRO_CFLAGS="`pkg-config --cflags cairo`"
+
+CPPFLAGS="${CPPFLAGS} ${CAIRO_CFLAGS}"
+LIBS="${LIBS} ${CAIRO_LIBS}"
+
+if test "${ac_cv_header_cairo_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for cairo.h" >&5
+echo $ECHO_N "checking for cairo.h... $ECHO_C" >&6
+if test "${ac_cv_header_cairo_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_cairo_h" >&5
+echo "${ECHO_T}$ac_cv_header_cairo_h" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking cairo.h usability" >&5
+echo $ECHO_N "checking cairo.h usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <cairo.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking cairo.h presence" >&5
+echo $ECHO_N "checking cairo.h presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <cairo.h>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: cairo.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: cairo.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: cairo.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: cairo.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: cairo.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: cairo.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: cairo.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: cairo.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: cairo.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: cairo.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: cairo.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: cairo.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: cairo.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: cairo.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: cairo.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: cairo.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## ------------------------------------------ ##
+## Report this to the AC_PACKAGE_NAME lists.  ##
+## ------------------------------------------ ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for cairo.h" >&5
+echo $ECHO_N "checking for cairo.h... $ECHO_C" >&6
+if test "${ac_cv_header_cairo_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_cairo_h=$ac_header_preproc
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_cairo_h" >&5
+echo "${ECHO_T}$ac_cv_header_cairo_h" >&6
+
+fi
+if test $ac_cv_header_cairo_h = yes; then
+  have_cairo=yes
+else
+  have_cairo=no
+fi
+
+
+
+if test "$have_cairo" = yes; then
+  GRAPHIC_LIBS="$CAIRO_LIBS $GRAPHIC_LIBS"
+  GRAPHIC_CFLAGS="$CAIRO_CFLAGS $GRAPHIC_CFLAGS"
+fi
+
+CPPFLAGS="${save_header}"
+LIBS="${save_libs}"
+
+#--------------------------------------------------------------------
+# Glitz-GLX libraries
+#--------------------------------------------------------------------
+WITH_GLITZ=no
+# Check whether --enable-glx or --disable-glx was given.
+if test "${enable_glx+set}" = set; then
+  enableval="$enable_glx"
+
+else
+  enable_glx=yes
+fi;
+
+if test "x$enable_glx" = "xyes"; then
+# Check whether --enable-glitz or --disable-glitz was given.
+if test "${enable_glitz+set}" = set; then
+  enableval="$enable_glitz"
+
+else
+  enable_glitz=yes
+fi;
+
+if test "x$enable_glitz" = "xyes"; then
+  WITH_GLITZ=yes
+  save_header=${CPPFLAGS}
+  save_libs=${LIBS}
+  CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
+  LIBS="${GRAPHIC_LIBS} ${LIBS}"
+
+  GLITZ_GLX_LIBS="`pkg-config --libs glitz-glx`"
+  GLITZ_GLX_CFLAGS="`pkg-config --cflags glitz-glx`"
+
+  CPPFLAGS="${CPPFLAGS} ${GLITZ_GLX_CFLAGS}"
+  LIBS="${LIBS} ${GLITZ_GLX_LIBS}"
+
+  if test "${ac_cv_header_glitz_glx_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for glitz-glx.h" >&5
+echo $ECHO_N "checking for glitz-glx.h... $ECHO_C" >&6
+if test "${ac_cv_header_glitz_glx_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_glitz_glx_h" >&5
+echo "${ECHO_T}$ac_cv_header_glitz_glx_h" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking glitz-glx.h usability" >&5
+echo $ECHO_N "checking glitz-glx.h usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <glitz-glx.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking glitz-glx.h presence" >&5
+echo $ECHO_N "checking glitz-glx.h presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <glitz-glx.h>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: glitz-glx.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: glitz-glx.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz-glx.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: glitz-glx.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: glitz-glx.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: glitz-glx.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz-glx.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: glitz-glx.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz-glx.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: glitz-glx.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz-glx.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: glitz-glx.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz-glx.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: glitz-glx.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz-glx.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: glitz-glx.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## ------------------------------------------ ##
+## Report this to the AC_PACKAGE_NAME lists.  ##
+## ------------------------------------------ ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for glitz-glx.h" >&5
+echo $ECHO_N "checking for glitz-glx.h... $ECHO_C" >&6
+if test "${ac_cv_header_glitz_glx_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_glitz_glx_h=$ac_header_preproc
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_glitz_glx_h" >&5
+echo "${ECHO_T}$ac_cv_header_glitz_glx_h" >&6
+
+fi
+if test $ac_cv_header_glitz_glx_h = yes; then
+  have_glitz_glx=yes
+else
+  have_glitz_glx=no
+fi
+
+
+
+  if test "$have_glitz_glx" = yes; then
+    GRAPHIC_LIBS="$GLITZ_GLX_LIBS $GRAPHIC_LIBS"
+    GRAPHIC_CFLAGS="$GLITZ_GLX_CFLAGS $GRAPHIC_CFLAGS"
+  fi
+
+  CPPFLAGS="${save_header}"
+  LIBS="${save_libs}"
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_GLITZ_GLX 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_GLITZ 1
+_ACEOF
+
+fi
+fi
+
+#--------------------------------------------------------------------
 # Set definitions
 #--------------------------------------------------------------------
 WITH_WRASTER=no
@@ -6388,6 +6756,12 @@ echo "$as_me: error: can't find libart, required for graphics=art!" >&2;}
   fi
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
   GRAPHIC_LIBS="$WIN32_LIBS $GRAPHIC_LIBS"
+elif test x"$BUILD_GRAPHICS" = "xcairo"; then
+  if test "$have_cairo" = no; then
+    { { echo "$as_me:$LINENO: error: can't find cairo, required for graphics=cairo!" >&5
+echo "$as_me: error: can't find cairo, required for graphics=cairo!" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
 fi
 
 
@@ -7053,6 +7427,7 @@ s,@X_EXTRA_LIBS@,$X_EXTRA_LIBS,;t t
 s,@EGREP@,$EGREP,;t t
 s,@WITH_XFT@,$WITH_XFT,;t t
 s,@WITH_GLX@,$WITH_GLX,;t t
+s,@WITH_GLITZ@,$WITH_GLITZ,;t t
 s,@WITH_WRASTER@,$WITH_WRASTER,;t t
 s,@GRAPHIC_LIBS@,$GRAPHIC_LIBS,;t t
 s,@GRAPHIC_CFLAGS@,$GRAPHIC_CFLAGS,;t t

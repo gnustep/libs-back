@@ -288,6 +288,71 @@ CPPFLAGS="${save_header}"
 LIBS="${save_libs}"
 
 #--------------------------------------------------------------------
+# Cairo graphics libraries
+#--------------------------------------------------------------------
+save_header=${CPPFLAGS}
+save_libs=${LIBS}
+CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
+LIBS="${GRAPHIC_LIBS} ${LIBS}"
+
+CAIRO_LIBS="`pkg-config --libs cairo`"
+CAIRO_CFLAGS="`pkg-config --cflags cairo`"
+
+CPPFLAGS="${CPPFLAGS} ${CAIRO_CFLAGS}"
+LIBS="${LIBS} ${CAIRO_LIBS}"
+
+AC_CHECK_HEADER(cairo.h,have_cairo=yes, have_cairo=no)
+
+if test "$have_cairo" = yes; then
+  GRAPHIC_LIBS="$CAIRO_LIBS $GRAPHIC_LIBS"
+  GRAPHIC_CFLAGS="$CAIRO_CFLAGS $GRAPHIC_CFLAGS"
+fi
+
+CPPFLAGS="${save_header}"
+LIBS="${save_libs}"
+
+#--------------------------------------------------------------------
+# Glitz-GLX libraries
+#--------------------------------------------------------------------
+WITH_GLITZ=no
+AC_ARG_ENABLE(glx, 
+  [  --disable-glx           Disable GLX support],,
+  enable_glx=yes)
+
+if test "x$enable_glx" = "xyes"; then
+AC_ARG_ENABLE(glitz, 
+  [  --disable-glitz         Disable Glitz support],,
+  enable_glitz=yes)
+
+if test "x$enable_glitz" = "xyes"; then
+  WITH_GLITZ=yes
+  save_header=${CPPFLAGS}
+  save_libs=${LIBS}
+  CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
+  LIBS="${GRAPHIC_LIBS} ${LIBS}"
+  
+  GLITZ_GLX_LIBS="`pkg-config --libs glitz-glx`"
+  GLITZ_GLX_CFLAGS="`pkg-config --cflags glitz-glx`"
+  
+  CPPFLAGS="${CPPFLAGS} ${GLITZ_GLX_CFLAGS}"
+  LIBS="${LIBS} ${GLITZ_GLX_LIBS}"
+  
+  AC_CHECK_HEADER(glitz-glx.h,have_glitz_glx=yes, have_glitz_glx=no)
+  
+  if test "$have_glitz_glx" = yes; then
+    GRAPHIC_LIBS="$GLITZ_GLX_LIBS $GRAPHIC_LIBS"
+    GRAPHIC_CFLAGS="$GLITZ_GLX_CFLAGS $GRAPHIC_CFLAGS"
+  fi
+  
+  CPPFLAGS="${save_header}"
+  LIBS="${save_libs}"
+  AC_SUBST(WITH_GLITZ)
+  AC_DEFINE(HAVE_GLITZ_GLX,1,[Define if you have glitz])
+  AC_DEFINE(USE_GLITZ,1,[Define to enable glitz support])
+fi
+fi
+
+#--------------------------------------------------------------------
 # Set definitions
 #--------------------------------------------------------------------
 WITH_WRASTER=no
@@ -310,7 +375,7 @@ AC_ARG_ENABLE(server,
   [  --enable-server=SRV     Build server type: x11, win32],,
   enable_server=$BUILD_SERVER)
 AC_ARG_ENABLE(graphics, 
-  [  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art],,
+  [  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo],,
   enable_graphics="$BUILD_GRAPHICS")
 
 BUILD_SERVER=$enable_server
@@ -338,6 +403,10 @@ elif test x"$BUILD_GRAPHICS" = "xart"; then
   fi
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
   GRAPHIC_LIBS="$WIN32_LIBS $GRAPHIC_LIBS"
+elif test x"$BUILD_GRAPHICS" = "xcairo"; then
+  if test "$have_cairo" = no; then
+    AC_MSG_ERROR([can't find cairo, required for graphics=cairo!])
+  fi
 fi
 
 AH_TOP([
