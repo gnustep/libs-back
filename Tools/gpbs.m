@@ -977,6 +977,7 @@ NSMutableDictionary	*pasteboards = nil;
        * Ensure that the X pasteboard system is initialised.
        */
       xPbClass = NSClassFromString(@"XPbOwner");
+      [xPbClass class];
     }
   return self;
 }
