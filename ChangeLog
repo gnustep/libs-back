@@ -1,3 +1,37 @@
+2003-06-17  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSStreamContext.m (GSShowGlyphs::, output:length:)
+	Removed compiler warnings about signed/unsigned comparision. 
+	Declared the extension method [GSFontInfo nameOfGlyph:].
+	In [NSDrawBitmap:::::::::::] initiliale variable alpha to stop the
+	compiler from complaining.
+	* Source/x11/xdnd.c (xdnd_is_dnd_aware(), xdnd_get_type_list)
+	Removed compiler warnings about signed/unsigned comparision. 
+	* Header/x11/XGGeneric.h 
+	Made ivar focusRequestNumber unsigned.
+	* Source/x11/XGServerEvent.m (receivedEvent:type:extra:forMode:)
+	Removed compiler warnings about signed/unsigned comparision.
+	[receivedEvent:type:extra:forMode:] initialiase deltaY in all
+	cases.
+	* Source/x11/XGServerWindow.m (PropGetCheckProperty(),
+	_setupRootWindow, windowdevice:, setwindowlevel::, imagecursor::::::)
+	Removed compiler warnings about signed/unsigned comparision.
+	Adopted to changes in GSDisplayServer.h.
+	* Source/x11/XGDragView.m (_handleEventDuringDragging:,
+	_updateAndMoveImageToCorrectPosition, _xWindowAcceptingDnDunderX:Y:,
+	_xWindowAcceptingDnDDescendentOf:underX:Y:)  
+	Removed compiler warnings about signed/unsigned comparision.
+	* Source/xlib/XGGState.m (_doComplexPath:::)
+	Removed compiler warnings about signed/unsigned comparision.
+	* Source/xlib/GSXftFontInfo.m (setupAttributes)
+	Removed compiler warnings about unused variable.
+	* Source/win32/WIN32Server.m
+	Adopted to changes in GSDisplayServer.h.
+	windowStyleForGSStyle() changed parameter style to unsigned.
+	* Tools/xpbs.m
+	Removed include for file GSPasteboardServer.h to remove some
+	compiler warnings.	
+
 2003-06-12 21:44  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Handle 2.0.* correctly in the freetype
