@@ -33,6 +33,7 @@
 
 #include <signal.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #ifdef __MINGW__
 #include	"process.h"

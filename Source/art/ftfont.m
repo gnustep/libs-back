@@ -314,7 +314,7 @@ static void add_face(NSString *family, int family_weight,
 	BOOL from_nfont)
 {
   FTFaceInfo *fi;
-  int weight;
+  unsigned int weight;
   unsigned int traits;
 
   NSString *fontName;
@@ -370,7 +370,7 @@ static void add_face(NSString *family, int family_weight,
     }
   else if (!from_nfont)
     { /* try to guess something for .font packages */
-      int dummy;
+      unsigned int dummy;
       int split = traits_from_string(family,&dummy,&dummy);
       rawFaceName = faceName = [family substringFromIndex: split];
       family = [family substringToIndex: split];
@@ -981,7 +981,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 /*	NSLog(@"drawString: '%s' at: %i:%i  to: %i:%i:%i:%i:%p\n",
 		s, x, y, x0, y0, x1, y1, buf);*/
 
-  for (c = s; *c; c++)
+  for (c = (const unsigned char *)s; *c; c++)
     {
 /* TODO: do the same thing in outlineString:... */
       ch = *c;

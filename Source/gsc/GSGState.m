@@ -375,7 +375,7 @@ typedef enum {
 {
   NSPoint point = [path currentPoint];
   unichar *uch;
-  int ulen;
+  unsigned int ulen;
   int i;
 
   /* 

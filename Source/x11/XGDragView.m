@@ -469,7 +469,7 @@ static	XGDragView	*sharedDragView = nil;
   if (cursors == nil)
     cursors = RETAIN([NSMutableDictionary dictionary]);
   
-  name = nil;
+  name = iname = nil;
   newCursor = nil;
   switch (mask)
     {
@@ -1099,7 +1099,7 @@ static	XGDragView	*sharedDragView = nil;
 					  Y: (int) y
 {
   Window *children;
-  int nchildren;
+  unsigned int nchildren;
   Window  result = None;
   Window  ignore, child2, root;
   Display *display = XDPY;

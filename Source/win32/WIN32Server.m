@@ -736,7 +736,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
 }
 
 - (void) imagecursor: (NSPoint)hotp : (int) w :  (int) h 
-		    : (int)colors : (const char *)image : (void **)cid
+		    : (int)colors : (const unsigned char *)image : (void **)cid
 {
   /*
   HCURSOR cur;

@@ -1241,8 +1241,8 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 		while (new_parent && (new_parent != cWin->root)) {
 		  Window root;
 		  Window *children;
-		  int nchildren;
-	    
+		  unsigned int nchildren;
+
 		  parent = new_parent;
 		  NSLog(@"QueryTree window is %d (root %d cwin root %d)", 
 			parent, root, cWin->root);
