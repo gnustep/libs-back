@@ -1,3 +1,10 @@
+2002-07-19  Adam Fedor  <fedor@gnu.org>
+
+	* Source/xlib/XGGeometry.m (clipXRectsForCopying): Shift rect
+	origin to account for clipping.
+	* Source/xlib/XGGState.m (-setAlphaColor:): Correct colorspace
+	of alpha color.
+
 2002-07-17  Adam Fedor  <fedor@gnu.org>
 
 	* Version: 0.7.9
