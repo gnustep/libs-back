@@ -1,6 +1,12 @@
 NEWS
 ****
 
+Noteworthy changes in version `0.9.0'
+=====================================
+
+Some more improvements to copy/paste support following ICCCM
+specifications (like COMPOUND_TEXT support).
+
 Noteworthy changes in version `0.8.9'
 =====================================
 
