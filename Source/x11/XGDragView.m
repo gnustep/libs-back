@@ -728,9 +728,9 @@ static	XGDragView	*sharedDragView = nil;
           
         case GSAppKitDraggingStatus:
           NSDebugLLog(@"NSDragging", @"got GSAppKitDraggingStatus\n");
-          if ([theEvent data1] == targetWindow)
+          if ((Window)[theEvent data1] == targetWindow)
             {
-              int newTargetMask = [theEvent data2];
+              unsigned int newTargetMask = [theEvent data2];
 
               if (newTargetMask != targetMask)
                 {
@@ -877,7 +877,7 @@ static	XGDragView	*sharedDragView = nil;
   //
   if (oldDragExternal != dragExternal)
     {
-      int newMask;
+      unsigned int newMask;
 
       newMask = [dragSource draggingSourceOperationMaskForLocal: dragExternal];
       if (newMask != dragMask)
@@ -1122,7 +1122,7 @@ static	XGDragView	*sharedDragView = nil;
           result = [self _xWindowAcceptingDnDDescendentOf: child
 						   underX: x
 							Y: y];
-          if (result != -1)
+          if (result != (Window)-1)
             break;
         }
     }
@@ -1152,7 +1152,7 @@ static	XGDragView	*sharedDragView = nil;
   result = [self _xWindowAcceptingDnDDescendentOf: dragWindev->root
 					   underX: x
 						Y: y];
-  if (result == -1)
+  if (result == (Window)-1)
     return None;
   else
     return result;
