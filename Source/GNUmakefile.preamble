@@ -58,7 +58,6 @@ ADDITIONAL_INCLUDE_DIRS += -I../Headers \
 # Flags for compiling as a bundle
 ifneq ($(BACKEND_BUNDLE),)
 libgnustep-back_BUNDLE_LIBS = $(GRAPHIC_LIBS)
-ADDITIONAL_INCLUDE_DIRS += $(GRAPHIC_CFLAGS)
 ADDITIONAL_LIB_DIRS += $(GRAPHIC_LFLAGS)
 endif
 

@@ -1,3 +1,12 @@
+2002-03-30  Adam Fedor  <fedor@gnu.org>
+
+	* Source/GNUmakefile.preamble: Add graphic includes, -Wall
+	* Source/gsc/GNUmakefile.preamble: Likewise.
+	* Source/x11/GNUmakefile.preamble: Likewise.
+	* Source/xlib/GNUmakefile.preamble: Likewise.
+
+	* Tools/font_cacher.m: Fix include.
+
 2002-03-29  Adam Fedor  <fedor@gnu.org>
 
 	* Source/gsc/GSGState.m (-GSSendBezierPath:): Append path in all
