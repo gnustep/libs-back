@@ -47,6 +47,8 @@
 #include "xlib/GSXftFontInfo.h"
 #endif
 
+#include "xlib/XGFontSetFontInfo.h"
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -70,6 +72,7 @@
 {
   Class fontClass = Nil;
   Class fontEnumerator = Nil;
+  BOOL  enableFontSet;
 
   NSDebugLog(@"Initializing GNUstep xlib backend.\n");
 
@@ -84,14 +87,43 @@
 #endif
     }
 #endif
+  enableFontSet = [[NSUserDefaults standardUserDefaults] boolForKey:
+							   @"GSXEnableFontSet"];
   if (fontClass == Nil)
     {
-      fontClass = [XGFontInfo class];
+      if (enableFontSet == NO)
+	{
+	  fontClass = [XGFontInfo class];
+	}
+      else
+	{
+#ifdef X_HAVE_UTF8_STRING
+	  fontClass = [XGFontSetFontInfo class];
+#else
+	  NSLog("Can't use GSXEnableFontSet: You need XFree86 >= 4.0.2");
+	  fontClass = [XGFontInfo class];
+#endif
+	}
     }
   [GSFontInfo setDefaultClass: fontClass];
+
   if (fontEnumerator == Nil)
     {
-      fontEnumerator = [XGFontEnumerator class];
+      if (enableFontSet == NO)
+	{
+	  fontEnumerator = [XGFontEnumerator class];
+	}
+      else
+	{
+#ifdef X_HAVE_UTF8_STRING
+	  // Commented out till the implementation of XGFontSetEnumerator
+	  // completes.
+	  //fontEnumerator = [XGFontSetEnumerator class];
+	  fontEnumerator = [XGFontEnumerator class];
+#else
+	  fontEnumerator = [XGFontEnumerator class];
+#endif
+	}
     }
   [GSFontEnumerator setDefaultClass: fontEnumerator];
 }

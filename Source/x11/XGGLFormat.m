@@ -64,6 +64,7 @@
 - (id)initWithAttributes:(NSOpenGLPixelFormatAttribute *)attribs
 {
   int v1, v2;
+  int AccumSize;
   NSOpenGLPixelFormatAttribute *ptr = attribs;
   NSMutableData *data = [NSMutableData data];
   MAKE_DISPLAY(dpy);
@@ -79,7 +80,12 @@
     {
       switch(*ptr)
 	{
-	  //	case  NSOpenGLPFAAllRenderers:
+	// it means all the same on GLX - there is no diffrent here
+    case NSOpenGLPFASingleRenderer:
+	case NSOpenGLPFAAllRenderers:
+	case NSOpenGLPFAAccelerated:
+	  append(GLX_USE_GL,YES);
+	  break;
 	case  NSOpenGLPFADoubleBuffer:
 	  append(GLX_DOUBLEBUFFER, YES);
 	  break;
@@ -110,16 +116,44 @@
 	  break;
 	case NSOpenGLPFAAccumSize:
 	  ptr++;
+	  //has to been tested - I did it in that way....
 	  //FIXME?  I don't understand...
-	  append(GLX_ACCUM_RED_SIZE, *ptr/3);
-	  append(GLX_ACCUM_GREEN_SIZE, *ptr/3);
-	  append(GLX_ACCUM_BLUE_SIZE, *ptr/3);
-	  break;
+	  //append(GLX_ACCUM_RED_SIZE, *ptr/3);
+	  //append(GLX_ACCUM_GREEN_SIZE, *ptr/3);
+	  //append(GLX_ACCUM_BLUE_SIZE, *ptr/3);
+	AccumSize=*ptr;  
+	switch (AccumSize){
+	  	case 8:
+		 	append(GLX_ACCUM_RED_SIZE, 3);
+		 	append(GLX_ACCUM_GREEN_SIZE, 3);
+		 	append(GLX_ACCUM_BLUE_SIZE, 2);
+		 	append(GLX_ACCUM_ALPHA_SIZE, 0);
+		 	break;
+	   	case 16:
+		 	append(GLX_ACCUM_RED_SIZE, 5);
+		 	append(GLX_ACCUM_GREEN_SIZE, 5);
+		 	append(GLX_ACCUM_BLUE_SIZE, 6);
+		 	append(GLX_ACCUM_ALPHA_SIZE, 0);
+			break;
+	   	case 24:
+			append(GLX_ACCUM_RED_SIZE, 8);
+	  		append(GLX_ACCUM_GREEN_SIZE, 8);
+	  		append(GLX_ACCUM_BLUE_SIZE, 8);
+			append(GLX_ACCUM_ALPHA_SIZE, 0);
+			break;
+       		case 32:
+			append(GLX_ACCUM_RED_SIZE, 8);
+	  		append(GLX_ACCUM_GREEN_SIZE, 8);
+	  		append(GLX_ACCUM_BLUE_SIZE, 8);
+		    	append(GLX_ACCUM_ALPHA_SIZE, 8);
+			break;
+	  	};
+		break;
+	//can not be handle by X11
 	case NSOpenGLPFAMinimumPolicy:
-	  //FIXME
 	  break;
+	// can not be handle by X11
 	case NSOpenGLPFAMaximumPolicy:
-	  //FIXME	
 	  break;
 
 	  //FIXME all of this stuff...
@@ -129,9 +163,7 @@
 	case NSOpenGLPFASamples:
 	case NSOpenGLPFAAuxDepthStencil:
 	case NSOpenGLPFARendererID:
-	case NSOpenGLPFASingleRenderer:
 	case NSOpenGLPFANoRecovery:
-	case NSOpenGLPFAAccelerated:
 	case NSOpenGLPFAClosestPolicy:
 	case NSOpenGLPFARobust:
 	case NSOpenGLPFABackingStore:
@@ -143,7 +175,6 @@
 	case NSOpenGLPFAVirtualScreenCount:
 	  break;
 	}
-
       ptr ++;
     }
 
