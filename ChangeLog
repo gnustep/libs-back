@@ -1,5 +1,15 @@
 2004-01-10  Adam Fedor  <fedor@gnu.org>
 
+	* Prevent orderwindow:relativeTo: from making a window key.
+	* Headers/x11/XGGeneric.h: Add Ivar.
+	* Source/x11/XGServerEvent.m (-_handleTakeFocusAtom:forContext:): 
+	Don't take focus if we ordered this window previously.
+	* Source/x11/XGServerWindow.m ([XGServer -orderwindow:::]): 
+	Set desiredOrderWindow.
+	([XGServer -setinputfocus:]): Reset it.
+
+2004-01-10  Adam Fedor  <fedor@gnu.org>
+
 	* Source/x11/XGServerWindow.m ([XGServer -orderwindow:::]): 
 	When otherWin == 0, make sure the window does not go in front
 	of the current key window.
