@@ -107,6 +107,7 @@ gpbs_log (int prio)
 
 @protocol XPb
 + (id) ownerByOsPb: (NSString*)p;
++ (BOOL) initializePasteboard;
 @end
 static Class	xPbClass;
 
@@ -1046,7 +1047,15 @@ NSMutableDictionary	*pasteboards = nil;
 #else      
       xPbClass = NSClassFromString(@"XPbOwner");
 #endif
-      [xPbClass class];
+
+      /*
+      If the OS pasteboard system fails to initialize, pretend that it isn't
+      there. In practice, this happens if gpbs has been compiled with X
+      support but is run on a display-less system. Note that
+      +initializePasteboard will already have printed a warning in this case.
+      */
+      if (xPbClass && ![xPbClass initializePasteboard])
+	xPbClass = nil;
     }
   return self;
 }

@@ -156,98 +156,95 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
 
 @implementation	XPbOwner
 
-+ (void) initialize
++ (BOOL) initializePasteboard
 {
-  if (self == [XPbOwner class])
+  XPbOwner *o;
+  NSPasteboard *p;
+  Atom generalPb, selectionPb;
+  NSRunLoop *l = [NSRunLoop currentRunLoop];
+  int desc;
+
+  ownByO = NSCreateMapTable(NSObjectMapKeyCallBacks,
+                  NSNonOwnedPointerMapValueCallBacks, 0);
+  ownByX = NSCreateMapTable(NSIntMapKeyCallBacks,
+                  NSNonOwnedPointerMapValueCallBacks, 0);
+
+  xDisplay = XOpenDisplay(NULL);
+  if (xDisplay == 0)
     {
-      XPbOwner		*o;
-      NSPasteboard	*p;
-      Atom generalPb, selectionPb;
-
-      ownByO = NSCreateMapTable(NSObjectMapKeyCallBacks,
-                      NSNonOwnedPointerMapValueCallBacks, 0);
-      ownByX = NSCreateMapTable(NSIntMapKeyCallBacks,
-                      NSNonOwnedPointerMapValueCallBacks, 0);
-
-      xDisplay = XOpenDisplay(NULL);
-      if (xDisplay == 0)
-	{
-	  NSLog(@"Unable to open X display - no X interoperation available");
-	}
-      else
-	{
-	  NSRunLoop	*l = [NSRunLoop currentRunLoop];
-	  int		desc;
-
-	  /*
-	   * Set up atoms for use in X selection mechanism.
-	   */
-	  XInternAtoms(xDisplay, atom_names, sizeof(atom_names)/sizeof(char*),
-	    False, atoms);
-
-	  xRootWin = RootWindow(xDisplay, DefaultScreen(xDisplay));
-	  xAppWin = XCreateSimpleWindow(xDisplay, xRootWin,
-                                        0, 0, 100, 100, 1, 1, 0L);
-	  /*
-	   * Add the X descriptor to the run loop so we get callbacks when
-	   * X events arrive.
-	   */
-	  desc = XConnectionNumber(xDisplay);
-
-          [l addEvent: (void*)(gsaddr)desc
-                 type: ET_RDESC
-              watcher: (id<RunLoopEvents>)self
-              forMode: NSDefaultRunLoopMode];
-
-          [l addEvent: (void*)(gsaddr)desc
-                 type: ET_RDESC
-              watcher: (id<RunLoopEvents>)self
-              forMode: NSConnectionReplyMode];
-
-          [l addEvent: (void*)(gsaddr)desc
-                 type: ET_RDESC
-              watcher: (id<RunLoopEvents>)self
-              forMode: xWaitMode];
-
-	  XSelectInput(xDisplay, xAppWin, PropertyChangeMask);
-	  XFlush(xDisplay);
-	}
-
-      /*
-       * According to the new open desktop specification 
-       * http://www.freedesktop.org/standards/clipboards-spec/clipboards.txt
-       * these two pasteboards should be switched around. That is,
-       * general should be XA_CLIPBOARD and selection XA_PRIMARY.
-       * The problem is that most X programs still use the old way.
-       * For these environments we offer a switch to the old mode.
-       */
-      if ([[NSUserDefaults standardUserDefaults] boolForKey: @"GSOldClipboard"])
-        {
-	  generalPb = XA_PRIMARY;
-	  selectionPb = XA_CLIPBOARD;
-	}
-      else 
-        {
-	  generalPb = XA_CLIPBOARD;
-	  selectionPb = XA_PRIMARY;
-	}
-      /* 
-       * For the general and the selection pasteboard we establish an initial
-       * owner that is the X selection system.  In this way, any X window
-       * selection already active will be available to the GNUstep system.
-       * These objects are not released!
-       */
-      p = [NSPasteboard generalPasteboard];
-      o = [[XPbOwner alloc] initWithXPb: generalPb osPb: p];
-      [o xSelectionClear];
-
-      p = [NSPasteboard pasteboardWithName: @"Selection"];
-      o = [[XPbOwner alloc] initWithXPb: selectionPb osPb: p];
-      [o xSelectionClear];
-      
-      // Call this to get the class initialisation
-      [XDragPbOwner class];
+      NSLog(@"Unable to open X display - no X interoperation available");
+      return NO;
     }
+
+  /*
+   * Set up atoms for use in X selection mechanism.
+   */
+  XInternAtoms(xDisplay, atom_names, sizeof(atom_names)/sizeof(char*),
+    False, atoms);
+
+  xRootWin = RootWindow(xDisplay, DefaultScreen(xDisplay));
+  xAppWin = XCreateSimpleWindow(xDisplay, xRootWin,
+                                0, 0, 100, 100, 1, 1, 0L);
+  /*
+   * Add the X descriptor to the run loop so we get callbacks when
+   * X events arrive.
+   */
+  desc = XConnectionNumber(xDisplay);
+
+  [l addEvent: (void*)(gsaddr)desc
+	 type: ET_RDESC
+      watcher: (id<RunLoopEvents>)self
+      forMode: NSDefaultRunLoopMode];
+
+  [l addEvent: (void*)(gsaddr)desc
+         type: ET_RDESC
+      watcher: (id<RunLoopEvents>)self
+      forMode: NSConnectionReplyMode];
+
+  [l addEvent: (void*)(gsaddr)desc
+         type: ET_RDESC
+      watcher: (id<RunLoopEvents>)self
+      forMode: xWaitMode];
+
+  XSelectInput(xDisplay, xAppWin, PropertyChangeMask);
+  XFlush(xDisplay);
+
+  /*
+   * According to the new open desktop specification
+   * http://www.freedesktop.org/standards/clipboards-spec/clipboards.txt
+   * these two pasteboards should be switched around. That is,
+   * general should be XA_CLIPBOARD and selection XA_PRIMARY.
+   * The problem is that most X programs still use the old way.
+   * For these environments we offer a switch to the old mode.
+   */
+  if ([[NSUserDefaults standardUserDefaults] boolForKey: @"GSOldClipboard"])
+    {
+      generalPb = XA_PRIMARY;
+      selectionPb = XA_CLIPBOARD;
+    }
+  else
+    {
+      generalPb = XA_CLIPBOARD;
+      selectionPb = XA_PRIMARY;
+    }
+  /*
+   * For the general and the selection pasteboard we establish an initial
+   * owner that is the X selection system.  In this way, any X window
+   * selection already active will be available to the GNUstep system.
+   * These objects are not released!
+   */
+  p = [NSPasteboard generalPasteboard];
+  o = [[XPbOwner alloc] initWithXPb: generalPb osPb: p];
+  [o xSelectionClear];
+
+  p = [NSPasteboard pasteboardWithName: @"Selection"];
+  o = [[XPbOwner alloc] initWithXPb: selectionPb osPb: p];
+  [o xSelectionClear];
+      
+  // Call this to get the class initialisation
+  [XDragPbOwner class];
+
+  return YES;
 }
 
 + (XPbOwner*) ownerByOsPb: (NSString*)p

@@ -52,7 +52,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
 @implementation	Win32PbOwner
 
-+ (void) initialize
++ (BOOL) initializePasteboard
 {
   if (self == [Win32PbOwner class])
     {
@@ -60,6 +60,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 				    [NSPasteboard generalPasteboard]];
       [wpb clipboardHasData];
     }
+  return YES;
 }
 
 + (id) ownerByOsPb: (NSString*)p
