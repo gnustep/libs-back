@@ -1,0 +1,27 @@
+/* config.h.in.  Generated automatically from configure.in by autoheader.  */
+
+/* Define if the X Window System is missing or not being used.  */
+#undef X_DISPLAY_MISSING
+
+#undef XSHM
+
+#undef WITH_WRASTER
+
+#undef HAVE_XFT
+
+#undef USE_XIM
+
+#undef BUILD_XLIB
+#undef BUILD_XDPS
+#undef BUILD_X11
+#undef BUILD_WIN32
+#undef BUILD_WINLIB
+
+/* Define if you have the <DPS/dpsNXargs.h> header file.  */
+#undef HAVE_DPS_DPSNXARGS_H
+
+/* Define if you have the <DPS/dpsclient.h> header file.  */
+#undef HAVE_DPS_DPSCLIENT_H
+
+/* Define if you have the <wraster.h> header file.  */
+#undef HAVE_WRASTER_H
