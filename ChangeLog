@@ -1,3 +1,8 @@
+2003-07-02 17:28  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m (-initWithFontName:matrix:screenFont:):
+	Return nil if it's not a valid font.
+
 2003-07-01 16:37  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Use the correct set of flags when loading

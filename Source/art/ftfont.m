@@ -652,10 +652,8 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   font_entry = [fcfg_all_fonts objectForKey: name];
   if (!font_entry)
     {
-      NSLog(@"Warning: font '%@' doesn't exist",name);
-      name = [fcfg_allFontNames objectAtIndex: 0];
-      font_entry = [fcfg_all_fonts objectForKey: name];
-      NSLog(@"falling back to '%@'",name);
+      [self release];
+      return nil;
     }
 
   face_info = font_entry;
