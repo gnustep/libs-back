@@ -1,3 +1,9 @@
+2003-01-26 20:07  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/x11/XWindowBuffer.m (-_exposeRect:): Round rectangle to
+	expose outwards so all pixels intersected by the expose rectangle
+	are actually exposed.
+
 2003-01-26 20:04  Alexander Malmberg <alexander@malmberg.org>
 
 	* Headers/xlib/XGPrivate.h, Source/art/ARTContext.m,
