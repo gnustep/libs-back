@@ -1,3 +1,8 @@
+2002-04-26  Adam Fedor  <fedor@gnu.org>
+
+	* acconfig.h: Define HAVE_UTF8
+	* config.h.in: Regen.
+
 2002-04-24  Adam Fedor  <fedor@gnu.org>
 
 	* configure.in: Don't enable wraster support if --with-wraster=none.

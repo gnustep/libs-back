@@ -9,6 +9,8 @@
 
 #undef USE_XIM
 
+#undef HAVE_UTF8
+
 #undef BUILD_XLIB
 #undef BUILD_XDPS
 #undef BUILD_X11
