@@ -685,34 +685,45 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 		      xEvent.xconfigure.send_event ? 'T' : 'F');
 	  if (cWin == 0 || xEvent.xconfigure.window != cWin->ident)
 	    generic.cachedWindow = [XGServer _windowForXWindow:xEvent.xconfigure.window];
-	  /*
-	   * Ignore events for unmapped windows.
-		 */
-	  if (cWin != 0 && cWin->map_state == IsViewable)
+
+	  if (cWin != 0)
 	    {
 	      NSRect	   r, x, n, h;
 	      NSTimeInterval ts = (NSTimeInterval)generic.lastMotion;
 
-	      /*
-	       * Get OpenStep frame coordinates from X frame.
-	       * If it's not from the window mmanager, ignore x and y.
-	       */
 	      r = cWin->xframe;
+
+	      x = NSMakeRect(xEvent.xconfigure.x,
+			     xEvent.xconfigure.y,
+			     xEvent.xconfigure.width,
+			     xEvent.xconfigure.height);
+
+	      /*
+	      According to the ICCCM, coordinates in synthetic events
+	      (ie. non-zero send_event) are in root space, while coordinates
+	      in real events are in the parent window's space. The parent
+	      window might be some window manager window, so we can't
+	      directly use those coordinates.
+
+	      Thus, if the event is real, we use XTranslateCoordinates to
+	      get the root space coordinates.
+	      */
 	      if (xEvent.xconfigure.send_event == 0)
 		{
-		  x = NSMakeRect(r.origin.x, r.origin.y,
-				 xEvent.xconfigure.width, xEvent.xconfigure.height);
+		  int root_x, root_y;
+		  Window root_child;
+		  XTranslateCoordinates(dpy, xEvent.xconfigure.window,
+					RootWindow(dpy, cWin->screen),
+					0, 0,
+					&root_x, &root_y,
+					&root_child);
+		  x.origin.x = root_x;
+		  x.origin.y = root_y;
 		}
-	      else
-		{
-		  x = NSMakeRect(xEvent.xconfigure.x, 
-				 xEvent.xconfigure.y,
-				 xEvent.xconfigure.width, 
-				 xEvent.xconfigure.height);
-		  cWin->xframe.origin = x.origin;
-		}
+
+	      cWin->xframe = x;
 	      n = [self _XFrameToOSFrame: x for: cWin];
-	      NSDebugLLog(@"Moving", 
+	      NSDebugLLog(@"Moving",
 			  @"Update win %d:\n   original:%@\n   new:%@",
 			  cWin->number, NSStringFromRect(r), 
 			  NSStringFromRect(x));
@@ -722,18 +733,26 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	      h = [self _OSFrameToXHints: n for: cWin];
 	      cWin->siz_hints.width = h.size.width;
 	      cWin->siz_hints.height = h.size.height;
-	      //if (xEvent.xconfigure.send_event != 0)
-	      {
-		cWin->siz_hints.x = h.origin.x;
-		cWin->siz_hints.y = h.origin.y;
-	      }
+
+	      /*
+	      We only update the position hints if we're on the screen.
+	      Otherwise, the window manager might not have added decorations
+	      (if any) to the window yet. Since we compensate for decorations
+	      when we set the position, this will confuse us and we'll end
+	      up compensating twice, which makes windows drift.
+	      */
+	      if (cWin->map_state == IsViewable)
+		{
+		  cWin->siz_hints.x = h.origin.x;
+		  cWin->siz_hints.y = h.origin.y;
+		}
 
 	      /*
 	       * create GNUstep event(s)
 	       */
 	      if (!NSEqualSizes(r.size, x.size))
 		{
-		  /* Resize events move the origin. There's no goo
+		  /* Resize events move the origin. There's no good
 		     place to pass this info back, so we put it in
 		     the event location field */
 		  e = [NSEvent otherEventWithType: NSAppKitDefined

@@ -1,3 +1,24 @@
+2004-06-26 13:04  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/x11/XGServerEvent.m (-processEvent: ConfigureNotify):
+	Don't ignore the event for unmapped windows. Use XTranslateCoordinates
+	to get the size and position right for both real and artificial
+	events. Only update the position hints if we're mapped.
+
+	* Source/x11/XGServerWindow.m: Add handlesWindowDecorations variable.
+	(-handlesWindowDecorations): New method.
+	(setWindowHintsForStyle, -styleoffsets:::::): If we aren't handling
+	window decorations, treat all windows as borderless.
+	(-stylewindow::, -setinputstate::): Assert that we're handling window
+	decorations.
+	(-window::::): Create the window structure earlier so it can be used
+	to convert frames.
+	(-_setupRootWindow): Set handlesWindowDecorations based on the
+	GSX11HandlesWindowDecorations defaults value.
+
+	* Documentation/Back/DefaultsSummary.gsdoc: Document
+	GSX11HandlesWindowDecorations.
+
 2004-06-19  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/WIN32Server.m (-findWindowAt:windowRef:excluding:)

@@ -31,6 +31,7 @@
 #include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSAutoreleasePool.h>
 #include <Foundation/NSDebug.h>
+#include <Foundation/NSException.h>
 #include <AppKit/DPSOperators.h>
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSCursor.h>
@@ -56,6 +57,10 @@
 #include "x11/XGInputServer.h"
 
 #define	ROOT generic.appRootWindow
+
+
+static BOOL handlesWindowDecorations = YES;
+
 
 /*
  * Name for application root window.
@@ -232,7 +237,8 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   hints->functions = 0;
 
   /* Now add to the hints from the styleMask */
-  if (styleMask == NSBorderlessWindowMask)
+  if (styleMask == NSBorderlessWindowMask
+      || !handlesWindowDecorations)
     {
       hints->flags |= MWM_HINTS_DECORATIONS;
       hints->flags |= MWM_HINTS_FUNCTIONS;
@@ -320,6 +326,12 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 @end
 
 @implementation XGServer (WindowOps)
+
+-(BOOL) handlesWindowDecorations
+{
+  return handlesWindowDecorations;
+}
+
 
 /*
  * Where a window has been reparented by the wm, we use this method to
@@ -744,6 +756,10 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
    * Now check user defaults.
    */
   defs = [NSUserDefaults standardUserDefaults];
+
+  if ([defs objectForKey: @"GSX11HandlesWindowDecorations"])
+    handlesWindowDecorations = [defs boolForKey: @"GSX11HandlesWindowDecorations"];
+
   generic.flags.useWindowMakerIcons = NO;
   if ((generic.wm & XGWM_WINDOWMAKER) != 0)
     {
@@ -935,7 +951,20 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   root = [self _rootWindowForScreen: screen];
   context = [self xrContextForScreen: screen];
 
-  frame = [NSWindow contentRectForFrameRect: frame styleMask: style];
+  /* Create the window structure and set the style early so we can use it to
+  convert frames. */
+  window = objc_malloc(sizeof(gswindow_device_t));
+  memset(window, '\0', sizeof(gswindow_device_t));
+  window->display = dpy;
+  window->screen = screen;
+
+  window->win_attrs.flags |= GSWindowStyleAttr;
+  if (handlesWindowDecorations)
+    window->win_attrs.window_style = style;
+  else
+    window->win_attrs.window_style = style & (NSIconWindowMask | NSMiniWindowMask);
+
+  frame = [self _OSFrameToXFrame: frame for: window];
 
   /* We're not allowed to create a zero rect window */
   if (NSWidth(frame) <= 0 || NSHeight(frame) <= 0)
@@ -943,13 +972,6 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       frame.size.width = 2;
       frame.size.height = 2;
     }
-  /* Translate to X coordinates */
-  frame.origin.y = DisplayHeight(dpy, screen) - NSMaxY(frame);
-
-  window = objc_malloc(sizeof(gswindow_device_t));
-  memset(window, '\0', sizeof(gswindow_device_t));
-  window->display = dpy;
-  window->screen = screen;
   window->xframe = frame;
   window->type = type;
   window->root = root->ident;
@@ -966,7 +988,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 				context->depth,
 				CopyFromParent,
 				context->visual,
-				(CWColormap | CWBackPixel|CWBorderPixel),
+				(CWColormap | CWBackPixel | CWBorderPixel),
 				&window->xwn_attrs);
 
   /*
@@ -1002,15 +1024,13 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
    * Initial attributes for any GNUstep window tell Window Maker not to
    * create an app icon for us.
    */
-  window->win_attrs.flags = GSExtraFlagsAttr;
-  window->win_attrs.extra_flags = GSNoApplicationIconFlag;
+  window->win_attrs.flags |= GSExtraFlagsAttr;
+  window->win_attrs.extra_flags |= GSNoApplicationIconFlag;
 
   /*
    * Prepare size/position hints, but don't set them now - ordering
    * the window in should automatically do it.
    */
-  window->win_attrs.flags |= GSWindowStyleAttr;
-  window->win_attrs.window_style = style;
   frame = [self _XFrameToOSFrame: window->xframe for: window];
   frame = [self _OSFrameToXHints: frame for: window];
   window->siz_hints.x = NSMinX(frame);
@@ -1125,6 +1145,17 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b 
 		     : (unsigned int) style
 {
+  if (!handlesWindowDecorations)
+    {
+      /*
+      If we don't handle decorations, all our windows are going to be
+      border- and decorationless. In that case, -gui won't call this method,
+      but we still use it internally.
+      */
+      *l = *r = *t = *b = 0.0;
+      return;
+    }
+
   /* First try to get the offset information that we have obtained from
      the WM. This will only work if the application has already created
      a window that has been reparented by the WM. Otherwise we have to
@@ -1211,6 +1242,8 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 - (void) stylewindow: (unsigned int)style : (int) win
 {
   gswindow_device_t	*window;
+
+  NSAssert(handlesWindowDecorations, @"-stylewindow:: called when handlesWindowDecorations==NO");
 
   window = WINDOW_WITH_TAG(win);
   if (!window)
@@ -2369,6 +2402,9 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
  */
 - (void) setinputstate: (int)st : (int)win
 {
+  if (!handlesWindowDecorations)
+    return;
+
   NSDebugLLog(@"XGTrace", @"DPSsetinputstate: %d : %d", st, win);
   if ((generic.wm & XGWM_WINDOWMAKER) != 0)
     {
