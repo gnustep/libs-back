@@ -391,10 +391,10 @@ AC_SUBST(GRAPHIC_LFLAGS)
 #--------------------------------------------------------------------
 BUILD_SERVER=x11
 BUILD_GRAPHICS=xlib
-if test "$have_gdi32" = yes; then
-  BUILD_SERVER=win32
-  BUILD_GRAPHICS=winlib
-fi
+case $target_os in
+  *mingw32* ) BUILD_SERVER=win32
+              BUILD_GRAPHICS=winlib;;
+esac
 
 AC_ARG_ENABLE(server, 
   [  --enable-server=SRV     Build server type: x11, win32],,
