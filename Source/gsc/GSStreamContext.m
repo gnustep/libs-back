@@ -211,23 +211,9 @@
 
 - (void) GSSetFont: (NSFont*)font
 {
-  const float *matrix = [font matrix];
-  const float *m;
+  const float *m = [font matrix];
   fprintf(gstream, "/%s findfont ", [[font fontName] cString]);
-
-  if ([self GSWViewIsFlipped])
-    {
-      float invmatrix[6];
-
-      memcpy(invmatrix, matrix, sizeof(invmatrix));
-      invmatrix[3] = -invmatrix[3];
-      m = invmatrix;
-    }
-  else
-      m = matrix;
-
-  fprintf(gstream, "[%g %g %g %g %g %g] ",
-          m[0], m[1], m[2], m[3], m[4], m[5]);
+  fprintf(gstream, "[%g %g %g %g %g %g] ", m[0], m[1], m[2], m[3], m[4], m[5]);
   fprintf(gstream, " makefont setfont\n");
 }
 
