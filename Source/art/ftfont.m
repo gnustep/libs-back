@@ -2435,6 +2435,7 @@ GSLayoutManager glyph generation code.
 #include <Foundation/NSCharacterSet.h>
 #include <AppKit/GSLayoutManager_internal.h>
 #include <AppKit/NSTextStorage.h>
+#include <AppKit/NSTextAttachment.h>
 
 @implementation GSLayoutManager (backend)
 
@@ -2518,6 +2519,12 @@ fb04 'ffl'
 		if (characterIsMember(cs,@selector(characterIsMember:),ch))
 		{
 			g->g=NSControlGlyph;
+			continue;
+		}
+
+		if (ch == NSAttachmentCharacter)
+		{
+			g->g=GSAttachmentGlyph;
 			continue;
 		}
 
