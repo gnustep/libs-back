@@ -1,3 +1,8 @@
+2002-10-28  Adam Fedor  <fedor@gnu.org>
+
+	* Source/gsc/GSStreamContext.m (-DPSsetalpha:): Use GSsetalpha
+	as defined in frontend, for printers that don't support setalpha.
+
 2002-10-27  Adam Fedor  <fedor@gnu.org>
 
 	* Tools/font_cacher.m: Add @end (Reported by Caba Conti

@@ -95,7 +95,9 @@
 - (void) DPSsetalpha: (float)a
 {
   [super DPSsetalpha: a];
-  fprintf(gstream, "%g setalpha\n", a);
+  /* This needs to be defined base on the the language level, etc. in
+     the Prolog section. */
+  fprintf(gstream, "%g GSsetalpha\n", a);
 }
 
 - (void) DPSsetcmykcolor: (float)c : (float)m : (float)y : (float)k
@@ -555,12 +557,12 @@
 /* ----------------------------------------------------------------------- */
 /* Client functions */
 /* ----------------------------------------------------------------------- */
-- (void) DPSPrintf: (char *)fmt  : (va_list)args
+- (void) DPSPrintf: (const char *)fmt  : (va_list)args
 {
   vfprintf(gstream, fmt, args);
 }
 
-- (void) DPSWriteData: (char *)buf : (unsigned int)count
+- (void) DPSWriteData: (const char *)buf : (unsigned int)count
 {
   /* Not sure here. Should we translate to ASCII if it's not
      already? */
