@@ -1,3 +1,7 @@
+2003-10-03  Adam Fedor  <fedor@gnu.org>
+
+	* configure.ac: Use -Wl for netbsd linker options.
+
 2003-10-02  Adam Fedor  <fedor@gnu.org>
 
 	* Source/xlib/XGGState.m (-DPSrectclip::::): Clear path.

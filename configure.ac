@@ -67,7 +67,7 @@ case "$target_os" in
 	      CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
               LDFLAGS="$LDFLAGS -L/usr/pkg/lib";;
   netbsd*)    CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
-              LDFLAGS="$LDFLAGS -L/usr/pkg/lib";;
+	      LDFLAGS="$LDFLAGS -Wl,-R/usr/pkg/lib -L/usr/pkg/lib";;
 esac
 
 #--------------------------------------------------------------------
