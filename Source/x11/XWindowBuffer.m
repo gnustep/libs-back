@@ -27,6 +27,7 @@
 
 #include "x11/XWindowBuffer.h"
 
+#include <math.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
@@ -318,11 +319,19 @@ rects in the new size before we are updated.
 
 For now, we just intersect with our known size to avoid problems with X.
 */
+  NSRect r2;
 
   r = NSIntersectionRect(r, NSMakeRect(0, 0,
     window->xframe.size.width, window->xframe.size.height));
   if (NSIsEmptyRect(r))
     return;
+
+  r2.origin.x=floor(r.origin.x);
+  r2.origin.y=floor(r.origin.y);
+  r2.size.width=ceil(r.size.width+r.origin.x-r2.origin.x);
+  r2.size.height=ceil(r.size.height+r.origin.y-r2.origin.y);
+
+  r=r2;
 
   if (use_shm)
     {
