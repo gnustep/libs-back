@@ -1,3 +1,8 @@
+2003-12-28  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m (initWithAttributes:): Adjusted
+	spelling of useWMTaskBar to header, to get it compile.
+
 2003-12-26  Adam Fedor  <fedor@gnu.org>
 
 	* Focus fixes.
