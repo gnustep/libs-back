@@ -1,3 +1,10 @@
+2004-10-30  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/XGContext.m  (+initializeBackend): Use anti-aliaesd
+	fonts when available and not specified otherwise.
+	* Documentation/Back/DefaultsSummary.gsdoc: Document that AA fonts
+	are now the default for xlib.
+
 2004-09-28  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerEvent.m (initialize_keyboard): Corrected typo
