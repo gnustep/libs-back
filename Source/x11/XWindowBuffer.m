@@ -511,6 +511,13 @@ static int warn = 0;
 
   if (ximage)
     {
+      if (pixmap)
+	{
+	  XFreePixmap(display,pixmap);
+	  XSetWindowBackground(display,window->ident,None);
+	  pixmap=0;
+	}
+
       if (use_shm)
 	{
 	  XShmDetach(display, &shminfo);
