@@ -83,7 +83,7 @@
     {
       encoding = NSBIG5StringEncoding;
     }
-#ifdef X_HAVE_UTF8_STRING
+#ifdef HAVE_UTF8
   else if ([localeEncoding isEqualToString:@"utf8"]
 	   || [localeEncoding isEqualToString:@"utf-8"] )
     {
@@ -140,7 +140,7 @@
   if (windev->ic && event->type == KeyPress)
     {
       [dbuf setLength: BUF_LEN];
-#ifdef X_HAVE_UTF8_STRING
+#ifdef HAVE_UTF8
       if (encoding == NSUTF8StringEncoding)
         count = Xutf8LookupString(windev->ic, event, buf, BUF_LEN, 
       		                  &keysym, &status);
