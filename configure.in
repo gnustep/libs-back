@@ -1,0 +1,414 @@
+# configure.in for GNUstep GUI Backend
+# Process this file with autoconf to produce a configure script.
+#
+# Copyright (C) 1996-2002 Free Software Foundation, Inc.
+#
+# Author:  Adam Fedor <fedor@gnu.org>
+#
+# This file is part of the GNUstep Backend.
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Library General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+# 
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Library General Public License for more details.
+#
+# You should have received a copy of the GNU Library General Public
+# License along with this library; see the file COPYING.LIB.
+# If not, write to the Free Software Foundation,
+# 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+#
+
+AC_INIT(back.make.in)
+
+if test -z "$GNUSTEP_SYSTEM_ROOT"; then
+  AC_MSG_ERROR(You must run the GNUstep.sh script before configuring)
+fi
+
+#--------------------------------------------------------------------
+# Use config.guess, config.sub and install-sh provided by gnustep-make
+#--------------------------------------------------------------------
+AC_CONFIG_AUX_DIR($GNUSTEP_SYSTEM_ROOT/Makefiles)
+
+AC_CONFIG_HEADER(config.h)
+
+#--------------------------------------------------------------------
+# Determine the host, build, and target systems
+#--------------------------------------------------------------------
+AC_CANONICAL_SYSTEM
+
+#--------------------------------------------------------------------
+# The following is so that headers and custom libraries
+# in the GNUstep root are used before the standard ones
+#--------------------------------------------------------------------
+# Set location of GNUstep dirs for later use
+GNUSTEP_HDIR=$GNUSTEP_SYSTEM_ROOT/Headers
+if test "$GNUSTEP_FLATTENED" = yes; then
+  GNUSTEP_LDIR=$GNUSTEP_SYSTEM_ROOT/Libraries
+else
+  clean_target_os=`$GNUSTEP_SYSTEM_ROOT/Makefiles/clean_os.sh $target_os`
+  clean_target_cpu=`$GNUSTEP_SYSTEM_ROOT/Makefiles/clean_cpu.sh $target_cpu`
+  obj_dir=$clean_target_cpu/$clean_target_os
+  GNUSTEP_LDIR=$GNUSTEP_SYSTEM_ROOT/Libraries/$obj_dir
+fi
+CPPFLAGS="$CPPFLAGS -I$GNUSTEP_HDIR"
+LDFLAGS="$LDFLAGS -L$GNUSTEP_LDIR/$LIBRARY_COMBO -L$GNUSTEP_LDIR"
+
+AC_PROG_CC
+
+#--------------------------------------------------------------------
+# Look for WindowMaker's wraster library
+#--------------------------------------------------------------------
+AC_ARG_WITH(wraster, 
+           [  --with-wraster=PREFIX   get-wraster-flags directory prefix])
+if test "x$with_wraster" = "x"; then
+ wprefix=""
+else
+ wprefix=${with_wraster}/
+fi
+
+GRAPHIC_LIBS=`${wprefix}get-wraster-flags --libs`
+GRAPHIC_CFLAGS=`${wprefix}get-wraster-flags --cflags`
+GRAPHIC_LFLAGS=`${wprefix}get-wraster-flags --ldflags`
+
+AC_DEFUN(AC_CHECK_WRASTER,
+[dnl
+AC_MSG_CHECKING(for current libwraster support)
+AC_CACHE_VAL(gs_cv_have_wraster,
+[wraster_check_save_header=${CPPFLAGS}
+wraster_check_save_libs=${LIBS}
+CPPFLAGS="$1 $2 ${CPPFLAGS}"
+LIBS="$3 $LIBS"
+
+# Check for RFillImage which is only in version 2.0 or libwraster
+AC_CHECK_LIB(wraster, RFillImage, gs_cv_have_wraster=yes, gs_cv_have_wraster=no)
+if test "$gs_cv_have_wraster" = yes; then
+  AC_CHECK_HEADERS(wraster.h, gs_cv_have_wraster=yes, gs_cv_have_wraster=no)
+fi
+CPPFLAGS="${wraster_check_save_header}"
+LIBS="${wraster_check_save_libs}"
+])
+AC_MSG_RESULT($gs_cv_have_wraster)
+])
+
+AC_CHECK_WRASTER(${GRAPHIC_CFLAGS}, ${GRAPHIC_LFLAGS}, ${GRAPHIC_LIBS})
+if test $gs_cv_have_wraster = no; then
+  GRAPHIC_LIBS=
+  GRAPHIC_CFLAGS=
+  GRAPHIC_LFLAGS=
+fi
+
+#--------------------------------------------------------------------
+# Find for X windows
+#--------------------------------------------------------------------
+# If the user specifically set x_include/x_libs, then assume we're
+# using a special X system and discard any previous GRAPHIC_flags
+set_x_paths=no
+if test $gs_cv_have_wraster = no -o $x_includes != NONE; then
+  set_x_paths=yes
+fi
+AC_PATH_XTRA
+
+if test $set_x_paths = yes; then
+  GRAPHIC_CFLAGS="$X_CFLAGS"
+  GRAPHIC_LFLAGS="$X_LIBS"
+  GRAPHIC_LIBS="$X_EXTRA_LIBS"
+
+  lib_save_header=${CPPFLAGS}
+  lib_save_libs=${LIBS}
+  CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
+  LIBS="${GRAPHIC_LIBS} ${LIBS}"
+  AC_CHECK_LIB(Xext, main, have_xext=1, have_xext=0)
+  if test $have_xext = 1; then
+    GRAPHIC_LIBS="-lX11 -lXext ${GRAPHIC_LIBS}"
+  else
+    GRAPHIC_LIBS="-lX11  ${GRAPHIC_LIBS}"
+  fi
+  LIBS="${GRAPHIC_LIBS} ${LIBS}"
+  AC_CHECK_LIB(Xmu, main, have_xmu=1, have_xmu=0)
+  CPPFLAGS="${lib_save_header}"
+  LIBS="${lib_save_libs}"
+  if test $have_xmu = 1; then
+    GRAPHIC_LIBS="-lXmu ${GRAPHIC_LIBS}"
+  fi
+fi
+if test -r $x_includes/X11/DPS; then
+  GRAPHIC_CFLAGS="-I$x_includes/X11 $GRAPHIC_CFLAGS"
+fi
+AC_SUBST(X_PRE_LIBS)
+
+#--------------------------------------------------------------------
+# Find for DPS
+#--------------------------------------------------------------------
+AC_ARG_WITH(dps_library, 
+           [  --with-dps-library=DIR  DPS library file are in DIR], ,
+           with_dps_library=)
+AC_ARG_WITH(dps_include,  
+	[  --with-dps-include=DIR  DPS include files are in DIR], ,
+        with_dps_include=)
+
+# Add the target header file directory as an include path so that the
+# check for dpsNXargs.h below looks at the appropriate target includes
+ORIG_CPPFLAGS=${CPPFLAGS}
+if test -n "$with_dps_include"; then
+  GRAPHIC_CFLAGS="-I$with_dps_include $GRAPHIC_CFLAGS"
+fi
+if test -n "$with_dps_library"; then
+  GRAPHIC_LFLAGS="-L$with_dps_library $GRAPHIC_LFLAGS"
+fi
+CPPFLAGS="${CPPFLAGS} ${GRAPHIC_CFLAGS}"
+
+AC_HAVE_HEADERS(DPS/dpsclient.h DPS/dpsNXargs.h)
+
+# Restore back to the original
+CPPFLAGS=${ORIG_CPPFLAGS}
+
+AC_SUBST(DPS_DEFINE)
+
+#--------------------------------------------------------------------
+# XIM support
+#--------------------------------------------------------------------
+AC_ARG_ENABLE(xim, 
+  [  --enable-xim            Enable XIM support],,
+  enable_xim=no)
+if test "x$enable_xim" = "xyes"; then
+ AC_DEFINE(USE_XIM)
+fi
+
+#--------------------------------------------------------------------
+# Extended font support
+#--------------------------------------------------------------------
+WITH_XFT=no
+save_header=${CPPFLAGS}
+save_libs=${LIBS}
+CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
+LIBS="${GRAPHIC_LIBS} ${LIBS}"
+AC_CHECK_LIB(Xft, XftFontOpen, have_xft=yes, have_xft=no)
+AC_CHECK_HEADER(X11/Xft/Xft.h)
+if test "$have_xft" = yes -a "$ac_cv_header_X11_Xft_Xft_h" = yes; then
+  GRAPHIC_LIBS="-lXft ${GRAPHIC_LIBS}"
+  WITH_XFT=yes
+  AC_DEFINE(HAVE_XFT)
+fi
+CPPFLAGS="${save_header}"
+LIBS="${save_libs}"
+AC_SUBST(WITH_XFT)
+
+#--------------------------------------------------------------------
+# XIM support
+#--------------------------------------------------------------------
+AC_ARG_ENABLE(xim, 
+  [  --disable-xim           Disable XIM support],,
+  enable_xim=yes)
+if test "x$enable_xim" = "xyes"; then
+ AC_DEFINE(USE_XIM)
+fi
+
+#--------------------------------------------------------------------
+# Find for JPEG
+#--------------------------------------------------------------------
+AC_ARG_WITH(jpeg_library, 
+           [  --with-jpeg-library=DIR JPEG library file are in DIR], ,
+           with_jpeg_library=/usr/local/lib)
+AC_ARG_WITH(jpeg_include,  
+	[  --with-jpeg-include=DIR JPEG include files are in DIR], ,
+        with_jpeg_include=/usr/local/include)
+
+AC_DEFUN(AC_CHECK_JPEGLIB,
+[jpeg_check_lib_save_header=${CPPFLAGS}
+CPPFLAGS="-L$1 -I$2 ${CPPFLAGS}"
+
+AC_CHECK_LIB(jpeg, jpeg_destroy_decompress,
+      jpeg_ok=yes,
+      jpeg_ok=no)
+if test "$jpeg_ok" = yes; then
+  AC_MSG_CHECKING([for jpeglib.h])
+  AC_TRY_CPP([#include <stdio.h>
+              #undef PACKAGE
+	      #undef VERSION
+	      #undef HAVE_STDLIB_H
+              #include <jpeglib.h>],
+ 	      jpeg_ok=yes,
+	      jpeg_ok=no)
+  AC_MSG_RESULT($jpeg_ok)
+
+  if test "$jpeg_ok" = yes; then
+    GRAPHIC_LFLAGS="-L$1 $GRAPHIC_LFLAGS"
+    GRAPHIC_CFLAGS="-I$1 $GRAPHIC_CFLAGS"
+  fi
+fi
+CPPFLAGS="${jpeg_check_lib_save_header}"])
+
+if test $gs_cv_have_wraster = no -o $set_x_paths = yes; then
+  AC_CHECK_JPEGLIB(${with_jpeg_library}, ${with_jpeg_include})
+fi
+
+#--------------------------------------------------------------------
+# Find for TIFF
+#--------------------------------------------------------------------
+AC_ARG_WITH(tiff_library, 
+           [  --with-tiff-library=DIR TIFF library file are in DIR], ,
+           with_tiff_library=/usr/local/lib)
+AC_ARG_WITH(tiff_include,  
+	[  --with-tiff-include=DIR TIFF include files are in DIR], ,
+        with_tiff_include=/usr/local/include)
+
+AC_DEFUN(AC_CHECK_TIFFLIB,
+[tiff_check_lib_save_header=${CPPFLAGS}
+tiff_check_lib_save_libs=${LIBS}
+CPPFLAGS="-L$1 ${JPEG_LIB} -I$2 ${JPEG_INCLUDE} ${CPPFLAGS}"
+AC_CHECK_LIB(z, main, HAVE_LIBZ=1, HAVE_LIBZ=0)
+
+AC_MSG_CHECKING(for -ltiff without -ljpeg nor -lz)
+LIBS="-ltiff -lm $LIBS"
+AC_TRY_LINK([char TIFFReadScanline();], [TIFFReadScanline()],
+    jpeg_notneeded=yes,
+    jpeg_notneeded=no)
+AC_MSG_RESULT($jpeg_notneeded)
+LIBS=${tiff_check_lib_save_libs}
+JPEG=
+if test "$jpeg_notneeded" = no; then
+  JPEG=-ljpeg
+fi
+
+if test $HAVE_LIBZ = 1; then
+  AC_MSG_CHECKING(for -ltiff without -lz)
+  LIBS="-ltiff $JPEG -lm $LIBS"
+  AC_TRY_LINK([char TIFFReadScanline();], [TIFFReadScanline()],
+      libz_notneeded=yes,
+      libz_notneeded=no)
+  AC_MSG_RESULT($libz_notneeded)
+  LIBS=${tiff_check_lib_save_libs}
+  if test "$libz_notneeded" = no; then
+    JPEG="$JPEG -lz"
+  fi
+fi
+
+AC_CHECK_LIB(tiff, TIFFReadScanline,
+      tiff_ok=yes,
+      tiff_ok=no
+      AC_MSG_WARN(Cannot find libtiff)
+      echo "* The GUI library reqiures the TIFF library"
+      echo "* Use --with-tiff-library to specify the tiff library"
+      echo "* directory if it is not in the usual place(s)"
+      echo "* You may also have to specify --with-jpeg-library if the jpeg"
+      echo "* Library is needed by tiff"
+      if test "x$CONFIGURING_CORE_LIBRARIES" != x; then
+        AC_MSG_ERROR(You must have proper libraries installed to compile core)
+      fi,
+      $JPEG -lm)
+if test "$tiff_ok" = yes; then
+  AC_CHECK_HEADER(tiffio.h,
+                  tiff_ok=yes,
+	          tiff_ok=no)
+  if test "$tiff_ok" = yes; then
+    GRAPHIC_LFLAGS="-L$1 $GRAPHIC_LFLAGS"
+    GRAPHIC_CFLAGS="-I$1 $GRAPHIC_CFLAGS"
+    GRAPHIC_LIBS="-ltiff $JPEG $GRAPHIC_LIBS"
+  else
+    AC_MSG_WARN(Cannot find libtiff header tiffio)
+    echo "* The GUI library requres the TIFF library"
+    echo "* Use --with-tiff-include to specify the tiff header directory"
+    echo "* if it is not in the usual place(s)"
+    if test "x$CONFIGURING_CORE_LIBRARIES" != x; then
+      AC_MSG_ERROR(You must have proper libraries installed to compile core)
+    fi
+  fi
+fi
+CPPFLAGS="${tiff_check_lib_save_header}"])
+
+if test $gs_cv_have_wraster = no -o $set_x_paths = yes; then
+  AC_CHECK_TIFFLIB(${with_tiff_library}, ${with_tiff_include})
+fi
+
+save_CPPFLAGS=${CPPFLAGS}
+CPPFLAGS="$CPPFLAGS $GRAPHIC_CFLAGS"
+AC_CHECK_HEADER(X11/extensions/XShm.h, AC_DEFINE(XSHM))
+CPPFLAGS="$save_CPPFLAGS"
+
+WITH_WRASTER=no
+if test $gs_cv_have_wraster = yes -a $set_x_paths = no; then
+  AC_DEFINE(WITH_WRASTER)
+  WITH_WRASTER=yes
+fi
+AC_SUBST(WITH_WRASTER)
+AC_SUBST(GRAPHIC_LIBS)
+AC_SUBST(GRAPHIC_CFLAGS)
+AC_SUBST(GRAPHIC_LFLAGS)
+
+#--------------------------------------------------------------------
+# Which projects should we build?
+#--------------------------------------------------------------------
+exlib=no
+exdps=no
+ex11=no
+ewin32=no
+ewinlib=no
+if test $gs_cv_have_wraster = yes -o $x_includes != NONE; then
+  exlib=yes
+  ex11=yes
+fi
+
+AC_ARG_ENABLE(xlib, 
+  [  --enable-xlib           Build xlib graphics context],,
+  enable_xlib=$exlib)
+AC_ARG_ENABLE(xdps, 
+  [  --enable-xdps           Build xdps graphics context],,
+  enable_xdps=$exdps)
+AC_ARG_ENABLE(x11, 
+  [  --enable-x11            Build x11 server],,
+  enable_x11=$ex11)
+AC_ARG_ENABLE(win32, 
+  [  --enable-win32          Build win32 server],,
+  enable_xwin32=$exwin32)
+AC_ARG_ENABLE(winlib, 
+  [  --enable-winlib         Build win32 graphics context],,
+  enable_xwinlib=$exwinlib)
+
+AC_MSG_CHECKING(Backend Server)
+if test "x$enable_win32" = "xyes"; then
+  BUILD_WIN32=yes
+  AC_SUBST(BUILD_WIN32)
+  AC_DEFINE(BUILD_WIN32)
+  AC_MSG_RESULT(win32)
+  # Only one server allowed
+  enable_x11=no
+fi
+if test "x$enable_x11" = "xyes"; then
+  BUILD_X11=yes
+  AC_SUBST(BUILD_X11)
+  AC_DEFINE(BUILD_X11)
+  AC_MSG_RESULT(x11)
+fi
+
+AC_MSG_CHECKING(Backend Graphics)
+if test "x$enable_winlib" = "xyes"; then
+  BUILD_WINLIB=yes
+  AC_SUBST(BUILD_WINLIB)
+  AC_DEFINE(BUILD_WINLIB)
+  AC_MSG_RESULT(win32)
+  enable_xdps=no
+  enable_xlib=no
+fi
+if test "x$enable_xdps" = "xyes"; then
+  BUILD_XDPS=yes
+  AC_SUBST(BUILD_XDPS)
+  AC_DEFINE(BUILD_XDPS)
+  AC_MSG_RESULT(xdps)
+  GRAPHIC_LIBS="-ldpstk -ldps -lpsres -lXt $X_PRE_LIBS $GRAPHIC_LIBS"
+  enable_xlib=no 
+fi
+if test "x$enable_xlib" = "xyes"; then
+  BUILD_XLIB=yes
+  AC_SUBST(BUILD_XLIB)
+  AC_DEFINE(BUILD_XLIB)
+  AC_MSG_RESULT(xlib)
+fi
+
+AC_OUTPUT(back.make config.make)
+
+
