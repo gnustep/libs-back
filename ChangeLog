@@ -1,3 +1,8 @@
+2002-11-16  Adam Fedor  <fedor@gnu.org>
+
+	* Source/x11/XGServerWindow.m ([XGServer -setinputstate::]): Return
+	if window is NULL.
+
 2002-11-16  Gregory John Casamento <greg_casamento@yahoo.com>
 
 	* Headers/x11/XGOpenGL.h: Added define to avoid collision of
