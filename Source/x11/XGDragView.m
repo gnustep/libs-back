@@ -199,7 +199,7 @@ static	XGDragView	*sharedDragView = nil;
 
 - (void) drawRect: (NSRect)rect
 {
-  [dragCell drawWithFrame: rect inView: self];
+  [dragCell drawWithFrame: [self frame] inView: self];
 }
 
 
@@ -427,7 +427,7 @@ static	XGDragView	*sharedDragView = nil;
   return (operationMask != oldOperationMask);
 }
   
-/*
+/**
   _setCursor examines the state of the dragging and update
   the cursor accordingly.  It will not save the current cursor,
   if you want to keep the original you have to save it yourself.
@@ -613,7 +613,7 @@ static	XGDragView	*sharedDragView = nil;
   [self _updateAndMoveImageToCorrectPosition];
   [NSEvent startPeriodicEventsAfterDelay: 0.02 withPeriod: 0.03];
 
-  // --- Loop that handles all events durring drag operation -----------
+  // --- Loop that handles all events during drag operation -----------
   while ([theEvent type] != NSLeftMouseUp)
     {
       [self _handleEventDuringDragging: theEvent];
@@ -787,10 +787,6 @@ static	XGDragView	*sharedDragView = nil;
         }
       break;
     case NSPeriodic:
-      /*
-       * targetWindow check is needed because otherwise events only
-       * arrive after an initial mouse move.
-       */
       if (newPosition.x != dragPosition.x || newPosition.y != dragPosition.y) 
         {
           [self _updateAndMoveImageToCorrectPosition];
