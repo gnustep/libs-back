@@ -1,3 +1,8 @@
+2002-04-24  Adam Fedor  <fedor@gnu.org>
+
+	* configure.in: Don't enable wraster support if --with-wraster=none.
+	Print error if no backend server or graphics configured.
+
 2002-04-23  Adam Fedor  <fedor@gnu.org>
 
 	* Headers/x11/XGServer.h: Rework to handle multiple screens.

@@ -87,7 +87,9 @@ CPPFLAGS="$1 $2 ${CPPFLAGS}"
 LIBS="$3 $LIBS"
 
 # Check for RFillImage which is only in version 2.0 of libwraster
-AC_CHECK_LIB(wraster, RFillImage, gs_cv_have_wraster=yes, gs_cv_have_wraster=no)
+AC_CHECK_LIB(wraster, RFillImage, gs_cv_have_wraster=yes, gs_cv_have_wraster=no)if test "x$with_wraster" = "xnone"; then
+  gs_cv_have_wraster=no
+fi
 if test "$gs_cv_have_wraster" = yes; then
   AC_CHECK_HEADERS(wraster.h, gs_cv_have_wraster=yes, gs_cv_have_wraster=no)
 fi
@@ -395,7 +397,7 @@ exdps=no
 ex11=no
 ewin32=no
 ewinlib=no
-if test $gs_cv_have_wraster = yes -o $x_includes != NONE; then
+if test $gs_cv_have_wraster = yes -o "$x_includes" != "NONE"; then
   exlib=yes
   ex11=yes
 fi
@@ -422,14 +424,14 @@ if test "x$enable_win32" = "xyes"; then
   AC_SUBST(BUILD_WIN32)
   AC_DEFINE(BUILD_WIN32)
   AC_MSG_RESULT(win32)
-  # Only one server allowed
-  enable_x11=no
-fi
-if test "x$enable_x11" = "xyes"; then
+elif test "x$enable_x11" = "xyes"; then
   BUILD_X11=yes
   AC_SUBST(BUILD_X11)
   AC_DEFINE(BUILD_X11)
   AC_MSG_RESULT(x11)
+else
+  AC_MSG_RESULT(None)
+  AC_MSG_ERROR(No Backend server configured. Report bug to bug-gnustep@gnu.org)
 fi
 
 AC_MSG_CHECKING(Backend Graphics)
@@ -440,20 +442,21 @@ if test "x$enable_winlib" = "xyes"; then
   AC_MSG_RESULT(win32)
   enable_xdps=no
   enable_xlib=no
-fi
-if test "x$enable_xdps" = "xyes"; then
+elif test "x$enable_xdps" = "xyes"; then
   BUILD_XDPS=yes
   AC_SUBST(BUILD_XDPS)
   AC_DEFINE(BUILD_XDPS)
   AC_MSG_RESULT(xdps)
   GRAPHIC_LIBS="-ldpstk -ldps -lpsres -lXt $X_PRE_LIBS $GRAPHIC_LIBS"
   enable_xlib=no 
-fi
-if test "x$enable_xlib" = "xyes"; then
+elif test "x$enable_xlib" = "xyes"; then
   BUILD_XLIB=yes
   AC_SUBST(BUILD_XLIB)
   AC_DEFINE(BUILD_XLIB)
   AC_MSG_RESULT(xlib)
+else
+  AC_MSG_RESULT(None)
+  AC_MSG_WARN(No Backend graphics lib. Report bug to bug-gnustep@gnu.org)
 fi
 
 #--------------------------------------------------------------------
