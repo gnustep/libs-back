@@ -125,7 +125,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
                   watcher: (id<RunLoopEvents>)self
                   forMode: mode];
 #else 
-#if 0
+  // FIXME
   NSTimer *timer;
 
   timer = [NSTimer timerWithTimeInterval: 0.01
@@ -134,11 +134,6 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 		   userInfo: nil
 		   repeats: YES];
   [[NSRunLoop currentRunLoop] addTimer: timer forMode: mode];
-#else
-  [[NSRunLoop currentRunLoop] addMsgTarget: self
-				withMethod: @selector(callback:)
-				   forMode: mode];
-#endif
 #endif
 }
 

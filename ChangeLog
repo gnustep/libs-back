@@ -1,3 +1,11 @@
+2005-03-30  Adam Fedor  <fedor@gnu.org>
+
+	* Version 0.9.5
+
+	* Headers/x11/XGDragView.h, Source/x11/XGDragView.m: Tag previous 
+	version of file for release.
+	* Source/win32/WIN32Server.m: Revert 2005-2-23 change for this release.
+
 2005-03-29 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Headers/x11/XGDragView.h: Make this a subclass of GSDragView

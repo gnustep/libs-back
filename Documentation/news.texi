@@ -7,6 +7,18 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.9.5}
+
+@itemize @bullet
+@item Added support for window alpha on X servers.
+@item Add support for old and new freetype libs.
+@item Some improvements to the Windows backend.
+@end itemize
+
+@c ====================================================================
+@c Keep the next line just below the list of changes in most recent version.
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.9.4}
 
 @itemize @bullet
@@ -18,10 +30,6 @@ is invited to contribute to making it work.
 @item art backend supports reading from a window.
 @item Add internal window decoration handling.
 @end itemize
-
-@c ====================================================================
-@c Keep the next line just below the list of changes in most recent version.
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.9.3}
 

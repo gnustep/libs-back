@@ -1,7 +1,7 @@
 ANNOUNCE
 ********
 
-This is version 0.9.4 of the GNUstep GUI Backend (`gnustep-back').
+This is version 0.9.5 of the GNUstep GUI Backend (`gnustep-back').
 
 What is the GNUstep GUI Backend?
 ================================
@@ -20,25 +20,19 @@ easily ported to other display systems.
 Window's Systems. It works via a DPS emulation engine to emulate the
 DPS functions required by the front-end system.
 
-Noteworthy changes in version `0.9.4'
+Noteworthy changes in version `0.9.5'
 =====================================
 
-   * Fast drawing on 8 bit displays was added (although it might only
-     speed things up on old X11 servers and/or remote servers).
+   * Added support for window alpha on X servers.
 
-   * GNUstep modifier keys are mapped to KeySyms instead of KeyCodes
+   * Add support for old and new freetype libs.
 
-   * Added a Cairo backend, although it is probably non-functional.
-     Anyone is invited to contribute to making it work.
-
-   * art backend supports reading from a window.
-
-   * Add internal window decoration handling.
+   * Some improvements to the Windows backend.
 
 Where can you get it?  How can you compile it?
 ==============================================
 
-The gstep-back-0.9.4.tar.gz distribution file has been placed on
+The gstep-back-0.9.5.tar.gz distribution file has been placed on
 `ftp.gnustep.org' in `pub/gnustep/core'.
 
 Where do I send bug reports?
