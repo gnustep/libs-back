@@ -260,7 +260,7 @@ static	Region	emptyRegion;
       /* Window device isn't set yet */
       return;
     }
-  color = gsMakeColor(gray_colorspace, value, 0, 0, 0);
+  color = gsMakeColor(rgb_colorspace, value, value, value, 0);
   gcv.foreground = xrRGBToPixel(context, color);
   if (agcntxt == None)
     agcntxt = XCreateGC(XDPY, draw, GCForeground, &gcv);

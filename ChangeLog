@@ -1,3 +1,27 @@
+2002-08-02  Adam Fedor  <fedor@gnu.org>
+
+	* Merge from 0.8.0 into main branch.
+
+2002-08-01  Adam Fedor  <fedor@gnu.org>
+
+	* Version: 0.8.0
+	
+	* configure.ac: Check for usleep.
+	* Source/x11/XGServerWindow.m ([XGServer -windowdevice:]):
+	Use alternate if no usleep.
+
+2002-07-28  Adam Fedor  <fedor@gnu.org>
+
+	* Source/xlib/XGBitmap.m (_pixmap_combine_alpha): Use
+	interger arithmatic. (Patch from Jeff Teunissen)
+
+2002-07-19  Adam Fedor  <fedor@gnu.org>
+
+	* Source/xlib/XGGeometry.m (clipXRectsForCopying): Shift rect
+	origin to account for clipping.
+	* Source/xlib/XGGState.m (-setAlphaColor:): Correct colorspace
+	of alpha color.
+
 2002-07-17  Adam Fedor  <fedor@gnu.org>
 
 	* Version: 0.7.9
@@ -11,7 +35,7 @@
 
 	* Source/xlib/XGBitmap.m (_pixmap_combine_alpha): Fix and
 	cleanup alpha blending (Rescale by alpha)
-	(_bitmap_combine_alpha): Idem. (Patch from deek@d2dc.net).
+	(_bitmap_combine_alpha): Idem. (Patch from Jeff Teunissen).
 
 2002-06-28  Adam Fedor  <fedor@gnu.org>
 

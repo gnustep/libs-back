@@ -538,7 +538,8 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   int x, y, width, height;
   gswindow_device_t *window;
 
-  window = WINDOW_WITH_TAG(screen);
+  /* Screen number is negative to avoid conflict with windows */
+  window = WINDOW_WITH_TAG(-screen);
   if (window)
     return window;
 
@@ -550,7 +551,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   window->ident  = RootWindow(dpy, screen);
   window->root   = window->ident;
   window->type   = NSBackingStoreNonretained;
-  window->number = screen;
+  window->number = -screen;
   window->map_state = IsViewable;
   window->visibility = -1;
   if (window->ident)
@@ -1358,7 +1359,12 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
    */
   if (height != window->siz_hints.height)
     {
+#if HAVE_USLEEP
       usleep(1);
+#else
+      for (x=0; x<10000; x++)
+	;
+#endif
       XGetGeometry(dpy, window->ident, &window->root,
 		   &x, &y, &width, &height,
 		   &window->border, &window->depth);
