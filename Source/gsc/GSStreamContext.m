@@ -28,7 +28,9 @@
 #include "gsc/GSStreamContext.h"
 #include "gsc/GSStreamGState.h"
 #include <AppKit/GSFontInfo.h>
+#include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
+#include <AppKit/NSView.h>
 #include <Foundation/NSArray.h>
 #include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>
@@ -358,12 +360,18 @@
 
 - (void) GSSetCTM: (NSAffineTransform *)ctm
 {
-  [self notImplemented: _cmd];
+  float m[6];
+  [ctm getMatrix: m];
+  fprintf(gstream, "[%g %g %g %g %g %g] setmatrix\n",
+          m[0], m[1], m[2], m[3], m[4], m[5]);
 }
 
 - (void) GSConcatCTM: (NSAffineTransform *)ctm
 {
-  [self notImplemented: _cmd];
+  float m[6];
+  [ctm getMatrix: m];
+  fprintf(gstream, "[%g %g %g %g %g %g] concat\n",
+          m[0], m[1], m[2], m[3], m[4], m[5]);
 }
 
 
@@ -632,15 +640,22 @@ writeHex(FILE *gstream, const unsigned char *data, int count)
 		     : (BOOL)hasAlpha : (NSString *)colorSpaceName
 		     : (const unsigned char *const [5])data
 {
-  int bytes;
-  NSSize scale;
+  int bytes, spp;
+  float y;
+  BOOL flipped = NO;
 
-  scale = NSMakeSize(NSWidth(rect) / pixelsWide, 
-		     NSHeight(rect) / pixelsHigh);
+  /* In a flipped view, we don't want to flip the image again, which would
+     make it come out upsidedown. FIXME: This can't be right, can it? */
+  if ([[NSView focusView] isFlipped])
+    flipped = YES;
+
   /* Save scaling */
   fprintf(gstream, "matrix\ncurrentmatrix\n");
+  y = NSMinY(rect);
+  if (flipped)
+    y += NSWidth(rect);
   fprintf(gstream, "%f %f translate %f %f scale\n", 
-	  NSMinX(rect), NSMinY(rect), scale.width, scale.height);
+	  NSMinX(rect), y, NSWidth(rect),  NSHeight(rect));
 
   if (bitsPerSample == 0)
     bitsPerSample = 8;
@@ -653,6 +668,10 @@ writeHex(FILE *gstream, const unsigned char *data, int count)
 	    bytesPerRow, pixelsHigh, bytes);
       return;
     }
+  if(hasAlpha)
+    spp = samplesPerPixel - 1;
+  else
+    spp = samplesPerPixel;
 
   if(samplesPerPixel > 1) 
     {
@@ -666,17 +685,16 @@ writeHex(FILE *gstream, const unsigned char *data, int count)
 	}
       fprintf(gstream, "%d %d %d [%d 0 0 -%d 0 %d]\n",
 	      pixelsWide, pixelsHigh, bitsPerSample, pixelsWide,
-	      pixelsHigh, pixelsHigh);
+	      (flipped) ? pixelsHigh : -pixelsHigh, pixelsHigh);
       fprintf(gstream, "{currentfile %d string readhexstring pop}\n",
-	      bytesPerRow);
-      fprintf(gstream, "false %d colorimage\n", 
-	      hasAlpha?(samplesPerPixel-1):samplesPerPixel);
+	      pixelsWide*spp);
+      fprintf(gstream, "false %d colorimage\n", spp);
     } 
   else
     {
-      fprintf(gstream, "%d %d %d [%d 0 0 -%d 0 %d]\n",
+      fprintf(gstream, "%d %d %d [%d 0 0 %d 0 %d]\n",
 	      pixelsWide, pixelsHigh, bitsPerSample, pixelsWide,
-	      pixelsHigh, pixelsHigh);
+	      (flipped) ? pixelsHigh : -pixelsHigh, pixelsHigh);
       fprintf(gstream, "currentfile image\n");
     }
   
@@ -686,13 +704,9 @@ writeHex(FILE *gstream, const unsigned char *data, int count)
       // We need to do a format conversion.
       // We do this on the fly, sending data to the context as soon as
       // it is computed.
-      int i, j, spp, alpha;
+      int i, j, alpha;
       unsigned char val;
-      if(hasAlpha)
-	spp = samplesPerPixel - 1;
-      else
-	spp = samplesPerPixel;
-      
+
       for(j=0; j<bytes; j++) 
 	{
 	  if(hasAlpha) 

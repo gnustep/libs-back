@@ -1,3 +1,10 @@
+2003-01-20  Adam Fedor  <fedor@gnu.org>
+
+	* Source/gsc/GSStreamContext.m (-GSSetCTM:): Implement.
+	(-GSConcatCTM:): Idem.
+	(-NSDrawBitmap:::::::::::): Don't flip images in a flipped view.
+	Correct scaling of images.
+
 Tue Jan 21 02:08:05 2003  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/xlib/XGFont.m ([XGFontInfo -dealloc]): Fixed memory leak:
