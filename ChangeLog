@@ -1,3 +1,17 @@
+2004-08-09 14:38  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/win32/WIN32Server.m, Source/win32/WIN32ServerEvent.m,
+	Headers/win32/WIN32Geometry.h (MSScreenRectToGS, GSScreenRectToMS):
+	The 'GS' rect is, in the terminology of NSWindow.h, the window frame,
+	not the screen frame. make the conversions match this and update
+	the callers.
+	* Source/x11/XGServerWindow.m (-_OSFrameToXFrame:for:,
+	-_OSFrameToXHints:for:, -_XFrameToOSFrame:for:): Update conversions.
+	(-windowdevice:): Remove artificial delays and geometry querying.
+	Update based on the frame from the last ConfigureNotify.
+	(-placewindow::): Remove event coordinate adjustments. Always send
+	move/resize events to -gui right away.
+
 2004-08-03  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Header/cairo/*:

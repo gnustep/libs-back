@@ -141,15 +141,23 @@ NSPoint MSScreenPointToGS(int x, int y)
 }
 
 static inline
-NSRect MSScreenRectToGS(RECT r)
+NSRect MSScreenRectToGS(RECT r, unsigned int styleMask, WIN32Server *self)
 {
   NSRect r1;
   int screen_height = GetSystemMetrics(SM_CYSCREEN);
+  float	t, b, l, rr;
+
+  [self styleoffsets: &l : &rr : &t : &b : styleMask];
 
   r1.origin.x = r.left;
   r1.origin.y = screen_height - r.bottom;
   r1.size.width = r.right - r.left;
   r1.size.height = r.bottom - r.top;
+
+  r1.origin.x += l;
+  r1.origin.y += b;
+  r1.size.width -= l + rr;
+  r1.size.height -= t + b;
 
   return r1;
 }
@@ -166,10 +174,18 @@ POINT GSScreenPointToMS(NSPoint p)
 }
 
 static inline
-RECT GSScreenRectToMS(NSRect r)
+RECT GSScreenRectToMS(NSRect r, unsigned int styleMask, WIN32Server *self)
 {
   RECT r1;
   int screen_height = GetSystemMetrics(SM_CYSCREEN);
+  float	t, b, l, rr;
+
+  [self styleoffsets: &l : &rr : &t : &b : styleMask];
+
+  r.origin.x -= l;
+  r.origin.y -= b;
+  r.size.width += l + rr;
+  r.size.height += t + b;
 
   r1.left = r.origin.x;
   r1.bottom = screen_height - r.origin.y;
