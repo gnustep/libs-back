@@ -47,7 +47,9 @@
 
 #include "x11/XGServer.h"
 #include "x11/XGInputServer.h"
+#ifdef HAVE_GLX
 #include "x11/XGOpenGL.h"
+#endif 
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
