@@ -107,6 +107,13 @@ static NSMutableSet *families_seen, *families_pending;
   NSString *displayName;
 
   NSArray *files;
+  struct
+  {
+    int pixel_size;
+    NSArray *files;
+  } *sizes;
+  int num_sizes;
+
   int weight;
   unsigned int traits;
 
@@ -219,6 +226,23 @@ static struct
 }
 
 
+static NSArray *fix_path(NSString *path, NSArray *files)
+{
+  int i, c = [files count];
+  NSMutableArray *nfiles;
+
+  if (!files)
+    return nil;
+
+  nfiles = [[NSMutableArray alloc] init];
+  for (i = 0; i < c; i++)
+    {
+      [nfiles addObject: [path stringByAppendingPathComponent:
+	  [files objectAtIndex: i]]];
+    }
+  return nfiles;
+}
+
 static void add_face(NSString *family, int family_weight,
 	unsigned int family_traits, NSDictionary *d, NSString *path,
 	BOOL from_nfont)
@@ -269,7 +293,8 @@ static void add_face(NSString *family, int family_weight,
       if (!faceName)
 	{
 	  faceName = @"<unknown face>";
-	  NSLog(@"Warning: couldn't find localized face name or fallback for %@",fontName);
+	  NSLog(@"Warning: couldn't find localized face name or fallback for %@",
+	    fontName);
 	}
     }
   else if ((faceName = [d objectForKey: @"Name"]))
@@ -298,20 +323,28 @@ static void add_face(NSString *family, int family_weight,
     traits_from_string(rawFaceName, &traits, &weight);
 
   {
-    NSArray *files = [d objectForKey: @"Files"];
-    int i, c = [files count];
+    NSDictionary *sizes;
+    NSEnumerator *e;
+    NSString *size;
+    int i;
 
-    if (files)
+    sizes = [d objectForKey: @"ScreenFonts"];
+
+    fi->num_sizes = [sizes count];
+    fi->sizes = malloc(sizeof(fi->sizes[0])*[sizes count]);
+    e = [sizes keyEnumerator];
+    i = 0;
+    while ((size = [e nextObject]))
       {
-	fi->files = [[NSMutableArray alloc] init];
-	for (i = 0; i < c; i++)
-	  {
-	    [(NSMutableArray *)fi->files addObject:
-	      [path stringByAppendingPathComponent:
-		[files objectAtIndex: i]]];
-	  }
+	fi->sizes[i].pixel_size = [size intValue];
+	fi->sizes[i].files = fix_path(path,[sizes objectForKey: size]);
+	NSDebugLLog(@"ftfont",@"%@ size %i files |%@|\n",
+	  fontName,fi->sizes[i].pixel_size,fi->sizes[i].files);
+	i++;
       }
   }
+
+  fi->files = fix_path(path,[d objectForKey: @"Files"]);
 
   if ([d objectForKey: @"Weight"])
     weight = [[d objectForKey: @"Weight"] intValue];
@@ -563,7 +596,6 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
   face_info = font_entry;
 
-  rfi = font_entry->files;
   weight = font_entry->weight;
   traits = font_entry->traits;
 
@@ -577,6 +609,23 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
   imgd.font.pix_width = matrix[0];
   imgd.font.pix_height = matrix[3];
+
+  rfi = font_entry->files;
+  if (font_entry->num_sizes &&
+      ((imgd.font.pix_width == imgd.font.pix_height) ||
+       (imgd.font.pix_width == -imgd.font.pix_height)))
+    {
+      int i;
+      for (i = 0; i < font_entry->num_sizes; i++)
+	{
+	  if (font_entry->sizes[i].pixel_size == imgd.font.pix_width)
+	    {
+	      rfi = font_entry->sizes[i].files;
+	      break;
+	    }
+	}
+    }
+
   imgd.font.face_id = (FTC_FaceID)rfi;
 
   /* TODO: make this configurable */
