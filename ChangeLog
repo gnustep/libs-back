@@ -1,3 +1,9 @@
+2003-11-05 03:29  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/x11/XGServerEvent.m (-receivedEvent:type:extra:forMode:):
+	Casts as lvalues will be deprecated in gcc 3.4. Thus, don't assign
+	to the cWin macro. Reported by Lyndon Tremblay.
+
 2003-11-02 02:58  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/gsc/GSStreamContext.m Whitespace cleanups.
