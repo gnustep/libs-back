@@ -1,3 +1,8 @@
+2003-06-12 19:22  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/x11/XWindowBuffer.m: Add XWindowBufferUseXShm defaults
+	variable.
+
 2003-06-11 15:32  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Implement -glyphWithName: and
