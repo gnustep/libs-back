@@ -1,3 +1,10 @@
+2003-12-02 Leigh Smith   < leigh@bogus.example.com >
+
+	* Source/winlib/WIN32GState.m ([WIN -_paintPath:drawType]):
+	Corrected bug in Bezier curves, a bug in line widths and adds a
+	workaround for a Windows GDI drawing bug when drawing curved wide
+	lines.
+
 2003-11-25 20:12  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/x11/XGServerEvent.m (initialize_keyboard): Make sure that
