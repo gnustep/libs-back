@@ -206,18 +206,6 @@ GNUstepErrorProc (DPSContext ctxt, DPSErrorCode errCode,
       text_proc = GNUstepTextProc;
     }
 
-  context = [self xrContext];
-  if (is_screen_context && !XDPSExtensionPresent(XDPY)) 
-    {
-#if HAVE_DPS_DPSNXARGS_H    
-      /* Make it possible for this client to start a DPS NX agent */
-      XDPSNXSetClientArg(XDPSNX_AUTO_LAUNCH, (void *)True);
-#else
-      NSLog (@"DPS extension not in server!");
-      exit (1);
-#endif
-    }
-
   /*
    * Create the context
    */
@@ -436,14 +424,6 @@ GNUstepErrorProc (DPSContext ctxt, DPSErrorCode errCode,
     return NULL;
 }
 
-- (void *) xrContext
-{
-  if (is_screen_context)
-    return [(XGServer *)server xrContext];
-  else
-    return NULL;
-}
-
 - (DPSContext)xDPSContext
 {
   return dps_context;
@@ -454,6 +434,19 @@ GNUstepErrorProc (DPSContext ctxt, DPSErrorCode errCode,
   int x, y, supported;
   unsigned long valuemask;
   XGCValues values;
+
+  // Where should the screen number come from?
+  context = [(XGServer *)server xrContextForScreen: 0];
+  if (!XDPSExtensionPresent(XDPY)) 
+    {
+#if HAVE_DPS_DPSNXARGS_H    
+      /* Make it possible for this client to start a DPS NX agent */
+      XDPSNXSetClientArg(XDPSNX_AUTO_LAUNCH, (void *)True);
+#else
+      NSLog (@"DPS extension not in server!");
+      exit (1);
+#endif
+    }
 
   /* Create a GC for the initial window */
   values.foreground = ((RContext *)context)->black;
