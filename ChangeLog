@@ -1,3 +1,10 @@
+2003-10-05  Adam Fedor  <fedor@gnu.org>
+
+	* Documentation/GNUmakefile: Make Back documentation
+	* Documentation/Back/GNUmakefile: Set DocumentationDirectory.
+
+	* Source/x11/raster.c (RMakeCenteredImage): Remove (unused).
+
 2003-10-04 14:27  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/path.m (-DPSrectclip::::): Move the call to -DPSnewpath
