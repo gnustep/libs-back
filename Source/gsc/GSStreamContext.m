@@ -44,11 +44,11 @@
 
 @implementation GSStreamContext 
 
-- (void) destroyContext;
+- (void) dealloc
 {
   if (gstream)
     fclose(gstream);
-  [super destroyContext];
+  [super dealloc];
 }
 
 - initWithContextInfo: (NSDictionary *)info
@@ -91,73 +91,73 @@
 /* ----------------------------------------------------------------------- */
 /* Color operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPScurrentalpha: (float*) a
+- (void) DPScurrentalpha: (float*)a
 {
   NSLog(@"DPSinvalidcontext: getting values from stream context");
 }
 
-- (void) DPScurrentcmykcolor: (float*) c: (float*) m: (float*) y: (float*) k
+- (void) DPScurrentcmykcolor: (float*)c : (float*)m : (float*)y : (float*)k
 {
   NSLog(@"DPSinvalidcontext: getting values from stream context");
 }
 
-- (void) DPScurrentgray: (float*) gray
+- (void) DPScurrentgray: (float*)gray
 {
   NSLog(@"DPSinvalidcontext: getting values from stream context");
 }
 
-- (void) DPScurrenthsbcolor: (float*) h: (float*) s: (float*) b
+- (void) DPScurrenthsbcolor: (float*)h : (float*)s : (float*)b
 {
   NSLog(@"DPSinvalidcontext: getting values from stream context");
 }
 
-- (void) DPScurrentrgbcolor: (float*) r: (float*) g: (float*) b
+- (void) DPScurrentrgbcolor: (float*)r : (float*)g : (float*)b
 {
   NSLog(@"DPSinvalidcontext: getting values from stream context");
 }
 
-- (void) DPSsetalpha: (float) a
+- (void) DPSsetalpha: (float)a
 {
   fprintf(gstream, "%g setalpha\n", a);
 }
 
-- (void) DPSsetcmykcolor: (float) c: (float) m: (float) y: (float) k
+- (void) DPSsetcmykcolor: (float)c : (float)m : (float)y : (float)k
 {
   fprintf(gstream, "%g %g %g %g setcmykcolor\n", c, m, y, k);
 }
 
-- (void) DPSsetgray: (float) gray
+- (void) DPSsetgray: (float)gray
 {
   fprintf(gstream, "%g setgray\n", gray);
 }
 
-- (void) DPSsethsbcolor: (float) h: (float) s: (float) b
+- (void) DPSsethsbcolor: (float)h : (float)s : (float)b
 {
   fprintf(gstream, "%g %g %g sethsbcolor\n", h, s, b);
 }
 
-- (void) DPSsetrgbcolor: (float) r: (float) g: (float) b
+- (void) DPSsetrgbcolor: (float)r : (float)g : (float)b
 {
   fprintf(gstream, "%g %g %g setrgbcolor\n", r, g, b);
 }
 
 
-- (void) GSSetFillColorspace: (NSDictionary *) dict
+- (void) GSSetFillColorspace: (NSDictionary *)dict
 {
   [self notImplemented: _cmd];
 }
 
-- (void) GSSetStrokeColorspace: (NSDictionary *) dict
+- (void) GSSetStrokeColorspace: (NSDictionary *)dict
 {
   [self notImplemented: _cmd];
 }
 
-- (void) GSSetFillColor: (float *) values
+- (void) GSSetFillColor: (float *)values
 {
   [self notImplemented: _cmd];
 }
 
-- (void) GSSetStrokeColor: (float *) values
+- (void) GSSetStrokeColor: (float *)values
 {
   [self notImplemented: _cmd];
 }
@@ -166,55 +166,72 @@
 /* ----------------------------------------------------------------------- */
 /* Text operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPSashow: (float) x: (float) y: (const char*) s
+- (void) DPSashow: (float)x : (float)y : (const char*)s
 {
-  fprintf(gstream, "%g %g %s ashow\n", x, y, s);
+  fprintf(gstream, "%g %g (%s) ashow\n", x, y, s);
 }
 
-- (void) DPSawidthshow: (float) cx: (float) cy: (int) c: (float) ax: (float) ay: (const char*) s
+- (void) DPSawidthshow: (float)cx : (float)cy : (int)c : (float)ax : (float)ay : (const char*)s
 {
-  fprintf(gstream, "%g %g %d %g %g %s awidthshow\n", cx, cy, c, ax, ay, s);
+  fprintf(gstream, "%g %g %d %g %g (%s) awidthshow\n", cx, cy, c, ax, ay, s);
 }
 
-- (void) DPScharpath: (const char*) s: (int) b
+- (void) DPScharpath: (const char*)s : (int)b
 {
-  fprintf(gstream, "%s %d charpath\n", s, b);
+  fprintf(gstream, "(%s) %d charpath\n", s, b);
 }
 
-- (void) DPSshow: (const char*) s
+- (void) DPSshow: (const char*)s
 {
-  fprintf(gstream, "%s show\n", s);
+  fprintf(gstream, "(%s) show\n", s);
 }
 
-- (void) DPSwidthshow: (float) x: (float) y: (int) c: (const char*) s
+- (void) DPSwidthshow: (float)x : (float)y : (int)c : (const char*)s
 {
-  fprintf(gstream, "%g %g %d %s widthshow\n", x, y, c, s);
+  fprintf(gstream, "%g %g %d (%s) widthshow\n", x, y, c, s);
 }
 
-- (void) DPSxshow: (const char*) s: (const float*) numarray: (int) size
-{
-}
-
-- (void) DPSxyshow: (const char*) s: (const float*) numarray: (int) size
+- (void) DPSxshow: (const char*)s : (const float*)numarray : (int)size
 {
 }
 
-- (void) DPSyshow: (const char*) s: (const float*) numarray: (int) size
+- (void) DPSxyshow: (const char*)s : (const float*)numarray : (int)size
+{
+}
+
+- (void) DPSyshow: (const char*)s : (const float*)numarray : (int)size
 {
 }
 
 
-- (void) GSSetCharacterSpacing: (float) extra
-{
-  [self notImplemented: _cmd];
-}
-
-- (void) GSSetFont: (NSFont*) font
+- (void) GSSetCharacterSpacing: (float)extra
 {
   [self notImplemented: _cmd];
 }
 
-- (void) GSSetFontSize: (float) size
+- (void) GSSetFont: (NSFont*)font
+{
+  const float *matrix = [font matrix];
+  const float *m;
+  fprintf(gstream, "/%s findfont ", [[font fontName] cString]);
+
+  if ([self GSWViewIsFlipped])
+    {
+      float invmatrix[6];
+
+      memcpy(invmatrix, matrix, sizeof(invmatrix));
+      invmatrix[3] = -invmatrix[3];
+      m = invmatrix;
+    }
+  else
+      m = matrix;
+
+  fprintf(gstream, "[%g %g %g %g %g %g] ",
+          m[0], m[1], m[2], m[3], m[4], m[5]);
+  fprintf(gstream, " makefont setfont\n");
+}
+
+- (void) GSSetFontSize: (float)size
 {
   [self notImplemented: _cmd];
 }
@@ -231,27 +248,27 @@
   return NSMakePoint(0,0);
 }
 
-- (void) GSSetTextCTM: (NSAffineTransform *) ctm
+- (void) GSSetTextCTM: (NSAffineTransform *)ctm
 {
   [self notImplemented: _cmd];
 }
 
-- (void) GSSetTextDrawingMode: (GSTextDrawingMode) mode
+- (void) GSSetTextDrawingMode: (GSTextDrawingMode)mode
 {
   [self notImplemented: _cmd];
 }
 
-- (void) GSSetTextPosition: (NSPoint) loc
+- (void) GSSetTextPosition: (NSPoint)loc
 {
   [self notImplemented: _cmd];
 }
 
-- (void) GSShowText: (const char *) string: (size_t) length
+- (void) GSShowText: (const char *)string : (size_t)length
 {
   [self notImplemented: _cmd];
 }
 
-- (void) GSShowGlyphs: (const NSGlyph *) glyphs: (size_t) length
+- (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t)length
 {
   [self notImplemented: _cmd];
 }
@@ -260,7 +277,7 @@
 /* ----------------------------------------------------------------------- */
 /* Gstate Handling */
 /* ----------------------------------------------------------------------- */
-- (void) DPScurrentgstate: (int) gst
+- (void) DPScurrentgstate: (int)gst
 {
   NSLog(@"DPSinvalidcontext: getting values from stream context");
 }
@@ -284,7 +301,7 @@
   fprintf(gstream, "initgraphics\n");
 }
 
-- (void) DPSsetgstate: (int) gst
+- (void) DPSsetgstate: (int)gst
 {
 }
 
@@ -295,22 +312,22 @@
   return 0;
 }
 
-- (void) GSUndefineGState: (int) gst
+- (void) GSUndefineGState: (int)gst
 {
   [self notImplemented: _cmd];
 }
 
-- (void) GSReplaceGState: (int) gst
+- (void) GSReplaceGState: (int)gst
 {
   [self notImplemented: _cmd];
 }
 
-- (void) GSCreateGState: (int) gst
+- (void) GSCreateGState: (int)gst
 {
   [self notImplemented: _cmd];
 }
 
-- (void) GSSetGState: (int) gst
+- (void) GSSetGState: (int)gst
 {
   [self notImplemented: _cmd];
 }
@@ -319,42 +336,42 @@
 /* ----------------------------------------------------------------------- */
 /* Gstate operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPScurrentflat: (float*) flatness
+- (void) DPScurrentflat: (float*)flatness
 {
   NSLog(@"DPSinvalidcontext: getting values from stream context");
 }
 
-- (void) DPScurrentlinecap: (int*) linecap
+- (void) DPScurrentlinecap: (int*)linecap
 {
   NSLog(@"DPSinvalidcontext: getting values from stream context");
 }
 
-- (void) DPScurrentlinejoin: (int*) linejoin
+- (void) DPScurrentlinejoin: (int*)linejoin
 {
   NSLog(@"DPSinvalidcontext: getting values from stream context");
 }
 
-- (void) DPScurrentlinewidth: (float*) width
+- (void) DPScurrentlinewidth: (float*)width
 {
   NSLog(@"DPSinvalidcontext: getting values from stream context");
 }
 
-- (void) DPScurrentmiterlimit: (float*) limit
+- (void) DPScurrentmiterlimit: (float*)limit
 {
   NSLog(@"DPSinvalidcontext: getting values from stream context");
 }
 
-- (void) DPScurrentpoint: (float*) x: (float*) y
+- (void) DPScurrentpoint: (float*)x : (float*)y
 {
   NSLog(@"DPSinvalidcontext: getting values from stream context");
 }
 
-- (void) DPScurrentstrokeadjust: (int*) b
+- (void) DPScurrentstrokeadjust: (int*)b
 {
   NSLog(@"DPSinvalidcontext: getting values from stream context");
 }
 
-- (void) DPSsetdash: (const float*) pat: (int) size: (float) offset
+- (void) DPSsetdash: (const float*)pat : (int)size : (float)offset
 {
   int i;
   fprintf(gstream, "[");
@@ -363,37 +380,37 @@
   fprintf(gstream, "] %g setdash\n", offset);
 }
 
-- (void) DPSsetflat: (float) flatness
+- (void) DPSsetflat: (float)flatness
 {
   fprintf(gstream, "%g setflat\n", flatness);
 }
 
-- (void) DPSsethalftonephase: (float) x: (float) y
+- (void) DPSsethalftonephase: (float)x : (float)y
 {
   fprintf(gstream, "%g %g sethalftonephase\n", x, y);
 }
 
-- (void) DPSsetlinecap: (int) linecap
+- (void) DPSsetlinecap: (int)linecap
 {
   fprintf(gstream, "%d setlinecap\n", linecap);
 }
 
-- (void) DPSsetlinejoin: (int) linejoin
+- (void) DPSsetlinejoin: (int)linejoin
 {
   fprintf(gstream, "%d setlinejoin\n", linejoin);
 }
 
-- (void) DPSsetlinewidth: (float) width
+- (void) DPSsetlinewidth: (float)width
 {
   fprintf(gstream, "%g setlinewidth\n", width);
 }
 
-- (void) DPSsetmiterlimit: (float) limit
+- (void) DPSsetmiterlimit: (float)limit
 {
   fprintf(gstream, "%g setmiterlimit\n", limit);
 }
 
-- (void) DPSsetstrokeadjust: (int) b
+- (void) DPSsetstrokeadjust: (int)b
 {
   fprintf(gstream, "%d setstrokeadjust\n", b);
 }
@@ -402,7 +419,7 @@
 /* ----------------------------------------------------------------------- */
 /* Matrix operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPSconcat: (const float*) m
+- (void) DPSconcat: (const float*)m
 {
   fprintf(gstream, "[%g %g %g %g %g %g] concat\n",
           m[0], m[1], m[2], m[3], m[4], m[5]);
@@ -413,17 +430,17 @@
   fprintf(gstream, "initmatrix\n");
 }
 
-- (void) DPSrotate: (float) angle
+- (void) DPSrotate: (float)angle
 {
   fprintf(gstream, "%g rotate\n", angle);
 }
 
-- (void) DPSscale: (float) x: (float) y
+- (void) DPSscale: (float)x : (float)y
 {
   fprintf(gstream, "%g %g scale\n", x, y);
 }
 
-- (void) DPStranslate: (float) x: (float) y
+- (void) DPStranslate: (float)x : (float)y
 {
   fprintf(gstream, "%g %g translate\n", x, y);
 }
@@ -435,12 +452,12 @@
   return nil;
 }
 
-- (void) GSSetCTM: (NSAffineTransform *) ctm
+- (void) GSSetCTM: (NSAffineTransform *)ctm
 {
   [self notImplemented: _cmd];
 }
 
-- (void) GSConcatCTM: (NSAffineTransform *) ctm
+- (void) GSConcatCTM: (NSAffineTransform *)ctm
 {
   [self notImplemented: _cmd];
 }
@@ -449,17 +466,17 @@
 /* ----------------------------------------------------------------------- */
 /* Paint operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPSarc: (float) x: (float) y: (float) r: (float) angle1: (float) angle2
+- (void) DPSarc: (float)x : (float)y : (float)r : (float)angle1 : (float)angle2
 {
   fprintf(gstream, "%g %g %g %g %g arc\n", x, y, r, angle1, angle2);
 }
 
-- (void) DPSarcn: (float) x: (float) y: (float) r: (float) angle1: (float) angle2
+- (void) DPSarcn: (float)x : (float)y : (float)r : (float)angle1 : (float)angle2
 {
   fprintf(gstream, "%g %g %g %g %g arcn\n", x, y, r, angle1, angle2);
 }
 
-- (void) DPSarct: (float) x1: (float) y1: (float) x2: (float) y2: (float) r
+- (void) DPSarct: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)r
 {
   fprintf(gstream, "%g %g %g %g %g arct\n", x1, y1, x2, y2, r);
 }
@@ -474,7 +491,8 @@
   fprintf(gstream, "closepath\n");
 }
 
-- (void) DPScurveto: (float) x1: (float) y1: (float) x2: (float) y2: (float) x3: (float) y3
+- (void)DPScurveto: (float)x1 : (float)y1 : (float)x2 : (float)y2 
+                  : (float)x3 : (float)y3
 {
   fprintf(gstream, "%g %g %g %g %g %g curveto\n", x1, y1, x2, y2, x3, y3);
 }
@@ -504,12 +522,12 @@
   fprintf(gstream, "initclip\n");
 }
 
-- (void) DPSlineto: (float) x: (float) y
+- (void) DPSlineto: (float)x : (float)y
 {
   fprintf(gstream, "%g %g lineto\n", x, y);
 }
 
-- (void) DPSmoveto: (float) x: (float) y
+- (void) DPSmoveto: (float)x : (float)y
 {
   fprintf(gstream, "%g %g moveto\n", x, y);
 }
@@ -519,26 +537,27 @@
   fprintf(gstream, "newpath\n");
 }
 
-- (void) DPSpathbbox: (float*) llx: (float*) lly: (float*) urx: (float*) ury
+- (void) DPSpathbbox: (float*)llx : (float*)lly : (float*)urx : (float*)ury
 {
 }
 
-- (void) DPSrcurveto: (float) x1: (float) y1: (float) x2: (float) y2: (float) x3: (float) y3
+- (void) DPSrcurveto: (float)x1 : (float)y1 : (float)x2 : (float)y2 
+                    : (float)x3 : (float)y3
 {
   fprintf(gstream, "%g %g %g %g %g %g rcurveto\n", x1, y1, x2, y2, x3, y3);
 }
 
-- (void) DPSrectclip: (float) x: (float) y: (float) w: (float) h
+- (void) DPSrectclip: (float)x : (float)y : (float)w : (float)h
 {
   fprintf(gstream, "%g %g %g %g rectclip\n", x, y, w, h);
 }
 
-- (void) DPSrectfill: (float) x: (float) y: (float) w: (float) h
+- (void) DPSrectfill: (float)x : (float)y : (float)w : (float)h
 {
   fprintf(gstream, "%g %g %g %g rectfill\n", x, y, w, h);
 }
 
-- (void) DPSrectstroke: (float) x: (float) y: (float) w: (float) h
+- (void) DPSrectstroke: (float)x : (float)y : (float)w : (float)h
 {
   fprintf(gstream, "%g %g %g %g rectstroke\n", x, y, w, h);
 }
@@ -548,12 +567,12 @@
   fprintf(gstream, "reversepath\n");
 }
 
-- (void) DPSrlineto: (float) x: (float) y
+- (void) DPSrlineto: (float)x : (float)y
 {
   fprintf(gstream, "%g %g rlineto\n", x, y);
 }
 
-- (void) DPSrmoveto: (float) x: (float) y
+- (void) DPSrmoveto: (float)x : (float)y
 {
   fprintf(gstream, "%g %g rmoveto\n", x, y);
 }
@@ -564,17 +583,17 @@
 }
 
 
-- (void) GSSendBezierPath: (NSBezierPath *) path
+- (void) GSSendBezierPath: (NSBezierPath *)path
 {
   [self notImplemented: _cmd];
 }
 
-- (void) GSRectClipList: (const NSRect *) rects: (int) count
+- (void) GSRectClipList: (const NSRect *)rects: (int)count
 {
   [self notImplemented: _cmd];
 }
 
-- (void) GSRectFillList: (const NSRect *) rects: (int) count
+- (void) GSRectFillList: (const NSRect *)rects: (int)count
 {
   [self notImplemented: _cmd];
 }
@@ -583,45 +602,51 @@
 /* ----------------------------------------------------------------------- */
 /* Window system ops */
 /* ----------------------------------------------------------------------- */
-- (void) DPScurrentgcdrawable: (void**) gc: (void**) draw: (int*) x: (int*) y
+- (void) DPScurrentgcdrawable: (void**)gc : (void**)draw : (int*)x : (int*)y
 {
   NSLog(@"DPSinvalidcontext: getting values from stream context");
 }
 
-- (void) DPScurrentoffset: (int*) x: (int*) y
+- (void) DPScurrentoffset: (int*)x : (int*)y
 {
   NSLog(@"DPSinvalidcontext: getting values from stream context");
 }
 
-- (void) DPSsetgcdrawable: (void*) gc: (void*) draw: (int) x: (int) y
+- (void) DPSsetgcdrawable: (void*)gc : (void*)draw : (int)x : (int)y
 {
+  NSLog(@"DPSinvalidcontext: setting drawable from stream context");
 }
 
-- (void) DPSsetoffset: (short int) x: (short int) y
+- (void) DPSsetoffset: (short int)x : (short int)y
 {
+  NSLog(@"DPSinvalidcontext: setting drawable from stream context");
 }
 
 
 /*-------------------------------------------------------------------------*/
 /* Graphics Extensions Ops */
 /*-------------------------------------------------------------------------*/
-- (void) DPScomposite: (float) x: (float) y: (float) w: (float) h: (int) gstateNum: (float) dx: (float) dy: (int) op
+- (void) DPScomposite: (float)x : (float)y : (float)w : (float)h 
+                     : (int)gstateNum : (float)dx : (float)dy : (int)op
 {
-  fprintf(gstream, "%g %g %g %g %d %g %g %d composite\n", x, y, w, h, gstateNum, dx, dy, op);
+  fprintf(gstream, "%g %g %g %g %d %g %g %d composite\n", x, y, w, h, 
+	  gstateNum, dx, dy, op);
 }
 
-- (void) DPScompositerect: (float) x: (float) y: (float) w: (float) h: (int) op
+- (void) DPScompositerect: (float)x : (float)y : (float)w : (float)h : (int)op
 {
   fprintf(gstream, "%g %g %g %g %d compositerect\n", x, y, w, h, op);
 }
 
-- (void) DPSdissolve: (float) x: (float) y: (float) w: (float) h: (int) gstateNum: (float) dx: (float) dy: (float) delta
+- (void) DPSdissolve: (float)x : (float)y : (float)w : (float)h 
+                    : (int)gstateNum : (float)dx : (float)dy : (float)delta
 {
-  fprintf(gstream, "%g %g %g %g %d %g %g %g dissolve\n", x, y, w, h, gstateNum, dx, dy, delta);
+  fprintf(gstream, "%g %g %g %g %d %g %g %g dissolve\n", x, y, w, h, 
+	  gstateNum, dx, dy, delta);
 }
 
 
-- (void) GSDrawImage: (NSRect) rect: (void *) imageref
+- (void) GSDrawImage: (NSRect)rect : (void *)imageref
 {
   [self notImplemented: _cmd];
 }
@@ -630,7 +655,7 @@
 /* ----------------------------------------------------------------------- */
 /* Client functions */
 /* ----------------------------------------------------------------------- */
-- (void) DPSPrintf: (char *)fmt : (va_list)args
+- (void) DPSPrintf: (char *)fmt  : (va_list)args
 {
   vfprintf(gstream, fmt, args);
 }
@@ -660,11 +685,11 @@ writeHex(FILE *gstream, const unsigned char *data, int count)
 
 @implementation GSStreamContext (Graphics)
 
-- (void) NSDrawBitmap: (NSRect) rect : (int) pixelsWide : (int) pixelsHigh
-		     : (int) bitsPerSample : (int) samplesPerPixel 
-		     : (int) bitsPerPixel : (int) bytesPerRow : (BOOL) isPlanar
-		     : (BOOL) hasAlpha : (NSString *) colorSpaceName
-		     : (const unsigned char *const [5]) data
+- (void) NSDrawBitmap: (NSRect)rect : (int)pixelsWide : (int)pixelsHigh
+		     : (int)bitsPerSample : (int)samplesPerPixel 
+		     : (int)bitsPerPixel : (int)bytesPerRow : (BOOL)isPlanar
+		     : (BOOL)hasAlpha : (NSString *)colorSpaceName
+		     : (const unsigned char *const [5])data
 {
   int bytes;
   NSSize scale;

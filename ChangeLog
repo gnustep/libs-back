@@ -1,3 +1,16 @@
+2002-04-06  Adam Fedor  <fedor@gnu.org>
+
+	* configure.in: Renable XIM by default again.
+
+	* Source/gsc/GSStreamContext.m (GSSetFont:): Implement.
+	Fix up show methods and fix spaces in method names.
+
+	* Source/xlib/XGContext.m (-initWithContextInfo:): Return
+	alternate (PS) context when indicated.
+
+	* Source/xlib/xrtools.c: Simplify color conversion routines.
+	* Source/xlib/XGGState.m: Use them
+	
 2002-04-03  Adam Fedor  <fedor@gnu.org>
 
 	* Source/GNUmakefile.preamble: Fix LIB_DIRS and

@@ -26,46 +26,41 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <X11/Xatom.h>
-#include <X11/Intrinsic.h>
 #include "xlib/xrtools.h"
 
-/* Internal conversion of colors to pixels values */
-u_long   
-xrGrayToPixel(RContext* context, float gray)
+xr_device_color_t 
+xrMakeColor(xr_device_colorspace_t space, float a, float b, float c, float d)
 {
-  XColor cc;
-  RColor rcolor;
-  rcolor.red = 255. * gray;
-  rcolor.green = 255. * gray;
-  rcolor.blue = 255. * gray;
-  rcolor.alpha = 0;
-  RGetClosestXColor(context, &rcolor, &cc);
-  return cc.pixel;
+  xr_device_color_t color;
+  color.space = space;
+  color.field[0] = a;
+  color.field[1] = b;
+  color.field[2] = c;
+  color.field[3] = d;
+  return color;
 }
 
-u_long   
-xrRGBToPixel(RContext* context, float red, float green, float blue)
+xr_device_color_t
+xrGrayToRGB(xr_device_color_t  color)
 {
-  XColor cc;
-  RColor rcolor;
-  rcolor.red = 255. * red;
-  rcolor.green = 255. * green;
-  rcolor.blue = 255. * blue;
-  rcolor.alpha = 0;
-  RGetClosestXColor(context, &rcolor, &cc);
-  return cc.pixel;
+  return xrMakeColor(rgb_colorspace, color.field[0], color.field[0], 
+	      color.field[0], 0);
 }
 
-u_long   
-xrHSBToPixel(RContext* context, float h, float s, float v)
+xr_device_color_t 
+xrHSBToRGB(xr_device_color_t  color)
 {
   int i;
+  float h, s, v;
   float f, p, q, t;
   float red, green, blue;
 
+  h = color.field[0];
+  s = color.field[1];
+  v = color.field[2];
+
   if (s == 0) 
-    return xrRGBToPixel(context, v, v, v);
+    return xrMakeColor(rgb_colorspace, v, v, v, 0);
 
   h = h * 6;
   i = (int)h;
@@ -107,15 +102,22 @@ xrHSBToPixel(RContext* context, float h, float s, float v)
       blue = q;
       break;
     }
-    return xrRGBToPixel(context, red, green, blue);
+  return xrMakeColor(rgb_colorspace, red, green, blue, 0);
 }
 
-/* Not implemented. FIXME */
-u_long   
-xrCMYKToPixel(RContext* context, float c, float m, float y, float k) 
+/* FIXME */   
+xr_device_color_t 
+xrCMYKToRGB(xr_device_color_t  color)
 {
+  float c, m, y, k;
   float red, green, blue;
-  double white = 1 - k;
+  double white;
+
+  c = color.field[0];
+  m = color.field[1];
+  y = color.field[2];
+  k = color.field[3];
+  white = 1 - k;
 	      
   if (k == 0)
     {
@@ -135,38 +137,36 @@ xrCMYKToPixel(RContext* context, float c, float m, float y, float k)
       green = (m > white ? 0 : white - m);
       blue = (y > white ? 0 : white - y);
     }
-  return xrRGBToPixel(context, red, green, blue);
+  return xrMakeColor(rgb_colorspace, red, green, blue, 0);
 }
 
-u_long   
-xrColorToPixel(RContext* context, xr_device_color_t  color)
+xr_device_color_t 
+xrColorToRGB(xr_device_color_t color)
 {
-  u_long pix;
+  xr_device_color_t new;
+
   switch(color.space)
     {
     case gray_colorspace:
-      pix = xrGrayToPixel(context, color.field[0]);
+      new = xrGrayToRGB(color);
       break;
     case rgb_colorspace:
-      pix = xrRGBToPixel(context, color.field[0], 
-			 color.field[1], color.field[2]);
+      new = color;
       break;
-    case hsb_colorspace:
-      pix = xrHSBToPixel(context, color.field[0], 
-			 color.field[1], color.field[2]);
+    case hsb_colorspace: 
+      new = xrHSBToRGB(color);
       break;
     case cmyk_colorspace: 
-      pix = xrCMYKToPixel(context, color.field[0], color.field[1],
-			  color.field[2], color.field[3]);
+      new = xrCMYKToRGB(color);
       break;
     default:
       break;
     }
-    return pix;
+  return new;
 }
 
 xr_device_color_t 
-xrConvertToGray(xr_device_color_t color)
+xrColorToGray(xr_device_color_t color)
 {
   xr_device_color_t new;
 
@@ -178,7 +178,7 @@ xrConvertToGray(xr_device_color_t color)
       break;
     case hsb_colorspace:
     case cmyk_colorspace: 
-      color = xrConvertToRGB(color);
+      color = xrColorToRGB(color);
       /* NO BREAK */
     case rgb_colorspace:
       new.field[0] = 
@@ -190,60 +190,13 @@ xrConvertToGray(xr_device_color_t color)
   return new;
 }
 
+/* FIXME: Not implemented */
 xr_device_color_t 
-xrConvertToRGB(xr_device_color_t color)
+xrColorToCMYK(xr_device_color_t color)
 {
   xr_device_color_t new;
 
-  new.space = rgb_colorspace;
-  switch(color.space)
-    {
-    case gray_colorspace:
-      new.field[0] = color.field[0];
-      new.field[1] = color.field[0];
-      new.field[2] = color.field[0];
-      break;
-    case rgb_colorspace:
-      new = color;
-      break;
-    case hsb_colorspace: 
-    case cmyk_colorspace: 
-      break;
-    default:
-      break;
-    }
-  return new;
-}
-
-xr_device_color_t 
-xrConvertToHSB(xr_device_color_t color)
-{
-  xr_device_color_t new;
-
-  new.space = hsb_colorspace;
-  switch(color.space)
-    {
-    case gray_colorspace:
-      break;
-    case rgb_colorspace:
-      break;
-    case hsb_colorspace: 
-      new = color;
-      break;
-    case cmyk_colorspace: 
-      break;
-    default:
-      break;
-    }
-  return new;
-}
-
-xr_device_color_t 
-xrConvertToCMYK(xr_device_color_t color)
-{
-  xr_device_color_t new;
-
-  new.space = gray_colorspace;
+  new.space = cmyk_colorspace;
   switch(color.space)
     {
     case gray_colorspace:
@@ -254,6 +207,30 @@ xrConvertToCMYK(xr_device_color_t color)
       break;
     case cmyk_colorspace: 
       new = color;
+      break;
+    default:
+      break;
+    }
+  return new;
+}
+
+/* FIXME: Not implemented */
+xr_device_color_t 
+xrColorToHSB(xr_device_color_t color)
+{
+  xr_device_color_t new;
+
+  new.space = hsb_colorspace;
+  switch(color.space)
+    {
+    case gray_colorspace:
+      break;
+    case rgb_colorspace:
+      break;
+    case hsb_colorspace:
+      new = color;
+      break;
+    case cmyk_colorspace: 
       break;
     default:
       break;
