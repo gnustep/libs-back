@@ -592,16 +592,6 @@ static NSArray *faFromFc(FcPattern *pat)
   // tide up
   FcPatternDestroy(fontPattern);
   
-  if ((font_info = XftFontOpenPattern(xdpy, pattern)))
-    {
-      NSDebugLog(@"Loaded font: %@", fontName);
-    }
-  else
-    {
-      NSDebugLog(@"Cannot load font: %@", fontName);
-      return NO;
-    }
-
   if (FcPatternGetString(pattern, FC_FAMILY, 0, (FcChar8 **)&family) == FcResultMatch)
     {
       ASSIGN(familyName, [NSString stringWithCString: (const char*)family]);
@@ -655,6 +645,17 @@ static NSArray *faFromFc(FcPattern *pat)
           traits |= NSItalicFontMask;
           break;
        }
+    }
+
+  // Derek Zhou claims that this takes over the ownership of the pattern
+  if ((font_info = XftFontOpenPattern(xdpy, pattern)))
+    {
+      NSDebugLog(@"Loaded font: %@", fontName);
+    }
+  else
+    {
+      NSDebugLog(@"Cannot load font: %@", fontName);
+      return NO;
     }
 
   /* TODO: somehow make gnustep-gui send unicode our way. utf8? ugly, but it works */
