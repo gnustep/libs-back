@@ -1,3 +1,9 @@
+2004-12-06  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/XGServerWindow.m  (-setwindowlevel::): Stop using
+	the KDE override atom for window levels. The old behaviour may be
+	reactivated via the define USE_KDE_OVERRIDE.
+
 2004-11-28  Matt Rice <ratmice@yahoo.com>
 
 	* Source/x11/XGGLFormat.m (-initWithAttributes:,append,append1): Add 
