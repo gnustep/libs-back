@@ -186,7 +186,7 @@ load_cache(NSString *cacheName, BOOL async)
     {
       if (load_cache(cache_name(), NO))
         {
-	  allFontNames = [[cache objectForKey: @"AllFontNames"] allObjects];
+	  allFontNames = RETAIN([[cache objectForKey: @"AllFontNames"] allObjects]);
 	  allFontFamilies = [cache objectForKey: @"AllFontFamilies"];
 	  // This dictionary stores the XLFD for each font
 	  creationDictionary = [cache objectForKey: @"CreationDictionary"];
