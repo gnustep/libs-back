@@ -831,6 +831,7 @@ if test -n "$ac_init_help"; then
 Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --disable-glx           Disable GLX support
   --disable-xim           Disable XIM support
   --enable-server=SRV     Build server type: x11, win32
   --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art
@@ -4457,11 +4458,19 @@ LIBS="${save_libs}"
 # GLX support
 #--------------------------------------------------------------------
 WITH_GLX=no
-save_header=${CPPFLAGS}
-save_libs=${LIBS}
-CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
-LIBS="${GRAPHIC_LIBS} ${LIBS}"
-echo "$as_me:$LINENO: checking for glXMakeContextCurrent in -lGL" >&5
+# Check whether --enable-glx or --disable-glx was given.
+if test "${enable_glx+set}" = set; then
+  enableval="$enable_glx"
+
+else
+  enable_glx=yes
+fi;
+if test "x$enable_glx" = "xyes"; then
+   save_header=${CPPFLAGS}
+   save_libs=${LIBS}
+   CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
+   LIBS="${GRAPHIC_LIBS} ${LIBS}"
+   echo "$as_me:$LINENO: checking for glXMakeContextCurrent in -lGL" >&5
 echo $ECHO_N "checking for glXMakeContextCurrent in -lGL... $ECHO_C" >&6
 if test "${ac_cv_lib_GL_glXMakeContextCurrent+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -4522,7 +4531,7 @@ else
   have_glx=no
 fi
 
-if test "${ac_cv_header_GL_glx_h+set}" = set; then
+   if test "${ac_cv_header_GL_glx_h+set}" = set; then
   echo "$as_me:$LINENO: checking for GL/glx.h" >&5
 echo $ECHO_N "checking for GL/glx.h... $ECHO_C" >&6
 if test "${ac_cv_header_GL_glx_h+set}" = set; then
@@ -4625,17 +4634,19 @@ echo "${ECHO_T}$ac_cv_header_GL_glx_h" >&6
 fi
 
 
-if test "$have_glx" = yes -a "$ac_cv_header_GL_glx_h" = yes; then
-  GRAPHIC_LIBS="-lGL ${GRAPHIC_LIBS}"
-  WITH_GLX=yes
+   if test "$have_glx" = yes -a "$ac_cv_header_GL_glx_h" = yes; then
+     GRAPHIC_LIBS="-lGL ${GRAPHIC_LIBS}"
+     WITH_GLX=yes
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_GLX 1
 _ACEOF
 
+   fi
+   CPPFLAGS="${save_header}"
+   LIBS="${save_libs}"
+
 fi
-CPPFLAGS="${save_header}"
-LIBS="${save_libs}"
 
 
 #--------------------------------------------------------------------
