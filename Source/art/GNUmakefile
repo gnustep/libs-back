@@ -39,7 +39,8 @@ SUBPROJECT_NAME=art
 
 # The Objective-C source files to be compiled
 art_OBJC_FILES = \
-ARTContext.m blit.m ftfont.m
+  ARTContext.m blit.m ftfont.m \
+  ARTWindowBuffer.m
 
 art_HEADER_FILES_DIR = ../../Headers/art
 art_HEADER_FILES_INSTALL_DIR = gnustep/art
