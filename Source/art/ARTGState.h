@@ -37,7 +37,7 @@
 #include <libart_lgpl/art_vpath_dash.h>
 
 
-@class ARTWindowBuffer;
+@class XWindowBuffer;
 
 
 @interface ARTGState : GSGState
@@ -52,7 +52,7 @@
 	int do_dash;
 
 
-	ARTWindowBuffer *wi;
+	XWindowBuffer *wi;
 
 	int clip_x0,clip_y0,clip_x1,clip_y1;
 	BOOL all_clipped;

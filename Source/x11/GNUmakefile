@@ -61,7 +61,8 @@ XGServerWindow.m \
 XGDragView.m \
 XGSlideView.m \
 XIMInputServer.m \
-XGBitmapImageRep.m
+XGBitmapImageRep.m \
+XWindowBuffer.m
 
 x11_HEADER_FILES_DIR = ../../Headers/x11
 x11_HEADER_FILES_INSTALL_DIR = gnustep/x11

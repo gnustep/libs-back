@@ -25,66 +25,57 @@
 #include "x11/XGServer.h"
 #include "x11/XGServerWindow.h"
 
-#include "gsc/GSContext.h"
-#include "art/ARTContext.h"
-#include "blit.h"
-
-#include "ARTWindowBuffer.h"
+#include "x11/XWindowBuffer.h"
 
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
 
-#ifndef RDS
 #include <X11/extensions/shape.h>
-#endif
 
 
-static ARTWindowBuffer **art_window_buffers;
-static int num_art_window_buffers;
+static XWindowBuffer **window_buffers;
+static int num_window_buffers;
 
-
-static draw_info_t DI;
-
-
-#ifndef RDS
 
 static int use_shape_hack = 0; /* this is an ugly hack :) */
 
 
 
-@implementation ARTWindowBuffer
+@implementation XWindowBuffer
 
-+ artWindowBufferForWindow: (gswindow_device_t *)awindow
++ windowBufferForWindow: (gswindow_device_t *)awindow
+              depthInfo: (struct XWindowBuffer_depth_info_s *)aDI
 {
   int i;
-  ARTWindowBuffer *wi;
+  XWindowBuffer *wi;
 
-  for (i = 0; i<num_art_window_buffers; i++)
+  for (i = 0; i < num_window_buffers; i++)
     {
-      if (art_window_buffers[i]->window == awindow)
+      if (window_buffers[i]->window == awindow)
 	break;
     }
-  if (i == num_art_window_buffers)
+  if (i == num_window_buffers)
     {
-      wi = [[ARTWindowBuffer alloc] init];
+      wi = [[XWindowBuffer alloc] init];
       wi->window = awindow;
-      art_window_buffers = realloc(art_window_buffers,
-        sizeof(ARTWindowBuffer *) * (num_art_window_buffers + 1));
-      if (!art_window_buffers)
+      window_buffers = realloc(window_buffers,
+        sizeof(XWindowBuffer *) * (num_window_buffers + 1));
+      if (!window_buffers)
 	{
 	  NSLog(@"Out of memory (failed to allocate %i bytes)",
-		sizeof(ARTWindowBuffer *) * (num_art_window_buffers + 1));
+		sizeof(XWindowBuffer *) * (num_window_buffers + 1));
 	  exit(1);
 	}
-      art_window_buffers[num_art_window_buffers++] = wi;
+      window_buffers[num_window_buffers++] = wi;
     }
   else
     {
-      wi = art_window_buffers[i];
+      wi = window_buffers[i];
       wi = RETAIN(wi);
     }
 
+  wi->DI = *aDI;
   wi->gc = awindow->gc;
   wi->drawable = awindow->ident;
   wi->display = awindow->display;
@@ -143,7 +134,7 @@ static int use_shape_hack = 0; /* this is an ugly hack :) */
 	  wi->use_shm = 1;
 	  wi->ximage = XShmCreateImage(wi->display,
 	    DefaultVisual(wi->display, DefaultScreen(wi->display)),
-	    DI.drawing_depth, ZPixmap, NULL, &wi->shminfo,
+	    aDI->drawing_depth, ZPixmap, NULL, &wi->shminfo,
 	    wi->window->xframe.size.width,
 	    wi->window->xframe.size.height);
 	}
@@ -179,7 +170,7 @@ static int use_shape_hack = 0; /* this is an ugly hack :) */
 	  NSLog(@"failed to create shared memory image, using normal XImage:s");
 	  wi->use_shm = 0;
 	  wi->ximage = XCreateImage(wi->display, DefaultVisual(wi->display,
-	    DefaultScreen(wi->display)), DI.drawing_depth, ZPixmap, 0, NULL,
+	    DefaultScreen(wi->display)), aDI->drawing_depth, ZPixmap, 0, NULL,
 	    wi->window->xframe.size.width, wi->window->xframe.size.height,
 	    8, 0);
 
@@ -189,7 +180,7 @@ static int use_shape_hack = 0; /* this is an ugly hack :) */
 	      XDestroyImage(wi->ximage);
 	      wi->ximage = NULL;
 	    }
-/*TODO?			wi->ximage=XGetImage(wi->display, wi->drawable,
+/*TODO?			wi->ximage = XGetImage(wi->display, wi->drawable,
 				0, 0, wi->window->xframe.size.width, wi->window->xframe.size.height,
 				-1, ZPixmap);*/
 	}
@@ -302,7 +293,7 @@ static int warn = 0;
 	  if (DI.inline_alpha)
 	    {
 	      a = data + DI.inline_alpha_ofs;
-	      as = 4;
+	      as = DI.bytes_per_pixel;
 	    }
 	  else
 	    {
@@ -312,9 +303,9 @@ static int warn = 0;
 
 	  for (bofs = 0, i = sx * sy, x = sx, dst = buf; i; i--, a += as)
 	    {
-	      if (*a<CUTOFF)
+	      if (*a < CUTOFF)
 		{
-		  *dst = *dst & ~(1<<bofs);
+		  *dst = *dst & ~(1 << bofs);
 		}
 	      bofs++;
 	      if (bofs == 8)
@@ -415,9 +406,8 @@ static int warn = 0;
       alpha = NULL;
       has_alpha = 1;
       /* fill the alpha channel */
-      /* TODO: is +=4 correct? yes, but only because the only modes
-	 with inline alpha are 32 bit */
-      for (i = 0, s = data + DI.inline_alpha_ofs; i<sx * sy; i++, s += 4)
+      for (i = 0, s = data + DI.inline_alpha_ofs; i < sx * sy;
+	   i++, s += DI.bytes_per_pixel)
 	*s = 0xff;
       return;
     }
@@ -439,13 +429,13 @@ static int warn = 0;
 {
   int i;
 
-  for (i = 0; i<num_art_window_buffers; i++)
-    if (art_window_buffers[i] == self) break;
-  if (i<num_art_window_buffers)
+  for (i = 0; i < num_window_buffers; i++)
+    if (window_buffers[i] == self) break;
+  if (i < num_window_buffers)
     {
-      num_art_window_buffers--;
-      for (; i<num_art_window_buffers; i++)
-	art_window_buffers[i] = art_window_buffers[i + 1];
+      num_window_buffers--;
+      for (; i < num_window_buffers; i++)
+	window_buffers[i] = window_buffers[i + 1];
     }
 
   if (ximage)
@@ -465,161 +455,26 @@ static int warn = 0;
 }
 
 
-+(void) initializeBackendWithDrawInfo: (draw_info_t *)d
++(void) initialize
 {
   use_shape_hack = [[NSUserDefaults standardUserDefaults]
-    boolForKey: @"back-art-shape-hack"];
-  DI = *d;
+    boolForKey: @"XWindowBuffer-shape-hack"];
 }
 
 
 +(void) _gotShmCompletion: (Drawable)d
 {
   int i;
-  for (i=0;i<num_art_window_buffers;i++)
+  for (i = 0; i < num_window_buffers; i++)
     {
-      if (art_window_buffers[i]->drawable==d)
+      if (window_buffers[i]->drawable == d)
 	{
-	  [art_window_buffers[i] _gotShmCompletion];
+	  [window_buffers[i] _gotShmCompletion];
 	  return;
 	}
     }
-  NSLog(@"Warning: gotShmCompletion: couldn't find ARTWindowBuffer for drawable");
+  NSLog(@"Warning: gotShmCompletion: couldn't find XWindowBuffer for drawable");
 }
 
 @end
-
-#else
-
-@implementation ARTWindowBuffer
-
-+ artWindowBufferForWindow: (int)awindow  remote: (RDSClient *)aremote;
-{
-  int i;
-  ARTWindowBuffer *wi;
-
-  int x, y;
-
-  for (i = 0; i<num_art_window_buffers; i++)
-    {
-      if (art_window_buffers[i]->window == awindow)
-	break;
-    }
-  if (i == num_art_window_buffers)
-    {
-      wi = [[ARTWindowBuffer alloc] init];
-      wi->window = awindow;
-      wi->remote = aremote;
-      art_window_buffers = realloc(art_window_buffers,
-        sizeof(ARTWindowBuffer *) * (num_art_window_buffers + 1));
-      if (!art_window_buffers)
-	{
-	  NSLog(@"Out of memory (failed to allocate %i bytes)",
-		sizeof(ARTWindowBuffer *) * (num_art_window_buffers + 1));
-	  exit(1);
-	}
-      art_window_buffers[num_art_window_buffers++] = wi;
-    }
-  else
-    {
-      wi = art_window_buffers[i];
-      wi = RETAIN(wi);
-    }
-
-  [aremote setupGetWindowSize: awindow : &x : &y];
-  if (x == wi->sx && y == wi->sy && wi->data)
-    return wi;
-
-  {
-    if (wi->alpha)
-      {
-	free(wi->alpha);
-	wi->alpha = NULL;
-	wi->has_alpha = 0;
-      }
-    if (wi->data)
-      {
-	shmdt(wi->shminfo.shmaddr);
-	wi->data = NULL;
-      }
-
-//		wi->pending_put = wi->pending_event = 0;
-
-    /* TODO: only use shared memory for 'real' on-screen windows */
-    wi->shminfo.shmid = shmget(IPC_PRIVATE, DI.bytes_per_pixel * x * y,
-      IPC_CREAT | 0700);
-    if (!wi->shminfo.shmid == -1)
-      NSLog(@"shmget() failed");
-/*			printf("shminfo.shmid=%08x  %i bytes (%ix%i)\n",
-				wi->shminfo.shmid, wi->ximage->bytes_per_line * wi->ximage->height,
-				wi->ximage->width, wi->ximage->height);*/
-    wi->shminfo.shmaddr = wi->data = shmat(wi->shminfo.shmid, 0, 0);
-    shmctl(wi->shminfo.shmid, IPC_RMID, 0);
-//		printf("addr=%p\n", wi->shminfo.shmaddr);
-  }
-
-  if (wi->data)
-    {
-      wi->sx = x;
-      wi->sy = y;
-      wi->bytes_per_line = DI.bytes_per_pixel * x;
-//		wi->bits_per_pixel = DI.bits_per_pixel;
-      wi->bytes_per_pixel = DI.bytes_per_pixel;
-//		NSLog(@"%@ ximage=%p data=%p\n", wi->ximage, wi->data);
-
-      [wi needsAlpha];
-      [aremote setupWindow: wi->window : wi->shminfo.shmid
-        : wi->sx : wi->sy : wi->bytes_per_line];
-    }
-  else
-    {
-      NSLog(@"Warning: failed to create shm buffer for window");
-      wi->data = NULL;
-    }
-
-  return wi;
-}
-
--(void) needsAlpha
-{
-  if (has_alpha)
-    return;
-
-//	NSLog(@"needs alpha for %p: %ix%i", self, sx, sy);
-
-  if (DI.inline_alpha)
-    {
-      int i;
-      unsigned char *s;
-      alpha = NULL;
-      has_alpha = 1;
-      /* fill the alpha channel */
-      /* TODO: is +=4 correct? but only because the only modes
-	 with inline alpha are 32 bit */
-      for (i = 0, s = data + DI.inline_alpha_ofs; i<sx * sy; i++, s += 4)
-	*s = 0xff;
-      return;
-    }
-
-  alpha = malloc(sx * sy);
-  if (!alpha)
-    return;
-
-//	NSLog(@"got buffer at %p", alpha);
-
-  has_alpha = 1;
-  memset(alpha, 0xff, sx * sy);
-}
-
--(void) _gotShmCompletion
-{
-}
-
--(void) _exposeRect: (NSRect)r
-{
-}
-
-@end
-
-#endif
 

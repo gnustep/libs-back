@@ -1,3 +1,10 @@
+2002-09-10 21:36  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/art/ARTWindowBuffer.h, Source/art/ARTWindowBuffer.m,
+	Source/x11/XWindowBuffer.m, Headers/x11/XWindowBuffer.h: Rename
+	ARTWindowBuffer to XWindowBuffer and move it to x11/ so other
+	backends can use it. Update many files in Source/art/.
+
 2002-09-10 17:35  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/composite.m: Implement handling of tranformations and

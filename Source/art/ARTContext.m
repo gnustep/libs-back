@@ -28,7 +28,7 @@
 
 #include "ARTGState.h"
 
-#include "ARTWindowBuffer.h"
+#include "x11/XWindowBuffer.h"
 #include "blit.h"
 #include "ftfont.h"
 
@@ -469,12 +469,8 @@ very expensive
 
 
 @interface ARTGState (internal_stuff)
-#ifdef RDS
--(void) _setup_stuff: (int)window  : (RDSClient *)remote;
-#else
 -(void) _setup_stuff: (gswindow_device_t *)win : (int)x : (int)y;
 -(void) GSCurrentDevice: (void **)device : (int *)x : (int *)y;
-#endif
 @end
 
 @implementation ARTGState (internal_stuff)
@@ -549,19 +545,27 @@ very expensive
   return self;
 }
 
-#ifdef RDS
--(void) _setup_stuff: (int)window  : (RDSClient *)remote
-{
-	NSLog(@"_setup_stuff: %i : %p",window,remote);
-	DESTROY(wi);
-	wi=[ARTWindowBuffer artWindowBufferForWindow: window  remote: remote];
-}
-#else
 -(void) _setup_stuff: (gswindow_device_t *)window : (int)x : (int)y
 {
+	struct XWindowBuffer_depth_info_s di;
+
+	XWindowBuffer *new_wi;
 	[self setOffset: NSMakePoint(x, y)];
-	DESTROY(wi);
-	wi=[ARTWindowBuffer artWindowBufferForWindow: window];
+
+	di.drawing_depth = DI.drawing_depth;
+	di.bytes_per_pixel = DI.bytes_per_pixel;
+	di.inline_alpha = DI.inline_alpha;
+	di.inline_alpha_ofs = DI.inline_alpha_ofs;
+	new_wi=[XWindowBuffer windowBufferForWindow: window  depthInfo: &di];
+	if (new_wi != wi)
+	{
+		DESTROY(wi);
+		wi=new_wi;
+	}
+	else
+	{
+		DESTROY(new_wi);
+	}
 }
 
 -(void) GSCurrentDevice: (void **)device : (int *)x : (int *)y
@@ -578,8 +582,6 @@ very expensive
 			*device = NULL;
 	}
 }
-
-#endif
 
 @end
 
@@ -616,9 +618,6 @@ very expensive
 	[gstate DPSsetalpha: 1.0];
 	[gstate DPSsetlinewidth: 1.0];
 
-#ifdef RDS
-	artcontext_setup_draw_info(&DI,0x000000ff,0x0000ff00,0x00ff0000,32);
-#else
 	{
 		Display *d=[(XGServer *)server xDisplay];
 		Visual *v=DefaultVisual(d,DefaultScreen(d));
@@ -629,8 +628,6 @@ very expensive
 
 		artcontext_setup_draw_info(&DI,v->red_mask,v->green_mask,v->blue_mask,bpp);
 	}
-#endif
-	[ARTWindowBuffer initializeBackendWithDrawInfo: &DI];
 
 	return self;
 }
@@ -638,9 +635,7 @@ very expensive
 
 - (void) flushGraphics
 { /* TODO: _really_ flush? (ie. force updates and wait for shm completion?) */
-#ifndef RDS
 	XFlush([(XGServer *)server xDisplay]);
-#endif
 }
 
 +(void) waitAllContexts
@@ -648,17 +643,15 @@ very expensive
 }
 
 
-#ifndef RDS
 +(void) _gotShmCompletion: (Drawable)d
 {
-	[ARTWindowBuffer _gotShmCompletion: d];
+	[XWindowBuffer _gotShmCompletion: d];
 }
 
 -(void) gotShmCompletion: (Drawable)d
 {
-	[ARTWindowBuffer _gotShmCompletion: d];
+	[XWindowBuffer _gotShmCompletion: d];
 }
-#endif
 
 //
 // Read the Color at a Screen Position
@@ -671,29 +664,18 @@ very expensive
 
 - (void) beep
 {
-#ifndef RDS
 	XBell([(XGServer *)server xDisplay], 50);
-#else
-#warning TODO beep
-#endif
 }
 
 /* Private backend methods */
 +(void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
 {
-	[(ARTWindowBuffer *)driver _exposeRect: rect];
+	[(XWindowBuffer *)driver _exposeRect: rect];
 }
 
 @end
 
 @implementation ARTContext (ops)
-#ifdef RDS
--(void) _rds_set_device: (int)window  remote: (RDSClient *)remote
-{
-	NSLog(@"_rds_set_device: %i  remote: %@",window,remote);
-	[(ARTGState *)gstate _setup_stuff: window : remote];
-}
-#else
 - (void) GSSetDevice: (void*)device : (int)x : (int)y
 {
 	[(ARTGState *)gstate _setup_stuff: device : x : y];
@@ -703,8 +685,5 @@ very expensive
 {
 	[(ARTGState *)gstate GSCurrentDevice: device : x : y];
 }
-
-#endif
-
 @end
 

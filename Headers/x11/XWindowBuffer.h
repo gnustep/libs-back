@@ -20,32 +20,33 @@
    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#ifndef ARTWindowBuffer_h
-#define ARTWindowBuffer_h
+#ifndef XWindowBuffer_h
+#define XWindowBuffer_h
 
 #include <X11/extensions/XShm.h>
 
+
+struct XWindowBuffer_depth_info_s
+{
+  int drawing_depth;
+  int bytes_per_pixel;
+  BOOL inline_alpha;
+  int inline_alpha_ofs;
+};
+
 /*
-ARTWindowBuffer maintains an XImage for a window. Each ARTGState that
-renders to that window uses the same WinImage (and thus the same buffer,
-etc.).
+XWindowBuffer maintains an XImage for a window. Each ARTGState that
+renders to that window uses the same XWindowBuffer (and thus the same
+buffer, etc.).
 
 Many states might render to the same window, so we need to make sure
-that there's only one WinImage for each window. */
-@interface ARTWindowBuffer : NSObject
+that there's only one XWindowBuffer for each window. */
+@interface XWindowBuffer : NSObject
 {
 @public
-#ifdef RDS
-  int window;
-  RDSClient *remote;
-
-  struct
-  {
-    int shmid;
-    char *shmaddr;
-  } shminfo;
-#else
   gswindow_device_t *window;
+
+@private
   GC gc;
   Drawable drawable;
   XImage *ximage;
@@ -53,7 +54,9 @@ that there's only one WinImage for each window. */
 
   int use_shm;
   XShmSegmentInfo shminfo;
-#endif
+
+
+  struct XWindowBuffer_depth_info_s DI;
 
 
   /* While a XShmPutImage is in progress we don't try to call it
@@ -65,6 +68,11 @@ that there's only one WinImage for each window. */
   int pending_event;   /* We're waiting for the ShmCompletion event. */
 
 
+  /* This is for the ugly shape-hack */
+  unsigned char *old_shape;
+  int old_shape_size;
+
+@public
   unsigned char *data;
   int sx, sy;
   int bytes_per_line, bits_per_pixel, bytes_per_pixel;
@@ -74,28 +82,25 @@ that there's only one WinImage for each window. */
   it. */
   unsigned char *alpha;
   int has_alpha;
-
-
-  unsigned char *old_shape;
-  int old_shape_size;
 }
 
-#ifdef RDS
-+ artWindowBufferForWindow: (int)awindow  remote: (RDSClient *)remote;
-#else
-+ artWindowBufferForWindow: (gswindow_device_t *)awindow;
-#endif
+/* this returns a _retained_ object */
++ windowBufferForWindow: (gswindow_device_t *)awindow
+              depthInfo: (struct XWindowBuffer_depth_info_s *)aDI;
 
+/*
+Note that alpha is _not_ guaranteed to exist after this has been called;
+you still need to check has_alpha. If the call fails, a message will be
+logged.
+
+(In ARTGState, I handle failures by simply ignoring the operation that
+required alpha.)
+*/
 -(void) needsAlpha;
 
 -(void) _gotShmCompletion;
 -(void) _exposeRect: (NSRect)r;
-
-+(void) initializeBackendWithDrawInfo: (struct draw_info_s *)d;
-
-#ifndef RDS
 +(void) _gotShmCompletion: (Drawable)d;
-#endif
 
 @end
 
