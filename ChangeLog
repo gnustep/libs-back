@@ -1,3 +1,9 @@
+2002-11-24 00:35  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ARTContext.m, Source/art/ftfont.h, Source/art/ftfont.m:
+	Implement the glyph generation backend methods. Implement the
+	GSShowGlyphs operator. Handle glyphs properly in FTFontInfo.
+
 2002-11-21  Adam Fedor  <fedor@gnu.org>
 
 	* Version: 0.8.3

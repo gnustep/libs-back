@@ -28,7 +28,9 @@
 
 #include "ARTGState.h"
 
+#ifndef RDS
 #include "x11/XWindowBuffer.h"
+#endif
 #include "blit.h"
 #include "ftfont.h"
 
@@ -295,7 +297,7 @@ very expensive
   if (all_clipped)
     return;
 
-  if ([path isEmpty]) return;
+  if (!path || [path isEmpty]) return;
   p = [path currentPoint];
 
   x = p.x;
@@ -307,6 +309,31 @@ very expensive
     color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
     transform: ctm
     deltas: numarray : size : 2];
+  UPDATE_UNBUFFERED
+}
+
+
+- (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t) length
+{
+  NSPoint p;
+  int x, y;
+
+  if (!wi || !wi->data) return;
+  if (all_clipped)
+    return;
+
+  if (!path || [path isEmpty]) return;
+  p = [path currentPoint];
+
+  x = p.x;
+  y = wi->sy - p.y;
+  [(id<FTFontInfo>)font
+    drawGlyphs: glyphs : length
+    at: x:y
+    to: clip_x0:clip_y0:clip_x1:clip_y1 : CLIP_DATA : wi->bytes_per_line
+    color: fill_color[0]:fill_color[1]:fill_color[2]:fill_color[3]
+    transform: ctm
+    drawinfo: &DI];
   UPDATE_UNBUFFERED
 }
 
@@ -556,7 +583,9 @@ very expensive
 	XWindowBuffer *new_wi;
 	[self setOffset: NSMakePoint(x, y)];
 
+#ifndef RDS
 	di.drawing_depth = DI.drawing_depth;
+#endif
 	di.bytes_per_pixel = DI.bytes_per_pixel;
 	di.inline_alpha = DI.inline_alpha;
 	di.inline_alpha_ofs = DI.inline_alpha_ofs;
@@ -622,6 +651,15 @@ very expensive
 	[gstate DPSsetalpha: 1.0];
 	[gstate DPSsetlinewidth: 1.0];
 
+#ifdef RDS
+	{
+		RDSServer *s=(RDSServer *)server;
+		int bpp;
+		int red_mask,green_mask,blue_mask;
+		[s getPixelFormat: &bpp masks: &red_mask : &green_mask : &blue_mask];
+		artcontext_setup_draw_info(&DI,red_mask,green_mask,blue_mask,bpp);
+	}
+#else
 	{
 		Display *d=[(XGServer *)server xDisplay];
 		Visual *v=DefaultVisual(d,DefaultScreen(d));
@@ -632,6 +670,7 @@ very expensive
 
 		artcontext_setup_draw_info(&DI,v->red_mask,v->green_mask,v->blue_mask,bpp);
 	}
+#endif
 
 	return self;
 }
@@ -639,7 +678,9 @@ very expensive
 
 - (void) flushGraphics
 { /* TODO: _really_ flush? (ie. force updates and wait for shm completion?) */
+#ifndef RDS
 	XFlush([(XGServer *)server xDisplay]);
+#endif
 }
 
 +(void) waitAllContexts
@@ -647,6 +688,7 @@ very expensive
 }
 
 
+#ifndef RDS
 +(void) _gotShmCompletion: (Drawable)d
 {
 	[XWindowBuffer _gotShmCompletion: d];
@@ -656,6 +698,7 @@ very expensive
 {
 	[XWindowBuffer _gotShmCompletion: d];
 }
+#endif
 
 //
 // Read the Color at a Screen Position
@@ -668,7 +711,10 @@ very expensive
 
 - (void) beep
 {
+	NSLog(@"ARTContext -beep: why here?");
+#ifndef RDS
 	XBell([(XGServer *)server xDisplay], 50);
+#endif
 }
 
 /* Private backend methods */
