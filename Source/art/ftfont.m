@@ -300,7 +300,7 @@ static void add_face(NSString *family, int family_weight,
       /* TODO: Need to define the strings somewhere, and make sure the
       strings files get created.  */
       faceName = [NSLocalizedStringFromTableInBundle(faceName,nil,
-			[NSBundle bundleForClass: fi->isa],nil) copy];
+			[NSBundle bundleForClass: [fi class]],nil) copy];
       fi->faceName = faceName;
     }
   else if (!from_nfont)
@@ -310,7 +310,7 @@ static void add_face(NSString *family, int family_weight,
       rawFaceName = faceName = [family substringFromIndex: split];
       family = [family substringToIndex: split];
       faceName = [NSLocalizedStringFromTableInBundle(faceName,nil,
-			[NSBundle bundleForClass: fi->isa],nil) copy];
+			[NSBundle bundleForClass: [fi class]],nil) copy];
       fi->faceName = faceName;
     }
   else
