@@ -44,6 +44,10 @@
 #include "win32/WIN32Server.h"
 #include "win32/WIN32Geometry.h"
 
+#ifdef __CYGWIN__
+#include <sys/file.h>
+#endif
+
 static void 
 validateWindow(HWND hwnd, RECT rect);
 LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
