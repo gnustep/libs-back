@@ -1,3 +1,9 @@
+2004-08-30  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m: Changed usage of CString for font
+	name and family into UTF8String for XFT. Patch by Yen-Ju Chen
+	<yjchenx@hotmail.com>.
+	
 2004-08-24  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/WIN32Server.m (-windowbounds:): Corrected variable

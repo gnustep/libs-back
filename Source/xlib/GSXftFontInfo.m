@@ -101,7 +101,7 @@ static NSArray *faFromFc(FcPattern *pat)
   
   name = [NSMutableString stringWithCapacity: 100];
   style = [NSMutableString stringWithCapacity: 100];
-  [name appendString: [NSString stringWithCString: family]];
+  [name appendString: [NSString stringWithUTF8String: family]];
 
   switch (weight) 
     {
@@ -190,7 +190,7 @@ static NSArray *faFromFc(FcPattern *pat)
               FcFont *aFont;
 	      NSString *name = [fontArray objectAtIndex: 0];
 
-              familyString = [NSString stringWithCString: family];
+              familyString = [NSString stringWithUTF8String: family];
               if (!(familyArray = [fcxft_allFontFamilies objectForKey: familyString]))
                 {
                   familyArray = [[NSMutableArray alloc] init];
@@ -596,7 +596,7 @@ static NSArray *faFromFc(FcPattern *pat)
   
   if (FcPatternGetString(pattern, FC_FAMILY, 0, (FcChar8 **)&family) == FcResultMatch)
     {
-      ASSIGN(familyName, [NSString stringWithCString: (const char*)family]);
+      ASSIGN(familyName, [NSString stringWithUTF8String: (const char*)family]);
     }
   if (FcPatternGetInteger(pattern, FC_SPACING, 0, &fcspacing) == FcResultMatch)
     {
@@ -680,7 +680,7 @@ static NSArray *faFromFc(FcPattern *pat)
 
   // Load Xft font and get font info structure.
   if ((xfontname == nil) ||
-      (font_info = XftFontOpenXlfd(xdpy, defaultScreen, [xfontname cString])) == NULL)
+      (font_info = XftFontOpenXlfd(xdpy, defaultScreen, [xfontname UTF8String])) == NULL)
     {
       NSLog(@"Unable to open fixed font");
       return NO;
@@ -693,7 +693,7 @@ static NSArray *faFromFc(FcPattern *pat)
   if (result != XftResultTypeMismatch)
     {
       ASSIGN(familyName,
-         [NSString stringWithCString: (const char*)xftTypeString]);
+         [NSString stringWithUTF8String: (const char*)xftTypeString]);
     }
   result = XftPatternGetInteger(pattern, XFT_SPACING, 0, &xftTypeInt);
   if (result != XftResultTypeMismatch)
@@ -742,7 +742,7 @@ static NSArray *faFromFc(FcPattern *pat)
     }
 
   XftPatternGetString(pattern, XFT_ENCODING, 0, &xftTypeString);
-  encodingScheme = [NSString stringWithCString: xftTypeString];
+  encodingScheme = [NSString stringWithUTF8String: xftTypeString];
   encoding = [encodingScheme componentsSeparatedByString: @"-"];
   reg = [encoding objectAtIndex: 0];
   if (reg != nil)
