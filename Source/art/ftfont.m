@@ -2607,3 +2607,24 @@ fb04 'ffl'
 }
 @end
 
+
+@interface FTFontInfo (experimental_glyph_printing_extension)
+-(const char *) nameOfGlyph: (NSGlyph)g;
+@end
+
+@implementation FTFontInfo (experimental_glyph_printing_extension)
+-(const char *) nameOfGlyph: (NSGlyph)g
+{
+static char buf[1024]; /* !!TODO!! */
+  FT_Face face;
+
+  if (FTC_Manager_Lookup_Size(ftc_manager, &imgd.font, &face, 0))
+    return ".notdef";
+
+  if (FT_Get_Glyph_Name(face, g, buf, sizeof(buf)))
+    return ".notdef";
+
+  return buf;
+}
+@end
+

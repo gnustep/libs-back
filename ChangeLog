@@ -1,3 +1,8 @@
+2003-02-08 21:10  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Add somewhat experimental -nameOfGlyph:
+	method to try to get printing to work.
+
 2003-02-06 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Tools/gpbs.m (ihandler): Fix for mingw, which doesn't have kill()
