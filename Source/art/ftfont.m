@@ -67,12 +67,16 @@ from the back-art-subpixel-text defaults key
 static int subpixel_text;
 
 
+@class FTFaceInfo;
+
 @interface FTFontInfo : GSFontInfo <FTFontInfo>
 {
   const char *filename;
   FTC_ImageDesc imgd;
 
   FTC_ImageDesc fallback;
+
+  FTFaceInfo *face_info;
 }
 @end
 
@@ -95,6 +99,17 @@ static NSMutableSet *families_seen, *families_pending;
   NSArray *files;
   int weight;
   unsigned int traits;
+
+  /*
+  hinting hints
+    0: 1 to use the auto-hinter
+    1: 1 to use hinting
+  byte 0 and 1 contain hinting hints for un-antialiased and antialiased
+  rendering, respectively.
+
+   16: 0=un-antialiased by default, 1=antialiased by default
+  */
+  unsigned int render_hints_hack;
 }
 @end
 
@@ -268,6 +283,14 @@ static void add_face(NSString *family, NSString *face, NSDictionary *d,
   if ([d objectForKey: @"Traits"])
     traits = [[d objectForKey: @"Traits"] intValue];
   fi->traits = traits;
+
+  if ([d objectForKey: @"RenderHints_hack"])
+  {
+    fi->render_hints_hack=strtol([[d objectForKey: @"RenderHints_hack"] cString],NULL,0);
+    printf("explicit '%@' -> %i\n",[d objectForKey: @"RenderHints_hack"],fi->render_hints_hack);
+  }
+  else
+    fi->render_hints_hack=0x10002;
 
   NSDebugLLog(@"ftfont", @"adding '%@' '%@'", full_name, fi);
 
@@ -481,6 +504,8 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	    name, [fcfg_allFontNames objectAtIndex: 0]);
     }
 
+  face_info = font_entry;
+
   rfi = font_entry->files;
   weight = font_entry->weight;
   traits = font_entry->traits;
@@ -609,12 +634,28 @@ extern void GSToUnicode();
 	cur.font.pix_width = xx;
 	cur.font.pix_height = yy;
 
-	if (cur.font.pix_width < 16 && cur.font.pix_height < 16 &&
-	    cur.font.pix_width > 6 && cur.font.pix_height > 6)
-	  cur.type = ftc_image_mono;
+	if (xx == yy && xx < 16 && xx >= 8)
+	  {
+	    int rh = face_info->render_hints_hack;
+	    if (rh & 0x10000)
+	      {
+		cur.type = ftc_image_grays;
+		rh = (rh >> 8) & 0xff;
+	      }
+	    else
+	      {
+		cur.type = ftc_image_mono;
+		rh = rh & 0xff;
+	      }
+	    if (rh & 1)
+	      cur.type |= ftc_image_flag_autohinted;
+	    if (!(rh & 2))
+	      cur.type |= ftc_image_flag_unhinted;
+	  }
+	else if (xx < 8)
+	  cur.type = ftc_image_grays | ftc_image_flag_unhinted;
 	else
 	  cur.type = ftc_image_grays;
-//			imgd.type|=|ftc_image_flag_unhinted; /* TODO? when? */
       }
     else
       {

@@ -1,3 +1,8 @@
+2002-09-14 13:03  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Add support for some simple rendering hints
+	in .nfont packages.
+
 2002-09-12 02:29  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/image.m (_image_get_color_rgb_8,
