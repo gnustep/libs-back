@@ -1,3 +1,8 @@
+2004-06-28 00:41  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/xlib/XGGState.m (-setWindowDevice:): Remove use of
+	cast-as-lvalue.
+
 2004-06-26 13:04  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/x11/XGServerEvent.m (-processEvent: ConfigureNotify):
