@@ -1,3 +1,10 @@
+2005-03-29 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Headers/x11/XGDragView.h: Make this a subclass of GSDragView
+	* Source/x11/XGDragView.m: Rewrite to be a subclass of GSDragView
+	so that bugfixes from it are in  XGDragView.  Remove lots of
+	redundant code.  Still quite a bit to do.
+
 2005-03-29  Adrian Robert <arobert@cogsci.ucsd.edu>
 
 	* Source/art/ftfont.h, Source/art/ftfont.m, Source/art/ftfont-old.m:
