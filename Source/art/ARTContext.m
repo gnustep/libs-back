@@ -1542,6 +1542,13 @@ very expensive
 	p.y=wi->sy-p.y;
 	p.y-=s.height;
 
+	/* PS says that any pixel covered by the clipping path is not to
+	be clipped, so we need to round 'outwards' here. */
+	s.width=ceil(s.width+p.x);
+	s.height=ceil(s.height+p.y);
+	p.x=floor(p.x);
+	p.y=floor(p.y);
+
 /*	printf("%p clip was (%i %i)-(%i %i)  (%g %g)+(%g %g)  -> (%g %g)+(%g %g)\n",
 		self,
 		clip_x0,clip_y0,clip_x1,clip_y1,
@@ -1552,8 +1559,9 @@ very expensive
 	if (p.y>clip_y0)
 		clip_y0=p.y;
 
-	p.x+=s.width;
-	p.y+=s.height;
+	p.x=s.width;
+	p.y=s.height;
+
 	if (p.x<clip_x1)
 		clip_x1=p.x;
 	if (p.y<clip_y1)
