@@ -32,14 +32,8 @@
 
 typedef struct render_run_s
 {
-  unsigned char r, g, b, a, real_a;
+  unsigned char r, g, b, a;
   unsigned char *dst, *dsta;
-
-  /* the following fields are only used by the svp rendering helpers */
-  int x0, x1;
-  int rowstride, arowstride, bpp;
-  void (*run_alpha)(struct render_run_s *ri, int num);
-  void (*run_opaque)(struct render_run_s *ri, int num);
 } render_run_t;
 
 
@@ -146,12 +140,6 @@ typedef struct draw_info_s
 void artcontext_setup_draw_info(draw_info_t *di,
 	unsigned int red_mask, unsigned int green_mask, unsigned int blue_mask,
 	int bpp);
-
-void artcontext_render_svp(const ArtSVP *svp, int x0, int y0, int x1, int y1,
-	unsigned char r, unsigned char g, unsigned char b, unsigned char a,
-	unsigned char *dst, int rowstride,
-	unsigned char *dsta, int arowstride, int has_alpha,
-	draw_info_t *di);
 
 #endif
 
