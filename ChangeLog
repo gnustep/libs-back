@@ -1,3 +1,7 @@
+2005-03-28 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/win32/WIN32Server.m: fix for locating window at point.
+
 2005-03-21  Adam Fedor  <fedor@gnu.org>
 
 	* Source/art/blit.m (artcontext_setup_draw_info): Add mail address
