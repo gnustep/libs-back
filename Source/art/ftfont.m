@@ -451,6 +451,9 @@ static void load_font_configuration(void)
 	  if (!d)
 	    continue;
 
+	  if ([d objectForKey: @"Family"])
+	    family = [d objectForKey: @"Family"];
+
 	  if ([d objectForKey: @"Weight"])
 	    weight = [[d objectForKey: @"Weight"] intValue];
 	  else
