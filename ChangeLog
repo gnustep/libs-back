@@ -1,3 +1,16 @@
+2002-06-04  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSGState.m
+	Added default implementation for [DPSrectfill::::], 
+	[DPSrectstroke::::] and [DPSrectclip::::].
+	* Header/winlib/WIN32GState.h
+	Added ivar to store old clip region.
+	* Source/winlib/WIN32GState.m
+	[_paintPath:], [DPSrectclip::::], [DPSinitclip], [setStyle:]  
+	and [restoreStyle:]: Rewrote the whole clipping code.
+	Added [deepen] and [dealloc] for consistency.
+	Simplified [DPSrectstroke::::].
+	
 2002-06-03  Adam Fedor  <fedor@gnu.org>
 
 	* Source/win32/WIN32Server.m (-beep): Implement
