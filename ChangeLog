@@ -1,3 +1,11 @@
+2004-08-31  Adrian Robert <arobert@cogsci.ucsd.edu>
+
+	* Source/x11/XGServerEvent.m: Changed mapping of GNUstep modifier
+	keys to X11 KeySyms instead of KeyCodes.  (Added check_key(); updated
+	check_modifier(), -processEvent: (KeyMapNotify), changed
+	default_key_code() to key_sym_from_defaults(), updated
+	initialize_keyboard().)
+	
 2004-08-30  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/GSXftFontInfo.m: Changed usage of CString for font

@@ -76,12 +76,12 @@ static char _command_pressed = 0;
 static char _alt_pressed = 0;
 /*
 Keys used for the modifiers (you may set them with user preferences).
-Note that the first and second key code for a modifier must be different.
+Note that the first and second key sym for a modifier must be different.
 Otherwise, the _*_pressed tracking will be confused.
 */
-static KeyCode _control_keycodes[2];
-static KeyCode _command_keycodes[2];
-static KeyCode _alt_keycodes[2];
+static KeySym _control_keysyms[2];
+static KeySym _command_keysyms[2];
+static KeySym _alt_keysyms[2];
 
 static BOOL _is_keyboard_initialized = NO;
 
@@ -127,9 +127,42 @@ static void initialize_keyboard (void);
 
 static void set_up_num_lock (void);
 
-static inline int check_modifier (XEvent *xEvent, KeyCode key_code) 
+// checks if given keycode is set in bit vector
+static inline int check_key (XEvent *xEvent, KeyCode key_code) 
 {
-  return (xEvent->xkeymap.key_vector[key_code / 8] & (1 << (key_code % 8)));  
+    return (key_code == 0) ?
+        0 : (xEvent->xkeymap.key_vector[key_code / 8] & (1 << (key_code % 8)));
+}
+
+// checks whether a GNUstep modifier is pressed when we're only able to check
+// whether X keycodes are pressed
+static int check_modifier (XEvent *xEvent, KeySym key_sym,
+                           XModifierKeymap *modmap)
+{
+  int m;
+  int c;
+  KeyCode key_code;
+
+  // if key_sym is a modifier, check each of its keycodes
+  for (m=0; m<8; m++)
+    {
+      key_code = modmap->modifiermap[m * modmap->max_keypermod];
+      if ((key_code != 0)
+          && XKeycodeToKeysym(xEvent->xkeymap.display, key_code, 0) == key_sym)
+        {
+          for (c=0; c<modmap->max_keypermod; c++)
+            {
+              if (check_key(xEvent,
+                            modmap->modifiermap[m * modmap->max_keypermod + c]))
+                return 1;
+            }
+          return 0; // no dice
+        }
+    }
+  // wasn't a modifier; just check the first keycode for this keysym,
+  // which ignores other possibilities but that's the best we can do
+  // w/o XtKeysymToKeycodeList
+  return check_key(xEvent, XKeysymToKeycode(xEvent->xkeymap.display, key_sym));
 }
 
 @implementation XGServer (EventOps)
@@ -976,44 +1009,56 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 	      // reports the state of the keyboard when pointer or
 	      // focus enters a window
 	case KeymapNotify:
-	  NSDebugLLog(@"NSEvent", @"%d KeymapNotify\n",
-		      xEvent.xkeymap.window);
-	  // Check if control is pressed
-	  _control_pressed = 0;
-	  if (_control_keycodes[0]
-	      && check_modifier (&xEvent, _control_keycodes[0]))
-	    {
-	      _control_pressed |= 1;
-	    }
-	  if (_control_keycodes[1]
-	      && check_modifier (&xEvent, _control_keycodes[1]))
-	    {
-	      _control_pressed |= 2;
-	    }
-	  // Check if command is pressed
-	  _command_pressed = 0;
-	  if (_command_keycodes[0]
-	      && check_modifier (&xEvent, _command_keycodes[0]))
-	    {
-	      _command_pressed |= 1;
-	    }
-	  if (_command_keycodes[1]
-	      && check_modifier (&xEvent, _command_keycodes[1]))
-	    {
-	      _command_pressed |= 2;
-	    }
-	  // Check if alt is pressed
-	  _alt_pressed = 0;
-	  if (_alt_keycodes[0]
-	      && check_modifier (&xEvent, _alt_keycodes[0]))
-	    {
-	      _alt_pressed |= 1;
-	    }
-	  if (_alt_keycodes[1]
-	      && check_modifier (&xEvent, _alt_keycodes[1]))
-	    {
-	      _alt_pressed |= 2;
-	    }
+          {
+            XModifierKeymap *modmap =
+              XGetModifierMapping(xEvent.xkeymap.display);
+
+            if (_is_keyboard_initialized == NO)
+              initialize_keyboard ();
+
+            NSDebugLLog(@"NSEvent", @"%d KeymapNotify\n",
+                        xEvent.xkeymap.window);
+
+            // Check if control is pressed
+            _control_pressed = 0;
+            if ((_control_keysyms[0] != NoSymbol)
+                && check_modifier (&xEvent, _control_keysyms[0], modmap))
+	      {
+	        _control_pressed |= 1;
+	      }
+            if ((_control_keysyms[1] != NoSymbol)
+                && check_modifier (&xEvent, _control_keysyms[1], modmap))
+              {
+                _control_pressed |= 2;
+              }
+
+            // Check if command is pressed
+            _command_pressed = 0;
+            if ((_command_keysyms[0] != NoSymbol)
+                && check_modifier (&xEvent, _command_keysyms[0], modmap))
+              {
+                _command_pressed |= 1;
+              }
+            if ((_command_keysyms[1] != NoSymbol)
+                && check_modifier (&xEvent, _command_keysyms[1], modmap))
+              {
+                _command_pressed |= 2;
+              }
+
+            // Check if alt is pressed
+            _alt_pressed = 0;
+            if ((_alt_keysyms[0] != NoSymbol)
+                && check_modifier (&xEvent, _alt_keysyms[0], modmap))
+              {
+                _alt_pressed |= 1;
+              }
+            if ((_alt_keysyms[1] != NoSymbol)
+                && check_modifier (&xEvent, _alt_keysyms[1], modmap))
+              {
+                _alt_pressed |= 2;
+              }
+            XFreeModifiermap(modmap);
+          }
 	  break;
 
 	      // when a window changes state from ummapped to
@@ -1350,31 +1395,30 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
 }
 
 
-// Return the key_code corresponding to the user defaults string
-// Return 1 (which is an invalid keycode) if the user default 
-// is not set
-static KeyCode
-default_key_code (Display *display, NSUserDefaults *defaults, 
-		  NSString *aString)
+// Return the key_sym corresponding to the user defaults string given,
+// or fallback if no default is registered.
+static KeySym
+key_sym_from_defaults (Display *display, NSUserDefaults *defaults,
+                       NSString *keyDefaultKey, KeySym fallback)
 {
-  NSString *keySymString;
-  KeySym a_key_sym;
-  
-  keySymString = [defaults stringForKey: aString];
-  if (keySymString == nil)
-    return 1; 
-  
-  a_key_sym = XStringToKeysym ([keySymString cString]);
-  if (a_key_sym == NoSymbol)
+  NSString *keyDefaultName;
+  KeySym key_sym;
+
+  keyDefaultName = [defaults stringForKey: keyDefaultKey];
+  if (keyDefaultName == nil)
+    return fallback;
+
+  key_sym = XStringToKeysym ([keyDefaultName cString]);
+  if (key_sym == NoSymbol)
     {
       // This is not necessarily an error.
       // If you want on purpose to disable a key, 
       // set its default to 'NoSymbol'.
-      NSLog (@"KeySym %@ not found; disabling %@", keySymString, aString);
-      return 0;
+      NSLog (@"KeySym %@ not found; disabling %@", keyDefaultName,
+                                                   keyDefaultKey);
     }
-  
-  return XKeysymToKeycode (display, a_key_sym);
+
+  return key_sym;
 }
 
 // This function should be called before any keyboard event is dealed with.
@@ -1384,50 +1428,45 @@ initialize_keyboard (void)
   NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
   Display *display = [XGServer currentXDisplay];
 
+  // Below must be stored and checked as keysyms, not keycodes, since
+  // more than one keycode may be mapped t the same keysym
   // Initialize Control
-  _control_keycodes[0] = default_key_code (display, defaults, 
-					   @"GSFirstControlKey");
-  if (_control_keycodes[0] == 1) // No User Default Set
-    _control_keycodes[0] = XKeysymToKeycode (display, XK_Control_L);
+  _control_keysyms[0] = key_sym_from_defaults(display, defaults,
+                                              @"GSFirstControlKey",
+                                              XK_Control_L);
 
-  _control_keycodes[1] = default_key_code (display, defaults, 
-					   @"GSSecondControlKey");
-  if (_control_keycodes[1] == 1) 
-    _control_keycodes[1] = XKeysymToKeycode (display, XK_Control_R);
+  _control_keysyms[1] = key_sym_from_defaults(display, defaults,
+                                              @"GSSecondControlKey",
+                                              XK_Control_R);
 
-  if (_control_keycodes[0] == _control_keycodes[1])
-    _control_keycodes[1] = 0;
+  if (_control_keysyms[0] == _control_keysyms[1])
+    _control_keysyms[1] = NoSymbol;
 
   // Initialize Command
-  _command_keycodes[0] = default_key_code (display, defaults, 
-					      @"GSFirstCommandKey");
-  if (_command_keycodes[0] == 1) 
-    _command_keycodes[0] = XKeysymToKeycode (display, XK_Alt_L);
+  _command_keysyms[0] = key_sym_from_defaults(display, defaults,
+                                              @"GSFirstCommandKey",
+                                              XK_Alt_L);
 
-  _command_keycodes[1] = default_key_code (display, defaults, 
-					   @"GSSecondCommandKey");
-  if (_command_keycodes[1] == 1) 
-    _command_keycodes[1] = 0;  
+  _command_keysyms[1] = key_sym_from_defaults(display, defaults,
+                                              @"GSSecondCommandKey",
+                                              NoSymbol);
 
-  if (_command_keycodes[0] == _command_keycodes[1])
-    _command_keycodes[1] = 0;
+  if (_command_keysyms[0] == _command_keysyms[1])
+    _command_keysyms[1] = NoSymbol;
 
   // Initialize Alt
-  _alt_keycodes[0] = default_key_code (display, defaults, 
-				       @"GSFirstAlternateKey");
-  if (_alt_keycodes[0] == 1) 
-    {
-      _alt_keycodes[0] = XKeysymToKeycode (display, XK_Alt_R);
-      if (_alt_keycodes[0] == 0)
-	_alt_keycodes[0] = XKeysymToKeycode (display, XK_Mode_switch);
-    }
-  _alt_keycodes[1] = default_key_code (display, defaults, 
-				       @"GSSecondAlternateKey");
-  if (_alt_keycodes[1] == 1) 
-    _alt_keycodes[1] = 0;  
+  _alt_keysyms[0] = key_sym_from_defaults(display, defaults,
+                                          @"GSFirstAlternateKey",
+                                          XK_Alt_R);
+  if (XKeysymToKeycode(display, _alt_keysyms[0]) == 0)
+    _alt_keysyms[0] = XK_Mode_switch;
 
-  if (_alt_keycodes[0] == _alt_keycodes[1])
-    _alt_keycodes[1] = 0;
+  _alt_keysyms[1] = key_sym_from_defaults(display, defaults,
+                                          @"GSecondAlternateKey",
+                                          NoSymbol);
+
+  if (_alt_keysyms[0] == _alt_keysyms[1])
+    _alt_keysyms[1] = NoSymbol;
 
   
   set_up_num_lock ();
@@ -1518,30 +1557,30 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType)
   /* Process NSFlagsChanged events.  We can't use a switch because we
      are not comparing to constants. Make sure keyCode is not 0 since
      XIM events can potentially return 0 keyCodes. */
-  keyCode = ((XKeyEvent *)xEvent)->keycode;
-  if (keyCode)
+  keysym = XLookupKeysym((XKeyEvent *)xEvent, 0);
+  if (keysym != NoSymbol)
     {
-      if (keyCode == _control_keycodes[0]) 
+      if (keysym == _control_keysyms[0]) 
 	{
 	  control_key = 1;
 	}
-      else if (keyCode == _control_keycodes[1])
+      else if (keysym == _control_keysyms[1])
 	{
 	  control_key = 2;
 	}
-      else if (keyCode == _command_keycodes[0]) 
+      else if (keysym == _command_keysyms[0]) 
 	{
 	  command_key = 1;
 	}
-      else if (keyCode == _command_keycodes[1]) 
+      else if (keysym == _command_keysyms[1]) 
 	{
 	  command_key = 2;
 	}
-      else if (keyCode == _alt_keycodes[0]) 
+      else if (keysym == _alt_keysyms[0]) 
 	{
 	  alt_key = 1;
 	}
-      else if (keyCode == _alt_keycodes[1]) 
+      else if (keysym == _alt_keysyms[1]) 
 	{
 	  alt_key = 2;
 	}
@@ -1592,6 +1631,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType)
 		 keysym: &keysym];
 
   /* Process keycode */
+  keyCode = ((XKeyEvent *)xEvent)->keycode;
   //ximKeyCode = XKeysymToKeycode([XGServer currentXDisplay],keysym);
 
   /* Add NSNumericPadKeyMask if the key is in the KeyPad */
