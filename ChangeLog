@@ -1,3 +1,8 @@
+2002-06-28  Adam Fedor  <fedor@gnu.org>
+
+	* Source/xlib/XGFont.m ([XGFontInfo -xCharStructForGlyph:glyph]):
+	Fix variable typo - using wrong index to glyph.
+
 2002-06-24  Adam Fedor  <fedor@gnu.org>
 
 	* Source/x11/XGServerWindow.m ([XGServer -windowdevice:]): Use
