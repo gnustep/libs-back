@@ -394,6 +394,23 @@ NSDebugLLog(@"Frame", @"O2H %d, %@, %@", win->number,
 }
 
 /*
+ * Convert a window frame in X  coordinates relative to the X-window to a frame
+ * in OpenStep  coordinates relative to the window by flipping.
+ */
+- (NSRect) _XWinFrameToOSWinFrame: (NSRect)x for: (void*)window
+{
+  gswindow_device_t	*win = (gswindow_device_t*)window;
+  NSRect	o;
+  o.size.width = x.size.width;
+  o.size.height = x.size.height;
+  o.origin.x = x.origin.x;
+  o.origin.y = win->siz_hints.height - x.origin.y;
+  o.origin.y = o.origin.y - o.size.height;
+  NSDebugLLog(@"GGFrame", @"%@ %@", NSStringFromRect(x), NSStringFromRect(o));
+  return o;
+}
+
+/*
  * Convert a window frame in X absolute screen coordinates to a frame
  * in OpenStep absolute screen coordinates by flipping an applying
  * offsets to allow for the X window decorations.
@@ -414,6 +431,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   NSStringFromRect(x), NSStringFromRect(o));
   return o;
 }
+
 
 - (XGWMProtocols) _checkWindowManager
 {
@@ -2015,9 +2033,13 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 
       // Transform the rectangle's coordinates to PS coordinates and add
       // this new rectangle to the list of exposed rectangles.
-      rect.origin = NSMakePoint((float)rectangle.x, rectangle.y);
-      rect.size = NSMakeSize(rectangle.width, rectangle.height);
-      [window->exposedRects addObject: [NSValue valueWithRect: rect]];
+      {
+ 	rect = [self _XWinFrameToOSWinFrame: 
+		       NSMakeRect(rectangle.x, rectangle.y,
+				  rectangle.width, rectangle.height)
+ 		                        for: window];
+	[window->exposedRects addObject: [NSValue valueWithRect: rect]];
+      }
     }
 }
 
@@ -2082,7 +2104,9 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 // handle X expose events
 - (void) _processExposedRectangles: (int)win
 {
+  int n;
   gswindow_device_t *window;
+  NSWindow *gui_win;
 
   window = WINDOW_WITH_TAG(win);
   if (!window)
@@ -2098,8 +2122,29 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   // We should determine the views that need to be redisplayed. Until we
   // fully support scalation and rotation of views redisplay everything.
   // FIXME: It seems wierd to trigger a front-end method from here...
-  [GSWindowWithNumber(win) display];
 
+  // We simply invalidate the 
+  // corresponding rectangle of the contentview.
+
+  gui_win = GSWindowWithNumber(win);
+
+  n = [window->exposedRects count];
+  if( n > 0 )
+    {
+      NSView *v;
+      NSValue *val[n];
+      int i;
+
+      v = [gui_win contentView];
+	
+      [window->exposedRects getObjects: val];
+      for( i = 0; i < n; ++i)
+	{
+	  NSRect rect = [val[i] rectValue];
+	  [v setNeedsDisplayInRect: rect];
+	}
+    }
+	    
   // Restore the exposed rectangles and the region
   [window->exposedRects removeAllObjects];
   XDestroyRegion (window->region);
