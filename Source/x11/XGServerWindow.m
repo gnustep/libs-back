@@ -879,6 +879,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 }
 
 - (int) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style
+	      : (int)screen
 {
   static int		last_win_num = 0;
   gswindow_device_t	*window;
@@ -889,6 +890,8 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 
   NSDebugLLog(@"XGTrace", @"DPSwindow: %@ %d", NSStringFromRect(frame), type);
   root = [self _rootWindowForScreen: XSCR];
+
+  frame = [NSWindow contentRectForFrameRect: frame styleMask: style];
 
   /* We're not allowed to create a zero rect window */
   if (NSWidth(frame) <= 0 || NSHeight(frame) <= 0)

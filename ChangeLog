@@ -1,3 +1,14 @@
+2002-04-22  Adam Fedor  <fedor@gnu.org>
+
+	* configure.in: Check for gdi32.
+
+	* Source/win32/WIN32Server.m (window::::): Update for new interface -
+	frame is frame rect, not content rect.
+	
+	* Source/x11/XGServer.m (-_initXContext): Look for
+	display attributes in server_info.
+	* Source/x11/XGServerWindow.m (-window::::): Update for new interface.
+
 2002-04-21  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/win32

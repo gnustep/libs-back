@@ -2720,6 +2720,59 @@ fi
 
 CPPFLAGS="$save_CPPFLAGS"
 
+#--------------------------------------------------------------------
+# Window's graphics library
+#--------------------------------------------------------------------
+save_header=${CPPFLAGS}
+save_libs=${LIBS}
+CPPFLAGS="${GRAPHIC_CFLAGS} ${GRAPHIC_LFLAGS} ${CPPFLAGS}"
+LIBS="${GRAPHIC_LIBS} ${LIBS}"
+echo $ac_n "checking for main in -lgdi32""... $ac_c" 1>&6
+echo "configure:2732: checking for main in -lgdi32" >&5
+ac_lib_var=`echo gdi32'_'main | sed 'y%./+-%__p_%'`
+if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_save_LIBS="$LIBS"
+LIBS="-lgdi32  $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 2740 "configure"
+#include "confdefs.h"
+
+int main() {
+main()
+; return 0; }
+EOF
+if { (eval echo configure:2747: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=no"
+fi
+rm -f conftest*
+LIBS="$ac_save_LIBS"
+
+fi
+if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+  have_gdi32=yes
+else
+  echo "$ac_t""no" 1>&6
+have_gdi32=no
+fi
+
+if test "$have_gdi32" = yes; then
+  GRAPHIC_LIBS="-lgdi32 ${GRAPHIC_LIBS}"
+fi
+CPPFLAGS="${save_header}"
+LIBS="${save_libs}"
+
+#--------------------------------------------------------------------
+# Set definitions
+#--------------------------------------------------------------------
 WITH_WRASTER=no
 if test $gs_cv_have_wraster = yes -a $set_x_paths = no; then
   cat >> confdefs.h <<\EOF
@@ -2788,7 +2841,7 @@ fi
 
 
 echo $ac_n "checking Backend Server""... $ac_c" 1>&6
-echo "configure:2792: checking Backend Server" >&5
+echo "configure:2845: checking Backend Server" >&5
 if test "x$enable_win32" = "xyes"; then
   BUILD_WIN32=yes
   
@@ -2811,7 +2864,7 @@ EOF
 fi
 
 echo $ac_n "checking Backend Graphics""... $ac_c" 1>&6
-echo "configure:2815: checking Backend Graphics" >&5
+echo "configure:2868: checking Backend Graphics" >&5
 if test "x$enable_winlib" = "xyes"; then
   BUILD_WINLIB=yes
   
@@ -2819,8 +2872,7 @@ if test "x$enable_winlib" = "xyes"; then
 #define BUILD_WINLIB 1
 EOF
 
-  echo "$ac_t""winlib" 1>&6
-  GRAPHIC_LIBS=-lgdi32
+  echo "$ac_t""win32" 1>&6
   enable_xdps=no
   enable_xlib=no
 fi
@@ -2855,7 +2907,7 @@ if test "${with_name+set}" = set; then
 fi
 
 echo $ac_n "checking Backend name""... $ac_c" 1>&6
-echo "configure:2858: checking Backend name" >&5
+echo "configure:2911: checking Backend name" >&5
 if test "x$with_name" = "x"; then
  BACKEND_NAME=back
 else

@@ -118,12 +118,27 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
   Display		*dpy;
   int			screen_number;
   NSString		*display_name;
+  NSRange               disnum;
   RContext		*rcontext;
   RContextAttributes	*attribs;
   XColor		testColor;
   unsigned char		r, g, b;
   
-  display_name = [server_info objectForKey: @"DisplayName"];
+  display_name = [server_info objectForKey: GSDisplayName];
+  if (display_name == nil)
+    {
+      NSString *dn = [server_info objectForKey: GSDisplayNumber];
+      NSString *sn = [server_info objectForKey: GSScreenNumber];
+      if (dn || sn)
+	{
+	  if (dn == NULL)
+	    dn = @"0";
+	  if (sn == NULL)
+	    sn = @"0";
+	  display_name = [NSString stringWithFormat: @":%@.%@", dn, sn];
+	}
+    }
+
   if (display_name == nil)
     {
       NSString	*host;
@@ -213,6 +228,13 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
     }
   else
     NSDebugLog(@"Opened display %@", display_name);
+
+  [server_info setObject: display_name forKey: GSDisplayName];
+  disnum = [display_name rangeOfString: @":"];
+  if (disnum.location >= 0)
+    [server_info setObject: [display_name substringFromIndex: disnum.location]
+		    forKey: GSDisplayNumber];
+  [server_info setObject: [display_name pathExtension] forKey: GSScreenNumber];
 
   /* Get the visual information */
   attribs = NULL;
@@ -325,8 +347,8 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
 */
 - (id) initWithAttributes: (NSDictionary *)info
 {
-  [self _initXContext];
   [super initWithAttributes: info];
+  [self _initXContext];
 
   [self setupRunLoopInputSourcesForMode: NSDefaultRunLoopMode]; 
   [self setupRunLoopInputSourcesForMode: NSConnectionReplyMode]; 
