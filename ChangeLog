@@ -1,3 +1,15 @@
+2003-09-02  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/xpbs.m
+	Made all calls to XGetAtomName() free their memory later on.
+	Removed function osTypeToX(). Extracted method
+	[getSelectionData:type:] from [xSelectionNotify:]. 
+	[xSelectionNotify:] now supports incremental data transfer and is
+	save against failing string conversions. Complete rewrite of
+	[xProvideSelection:] to better follow the ICCCM
+	specification. This now implements TIMESTAMP, MULTIPLE and
+	COMPOUND_TEXT (all untested!)
+	
 2003-08-31  Adam Fedor  <fedor@gnu.org>
 
 	* Tools/gpbs.m (init): Close file descriptors so gpbs can be a proper
