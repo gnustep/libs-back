@@ -109,17 +109,6 @@
   /* FIXME */
 }
 
-- (NSColor *) NSReadPixel: (NSPoint)location
-{
-  /* FIXME */
-  return nil;
-}
-
-- (void) beep
-{
-  /* FIXME: Flash screen? */
-}
-
 + (void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
 {
   NSLog (@"expose");
