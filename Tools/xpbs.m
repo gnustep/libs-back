@@ -563,7 +563,8 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
       if ([self waitingForSelection] != 0)
         {
 	  [self setWaitingForSelection: 0];
-	  NSLog(@"Timed out waiting for X selection");
+	  NSLog(@"Timed out waiting for X selection '%s'", 
+		XGetAtomName(xDisplay, xType));
 	}
     }
 }
@@ -585,7 +586,7 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
     }
   else
     {
-      NSLog(@"Request for non-string info from X pasteboard");
+      NSLog(@"Request for non-string info from X pasteboard: %@", type);
     }
   [pb setData: [self data] forType: type];
 }
@@ -751,7 +752,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	}
       else
 	{
-	  NSLog(@"Unsupported data type from X selection.");
+	  NSLog(@"Unsupported data type '%s' from X selection.", 
+		XGetAtomName(xDisplay, actual_type));
 	}
     }
   
