@@ -54,6 +54,54 @@
 
 extern int XGErrorHandler(Display *display, XErrorEvent *err);
 
+static NSString *
+_parse_display_name(NSString *name, int *dn, int *sn)
+{
+  int d, s;
+  NSString *host;
+  NSArray  *a;
+
+  host = @"";
+  d = s = 0;
+  a = [name componentsSeparatedByString: @":"];
+  if (name == nil)
+    {
+      NSLog(@"X DISPLAY environment variable not set,"
+	    @" assuming local X server (DISPLAY=:0.0)");
+    }
+  else if ([name hasPrefix: @":"] == YES)
+    {
+      int bnum;
+      bnum = sscanf([name cString], ":%d.%d", &d, &s);
+      if (bnum == 1)
+	s = 0;
+      if (bnum < 1)
+	d = 0;
+    }  
+  else if ([a count] != 2)
+    {
+      NSLog(@"X DISPLAY environment variable has bad format,"
+	    @" assuming local X server (DISPLAY=:0.0)");
+    }
+  else
+    {
+      int bnum;
+      NSString *dnum;
+      host = [a objectAtIndex: 0];
+      dnum = [a lastObject];
+      bnum = sscanf([dnum cString], "%d.%d", &d, &s);
+      if (bnum == 1)
+	s = 0;
+      if (bnum < 1)
+	d = 0;
+    }
+  if (dn)
+    *dn = d;
+  if (sn)
+    *sn = s;
+  return host;
+}
+
 @interface XGServer (Window)
 - (void) _setupRootWindow;
 @end
@@ -241,11 +289,11 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
 
 - _initXContext
 {
-  int			screen_number;
-  NSString		*display_name;
-  NSRange               disnum;
+  int			screen_number, display_number;
+  NSString		*display_name, *host;
   XGScreenContext       *screen;
-  
+
+  host = [[NSUserDefaults standardUserDefaults] stringForKey: @"NSHost"];
   display_name = [server_info objectForKey: GSDisplayName];
   if (display_name == nil)
     {
@@ -257,74 +305,45 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
 	    dn = @"0";
 	  if (sn == NULL)
 	    sn = @"0";
-	  display_name = [NSString stringWithFormat: @":%@.%@", dn, sn];
+	  if (host == nil)
+	    host = @"";
+	  display_name = [NSString stringWithFormat: @"%@:%@.%@", host, dn,sn];
 	}
     }
 
   if (display_name == nil)
     {
-      NSString	*host;
-      NSString	*dnum = @"0.0";
-
-      host = [[NSUserDefaults standardUserDefaults] stringForKey: @"NSHost"];
       if (host == nil)
 	{
 	  NSString	*d = [[[NSProcessInfo processInfo] environment]
 	    objectForKey: @"DISPLAY"];
 
-	  if (d == nil)
+	  host = _parse_display_name(d, &display_number, &screen_number);
+	  if (display_number != 0)
 	    {
-	      host = @"";
+	      NSLog(@"NOTE: Only one display per host fully supported.");
 	    }
-	  else
+	  if ([host isEqual: @""] == NO)
 	    {
-	      if ([d hasPrefix: @":"] == YES)
-		{
-		  host = @"";	// local host
-		}
-	      else
-		{
-		  NSArray	*a = [d componentsSeparatedByString: @":"];
-
-		  if ([a count] != 2)
-		    {
-		      NSLog(@"X DISPLAY environment variable has bad format"
-			@" assuming local X server (DISPLAY=:0.0)");
-		      host = @"";
-		    }
-		  else
-		    {
-		      host = [a objectAtIndex: 0];
-		      dnum = [a lastObject];
-		      if ([dnum isEqual: @"0"] == NO
-			&& [dnum hasPrefix: @"0."] == NO)
-			{
-			  NSLog(@"Only one display per host fully supported.");
-			}
-		    }
-		}
-	      if ([host isEqual: @""] == NO)
-		{
-		  /**
-		   * If we are using the DISPLAY environment variable to
-		   * determine where to display, set the NSHost default
-		   * so that other parts of the system know where we are
-		   * displaying.
-		   */
-		  [[NSUserDefaults standardUserDefaults] registerDefaults:
-		    [NSDictionary dictionaryWithObject: host
-						forKey: @"NSHost"]];
-		}
+	      /**
+	       * If we are using the DISPLAY environment variable to
+	       * determine where to display, set the NSHost default
+	       * so that other parts of the system know where we are
+	       * displaying.
+	       */
+	      [[NSUserDefaults standardUserDefaults] registerDefaults:
+		  [NSDictionary dictionaryWithObject: host
+			                      forKey: @"NSHost"]];
 	    }
 	}
-      if ([host isEqual: @""] == NO)
+      else if ([host isEqual: @""] == NO)
 	{
 	  /**
 	   * If the NSHost default told us to display somewhere, we need
 	   * to generate a display name for X from the host name and the
 	   * default display and screen numbers (zero).
 	   */
-	  display_name = [NSString stringWithFormat: @"%@:%@", host, dnum];
+	  display_name = [NSString stringWithFormat: @"%@:0.0", host];
 	}
     }
 
@@ -338,25 +357,22 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
       display_name = [NSString stringWithCString: XDisplayName(NULL)];
     }
 
-  /* Use the fact that the screen number is specified like an extension
-     e.g. hostname:0.1 */
-  screen_number = [[display_name pathExtension] intValue];
-
   if (dpy == NULL)
     {
       char *dname = XDisplayName([display_name cString]);
       [NSException raise: NSWindowServerCommunicationException
 		  format: @"Unable to connect to X Server `%s'", dname];
     }
-  else
-    NSDebugLog(@"Opened display %@", display_name);
 
+  /* Parse display information */
+  _parse_display_name(display_name, &display_number, &screen_number);
+  NSDebugLog(@"Opened display %@, display %d screen %d", 
+	     display_name, display_number, screen_number);
   [server_info setObject: display_name forKey: GSDisplayName];
-  disnum = [display_name rangeOfString: @":"];
-  if (disnum.location >= 0)
-    [server_info setObject: [display_name substringFromIndex: disnum.location]
-		    forKey: GSDisplayNumber];
-  [server_info setObject: [display_name pathExtension] forKey: GSScreenNumber];
+  [server_info setObject: [NSNumber numberWithInt: display_number]
+		  forKey: GSDisplayNumber];
+  [server_info setObject: [NSNumber numberWithInt: screen_number] 
+	          forKey: GSScreenNumber];
 
   /* Setup screen*/
   if (screenList == NULL)
