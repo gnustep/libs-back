@@ -845,6 +845,8 @@ static void clip_svp_callback(void *data, int y, int start,
 
   clip_sx = clip_x1 - clip_x0;
   clip_sy = clip_y1 - clip_y0;
+  
+  [self DPSnewpath];
 }
 
 - (void) DPSinitclip;
