@@ -74,8 +74,8 @@ typedef struct _gswindow_device_t {
   int                   screen;        /* Screeen this window is on */
   GC                    gc;            /* GC for drawing */
   long                  number;        /* Globally unique identifier */
-  int                   depth;         /* Window depth */
-  int                   border;        /* Border size */
+  unsigned int          depth;         /* Window depth */
+  unsigned int          border;        /* Border size */
   int			map_state;     /* X map state */
   int                   visibility;    /* X visibility */
   NSBackingStoreType    type;          /* Backing type */
