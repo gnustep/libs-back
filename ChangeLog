@@ -1,3 +1,19 @@
+2005-01-11 20:27  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ARTGState.h: Add strokeadjust ivar.
+	* Source/art/ARTContext.m (-DPScurrentstrokeadjust)
+	(-DPSsetstrokeadjust): Use the strokeadjust ivar.
+	* Source/art/path.m (-DPSrectclip::::): Don't use the optimized
+	path if the clipping path is complex.
+	(-_stroke::): Remove second argument, rename to ...
+	(-_stroke:): ... this. If strokeadjust is active, adjust the path
+	to make it clearer.
+	(-DPSrectstroke::::): Update _stroke::: call. Remove dash adjustment
+	code.
+	(-DPSstroke): Update _stroke:: call.
+	* Source/art/composite.m: Fix comment typo. Remove some old
+	debugging code.
+
 2005-01-11 16:15  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/blit.m: Remove #warning:s.

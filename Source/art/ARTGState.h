@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2003, 2005 Free Software Foundation, Inc.
 
    Author:  Alexander Malmberg <alexander@malmberg.org>
 
@@ -53,6 +53,7 @@
 	float line_width;
 	int linecapstyle,linejoinstyle;
 	float miter_limit;
+	BOOL strokeadjust;
 
 	struct _ArtVpathDash dash;
 	int do_dash;

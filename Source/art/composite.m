@@ -454,12 +454,6 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
   if (all_clipped) return;
 
 
-/*  NSLog(@"composite op=%i  (%g %g)+(%g %g)->(%g %g)",op,
-    aRect.origin.x,aRect.origin.y,
-    aRect.size.width,aRect.size.height,
-    aPoint.x,aPoint.y);*/
-
-
   {
     BOOL dst_needs_alpha;
     op = [self _composite_func: !ags->wi->has_alpha : NO
@@ -870,7 +864,6 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
   if (!wi || !wi->data || !ags->wi || !ags->wi->data) return;
   if (all_clipped) return;
 
-
   /* Set up all the pointers and clip things */
 
   dbpl = wi->bytes_per_line;
@@ -1031,7 +1024,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
       }
   }
 
-  /* this breaks the alpha pointer in some, but that's ok since in
+  /* this breaks the alpha pointer in some cases, but that's ok since in
      all those cases, the alpha pointer isn't used (inline alpha or
      no alpha) */
   if (order == 2)

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2003, 2005 Free Software Foundation, Inc.
 
    Author:  Alexander Malmberg <alexander@malmberg.org>
 
@@ -43,6 +43,29 @@ Path handling.
 
 #if 0
 /* useful when debugging */
+static void dump_vpath(ArtVpath *vp)
+{
+  int i;
+  printf("** dumping %p **\n", vp);
+  for (i = 0; ; i++)
+    {
+      if (vp[i].code == ART_MOVETO_OPEN)
+	printf("  moveto_open");
+      else if (vp[i].code == ART_MOVETO)
+	printf("  moveto");
+      else if (vp[i].code == ART_LINETO)
+	printf("  lineto");
+      else if (vp[i].code == ART_END)
+	printf("  end");
+      else
+	printf("  unknown %i", vp[i].code);
+
+      printf(" (%g %g)\n",
+	     vp[i].x, vp[i].y);
+      if (vp[i].code == ART_END)
+	break;
+    }
+}
 static void dump_bpath(ArtBpath *vp)
 {
   int i;
@@ -823,7 +846,7 @@ static void clip_svp_callback(void *data, int y, int start,
 		     axis: &x0 : &y0 : &x1 : &y1
 		     pixel: NO];
 
-  if (!axis_aligned)
+  if (!axis_aligned || clip_span)
     {
       svp = art_svp_from_vpath(vp);
       [self _clip_add_svp: svp];
@@ -1035,11 +1058,13 @@ static void clip_svp_callback(void *data, int y, int start,
 /** Stroking **/
 
 /* will free the passed in vpath */
--(void) _stroke: (ArtVpath *)vp  : (BOOL)adjust_dash_ofs
+-(void) _stroke: (ArtVpath *)vp
 {
   double temp_scale;
-  ArtVpath *vp2;
   ArtSVP *svp;
+
+  float dash_adjust;
+
 
   /* TODO: this is a hack, but it's better than nothing */
   /* since we flip vertically, the signs here should really be
@@ -1048,14 +1073,155 @@ static void clip_svp_callback(void *data, int y, int start,
 			 ctm->matrix.m12 * ctm->matrix.m21));
   if (temp_scale <= 0) temp_scale = 1;
 
+
+  /*
+  If stroke-adjusting (or something equivalent) is active, we want to adjust
+  the path so it will turn out nice and sharp.
+
+  To do this, we round the line width to the closest integer width. To get
+  sharp lines, we then want each pixel to be at an integer coordinate, or
+  an integer plus 0.5, depending on the width and a bunch of other things.
+  */
+  if (strokeadjust
+
+      /* No point trying to adjust width 0 lines.  (if they were implemented
+         properly)  */
+      && line_width > 0
+
+      /* Nor if the path is empty.  */
+      && vp[0].code != ART_END)
+    {
+      int i;
+
+      int effective_width = rint(temp_scale * line_width);
+      float ofs;
+
+      int last_move;
+
+      /* Paths with more elements than this won't be adjusted.  */
+#define MAX_LEN 1024
+      unsigned char flags[MAX_LEN];
+      /*
+	 1 start of vertical line
+	 2 start of horizontal line
+	 4 end-point on vertical line
+	 8 end-point on horizontal line
+      */
+
+      temp_scale = effective_width / line_width;
+
+      if (effective_width & 1)
+	ofs = 0.5;
+      else
+	ofs = 0.0;
+
+      last_move = 0;
+      /* TODO: use epsilons instead of exact comparisons?  makes rounding
+	 a huge mess.  */
+      flags[0] = 0;
+      for (i = 1; i < MAX_LEN; i++)
+	{
+	  flags[i] = 0;
+	  /* If this is a closed sub-path, consider the line from the last
+	     element to the moveto.  */
+	  if (vp[i].code != ART_LINETO)
+	    {
+	      if (vp[last_move].code == ART_MOVETO)
+		{
+		  if (vp[i - 1].x == vp[last_move].x)
+		    {
+		      flags[i - 1] |= 1;
+		      flags[last_move] |= 1;
+		    }
+		  if (vp[i - 1].y == vp[last_move].y)
+		    {
+		      flags[i - 1] |= 2;
+		      flags[last_move] |= 2;
+		    }
+		}
+	      else
+		{
+		  if (flags[last_move] & 1)
+		    flags[last_move] |= 4;
+		  if (flags[last_move] & 2)
+		    flags[last_move] |= 8;
+
+		  if (flags[i - 1] & 1)
+		    flags[i - 1] |= 4;
+		  if (flags[i - 1] & 2)
+		    flags[i - 1] |= 8;
+		}
+	    }
+
+	  if (vp[i].code == ART_END)
+	    break;
+
+	  if (vp[i].code == ART_MOVETO
+	      || vp[i].code == ART_MOVETO_OPEN)
+	    {
+	      last_move = i;
+	    }
+	  else
+	    {
+	      if (vp[i - 1].x == vp[i].x)
+		{
+		  flags[i - 1] |= 1;
+		  flags[i] |= 1;
+		}
+	      if (vp[i - 1].y == vp[i].y)
+		{
+		  flags[i - 1] |= 2;
+		  flags[i] |= 2;
+		}
+	    }
+	}
+
+      if (i < MAX_LEN)
+	{
+	  for (i = 0; ; i++)
+	    {
+	      if (vp[i].code == ART_END)
+		break;
+	      if (flags[i] & 1)
+		vp[i].x = floorf(vp[i].x) + ofs;
+	      else if (flags[i] & 8)
+		vp[i].x = floorf(vp[i].x + 0.5);
+	      if (flags[i] & 2)
+		vp[i].y = floorf(vp[i].y) + ofs;
+	      else if (flags[i] & 4)
+		vp[i].y = floorf(vp[i].y + 0.5);
+	    }
+	}
+
+      /* Try to line an integer dash offset up on a pixel boundary near
+	 the first point.  (Safe because we know the path isn't empty
+	 at this point.)  */
+      dash_adjust = 0.0;
+      if (vp[1].code == ART_LINETO)
+	{
+	  if (fabs(vp[0].x - vp[1].x) < 0.1)
+	    dash_adjust = rint(vp[0].y) - vp[0].y;
+	  else if (fabs(vp[0].y - vp[1].y) < 0.1)
+	    dash_adjust = rint(vp[0].x) - vp[0].x;
+	}
+#undef MAX_LEN
+    }
+  else
+    {
+      dash_adjust = 0.0;
+    }
+
+
   if (do_dash)
     {
       /* try to adjust the offset so dashes appear on pixel boundaries
          (otherwise it turns into an antialiased blur) */
       int i;
+      float old_offset = dash.offset;
+      ArtVpath *vp2;
 
-      if (adjust_dash_ofs)
-	dash.offset += (((int)line_width) & 1) / 2.0;
+      if (!dash.offset)
+	dash.offset += dash_adjust;
 
       for (i = 0; i < dash.n_dash; i++)
 	dash.dash[i] *= temp_scale;
@@ -1067,8 +1233,7 @@ static void clip_svp_callback(void *data, int y, int start,
       art_free(vp);
       vp = vp2;
 
-      if (adjust_dash_ofs)
-	dash.offset -= (((int)line_width) & 1) / 2.0;
+      dash.offset = old_offset;
     }
 
   svp = art_svp_vpath_stroke(vp, linejoinstyle, linecapstyle,
@@ -1096,15 +1261,6 @@ static void clip_svp_callback(void *data, int y, int start,
   if (!stroke_color[3]) return;
 
   vp = art_new(ArtVpath, 6);
-
-  if (line_width == (int)line_width && ((int)line_width) & 1)
-    { /* TODO: only do this if stroke-adjust is on? */
-      /* TODO: check coordinates to see how much we should adjust */
-      x += 0.5;
-      y += 0.5;
-      w -= 1;
-      h -= 1;
-    }
 
   vp[0].code = ART_MOVETO;
   vp[0].x = x; vp[0].y = y;
@@ -1135,7 +1291,7 @@ static void clip_svp_callback(void *data, int y, int start,
   art_free(vp);
   vp = vp2;
 
-  [self _stroke: vp : YES];
+  [self _stroke: vp];
 }
 
 - (void) DPSstroke
@@ -1177,7 +1333,7 @@ will give correct results as long as both axises are scaled the same.
   if (!vp)
     return;
 
-  [self _stroke: vp : NO];
+  [self _stroke: vp];
 
   [path removeAllPoints];
 }
