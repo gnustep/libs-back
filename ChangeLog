@@ -1,3 +1,8 @@
+2004-09-28  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerEvent.m (initialize_keyboard): Corrected typo
+	reported by Benhur Stein <benhur.stein@gmail.com>.
+
 2004-09-24  Adrian Robert <arobert@cogsci.ucsd.edu>
 
 	* Source/x11/XGServerEvent.m: Improvement of earlier update to
