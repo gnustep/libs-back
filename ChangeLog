@@ -1,3 +1,7 @@
+2003-09-29  Adam Fedor  <fedor@gnu.org>
+
+	* Version 0.9.0
+
 2003-09-22 13:03  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/image.m (-_image_do_rgb_transform:::): Check if the
