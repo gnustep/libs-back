@@ -26,7 +26,7 @@
 
 #include "ARTGState.h"
 
-#include "ARTWindowBuffer.h"
+#include "x11/XWindowBuffer.h"
 #include "blit.h"
 
 
