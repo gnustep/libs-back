@@ -2539,7 +2539,7 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
 	{
 	  if ((unsigned short)((char)*data++) > 128)
 	    {
-	      *cData |= (0x01 << i);
+	      *cData |= (0x01 << j);
 	    }
 	  cData++;
 	}
@@ -2791,15 +2791,5 @@ _computeDepth(int class, int bpp)
 		   DisplayHeight(dpy, screen));
 }
 
-@end
-
-
-#include	"x11/XGSlideView.h"
-
-@implementation XGServer (Sliding)
-- (BOOL) slideImage: (NSImage*)image from: (NSPoint)from to: (NSPoint)to
-{
-  return [XGSlideView _slideImage: image from: from to: to];
-}
 @end
 
