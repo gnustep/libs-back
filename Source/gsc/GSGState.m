@@ -458,9 +458,9 @@
    /* Initialize colors. By default the same color is used for filling and 
      stroking unless fill and/or stroke color is set explicitly */
   fillColor = gsMakeColor(gray_colorspace, 0, 0, 0, 0);
-  [self setColor: fillColor state: COLOR_BOTH];
   fillColor.field[AINDEX] = 1.0;
   strokeColor.field[AINDEX] = 1.0;
+  [self setColor: fillColor state: COLOR_BOTH];
 
   charSpacing = 0;
   textMode    = GSTextFill;
