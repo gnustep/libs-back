@@ -24,9 +24,6 @@
 #define blit_h
 
 
-#include <libart_lgpl/libart.h>
-
-
 /** Information about how we draw stuff **/
 
 

@@ -1,3 +1,9 @@
+2003-04-02 14:04  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ARTContext.m, Source/art/blit.h: Clean up includes.
+
+	* Source/art/blit.m (plusd_aa): Fix calculation of alpha.
+
 2003-03-29 19:13  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ARTContext.m, Source/art/blit.h, Source/art/blit.m,

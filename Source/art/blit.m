@@ -31,8 +31,6 @@ This file includes itself. Many times. You have been warned.
 
 #include <Foundation/NSDebug.h>
 
-#include "x11/XGServer.h"
-
 #include "blit.h"
 
 #endif
@@ -1142,7 +1140,7 @@ static void MPRE(plusd_aa) (composite_run_t *c, int num)
       dr += sr - 255; if (dr<0) dr = 0;
       dg += sg - 255; if (dg<0) dg = 0;
       db += sb - 255; if (db<0) db = 0;
-      da += sa - 255; if (da<0) da = 0;
+      da += sa;       if (da>255) da = 255;
 
       BLEND_WRITE_ALPHA(d, dst_alpha, dr, dg, db, da)
 
