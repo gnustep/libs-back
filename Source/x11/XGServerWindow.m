@@ -1575,10 +1575,8 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   if (op != NSWindowOut && window->map_state != IsViewable)
     {
       XMoveWindow(dpy, window->ident, window->siz_hints.x,
-      	window->siz_hints.y);
+	window->siz_hints.y);
       setNormalHints(dpy, window);
-      /* Set this to ignore any take focus events for this window */
-      generic.desiredOrderedWindow = winNum;
     }
 
   switch (op)
@@ -2353,7 +2351,6 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   NSDebugLLog(@"Focus", @"Setting focus to %d", window->number);
   generic.desiredFocusWindow = win;
   generic.focusRequestNumber = XNextRequest(dpy);
-  generic.desiredOrderedWindow = 0;
   XSetInputFocus(dpy, window->ident, RevertToParent, generic.lastTime);
   [inputServer ximFocusICWindow: window];
 }

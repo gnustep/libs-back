@@ -76,7 +76,6 @@ struct XGGeneric {
   long			currentFocusWindow;
   long			desiredFocusWindow;
   unsigned long		focusRequestNumber;
-  unsigned long         desiredOrderedWindow;
   unsigned char		lMouse;
   unsigned char		mMouse;
   unsigned char		rMouse;
