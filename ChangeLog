@@ -1,3 +1,7 @@
+2004-07-14  Adam Fedor  <fedor@gnu.org>
+
+	* Documentation/Back/Standards.txt: update.
+
 2004-07-13 03:11  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/shfill.m (function_setup, -DPSshfill:): NSDebugLLog
