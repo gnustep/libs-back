@@ -852,7 +852,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 #ifdef FT212_STUFF
 		cur.type = ftc_image_grays;
 #else
-		cur.flags = ftc_image_grays;
+		cur.flags = FT_LOAD_TARGET_NORMAL;
 #endif
 		rh = (rh >> 8) & 0xff;
 	      }
@@ -861,7 +861,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 #ifdef FT212_STUFF
 		cur.type = ftc_image_mono;
 #else
-		cur.flags = ftc_image_mono;
+		cur.flags = FT_LOAD_TARGET_MONO;
 #endif
 		rh = rh & 0xff;
 	      }
@@ -869,26 +869,26 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 #ifdef FT212_STUFF
 	      cur.type |= ftc_image_flag_autohinted;
 #else
-	      cur.flags |= ftc_image_flag_autohinted;
+	      cur.flags |= FT_LOAD_FORCE_AUTOHINT;
 #endif
 	    if (!(rh & 2))
 #ifdef FT212_STUFF
 	      cur.type |= ftc_image_flag_unhinted;
 #else
-	      cur.flags |= ftc_image_flag_unhinted;
+	      cur.flags |= FT_LOAD_NO_HINTING;
 #endif
 	  }
 	else if (xx < 8)
 #ifdef FT212_STUFF
 	  cur.type = ftc_image_grays | ftc_image_flag_unhinted;
 #else
-	  cur.flags = ftc_image_grays | ftc_image_flag_unhinted;
+	  cur.flags = FT_LOAD_TARGET_NORMAL | FT_LOAD_NO_HINTING;
 #endif
 	else
 #ifdef FT212_STUFF
 	  cur.type = ftc_image_grays;
 #else
-	  cur.flags = ftc_image_grays;
+	  cur.flags = FT_LOAD_TARGET_NORMAL;
 #endif
       }
     else
@@ -1295,7 +1295,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 #ifdef FT212_STUFF
 		cur.type = ftc_image_grays;
 #else
-		cur.flags = ftc_image_grays;
+		cur.flags = FT_LOAD_TARGET_NORMAL;
 #endif
 		rh = (rh >> 8) & 0xff;
 	      }
@@ -1304,7 +1304,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 #ifdef FT212_STUFF
 		cur.type = ftc_image_mono;
 #else
-		cur.flags = ftc_image_mono;
+		cur.flags = FT_LOAD_TARGET_MONO;
 #endif
 		rh = rh & 0xff;
 	      }
@@ -1312,26 +1312,26 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 #ifdef FT212_STUFF
 	      cur.type |= ftc_image_flag_autohinted;
 #else
-	      cur.flags |= ftc_image_flag_autohinted;
+	      cur.flags |= FT_LOAD_FORCE_AUTOHINT;
 #endif
 	    if (!(rh & 2))
 #ifdef FT212_STUFF
 	      cur.type |= ftc_image_flag_unhinted;
 #else
-	      cur.flags |= ftc_image_flag_unhinted;
+	      cur.flags |= FT_LOAD_NO_HINTING;
 #endif
 	  }
 	else if (xx < 8)
 #ifdef FT212_STUFF
 	  cur.type = ftc_image_grays | ftc_image_flag_unhinted;
 #else
-	  cur.flags = ftc_image_grays | ftc_image_flag_unhinted;
+	  cur.flags = FT_LOAD_TARGET_NORMAL | FT_LOAD_NO_HINTING;
 #endif
 	else
 #ifdef FT212_STUFF
 	  cur.type = ftc_image_grays;
 #else
-	  cur.flags = ftc_image_grays;
+	  cur.flags = FT_LOAD_TARGET_NORMAL;
 #endif
       }
     else
@@ -1642,7 +1642,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 #ifdef FT212_STUFF
 		cur.type = ftc_image_grays;
 #else
-		cur.flags = ftc_image_grays;
+		cur.flags = FT_LOAD_TARGET_NORMAL;
 #endif
 		rh = (rh >> 8) & 0xff;
 	      }
@@ -1651,7 +1651,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 #ifdef FT212_STUFF
 		cur.type = ftc_image_mono;
 #else
-		cur.flags = ftc_image_mono;
+		cur.flags = FT_LOAD_TARGET_MONO;
 #endif
 		rh = rh & 0xff;
 	      }
@@ -1659,26 +1659,26 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 #ifdef FT212_STUFF
 	      cur.type |= ftc_image_flag_autohinted;
 #else
-	      cur.flags |= ftc_image_flag_autohinted;
+	      cur.flags |= FT_LOAD_FORCE_AUTOHINT;
 #endif
 	    if (!(rh & 2))
 #ifdef FT212_STUFF
 	      cur.type |= ftc_image_flag_unhinted;
 #else
-	      cur.flags |= ftc_image_flag_unhinted;
+	      cur.flags |= FT_LOAD_NO_HINTING;
 #endif
 	  }
 	else if (xx < 8)
 #ifdef FT212_STUFF
 	  cur.type = ftc_image_grays | ftc_image_flag_unhinted;
 #else
-	  cur.flags = ftc_image_grays | ftc_image_flag_unhinted;
+	  cur.flags = FT_LOAD_TARGET_NORMAL | FT_LOAD_NO_HINTING;
 #endif
 	else
 #ifdef FT212_STUFF
 	  cur.type = ftc_image_grays;
 #else
-	  cur.flags = ftc_image_grays;
+	  cur.flags = FT_LOAD_TARGET_NORMAL;
 #endif
 
       if ((error=FTC_SBitCache_Lookup(ftc_sbitcache, &cur, glyph, &sbit, NULL)))
@@ -2278,7 +2278,10 @@ static int filters[3][7]=
 
     subpixel_text = [ud integerForKey: @"back-art-subpixel-text"];
 
-    anti_alias_by_default = [ud boolForKey: @"GSFontAntiAlias"];
+    if ([ud objectForKey: @"GSFontAntiAlias"])
+      anti_alias_by_default = [ud boolForKey: @"GSFontAntiAlias"];
+    else
+      anti_alias_by_default = YES;
 
     /* To make it easier to find an optimal (or at least good) filter,
     the filters are configurable (for now). */
@@ -2401,7 +2404,7 @@ static int filters[3][7]=
 #ifdef FT212_STUFF
 	  cur.type = ftc_image_grays, subpixel = YES, cur.font.pix_width *= 3, x *= 3;
 #else
-	  cur.flags = ftc_image_grays, subpixel = YES, cur.font.pix_width *= 3, x *= 3;
+	  cur.flags = FT_LOAD_TARGET_NORMAL, subpixel = YES, cur.font.pix_width *= 3, x *= 3;
 #endif
 //			imgd.type|=|ftc_image_flag_unhinted; /* TODO? when? */
       }
