@@ -582,12 +582,12 @@ seem to cause edges to be off by a pixel
 		{
 		  ri.a = src[3];
 		  /* TODO: find out if input is premultiplied or not */
-/*                if (ri.a && ri.a != 255)
-                    {
-                      ri.r = (255 * ri.r) / ri.a;
-                      ri.g = (255 * ri.g) / ri.a;
-                      ri.b = (255 * ri.b) / ri.a;
-                    }*/
+		  if (ri.a && ri.a != 255)
+		    {
+		      ri.r = (255 * ri.r) / ri.a;
+		      ri.g = (255 * ri.g) / ri.a;
+		      ri.b = (255 * ri.b) / ri.a;
+		    }
 		  if (alpha_dest)
 		    {
 		      if (src[3] == 255)
