@@ -1,3 +1,8 @@
+2003-06-11 15:32  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Implement -glyphWithName: and
+	-appendBezierPathWithGlyphs:count:toBezierPath:.
+
 2003-06-07 23:05  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Add some ifdef:s to get it to compile with
