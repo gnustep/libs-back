@@ -31,12 +31,7 @@
 #include <X11/Xutil.h>
 #include <x11/xdnd.h>
 
-#ifndef X_HAVE_UTF8_STRING
-#warning "XFRee86 UTF8 extension not used: gpbs supports ISO Latin 1 characters only"
-#endif
-
 static Atom	osTypeToX(NSString *t);
-static NSString	*xTypeToOs(Atom t);
 
 /*
  *	Non-predefined atoms that are used in the X selection mechanism
@@ -121,19 +116,6 @@ osTypeToX(NSString *t)
     return XG_NULL;
   else
     return XG_NULL;
-}
-
-static NSString*
-xTypeToOs(Atom t)
-{
-  if ((t == XG_UTF8_STRING) || 
-      (t == XG_TEXT) || 
-      (t == XA_STRING))
-    return NSStringPboardType;
-  else if (t == XG_FILE_NAME)
-    return NSFilenamesPboardType;
-  else
-    return nil;
 }
 
 
@@ -526,11 +508,8 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
    *	so we must tell the X server that we have the current selection.
    *	To conform to ICCCM we need to specify an up-to-date timestamp.
    */
-#ifdef X_HAVE_UTF8_STRING
    Atom defaultType = XG_UTF8_STRING;
-#else // X_HAVE_UTF8_STRING not defined
-   Atom defaultType = XA_STRING;
-#endif // X_HAVE_UTF8_STRING not defined
+   //Atom defaultType = XA_STRING;
 
   XSetSelectionOwner(xDisplay, _xPb, xAppWin, 
 		     [self xTimeByAppending: defaultType]);
@@ -560,7 +539,7 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
       
       /*
        * Ok - we got a timestamp, so we can ask the selection system for
-       * the pasteboard data that was/is valid for theat time.
+       * the pasteboard data that was/is valid for that time.
        * Ask the X system to provide the pasteboard data in the
        * appropriate property of our application root window.
        */
@@ -600,10 +579,8 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
    */
   if ([type isEqual: NSStringPboardType])
     {
-#ifdef X_HAVE_UTF8_STRING
       [self requestData: XG_UTF8_STRING];
       if ([self data] == nil)
-#endif // X_HAVE_UTF8_STRING not defined
 	[self requestData: XA_STRING];
     }
   else
@@ -674,10 +651,14 @@ xErrorHandler(Display *d, XErrorEvent *e)
 {
   int		status;
   unsigned char	*data;
-  Atom		actual_target;
+  long long_offset = 0L;
+  long long_length = FULL_LENGTH;
+  Atom req_type = AnyPropertyType;
+  Atom		actual_type;
   int		actual_format;
   unsigned long	bytes_remaining;
   unsigned long	number_items;
+  NSMutableData	*md = nil;
 
   if (xEvent->property == (Atom)None)
     {
@@ -696,46 +677,74 @@ xErrorHandler(Display *d, XErrorEvent *e)
   /*
    * Read data from property identified in SelectionNotify event.
    */
-  status = XGetWindowProperty(xDisplay,
-				xEvent->requestor,
-				xEvent->property,
-				0L,                             // offset
-				FULL_LENGTH,
-				True,               // Delete prop when read.
-				AnyPropertyType,
-				&actual_target,
-				&actual_format,
-				&number_items,
-				&bytes_remaining,
-				&data);
+  do
+    {
+      status = XGetWindowProperty(xDisplay,
+				  xEvent->requestor,
+				  xEvent->property,
+				  long_offset,         // offset
+				  long_length,
+				  True,               // Delete prop when read.
+				  req_type,
+				  &actual_type,
+				  &actual_format,
+				  &number_items,
+				  &bytes_remaining,
+				  &data);
+      
+      if ((status == Success) && (number_items > 0))
+        {
+	    long count = number_items * actual_format / 8;
 
-  if ((status == Success) && (number_items > 0))
+	    if (md == nil)
+	      {
+		md = [[NSMutableData alloc] initWithBytes: (void *)data
+					    length: count];  
+		req_type = actual_type;
+	      }
+	    else
+	      {
+		if (req_type != actual_type)
+		  {
+		    NSLog(@"Selection changed type from %s to %s.", 
+			  XGetAtomName(xDisplay, req_type),
+			  XGetAtomName(xDisplay, actual_type));
+		    RELEASE(md);
+		    return;
+		  }
+		[md appendBytes: (void *)data length: count];
+	      }
+
+	    long_offset += count / 4;
+	    if (data)
+	      {
+		XFree(data);
+	      }
+	}
+    }
+  while ((status == Success) && (bytes_remaining > 0));
+
+  if (status == Success)
     {
       // Convert data to text string.
-      if (actual_target == XG_UTF8_STRING)
+      if (actual_type == XG_UTF8_STRING)
 	{
-	  NSData	*d;
 	  NSString	*s;
+	  NSData	*d;
 
-	  d = [[NSData alloc] initWithBytes: (void *)data
-	                             length: number_items];
-	  s = [[NSString alloc] initWithData: d
+	  s = [[NSString alloc] initWithData: md
 	                            encoding: NSUTF8StringEncoding];
-	  RELEASE(d);
 	  d = [NSSerializer serializePropertyList: s];
 	  RELEASE(s);
 	  [self setData: d];
 	}
-      else if (actual_target == XA_STRING)
+      else if (actual_type == XA_STRING)
 	{
-	  NSData	*d;
 	  NSString	*s;
+	  NSData	*d;
 
-	  d = [[NSData alloc] initWithBytes: (void*)data 
-			      length: number_items];
-	  s = [[NSString alloc] initWithData: d
+	  s = [[NSString alloc] initWithData: md
 				encoding: NSISOLatin1StringEncoding];
-	  RELEASE(d);
 	  d = [NSSerializer serializePropertyList: s];
 	  RELEASE(s);
 	  [self setData: d];
@@ -744,10 +753,9 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	{
 	  NSLog(@"Unsupported data type from X selection.");
 	}
-
-      if (data)
-	XFree(data);
     }
+  
+  RELEASE(md);
 }
 
 - (void) xSelectionRequest: (XSelectionRequestEvent*)xEvent
