@@ -30,6 +30,7 @@
 
 @interface WIN32FontInfo : GSFontInfo
 {
+  HFONT hFont;
 }
 
 - (void) draw: (const char*)s lenght: (int)len 
