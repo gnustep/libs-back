@@ -1,3 +1,7 @@
+2003-10-15  Adam Fedor  <fedor@gnu.org>
+
+	* configure.ac: Don't look for jpeg/tiff (already linked in by gui).
+
 2003-10-08 15:58  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/xlib/XGContext.m (+initializeBackend): Give NSLog an
