@@ -1,3 +1,9 @@
+2002-10-10  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/XGGState.m
+	DPSsetdash::: now accepts an empty dash pattern, signaling a reset
+	to a solid line.
+
 2002-10-08  Adam Fedor  <fedor@gnu.org>
 
 	* Update for front-end passing colorspaces and fonts
