@@ -26,6 +26,11 @@
 #include <AppKit/NSPasteboard.h>
 #include <GNUstepGUI/GSPasteboardServer.h>
 
+#include <fcntl.h>
+#ifdef	HAVE_SYSLOG_H
+#include <syslog.h>
+#endif
+
 #include <signal.h>
 #include <unistd.h>
 
@@ -35,6 +40,66 @@
 
 #ifndef	NSIG
 #define	NSIG	32
+#endif
+
+static int	is_daemon = 0;		/* Currently running as daemon.	 */
+static char	ebuf[2048];
+
+#ifdef HAVE_SYSLOG
+
+static int	log_priority;
+
+static void
+gpbs_log (int prio)
+{
+  if (is_daemon)
+    {
+      syslog (log_priority | prio, ebuf);
+    }
+  else if (prio == LOG_INFO)
+    {
+      write (1, ebuf, strlen (ebuf));
+      write (1, "\n", 1);
+    }
+  else
+    {
+      write (2, ebuf, strlen (ebuf));
+      write (2, "\n", 1);
+    }
+
+  if (prio == LOG_CRIT)
+    {
+      if (is_daemon)
+	{
+	  syslog (LOG_CRIT, "exiting.");
+	}
+      else
+     	{
+	  fprintf (stderr, "exiting.\n");
+	  fflush (stderr);
+	}
+      exit(EXIT_FAILURE);
+    }
+}
+#else
+
+#define	LOG_CRIT	2
+#define LOG_DEBUG	0
+#define LOG_ERR		1
+#define LOG_INFO	0
+#define LOG_WARNING	0
+void
+gpbs_log (int prio)
+{
+  write (2, ebuf, strlen (ebuf));
+  write (2, "\n", 1);
+  if (prio == LOG_CRIT)
+    {
+      fprintf (stderr, "exiting.\n");
+      fflush (stderr);
+      exit(EXIT_FAILURE);
+    }
+}
 #endif
 
 @class PasteboardServer;
@@ -1047,8 +1112,9 @@ ihandler(int sig)
 static void
 init(int argc, char** argv)
 {
+  NSUserDefaults *defs;
   NSArray	*args = [[NSProcessInfo processInfo] arguments];
-  unsigned	count;
+  unsigned	count, c;
 
   for (count = 1; count < [args count]; count++)
     {
@@ -1122,6 +1188,7 @@ init(int argc, char** argv)
       exit(EXIT_SUCCESS);
     }
 #else
+      is_daemon = 1;
       switch (fork())
 	{
 	  case -1:
@@ -1148,6 +1215,48 @@ init(int argc, char** argv)
 	}
 #endif 
     }
+
+  /*
+   *	Ensure we don't have any open file descriptors which may refer
+   *	to sockets bound to ports we may try to use.
+   *
+   *	Use '/dev/null' for stdin and stdout.
+   */
+  for (c = 0; c < FD_SETSIZE; c++)
+    {
+      if (is_daemon || (c != 2))
+	{
+	  (void)close(c);
+	}
+    }
+  if (open("/dev/null", O_RDONLY) != 0)
+    {
+      sprintf(ebuf, "failed to open stdin from /dev/null (%s)\n",
+	strerror(errno));
+      gpbs_log(LOG_CRIT);
+      exit(EXIT_FAILURE);
+    }
+  if (open("/dev/null", O_WRONLY) != 1)
+    {
+      sprintf(ebuf, "failed to open stdout from /dev/null (%s)\n",
+	strerror(errno));
+      gpbs_log(LOG_CRIT);
+      exit(EXIT_FAILURE);
+    }
+  if (is_daemon && open("/dev/null", O_WRONLY) != 2)
+    {
+      sprintf(ebuf, "failed to open stderr from /dev/null (%s)\n",
+	strerror(errno));
+      gpbs_log(LOG_CRIT);
+      exit(EXIT_FAILURE);
+    }
+
+    /*
+     * Make gpbs logging go to syslog unless overridden by user.
+     */
+    defs = [NSUserDefaults standardUserDefaults];
+    [defs registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys:
+      @"YES", @"GSLogSyslog", nil]];
 }
 
 

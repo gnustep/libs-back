@@ -1,0 +1,83 @@
+NEWS
+****
+
+Noteworthy changes in version `0.8.9'
+=====================================
+
+   * Much improved pasting support between X apps and GNUstep apps.
+
+   * Backend headers are no longer installed (now private).
+
+Noteworthy changes in version `0.8.8'
+=====================================
+
+   Full multi-byte/unicode support for East Asian languages was added to
+the xlib backend. The X11 server now supports use of the XIM input
+method for entering non-keyboard characters. Both contributions thanks
+to Kazunobu Kuriyama.
+
+   * Also added slightly better EWMH support.
+
+   * Art backend works with more versions of freetype.
+
+Noteworthy changes in version `0.8.7'
+=====================================
+
+   Handle NSBezierPath glyph drawing in art backend. art backend
+compiles with all freetype except 2.1.3 via ifdefs.
+
+Noteworthy changes in version `0.8.6'
+=====================================
+
+   Bug fixes. See the gnustep-gui NEWS for changes.
+
+Noteworthy changes in version `0.8.5'
+=====================================
+
+   Text system improvements. See the gnustep-gui NEWS for changes.
+
+Noteworthy changes in version `0.8.3'
+=====================================
+
+   See the gnustep-gui NEWS for changes.
+
+Noteworthy changes in version `0.8.2'
+=====================================
+
+   Improved font handling in art backend. Improved compositing  with
+transformations and clipping in art backend.
+
+Noteworthy changes in version `0.8.1'
+=====================================
+
+   art (libart-based) backend added. Use ./configure
+-enable-graphics=art to choose this backend.
+
+Noteworthy changes in version `0.8.0'
+=====================================
+
+   Bug fixes.
+
+Noteworthy changes in version `0.7.9'
+=====================================
+
+   Bug fixes.
+
+Noteworthy changes in version `0.7.8'
+=====================================
+
+   Simplified backend selection using -enable-server and
+-enable-graphics. Add -with-library-flags and -with-include-flags for
+adding additonal flags. Set name with -with-name
+
+Noteworthy changes in version `0.7.7'
+=====================================
+
+   First release. Most components extracted from xgps. The old backends,
+xgps and xdps were depreciated in favor of this new backend, simply
+named back, which can be configured for a variety of window server and
+graphics implementations, and also allow for improved code sharing.
+
+   In addition there is now a window server backend for Windows
+computers, although it is in a very alpha state.
+
