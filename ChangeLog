@@ -1,3 +1,8 @@
+2003-01-31 22:33  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m (-_generateGlyphsForRun:at:): Implement
+	handling of text attachments.
+
 2003-01-27 18:10  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Clean up includes.
