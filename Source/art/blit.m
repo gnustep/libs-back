@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2003, 2004 Free Software Foundation, Inc.
 
    Author:  Alexander Malmberg <alexander@malmberg.org>
 
@@ -46,6 +46,13 @@ still need to fix all the remaining spots
 2002-08-06: boundary cases should be correct now in most places, although
 rounding is way off (but not more than 1, hopefully) for near-boundary
 cases. at least pure black stays pure black and pure white stays pure white
+
+2004-01-10: Test suite now says that all composite functions are 'correct',
+in the sense that the difference from the correct result is never larger
+than 0.5, and that's the best I can get with finite precision'. :)
+
+(However, should probably check whether the results here always match the
+correctly rounded correct result.)
 
 TODO: (optional?) proper gamma handling?
 
@@ -275,7 +282,7 @@ static void MPRE(blit_mono_a) (unsigned char *adst, unsigned char *dsta,
 	  nb = (b * a + nb * (255 - a) + 0xff) >> 8;
 	  BLEND_WRITE(dst, nr, ng, nb)
 	  BLEND_INC(dst)
-	    }
+	}
       else
 	{
 	  BLEND_INC(dst)
@@ -336,7 +343,7 @@ static void MPRE(blit_subpixel) (unsigned char *adst, const unsigned char *asrc,
 
 static void MPRE(run_opaque) (render_run_t *ri, int num)
 {
-#if FORMAT_HOW == DI_16_B5G5R5A1 || FORMAT_HOW == DI_16_B5G6R5
+#if FORMAT_HOW == DI_16_B5_G5_R5_A1 || FORMAT_HOW == DI_16_B5_G6_R5
   unsigned int v;
   unsigned short *dst = (unsigned short *)ri->dst;
 
@@ -495,6 +502,141 @@ static void MPRE(sover_aa) (composite_run_t *c, int num)
 
 static void MPRE(sover_ao) (composite_run_t *c, int num)
 {
+#if FORMAT_HOW == DI_16_B5_G6_R5 || FORMAT_HOW == DI_16_B5_G5_R5_A1
+  BLEND_TYPE *s = (BLEND_TYPE *)c->src, *d = (BLEND_TYPE *)c->dst;
+  unsigned char *src_alpha = c->srca;
+  int sr, sg, sb, sa;
+#undef i386
+#ifndef i386
+  int dr, dg, db;
+#endif
+
+  unsigned int temp;
+
+  for (; num; num--)
+    {
+      ALPHA_READ(s, src_alpha, sa)
+      if (!sa)
+	{
+	  ALPHA_INC(s, src_alpha)
+	  BLEND_INC(d)
+	  continue;
+	}
+      if (sa == 255)
+	{
+	  BLEND_READ(s, sr, sg, sb)
+	  BLEND_WRITE(d, sr, sg, sb)
+	  ALPHA_INC(s, src_alpha)
+	  BLEND_INC(d)
+	  continue;
+	}
+
+
+#ifdef i386
+      /*
+      The basic idea here is to scale all components using one multiply,
+      and to do so without losing any accuracy. To do this, we move the
+      components around so we get 8 empty bits above each component. In
+      a 32-bit word, we don't have enough space for this, but by moving
+      green to the top 6 bits and using ix86 'mul', we'll get the top 32
+      bits of the multiplication in another register and can later recombine
+      the components relatively easily.
+
+      Mostly equivalent c (16bpp case):
+
+      unsigned long long int temp;
+
+      sa = 255-sa;
+      
+      temp = d[0];
+      temp = ((temp|(temp<<21))&0xfc00001f)|((temp&0xf800)<<2);
+      temp = temp*sa;
+      temp = temp+0x000000020003e01fLL;
+      temp = temp>>8;
+      temp = (temp&0x1f) | ((temp&0x3e000)>>2) | ((temp&0xfc000000)>>21);
+      d[0]=temp + s[0];
+
+
+16bpp:
+original:                                 0000 0000 0000 0000  bbbb bggg gggr rrrr
+after unpacking:                          gggg gg00 0000 00bb  bbb0 0000 000r rrrr
+after 'mul':   ....  0000 0000 gggg gggg  gggg ggbb bbbb bbbb  bbbr rrrr rrrr rrrr
+
+15bpp:
+original:                                 0000 0000 0000 0000  0bbb bbgg gggr rrrr
+after unpacking:                          gggg g000 0000 00bb  bbb0 0000 000r rrrr
+after 'mul':   ....  0000 0000 gggg gggg  gggg g0bb bbbb bbbb  bbbr rrrr rrrr rrrr
+
+      */
+      temp = d[0];
+      sa = 255 - sa;
+      asm (
+	"movl %0,%%eax\n"
+#if FORMAT_HOW == DI_16_B5_G6_R5
+        "shll $21,%%eax\n"
+#else
+        "shll $22,%%eax\n"
+#endif
+	"orl %0,%%eax\n"
+#if FORMAT_HOW == DI_16_B5_G6_R5
+	"andl $0xfc00001f,%%eax\n"
+	"andl $0xf800,%0\n"
+	"shll $2,%0\n"
+#else
+	"andl $0xf800001f,%%eax\n"
+	"andl $0x7c00,%0\n"
+	"shll $3,%0\n"
+#endif
+	"orl %0,%%eax\n"
+	"mul %2\n"
+	"addl $0x0003e01f,%%eax\n"
+#if FORMAT_HOW == DI_16_B5_G6_R5
+	"addl $0x02,%%edx\n"
+	"andl $0xfc,%%edx\n"
+	"shll $3,%%edx\n"
+#else
+	"addl $0x01,%%edx\n"
+	"andl $0xf8,%%edx\n"
+	"shll $2,%%edx\n"
+#endif
+	"shrl $8,%%eax\n"
+	"movl %%eax,%0\n"
+	"andl $0x1f,%0\n"
+	"orl %%edx,%0\n"
+#if FORMAT_HOW == DI_16_B5_G6_R5
+	"shrl $2,%%eax\n"
+	"andl $0xf800,%%eax\n"
+#else
+	"shrl $3,%%eax\n"
+	"andl $0x7c00,%%eax\n"
+#endif
+	"orl %%eax,%0\n"
+	: "=r" (temp)
+	: "0" (temp), "g" (sa)
+	: "eax", "edx");
+      d[0] = temp + s[0];
+#else
+      /*
+      Generic, non-ix86 code. Can't use the really optimized path, but
+      we can still add in the entire source pixel instead of unpacking
+      it.
+      */
+      BLEND_READ(d, dr, dg, db)
+
+      sa = 255 - sa;
+      dr = ((dr * sa + 0xff) >> 8);
+      dg = ((dg * sa + 0xff) >> 8);
+      db = ((db * sa + 0xff) >> 8);
+
+      COPY_ASSEMBLE_PIXEL(temp, dr, dg, db)
+  
+      d[0] = temp + s[0];
+#endif
+
+      ALPHA_INC(s, src_alpha)
+      BLEND_INC(d)
+    }
+#else
   BLEND_TYPE *s = (BLEND_TYPE *)c->src, *d = (BLEND_TYPE *)c->dst;
 #ifndef INLINE_ALPHA
   unsigned char *src_alpha = c->srca;
@@ -532,6 +674,7 @@ static void MPRE(sover_ao) (composite_run_t *c, int num)
       ALPHA_INC(s, src_alpha)
       BLEND_INC(d)
     }
+#endif
 }
 
 /* dsta : 0 */
@@ -749,7 +892,7 @@ static void MPRE(satop_aa) (composite_run_t *c, int num)
       dr = (sr * da + dr * sa + 0xff) >> 8;
       dg = (sg * da + dg * sa + 0xff) >> 8;
       db = (sb * da + db * sa + 0xff) >> 8;
-      da = ((255 - sa) * da + da * sa + 0xff) >> 8;
+      /* For alpha, satop simplifies to da' = da. */
 
       BLEND_WRITE_ALPHA(d, dst_alpha, dr, dg, db, da)
 
@@ -977,10 +1120,11 @@ static void MPRE(datop_aa) (composite_run_t *c, int num)
 
       da = 255 - da;
 
-      dr = (dr * sa + sr * da + 0x80) >> 8;
-      dg = (dg * sa + sg * da + 0x80) >> 8;
-      db = (db * sa + sb * da + 0x80) >> 8;
-      da = ((255 - da) * sa + sa * da + 0x80) >> 8;
+      dr = (dr * sa + sr * da + 0xff) >> 8;
+      dg = (dg * sa + sg * da + 0xff) >> 8;
+      db = (db * sa + sb * da + 0xff) >> 8;
+      /* For alpha, datop simplifies to da' = sa. */
+      da = sa;
 
       BLEND_WRITE_ALPHA(d, dst_alpha, dr, dg, db, da)
 
@@ -1040,10 +1184,10 @@ static void MPRE(xor_aa) (composite_run_t *c, int num)
 
       da = 255 - da;
       sa = 255 - sa;
-      dr = ((dr * sa + sr * da + 0x80) >> 8);
-      dg = ((dg * sa + sg * da + 0x80) >> 8);
-      db = ((db * sa + sb * da + 0x80) >> 8);
-      da = ((da * (255 - sa) + sa * (255 - da) + 0x80) >> 8);
+      dr = ((dr * sa + sr * da + 0xff) >> 8);
+      dg = ((dg * sa + sg * da + 0xff) >> 8);
+      db = ((db * sa + sb * da + 0xff) >> 8);
+      da = ((da * (255 - sa) + sa * (255 - da) + 0xff) >> 8);
 
       BLEND_WRITE_ALPHA(d, dst_alpha, dr, dg, db, da)
 
@@ -1532,15 +1676,15 @@ ourself.
 
 /* 16-bit  5 bits blue, 6 bits green, 5 bits red */
 #define FORMAT_INSTANCE b5g6r5
-#define FORMAT_HOW DI_16_B5G6R5
+#define FORMAT_HOW DI_16_B5_G6_R5
 #warning B5G6R5
 
 #define BLEND_TYPE unsigned short
 #define BLEND_READ(p,nr,ng,nb) \
 	{ \
 		unsigned short _s=p[0]; \
-		nr=(_s>>11)<<3; \
-		ng=((_s>>5)<<2)&0xff; \
+		nr=(_s>>8); \
+		ng=(_s>>3)&0xff; \
 		nb=(_s<<3)&0xff; \
 	}
 #define BLEND_READ_ALPHA(p,pa,nr,ng,nb,na) \
@@ -1570,15 +1714,15 @@ ourself.
 
 /* 16-bit  5 bits blue, 5 bits green, 5 bits red */
 #define FORMAT_INSTANCE b5g5r5a1
-#define FORMAT_HOW DI_16_B5G5R5A1
+#define FORMAT_HOW DI_16_B5_G5_R5_A1
 #warning B5G5R5A1
 
 #define BLEND_TYPE unsigned short
 #define BLEND_READ(p,nr,ng,nb) \
 	{ \
 		unsigned short _s=p[0]; \
-		nr=(_s>>10)<<3; \
-		ng=((_s>>5)<<3)&0xff; \
+		nr=(_s>>7); \
+		ng=(_s>>2)&0xff; \
 		nb=(_s<<3)&0xff; \
 	}
 #define BLEND_READ_ALPHA(p,pa,nr,ng,nb,na) \
@@ -1834,20 +1978,7 @@ Xor     1 - dstA   1 - srcA    noop             noop
 
 
 PlusL    dst=src+dst  , clamp to 1.0; dsta=srca+dsta, clamp to 1.0
-PlisD    dst=src+dst-1, clamp to 0.0; dsta=srca+dsta, clamp to 1.0
-
-these are incorrect:
-
-PlusD
-[PlusD does not follow the general equation. The equation is dst'=(1-dst)+(1-src).
-If the result is less than 0 (black), then the result is 0.]
-N/A
-N/A
-
-PlusL
-[For PlusL, the addition saturates. That is, if (src+dst) > white), the result is white.]
-1
-1
+PlusD    dst=src+dst-1, clamp to 0.0; dsta=srca+dsta, clamp to 1.0
 
 */
 

@@ -1,3 +1,16 @@
+2004-01-10 16:25  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/blit.m: Replace uses DI_16_B5G5R5A1 and DI_16_B5G6R5
+	with uses of DI_16_B5_G5_R5_A1 and DI_16_B5_G6_R5.
+	(sover_ao): Add an optimized version for the 16/15 bpp modes.
+	(satop_aa): Simplify calculation of da'.
+	(datop_aa): Simplify calculation of da'. Fix the rounding.
+	(xor_aa): Fix the rounding.
+	(DI_16_B5_G5_R5_A1, DI_16_B5_G6_R5): Unpack pixels in a more
+	efficient way.
+
+	* Source/art/blit_scrapheap.m: New file.
+
 2004-01-07 14:51  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/composite.m (-_composite_func::::::): If the source has
