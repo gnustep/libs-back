@@ -1,3 +1,8 @@
+2003-07-05 14:05  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Handle freetype <=2.1.2 in the error
+	reporting.
+
 2003-07-03 22:03  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Give more information when reporting

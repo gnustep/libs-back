@@ -990,7 +990,12 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	    {
 	      NSLog(@"FTC_SBitCache_Lookup() failed with error %08x (%08x, %ix%i, %08x)\n",
 		error, cur.font.face_id, cur.font.pix_width, cur.font.pix_height,
-		cur.flags);
+#ifdef FT212_STUFF
+		cur.type
+#else
+		cur.flags
+#endif
+		);
 	      continue;
 	    }
 
@@ -1369,7 +1374,12 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	    {
 	      NSLog(@"FTC_SBitCache_Lookup() failed with error %08x (%08x, %ix%i, %08x)\n",
 		error, cur.font.face_id, cur.font.pix_width, cur.font.pix_height,
-		cur.flags);
+#ifdef FT212_STUFF
+		cur.type
+#else
+		cur.flags
+#endif
+		);
 	      continue;
 	    }
 
@@ -1687,7 +1697,12 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	{
 	  NSLog(@"FTC_SBitCache_Lookup() failed with error %08x (%08x, %ix%i, %08x)\n",
 	    error, cur.font.face_id, cur.font.pix_width, cur.font.pix_height,
-	    cur.flags);
+#ifdef FT212_STUFF
+	    cur.type
+#else
+	    cur.flags
+#endif
+	    );
 	  return NSZeroSize;
 	}
 
