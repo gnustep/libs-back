@@ -1,3 +1,10 @@
+2002-09-21 12:14  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Headers/x11/XWindowBuffer.h, Source/x11/XWindowBuffer.m
+	(+windowBufferForWindow:depthInfo:): If possible, create a shared
+	pixmap from the image data and set it as the background of the
+	window.
+
 2002-09-20 18:36  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/path.m (clip_svp_callback): Use correct x coordinate

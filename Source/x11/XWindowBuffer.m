@@ -117,6 +117,13 @@ static int use_shape_hack = 0; /* this is an ugly hack :) */
 	  else
 	    XDestroyImage(wi->ximage);
 	}
+      if (wi->pixmap)
+	{
+	  XFreePixmap(wi->display,wi->pixmap);
+	  XSetWindowBackground(wi->display,wi->window->ident,None);
+	  wi->pixmap=0;
+	}
+
       wi->has_alpha = 0;
       if (wi->alpha)
 	{
@@ -150,9 +157,25 @@ static int use_shape_hack = 0; /* this is an ugly hack :) */
 	    NSLog(@"shmget() failed"); /* TODO */
 	  wi->shminfo.shmaddr = wi->ximage->data = shmat(wi->shminfo.shmid, 0, 0);
 
-	  wi->shminfo.readOnly = 1;
+	  wi->shminfo.readOnly = 0;
 	  if (!XShmAttach(wi->display, &wi->shminfo))
 	    NSLog(@"XShmAttach() failed");
+
+	  /* We try to create a shared pixmap using the same buffer, and set
+	  it as the background of the window. This allows X to handle expose
+	  events all by itself, which avoids white flashing when things are
+	  dragged across a window. */
+	  /* TODO: we still get and handle expose events, although we don't
+	  need to. */
+	  wi->pixmap=XShmCreatePixmap(wi->display,wi->drawable,
+				      wi->ximage->data,&wi->shminfo,
+				      wi->window->xframe.size.width,
+				      wi->window->xframe.size.height,
+				      aDI->drawing_depth);
+	  if (wi->pixmap)
+	    {
+	      XSetWindowBackgroundPixmap(wi->display,wi->window->ident,wi->pixmap);
+	    }
 
 	  /* On some systems (eg. freebsd), X can't attach to the shared
 	  segment if it's marked for destruction, so we make sure it's
