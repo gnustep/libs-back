@@ -1697,6 +1697,9 @@ void artcontext_setup_draw_info(draw_info_t *di,
 {
   int t = DI_FALLBACK;
 
+  NSDebugLLog(@"back-art", @"%s masks=(%08x %08x %08x) bpp=%i",
+    __PRETTY_FUNCTION__, red_mask, green_mask, blue_mask, bpp);
+
   if (bpp == 16 && red_mask == 0xf800 && green_mask == 0x7e0 &&
       blue_mask == 0x1f)
     {
@@ -1734,6 +1737,8 @@ void artcontext_setup_draw_info(draw_info_t *di,
 	    t = DI_32_ABGR;
 	}
     }
+
+  NSDebugLLog(@"back-art", @"got t=%i", t);
 
   *di = draw_infos[t];
   if (!di->render_run_alpha)
