@@ -190,6 +190,12 @@ if test "$have_xft" = yes -a "$ac_cv_header_X11_Xft_Xft_h" = yes; then
   if test "$have_utf8" = yes; then
     AC_DEFINE(HAVE_UTF8,1,[Define if you have XftDrawStringUtf8])
   fi
+  AC_CHECK_LIB(fontconfig, FcPatternCreate, have_fc=yes, have_fc=no)
+  AC_CHECK_HEADER(fontconfig/fontconfig.h)
+  if test "$have_fc" = yes -a "$ac_cv_header_fontconfig_fontconfig_h" = yes; then
+    GRAPHIC_LIBS="${GRAPHIC_LIBS} -lfontconfig"
+    AC_DEFINE(HAVE_FC,1,[Define if you have FcPatternCreate])
+  fi
 fi
 CPPFLAGS="${save_header}"
 LIBS="${save_libs}"
