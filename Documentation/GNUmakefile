@@ -31,6 +31,8 @@ include ../Version
 # The documents to be generated
 DOCUMENT_NAME = 
 
+SUBPROJECTS = Back
+
 # The text documents to be generated
 DOCUMENT_TEXT_NAME = \
 INSTALL NEWS README ANNOUNCE 
@@ -58,6 +60,7 @@ ANNOUNCE_DOC_INSTALL_DIR = Developer/Back/ReleaseNotes/$(VERSION)
 -include GNUmakefile.local
 
 include $(GNUSTEP_MAKEFILES)/documentation.make
+include $(GNUSTEP_MAKEFILES)/aggregate.make
 
 -include Makefile.postamble
 

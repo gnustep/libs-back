@@ -34,7 +34,7 @@ Back_AGSDOC_FILES = \
 	WindowFocus.gsdoc
 
 Back_AGSDOC_FLAGS = \
-	-DocumentationDirectory . \
+	-DocumentationDirectory Back \
 	-Up Back
 
 Back_DOC_INSTALL_DIR = Developer/Back/Reference
