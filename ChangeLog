@@ -1,3 +1,9 @@
+2002-03-31  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m
+	In [window:::] set the initial hints for a window, as
+	setWindowHintsForStyle() would otherwise never be called.
+	
 2002-03-30  Adam Fedor  <fedor@gnu.org>
 
 	* Source/GNUmakefile.preamble: Add graphic includes, -Wall
