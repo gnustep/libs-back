@@ -1,3 +1,8 @@
+2003-02-19  Adam Fedor  <fedor@gnu.org>
+
+	* Source/gsc/GSStreamContext.m (fpfloat): New function. Used everywhere
+	to print a float regardless of current locale.
+
 2003-02-17  Willem Rein Oudshoorn  <woudshoo@xs4all.nl>
 
 	* Source/x11/XGDragView.m ([XGDragView -drawRect:]): use [self

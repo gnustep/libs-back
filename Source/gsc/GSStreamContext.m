@@ -40,6 +40,21 @@
 #include <Foundation/NSValue.h>
 #include <string.h>
 
+/* Print a floating point number regardless of localization */
+void
+fpfloat(FILE *stream, float f)
+{
+  char buffer[80], *p;
+  sprintf(buffer, "%g ", f);
+  p = buffer;
+  while (*p)
+    {
+      if (*p == ',')
+	*p = '.';
+      p++;
+    }
+  fprintf(stream, "%s", buffer);
+}
 
 @interface GSStreamContext (Private)
 
@@ -102,31 +117,43 @@
   [super DPSsetalpha: a];
   /* This needs to be defined base on the the language level, etc. in
      the Prolog section. */
-  fprintf(gstream, "%g GSsetalpha\n", a);
+  fpfloat(gstream, a);
+  fprintf(gstream, "GSsetalpha\n");
 }
 
 - (void) DPSsetcmykcolor: (float)c : (float)m : (float)y : (float)k
 {
   [super DPSsetcmykcolor: c : m : y : k];
-  fprintf(gstream, "%g %g %g %g setcmykcolor\n", c, m, y, k);
+  fpfloat(gstream, c);
+  fpfloat(gstream, m);
+  fpfloat(gstream, y);
+  fpfloat(gstream, k);
+  fprintf(gstream, "setcmykcolor\n");
 }
 
 - (void) DPSsetgray: (float)gray
 {
   [super DPSsetgray: gray];
-  fprintf(gstream, "%g setgray\n", gray);
+  fpfloat(gstream, gray);
+  fprintf(gstream, "setgray\n");
 }
 
 - (void) DPSsethsbcolor: (float)h : (float)s : (float)b
 {
   [super DPSsethsbcolor: h : s : b];
-  fprintf(gstream, "%g %g %g sethsbcolor\n", h, s, b);
+  fpfloat(gstream, h);
+  fpfloat(gstream, s);
+  fpfloat(gstream, b);
+  fprintf(gstream, "sethsbcolor\n");
 }
 
 - (void) DPSsetrgbcolor: (float)r : (float)g : (float)b
 {
   [super DPSsetrgbcolor: r : g : b];
-  fprintf(gstream, "%g %g %g setrgbcolor\n", r, g, b);
+  fpfloat(gstream, r);
+  fpfloat(gstream, g);
+  fpfloat(gstream, b);
+  fprintf(gstream, "setrgbcolor\n");
 }
 
 - (void) GSSetFillColor: (const float *)values
@@ -145,14 +172,21 @@
 /* ----------------------------------------------------------------------- */
 - (void) DPSashow: (float)x : (float)y : (const char*)s
 {
-  fprintf(gstream, "%g %g (", x, y);
+  fpfloat(gstream, x);
+  fpfloat(gstream, y);
+  fprintf(gstream, "(");
   [self output:s];
   fprintf(gstream, ") ashow\n");
 }
 
 - (void) DPSawidthshow: (float)cx : (float)cy : (int)c : (float)ax : (float)ay : (const char*)s
 {
-  fprintf(gstream, "%g %g %d %g %g (",cx, cy, c, ax, ay);
+  fpfloat(gstream, cx);
+  fpfloat(gstream, cy);
+  fprintf(gstream, "%d ", c);
+  fpfloat(gstream, ax);
+  fpfloat(gstream, ay);
+  fprintf(gstream, "(");
   [self output:s];
   fprintf(gstream, ") awidthshow\n");
 }
@@ -173,7 +207,9 @@
 
 - (void) DPSwidthshow: (float)x : (float)y : (int)c : (const char*)s
 {
-  fprintf(gstream, "%g %g %d (", x, y, c);
+  fpfloat(gstream, x);
+  fpfloat(gstream, y);
+  fprintf(gstream, "%d (", c);
   [self output:s];
   fprintf(gstream, ") widthshow\n");
 }
@@ -202,8 +238,16 @@
 - (void) GSSetFont: (void *)fontref
 {
   const float *m = [(GSFontInfo *)fontref matrix];
-  fprintf(gstream, "/%s findfont ", [[(GSFontInfo *)fontref fontName] cString]);
-  fprintf(gstream, "[%g %g %g %g %g %g] ", m[0], m[1], m[2], m[3], m[4], m[5]);
+  fprintf(gstream, "/%s findfont ", 
+	  [[(GSFontInfo *)fontref fontName] cString]);
+  fprintf(gstream, "[");
+  fpfloat(gstream, m[0]);
+  fpfloat(gstream, m[1]);
+  fpfloat(gstream, m[2]);
+  fpfloat(gstream, m[3]);
+  fpfloat(gstream, m[4]);
+  fpfloat(gstream, m[5]);
+  fprintf(gstream, "] ");
   fprintf(gstream, " makefont setfont\n");
   [super GSSetFont: fontref];
 }
@@ -306,20 +350,25 @@
   int i;
   fprintf(gstream, "[");
   for (i = 0; i < size; i++)
-    fprintf(gstream, "%f ", pat[i]);
-  fprintf(gstream, "] %g setdash\n", offset);
+    fpfloat(gstream, pat[i]);
+  fprintf(gstream, "] ");
+  fpfloat(gstream, offset);
+  fprintf(gstream, "setdash\n");
 }
 
 - (void) DPSsetflat: (float)flatness
 {
   [super DPSsetflat: flatness];
-  fprintf(gstream, "%g setflat\n", flatness);
+  fpfloat(gstream, flatness);
+  fprintf(gstream, "setflat\n");
 }
 
 - (void) DPSsethalftonephase: (float)x : (float)y
 {
   [super DPSsethalftonephase: x : y];
-  fprintf(gstream, "%g %g sethalftonephase\n", x, y);
+  fpfloat(gstream, x);
+  fpfloat(gstream, y);
+  fprintf(gstream, "sethalftonephase\n");
 }
 
 - (void) DPSsetlinecap: (int)linecap
@@ -337,13 +386,15 @@
 - (void) DPSsetlinewidth: (float)width
 {
   [super DPSsetlinewidth: width];
-  fprintf(gstream, "%g setlinewidth\n", width);
+  fpfloat(gstream, width);
+  fprintf(gstream, "setlinewidth\n");
 }
 
 - (void) DPSsetmiterlimit: (float)limit
 {
   [super DPSsetmiterlimit: limit];
-  fprintf(gstream, "%g setmiterlimit\n", limit);
+  fpfloat(gstream, limit);
+  fprintf(gstream, "setmiterlimit\n");
 }
 
 - (void) DPSsetstrokeadjust: (int)b
@@ -365,13 +416,21 @@
     {
       if ((m[4] != 0.0) || (m[5] != 0.0))
 	{
-	  fprintf(gstream, "%g %g translate\n", m[4], m[5]);
+	  fpfloat(gstream, m[4]);
+	  fpfloat(gstream, m[5]);
+	  fprintf(gstream, "translate\n");
 	}
     }
   else 
     {
-      fprintf(gstream, "[%g %g %g %g %g %g] concat\n",
-	      m[0], m[1], m[2], m[3], m[4], m[5]);
+      fprintf(gstream, "[");
+      fpfloat(gstream, m[0]);
+      fpfloat(gstream, m[1]);
+      fpfloat(gstream, m[2]);
+      fpfloat(gstream, m[3]);
+      fpfloat(gstream, m[4]);
+      fpfloat(gstream, m[5]);
+      fprintf(gstream, "] concat\n");
     }
 }
 
@@ -384,35 +443,52 @@
 - (void) DPSrotate: (float)angle
 {
   [super DPSrotate: angle];
-  fprintf(gstream, "%g rotate\n", angle);
+  fpfloat(gstream, angle);
+  fprintf(gstream, "rotate\n");
 }
 
 - (void) DPSscale: (float)x : (float)y
 {
   [super DPSscale: x : y];
-  fprintf(gstream, "%g %g scale\n", x, y);
+  fpfloat(gstream, x);
+  fpfloat(gstream, y);
+  fprintf(gstream, "scale\n");
 }
 
 - (void) DPStranslate: (float)x : (float)y
 {
   [super DPStranslate: x : y];
-  fprintf(gstream, "%g %g translate\n", x, y);
+  fpfloat(gstream, x);
+  fpfloat(gstream, y);
+  fprintf(gstream, "translate\n");
 }
 
 - (void) GSSetCTM: (NSAffineTransform *)ctm
 {
   float m[6];
   [ctm getMatrix: m];
-  fprintf(gstream, "[%g %g %g %g %g %g] setmatrix\n",
-          m[0], m[1], m[2], m[3], m[4], m[5]);
+  fprintf(gstream, "[");
+  fpfloat(gstream, m[0]);
+  fpfloat(gstream, m[1]);
+  fpfloat(gstream, m[2]);
+  fpfloat(gstream, m[3]);
+  fpfloat(gstream, m[4]);
+  fpfloat(gstream, m[5]);
+  fprintf(gstream, "] setmatrix\n");
 }
 
 - (void) GSConcatCTM: (NSAffineTransform *)ctm
 {
   float m[6];
   [ctm getMatrix: m];
-  fprintf(gstream, "[%g %g %g %g %g %g] concat\n",
-          m[0], m[1], m[2], m[3], m[4], m[5]);
+  fprintf(gstream, "[");
+  fpfloat(gstream, m[0]);
+  fpfloat(gstream, m[1]);
+  fpfloat(gstream, m[2]);
+  fpfloat(gstream, m[3]);
+  fpfloat(gstream, m[4]);
+  fpfloat(gstream, m[5]);
+  fprintf(gstream, "] concat\n");
 }
 
 
@@ -421,17 +497,32 @@
 /* ----------------------------------------------------------------------- */
 - (void) DPSarc: (float)x : (float)y : (float)r : (float)angle1 : (float)angle2
 {
-  fprintf(gstream, "%g %g %g %g %g arc\n", x, y, r, angle1, angle2);
+  fpfloat(gstream, x);
+  fpfloat(gstream, y);
+  fpfloat(gstream, r);
+  fpfloat(gstream, angle1);
+  fpfloat(gstream, angle2);
+  fprintf(gstream, "arc\n");
 }
 
 - (void) DPSarcn: (float)x : (float)y : (float)r : (float)angle1 : (float)angle2
 {
-  fprintf(gstream, "%g %g %g %g %g arcn\n", x, y, r, angle1, angle2);
+  fpfloat(gstream, x);
+  fpfloat(gstream, y);
+  fpfloat(gstream, r);
+  fpfloat(gstream, angle1);
+  fpfloat(gstream, angle2);
+  fprintf(gstream, "arcn\n");
 }
 
 - (void) DPSarct: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)r
 {
-  fprintf(gstream, "%g %g %g %g %g arct\n", x1, y1, x2, y2, r);
+  fpfloat(gstream, x1);
+  fpfloat(gstream, y1);
+  fpfloat(gstream, x2);
+  fpfloat(gstream, y2);
+  fpfloat(gstream, r);
+  fprintf(gstream, "arct\n");
 }
 
 - (void) DPSclip
@@ -447,7 +538,13 @@
 - (void)DPScurveto: (float)x1 : (float)y1 : (float)x2 : (float)y2 
                   : (float)x3 : (float)y3
 {
-  fprintf(gstream, "%g %g %g %g %g %g curveto\n", x1, y1, x2, y2, x3, y3);
+  fpfloat(gstream, x1);
+  fpfloat(gstream, y1);
+  fpfloat(gstream, x2);
+  fpfloat(gstream, y2);
+  fpfloat(gstream, x3);
+  fpfloat(gstream, y3);
+  fprintf(gstream, "curveto\n");
 }
 
 - (void) DPSeoclip
@@ -477,12 +574,16 @@
 
 - (void) DPSlineto: (float)x : (float)y
 {
-  fprintf(gstream, "%g %g lineto\n", x, y);
+  fpfloat(gstream, x);
+  fpfloat(gstream, y);
+  fprintf(gstream, "lineto\n");
 }
 
 - (void) DPSmoveto: (float)x : (float)y
 {
-  fprintf(gstream, "%g %g moveto\n", x, y);
+  fpfloat(gstream, x);
+  fpfloat(gstream, y);
+  fprintf(gstream, "moveto\n");
 }
 
 - (void) DPSnewpath
@@ -497,22 +598,40 @@
 - (void) DPSrcurveto: (float)x1 : (float)y1 : (float)x2 : (float)y2 
                     : (float)x3 : (float)y3
 {
-  fprintf(gstream, "%g %g %g %g %g %g rcurveto\n", x1, y1, x2, y2, x3, y3);
+  fpfloat(gstream, x1);
+  fpfloat(gstream, y1);
+  fpfloat(gstream, x2);
+  fpfloat(gstream, y2);
+  fpfloat(gstream, x3);
+  fpfloat(gstream, y3);
+  fprintf(gstream, "rcurveto\n");
 }
 
 - (void) DPSrectclip: (float)x : (float)y : (float)w : (float)h
 {
-  fprintf(gstream, "%g %g %g %g rectclip\n", x, y, w, h);
+  fpfloat(gstream, x);
+  fpfloat(gstream, y);
+  fpfloat(gstream, w);
+  fpfloat(gstream, h);
+  fprintf(gstream, "rectclip\n");
 }
 
 - (void) DPSrectfill: (float)x : (float)y : (float)w : (float)h
 {
-  fprintf(gstream, "%g %g %g %g rectfill\n", x, y, w, h);
+  fpfloat(gstream, x);
+  fpfloat(gstream, y);
+  fpfloat(gstream, w);
+  fpfloat(gstream, h);
+  fprintf(gstream, "rectfill\n");
 }
 
 - (void) DPSrectstroke: (float)x : (float)y : (float)w : (float)h
 {
-  fprintf(gstream, "%g %g %g %g rectstroke\n", x, y, w, h);
+  fpfloat(gstream, x);
+  fpfloat(gstream, y);
+  fpfloat(gstream, w);
+  fpfloat(gstream, h);
+  fprintf(gstream, "rectstroke\n");
 }
 
 - (void) DPSreversepath
@@ -522,12 +641,16 @@
 
 - (void) DPSrlineto: (float)x : (float)y
 {
-  fprintf(gstream, "%g %g rlineto\n", x, y);
+  fpfloat(gstream, x);
+  fpfloat(gstream, y);
+  fprintf(gstream, "rlineto\n");
 }
 
 - (void) DPSrmoveto: (float)x : (float)y
 {
-  fprintf(gstream, "%g %g rmoveto\n", x, y);
+  fpfloat(gstream, x);
+  fpfloat(gstream, y);
+  fprintf(gstream, "rmoveto\n");
 }
 
 - (void) DPSstroke
@@ -619,20 +742,29 @@
 - (void) DPScomposite: (float)x : (float)y : (float)w : (float)h 
                      : (int)gstateNum : (float)dx : (float)dy : (int)op
 {
-  fprintf(gstream, "%g %g %g %g %d %g %g %d composite\n", x, y, w, h, 
-	  gstateNum, dx, dy, op);
+  fpfloat(gstream, x);
+  fpfloat(gstream, y);
+  fpfloat(gstream, w);
+  fpfloat(gstream, h);
+  fprintf(gstream, "%d ", gstateNum);
+  fpfloat(gstream, dx);
+  fpfloat(gstream, dy);
+ fprintf(gstream, "%d composite\n", op);
 }
 
 - (void) DPScompositerect: (float)x : (float)y : (float)w : (float)h : (int)op
 {
-  fprintf(gstream, "%g %g %g %g %d compositerect\n", x, y, w, h, op);
+  fpfloat(gstream, x);
+  fpfloat(gstream, y);
+  fpfloat(gstream, w);
+  fpfloat(gstream, h);
+  fprintf(gstream, "%d compositerect\n", op);
 }
 
 - (void) DPSdissolve: (float)x : (float)y : (float)w : (float)h 
                     : (int)gstateNum : (float)dx : (float)dy : (float)delta
 {
-  fprintf(gstream, "%g %g %g %g %d %g %g %g dissolve\n", x, y, w, h, 
-	  gstateNum, dx, dy, delta);
+  NSLog(@"DPSinvalidcontext: dissolve in a stream context");
 }
 
 
@@ -695,8 +827,12 @@ writeHex(FILE *gstream, const unsigned char *data, int count)
   y = NSMinY(rect);
   if (flipped)
     y += NSWidth(rect);
-  fprintf(gstream, "%f %f translate %f %f scale\n", 
-	  NSMinX(rect), y, NSWidth(rect),  NSHeight(rect));
+  fpfloat(gstream, NSMinX(rect));
+  fpfloat(gstream, y);
+  fprintf(gstream, "translate ");
+  fpfloat(gstream, NSWidth(rect));
+  fpfloat(gstream, NSHeight(rect));
+  fprintf(gstream, "scale\n");
 
   if (bitsPerSample == 0)
     bitsPerSample = 8;
