@@ -28,7 +28,7 @@
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <gnustep/xgps/XGContextPrivate.h>
+#include "xlib/XGPrivate.h"
 
 #define	stringify_it(X)	#X
 #define	makever(X) stringify_it(X)
