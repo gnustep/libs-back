@@ -1,3 +1,8 @@
+2003-06-17 20:07  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/composite.m, Source/art/ftfont.m, Source/art/path.m:
+	Minor cleanups.
+
 2003-06-17  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSStreamContext.m (GSShowGlyphs::, output:length:)

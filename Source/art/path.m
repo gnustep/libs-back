@@ -748,9 +748,9 @@ static void clip_svp_callback(void *data, int y, int start,
 	  int i;
 	  for (i = 0; i < clip_num_span; i++)
 	    {
-	      clip_span[i] -= ci.minx;
-	      if (clip_span[i] < 0)
+	      if (clip_span[i] < ci.minx)
 	        NSLog(@"_clip_add_svp: clip_span[i]<0 when adjusting for minx");
+	      clip_span[i] -= ci.minx;
 	      if (clip_span[i] > ci.maxx - ci.minx)
 	        NSLog(@"_clip_add_svp: clip_span[i] too large when adjusting for minx");
 	    }
