@@ -1,3 +1,8 @@
+2003-10-04 14:27  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/path.m (-DPSrectclip::::): Move the call to -DPSnewpath
+	so it gets called on all paths through the method.
+
 2003-10-03  Adam Fedor  <fedor@gnu.org>
 
 	* configure.ac: Use -Wl for netbsd linker options.
