@@ -570,7 +570,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
      things bottom-up instead of top-down. If so, we flip the
      coordinates here. */
   order = 0;
-  if (ags == self && sy0 <= cy0)
+  if (ags->wi == self->wi && sy0 <= cy0)
     {
       order = 1;
       dst += dbpl * (cy1 - 1);
@@ -945,7 +945,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
      things bottom-up instead of top-down. If so, we flip the
      coordinates here. */
   order = 0;
-  if (ags == self && sy0 <= cy0)
+  if (ags->wi == self->wi && sy0 <= cy0)
     {
       order = 1;
       dst += dbpl * (cy1 - 1);
