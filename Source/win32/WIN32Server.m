@@ -364,14 +364,26 @@ DWORD windowStyleForGSStyle(unsigned int style)
   DWORD wstyle;
   DWORD estyle;
 
-  if (handlesWindowDecorations)
+  if (handlesWindowDecorations == NO)
     {
-      wstyle = windowStyleForGSStyle(style);
-      estyle = (style == 0 ? WS_EX_TOOLWINDOW : 0);
+      wstyle = WS_POPUP;
     }
   else
     {
-      wstyle = WS_POPUP;
+      wstyle = windowStyleForGSStyle(style);
+    }
+
+  if ((style & NSMiniaturizableWindowMask)
+    && flags.useWMTaskBar == YES)
+    {
+      estyle = 0;
+    }
+  else
+    {
+      /* 
+       * Not miniaturisable ...
+       * make it a toolwindow so it doesn't appear in the taskbar.
+       */
       estyle = WS_EX_TOOLWINDOW;
     }
 
@@ -389,8 +401,8 @@ DWORD windowStyleForGSStyle(unsigned int style)
 			r.top, 
 			r.right - r.left, 
 			r.bottom - r.top,
-			(HWND) NULL,
-			(HMENU) NULL,
+			(HWND)NULL,
+			(HMENU)NULL,
 			hinstance,
 			(void*)type);
   NSDebugLLog(@"WTrace", @"         num/handle: %d", hwnd);
