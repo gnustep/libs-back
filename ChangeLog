@@ -1,3 +1,8 @@
+2004-09-01  Adam Fedor  <fedor@gnu.org>
+
+	* configure.ac: Prepend don't overwrite CFLAGS and LDFLAGS given
+	in environment.
+
 2004-08-31  Adrian Robert <arobert@cogsci.ucsd.edu>
 
 	* Source/x11/XGServerEvent.m: Changed mapping of GNUstep modifier
