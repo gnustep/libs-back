@@ -1582,7 +1582,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 	break;
 
       case NSWindowOut:
-	XUnmapWindow(dpy, window->ident);
+        XWithdrawWindow (dpy, window->ident, window->screen);
 	break;
     }
   /*
