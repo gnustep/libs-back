@@ -1,3 +1,9 @@
+2003-02-20  Willem Rein Oudshoorn  <woudshoo@xs4all.nl>
+
+	* Source/xlib/XGFont.m ([XGFontInfo -setupAttributes]): Use
+	ascender and descender informaton of the X11 font instead of using
+	maximum bounding box.
+
 2003-02-19  Adam Fedor  <fedor@gnu.org>
 
 	* Source/gsc/GSStreamContext.m (fpfloat): New function. Used everywhere

@@ -298,10 +298,10 @@ static BOOL XGInitAtoms(Display *dpy)
   [fontDictionary setObject: familyName forKey: NSAFMFamilyName];
   isFixedPitch = XGFontIsFixedPitch(xdpy, font_info);
   isBaseFont = NO;
-  ascender = font_info->max_bounds.ascent;
+  ascender = font_info->ascent;
   [fontDictionary setObject: [NSNumber numberWithFloat: ascender] 
 		  forKey: NSAFMAscender];
-  descender = -(font_info->max_bounds.descent);
+  descender = -(font_info->descent);
   [fontDictionary setObject: [NSNumber numberWithFloat: descender]
 		  forKey: NSAFMDescender];
   fontBBox = NSMakeRect(
