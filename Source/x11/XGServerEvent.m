@@ -1300,6 +1300,12 @@ static inline int check_modifier (XEvent *xEvent, KeyCode key_code)
       NSDebugLLog(@"Focus", @"Key window is already %d", key_num);
       [GSServerForWindow(key_win) setinputfocus: key_num];
     }
+  else if (generic.desiredOrderedWindow == cWin->number)
+    {
+      /* We just want to order the window, not give it focus */
+      NSDebugLLog(@"Focus", @"Ignoring focus request");
+      generic.desiredOrderedWindow = 0;
+    }
   else
     {
       NSPoint eventLocation;
