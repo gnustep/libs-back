@@ -1,3 +1,8 @@
+2002-05-06  Adam Fedor  <fedor@gnu.org>
+
+	* configure.ac (BUILD_SERVER): Set to predefined define
+	* Source/GSBackend.m: Use it.
+
 2002-05-05  Adam Fedor  <fedor@gnu.org>
 
 	* configure.ac: Simplify backend selection using --enable-server
