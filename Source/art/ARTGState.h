@@ -26,11 +26,17 @@
 #include "art/ARTContext.h"
 #include "gsc/GSGState.h"
 
+#include "config.h"
+
+#if (BUILD_SERVER==SERVER_rds)
+#define RDS
+#endif
+
 #ifndef RDS
 #include "x11/XGServer.h"
 #include "x11/XGServerWindow.h"
 #else
-#include "rds/RDSClient.h"
+#include "rds/RDSServer.h"
 #endif
 
 

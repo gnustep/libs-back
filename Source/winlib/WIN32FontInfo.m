@@ -36,8 +36,16 @@
 
 @implementation WIN32FontInfo
 
-- initWithFontName: (NSString*)name matrix: (const float *)fmatrix
+- initWithFontName: (NSString*)name
+	    matrix: (const float *)fmatrix
+	screenFont: (BOOL)screenFont
 {
+  if (screenFont)
+    {
+      RELEASE(self);
+      return nil;
+    }
+
   [super init];
   ASSIGN(fontName, name);
   memcpy(matrix, fmatrix, sizeof(matrix));

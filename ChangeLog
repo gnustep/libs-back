@@ -1,3 +1,48 @@
+2003-01-26 20:04  Alexander Malmberg <alexander@malmberg.org>
+
+	* Headers/xlib/XGPrivate.h, Source/art/ARTContext.m,
+	Source/art/ARTGState.h, Source/art/composite.m, Source/art/ftfont.h,
+	Source/art/ftfont.m, Source/art/image.m, Source/art/path.m,
+	Source/winlib/WIN32FontInfo.m, Source/xdps/AFMFileFontInfo.m,
+	Source/xlib/XGFont.m, Source/xlib/XGGState.m: Merge in
+	text-system-branch.
+
+2003-01-26 18:17  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/xlib/XGFont.m: Make -GSShowGlyphs::'s helpers actually
+	work.
+
+2003-01-26 17:22  Alexander Malmberg <alexander@malmberg.org>
+
+	* Headers/xlib/XGPrivate.h, Source/xlib/XGFont.m,
+	Source/xlib/XGState.m: Implement basic version of -GSShowGlyphs::
+	with a few helpers.
+
+2003-01-26 17:15  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m (-advancementForGlyph:): Return correct
+	metrics for both screen and printer fonts.
+
+2002-11-26 12:58  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/winlib/WIN32FontInfo.m, Source/xdps/AFMFileFontInfo.m,
+	Source/xlib/XGFont.m, Source/xlib/XftFontInfo.m: Update with new
+	screen font changes in backend/gui interface.
+
+	Source/art/ftfont.m: Update with new interface. Add basic support
+	of screen fonts.
+
+2002-11-24 00:40  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/x11/XWindowBuffer (-_exposeRect:): Round coordinates
+	explicitly to avoid truncating problems.
+
+2002-11-24 00:35  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ARTContext.m, Source/art/ftfont.h, Source/art/ftfont.m:
+	Implement the glyph generation backend methods. Implement the
+	GSShowGlyphs operator. Handle glyphs properly in FTFontInfo.
+
 2003-01-23  Adam Fedor  <fedor@gnu.org>
 
 	* Headers/xlib/GSXftFontInfo.h: Renamed from XftFontInfo
