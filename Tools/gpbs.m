@@ -583,6 +583,13 @@ NSMutableDictionary	*pasteboards = nil;
 {
   PasteboardEntry *e = [self entryByCount: count];
 
+  if ([owner isProxy] == YES)
+    {
+      Protocol	*p = @protocol(GSPasteboardCallback);
+
+      [owner setProtocolForProxy: p];
+    }
+
   if (e)
     {
       id	x = [xPbClass ownerByOsPb: name];
@@ -702,6 +709,12 @@ NSMutableDictionary	*pasteboards = nil;
   PasteboardEntry	*old = RETAIN(current);
   id			x = [xPbClass ownerByOsPb: name];
 
+  if ([owner isProxy] == YES)
+    {
+      Protocol	*p = @protocol(GSPasteboardCallback);
+
+      [owner setProtocolForProxy: p];
+    }
   /*
    * If neither the new nor the old owner of the pasteboard is the X
    * pasteboard owner corresponding to this pasteboard, we will need
@@ -1225,4 +1238,33 @@ main(int argc, char** argv, char **env)
   RELEASE(pool);
   exit(EXIT_SUCCESS);
 }
+
+/*
+ * The following dummy classe is here solely as a workaround for pre 3.3
+ * versions of gcc where protocols didn't work properly unless implemented
+ * in the source where the '@protocol()' directive is used.
+ */
+@interface NSPasteboardOwnerDummy : NSObject <GSPasteboardCallback>
+- (void) pasteboard: (NSPasteboard*)pb
+ provideDataForType: (NSString*)type;
+- (void) pasteboard: (NSPasteboard*)pb
+ provideDataForType: (NSString*)type
+         andVersion:(int)v;
+- (void) pasteboardChangedOwner: (NSPasteboard*)pb;
+@end
+
+@implementation NSPasteboardOwnerDummy
+- (void) pasteboard: (NSPasteboard*)pb
+ provideDataForType: (NSString*)type
+{
+}
+- (void) pasteboard: (NSPasteboard*)pb
+ provideDataForType: (NSString*)type
+         andVersion:(int)v
+{
+}
+- (void) pasteboardChangedOwner: (NSPasteboard*)pb
+{
+}
+@end
 
