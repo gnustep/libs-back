@@ -1,3 +1,8 @@
+2004-01-25 13:52  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/image.m (-_image_do_rgb_transform:::): Fix off-by-one
+	error in horizontal clipping.
+
 2004-01-10  Adam Fedor  <fedor@gnu.org>
 
 	* configure.ac: Check if XShm is really implemented (it isn't on

@@ -486,7 +486,7 @@ seem to cause edges to be off by a pixel
 		  x0++;
 		}
 	    }
-	  if (x1 >= clip_x1) x1 = clip_x1 - 1; /* TODO? */
+	  if (x1 > clip_x1) x1 = clip_x1;
 
 	  ri.dst = wi->data + x0 * DI.bytes_per_pixel
 		   + cy * wi->bytes_per_line;
@@ -570,7 +570,7 @@ seem to cause edges to be off by a pixel
 }
 
 
-- (void)DPSimage: (NSAffineTransform * ) matrix
+- (void)DPSimage: (NSAffineTransform *) matrix
 		: (int) pixelsWide : (int) pixelsHigh
 		: (int) bitsPerSample : (int) samplesPerPixel 
 		: (int) bitsPerPixel : (int) bytesPerRow : (BOOL) isPlanar
@@ -620,7 +620,7 @@ seem to cause edges to be off by a pixel
 	}
       else
 	alpha_dest = NULL;
-	
+
       ox = [matrix transformPoint: NSMakePoint(0, 0)].x;
       oy = wi->sy - [matrix transformPoint: NSMakePoint(0, 0)].y - pixelsHigh;
 
