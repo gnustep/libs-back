@@ -1,3 +1,10 @@
+2003-01-14  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xdps/NSDPSContext.m
+	Removed unneeded method [xrContext]. Moved context access into
+	[createDPSContext] and call [XGServer xrContextForScreen:] instead
+	of [XGServer xrContext].
+
 2002-12-31  Adam Fedor  <fedor@gnu.org>
 
 	* Headers/x11/XGOpenGL.h: Redefine BOOL to avoid name collision
