@@ -1,3 +1,9 @@
+2003-06-29 17:34  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m (-initWithFontName:matrix:screenFont:): Round
+	the matrix entries for screen fonts to integers to get consistent
+	handling of non-integer sized screen fonts.
+
 2003-06-28 15:27  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Use a specific table when translating
