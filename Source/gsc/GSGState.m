@@ -72,24 +72,12 @@
   [super init];
 
   drawcontext = drawContext;
-  ctm = [[NSAffineTransform allocWithZone: GSObjCZone(self)] init];
   offset = NSMakePoint(0, 0);
   path   = nil;
   font   = nil;
-
-  /* Initialize colors. By default the same color is used for filling and 
-     stroking unless fill and/or stroke color is set explicitly */
-  cstate       = COLOR_BOTH;
   fillColorS   = nil;
   strokeColorS = nil;
-  fillColor    = gsMakeColor(gray_colorspace, 0, 0, 0, 0);
-  fillColor.field[AINDEX] = 1.0;
-  strokeColor    = gsMakeColor(gray_colorspace, 0, 0, 0, 0);
-  strokeColor.field[AINDEX] = 1.0;
-
-  charSpacing = 0;
-  textMode    = GSTextFill;
-  textCtm     = [[NSAffineTransform allocWithZone: GSObjCZone(self)] init];
+  [self DPSinitgraphics];
   return self;
 }
 
@@ -458,7 +446,28 @@
 /* ----------------------------------------------------------------------- */
 - (void) DPSinitgraphics
 {
-  [self subclassResponsibility: _cmd];
+  DESTROY(path);
+  DESTROY(font);
+  DESTROY(fillColorS);
+  DESTROY(strokeColorS);
+  if (ctm)
+    [ctm makeIdentityMatrix];
+  else
+    ctm = [[NSAffineTransform allocWithZone: GSObjCZone(self)] init];
+
+   /* Initialize colors. By default the same color is used for filling and 
+     stroking unless fill and/or stroke color is set explicitly */
+  fillColor = gsMakeColor(gray_colorspace, 0, 0, 0, 0);
+  [self setColor: fillColor state: COLOR_BOTH];
+  fillColor.field[AINDEX] = 1.0;
+  strokeColor.field[AINDEX] = 1.0;
+
+  charSpacing = 0;
+  textMode    = GSTextFill;
+  if (textCtm)
+    [textCtm makeIdentityMatrix];
+  else
+    textCtm = [[NSAffineTransform allocWithZone: GSObjCZone(self)] init];
 }
 
 - (void)DPScurrentflat: (float *)flatness 

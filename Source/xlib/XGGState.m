@@ -1415,16 +1415,10 @@ typedef enum {
 
 - (void)DPSinitgraphics 
 {
-  [ctm makeIdentityMatrix];
-  DESTROY(path);
+  [super DPSinitgraphics];
   if (clipregion)
     XDestroyRegion(clipregion);
   clipregion = 0;
-  /* FIXME: reset the GC */
-  fillColor = gsMakeColor(gray_colorspace, 0, 0, 0, 0);
-  [self setColor: fillColor state: COLOR_BOTH];
-  fillColor.field[AINDEX] = 1.0;
-  strokeColor.field[AINDEX] = 1.0;
 }
 
 - (void)DPSsetdash: (const float *)pat : (int)size : (float)pat_offset 
