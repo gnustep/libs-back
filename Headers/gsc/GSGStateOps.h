@@ -105,6 +105,8 @@
 /* ----------------------------------------------------------------------- */
 /* Paint operations */
 /* ----------------------------------------------------------------------- */
+- (NSPoint) currentPoint;
+
 - (void) DPSarc: (float)x : (float)y : (float)r : (float)angle1 
 	       : (float)angle2;
 - (void) DPSarcn: (float)x : (float)y : (float)r : (float)angle1 

@@ -1,3 +1,8 @@
+2002-08-30 00:33  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Headers/gsc/GSGStateOps.h, Source/art/ARTContext.m: Remove
+	ARTGState's own path handling and have it use GSGState's again.
+
 2002-08-28  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSGState.m
