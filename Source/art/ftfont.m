@@ -604,7 +604,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	      self, name,
 	      fmatrix[0], fmatrix[1], fmatrix[2],
 	      fmatrix[3], fmatrix[4], fmatrix[5],
-	      screenFont);
+	      p_screenFont);
 
   font_entry = [fcfg_all_fonts objectForKey: name];
   if (!font_entry)
@@ -1165,7 +1165,7 @@ extern void GSToUnicode();
     yx = matrix[0] * transform->matrix.m12 + matrix[1] * transform->matrix.m22;
     xy = matrix[2] * transform->matrix.m11 + matrix[3] * transform->matrix.m21;
     yy = matrix[2] * transform->matrix.m12 + matrix[3] * transform->matrix.m22;
-
+ 
     /* If we're drawing 'normal' text (unscaled, unrotated, reasonable
        size), we can and should use the sbit cache for screen fonts. */
     if (screenFont &&
@@ -1221,7 +1221,6 @@ extern void GSToUnicode();
 	ftdelta.x = ftdelta.y = 0;
       }
   }
-
 
 /*	NSLog(@"drawString: '%s' at: %i:%i  to: %i:%i:%i:%i:%p\n",
 		s, x, y, x0, y0, x1, y1, buf);*/
@@ -1445,20 +1444,88 @@ extern void GSToUnicode();
 
 - (NSSize) advancementForGlyph: (NSGlyph)glyph
 {
-  FT_Glyph g;
-  FTC_ImageDesc *cur;
-/* TODO: this is ugly */
-  cur = &imgd;
-  if (FTC_ImageCache_Lookup(ftc_imagecache, cur, glyph, &g, NULL))
+  if (screenFont)
     {
-//		NSLog(@"advancementForGlyph: %04x -> %i not found\n", aGlyph, glyph);
-      return NSZeroSize;
+      /* TODO: try to more efficiently? */
+      /* TODO: set up all this stuff in -init... for the raw metric case */
+      float xx, yy;
+      FTC_ImageDesc cur;
+      FTC_SBit sbit;
+
+      cur = imgd;
+
+      xx = matrix[0];
+      yy = matrix[3];
+
+	if (xx == yy && xx < 16 && xx >= 8)
+	  {
+	    int rh = face_info->render_hints_hack;
+	    if (rh & 0x10000)
+	      {
+		cur.type = ftc_image_grays;
+		rh = (rh >> 8) & 0xff;
+	      }
+	    else
+	      {
+		cur.type = ftc_image_mono;
+		rh = rh & 0xff;
+	      }
+	    if (rh & 1)
+	      cur.type |= ftc_image_flag_autohinted;
+	    if (!(rh & 2))
+	      cur.type |= ftc_image_flag_unhinted;
+	  }
+	else if (xx < 8)
+	  cur.type = ftc_image_grays | ftc_image_flag_unhinted;
+	else
+	  cur.type = ftc_image_grays;
+
+      if (FTC_SBitCache_Lookup(ftc_sbitcache, &cur, glyph, &sbit, NULL))
+	return NSZeroSize;
+
+      return NSMakeSize(sbit->xadvance, sbit->yadvance);
     }
+  else
+    {
+      FT_Face face;
+      FT_Glyph gl;
+      FT_Matrix ftmatrix;
+      FT_Vector ftdelta;
+      float f;
+      NSSize s;
 
-/*	NSLog(@"advancementForGlyph: %04x -> %i  %08xx%08x\n",
-		aGlyph, glyph, g->advance.x, g->advance.y);*/
+      f = fabs(matrix[0] * matrix[3] - matrix[1] * matrix[2]);
+      if (f > 1)
+	f = sqrt(f);
+      else
+	f = 1.0;
 
-  return NSMakeSize(g->advance.x / 65536.0, g->advance.y / 65536.0);
+      f = (int)f;
+
+      ftmatrix.xx = matrix[0] / f * 65536.0;
+      ftmatrix.xy = matrix[1] / f * 65536.0;
+      ftmatrix.yx = matrix[2] / f * 65536.0;
+      ftmatrix.yy = matrix[3] / f * 65536.0;
+      ftdelta.x = ftdelta.y = 0;
+
+      if (FTC_Manager_Lookup_Size(ftc_manager, &imgd.font, &face, 0))
+	return NSZeroSize;
+
+      if (FT_Load_Glyph(face, glyph, FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP))
+	return NSZeroSize;
+
+      if (FT_Get_Glyph(face->glyph, &gl))
+	return NSZeroSize;
+
+      if (FT_Glyph_Transform(gl, &ftmatrix, &ftdelta))
+	return NSZeroSize;
+
+      s = NSMakeSize(gl->advance.x / 65536.0, gl->advance.y / 65536.0);
+
+      FT_Done_Glyph(gl);
+
+      return s;
+    }
 }
 
 - (NSRect) boundingRectForGlyph: (NSGlyph)glyph
