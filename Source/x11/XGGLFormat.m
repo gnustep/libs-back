@@ -69,12 +69,14 @@
   NSMutableData *data = [NSMutableData data];
   MAKE_DISPLAY(dpy);
 
-#define append(a, b) v1 = a;v2 = b;[data appendBytes: &v1 length: sizeof(v1)];\
-  [data appendBytes: &v2 length: sizeof(v2)]
-#define append1(a) v1 = a;[data appendBytes: &v1 length: sizeof(v1)]
+#define append(a, b) do {v1 = a;v2 = b;[data appendBytes: &v1 length: sizeof(v1)];\
+  [data appendBytes: &v2 length: sizeof(v2)];} while (0)
+#define append1(a) do {v1 = a;[data appendBytes: &v1 length: sizeof(v1)];} while (0)
 
   if (GSglxMinorVersion (dpy) < 3)
-    append1 (GLX_RGBA);
+    {
+      append1 (GLX_RGBA);
+    }
 
   while(*ptr)
     {
