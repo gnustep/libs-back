@@ -89,7 +89,7 @@ that there's only one WinImage for each window. */
 -(void) _gotShmCompletion;
 -(void) _exposeRect: (NSRect)r;
 
-+(void) initializeBackendWithDrawInfo: (draw_info_t *)d;
++(void) initializeBackendWithDrawInfo: (struct draw_info_s *)d;
 
 #ifndef RDS
 +(void) _gotShmCompletion: (Drawable)d;

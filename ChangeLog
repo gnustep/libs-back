@@ -1,3 +1,12 @@
+2002-08-26 15:59  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Headers/art/ARTContext.h, Source/art/ARTContext.m,
+	Source/art/ARTWindowBuffer.m, Source/art/GNUmakefile,
+	Source/art/blit.h, Source/art/ARTGState.h, Source/art/image.m: Move
+	image handling (-DPSimage...) to its own file. Add handling of
+	arbitrary transformations, arbitrary bits/samples, bits/pixel, etc.,
+	planar data, and gray and cmyk colorspaces.
+
 2002-08-26 01:09  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/blit.m: Reformat to fit coding standards better.

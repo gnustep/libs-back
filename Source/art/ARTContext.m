@@ -24,32 +24,18 @@ copyright 2002 Alexander Malmberg <alexander@malmberg.org>
 #include <AppKit/NSBezierPath.h>
 #include <AppKit/NSColor.h>
 
-#include "gsc/GSContext.h"
-#include "gsc/GSGState.h"
+#include "ARTGState.h"
 
+#include "ARTWindowBuffer.h"
 #include "blit.h"
 #include "ftfont.h"
 
-#include "art/ARTContext.h"
-
-#ifndef RDS
-#include "x11/XGServer.h"
-#include "x11/XGServerWindow.h"
-#else
-#include "rds/RDSClient.h"
-#endif
-
-
-#include <libart_lgpl/libart.h>
 #include <libart_lgpl/art_svp_intersect.h>
 
 
 #ifndef PI
 #define PI 3.14159265358979323846264338327950288
 #endif
-
-
-#include "ARTWindowBuffer.h"
 
 
 /*
@@ -106,35 +92,7 @@ Context:
    */
 
 
-static draw_info_t DI;
-
-
-/** ARTGState does all the work **/
-
-@interface ARTGState : GSGState
-{
-	unsigned char fill_color[4],stroke_color[4];
-
-	float line_width;
-	int linecapstyle,linejoinstyle;
-	float miter_limit;
-
-	ArtVpathDash dash;
-	int do_dash;
-
-
-	ARTWindowBuffer *wi;
-
-	int clip_x0,clip_y0,clip_x1,clip_y1;
-	BOOL all_clipped;
-#define CLIP_DATA (wi->data+clip_x0*wi->bytes_per_pixel+clip_y0*wi->bytes_per_line)
-	int clip_sx,clip_sy;
-
-	ArtSVP *clip_path;
-}
-
-@end
-
+draw_info_t ART_DI;
 
 
 /* TODO:
@@ -2072,107 +2030,6 @@ will give correct results as long as both axises are scaled the same.
 	[path removeAllPoints];
 }
 
-- (void)DPSimage: (NSAffineTransform*) matrix
-		: (int) pixelsWide : (int) pixelsHigh
-		: (int) bitsPerSample : (int) samplesPerPixel 
-		: (int) bitsPerPixel : (int) bytesPerRow : (BOOL) isPlanar
-		: (BOOL) hasAlpha : (NSString *) colorSpaceName
-		: (const unsigned char *const [5]) data
-{
-/* this is very basic, but it's enough to handle cached image representations
-and that covers most (all?) actual uses of it */
-	int x,y,ox,oy;
-	const unsigned char *src=data[0];
-	unsigned char *alpha_dest;
-
-	render_run_t ri;
-
-	if (!wi || !wi->data) return;
-
-	if (wi->has_alpha)
-	{
-		if (DI.inline_alpha)
-			alpha_dest=wi->data+DI.inline_alpha_ofs;
-		else
-			alpha_dest=wi->alpha;
-	}
-	else
-		alpha_dest=NULL;
-
-//	NSLog(@"image (%ix%i) to (%ix%i) %i\n",pixelsWide,pixelsHigh,wi->sx,wi->sy,hasAlpha);
-
-	ox=[matrix transformPoint: NSMakePoint(0,0)].x;
-	oy=wi->sy-[matrix transformPoint: NSMakePoint(0,0)].y-pixelsHigh;
-
-	if (bitsPerSample==8 && !isPlanar && bytesPerRow==samplesPerPixel*pixelsWide &&
-	    ((samplesPerPixel==3 && bitsPerPixel==24 && !hasAlpha) ||
-	     (samplesPerPixel==4 && bitsPerPixel==32 && hasAlpha)))
-	{
-		for (y=0;y<pixelsHigh;y++)
-		{
-			for (x=0;x<pixelsWide;x++)
-			{
-				if (x+ox<clip_x0 || x+ox>=clip_x1 || y+oy<clip_y0 || y+oy>=clip_y1)
-				{
-					if (hasAlpha)
-						src+=4;
-					else
-						src+=3;
-					continue;
-				}
-				ri.dst=wi->data+(x+ox)*DI.bytes_per_pixel+(y+oy)*wi->bytes_per_line;
-				ri.dsta=wi->alpha+(x+ox)+(y+oy)*wi->sx;
-				ri.r=src[0];
-				ri.g=src[1];
-				ri.b=src[2];
-				if (hasAlpha)
-				{
-					ri.a=src[3];
-					/* TODO: find out if input is premultiplied or not */
-					if (ri.a && ri.a!=255)
-					{
-						ri.r=(255*ri.r)/ri.a;
-						ri.g=(255*ri.g)/ri.a;
-						ri.b=(255*ri.b)/ri.a;
-					}
-					if (alpha_dest)
-					{
-						if (src[3]==255)
-							RENDER_RUN_OPAQUE_A(&ri,1);
-						else if (src[3])
-							RENDER_RUN_ALPHA_A(&ri,1);
-					}
-					else
-					{
-						if (src[3]==255)
-							RENDER_RUN_OPAQUE(&ri,1);
-						else if (src[3])
-							RENDER_RUN_ALPHA(&ri,1);
-					}
-					src+=4;
-				}
-				else
-				{
-					ri.a=255;
-					if (alpha_dest)
-						RENDER_RUN_OPAQUE_A(&ri,1);
-					else
-						RENDER_RUN_OPAQUE(&ri,1);
-					src+=3;
-				}
-			}
-		}
-	}
-	else
-	{
-		NSLog(@"unimplemented DPSimage");
-		NSLog(@"%ix%i  |%@|  bips=%i spp=%i bipp=%i bypr=%i  planar=%i alpha=%i\n",
-			pixelsWide,pixelsHigh,matrix,
-			bitsPerSample,samplesPerPixel,bitsPerPixel,bytesPerRow,isPlanar,
-			hasAlpha);
-	}
-}
-
 @end
 
 
@@ -2486,8 +2343,8 @@ static ArtSVP *copy_svp(ArtSVP *svp)
 #include <Foundation/NSDebug.h>
 #include <Foundation/NSUserDefaults.h>
 #include <AppKit/NSBitmapImageRep.h>
-#include <AppKit/NSGraphics.h>
 #include <AppKit/NSImage.h>
+#include <AppKit/NSGraphics.h>
 
 @interface NSBitmapImageRep (BackEnd)
 - (Pixmap) xPixmapMask;
