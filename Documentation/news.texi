@@ -7,14 +7,19 @@
 @include version.texi
 @end ifset
 
-@section Noteworthy changes in version @samp{0.8.1}
+@section Noteworthy changes in version @samp{0.8.2}
 
-art (libart-based) backend added. Use ./configure --enable-graphics=art
-to choose this backend.
+Improved font handling in art backend. Improved compositing  with
+transformations and clipping in art backend.
 
 @c ====================================================================
 @c Keep the next line just below the list of changes in most recent version.
 @ifclear ANNOUNCE-ONLY
+
+@section Noteworthy changes in version @samp{0.8.1}
+
+art (libart-based) backend added. Use ./configure --enable-graphics=art
+to choose this backend.
 
 @section Noteworthy changes in version @samp{0.8.0}
 
