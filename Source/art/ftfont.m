@@ -576,11 +576,39 @@ static void load_font_configuration(void)
 @end
 
 @implementation FTFontEnumerator
-- (void) enumerateFontsAndFamilies
+-(void) enumerateFontsAndFamilies
 {
   ASSIGN(allFontNames, fcfg_allFontNames);
   ASSIGN(allFontFamilies, fcfg_allFontFamilies);
 }
+
+-(NSString *) defaultSystemFontName
+{
+  if ([fcfg_allFontNames containsObject: @"BitstreamVeraSans-Roman"])
+    return @"BitstreamVeraSans-Roman";
+  if ([fcfg_allFontNames containsObject: @"FreeSans"])
+    return @"FreeSans";
+  return @"Helvetica";
+}
+
+-(NSString *) defaultBoldSystemFontName
+{
+  if ([fcfg_allFontNames containsObject: @"BitstreamVeraSans-Bold"])
+    return @"BitstreamVeraSans-Bold";
+  if ([fcfg_allFontNames containsObject: @"FreeSansBold"])
+    return @"FreeSansBold";
+  return @"Helvetica-Bold";
+}
+
+-(NSString *) defaultFixedPitchFontName
+{
+  if ([fcfg_allFontNames containsObject: @"BitstreamVeraSansMono-Roman"])
+    return @"BitstreamVeraSansMono-Roman";
+  if ([fcfg_allFontNames containsObject: @"FreeMono"])
+    return @"FreeMono";
+  return @"Courier";
+}
+
 @end
 
 
@@ -988,8 +1016,8 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	{
 	  if ((error=FTC_SBitCache_Lookup(ftc_sbitcache, &cur, glyph, &sbit, NULL)))
 	    {
-	      NSLog(@"FTC_SBitCache_Lookup() failed with error %08x (%08x, %ix%i, %08x)\n",
-		error, cur.font.face_id, cur.font.pix_width, cur.font.pix_height,
+	      NSLog(@"FTC_SBitCache_Lookup() failed with error %08x (%08x, %08x, %ix%i, %08x)\n",
+		error, glyph, cur.font.face_id, cur.font.pix_width, cur.font.pix_height,
 #ifdef FT212_STUFF
 		cur.type
 #else
@@ -1372,8 +1400,8 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	{
 	  if ((error=FTC_SBitCache_Lookup(ftc_sbitcache, &cur, glyph, &sbit, NULL)))
 	    {
-	      NSLog(@"FTC_SBitCache_Lookup() failed with error %08x (%08x, %ix%i, %08x)\n",
-		error, cur.font.face_id, cur.font.pix_width, cur.font.pix_height,
+	      NSLog(@"FTC_SBitCache_Lookup() failed with error %08x (%08x, %08x, %ix%i, %08x)\n",
+		error, glyph, cur.font.face_id, cur.font.pix_width, cur.font.pix_height,
 #ifdef FT212_STUFF
 		cur.type
 #else
@@ -1695,8 +1723,8 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
       if ((error=FTC_SBitCache_Lookup(ftc_sbitcache, &cur, glyph, &sbit, NULL)))
 	{
-	  NSLog(@"FTC_SBitCache_Lookup() failed with error %08x (%08x, %ix%i, %08x)\n",
-	    error, cur.font.face_id, cur.font.pix_width, cur.font.pix_height,
+	  NSLog(@"FTC_SBitCache_Lookup() failed with error %08x (%08x, %08x, %ix%i, %08x)\n",
+	    error, glyph, cur.font.face_id, cur.font.pix_width, cur.font.pix_height,
 #ifdef FT212_STUFF
 	    cur.type
 #else

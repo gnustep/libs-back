@@ -1,3 +1,8 @@
+2003-08-10 23:26  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m: Override the new default font name methods.
+	Log the glyph when logging FTC_SBitCache_Lookup errors.
+
 2003-08-09  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Tools/xpbs.m
