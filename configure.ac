@@ -77,6 +77,18 @@ case "$target_os" in
 esac
 
 #--------------------------------------------------------------------
+# Find TIFF (Solaris requires this to find the correct library, even though
+# it does not link directly to it)
+#--------------------------------------------------------------------
+AC_ARG_WITH(tiff_library,
+           [  --with-tiff-library=DIR TIFF library file are in DIR], ,
+           with_tiff_library=)
+
+if test -n "$with_tiff_library"; then
+  GRAPHIC_LFLAGS="$GRAPHIC_LFLAGS -L$with_tiff_library"
+fi
+
+#--------------------------------------------------------------------
 # Find for X windows
 #--------------------------------------------------------------------
 set_x_paths=yes
@@ -114,7 +126,6 @@ if test "$have_funcproto" = no; then
   AC_DEFINE(FUNCPROTO,1,[Define if X11 doesn't automatically use prototypes])
 fi
 
-
 #--------------------------------------------------------------------
 # Find for DPS
 #--------------------------------------------------------------------
@@ -148,7 +159,7 @@ fi
 PKG_XFT=no
 PKG_CHECK_MODULES(XFT, xft, WITH_XFT=yes, WITH_XFT=no)
 
-if test WITH_XFT = no; then
+if test $WITH_XFT = no; then
   # pkg-config failed for some reason, Check the old way?
   save_CPPFLAGS=${CPPFLAGS}
   save_LIBS=${LIBS}
@@ -316,7 +327,6 @@ fi
 #--------------------------------------------------------------------
 WITH_WRASTER=no
 AC_SUBST(WITH_WRASTER)
-AC_DEFINE(HAVE_WRASTER_H,0,[Define to 0 as we don't use wraster anymore])
 
 # Revert to previous flags (removing added GNUstep flags)
 CPPFLAGS=${GRAPHIC_CFLAGS}

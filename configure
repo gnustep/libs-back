@@ -858,6 +858,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-tiff-library=DIR TIFF library file are in DIR
   --with-x                use the X Window System
   --with-name=PREFIX      Set the name of the backend (def=back)
 
@@ -2394,6 +2395,23 @@ case "$target_os" in
   netbsd*)    CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
 	      LDFLAGS="$LDFLAGS -Wl,-R/usr/pkg/lib -L/usr/pkg/lib";;
 esac
+
+#--------------------------------------------------------------------
+# Find TIFF (Solaris requires this to find the correct library, even though
+# it does not link directly to it)
+#--------------------------------------------------------------------
+
+# Check whether --with-tiff_library or --without-tiff_library was given.
+if test "${with_tiff_library+set}" = set; then
+  withval="$with_tiff_library"
+
+else
+  with_tiff_library=
+fi;
+
+if test -n "$with_tiff_library"; then
+  GRAPHIC_LFLAGS="$GRAPHIC_LFLAGS -L$with_tiff_library"
+fi
 
 #--------------------------------------------------------------------
 # Find for X windows
@@ -4225,7 +4243,6 @@ _ACEOF
 
 fi
 
-
 #--------------------------------------------------------------------
 # Find for DPS
 #--------------------------------------------------------------------
@@ -4835,10 +4852,12 @@ fi
   fi
 
   if test "$PKG_CONFIG" = "no" ; then
-     echo "*** The pkg-config script could not be found. Make sure it is"
-     echo "*** in your path, or set the PKG_CONFIG environment variable"
-     echo "*** to the full path to pkg-config."
-     echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
+     echo "pkg-config script not be found"
+     ## We don't want the user to see this warning
+     ## echo "*** The pkg-config script could not be found. Make sure it is"
+     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
+     ## echo "*** to the full path to pkg-config."
+     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
   else
      PKG_CONFIG_MIN_VERSION=0.9.0
      if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
@@ -4885,7 +4904,7 @@ echo "${ECHO_T}$XFT_LIBS" >&6
   fi
 
 
-if test WITH_XFT = no; then
+if test $WITH_XFT = no; then
   # pkg-config failed for some reason, Check the old way?
   save_CPPFLAGS=${CPPFLAGS}
   save_LIBS=${LIBS}
@@ -6477,10 +6496,12 @@ fi
   fi
 
   if test "$PKG_CONFIG" = "no" ; then
-     echo "*** The pkg-config script could not be found. Make sure it is"
-     echo "*** in your path, or set the PKG_CONFIG environment variable"
-     echo "*** to the full path to pkg-config."
-     echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
+     echo "pkg-config script not be found"
+     ## We don't want the user to see this warning
+     ## echo "*** The pkg-config script could not be found. Make sure it is"
+     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
+     ## echo "*** to the full path to pkg-config."
+     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
   else
      PKG_CONFIG_MIN_VERSION=0.9.0
      if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
@@ -6588,10 +6609,12 @@ fi
   fi
 
   if test "$PKG_CONFIG" = "no" ; then
-     echo "*** The pkg-config script could not be found. Make sure it is"
-     echo "*** in your path, or set the PKG_CONFIG environment variable"
-     echo "*** to the full path to pkg-config."
-     echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
+     echo "pkg-config script not be found"
+     ## We don't want the user to see this warning
+     ## echo "*** The pkg-config script could not be found. Make sure it is"
+     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
+     ## echo "*** to the full path to pkg-config."
+     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
   else
      PKG_CONFIG_MIN_VERSION=0.9.0
      if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
@@ -6802,11 +6825,6 @@ fi
 # Set definitions
 #--------------------------------------------------------------------
 WITH_WRASTER=no
-
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_WRASTER_H 0
-_ACEOF
 
 
 # Revert to previous flags (removing added GNUstep flags)

@@ -74,9 +74,6 @@
 /* Define if you have XftDrawStringUtf8 */
 #undef HAVE_UTF8
 
-/* Define to 0 as we don't use wraster anymore */
-#undef HAVE_WRASTER_H
-
 /* Define to 1 if you have the <X11/extensions/XShm.h> header file. */
 #undef HAVE_X11_EXTENSIONS_XSHM_H
 
