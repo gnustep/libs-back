@@ -81,8 +81,6 @@ some cases).
 #define MPRE(r) M2PRE(r, FORMAT_INSTANCE)
 
 
-/* TODO: these need versions for destination alpha */
-
 static void MPRE(blit_alpha_opaque) (unsigned char *adst,
 	const unsigned char *asrc,
 	unsigned char r, unsigned char g, unsigned char b, int num)
@@ -178,6 +176,81 @@ static void MPRE(blit_alpha) (unsigned char *adst, const unsigned char *asrc,
 }
 
 static void MPRE(blit_mono) (unsigned char *adst,
+	const unsigned char *src, int src_ofs,
+	unsigned char r, unsigned char g, unsigned char b, unsigned char alpha,
+	int num)
+{
+  BLEND_TYPE *dst = (BLEND_TYPE *)adst;
+  int i, nr, ng, nb;
+  unsigned char s;
+  int a;
+
+  a = alpha;
+  if (a>127) a++;
+
+  s = *src++;
+  i = src_ofs;
+  while (src_ofs--) s <<= 1;
+
+  for (; num; num--)
+    {
+      if (s&0x80)
+	{
+	  BLEND_READ(dst, nr, ng, nb)
+	  nr = (r * a + nr * (255 - a) + 0xff) >> 8;
+	  ng = (g * a + ng * (255 - a) + 0xff) >> 8;
+	  nb = (b * a + nb * (255 - a) + 0xff) >> 8;
+	  BLEND_WRITE(dst, nr, ng, nb)
+	  BLEND_INC(dst)
+	    }
+      else
+	{
+	  BLEND_INC(dst)
+	}
+      i++;
+      if (i == 8)
+	{
+	  s = *src++;
+	  i = 0;
+	}
+      else
+	s <<= 1;
+    }
+}
+
+
+static void MPRE(blit_alpha_a) (unsigned char *adst, unsigned char *dsta,
+	const unsigned char *asrc,
+	unsigned char r, unsigned char g, unsigned char b, unsigned char a_alpha,
+	int num)
+{
+  const unsigned char *src = asrc;
+  BLEND_TYPE *dst = (BLEND_TYPE *)adst;
+  int a, nr, ng, nb, na;
+  int alpha = a_alpha;
+
+  if (alpha>127) alpha++;
+
+  for (; num; num--, src++)
+    {
+      a = *src;
+      if (!a)
+	{
+	  ALPHA_INC(dst, dsta)
+	  continue;
+	}
+      a *= alpha;
+      BLEND_READ_ALPHA(dst, dsta, nr, ng, nb, na)
+      nr = (r * a + nr * (65280 - a) + 0xff00) >> 16;
+      ng = (g * a + ng * (65280 - a) + 0xff00) >> 16;
+      nb = (b * a + nb * (65280 - a) + 0xff00) >> 16;
+      na = ((a << 8) + na * (65280 - a) + 0xff00) >> 16;
+      BLEND_WRITE_ALPHA(dst, dsta, nr, ng, nb, na)
+      ALPHA_INC(dst, dsta)
+    }
+}
+
+static void MPRE(blit_mono_a) (unsigned char *adst, unsigned char *dsta,
 	const unsigned char *src, int src_ofs,
 	unsigned char r, unsigned char g, unsigned char b, unsigned char alpha,
 	int num)
@@ -1548,6 +1621,8 @@ static draw_info_t draw_infos[DI_NUM] = {
   NPRE(blit_mono_opaque,x), \
   NPRE(blit_alpha,x), \
   NPRE(blit_mono,x), \
+  NPRE(blit_alpha_a,x), \
+  NPRE(blit_mono_a,x), \
   \
   NPRE(blit_subpixel,x), \
   \

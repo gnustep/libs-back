@@ -1,3 +1,11 @@
+2003-03-29 19:13  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ARTContext.m, Source/art/blit.h, Source/art/blit.m,
+	Source/art/ftfont.h, Source/art/ftfont.m: Implement rendering of
+	text to buffers with destination alpha. Change the subpixel
+	font rendering to override the glyph operator since it's the one
+	actually being used.
+
 2003-03-25  Adam Fedor  <fedor@gnu.org>
 
 	* Source/xlib/GSXftFontInfo.m: Protect 'id' when including
