@@ -510,16 +510,29 @@
   [self subclassResponsibility: _cmd];
 }
 
-- (void)DPScurrentpoint: (float *)x : (float *)y 
+- (NSPoint) currentPoint
 {
   NSAffineTransform *ictm;
   NSPoint user;
 
+  if (path == nil)
+    {
+      return NSMakePoint(0, 0);
+    }
+
   // This is rather slow, but it is not used very often
   ictm = [ctm copyWithZone: GSObjCZone(self)];
   [ictm invert];
-  user = [ictm pointInMatrixSpace: [path currentPoint]];
+  user = [ictm transformPoint: [path currentPoint]];
   RELEASE(ictm);
+  return user;
+}
+
+- (void)DPScurrentpoint: (float *)x : (float *)y 
+{
+  NSPoint user;
+
+  user = [self currentPoint];
   *x = user.x;
   *y = user.y;
 }
@@ -613,33 +626,60 @@
 /* ----------------------------------------------------------------------- */
 - (void) DPSarc: (float)x : (float)y : (float)r : (float)angle1 : (float)angle2 
 {
-  NSPoint center = [ctm pointInMatrixSpace: NSMakePoint(x, y)];
-  NSSize  radius = [ctm sizeInMatrixSpace: NSMakeSize(r, r)];
+  NSBezierPath *newPath;
 
+  newPath = [[NSBezierPath alloc] init];
+  if ((path != nil) && ([path elementCount] != 0))
+    {
+      [newPath lineToPoint: [self currentPoint]];
+    }
+  [newPath appendBezierPathWithArcWithCenter: NSMakePoint(x, y)  
+	   radius: r
+	   startAngle: angle1
+	   endAngle: angle2
+	   clockwise: NO];
+  [newPath transformUsingAffineTransform: ctm];
   CHECK_PATH;
-  [path appendBezierPathWithArcWithCenter: center  
-	radius: radius.width
-	startAngle: angle1
-	endAngle: angle2
-	clockwise: NO];
+  [path appendBezierPath: newPath];
+  RELEASE(newPath);
 }
 
 - (void) DPSarcn: (float)x : (float)y : (float)r : (float)angle1 : (float)angle2 
 {
-  NSPoint center = [ctm pointInMatrixSpace: NSMakePoint(x, y)];
-  NSSize  radius = [ctm sizeInMatrixSpace: NSMakeSize(r, r)];
+  NSBezierPath *newPath;
 
+  newPath = [[NSBezierPath alloc] init];
+  if ((path != nil) && ([path elementCount] != 0))
+    {
+      [newPath lineToPoint: [self currentPoint]];
+    }
+  [newPath appendBezierPathWithArcWithCenter: NSMakePoint(x, y)  
+	   radius: r
+	   startAngle: angle1
+	   endAngle: angle2
+	   clockwise: YES];
+  [newPath transformUsingAffineTransform: ctm];
   CHECK_PATH;
-  [path appendBezierPathWithArcWithCenter: center  
-	radius: radius.width
-	startAngle: angle1
-	endAngle: angle2
-	clockwise: YES];
+  [path appendBezierPath: newPath];
+  RELEASE(newPath);
 }
 
 - (void)DPSarct: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)r 
 {
-  [self notImplemented: _cmd];
+  NSBezierPath *newPath;
+
+  newPath = [[NSBezierPath alloc] init];
+  if ((path != nil) && ([path elementCount] != 0))
+    {
+	[newPath lineToPoint: [self currentPoint]];
+    }
+  [newPath appendBezierPathWithArcFromPoint: NSMakePoint(x1, y1)
+	   toPoint: NSMakePoint(x2, y2)
+	   radius: r];
+  [newPath transformUsingAffineTransform: ctm];
+  CHECK_PATH;
+  [path appendBezierPath: newPath];
+  RELEASE(newPath);
 }
 
 - (void) DPSclip
