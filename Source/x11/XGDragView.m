@@ -559,22 +559,17 @@ static	XGDragView	*sharedDragView = nil;
 */
 - (void) _handleDrag: (NSEvent*)theEvent
 {
-  // Caching some often used values. These values do not
-  // change in this method.
-  Display	*xDisplay = [XGServer currentXDisplay];
-  // Use eWindow for coordination transformation
-  NSWindow	*eWindow = [theEvent window];
+  Display	*xDisplay = [XGServer currentXDisplay]; // Caching some often used values.
+  NSWindow	*eWindow = [theEvent window];   // Use eWindow for coordination transformation
   NSDate	*theDistantFuture = [NSDate distantFuture];
   NSImage       *dragImage = [dragCell image];
   unsigned int	eventMask = NSLeftMouseDownMask | NSLeftMouseUpMask
     | NSLeftMouseDraggedMask | NSMouseMovedMask
     | NSPeriodicMask | NSAppKitDefinedMask | NSFlagsChangedMask;
-
-  NSPoint       startPoint;
-  
-  // Storing values, to restore after we have finished.
+  NSPoint       startPoint;   // Storing values, to restore after we have finished.
   NSCursor      *cursorBeforeDrag = [NSCursor currentCursor];
-  
+  BOOL          refreshedView = NO;
+
   // Unset the target window  
   targetWindow = 0;
   targetMask = NSDragOperationAll;
@@ -617,6 +612,14 @@ static	XGDragView	*sharedDragView = nil;
   while ([theEvent type] != NSLeftMouseUp)
     {
       [self _handleEventDuringDragging: theEvent];
+      
+      // FIXME: Force the redisplay of the source view after the drag.  
+      // Temporary fix for bug#11352.
+      if(refreshedView == NO)
+	{
+	  [dragSource display];
+	  refreshedView = YES;
+	}
 
       theEvent = [NSApp nextEventMatchingMask: eventMask
 				    untilDate: theDistantFuture
