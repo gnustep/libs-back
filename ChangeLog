@@ -1,3 +1,11 @@
+2003-11-02 02:58  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/gsc/GSStreamContext.m Whitespace cleanups.
+
+	(writeHex): Use index properly; don't always write the first byte.
+	Use fputc() instead of fprintf() (was doing the hex conversion
+	manually anyway, might as well make it efficient).
+
 2003-11-02 02:27  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/gsc/GSStreamContext.m (fpfloat, writeHex): Make static.

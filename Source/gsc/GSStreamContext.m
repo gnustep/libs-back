@@ -278,7 +278,7 @@ fpfloat(FILE *stream, float f)
       
       for (i = 0; i < length; i++)
 	{
-	  fprintf(gstream, "/%s glyphshow\n",[font nameOfGlyph: glyphs[i]]);
+	  fprintf(gstream, "/%s glyphshow\n", [font nameOfGlyph: glyphs[i]]);
 	}
     }
   else
@@ -286,7 +286,7 @@ fpfloat(FILE *stream, float f)
       /* If backend doesn't handle nameOfGlyph, assume the glyphs are
 	 just mapped to characters. This is the case for the xlib backend
 	 (at least for now). */
-      char string[length+1];
+      char string[length + 1];
       unsigned int i;
       
       for (i = 0; i < length; i++)
@@ -683,10 +683,10 @@ fpfloat(FILE *stream, float f)
   [self DPSsetdash: pattern : count : phase];
 
   count = [path elementCount];
-  for(i = 0; i < count; i++) 
+  for (i = 0; i < count; i++)
     {
       type = [path elementAtIndex: i associatedPoints: pts];
-      switch(type) 
+      switch (type)
         {
 	case NSMoveToBezierPathElement:
 	  [self DPSmoveto: pts[0].x : pts[0].y];
@@ -795,16 +795,16 @@ fpfloat(FILE *stream, float f)
 
 @end
 
-static char *hexdigits = "0123456789abcdef";
 
 static void
 writeHex(FILE *gstream, const unsigned char *data, int count)
 {
+static const char *hexdigits = "0123456789abcdef";
   int i;
   for (i = 0; i < count; i++)
     {
-      fprintf(gstream, "%c%c", hexdigits[(int)(data[0]/16)],
-	      hexdigits[(data[0] % 16)]);
+      fputc(hexdigits[(int)(data[i] / 16)], gstream);
+      fputc(hexdigits[(int)(data[i] % 16)], gstream);
       if (i && i % 40 == 0)
 	fprintf(gstream, "\n");
     }
@@ -869,7 +869,7 @@ writeHex(FILE *gstream, const unsigned char *data, int count)
 	      pixelsWide, pixelsHigh, bitsPerSample, pixelsWide,
 	      (flipped) ? pixelsHigh : -pixelsHigh, pixelsHigh);
       fprintf(gstream, "{currentfile %d string readhexstring pop}\n",
-	      pixelsWide*spp);
+	      pixelsWide * spp);
       fprintf(gstream, "false %d colorimage\n", spp);
     } 
   else
@@ -891,23 +891,23 @@ writeHex(FILE *gstream, const unsigned char *data, int count)
       int alpha = 0;
       unsigned char val;
 
-      for(j=0; j<bytes; j++) 
+      for (j = 0; j < bytes; j++)
 	{
-	  if(hasAlpha) 
+	  if (hasAlpha)
 	    {
-	      if(isPlanar)
+	      if (isPlanar)
 		alpha = data[spp][j];
 	      else
-		alpha = data[0][spp+j*samplesPerPixel];
+		alpha = data[0][spp + j * samplesPerPixel];
 	    }
 	  for (i = 0; i < spp; i++) 
 	    {
-	      if(isPlanar)
+	      if (isPlanar)
 		val = data[i][j];
 	      else
-		val = data[0][i+j*samplesPerPixel];
-	      if(hasAlpha)
-		val = 255 - ((255-val)*(long)alpha)/255;
+		val = data[0][i + j * samplesPerPixel];
+	      if (hasAlpha)
+		val = 255 - ((255 - val) * (long)alpha) / 255;
 	      writeHex(gstream, &val, 1);
 	    }
 	  if (j && j % 40 == 0)
@@ -918,7 +918,7 @@ writeHex(FILE *gstream, const unsigned char *data, int count)
   else 
     {
       // The data is already in the format the context expects it in
-      writeHex(gstream, data[0], bytes*samplesPerPixel);
+      writeHex(gstream, data[0], bytes * samplesPerPixel);
     }
 
   /* Restore original scaling */
