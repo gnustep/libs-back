@@ -36,6 +36,7 @@
 #include <Foundation/NSValue.h>
 #include <Foundation/NSString.h>
 #include <Foundation/NSUserDefaults.h>
+#include <Foundation/NSRunLoop.h>
 #include <Foundation/NSDebug.h>
 
 #include "x11/XGServerWindow.h"

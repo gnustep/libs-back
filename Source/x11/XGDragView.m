@@ -28,9 +28,13 @@
 
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSCursor.h>
+#include <AppKit/NSImage.h>
 #include <AppKit/NSPasteboard.h>
 #include <AppKit/NSView.h>
 #include <AppKit/NSWindow.h>
+
+#include <Foundation/NSDebug.h>
+#include <Foundation/NSThread.h>
 
 #include "x11/XGServer.h"
 #include "x11/XGServerWindow.h"
