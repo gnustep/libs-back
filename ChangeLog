@@ -31,6 +31,18 @@
 	Added fontconfig specific code.
 	Patch from Derek Zhou dzhou@chrontel.com with some adaption
 	
+2003-03-24  Adam Fedor  <fedor@gnu.org>
+
+	* Version: 0.8.5
+
+2003-03-11  Adam Fedor  <fedor@gnu.org>
+
+	* configure.ac: Only add libgdi32 for winlib
+
+2003-03-08  Adam Fedor  <fedor@gnu.org>
+
+	* Headers/x11/XGOpenGL.h: Standardize BOOL redefine to XWINDOWSBOOL.
+
 2003-02-24  Adam Fedor  <fedor@gnu.org>
 
 	* Version: 0.8.4
