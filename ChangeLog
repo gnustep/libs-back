@@ -1,3 +1,12 @@
+2004-11-09 23:15  Alexander Malmberg <alexander@malmberg.org>
+
+	* Source/art/ftfont.m (fix_path): Don't prepend the path to absolute
+	file names.
+	(-initWithFontName:matrix:screenFont:): Initialize cachedGlyph.
+	(-advancementForGlyph:): Handle NSNullGlyph.
+	(-glyphForCharacter:): Return NSNullGlyph if there's no glyph for
+	the character.
+
 2004-11-09 19:00  Alexander Malmberg <alexander@malmberg.org>
 
 	* Tools/gpbs.m (main): If we get a -GSStartupNotification argument,
