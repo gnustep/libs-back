@@ -152,7 +152,7 @@ xdnd_is_dnd_aware(DndClass *dnd, Window window, int *version, Atom *typelist)
       result = 0;
       for (t = typelist; *t; t++) 
 	{
-	  int j;
+	  unsigned long j;
 	  for (j = 1; j < count; j++) 
 	    {
 	      if (types[j] == *t) 
@@ -369,8 +369,8 @@ void
 xdnd_get_type_list(DndClass * dnd, Window window, Atom ** typelist)
 {
   Atom type, *a;
-  int format, i;
-  unsigned long count, remaining;
+  int format;
+  unsigned long i, count, remaining;
   unsigned char *data = NULL;
 
   *typelist = 0;
