@@ -243,6 +243,7 @@ static NSArray *fix_path(NSString *path, NSArray *files)
   return nfiles;
 }
 
+/* TODO: handling of .font packages needs to be reworked */
 static void add_face(NSString *family, int family_weight,
 	unsigned int family_traits, NSDictionary *d, NSString *path,
 	BOOL from_nfont)
@@ -254,12 +255,6 @@ static void add_face(NSString *family, int family_weight,
   NSString *fontName;
   NSString *faceName, *rawFaceName;
 
-
-  if (!from_nfont)
-    {
-      NSLog(@".font not back in yet");
-      return;
-    }
 
   fontName = [d objectForKey: @"PostScriptName"];
   if (!fontName)
@@ -304,6 +299,16 @@ static void add_face(NSString *family, int family_weight,
       translate individually? */
       /* TODO: Need to define the strings somewhere, and make sure the
       strings files get created.  */
+      faceName = [NSLocalizedStringFromTableInBundle(faceName,nil,
+			[NSBundle bundleForClass: fi->isa],nil) copy];
+      fi->faceName = faceName;
+    }
+  else if (!from_nfont)
+    { /* try to guess something for .font packages */
+      int dummy;
+      int split = traits_from_string(family,&dummy,&dummy);
+      rawFaceName = faceName = [family substringFromIndex: split];
+      family = [family substringToIndex: split];
       faceName = [NSLocalizedStringFromTableInBundle(faceName,nil,
 			[NSBundle bundleForClass: fi->isa],nil) copy];
       fi->faceName = faceName;
@@ -496,7 +501,8 @@ static void load_font_configuration(void)
 	      family,
 	      [family stringByAppendingPathExtension: @"afm"],
 	      nil],
-	    @"Files", /* TODO */
+	    @"Files",
+	    family,@"PostScriptName",
 	    nil];
 	  add_face(family, 5, 0, d, font_path, NO);
 	}
