@@ -2087,6 +2087,11 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 {
   FT_Error error;
 
+  if (glyph == NSControlGlyph
+   || glyph == GSAttachmentGlyph
+   || glyph == NSNullGlyph)
+    return NSZeroSize;
+
   glyph--;
   if (screenFont)
     {
@@ -2196,14 +2201,14 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   FT_Vector vec;
   FT_GlyphSlot glyph;
 
-  g--;
-  prev--;
-
   if (nominal)
     *nominal = YES;
 
   if (g == NSControlGlyph || prev == NSControlGlyph)
     return NSZeroPoint;
+
+  g--;
+  prev--;
 
   if (FTC_Manager_Lookup_Size(ftc_manager, &imgd.font, &face, 0))
     return NSZeroPoint;
