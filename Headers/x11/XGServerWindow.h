@@ -80,6 +80,9 @@ typedef struct _gswindow_device_t {
   int                   visibility;    /* X visibility */
   NSBackingStoreType    type;          /* Backing type */
   NSRect                xframe;        /* Window frame */
+
+  unsigned int          buffer_width;  /* Size in pixels of the current buffers. */
+  unsigned int          buffer_height;
   Drawable              buffer;        /* Backing store pixmap */
   Drawable              alpha_buffer;  /* Alpha buffer. Managed by gdriver
 					  will be freed if HandlesBacking=0 */
