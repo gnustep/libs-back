@@ -84,6 +84,7 @@ static KeySym _command_keysyms[2];
 static KeySym _alt_keysyms[2];
 
 static BOOL _is_keyboard_initialized = NO;
+static BOOL _mod_ignore_shift = NO;
 
 void __objc_xgcontextevent_linking (void)
 {
@@ -1456,6 +1457,7 @@ initialize_keyboard (void)
 
   
   set_up_num_lock ();
+  _mod_ignore_shift = [defaults boolForKey: @"GSModifiersAreKeys"];
   
   _is_keyboard_initialized = YES;
 }
@@ -1536,6 +1538,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType)
   int		control_key = 0;
   int		command_key = 0;
   int		alt_key = 0;
+  KeySym	modKeysym;  // process modifier independently of shift, etc.
   
   if (_is_keyboard_initialized == NO)
     initialize_keyboard ();
@@ -1562,31 +1565,36 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType)
   //ximKeyCode = XKeysymToKeycode([XGServer currentXDisplay],keysym);
 
   /* Process NSFlagsChanged events.  We can't use a switch because we
-     are not comparing to constants. Make sure keyCode is not 0 since
-     XIM events can potentially return 0 keyCodes. */
-  if (keysym != NoSymbol)
+     are not comparing to constants. Make sure keySym is not NoSymbol since
+     XIM events can potentially return this. */
+  /* Possibly ignore shift/other modifier state in determining KeySym to
+     work around correct but undesired behavior with shifted modifiers.
+     See Back defaults documentation for "GSModifiersAreKeys". */
+  modKeysym = (_mod_ignore_shift == YES) ?
+      XLookupKeysym((XKeyEvent *)xEvent, 0) : keysym;
+  if (modKeysym != NoSymbol)
     {
-      if (keysym == _control_keysyms[0]) 
+      if (modKeysym == _control_keysyms[0]) 
 	{
 	  control_key = 1;
 	}
-      else if (keysym == _control_keysyms[1])
+      else if (modKeysym == _control_keysyms[1])
 	{
 	  control_key = 2;
 	}
-      else if (keysym == _command_keysyms[0]) 
+      else if (modKeysym == _command_keysyms[0]) 
 	{
 	  command_key = 1;
 	}
-      else if (keysym == _command_keysyms[1]) 
+      else if (modKeysym == _command_keysyms[1]) 
 	{
 	  command_key = 2;
 	}
-      else if (keysym == _alt_keysyms[0]) 
+      else if (modKeysym == _alt_keysyms[0]) 
 	{
 	  alt_key = 1;
 	}
-      else if (keysym == _alt_keysyms[1]) 
+      else if (modKeysym == _alt_keysyms[1]) 
 	{
 	  alt_key = 2;
 	}

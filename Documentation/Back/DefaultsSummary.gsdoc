@@ -169,9 +169,36 @@
 	      <item>NoSymbol</item>
 	    </list>
           <p>
-          This is described more completely in the GUI documentation.
+          These strings correspond to "keysyms" on X11 systems.  On X11,
+          physical keys on the keyboard are equivalent to <em>keycodes</em>.
+          A single keysym may be associated to more than one keycode, and
+          can even be associated to a shifted key.
+          </p>
+          <p>
+          This is described more completely in the <uref
+          url="../../../User/Gui/KeyboardSetup.html">GUI documentation on
+          keyboard setup</uref>.
           </p>
 	  </desc>
+	  <term>GSModifiersAreKeys</term>
+	  <desc>
+          <p>
+          On some keyboards, the default X11 mapping includes keycodes that
+          are mapped to one or another modifier keysym depending on whether
+          'shift' (or in some cases, another key) is pressed.  This is the
+          case on some Apple USB keyboards for example: one key to the left
+          of the spacebar maps to "Option" without shift pressed, and "Alt"
+          with shift pressed.  Such keyboard mappings are often useful in
+          non-English contexts to access accents or non-Roman characters.
+          However if such a key is used as a modifier in GNUstep problems can
+          occur when trying to use the modifier in conjunction with a shifted
+          character.  In particular, you will need to hit and release the
+          modifier and the shift key in a particular order, or else things
+          will not work as expected, and the modifier may become "stuck".  If
+          you experience such a problem, set <code>GSModifiersAreKeys</code>
+          to <code>YES</code>.
+          </p>
+          </desc>
 	  <term>UseWindowMakerIcons</term>
 	  <desc>
           <p>
