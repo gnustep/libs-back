@@ -3028,7 +3028,8 @@ _computeDepth(int class, int bpp)
   XIconSize *xiconsize;
   int count_return;
   int status;
-  
+  NSSize iconSize;
+
   status = XGetIconSizes(dpy,
                          DefaultRootWindow(dpy),
 			 &xiconsize,
@@ -3039,10 +3040,19 @@ _computeDepth(int class, int bpp)
         {
 	  /* must add 4 pixels for the border which windowmaker leaves out
 	     but gnustep draws over. */
-          return NSMakeSize(xiconsize[0].max_width + 4,
-			    xiconsize[0].max_height + 4);
+          iconSize = NSMakeSize(xiconsize[0].max_width + 4,
+				xiconsize[0].max_height + 4);
 	}
+      else
+        {
+          iconSize = NSMakeSize(xiconsize[0].max_width,
+				xiconsize[0].max_height);
+	}
+
+      XFree(xiconsize);
+      return iconSize;
     }
+
   return [super iconSize];
 }
 

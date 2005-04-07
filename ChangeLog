@@ -1,3 +1,8 @@
+2005-04-07  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m  (-iconSize): Use XFree to free
+	xiconsize. Fixes bug #12578.
+
 2005-04-04 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/winlib/WIN32GState.m: tunr on alpha blending and swap colors
