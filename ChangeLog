@@ -1,3 +1,9 @@
+2005-04-16  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/XGGState.m
+	(-_compositeGState:sourcefromRect:fromRecttoPoint:toPointop:opfraction:]): 
+	New way to compute drect. This fixes bug #12459.
+
 2005-04-07  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m  (-iconSize): Use XFree to free
