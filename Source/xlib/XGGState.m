@@ -464,28 +464,16 @@ static	Region	emptyRegion;
      
   // --- determine region to draw --------------------------------------
 
-  {
-    NSRect flushRect;                        // destination rectangle
-                                             // in View coordinates
+  srect = XGViewRectToX(source, fromRect);
+  toXPoint = XGViewPointToX(self, toPoint);
+  drect.x = toXPoint.x; 
+  drect.y = toXPoint.y - srect.height; 
+  drect.width = srect.width;
+  drect.height = srect.height;
 
-    flushRect.size = fromRect.size;
-    flushRect.origin = toPoint;
-    
-    flushRect.origin = [ctm pointInMatrixSpace: flushRect.origin];
-    drect = XGWindowRectToX(self, flushRect);
-    if (source->ctm->matrix.m22 < 0) drect.y += drect.height;
-
-    toXPoint.x = drect.x; 
-    toXPoint.y = drect.y; 
-
-    srect = XGViewRectToX (source, fromRect);
-
-    clipXRectsForCopying (source_win, &srect, dest_win, &drect);
-
-    if (XGIsEmptyRect(drect))
+  clipXRectsForCopying(source_win, &srect, dest_win, &drect);
+  if (XGIsEmptyRect(drect))
       return;
-
-  }
 
   // --- get destination XImage ----------------------------------------
   
