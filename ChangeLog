@@ -1,3 +1,8 @@
+2005-04-19  Adam Fedor  <fedor@gnu.org>
+
+	* Source/art/path.m ([ARTGState -_stroke:]): Change floorf->floor.
+	Fixes bug #12731.
+
 2005-04-16  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/XGGState.m
