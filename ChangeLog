@@ -1,3 +1,10 @@
+2005-04-20  Adam Fedor  <fedor@gnu.org>
+
+	* Fonts/GNUmakefile.postamble: Make sure to install in 
+	$(GNUSTEP_INSTALLATION_DIR).
+	* GNUmakefile: Add check to not install fonts if fonts=no.
+	Fixes bug #12749
+
 2005-04-19  Adam Fedor  <fedor@gnu.org>
 
 	* Source/art/path.m ([ARTGState -_stroke:]): Change floorf->floor.

@@ -40,7 +40,11 @@ include ./Version
 #
 # The list of subproject directories
 #
-SUBPROJECTS = Source Fonts Tools 
+SUBPROJECTS = Source Tools
+
+ifneq ($(fonts), no)
+SUBPROJECTS += Fonts
+endif
 
 -include GNUmakefile.preamble
 

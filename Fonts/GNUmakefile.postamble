@@ -34,14 +34,15 @@
 
 # Things to do after installing
 after-install::
+	mkdir -p $(GNUSTEP_INSTALLATION_DIR)/$(back-resources_RESOURCE_FILES_INSTALL_DIR)
 	for file in $(FONT_INSTALL_FILES); do \
-	  ($(TAR) cfX - $(GNUSTEP_MAKEFILES)/tar-exclude-list $$file) | (cd $(GNUSTEP_SYSTEM_ROOT)/$(back-resources_RESOURCE_FILES_INSTALL_DIR); $(TAR) xf -) ;\
+	  ($(TAR) cfX - $(GNUSTEP_MAKEFILES)/tar-exclude-list $$file) | (cd $(GNUSTEP_INSTALLATION_DIR)/$(back-resources_RESOURCE_FILES_INSTALL_DIR); $(TAR) xf -) ;\
 	done
 
 # Things to do before uninstalling
 before-uninstall::
 	for file in $(FONT_INSTALL_FILES); do \
-	  rm -rf $(GNUSTEP_SYSTEM_ROOT)/$(back-resources_RESOURCE_FILES_INSTALL_DIR)/$$file;\
+	  rm -rf $(GNUSTEP_INSTALLATION_DIR)/$(back-resources_RESOURCE_FILES_INSTALL_DIR)/$$file;\
 	done
 
 # Things to do after uninstalling
