@@ -7,6 +7,16 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.9.6}
+
+@itemize @bullet
+@item Minor bug fixes
+@end itemize
+
+@c ====================================================================
+@c Keep the next line just below the list of changes in most recent version.
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.9.5}
 
 @itemize @bullet
@@ -14,10 +24,6 @@
 @item Add support for old and new freetype libs.
 @item Some improvements to the Windows backend.
 @end itemize
-
-@c ====================================================================
-@c Keep the next line just below the list of changes in most recent version.
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.9.4}
 

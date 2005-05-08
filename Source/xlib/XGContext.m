@@ -80,8 +80,7 @@
   [NSGraphicsContext setDefaultContextClass: [XGContext class]];
 
 #ifdef HAVE_XFT
-  if (([ud objectForKey: @"GSFontAntiAlias"] == nil) ||
-      ([ud boolForKey: @"GSFontAntiAlias"]))
+  if ([ud boolForKey: @"GSFontAntiAlias"])
     {
       fontClass = [GSXftFontInfo class];
 #ifdef HAVE_FC
