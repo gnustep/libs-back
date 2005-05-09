@@ -1,3 +1,25 @@
+2005-05-07  Adam Fedor  <fedor@gnu.org>
+
+	* Version 0.9.6
+
+2005-05-06  Adam Fedor  <fedor@gnu.org>
+
+	* Source/xlib/XGContext.m: Set Anti-alias default to NO again.
+	Unresolved problems with some Xft implementations finding fonts.
+	* Documentation/Back/DefaultsSummary.gsdoc: Document.
+
+2005-04-20  Adam Fedor  <fedor@gnu.org>
+
+	* Fonts/GNUmakefile.postamble: Make sure to install in 
+	$(GNUSTEP_INSTALLATION_DIR).
+	* GNUmakefile: Add check to not install fonts if fonts=no.
+	Fixes bug #12749
+
+2005-04-19  Adam Fedor  <fedor@gnu.org>
+
+	* Source/art/path.m ([ARTGState -_stroke:]): Change floorf->floor.
+	Fixes bug #12731.
+
 2005-03-30  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.9.5

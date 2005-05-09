@@ -1194,13 +1194,13 @@ static void clip_svp_callback(void *data, int y, int start,
 	      if (vp[i].code == ART_END)
 		break;
 	      if (flags[i] & 1)
-		vp[i].x = floorf(vp[i].x) + ofs;
+		vp[i].x = floor(vp[i].x) + ofs;
 	      else if (flags[i] & 8)
-		vp[i].x = floorf(vp[i].x + 0.5);
+		vp[i].x = floor(vp[i].x + 0.5);
 	      if (flags[i] & 2)
-		vp[i].y = floorf(vp[i].y) + ofs;
+		vp[i].y = floor(vp[i].y) + ofs;
 	      else if (flags[i] & 4)
-		vp[i].y = floorf(vp[i].y + 0.5);
+		vp[i].y = floor(vp[i].y + 0.5);
 	    }
 	}
 
