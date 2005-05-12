@@ -107,6 +107,11 @@ static	Region	emptyRegion;
   alpha_buffer = 0;
   xgcntxt = None;
   agcntxt = None;
+#ifdef HAVE_LIBXFT
+  xft_draw = NULL;
+  xft_alpha_draw = NULL;
+  memset(&xft_color, 0, sizeof(XftColor));
+#endif
   return self;
 }
 
@@ -252,6 +257,13 @@ static	Region	emptyRegion;
   gsColorToRGB(&c);
   gcv.foreground = xrRGBToPixel(context, c);
   [self setGCValues: gcv withMask: GCForeground];
+#ifdef HAVE_LIBXFT
+  xft_color.color.red = 65535.0 * c.field[0];
+  xft_color.color.green = 65535.0 * c.field[1];
+  xft_color.color.blue = 65535.0 * c.field[2];
+  xft_color.color.alpha = 0xffff;
+  xft_color.pixel = gcv.foreground;
+#endif
 }
 
 - (void) setAlphaColor: (float)value
@@ -268,6 +280,9 @@ static	Region	emptyRegion;
     agcntxt = XCreateGC(XDPY, draw, GCForeground, &gcv);
   else
     XChangeGC(XDPY, agcntxt, GCForeground, &gcv);
+#ifdef HAVE_LIBXFT
+  xft_color.color.alpha = 65535.0 * value;
+#endif
 }
 
 - (void) copyGraphicContext
@@ -346,6 +361,40 @@ static	Region	emptyRegion;
 - (GC) graphicContext
 {
   return xgcntxt;
+}
+
+- (XftColor) xftColor
+{
+    return xft_color;
+}
+
+- (XftDraw *)xftDrawForDrawable: (Drawable)d
+{
+    if (d == 0)
+        return 0;  //PENDING: warn? throw?
+
+    if (d == draw)
+      {
+        if (xft_draw == NULL)
+            xft_draw =
+                XftDrawCreate(XDPY, d, DefaultVisual(XDPY, DefaultScreen(XDPY)),
+                              DefaultColormap(XDPY, DefaultScreen(XDPY)));
+        if (clipregion != None)
+            XftDrawSetClip(xft_draw, clipregion);
+        return xft_draw;
+      }
+    else if (d == alpha_buffer)
+      {
+        if (xft_alpha_draw == NULL)
+            xft_alpha_draw =
+                XftDrawCreate(XDPY, d, DefaultVisual(XDPY, DefaultScreen(XDPY)),
+                              DefaultColormap(XDPY, DefaultScreen(XDPY)));
+        if (clipregion != None)
+            XftDrawSetClip(xft_alpha_draw, clipregion);
+        return xft_alpha_draw;
+      }
+
+    return 0;  //PENDING: warn? throw?
 }
 
 - (void) copyBits: (XGGState*)source fromRect: (NSRect)aRect 

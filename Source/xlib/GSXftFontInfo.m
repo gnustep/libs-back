@@ -374,62 +374,22 @@ static NSArray *faFromFc(FcPattern *pat)
 		      allowLossyConversion: YES];
   int length = [d length];
   const char *cstr = (const char*)[d bytes];
-  XftDraw *xftdraw;
-  XftColor xftcolor;
-  XColor dummyc;
-  XGCValues values;
   XGGState *state = [(XGContext *)GSCurrentContext() currentGState];
-  Region xregion = [state xClipRegion];
-  int defaultScreen = DefaultScreen(xdpy);
-  Colormap colmap = DefaultColormap(xdpy, defaultScreen);
-
-  /* ready to draw */
-  xftdraw = XftDrawCreate(xdpy, draw,
-                          DefaultVisual(xdpy, defaultScreen),
-			  colmap);
-  if(xftdraw == NULL) 
-    return;
-
-  /* sort out the drawing colour */
-  XGetGCValues(xdpy, xgcntxt,
-               GCForeground | GCBackground,
-               &values);
-       
-  dummyc.pixel = values.foreground;
-  XQueryColor(xdpy, colmap, &dummyc);
-  xftcolor.color.red = dummyc.red;
-  xftcolor.color.green = dummyc.green;
-  xftcolor.color.blue = dummyc.blue;
-  xftcolor.color.alpha =  0xffff;
-  xftcolor.pixel = values.foreground;
-  
-  // set up clipping 
-  if(xregion != None)
-    {
-      XftDrawSetClip(xftdraw, xregion);
-      XDestroyRegion(xregion);
-    }
+  XftDraw *xftdraw = [state xftDrawForDrawable: draw];
+  XftColor xftcolor = [state xftColor];
 
   /* do it */
   XftDrawString16(xftdraw, &xftcolor, font_info, 
 		  xp.x, xp.y, (XftChar16*)cstr, length);
-
-  /* tidy up */
-  XftDrawDestroy(xftdraw);
 }
 
 - (void) drawGlyphs: (const NSGlyph *) glyphs lenght: (int) len
 	  onDisplay: (Display*) xdpy drawable: (Drawable) draw
 	       with: (GC) xgcntxt at: (XPoint) xp
 {
-  XftDraw *xftdraw;
-  XftColor xftcolor;
-  XColor dummyc;
-  XGCValues values;
   XGGState *state = [(XGContext *)GSCurrentContext() currentGState];
-  Region xregion = [state xClipRegion];
-  int defaultScreen = DefaultScreen(xdpy);
-  Colormap colmap = DefaultColormap(xdpy, defaultScreen);
+  XftDraw *xftdraw = [state xftDrawForDrawable: draw];
+  XftColor xftcolor = [state xftColor];
   unichar buf[len];
   int i;
 
@@ -438,39 +398,9 @@ static NSArray *faFromFc(FcPattern *pat)
       buf[i] = glyphs[i];
     }
 
-  /* ready to draw */
-  xftdraw = XftDrawCreate(xdpy, draw,
-                          DefaultVisual(xdpy, defaultScreen),
-			  colmap);
-  if(xftdraw == NULL) 
-    return;
-
-  /* sort out the drawing colour */
-  XGetGCValues(xdpy, xgcntxt,
-               GCForeground | GCBackground,
-               &values);
-       
-  dummyc.pixel = values.foreground;
-  XQueryColor(xdpy, colmap, &dummyc);
-  xftcolor.color.red = dummyc.red;
-  xftcolor.color.green = dummyc.green;
-  xftcolor.color.blue = dummyc.blue;
-  xftcolor.color.alpha =  0xffff;
-  xftcolor.pixel = values.foreground;
-  
-  // set up clipping 
-  if(xregion != None)
-    {
-      XftDrawSetClip(xftdraw, xregion);
-      XDestroyRegion(xregion);
-    }
-
   /* do it */
   XftDrawString16(xftdraw, &xftcolor, font_info, 
 		  xp.x, xp.y, (XftChar16*)buf, len);
-
-  /* tidy up */
-  XftDrawDestroy(xftdraw);
 }
 
 - (void) draw: (const char*) s lenght: (int) len 
@@ -478,41 +408,9 @@ static NSArray *faFromFc(FcPattern *pat)
 	 with: (GC) xgcntxt at: (XPoint) xp
 {
   int length = strlen(s);
-  XftDraw *xftdraw;
-  XftColor xftcolor;
-  XColor dummyc;
-  XGCValues values;
   XGGState *state = [(XGContext *)GSCurrentContext() currentGState];
-  Region xregion = [state xClipRegion];
-  int defaultScreen = DefaultScreen(xdpy);
-  Colormap colmap = DefaultColormap(xdpy, defaultScreen);
-
-  /* ready to draw */
-  xftdraw = XftDrawCreate(xdpy, draw,
-                          DefaultVisual(xdpy, defaultScreen),
-			  colmap);
-  if(xftdraw == NULL) 
-    return;
-
-  /* sort out the drawing colour */
-  XGetGCValues(xdpy, xgcntxt,
-               GCForeground | GCBackground,
-               &values);
-       
-  dummyc.pixel = values.foreground;
-  XQueryColor(xdpy, colmap, &dummyc);
-  xftcolor.color.red = dummyc.red;
-  xftcolor.color.green = dummyc.green;
-  xftcolor.color.blue = dummyc.blue;
-  xftcolor.color.alpha =  0xffff;
-  xftcolor.pixel = values.foreground;
-  
-  // set up clipping 
-  if(xregion != None)
-    {
-      XftDrawSetClip(xftdraw, xregion);
-      XDestroyRegion(xregion);
-    }
+  XftDraw *xftdraw = [state xftDrawForDrawable: draw];
+  XftColor xftcolor = [state xftColor];
 
 #ifdef HAVE_UTF8
   /* do it */
@@ -527,9 +425,6 @@ static NSArray *faFromFc(FcPattern *pat)
       XftDrawString8(xftdraw, &xftcolor, font_info, 
                    xp.x, xp.y, (XftChar8*)s, length);
     }
-
-  /* tidy up */
-  XftDrawDestroy(xftdraw);
 }
 
 - (float) widthOf: (const char*) s lenght: (int) len
