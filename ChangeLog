@@ -1,3 +1,12 @@
+2005-03-29  Adrian Robert <arobert@cogsci.ucsd.edu>
+
+	* Headers/xlib/XGGState.h (xft_draw, xft_alpha_draw, xft_color,
+	-xftDrawForDrawable, -xftColor): New ivars and methods for caching
+	Xft (freetype) draw state.
+	* Source/xlib/XGGState.m (-xftDrawForDrawable:, -xftColor): Cache
+	Xft draw state.
+	* Source/xlib/GSXftFontInfo.m: Use cached Xft draw state for rendering.
+
 2005-04-20  Adam Fedor  <fedor@gnu.org>
 
 	* Fonts/GNUmakefile.postamble: Make sure to install in 

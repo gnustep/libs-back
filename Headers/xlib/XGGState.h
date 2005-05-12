@@ -31,6 +31,11 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include "x11/XGServer.h"
+#ifdef HAVE_LIBXFT
+#define id xwindowsid
+#include <X11/Xft/Xft.h>
+#undef id
+#endif
 
 @class NSBezierPath;
 @class NSFont;
@@ -47,6 +52,11 @@
   Drawable  draw;
   Drawable  alpha_buffer;
   Region clipregion;
+#ifdef HAVE_LIBXFT
+  XftDraw   *xft_draw;
+  XftDraw   *xft_alpha_draw;
+  XftColor  xft_color;
+#endif
 
   BOOL drawingAlpha;
   BOOL sharedGC;  /* Do we own the GC or share it? */
@@ -64,6 +74,10 @@
 - (Drawable) drawable;
 - (GC) graphicContext;
 - (NSRect) clipRect;
+#ifdef HAVE_LIBXFT
+- (XftDraw *)xftDrawForDrawable: (Drawable)d;
+- (XftColor)xftColor;
+#endif
 
 - (XPoint) viewPointToX: (NSPoint)aPoint;
 - (XRectangle) viewRectToX: (NSRect)aRect;
