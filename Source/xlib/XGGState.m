@@ -363,6 +363,7 @@ static	Region	emptyRegion;
   return xgcntxt;
 }
 
+#ifdef HAVE_LIBXFT
 - (XftColor) xftColor
 {
     return xft_color;
@@ -396,6 +397,7 @@ static	Region	emptyRegion;
 
     return 0;  //PENDING: warn? throw?
 }
+#endif
 
 - (void) copyBits: (XGGState*)source fromRect: (NSRect)aRect 
 				      toPoint: (NSPoint)aPoint

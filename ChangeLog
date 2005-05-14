@@ -1,4 +1,9 @@
-2005-03-29  Adrian Robert <arobert@cogsci.ucsd.edu>
+2005-05-14  Adrian Robert <arobert@cogsci.ucsd.edu>
+
+	* Source/xlib/XGGState.m: Added missing #ifdefs to last patch so
+	compilation on non-libxft system is unaffected.
+
+2005-05-12  Adrian Robert <arobert@cogsci.ucsd.edu>
 
 	* Headers/xlib/XGGState.h (xft_draw, xft_alpha_draw, xft_color,
 	-xftDrawForDrawable, -xftColor): New ivars and methods for caching
