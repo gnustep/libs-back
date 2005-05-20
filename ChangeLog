@@ -1,3 +1,11 @@
+2005-05-20  Adrian Robert <arobert@cogsci.ucsd.edu>
+
+	* Headers/xlib/XGGState.h, Source/xlib/XGGState.m: Changed
+	HAVE_LIBXFT #ifdefs to HAVE_XFT.
+	* configure.ac, config.h.in: Changed comments for HAVE_XFT to
+	clarify that it is different from HAVE_LIBXFT (latter is just the
+	runtime lib, while former implies a functional installation).
+
 2005-05-14  Adrian Robert <arobert@cogsci.ucsd.edu>
 
 	* Source/xlib/XGGState.m: Added missing #ifdefs to last patch so
