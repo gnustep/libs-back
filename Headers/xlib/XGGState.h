@@ -31,7 +31,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include "x11/XGServer.h"
-#ifdef HAVE_LIBXFT
+#ifdef HAVE_XFT
 #define id xwindowsid
 #include <X11/Xft/Xft.h>
 #undef id
@@ -52,7 +52,7 @@
   Drawable  draw;
   Drawable  alpha_buffer;
   Region clipregion;
-#ifdef HAVE_LIBXFT
+#ifdef HAVE_XFT
   XftDraw   *xft_draw;
   XftDraw   *xft_alpha_draw;
   XftColor  xft_color;
@@ -74,7 +74,7 @@
 - (Drawable) drawable;
 - (GC) graphicContext;
 - (NSRect) clipRect;
-#ifdef HAVE_LIBXFT
+#ifdef HAVE_XFT
 - (XftDraw *)xftDrawForDrawable: (Drawable)d;
 - (XftColor)xftColor;
 #endif

@@ -187,7 +187,7 @@ if test $WITH_XFT = yes; then
   save_LIBS=${LIBS}
   CPPFLAGS="$XFT_CFLAGS $CPPFLAGS"
   LIBS="$XFT_LIBS $LIBS"
-  AC_DEFINE(HAVE_XFT,1,[Define if you have the Xft library])
+  AC_DEFINE(HAVE_XFT,1,[Define if you have a functional XFreeType installation, including libXft.])
   AC_CHECK_LIB(Xft, XftDrawStringUtf8, have_utf8=yes, have_utf8=no)
   if test "$have_utf8" = yes; then
     AC_DEFINE(HAVE_UTF8,1,[Define if you have XftDrawStringUtf8])

@@ -107,7 +107,7 @@ static	Region	emptyRegion;
   alpha_buffer = 0;
   xgcntxt = None;
   agcntxt = None;
-#ifdef HAVE_LIBXFT
+#ifdef HAVE_XFT
   xft_draw = NULL;
   xft_alpha_draw = NULL;
   memset(&xft_color, 0, sizeof(XftColor));
@@ -257,7 +257,7 @@ static	Region	emptyRegion;
   gsColorToRGB(&c);
   gcv.foreground = xrRGBToPixel(context, c);
   [self setGCValues: gcv withMask: GCForeground];
-#ifdef HAVE_LIBXFT
+#ifdef HAVE_XFT
   xft_color.color.red = 65535.0 * c.field[0];
   xft_color.color.green = 65535.0 * c.field[1];
   xft_color.color.blue = 65535.0 * c.field[2];
@@ -280,7 +280,7 @@ static	Region	emptyRegion;
     agcntxt = XCreateGC(XDPY, draw, GCForeground, &gcv);
   else
     XChangeGC(XDPY, agcntxt, GCForeground, &gcv);
-#ifdef HAVE_LIBXFT
+#ifdef HAVE_XFT
   xft_color.color.alpha = 65535.0 * value;
 #endif
 }
@@ -363,7 +363,7 @@ static	Region	emptyRegion;
   return xgcntxt;
 }
 
-#ifdef HAVE_LIBXFT
+#ifdef HAVE_XFT
 - (XftColor) xftColor
 {
     return xft_color;
