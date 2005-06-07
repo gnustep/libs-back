@@ -200,11 +200,11 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
   return r1;
 }
 
-- (void) _compositeGState: (WIN32GState *) source
-                 fromRect: (NSRect) sourceRect
-                  toPoint: (NSPoint) destPoint
-                       op: (NSCompositingOperation) op
-                 fraction: (float)delta
+- (void) compositeGState: (WIN32GState *) source
+		fromRect: (NSRect) sourceRect
+		 toPoint: (NSPoint) destPoint
+		      op: (NSCompositingOperation) op
+		fraction: (float)delta
 {
   HDC sourceDC;
   HDC hDC;
@@ -297,11 +297,11 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
                  toPoint: (NSPoint)aPoint
                       op: (NSCompositingOperation)op
 {
-  [self _compositeGState: (WIN32GState *) source
-	        fromRect: aRect
-	         toPoint: aPoint
-	              op: op
-	        fraction: 1];
+  [self compositeGState: (WIN32GState *) source
+	       fromRect: aRect
+	        toPoint: aPoint
+	             op: op
+	       fraction: 1];
 }
 
 - (void) dissolveGState: (GSGState *)source
@@ -309,11 +309,11 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
 		toPoint: (NSPoint)aPoint 
 		  delta: (float)delta
 {
-  [self _compositeGState: (WIN32GState *) source
-	        fromRect: aRect
-	         toPoint: aPoint
-	              op: NSCompositeSourceOver
-	        fraction: delta];
+  [self compositeGState: (WIN32GState *) source
+	       fromRect: aRect
+	        toPoint: aPoint
+	             op: NSCompositeSourceOver
+	       fraction: delta];
 }
 
 - (void) compositerect: (NSRect)aRect
@@ -382,7 +382,8 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   int xres, yres;
   UINT fuColorUse;
 
-  if (isPlanar || ![colorSpaceName isEqualToString: NSDeviceRGBColorSpace])
+  if (isPlanar || !([colorSpaceName isEqualToString: NSDeviceRGBColorSpace] ||
+		    [colorSpaceName isEqualToString: NSCalibratedRGBColorSpace]))
     {
       NSLog(@"Bitmap type currently not supported %d %@", isPlanar, colorSpaceName);
       return NULL;
