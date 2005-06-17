@@ -1,3 +1,8 @@
+2005-06-17  Adam Fedor  <fedor@gnu.org>
+
+	* Tools/gpbs.m ([PasteboardServer -connectionBecameInvalid:]): 
+	Use isKindOfClass.
+
 2005-06-07  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/winlib/Win32GState.m (GSCreateBitmap): Allow

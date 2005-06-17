@@ -998,7 +998,7 @@ NSMutableDictionary	*pasteboards = nil;
       NSLog(@"Help - pasteboard server connection has died!\n");
       exit(EXIT_FAILURE);
     }
-  if ([connection isKindOf: [NSConnection class]])
+  if ([connection isKindOfClass: [NSConnection class]])
     {
       NSEnumerator    *e = [pasteboards objectEnumerator];
       PasteboardObject	  *o;
