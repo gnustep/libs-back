@@ -1,3 +1,19 @@
+2005-07-01  Adam Fedor  <fedor@gnu.org>
+
+	* Documentation/Back/Back.gsdoc,
+	Documentation/Back/DefaultsSummary.gsdoc,
+	Documentation/Back/WindowFocus.gsdoc,
+	Headers/art/ARTContext.h,
+	Headers/x11/XGDragView.h,
+	Headers/xlib/XGFontSetFontInfo.h,
+	Headers/xlib/XGGeometry.h,
+	Source/x11/wrasterP.h,
+	Source/xlib/XGFontSetFontInfo.m,
+	Source/xlib/linking.m,
+	Tools/GNUmakefile.postamble,
+	Tools/GNUmakefile.preamble,
+	Tools/gpbs.1: Add/fix copyright and licenses.
+
 2005-06-17  Adam Fedor  <fedor@gnu.org>
 
 	* Tools/gpbs.m ([PasteboardServer -connectionBecameInvalid:]): 

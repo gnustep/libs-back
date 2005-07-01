@@ -4,6 +4,8 @@
 
    <abstract>Point and rectangle manipulations for X-structures</abstract>
    
+   Copyright (C) 2001-2005 Free Software Foundation, Inc.
+
    Written by:  <author name="Wim Oudshoorn"><email>woudshoo@xs4all.nl</email></author>
    Date: Nov, 2001
    
