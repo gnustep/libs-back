@@ -60,6 +60,7 @@ typedef enum {
   device_color_t fillColor;     /* fill color */
   device_color_t strokeColor;   /* stroke color */
   color_state_t  cstate;        /* state last time color was set */
+  NSImage *pattern;             /* If set, image to draw with */   
 
   float   charSpacing;
   NSAffineTransform *textCtm;   /* Text transform - concat with ctm */
@@ -74,6 +75,7 @@ typedef enum {
 - (NSPoint) offset;
 
 - (void) setColor: (device_color_t *)color state: (color_state_t)cState;
+- (void) GSSetPatterColor: (NSImage*)image;
 
 - (void) compositeGState: (GSGState *)source
                 fromRect: (NSRect)aRect
@@ -84,6 +86,12 @@ typedef enum {
                fromRect: (NSRect)aRect
                 toPoint: (NSPoint)aPoint
                   delta: (float)delta;
+
+- (void) compositeGState: (GSGState *)source
+                fromRect: (NSRect)aRect
+                 toPoint: (NSPoint)aPoint
+                      op: (NSCompositingOperation)op
+                fraction: (float)delta;
 
 - (void) compositerect: (NSRect)aRect
                     op: (NSCompositingOperation)op;

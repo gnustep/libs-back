@@ -611,6 +611,7 @@ static	Region	emptyRegion;
                 fromRect: (NSRect)aRect
                  toPoint: (NSPoint)aPoint
                       op: (NSCompositingOperation)op
+		fraction: (float)delta
 {
   BOOL do_copy, source_alpha;
   XGCValues comp_gcv;
@@ -734,7 +735,7 @@ static	Region	emptyRegion;
             fromRect: aRect
             toPoint: aPoint
             op: op
-            fraction: 1];
+            fraction: delta];
     }
   
 
@@ -745,32 +746,28 @@ static	Region	emptyRegion;
     }
 }
 
+- (void) compositeGState: (GSGState *)source 
+                fromRect: (NSRect)aRect
+                 toPoint: (NSPoint)aPoint
+                      op: (NSCompositingOperation)op
+{
+  [self compositeGState: source 
+               fromRect: aRect
+                toPoint: aPoint
+                     op: op
+               fraction: 1.0];
+}
+
 - (void) dissolveGState: (GSGState *)source
 	       fromRect: (NSRect)aRect
 		toPoint: (NSPoint)aPoint 
 		  delta: (float)delta
 {
-  /* If we have no drawable, we can't proceed. */
-  if (draw == 0)
-    {
-      DPS_WARN(DPSinvalidid, @"No Drawable defined for dissolve");
-      return;
-    }
-
-  if (shouldDrawAlpha == NO)
-    {
-      /* No alpha buffers */
-      [self copyBits: (XGGState *)source fromRect: aRect toPoint: aPoint];
-    }
-  else
-    {
-      [self _compositeGState: (XGGState *)source 
-            fromRect: aRect
-            toPoint: aPoint
-            op: NSCompositeSourceOver
-            fraction: delta];
-    }
-
+  [self compositeGState: source 
+               fromRect: aRect
+                toPoint: aPoint
+                     op: NSCompositeSourceOver
+               fraction: delta];
 }
 
 - (void) compositerect: (NSRect)aRect

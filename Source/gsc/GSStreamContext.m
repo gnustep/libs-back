@@ -171,6 +171,10 @@ fpfloat(FILE *stream, float f)
   [self notImplemented: _cmd];
 }
 
+- (void) GSSetPatterColor: (NSImage*)image 
+{
+  [self notImplemented: _cmd];
+}
 
 /* ----------------------------------------------------------------------- */
 /* Text operations */
@@ -772,6 +776,15 @@ fpfloat(FILE *stream, float f)
   NSLog(@"DPSinvalidcontext: dissolve in a stream context");
 }
 
+- (void) GScomposite: (int)gstateNum
+	     toPoint: (NSPoint)aPoint
+	    fromRect: (NSRect)srcRect
+	   operation: (NSCompositingOperation)op
+	    fraction: (float)delta
+{
+ [self DPScomposite: NSMinX(srcRect) : NSMinY(srcRect) : NSWidth(srcRect) : NSHeight(srcRect) 
+                   : gstateNum : aPoint.x : aPoint.y : op];
+}
 
 - (void) GSDrawImage: (NSRect)rect : (void *)imageref
 {

@@ -27,6 +27,7 @@
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
 #include <AppKit/NSColor.h>
+#include <AppKit/NSImage.h>
 #include <GNUstepGUI/GSFontInfo.h>
 #include <AppKit/NSGraphics.h>
 #include "gsc/GSContext.h"
@@ -90,6 +91,7 @@
   RELEASE(textCtm);
   RELEASE(fillColorS);
   RELEASE(strokeColorS);
+  TEST_RELEASE(pattern);
   [super dealloc];
 }
 
@@ -110,6 +112,8 @@
     RETAIN(fillColorS);
   if (strokeColorS != nil)
     RETAIN(strokeColorS);
+  if (pattern != nil)
+    RETAIN(pattern);
 
   return self;
 }
@@ -145,6 +149,12 @@
     strokeColor = *color;
   strokeColor.field[AINDEX] = alpha;
   cstate = cState;
+  DESTROY(pattern);
+}
+
+- (void) GSSetPatterColor: (NSImage*)image 
+{
+  ASSIGN(pattern, image);
 }
 
 - (void) compositeGState: (GSGState *)source
@@ -161,6 +171,29 @@
                   delta: (float)delta
 {
   [self subclassResponsibility: _cmd];
+}
+
+- (void) compositeGState: (GSGState *)source
+                fromRect: (NSRect)aRect
+                 toPoint: (NSPoint)aPoint
+                      op: (NSCompositingOperation)op
+                fraction: (float)delta
+{
+  if (op == NSCompositeSourceOver)
+    {
+      [self dissolveGState: source
+	          fromRect: aRect
+                   toPoint: aPoint
+	             delta: delta];
+    }
+  else
+    {
+      [self compositeGState: source
+	          fromRect: aRect
+                   toPoint: aPoint
+	                op: op];
+    }
+
 }
 
 - (void) compositerect: (NSRect)aRect
@@ -948,7 +981,7 @@ typedef enum {
 - (void) GSSendBezierPath: (NSBezierPath *)newpath
 {
   int count = 10;
-  float pattern[10];
+  float dash_pattern[10];
   float phase;
 
   // Appending to the current path is a lot faster than copying!
@@ -965,8 +998,8 @@ typedef enum {
   [self DPSsetmiterlimit: [newpath miterLimit]];
   [self DPSsetflat: [newpath flatness]];
 
-  [newpath getLineDash: pattern count: &count phase: &phase];
-  [self DPSsetdash: pattern : count : phase];
+  [newpath getLineDash: dash_pattern count: &count phase: &phase];
+  [self DPSsetdash: dash_pattern : count : phase];
 }
 
 - (void) GSRectClipList: (const NSRect *)rects : (int) count
