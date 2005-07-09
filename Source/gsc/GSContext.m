@@ -255,6 +255,11 @@ static unsigned int unique_index = 0;
   [gstate DPSsetrgbcolor:r :g :b];
 }
 
+- (void) GSSetPatterColor: (NSImage*)image 
+{
+  [gstate GSSetPatterColor: image];
+}
+
 - (void) GSSetFillColorspace: (void *)spaceref
 {
   [gstate GSSetFillColorspace: spaceref];
@@ -755,6 +760,27 @@ static unsigned int unique_index = 0;
   p    = NSMakePoint(dx, dy);
 
   [gstate dissolveGState: g fromRect: rect toPoint: p delta: delta];
+}
+
+- (void) GScomposite: (int)gstateNum
+	     toPoint: (NSPoint)aPoint
+	    fromRect: (NSRect)srcRect
+	   operation: (NSCompositingOperation)op
+	    fraction: (float)delta
+{
+  GSGState *g = gstate;
+
+  if (gstateNum)
+    {
+      [self DPSexecuserobject: gstateNum];
+      ctxt_pop(g, opstack, GSGState);
+    }
+
+  [gstate compositeGState: g
+	         fromRect: srcRect
+                  toPoint: aPoint
+                       op: op
+                 fraction: delta];
 }
 
 - (void) GSDrawImage: (NSRect) rect: (void *) imageref

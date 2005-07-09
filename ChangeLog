@@ -1,3 +1,20 @@
+2005-07-09  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/gsc/GSGState.h,
+	Source/gsc/GSGState.m: New methods  
+	[-compositeGState:fromRect:toPoint:op:fraction:] and
+	[GSSetPatterColor:]. Also added ivar pattern. 
+	* Source/gsc/GSGState.m (-dealloc, -deepen, -setColor:state:):
+	Deal with pattern ivar.
+	* Source/gsc/GSContext.m,
+	Source/gsc/GSStreamContext.m: New methods
+	[-GScomposite:toPoint:fromRect:operation:fraction:] and 
+	[-GSSetPatterColor:].
+	* Source/xlib/XGGState.m: New method  
+	[-compositeGState:fromRect:toPoint:op:fraction:] use this to
+	implement [-compositeGState:fromRect:toPoint:op:] and
+	[-dissolveGState:fromRect:toPoint:delta:]. 
+	
 2005-07-04  Adam Fedor  <fedor@gnu.org>
 
 	* Documentation/news.texi: Update.
