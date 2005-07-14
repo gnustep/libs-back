@@ -266,7 +266,11 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
 			     sourceDC,
 			     rectFrom.left, rectFrom.top,
 			     (rectFrom.right - rectFrom.left), h, blendFunc);
-	break;
+	/* There is actually a very real chance this could fail, even on 
+	    computers that supposedly support it. It's not known why it
+	    fails though... */
+	if (success)
+	  break;
 #endif
       }
 

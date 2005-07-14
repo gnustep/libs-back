@@ -1,3 +1,8 @@
+2005-07-14  Adam Fedor  <fedor@gnu.org>
+
+	* Source/winlib/WIN32GState.m ([WIN32GState -compositeGState:...]): Fall
+	through to default operation if alpha blend not sucessful.
+
 2005-07-09  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/gsc/GSGState.h,
