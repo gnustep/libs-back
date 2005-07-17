@@ -29,11 +29,16 @@ include $(GNUSTEP_MAKEFILES)/common.make
 
 include ../config.make
 
+include ../Version
+
+
 # The library to be compiled, as a library or as a bundle
 ifeq ($(BACKEND_BUNDLE),)
-LIBRARY_NAME=libgnustep-$(BACKEND_NAME)
+BACKEND_FULL=$(BACKEND_NAME)
+LIBRARY_NAME=libgnustep-$(BACKEND_FULL)
 else
-BUNDLE_NAME=libgnustep-$(BACKEND_NAME)
+BACKEND_FULL=$(BACKEND_NAME)-$(INTERFACE_VERSION_NUMBER)
+BUNDLE_NAME=libgnustep-$(BACKEND_FULL)
 endif
 
 #
@@ -41,15 +46,15 @@ endif
 #
 SUBPROJECTS = gsc $(BUILD_SERVER) $(BUILD_GRAPHICS)
 
-libgnustep-$(BACKEND_NAME)_SUBPROJECTS=$(SUBPROJECTS)
+libgnustep-$(BACKEND_FULL)_SUBPROJECTS=$(SUBPROJECTS)
 
-libgnustep-$(BACKEND_NAME)_OBJC_FILES=GSBackend.m
+libgnustep-$(BACKEND_FULL)_OBJC_FILES=GSBackend.m
 
-libgnustep-$(BACKEND_NAME)_PRINCIPAL_CLASS=GSBackend
+libgnustep-$(BACKEND_FULL)_PRINCIPAL_CLASS=GSBackend
 
-libgnustep-$(BACKEND_NAME)_LOCALIZED_RESOURCE_FILES=nfontFaceNames.strings
+libgnustep-$(BACKEND_FULL)_LOCALIZED_RESOURCE_FILES=nfontFaceNames.strings
 
-libgnustep-$(BACKEND_NAME)_LANGUAGES=English Swedish
+libgnustep-$(BACKEND_FULL)_LANGUAGES=English Swedish
 
 -include GNUmakefile.preamble
 

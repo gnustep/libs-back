@@ -23,7 +23,7 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 # Things to do before compiling
-before-all:: $(GNUSTEP_TARGET_DIR)/config.h
+before-all:: $(GNUSTEP_TARGET_DIR)/config.h $(BUNDLE_NAME)Info.plist
 
 # Things to do after compiling
 # after-all::
@@ -66,3 +66,15 @@ after-distclean::
 $(GNUSTEP_TARGET_DIR)/config.h: ../config.status
 	$(GNUSTEP_MAKEFILES)/mkinstalldirs $(GNUSTEP_TARGET_DIR)
 	-cp ../config.h $(GNUSTEP_TARGET_DIR)
+
+
+#
+# Make an Info.plist for the bundle
+#
+$(BUNDLE_NAME)Info.plist:
+	$(ECHO_CREATING)(echo "{"; \
+	echo "  GSBundleShortVersionString = \"$(VERSION)\";"; \
+	echo "  GSBundleVersion = $(VERSION_NUMBER);"; \
+	echo "  CFBundleShortVersionString = \"$(VERSION)\";"; \
+	echo "  CFBundleVersion = $(VERSION_NUMBER);"; \
+	echo "}") > $@$(END_ECHO)
