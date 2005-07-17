@@ -1,7 +1,14 @@
+2005-07-17  Adam Fedor  <fedor@gnu.org>
+
+	* Version: Add interface version number
+	* Source/GNUmakefile: Use it.
+	* Source/GNUmakefile.postamble: Idem, add custom Info.plist.
+	* Source/GNUmakefile.preamble: Update for interface version.
+
 2005-07-14  Adam Fedor  <fedor@gnu.org>
 
-	* Source/winlib/WIN32GState.m ([WIN32GState -compositeGState:...]): Fall
-	through to default operation if alpha blend not sucessful.
+	* Source/winlib/WIN32GState.m ([WIN32GState -compositeGState:...]): 
+	Fall through to default operation if alpha blend not sucessful.
 
 2005-07-09  Fred Kiefer <FredKiefer@gmx.de>
 
