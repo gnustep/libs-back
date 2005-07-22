@@ -9,11 +9,14 @@
 
 @section Noteworthy changes in version @samp{0.10.0}
 
+The installed name of the backend now includes an interface version number.
+This avoids the potential version mismatch between the frontend (GUI) library
+and the backend.
+
 @itemize @bullet
 @item Alpha blending was implemented for Windows, although it does not
 seem to work on some machines.
 @end itemize
-
 
 @c ====================================================================
 @c Keep the next line just below the list of changes in most recent version.

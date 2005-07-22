@@ -1,6 +1,16 @@
 NEWS
 ****
 
+Noteworthy changes in version `0.10.0'
+======================================
+
+The installed name of the backend now includes an interface version
+number.  This avoids the potential version mismatch between the
+frontend (GUI) library and the backend.
+
+   * Alpha blending was implemented for Windows, although it does not
+     seem to work on some machines.
+
 Noteworthy changes in version `0.9.5'
 =====================================
 

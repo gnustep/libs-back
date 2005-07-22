@@ -1,7 +1,7 @@
 ANNOUNCE
 ********
 
-This is version 0.9.5 of the GNUstep GUI Backend (`gnustep-back').
+This is version 0.10.0 of the GNUstep GUI Backend (`gnustep-back').
 
 What is the GNUstep GUI Backend?
 ================================
@@ -20,20 +20,21 @@ easily ported to other display systems.
 Window's Systems. It works via a DPS emulation engine to emulate the
 DPS functions required by the front-end system.
 
-Noteworthy changes in version `0.9.5'
-=====================================
+Noteworthy changes in version `0.10.0'
+======================================
 
-   * Added support for window alpha on X servers.
+The installed name of the backend now includes an interface version
+number.  This avoids the potential version mismatch between the
+frontend (GUI) library and the backend.
 
-   * Add support for old and new freetype libs.
-
-   * Some improvements to the Windows backend.
+   * Alpha blending was implemented for Windows, although it does not
+     seem to work on some machines.
 
 Where can you get it?  How can you compile it?
 ==============================================
 
-The gstep-back-0.9.5.tar.gz distribution file has been placed on
-`ftp.gnustep.org' in `pub/gnustep/core'.
+The gstep-back-0.10.0.tar.gz distribution file has been placed at
+<ftp://ftp.gnustep.org/pub/gnustep/core>.
 
 Where do I send bug reports?
 ============================
