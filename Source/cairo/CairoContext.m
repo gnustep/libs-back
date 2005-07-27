@@ -20,12 +20,12 @@
  */
 #include "cairo/CairoContext.h"
 #include "cairo/CairoGState.h"
+#include "cairo/CairoFontInfo.h"
+#include "cairo/CairoFontEnumerator.h"
 #include "NSBezierPathCairo.h"
 
 #define XRGSTATE ((CairoGState *)gstate)
 
-@class CairoFontEnumerator;
-@class CairoFontInfo;
 
 @implementation CairoContext
 
@@ -35,8 +35,8 @@
   [NSGraphicsContext setDefaultContextClass:self];
 
   [CairoSurface initializeBackend];
-  [CairoFontEnumerator initializeBackend];
-  [CairoFontInfo initializeBackend];
+  [GSFontEnumerator setDefaultClass: [CairoFontEnumerator class]];
+  [GSFontInfo setDefaultClass: [CairoFontInfo class]];
   [NSBezierPath initializeCairoBezierPath];
 }
 

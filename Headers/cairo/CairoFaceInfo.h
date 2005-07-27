@@ -32,6 +32,7 @@
 
 	cairo_font_slant_t _c_slant;
 	cairo_font_weight_t _c_weight;
+	cairo_font_face_t *_fontFace; 
 
 	NSString *_faceName;
 	NSString *_familyName;
@@ -67,6 +68,7 @@
 - (void) setName: (NSString *)name;
 - (const char *) cairoCName;
 - (void) setCairoName: (NSString *)name;
+- (cairo_font_face_t *)fontFace;
 
 
 

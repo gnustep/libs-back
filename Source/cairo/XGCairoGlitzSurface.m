@@ -52,6 +52,11 @@
 
 - (id) initWithDevice: (void *)device
 {
+  glitz_format_t *format;
+  Colormap cm;
+  XVisualInfo *vi;
+  unsigned long format_options = GLITZ_FORMAT_OPTION_ONSCREEN_MASK;
+
   /* FIXME format is ignore when Visual isn't NULL
    * Cairo may change this API
    */
@@ -65,17 +70,6 @@
     GSWINDEVICE->buffer);
     }
   */
-  
-  return self;
-}
-
-- (void) setAsTargetOfCairo: (cairo_t *)ct
-{
-  glitz_surface_t *glsurface;
-  glitz_format_t *format;
-  Colormap cm;
-  XVisualInfo *vi;
-  unsigned long format_options = GLITZ_FORMAT_OPTION_ONSCREEN_MASK;
 
   format_options |= GLITZ_FORMAT_OPTION_NO_MULTISAMPLE_MASK;
   format_options |= GLITZ_FORMAT_OPTION_SINGLEBUFFER_MASK;
@@ -108,13 +102,12 @@
     XSetWindowColormap(GSWINDEVICE->display,GSWINDEVICE->ident,cm);
   */
 
-  glsurface = glitz_glx_surface_create(GSWINDEVICE->display,
-				       GSWINDEVICE->screen,
-				       format,
-				       GSWINDEVICE->ident);
-//	glitz_surface_update_size(glsurface);
+  _surface = cairo_glitz_surface_create(glitz_glx_surface_create(GSWINDEVICE->display,
+								 GSWINDEVICE->screen,
+								 format,
+								 GSWINDEVICE->ident));
   
-  cairo_set_target_gl(ct, glsurface);
+  return self;
 }
 
 - (NSSize) size

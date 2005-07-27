@@ -34,6 +34,7 @@ typedef struct _CairoInfo
 {
 @public
   void *gsDevice;
+  cairo_surface_t *_surface;
 }
 
 + (CairoSurface *) surfaceForDevice: (void *) device
@@ -43,9 +44,10 @@ typedef struct _CairoInfo
 								depthInfo:(CairoInfo *)cairoInfo;
 
 - (id) initWithDevice:(void *)device;
-- (void) setAsTargetOfCairo:(cairo_t *)ct;
 
 - (NSSize) size;
+
+- (cairo_surface_t *) surface;
 
 @end
 

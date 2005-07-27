@@ -23,44 +23,38 @@
 
 @implementation NSBezierPath (Cairo)
 
-static void
-gs_cairo_move_to(void *data, double x, double y)
-{
-  NSBezierPath *path = (NSBezierPath *)data;
-  [path moveToPoint: NSMakePoint(x, y)];
-}
-
-static void
-gs_cairo_line_to(void *data, double x, double y)
-{
-  NSBezierPath *path = (NSBezierPath *)data;
-  [path lineToPoint: NSMakePoint(x, y)];
-}
-
-static void
-gs_cairo_curve_to(void *data,
-		  double x1, double y1,
-		  double x2, double y2, double x3, double y3)
-{
-  NSBezierPath *path = (NSBezierPath *)data;
-  [path curveToPoint: NSMakePoint(x1, y1) 
-	controlPoint1: NSMakePoint(x2, y2) 
-	controlPoint2: NSMakePoint(x3, y3)];
-}
-
-static void
-gs_cairo_close_path(void *data)
-{
-  NSBezierPath *path = (NSBezierPath *)data;
-  [path closePath];
-}
-
 + (NSBezierPath *) bezierPathFromCairo: (cairo_t *)ct
 {
+  int i;
+  cairo_path_t *cpath;
+  cairo_path_data_t *data;
   NSBezierPath *path =[NSBezierPath bezierPath];
 
-  cairo_current_path(ct, gs_cairo_move_to, gs_cairo_line_to,
-		     gs_cairo_curve_to, gs_cairo_close_path, path);
+  cpath = cairo_copy_path (ct);
+
+  for (i=0; i < cpath->num_data; i += cpath->data[i].header.length) 
+    {
+      data = &cpath->data[i];
+      switch (data->header.type) 
+        {
+	  case CAIRO_PATH_MOVE_TO:
+	    [path moveToPoint: NSMakePoint(data[1].point.x, data[1].point.y)];
+	    break;
+	  case CAIRO_PATH_LINE_TO:
+	    [path lineToPoint: NSMakePoint(data[1].point.x, data[1].point.y)];
+	    break;
+	  case CAIRO_PATH_CURVE_TO:
+	    [path curveToPoint: NSMakePoint(data[1].point.x, data[1].point.y) 
+		 controlPoint1: NSMakePoint(data[2].point.x, data[2].point.y) 
+		 controlPoint2: NSMakePoint(data[3].point.x, data[3].point.y)];
+	    break;
+	  case CAIRO_PATH_CLOSE_PATH:
+	    [path closePath];
+	    break;
+	}
+    }
+
+  cairo_path_destroy(cpath);
 
   return path;
 }
@@ -69,7 +63,11 @@ static cairo_t *__ct = NULL;
 
 + (void) initializeCairoBezierPath
 {
-  __ct = cairo_create();
+  cairo_surface_t *surface;
+
+  surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 100, 100);
+  __ct = cairo_create(surface);
+  cairo_surface_destroy(surface);
 }
 
 - (void) appendBezierPathToCairo: (cairo_t *)ct

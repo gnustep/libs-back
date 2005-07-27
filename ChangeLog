@@ -1,3 +1,26 @@
+2005-07-28  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/cairo/CairoFaceInfo.h,
+	* Headers/cairo/CairoFontEnumerator.h,
+	* Headers/cairo/CairoFontInfo.h,
+	* Headers/cairo/CairoSurface.h,
+	* Headers/cairo/XGCairoSurface.h,
+	* Source/cairo/CairoContext.m,
+	* Source/cairo/CairoGState.m,
+	* Source/cairo/CairoFaceInfo.m,
+	* Source/cairo/CairoFontInfo.m,
+	* Source/cairo/CairoFontEnumerator.m,
+	* Source/cairo/CairoSurface.m,
+	* Source/cairo/NSBezierPathCairo.m,
+	* Source/cairo/XGCairoGlitzSurface.m,
+	* Source/cairo/XGCairoSurface.m,
+	* Source/cairo/XGCairoXImageSurface.m,
+
+	Adopted to changes in latest release of cairo.
+
+	* Source/cairo/GNUmakefile:
+	Removed file CairoFontManager.m
+	
 2005-07-22  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.10.0

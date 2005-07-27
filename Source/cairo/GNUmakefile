@@ -34,11 +34,11 @@ cairo_OBJC_FILES = CairoSurface.m \
   CairoGState.m \
   CairoContext.m \
   CairoFontEnumerator.m \
-  CairoFontManager.m \
   CairoFaceInfo.m \
   XGCairoSurface.m \
   XGCairoXImageSurface.m \
   NSBezierPathCairo.m \
+#  CairoFontManager.m \
 #  CairoFreeTypeFontInfo.m \
 
 
