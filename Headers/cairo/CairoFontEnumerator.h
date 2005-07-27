@@ -25,8 +25,10 @@
 
 #include <GNUstepGUI/GSFontInfo.h>
 #include <cairo.h>
+#include "cairo/CairoFaceInfo.h"
 
 @interface CairoFontEnumerator : GSFontEnumerator
++ (CairoFaceInfo *) fontWithName: (NSString *)name;
 @end
 
 #endif

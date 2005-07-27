@@ -23,6 +23,7 @@
 #include <Foundation/NSUserDefaults.h>
 #include <math.h>
 #include "cairo/XGCairoSurface.h"
+#include <cairo-xlib.h>
 
 #define GSWINDEVICE ((gswindow_device_t *)gsDevice)
 
@@ -31,29 +32,14 @@
 + (CairoSurface *) createSurfaceForDevice: (void *)device
 				depthInfo: (CairoInfo *)cairoInfo
 {
-#define NEWGSWINDEVICE ((gswindow_device_t *)device)
-  XGCairoSurface *surface;
-    
-  surface = [[self alloc] initWithDevice: NEWGSWINDEVICE];
-  
-  NSAssert(NEWGSWINDEVICE->buffer, @"FIXME! CairoSurface: Strange, a window doesn't have buffer");
-
-  return surface;
-#undef NEWGSWINDEVICE
-}
-
-
-- (NSString *) description
-{
-  return [NSString stringWithFormat: @"<XGCairoSurface %p xr:%p>", self, xrSurface];
+  return [[self alloc] initWithDevice: device];
 }
 
 - (id) initWithDevice: (void *)device
 {
-  /* FIXME format is ignore when Visual isn't NULL
-   * Cairo may change this API
-   */
   gsDevice = device;
+
+  NSAssert(GSWINDEVICE->buffer, @"FIXME! CairoSurface: Strange, a window doesn't have buffer");
   /*
     if (GSWINDEVICE->type != NSBackingStoreNonretained)
     {
@@ -64,41 +50,22 @@
     }
   */
   
-  xrSurface = cairo_xlib_surface_create(GSWINDEVICE->display,
-					GSWINDEVICE->buffer,
-					DefaultVisual(GSWINDEVICE->display,
-						      DefaultScreen(GSWINDEVICE->display)),
-					0,
-					DefaultColormap(GSWINDEVICE->display,
-							DefaultScreen(GSWINDEVICE->display)));
-
+  /* FIXME format is ignore when Visual isn't NULL
+   * Cairo may change this API
+   */
+  _surface = cairo_xlib_surface_create(GSWINDEVICE->display,
+				       GSWINDEVICE->buffer,
+				       DefaultVisual(GSWINDEVICE->display,
+						     DefaultScreen(GSWINDEVICE->display)),
+				       0,
+				       DefaultColormap(GSWINDEVICE->display,
+						       DefaultScreen(GSWINDEVICE->display)));
   return self;
-}
-
-- (void) setAsTargetOfCairo: (cairo_t *)ct
-{
-  /*
-    if (GSWINDEVICE->type != NSBackingStoreNonretained)
-    {
-    GSWINDEVICE->gdriverProtocol |= GDriverHandlesExpose;
-    XSetWindowBackgroundPixmap(GSWINDEVICE->display,
-    GSWINDEVICE->ident,
-    GSWINDEVICE->buffer);
-    }
-  */
-  //cairo_set_target_drawable(ct, GSWINDEVICE->display, GSWINDEVICE->buffer);
-  cairo_set_target_surface(ct, xrSurface);
-}
-
-- (void) dealloc
-{
-  cairo_surface_destroy(xrSurface);
-  [super dealloc];
 }
 
 - (void) logDevice
 {
-  NSLog(@"device %p id:%p buff:%p",self,GSWINDEVICE->ident,GSWINDEVICE->buffer);
+  NSLog(@"device %p id:%p buff:%p", self, GSWINDEVICE->ident, GSWINDEVICE->buffer);
 }
 
 - (NSSize) size
@@ -107,4 +74,3 @@
 }
 
 @end
-

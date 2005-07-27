@@ -30,8 +30,7 @@
 @interface CairoFontInfo : GSFontInfo
 {
 @public
-	cairo_t *_cf;
-	cairo_font_t *xrFont;
+	cairo_scaled_font_t *_scaled;
 
 	CairoFaceInfo *_faceInfo;
 

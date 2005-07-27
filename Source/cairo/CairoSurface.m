@@ -129,23 +129,27 @@ static Class __defaultSurfaceClass;
 - (void) dealloc
 {
   //NSLog(@"CairoSurface dealloc");
+  if (_surface != NULL)
+    {
+      cairo_surface_destroy(_surface);
+    }
   [super dealloc];
-}
-
-- (void) setAsTargetOfCairo: (cairo_t *)ct
-{
-  [self subclassResponsibility:_cmd];
 }
 
 - (NSString *) description
 {
-  return [NSString stringWithFormat:@"<CairoSurface %p xr:%p>", self, NULL];
+  return [NSString stringWithFormat:@"<%@ %p xr:%p>", [self class], self, _surface];
 }
 
 -(NSSize) size
 {
   [self subclassResponsibility:_cmd];
   return NSMakeSize(0, 0);
+}
+
+- (cairo_surface_t *) surface
+{
+  return _surface;
 }
 
 @end

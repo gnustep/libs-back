@@ -21,6 +21,8 @@
  */
 
 #include "cairo/CairoFaceInfo.h"
+#include <cairo-ft.h>
+#include <AppKit/NSFontManager.h>
 
 @ implementation CairoFaceInfo 
 
@@ -43,6 +45,16 @@
   [self setCairoWeight: cairoWeight];
 
   return self;
+}
+
+- (void) dealloc
+{
+  cairo_font_face_destroy(_fontFace);
+  RELEASE(_familyName);
+  RELEASE(_faceName);
+  RELEASE(_displayName);
+  RELEASE(_cairoName);
+  [super dealloc];
 }
 
 - (void) setFamilyName: (NSString *)name
@@ -128,6 +140,13 @@
 - (unsigned int) cacheSize
 {
   return 257;
+}
+
+- (cairo_font_face_t *)fontFace
+{
+  _fontFace =_cairo_simple_font_face_create([_familyName cString], _c_slant, _c_weight);
+
+  return _fontFace;
 }
 
 @end

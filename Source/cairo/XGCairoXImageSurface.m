@@ -42,12 +42,6 @@
 #undef NEWGSWINDEVICE
 }
 
-
-- (NSString *) description
-{
-  return [NSString stringWithFormat: @"<XGCairoXImageSurface %p xr:%p>", self, image];
-}
-
 - (id) initWithDevice: (void *)device
 {
   /* FIXME format is ignore when Visual isn't NULL
@@ -62,17 +56,12 @@
 		       GSWINDEVICE->xframe.size.height,
 		       8, 0);
   image->data = malloc(image->height * image->bytes_per_line);
-  NSLog(@"alloc %d %d %d",image->width,image->height,(image->height * image->bytes_per_line));
+  //NSLog(@"alloc %d %d %d",image->width,image->height,(image->height * image->bytes_per_line));
+  _surface = cairo_image_surface_create_for_data(image->data, CAIRO_FORMAT_ARGB32, 
+						 image->width, image->height, image->width*4);
   
   return self;
 }
-
-- (void) setAsTargetOfCairo: (cairo_t *)ct
-{
-  cairo_set_target_image(ct, image->data, CAIRO_FORMAT_ARGB32, 
-			 image->width, image->height, image->width*4);
-}
-
 - (NSSize) size
 {
   return GSWINDEVICE->xframe.size;

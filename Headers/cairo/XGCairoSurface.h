@@ -30,7 +30,6 @@
 
 @interface XGCairoSurface : CairoSurface
 {
-	cairo_surface_t *xrSurface;
 }
 @end
 
