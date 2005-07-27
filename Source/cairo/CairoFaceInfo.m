@@ -49,7 +49,10 @@
 
 - (void) dealloc
 {
-  cairo_font_face_destroy(_fontFace);
+  if (_fontFace)
+    {
+      cairo_font_face_destroy(_fontFace);
+    }
   RELEASE(_familyName);
   RELEASE(_faceName);
   RELEASE(_displayName);
@@ -144,7 +147,12 @@
 
 - (cairo_font_face_t *)fontFace
 {
-  _fontFace =_cairo_simple_font_face_create([_familyName cString], _c_slant, _c_weight);
+  if (!_fontFace)
+    {
+      // FIXME: This function is not exported by cairo
+      _fontFace = _cairo_simple_font_face_create([_familyName cString], 
+						 _c_slant, _c_weight);
+    }
 
   return _fontFace;
 }
