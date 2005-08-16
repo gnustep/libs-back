@@ -984,7 +984,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
 /*	NSLog(@"drawString: '%s' at: %i:%i  to: %i:%i:%i:%i:%p\n",
 		s, x, y, x0, y0, x1, y1, buf);*/
-
+  d=0;
   for (c = (const unsigned char *)s; *c; c++)
     {
 /* TODO: do the same thing in outlineString:... */

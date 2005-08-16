@@ -1,3 +1,8 @@
+2005-08-16  Adrian Robert <arobert@cogsci.ucsd.edu>
+
+	* Source/art/ftfont.m (-[FTFontInfo drawString:...]):
+	Initialize index d for delta_data[].  (Already done in ftfont-old.)
+
 2005-07-28  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/cairo/CairoFaceInfo.h,
