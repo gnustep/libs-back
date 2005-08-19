@@ -78,13 +78,21 @@
   /* setting GSFontInfo:
    * xHeight, pix_width, pix_height
    */
-  face = [_faceInfo fontFace];
   cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
 		    -matrix[3], matrix[4], matrix[5]);
   cairo_matrix_init_identity(&ctm);
   // FIXME: Should get default font options from somewhere
   options = cairo_font_options_create();
+  face = [_faceInfo fontFace];
+  if (!face)
+    {
+      return NO;
+    }
   _scaled = cairo_scaled_font_create(face, &font_matrix, &ctm, options);
+  if (!_scaled)
+    {
+      return NO;
+    }
   cairo_scaled_font_extents(_scaled, &font_extents);
   ascender = font_extents.ascent;
   descender = font_extents.descent;
@@ -130,7 +138,10 @@
 - (void) dealloc
 {
   RELEASE(_faceInfo);
-  cairo_scaled_font_destroy(_scaled);
+  if (_scaled)
+    {
+      cairo_scaled_font_destroy(_scaled);
+    }
   free(_cachedSizes);
   free(_cachedGlyphs);
   [super dealloc];
@@ -143,15 +154,25 @@
 }
 
 static
-cairo_glyph_t _cairo_glyph_for_NSGlyph(NSGlyph glyph)
+cairo_glyph_t _cairo_glyph_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph)
 {
   cairo_glyph_t cglyph;
+  char str[2];
+  cairo_glyph_t *glyphs = NULL;
+  int num_glyphs;
+  cairo_status_t status;
 
-  // FIXME: This is an unclear hack!
-  cglyph.index = glyph - 31;
-  cglyph.x = 0;
-  cglyph.y = 0;
+  str[0] = glyph;
+  str[1] = 0;
   
+  status = _cairo_scaled_font_text_to_glyphs(scaled_font, str, 
+					     &glyphs, &num_glyphs);
+  if (glyphs)
+    {
+      cglyph = glyphs[0];
+      free(glyphs);
+    }
+
   return cglyph;
 }
 
@@ -168,7 +189,7 @@ cairo_glyph_t _cairo_glyph_for_NSGlyph(NSGlyph glyph)
       return _cachedSizes[entry];
     }
 
-  cglyph = _cairo_glyph_for_NSGlyph(glyph);
+  cglyph = _cairo_glyph_for_NSGlyph(_scaled, glyph);
   cairo_scaled_font_glyph_extents(_scaled, &cglyph, 1, &ctext);
   _cachedGlyphs[entry] = glyph;
   _cachedSizes[entry] = NSMakeSize(ctext.x_advance, ctext.y_advance);
@@ -181,7 +202,7 @@ cairo_glyph_t _cairo_glyph_for_NSGlyph(NSGlyph glyph)
   cairo_glyph_t cglyph;
   cairo_text_extents_t ctext;
 
-  cglyph = _cairo_glyph_for_NSGlyph(glyph);
+  cglyph = _cairo_glyph_for_NSGlyph(_scaled, glyph);
   cairo_scaled_font_glyph_extents(_scaled, &cglyph, 1, &ctext);
 
   return NSMakeRect(ctext.x_bearing, ctext.y_bearing,
@@ -192,13 +213,14 @@ cairo_glyph_t _cairo_glyph_for_NSGlyph(NSGlyph glyph)
 {
   cairo_text_extents_t ctext;
   cairo_status_t status;
-  cairo_glyph_t *glyphs;
+  cairo_glyph_t *glyphs = NULL;
   int	     num_glyphs;
 
   // FIXME: This function is not exported by Cairo
-  status = _cairo_scaled_font_text_to_glyphs (_scaled, [string UTF8String], 
-					      &glyphs, &num_glyphs);
+  status = _cairo_scaled_font_text_to_glyphs(_scaled, [string UTF8String], 
+					     &glyphs, &num_glyphs);
   cairo_scaled_font_glyph_extents(_scaled, glyphs, num_glyphs, &ctext);
+  free(glyphs);
 
   return ctext.width;
 }
@@ -229,59 +251,6 @@ cairo_glyph_t _cairo_glyph_for_NSGlyph(NSGlyph glyph)
 
      cairo_destroy(ct);
    */
-
-#if 0
-  int i;
-  NSGlyph glyph;
-
-  FT_Matrix ftmatrix;
-  FT_Vector ftdelta;
-
-  NSPoint p = [path currentPoint];
-
-  ftmatrix.xx = 65536;
-  ftmatrix.xy = 0;
-  ftmatrix.yx = 0;
-  ftmatrix.yy = 65536;
-  ftdelta.x = p.x * 64.0;
-  ftdelta.y = p.y * 64.0;
-
-  for (i = 0; i < count; i++, glyphs++)
-    {
-      FT_Face face;
-      FT_Glyph gl;
-      FT_OutlineGlyph og;
-
-      glyph = *glyphs - 1;
-
-      if (FTC_Manager_Lookup_Size(ftc_manager, &_imgd.font, &face, 0))
-	continue;
-      if (FT_Load_Glyph(face, glyph, FT_LOAD_DEFAULT))
-	continue;
-
-      if (FT_Get_Glyph(face->glyph, &gl))
-	continue;
-
-      if (FT_Glyph_Transform(gl, &ftmatrix, &ftdelta))
-	{
-	  NSLog(@"glyph transformation failed!");
-	  continue;
-	}
-      og = (FT_OutlineGlyph)gl;
-
-      ftdelta.x += gl->advance.x >> 10;
-      ftdelta.y += gl->advance.y >> 10;
-
-      FT_Outline_Decompose(&og->outline, &bezierpath_funcs, path);
-      FT_Done_Glyph(gl);
-    }
-
-  if (count)
-    {
-      [path moveToPoint: NSMakePoint(ftdelta.x / 64.0,
-				     ftdelta.y / 64.0)];
-    }
-#endif
 }
 
 - (void) drawGlyphs: (const NSGlyph*)glyphs
@@ -307,14 +276,9 @@ cairo_glyph_t _cairo_glyph_for_NSGlyph(NSGlyph glyph)
   cairo_set_font_face(ct, [_faceInfo fontFace]);
   cairo_set_font_matrix(ct, &font_matrix);
 
-/*
-  status = _cairo_scaled_font_text_to_glyphs (_scaled, glyphs, 
-					      &cglyphs, &length);
-*/
-
   for (i = 0; i < length; i++)
     {
-      cglyphs[i] = _cairo_glyph_for_NSGlyph(glyphs[i]);
+      cglyphs[i] = _cairo_glyph_for_NSGlyph(_scaled, glyphs[i]);
       cglyphs[i].x = dx;
       cglyphs[i].y = dy;
       cairo_glyph_extents(ct, cglyphs + i, 1, &gext);
