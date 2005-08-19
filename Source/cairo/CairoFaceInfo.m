@@ -145,13 +145,18 @@
   return 257;
 }
 
+extern cairo_font_face_t *
+_cairo_toy_font_face_create(const char          *family, 
+			    cairo_font_slant_t   slant, 
+			    cairo_font_weight_t  weight);
+
 - (cairo_font_face_t *)fontFace
 {
   if (!_fontFace)
     {
       // FIXME: This function is not exported by cairo
-      _fontFace = _cairo_simple_font_face_create([_familyName cString], 
-						 _c_slant, _c_weight);
+      _fontFace = _cairo_toy_font_face_create([_cairoName cString], 
+					      _c_slant, _c_weight);
     }
 
   return _fontFace;
