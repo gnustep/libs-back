@@ -1,8 +1,13 @@
 2005-08-20  Fred Kiefer <FredKiefer@gmx.de>
 
-	* Headers/cairo/CairoFaceInfo.h (-fontFace): Use
+	* Source/cairo/CairoGState.m (-DPSImage::::::::):
+	For the ARGB32 case sort the colour fields in the bitmap correctly.
+	
+2005-08-20  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoFaceInfo.m (-fontFace): Use
 	_cairo_toy_font_face_create, as Cairo did rename this function.
-	* Headers/cairo/CairoFontInfo.h (_cairo_glyph_for_NSGlyph): Use
+	* Source/cairo/CairoFontInfo.m (_cairo_glyph_for_NSGlyph): Use
 	Cairo function _cairo_scaled_font_text_to_glyphs to convert to glyphs.
 
 2005-08-16  Adrian Robert <arobert@cogsci.ucsd.edu>

@@ -1022,7 +1022,11 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
   cairo_format_t format;
   NSAffineTransformStruct tstruct;
   cairo_surface_t *surface;
-  
+  unsigned char	*tmp;
+  int i = 0;
+  unsigned int pixels = pixelsHigh * pixelsWide;
+  const unsigned char *bits = data[0];
+
 /*
   NSLog(@"%@ DPSimage %dx%d (%p)", self, pixelsWide, pixelsHigh,
         cairo_current_target_surface (_ct));
@@ -1037,6 +1041,16 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
   switch (bitsPerSample * samplesPerPixel)
     {
     case 32:
+      tmp = objc_malloc(pixels * 4);
+      while (i < pixels*4)
+	{
+	  tmp[i+0] = bits[i+2];
+	  tmp[i+1] = bits[i+1];
+	  tmp[i+2] = bits[i+0];
+	  tmp[i+3] = bits[i+3];
+	  i += 4;
+	}
+      bits = tmp;
       format = CAIRO_FORMAT_ARGB32;
       break;
     case 24:
@@ -1063,11 +1077,17 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
 		    tstruct.tX, tstruct.tY);
   cairo_transform(_ct, &local_matrix);
 
-  surface = cairo_image_surface_create_for_data((void*)data, 
+  surface = cairo_image_surface_create_for_data((void*)bits,
 						format,
 						pixelsWide,
 						pixelsHigh,
 						bytesPerRow);
+
+  if (bits != data[0])
+    {
+      objc_free(bits);
+    }
+
   if (surface == NULL)
     {
       NSLog(@"Image surface could not be created");
