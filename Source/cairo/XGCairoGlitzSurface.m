@@ -21,34 +21,12 @@
    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include <Foundation/NSUserDefaults.h>
 #include <math.h>
 #include "cairo/XGCairoGlitzSurface.h"
 
 #define GSWINDEVICE ((gswindow_device_t *)gsDevice)
 
 @implementation XGCairoGlitzSurface
-
-+ (CairoSurface *) createSurfaceForDevice: (void *)device
-				depthInfo: (CairoInfo *)cairoInfo
-{
-#define NEWGSWINDEVICE ((gswindow_device_t *)device)
-  XGCairoGlitzSurface *surface;
-
-  surface = [[self alloc] initWithDevice:NEWGSWINDEVICE];
-  
-  
-  NSAssert(NEWGSWINDEVICE->buffer, @"FIXME! CairoSurface: Strange, a window doesn't have buffer");
-
-  return surface;
-#undef NEWGSWINDEVICE
-}
-
-
-- (NSString *) description
-{
-  return [NSString stringWithFormat: @"<XGCairoSurface %p xr:%p>", self, NULL];
-}
 
 - (id) initWithDevice: (void *)device
 {

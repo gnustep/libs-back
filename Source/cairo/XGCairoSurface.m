@@ -20,7 +20,6 @@
    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include <Foundation/NSUserDefaults.h>
 #include <math.h>
 #include "cairo/XGCairoSurface.h"
 #include <cairo-xlib.h>
@@ -29,17 +28,23 @@
 
 @implementation XGCairoSurface
 
-+ (CairoSurface *) createSurfaceForDevice: (void *)device
-				depthInfo: (CairoInfo *)cairoInfo
-{
-  return [[self alloc] initWithDevice: device];
-}
-
 - (id) initWithDevice: (void *)device
 {
+  Display *dpy;
+  Drawable drawable;
+
   gsDevice = device;
 
-  NSAssert(GSWINDEVICE->buffer, @"FIXME! CairoSurface: Strange, a window doesn't have buffer");
+  dpy = GSWINDEVICE->display;
+  if (GSWINDEVICE->type != NSBackingStoreNonretained)
+    {
+      drawable = GSWINDEVICE->buffer;
+    }
+  else
+    {
+      drawable = GSWINDEVICE->ident;
+    }
+
   /*
     if (GSWINDEVICE->type != NSBackingStoreNonretained)
     {
@@ -50,22 +55,12 @@
     }
   */
   
-  /* FIXME format is ignore when Visual isn't NULL
-   * Cairo may change this API
-   */
-  _surface = cairo_xlib_surface_create(GSWINDEVICE->display,
-				       GSWINDEVICE->buffer,
-				       DefaultVisual(GSWINDEVICE->display,
-						     DefaultScreen(GSWINDEVICE->display)),
-				       0,
-				       DefaultColormap(GSWINDEVICE->display,
-						       DefaultScreen(GSWINDEVICE->display)));
+  _surface = cairo_xlib_surface_create(dpy,
+				       drawable,
+				       DefaultVisual(dpy, DefaultScreen(dpy)),
+				       GSWINDEVICE->xframe.size.width,
+				       GSWINDEVICE->xframe.size.height);
   return self;
-}
-
-- (void) logDevice
-{
-  NSLog(@"device %p id:%p buff:%p", self, GSWINDEVICE->ident, GSWINDEVICE->buffer);
 }
 
 - (NSSize) size

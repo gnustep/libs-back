@@ -94,7 +94,8 @@
       return NO;
     }
   cairo_scaled_font_extents(_scaled, &font_extents);
-  ascender = font_extents.ascent;
+  // FIXME: Need some adjustment here
+  ascender = font_extents.ascent + 3;
   descender = font_extents.descent;
   xHeight = font_extents.height;
   maximumAdvancement = NSMakeSize(font_extents.max_x_advance, 
@@ -152,6 +153,14 @@
   /* subclass should override */
   return YES;
 }
+
+// FIXME: This function is not exported by Cairo
+extern
+cairo_status_t
+_cairo_scaled_font_text_to_glyphs (cairo_scaled_font_t *scaled_font,
+				   const char          *utf8, 
+				   cairo_glyph_t      **glyphs, 
+				   int 		       *num_glyphs);
 
 static
 cairo_glyph_t _cairo_glyph_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph)
@@ -216,7 +225,6 @@ cairo_glyph_t _cairo_glyph_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph
   cairo_glyph_t *glyphs = NULL;
   int	     num_glyphs;
 
-  // FIXME: This function is not exported by Cairo
   status = _cairo_scaled_font_text_to_glyphs(_scaled, [string UTF8String], 
 					     &glyphs, &num_glyphs);
   cairo_scaled_font_glyph_extents(_scaled, glyphs, num_glyphs, &ctext);
@@ -256,14 +264,17 @@ cairo_glyph_t _cairo_glyph_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph
 - (void) drawGlyphs: (const NSGlyph*)glyphs
 	     length: (int)length 
 	         on: (cairo_t*)ct
-		atX: (double)dx
-		  y: (double)dy
 {
   static cairo_glyph_t *cglyphs = NULL;
   static int maxlength = 0;
   size_t i;
   cairo_text_extents_t gext;
   cairo_matrix_t font_matrix;
+  double dx, dy;
+
+  cairo_get_current_point(ct, &dx, &dy);
+  // FIXME: Need some adjustment here
+  dy -= 5;
 
   if (length > maxlength)
     {

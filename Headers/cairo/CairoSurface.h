@@ -26,10 +26,6 @@
 #include <cairo.h>
 #include <Foundation/Foundation.h>
 
-typedef struct _CairoInfo
-{
-} CairoInfo;
-
 @interface CairoSurface : NSObject
 {
 @public
@@ -37,13 +33,7 @@ typedef struct _CairoInfo
   cairo_surface_t *_surface;
 }
 
-+ (CairoSurface *) surfaceForDevice: (void *) device
-                        depthInfo: (CairoInfo *) cairoInfo;
-
-+ (CairoSurface *) createSurfaceForDevice:(void *)device
-								depthInfo:(CairoInfo *)cairoInfo;
-
-- (id) initWithDevice:(void *)device;
+- (id) initWithDevice: (void *)device;
 
 - (NSSize) size;
 

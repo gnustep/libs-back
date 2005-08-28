@@ -28,20 +28,6 @@
 
 @implementation XGCairoXImageSurface
 
-+ (CairoSurface *) createSurfaceForDevice: (void *)device
-				depthInfo: (CairoInfo *)cairoInfo
-{
-#define NEWGSWINDEVICE ((gswindow_device_t *)device)
-  XGCairoXImageSurface *surface;
-
-  surface = [[self alloc] initWithDevice:NEWGSWINDEVICE];
-  
-  NSAssert(NEWGSWINDEVICE->buffer, @"FIXME! CairoSurface: Strange, a window doesn't have buffer");
-  
-  return surface;
-#undef NEWGSWINDEVICE
-}
-
 - (id) initWithDevice: (void *)device
 {
   /* FIXME format is ignore when Visual isn't NULL
@@ -62,6 +48,7 @@
   
   return self;
 }
+
 - (NSSize) size
 {
   return GSWINDEVICE->xframe.size;

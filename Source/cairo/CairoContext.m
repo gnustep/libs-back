@@ -23,6 +23,7 @@
 #include "cairo/CairoFontInfo.h"
 #include "cairo/CairoFontEnumerator.h"
 #include "NSBezierPathCairo.h"
+#include "x11/XGServer.h"
 
 #define XRGSTATE ((CairoGState *)gstate)
 
@@ -40,13 +41,6 @@
   [NSBezierPath initializeCairoBezierPath];
 }
 
-/* FIXME: TRAP */
-- (void) forwardInvocation: (NSInvocation *)anInvocation
-{
-  /* only for trapping any unknown message. */
-  NSLog (@":::UNKNOWN::: %@ %@", self, anInvocation);
-}
-
 - (void) GSWSetViewIsFlipped: (BOOL)flipped
 {
   if (gstate)
@@ -59,45 +53,16 @@
 {
   NSString *contextType;
 
-  /*
-     CSMKColorType hsb_double;
-     CSMKColorAttributes attr;
-   */
-
   [super initWithContextInfo:info];
 
   contextType = [info objectForKey:
 			 NSGraphicsContextRepresentationFormatAttributeName];
   if (contextType)
     {
-      if (!([contextType isEqualToString: NSGraphicsContextPDFFormat] ||
-	    [contextType isEqualToString: NSGraphicsContextPSFormat]))
-	{
-	  NSLog(@"CairoContext : Hmmmm");
-	}
-      NSLog(@"CairoContext : NSGCRFAName %@", contextType);
+      /* Most likely this is a PS or PDF context, so just return what
+	 super gave us */
       return self;
     }
-
-  /*
-     attr.signature = CSMKHSVColorSignature;
-     attr.isPremultiplied = NO;
-     attr.isPlanar = NO;
-     attr.hasAlphaChannel = NO;
-     attr.isEndian16 = NO;
-     attr.flavor = CSMKBlackIsZeroFlavor;
-     attr.numberOfColorComponents = 3;
-     attr.bytesPerChannel = 4;
-
-     hsb_double = CSMKMakeColorType(&attr);
-
-     ASSIGN(_systemRGBprofile,
-     [CSMKColorProfile defaultColorProfileForColorType:CSMKRGBDoubleColor]);
-     ASSIGN(_systemCMYKprofile,
-     [CSMKColorProfile defaultColorProfileForColorType:CSMKCMYKDoubleColor]);
-     ASSIGN(_systemHSBprofile,
-     [CSMKColorProfile defaultColorProfileForColorType:hsb_double]);
-   */
 
   gstate = [[CairoGState allocWithZone: [self zone]] initWithDrawContext: self];
 
@@ -106,13 +71,7 @@
 
 - (void) flushGraphics
 {
-  /* FIXME */
-}
-
-+ (void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
-{
-  NSLog (@"expose");
-  /* FIXME: */
+  XFlush([(XGServer *)server xDisplay]);
 }
 
 @end 
