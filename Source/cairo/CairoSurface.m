@@ -31,8 +31,6 @@
 @class XGCairoSurface;
 #endif
 
-static CairoSurface **surface_list;
-static int num_cairo_surfaces;
 static Class __defaultSurfaceClass;
 
 @implementation CairoSurface 
@@ -54,73 +52,14 @@ static Class __defaultSurfaceClass;
     }
 }
 
-+ (void) _listSurface
++ (id) allocWithZone: (NSZone*)zone
 {
-  int i;
-  id str = @"surfaces :";
-
-  if (surface_list == NULL)
-    {
-      NSLog(@"no surface");
-      return;
-    }
-
-  for (i = 0; i < num_cairo_surfaces; i++)
-    {
-      str = [NSString stringWithFormat: @"%@ %p", str, surface_list[i]];
-    }
-  NSLog(str);
-}
-
-+ (CairoSurface *) surfaceForDevice: (void *)device 
-			  depthInfo: (CairoInfo *)cairoInfo
-{
-  id newsurface;
-  int i;
-
-  for (i = 0; i < num_cairo_surfaces; i++)
-    {
-      if (surface_list[i]->gsDevice == device)
-	{
-	  return surface_list[i];
-	}
-    }
-
-  /* a surface for the device isn't found
-   * create a new one */
-
-  newsurface =[self createSurfaceForDevice: device depthInfo:cairoInfo];
-  num_cairo_surfaces++;
-  surface_list = realloc (surface_list, sizeof (void *) * num_cairo_surfaces);
-
-  if (!surface_list)
-    {
-      NSLog(@"Woah.. buy some memory man! CairoSurface.m meet OOMKiller! %d",
-	     __LINE__);
-      exit(1);
-    }
-
-  surface_list[num_cairo_surfaces - 1] = newsurface;
-
-  return newsurface;
-}
-
-+ (CairoSurface *) createSurfaceForDevice: (void *)device 
-				depthInfo: (CairoInfo *)cairoInfo
-{
-  if (__defaultSurfaceClass == self)
-    {
-      [self subclassResponsibility: _cmd];
-      return nil;
-    }
-
-  return [__defaultSurfaceClass createSurfaceForDevice: device depthInfo: cairoInfo];
+  return NSAllocateObject(__defaultSurfaceClass, 0, zone);
 }
 
 - (id) initWithDevice: (void *) device
 {
   /* TODO FIXME make a more abstract struct for the device */
-  /* _surface = cairo_surface_create_for_image(); */
   [self subclassResponsibility:_cmd];
 
   return self;

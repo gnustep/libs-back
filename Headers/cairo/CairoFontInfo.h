@@ -48,9 +48,7 @@
 - (void) setCacheSize:(unsigned int)size;
 - (void) drawGlyphs: (const NSGlyph*)glyphs
 	     length: (int)length 
-	         on: (cairo_t*)ct
-		atX: (double)dx
-                  y: (double)dy;
+	         on: (cairo_t*)ct;
 @end
 
 #endif

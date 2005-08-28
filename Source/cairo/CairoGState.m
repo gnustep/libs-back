@@ -162,14 +162,10 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
 
 - (void) GSSetDevice: (void *)device : (int)x : (int)y
 {
-  CairoInfo cairo_info;
-
-  ASSIGN(_surface, [CairoSurface surfaceForDevice: device depthInfo: &cairo_info]);
+  DESTROY(_surface);
+  _surface = [[CairoSurface alloc] initWithDevice: device];
   _offset = NSMakePoint(x, y);
-/*
-  NSLog(@"before: surface %p on state %p",
-	cairo_get_target(_ct), self);
-*/
+
   [self DPSinitgraphics];
 /*
   NSLog(@"after: surface %p on state %p %@",
@@ -326,7 +322,7 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
   c[b + 1] = 0;
 
   cairo_text_path(_ct, c);
-  free (c);
+  free(c);
 }
 
 - (void) DPSshow: (const char *)s
@@ -367,8 +363,8 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
     }
 
   ASSIGN(_font, fontref);
-  //cairo_set_font_face(_ct, ((CairoFontInfo *)_font)->xrFont);
-  //cairo_set_font_matrix(_ct, matrix);
+  //cairo_set_font_face(_ct, [((CairoFontInfo *)_font)->_faceInfo fontFace]);
+  //cairo_set_font_matrix(_ct, ((CairoFontInfo *)_font)->matrix);
 }
 
 - (void) GSSetFontSize: (float)size
@@ -411,18 +407,9 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
 
 - (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t)length
 {
-  double dx, dy;
-
-
-  cairo_get_current_point(_ct, &dx, &dy);
-
-  // FIXME: Need some adjustment here
-  dy -= 5;
   [_font drawGlyphs: glyphs
              length: length
-                 on: _ct
-                atX: dx
-                  y: dy];
+                 on: _ct];
 }
 
 /*
@@ -679,14 +666,12 @@ _log_matrix(cairo_t * ct)
 {
   double dx, dy;
 
-  //FIXME();
   cairo_get_current_point(_ct, &dx, &dy);
   return NSMakePoint(dx, dy);
 }
 
 - (void) DPSarc: (float)x : (float)y : (float)r : (float)angle1 : (float)angle2
 {
-  //NSLog(@"%g %g", angle1, angle2);
   cairo_arc(_ct, x, y, r, angle1 * M_PI / 180, angle2 * M_PI / 180);
 }
 
@@ -756,12 +741,12 @@ _log_matrix(cairo_t * ct)
 
 - (void) DPSflattenpath
 {
-  /* recheck this in plrm */
   cairo_path_t *path;
 
   path = cairo_copy_path_flat(_ct);
   cairo_new_path(_ct);
   cairo_append_path(_ct, path);
+  cairo_path_destroy(path);
 }
 
 - (void) DPSinitclip
@@ -1024,6 +1009,7 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
   cairo_surface_t *surface;
   unsigned char	*tmp;
   int i = 0;
+  int j;
   unsigned int pixels = pixelsHigh * pixelsWide;
   const unsigned char *bits = data[0];
 
@@ -1042,7 +1028,7 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
     {
     case 32:
       tmp = objc_malloc(pixels * 4);
-      while (i < pixels*4)
+      while (i < pixels * 4)
 	{
 	  tmp[i+0] = bits[i+2];
 	  tmp[i+1] = bits[i+1];
@@ -1054,6 +1040,19 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
       format = CAIRO_FORMAT_ARGB32;
       break;
     case 24:
+      tmp = objc_malloc(pixels * 4);
+      i = 0;
+      j = 0;
+      while (i < pixels * 4)
+	{
+	  tmp[i+0] = bits[j+2];
+	  tmp[i+1] = bits[j+1];
+	  tmp[i+2] = bits[j+0];
+	  tmp[i+3] = 0;
+	  i += 4;
+	  j += 3;
+	}
+      bits = tmp;
       format = CAIRO_FORMAT_RGB24;
       break;
     default:
