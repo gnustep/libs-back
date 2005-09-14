@@ -48,6 +48,12 @@
 
 - (void) setWindow: (HWND)number;
 - (HWND) window;
+// declared to fix conflicting type with super class warning during compile 
+- (void) compositeGState: (WIN32GState *) source
+		fromRect: (NSRect) sourceRect
+		 toPoint: (NSPoint) destPoint
+		      op: (NSCompositingOperation) op
+		fraction: (float)delta;
 
 @end
 

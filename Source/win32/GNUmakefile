@@ -36,13 +36,22 @@ include ../../config.make
 # The library to be compiled, as a library or as a bundle
 SUBPROJECT_NAME=win32
 
+win32_LOCALIZED_RESOURCE_FILES = \
+
 # The C source files to be compiled
 win32_C_FILES = \
 
 # The Objective-C source files to be compiled
 win32_OBJC_FILES = \
 WIN32Server.m  \
-WIN32ServerEvent.m
+w32_debug.m \
+w32_activate.m \
+w32_create.m \
+w32_general.m \
+w32_movesize.m \
+w32_text_focus.m \
+w32_windowdisplay.m \
+GSDisplayServer_details.m \
 
 -include GNUmakefile.preamble
 
