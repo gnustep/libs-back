@@ -502,7 +502,8 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
   if (bits != data[0])
     {
-      objc_free(bits);
+      /* cast bits to Void Pointer to fix warning in compile */
+      objc_free((void *)(bits));
     }
   objc_free(bitmap);
   return hbitmap;
@@ -897,14 +898,15 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   [super DPSinitgraphics];
 }
 
-- (void) DPSsetdash: (const float*)pattern : (int)count : (float)phase
+
+- (void) DPSsetdash: (const float*)thePattern : (int)count : (float)phase
 {
   if (!path)
     {
       path = [NSBezierPath new];
     }
 
-  [path setLineDash: pattern count: count phase: phase];
+  [path setLineDash: thePattern count: count phase: phase];
 }
 
 - (void)DPScurrentmiterlimit: (float *)limit 
@@ -1013,11 +1015,11 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   penStyle = PS_GEOMETRIC | PS_SOLID;
   if (path)
     {
-      float pattern[10];
+      float thePattern[10];
       int count = 10;
       float phase;
 
-      [path getLineDash: pattern count: &count phase: &phase];
+      [path getLineDash: thePattern count: &count phase: &phase];
 
       if (count && (count < 10))
 	{
