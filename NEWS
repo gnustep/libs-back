@@ -1,6 +1,22 @@
 NEWS
 ****
 
+Noteworthy changes in version `0.10.1'
+======================================
+
+The art graphics module is the default now. As was previously the case,
+if the proper libraries are not found, the configuration will
+automatically switch to xlib on winlib (whichever is appropriate).
+
+There was a great deal of work by Tom MacSween on the windows module to
+get windows and taskbars working together, closing, opening, hiding,
+and just general good window management.
+
+   The Cairo module has been significantly updated and now works with
+Cariro version 1.0, although you need to make some minor changes to the
+Cairo library before it will work with GNUstep. Due to this, this module
+is still considered beta. Ask on the mailing lists for help with this.
+
 Noteworthy changes in version `0.10.0'
 ======================================
 

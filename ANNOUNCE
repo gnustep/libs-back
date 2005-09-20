@@ -1,7 +1,7 @@
 ANNOUNCE
 ********
 
-This is version 0.10.0 of the GNUstep GUI Backend (`gnustep-back').
+This is version 0.10.1 of the GNUstep GUI Backend (`gnustep-back').
 
 What is the GNUstep GUI Backend?
 ================================
@@ -20,20 +20,26 @@ easily ported to other display systems.
 Window's Systems. It works via a DPS emulation engine to emulate the
 DPS functions required by the front-end system.
 
-Noteworthy changes in version `0.10.0'
+Noteworthy changes in version `0.10.1'
 ======================================
 
-The installed name of the backend now includes an interface version
-number.  This avoids the potential version mismatch between the
-frontend (GUI) library and the backend.
+The art graphics module is the default now. As was previously the case,
+if the proper libraries are not found, the configuration will
+automatically switch to xlib on winlib (whichever is appropriate).
 
-   * Alpha blending was implemented for Windows, although it does not
-     seem to work on some machines.
+   There was a great deal of work by Tom MacSween on the windows module
+to get windows and taskbars working together, closing, opening, hiding,
+and just general good window management.
+
+   The Cairo module has been significantly updated and now works with
+Cariro version 1.0, although you need to make some minor changes to the
+Cairo library before it will work with GNUstep. Due to this, this module
+is still considered beta. Ask on the mailing lists for help with this.
 
 Where can you get it?  How can you compile it?
 ==============================================
 
-The gstep-back-0.10.0.tar.gz distribution file has been placed at
+The gstep-back-0.10.1.tar.gz distribution file has been placed at
 <ftp://ftp.gnustep.org/pub/gnustep/core>.
 
 Where do I send bug reports?
