@@ -6834,7 +6834,7 @@ LDFLAGS=${GRAPHIC_LFLAGS}
 # Which projects should we build?
 #--------------------------------------------------------------------
 BUILD_SERVER=x11
-BUILD_GRAPHICS=xlib
+BUILD_GRAPHICS=art
 case $target_os in
   *mingw32* ) BUILD_SERVER=win32
               BUILD_GRAPHICS=winlib;;

@@ -7,6 +7,25 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.10.1}
+
+The art graphics module is the default now. As was previously the
+case, if the proper libraries are not found, the configuration will
+automatically switch to xlib on winlib (whichever is appropriate).
+
+There was a great deal of work by Tom MacSween on the windows module to
+get windows and taskbars working together, closing, opening, hiding, and just
+general good window management.
+
+The Cairo module has been significantly updated and now works with
+Cariro version 1.0, although you need to make some minor changes to the
+Cairo library before it will work with GNUstep. Due to this, this module
+is still considered beta. Ask on the mailing lists for help with this.
+
+@c ====================================================================
+@c Keep the next line just below the list of changes in most recent version.
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.10.0}
 
 The installed name of the backend now includes an interface version number.
@@ -17,10 +36,6 @@ and the backend.
 @item Alpha blending was implemented for Windows, although it does not
 seem to work on some machines.
 @end itemize
-
-@c ====================================================================
-@c Keep the next line just below the list of changes in most recent version.
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.9.5}
 
