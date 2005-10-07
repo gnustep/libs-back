@@ -94,7 +94,7 @@
   } while (0)
 
 #define ctxt_push(object, stack) \
-  GSIArrayAddItem((GSIArray)stack, (GSIArrayItem)object)
+  GSIArrayAddItem((GSIArray)stack, (GSIArrayItem)((id)object))
 
 /* Globally unique gstate number */
 static unsigned int unique_index = 0;
