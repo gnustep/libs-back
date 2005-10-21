@@ -128,7 +128,7 @@
 
 @interface WIN32Server (w32_debug)
 
-- (BOOL) displayEvent: (uint)uMsg;   // diagnotic filter
+- (BOOL) displayEvent: (unsigned int)uMsg;   // diagnotic filter
 - (void) test_Geomemetry: (HWND)hwnd;
 - (void) print_result: (RECT)msrect and: (NSRect)gsrect and: (RECT)control;
 - (NSMutableString *) w32_createDetails: (LPCREATESTRUCT)details;

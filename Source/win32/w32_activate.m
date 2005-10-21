@@ -136,7 +136,7 @@
   printf("NSApp is:[%s]\n",active ? "active" : "inactive");
   printf("lParam is [%s]\n thread = [%u]\n  w32_Class[%s] \n",
 	 (int)wParam ? "TRUE": "FALSE",
-        (uint)lParam,
+        (unsigned int)lParam,
 	 [[self getNativeClassName:hwnd] cString]);
   // debug GS_state details       
   printf("%s",[[self gswindowstate:EVENT_WINDOW(hwnd)] cString]);

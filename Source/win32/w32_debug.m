@@ -67,7 +67,7 @@ static NSString * spacer =@"<BLANK_LINE>\n";
   printf(" Bottom %ld\n",msrect.bottom);
 }
 
-- (BOOL) displayEvent:(uint)uMsg
+- (BOOL) displayEvent:(unsigned int)uMsg
 {
 
 #ifdef __W32_debug__ //_logging
