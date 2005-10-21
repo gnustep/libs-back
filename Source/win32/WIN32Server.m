@@ -42,6 +42,7 @@
 #include <AppKit/NSEvent.h>
 #include <AppKit/NSCursor.h>
 #include <AppKit/NSText.h>
+#include <AppKit/NSTextField.h>
 #include <AppKit/DPSOperators.h>
 
 #include "win32/WIN32Server.h"
@@ -51,10 +52,11 @@
 #ifdef __CYGWIN__
 #include <sys/file.h>
 #endif
-
+static NSString * Version=@"(C) 2005 FSF gnustep-back 0.10.1";
 // custom event notifications
 static NSString *NSMenuWillTearOff = @"MenuWillTearOff";
 static NSString *NSMenuwillPopUP =@"MenuwillPopUP";
+static NSString *NSWindowDidCreateWindow=@"WindowDidCreateWindow";
 
 static NSEvent *process_key_event(HWND hwnd, WPARAM wParam, LPARAM lParam, 
 				  NSEventType eventType);
@@ -191,12 +193,12 @@ printf("\n\n##############################################################\n");
   // Keep extra space for each window, for GS data
   wc.cbWndExtra = sizeof(WIN_INTERN); 
   wc.hInstance = hinstance; 
-  wc.hIcon = NULL;
+  wc.hIcon = NULL;//currentAppIcon;
   wc.hCursor = LoadCursor(NULL, IDC_ARROW);
   wc.hbrBackground = GetStockObject(WHITE_BRUSH); 
   wc.lpszMenuName =  NULL; 
   wc.lpszClassName = "GNUstepWindowClass"; 
-  wc.hIconSm = NULL;
+  wc.hIconSm = NULL;//currentAppIcon;
 
   if (!RegisterClassEx(&wc)) 
        return; 
@@ -261,7 +263,6 @@ printf("##initWithAttributes: (NSDictionary *)info #######\n");
 printf("\n\n##############################################################\n");
 #endif
   NSNotificationCenter	*nc = [NSNotificationCenter defaultCenter];      
-  NSUserDefaults	*defs = [NSUserDefaults standardUserDefaults];
   
   [self _initWin32Context];
   [super initWithAttributes: info];
@@ -271,16 +272,37 @@ printf("\n\n##############################################################\n");
   [self setupRunLoopInputSourcesForMode: NSModalPanelRunLoopMode]; 
   [self setupRunLoopInputSourcesForMode: NSEventTrackingRunLoopMode]; 
 
-  flags.useWMTaskBar = YES;
-  if ([defs stringForKey: @"GSUseWMTaskbar"] != nil
-    && [defs boolForKey: @"GSUseWMTaskbar"] == NO)
+  //flags.useWMTaskBar = YES;
+  //flags.useWMStyles = YES;
+  
+  if ([[NSUserDefaults standardUserDefaults] stringForKey:@"GSUseWMTaskbar"] !=nil)
     {
-      flags.useWMTaskBar = NO;
+      flags.useWMTaskBar = [[NSUserDefaults standardUserDefaults] 
+                                boolForKey:@"GSUseWMTaskbar"];
+      flags.HAVE_SERVER_PREFS=YES; 
+    }
+   else
+    {
+       flags.HAVE_SERVER_PREFS=NO;
     }
     
-  /* The backend needs to be able to keep tabs on events that are only
-     produced by GNUstep so that it can make changes or override
-     behavior in favor of the real platform window server */
+   if ([[NSUserDefaults standardUserDefaults] stringForKey:@"GSUseWMStyles"] !=nil)
+    {
+      flags.useWMStyles = [[NSUserDefaults standardUserDefaults] 
+                                boolForKey:@"GSUseWMStyles"];
+      flags.HAVE_SERVER_PREFS=YES;  
+    }
+    else
+    {
+       flags.HAVE_SERVER_PREFS=NO;
+    }
+    
+   if (flags.useWMStyles==YES)
+        handlesWindowDecorations = YES;
+   
+   /* the backend needs to be able to keep tabs on events that are only produced by 
+      GNUstep so that it can make changes or override behavior in favor of the real 
+      platform window server */ 
   [nc addObserver: self
 	  selector: @selector(ApplicationDidFinishLaunching:)
 	  name: NSApplicationDidFinishLaunchingNotification
@@ -312,6 +334,10 @@ printf("\n\n##############################################################\n");
 	  name: NSMenuwillPopUP
 	  object: nil];
 	  
+   [nc addObserver: self
+	 selector: @selector(WindowDidCreateWindow:)
+	 name: NSWindowDidCreateWindow
+	 object: nil];
 	  
 #ifdef __APPNOTIFICATIONS__
   [self registerForWindowEvents];
@@ -354,25 +380,188 @@ printf("\n\n##############################################################\n");
   [self subclassResponsibility: _cmd];
 }
 
+// make a configure window for the backend
+/* win32 is unique in that it can support both the win32 look and feel or
+a openstep look and feel.
+
+To make it easier to switch between the 2 I have added a small server inspector 
+panel that will provide access to settings without recompile.
+
+If main debug feature is on then I can also add access to some of the switches
+to control debug output... or log specific event to a log panel.
+*/
+- (void) initConfigWindow
+{
+   unsigned int style = NSTitledWindowMask 
+                     | NSClosableWindowMask;
+   NSRect       rect;
+   NSView *     content;
+
+   rect = NSMakeRect (715,800,236,182);
+   configWindow = RETAIN([[NSWindow alloc] initWithContentRect: rect
+                                              styleMask: style
+                                                backing: NSBackingStoreBuffered
+                                                  defer: YES]);
+   [configWindow setTitle:@"server Preferences"];
+   [configWindow setReleasedWhenClosed:NO];
+
+   content = [configWindow contentView];
+   NSTextField *theText=[[NSTextField alloc] initWithFrame: NSMakeRect (27,155,190,22)];
+   [theText setStringValue:@"Win32 GNUStep Display Server"];
+   [theText setEditable:NO];
+   [theText setEnabled:NO];
+   [theText setSelectable:NO];
+   [[theText cell] setBackgroundColor:[NSColor lightGrayColor]];
+   [[theText cell] setBordered:NO];
+   [[theText cell] setBezeled:NO];
+   [content addSubview:theText];
+   
+   /*NSTextField *theText1=[[NSTextField alloc] initWithFrame: NSMakeRect (27,135,190,22)];
+   [theText1 setStringValue:@"Revitalized By Tom MacSween"];
+   [theText1 setEditable:NO];
+   [theText1 setEnabled:NO];
+   [theText1 setSelectable:NO];
+   [[theText1 cell] setBackgroundColor:[NSColor lightGrayColor]];
+   [[theText1 cell] setBordered:NO];
+   [[theText1 cell] setBezeled:NO];
+   [content addSubview:theText1];*/
+   
+   NSTextField *theText2=[[NSTextField alloc] initWithFrame: NSMakeRect (17,115,200,22)];
+   [theText2 setStringValue:Version];
+   [theText2 setEditable:NO];
+   [theText2 setEnabled:NO];
+   [theText2 setSelectable:NO];
+   [[theText2 cell] setBackgroundColor:[NSColor lightGrayColor]];
+   [[theText2 cell] setBordered:NO];
+   [[theText2 cell] setBezeled:NO];
+   [content addSubview:theText2];
+   
+   // popup for style
+   styleButton = [[NSPopUpButton  alloc] initWithFrame: NSMakeRect (30,80,171,22)];
+   [styleButton setAutoenablesItems:YES];
+   [styleButton setTarget:self];
+   [styleButton setAction: @selector(setStyle:)];
+   [styleButton setTitle: @"Select window Style"];
+   [styleButton addItemWithTitle:@"GNUStep window Style"];
+   [styleButton addItemWithTitle:@"MicroSoft window Style"];
+   [content addSubview:styleButton];
+   
+   // set the tags on the items
+   [[styleButton itemAtIndex:0] setTag:0];
+   [[styleButton itemAtIndex:1] setTag:1];
+   [[styleButton itemAtIndex:2] setTag:2];
+  
+  
+   // check box for using taskbar
+   taskbarButton = [[NSButton  alloc] initWithFrame: NSMakeRect (30,55,171,22)];
+   [taskbarButton setButtonType: NSSwitchButton];
+   [taskbarButton setTitle: @"Use Win Taskbar"];
+   [taskbarButton setTarget:self];
+   [taskbarButton setAction: @selector(setTaskBar:)];
+   [content addSubview:taskbarButton];
+   // save to defaults
+   saveButton = [[NSButton  alloc] initWithFrame: NSMakeRect (30,25,171,22)];
+   [saveButton setButtonType: NSMomentaryPushInButton];
+   [saveButton setTitle: @"Save to defaults"];
+   [saveButton setTarget:self];
+   [saveButton setAction: @selector(setSave:)];
+   [content addSubview:saveButton];
+   [saveButton setEnabled:NO];
+
+
+   // set the buttons to match the current state
+   if(flags.useWMStyles==YES)
+      [styleButton selectItemAtIndex:2];
+   else
+      [styleButton selectItemAtIndex:1];
+    
+   if(flags.useWMTaskBar==YES)
+      [taskbarButton setState:NSOnState];
+   else
+      [taskbarButton setState:NSOffState]; 
+}
+   
+ // config window actions
+      
+- (void) setStyle:(id)sender
+{
+   //defaults key: GSUseWMStyles
+   // code flag: flags.useWMStyles
+   [saveButton setEnabled:YES];
+    
+   if ([[sender selectedItem] tag] >1)
+    {
+      flags.useWMStyles=YES;
+      flags.useWMTaskBar=YES;
+      [taskbarButton setState:NSOnState];
+    }
+   else
+    {
+      flags.useWMStyles=NO;
+      flags.useWMTaskBar=NO;
+      [taskbarButton setState:NSOffState];
+    }
+}
+
+- (void) setTaskBar:(id)sender
+{
+   //defaults key: GSUseWMTaskbar
+   // code flag: flags.useWMTaskBar
+   [saveButton setEnabled:YES];
+   flags.useWMTaskBar=[sender state];
+}
+
+- (void) setSave:(id)sender
+{
+   NSString * theValue=@"NO";
+   //NSUserDefaults	*defs = [NSUserDefaults standardUserDefaults];
+   //printf("Save to defaults\n");
+   if(flags.useWMTaskBar ==YES)
+      theValue=@"YES";
+        
+   [[NSUserDefaults standardUserDefaults] 
+      setObject:theValue forKey:@"GSUseWMTaskbar"];
+        
+   theValue=@"NO";
+   if(flags.useWMStyles ==YES)
+      theValue=@"YES";
+        
+   [[NSUserDefaults standardUserDefaults] 
+      setObject:theValue forKey:@"GSUseWMStyles"];
+    
+    // user must restart application for changes
+    
+   NSRunInformationalAlertPanel(@"Server Preferences Changed",
+                     @"Changes will take affect on the next restart",
+                      @"OK",nil, nil);
+   flags.HAVE_SERVER_PREFS=YES;
+   [configWindow close];
+   [saveButton setEnabled:NO];
+}
+
+- (void) showServerPrefs:(id)sender
+{
+   [configWindow makeKeyAndOrderFront:self];
+}
+
 /* 
-   When debug is active (#define __W32_debug__) the following
-   additional notifications are registered for in the backend server.
-   Helps to show where appevents and server events are happening
-   relative to each other.
+    when debug is active (#define __W32_debug__) the following additional notifications
+    are registered for in the backend server.  Helps to show where appevents and server
+    events are happening relitive to each other
+
 
 NSWindowDidBecomeKeyNotification
     Posted whenever an NSWindow becomes the key window.
-    The notification object is the NSWindow that has become key. This
-    notification does not contain a userInfo dictionary.
+    The notification object is the NSWindow that has become key. This notification 
+    does not contain a userInfo dictionary.
 
 NSWindowDidBecomeMainNotification
     Posted whenever an NSWindow becomes the main window.
-    The notification object is the NSWindow that has become main. This
-    notification does not contain a userInfo dictionary.
+    The notification object is the NSWindow that has become main. This notification 
+    does not contain a userInfo dictionary.
     
 NSWindowDidChangeScreenNotification
-    Posted whenever a portion of an NSWindow’s frame moves onto or
-    off of a screen.
+    Posted whenever a portion of an NSWindow’s frame moves onto or off of a screen.
     The notification object is the NSWindow that has changed screens. This 
     notification does not contain a userInfo dictionary.
     This notification is not sent in Mac OS X versions earlier than 10.4.
@@ -737,7 +926,7 @@ printf("\n\n##############################################################\n");
 }  
 
 /*  stubs for window server events note other stubs should be 
-    declared for mous and keyboards
+    declared for mouse and keyboards
     these should be implmented in a subclass or a catagory
 */
 - (LRESULT) decodeWM_ACTIVEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
@@ -746,17 +935,13 @@ printf("\n\n##############################################################\n");
   return 0;
 }
 
-
-- (LRESULT) decodeWM_ACTIVEAPPParams: (HWND)hwnd : (WPARAM)wParam 
-				    : (LPARAM)lParam
+- (LRESULT) decodeWM_ACTIVEAPPParams: (HWND)hwnd :(WPARAM)wParam : (LPARAM)lParam
 {
   [self subclassResponsibility: _cmd];
   return 0;
 }
 
-
-- (void) decodeWM_NCACTIVATEParams: (WPARAM)wParam : (LPARAM)lParam 
-				  : (HWND)hwnd
+- (void) decodeWM_NCACTIVATEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   [self subclassResponsibility: _cmd];
 }
@@ -768,6 +953,16 @@ printf("\n\n##############################################################\n");
   return 0;
 }
 
+- (void) decodeWM_SIZINGParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
+{
+   [self subclassResponsibility: _cmd];
+}
+
+- (LRESULT) decodeWM_MOVINGParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
+{
+   [self subclassResponsibility: _cmd];
+   return 0;
+}
 
 - (LRESULT) decodeWM_MOVEParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
 {
@@ -775,9 +970,7 @@ printf("\n\n##############################################################\n");
   return 0;
 }
 
-
-- (void) decodeWM_NCCALCSIZEParams: (WPARAM)wParam : (LPARAM)lParam 
-				  : (HWND)hwnd
+- (void) decodeWM_NCCALCSIZEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   [self subclassResponsibility: _cmd];
 }
@@ -810,6 +1003,12 @@ printf("\n\n##############################################################\n");
 
 
 - (LRESULT) decodeWM_CREATEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
+{
+  [self subclassResponsibility: _cmd];
+  return 0;
+}
+
+- (DWORD) windowStyleForGSStyle: (unsigned int) style
 {
   [self subclassResponsibility: _cmd];
   return 0;
@@ -852,12 +1051,11 @@ printf("\n\n##############################################################\n");
   [self subclassResponsibility: _cmd];
 }
 
-
-- (void) decodeWM_GETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
-{
-  [self subclassResponsibility: _cmd];
-}
-
+//- (HICON) decodeWM_GETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
+//{
+ //[self subclassResponsibility: _cmd]; 
+ //return nil;
+//}
 
 - (void) resizeBackingStoreFor: (HWND)hwnd
 {
@@ -921,8 +1119,13 @@ printf("\n\n##############################################################\n");
   [self subclassResponsibility: _cmd];
 }
 
+- (void) decodeWM_COMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
+{
+   [self subclassResponsibility: _cmd];
 
-- (BOOL) displayEvent: (unsigned int)uMsg;   // diagnotic filter
+}
+
+- (BOOL) displayEvent:(uint)uMsg;   // diagnotic filter
 {
   [self subclassResponsibility: _cmd];
   return YES;
@@ -1008,7 +1211,8 @@ printf("\n\n##############################################################\n");
 
   switch (uMsg) 
     { 
-    
+   case WM_SIZING:
+       [self decodeWM_SIZINGParams:hwnd : wParam : lParam];
     case WM_NCCREATE:
       return [self decodeWM_NCCREATEParams: wParam : lParam : hwnd];
       break;
@@ -1019,11 +1223,12 @@ printf("\n\n##############################################################\n");
       [self decodeWM_NCACTIVATEParams: wParam : lParam : hwnd]; 
       break;
     case WM_NCPAINT:
+      if (flags.useWMStyles==NO)
       [self decodeWM_NCPAINTParams:wParam :lParam :hwnd]; 
       break;
-    case WM_SHOWWINDOW:
-      [self decodeWM_SHOWWINDOWParams:wParam :lParam :hwnd]; 
-      break;
+   //case WM_SHOWWINDOW:
+      //[self decodeWM_SHOWWINDOWParams:wParam :lParam :hwnd]; 
+      //break;
     case WM_NCDESTROY:
       [self decodeWM_NCDESTROYParams:wParam :lParam :hwnd]; 
       break;
@@ -1050,6 +1255,7 @@ printf("\n\n##############################################################\n");
       return [self decodeWM_MOVEParams:hwnd :wParam :lParam];
       break;
     case WM_MOVING: 
+      return [self decodeWM_MOVINGParams:hwnd :wParam :lParam];
       break;
     case WM_SIZE:
       return [self decodeWM_SIZEParams:hwnd :wParam :lParam];
@@ -1062,7 +1268,7 @@ printf("\n\n##############################################################\n");
       break; 
     case WM_ACTIVATE:
       if ((int)lParam !=0)
-	[self decodeWM_ACTIVEParams:wParam :lParam : hwnd];  /************************/
+         [self decodeWM_ACTIVEParams:wParam :lParam : hwnd]; 
       break;
     case WM_ACTIVATEAPP:
       //if (_is_cache == NO) 
@@ -1091,6 +1297,7 @@ printf("\n\n##############################################################\n");
     case WM_PAINT:
       [self decodeWM_PAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd]; 
     case WM_SYNCPAINT:
+      if (flags.useWMStyles==NO)
       [self decodeWM_SYNCPAINTParams:wParam :lParam :hwnd]; 
       break;
     case WM_CLOSE:
@@ -1116,6 +1323,7 @@ printf("\n\n##############################################################\n");
     case WM_ENTERIDLE:
       break;
     case WM_COMMAND:
+      [self decodeWM_COMMANDParams:wParam :lParam :hwnd];
       break;
     case WM_SYSKEYDOWN:
       break;
@@ -1126,10 +1334,13 @@ printf("\n\n##############################################################\n");
       break;
     case WM_HELP:
       break;
-    case WM_GETICON:
-      [self decodeWM_GETICONParams:wParam :lParam :hwnd];
-      break;
-    case WM_CANCELMODE:
+   //case WM_GETICON:
+      //return [self decodeWM_GETICONParams:wParam :lParam :hwnd];
+      //break;
+   //case WM_SETICON:
+      //return [self decodeWM_SETICONParams: wParam : lParam : hwnd];
+      //break;
+   case WM_CANCELMODE:  // new added by Tom MacSween
       break;
     case WM_ENABLE:
     case WM_CHILDACTIVATE:
@@ -1137,7 +1348,7 @@ printf("\n\n##############################################################\n");
     case WM_NULL:
       break; 
       
-      /* resued from WIN32EventServer.m (now removed from this project).  */
+ /* resued from WIN32EventServer.m (now removed from this project) */        
     case WM_NCHITTEST: //MOUSE
       NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCHITTEST", hwnd);
       break;
@@ -1261,93 +1472,6 @@ printf("\n\n##############################################################\n");
 @end
 
 
-/* Styles are mapped between the two systems here note that this
- * release does not utilize them but I have left them here for a
- * future release.
- * 
- * I have also removed the check for useWMTaskBar in this release.
- * behavior is native win32 - at this point I do not have gworkspace
- * running under cygwin so it is not relivant.
- *
- * I do not use the handlesWindowDecorations in my code but it is
- * still set for use by the original code.
- *
- * I have not changed current inplimentation of mouse or keyboard
- * events.  */
-static inline
-DWORD windowStyleForGSStyle(unsigned int style)
-{
-
-/*
-    NSUtilityWindowMask         16
-    NSDocModalWindowMask        32
-    NSBorderlessWindowMask      0
-    NSTitledWindowMask          1
-    NSClosableWindowMask        2
-    NSMiniaturizableWindowMask  4
-    NSResizableWindowMask       8
-    NSIconWindowMask            64
-    NSMiniWindowMask            128
-  
-  NSMenu(style) =  NSTitledWindowMask | NSClosableWindowMask =3;
-*/
-
-  DWORD wstyle = 0;
-
-  switch (style)
-    {
-    case NSTitledWindowMask: // 1
-      wstyle = WS_CAPTION;
-      break;
-    case NSClosableWindowMask: // 2
-      wstyle =WS_CAPTION+WS_SYSMENU;
-      break;
-    case NSMiniaturizableWindowMask: //4
-      wstyle =WS_MINIMIZEBOX+WS_SYSMENU;
-      break;
-    case NSResizableWindowMask: // 8
-      wstyle=WS_SIZEBOX;
-    case NSMiniWindowMask: //128
-    case NSIconWindowMask: // 64
-      wstyle = WS_ICONIC; 
-      break;
-      //case NSUtilityWindowMask: //16
-      //case NSDocModalWindowMask: //32
-      break;
-      // combinations
-    case NSTitledWindowMask+NSClosableWindowMask: //3
-      wstyle =WS_CAPTION+WS_SYSMENU;
-      break;
-    case NSTitledWindowMask+NSClosableWindowMask+NSMiniaturizableWindowMask: //7
-      wstyle =WS_CAPTION+WS_MINIMIZEBOX+WS_SYSMENU;
-      break;
-    case NSTitledWindowMask+NSResizableWindowMask: // 9
-      wstyle = WS_CAPTION+WS_SIZEBOX;
-      break;
-    case NSTitledWindowMask+NSClosableWindowMask+NSResizableWindowMask: // 11
-      wstyle =WS_CAPTION+WS_SIZEBOX+WS_SYSMENU;
-      break;
-      case NSTitledWindowMask+NSClosableWindowMask+NSResizableWindowMask+
-	NSMiniaturizableWindowMask: //15
-      wstyle =WS_CAPTION+WS_SIZEBOX+WS_MINIMIZEBOX+WS_SYSMENU;
-      break;
-        
-    default:
-      wstyle =WS_CAPTION;
-      break;
-    }
-
-  //NSLog(@"Window wstyle %d for style %d", wstyle, style);
-#ifdef __debugServer__
-  printf("\n\n##############################################################\n");
-  printf("\n\n##############################################################\n");
-  printf("GS Window Style %u\n",style);     
-  printf("Win32 Style picked %ld [hex] %X\n", wstyle, (unsigned int)wstyle); 
-  printf("\n\n##############################################################\n");  
-  printf("\n\n##############################################################\n");  
-#endif
-  return wstyle;
-}
 
 @implementation WIN32Server (WindowOps)
 
@@ -1411,18 +1535,14 @@ DWORD windowStyleForGSStyle(unsigned int style)
 
   flags.currentGS_Style=style;
     
-  if(style >=0)
-    wstyle = WS_POPUP;
-  else
-    {
-      
-      wstyle = windowStyleForGSStyle(style);
-      printf("Window style for W32 is %u\n",(UINT)wstyle);
-    }
+   wstyle =[self windowStyleForGSStyle:style];
 
   if ((style & NSMiniaturizableWindowMask) ==NSMiniaturizableWindowMask)//&& flags.useWMTaskBar == YES)
     {
-      estyle = WS_EX_APPWINDOW;//0;
+         if(flags.useWMTaskBar==YES)
+            estyle = WS_EX_APPWINDOW;
+         else
+            estyle =WS_EX_TOOLWINDOW;
     }
   else
     {
@@ -1437,7 +1557,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
   printf("checking for NSMiniaturizableWindowMask %u\n",(style & NSMiniaturizableWindowMask));
   printf("GS Window Style %u\n",style);
   printf("Extended Style %d  [hex] %X\n",(int)estyle,(UINT)estyle );     
-  printf("Win32 Style picked %ld [hex] %X\n", wstyle, (unsigned int)wstyle); 
+   printf("Win32 Style picked %ld [hex] %X\n",wstyle,(uint)wstyle); 
   printf("\n##############################################################\n");    
 #endif
 
@@ -1475,7 +1595,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
 
 - (void) stylewindow: (unsigned int)style : (int) winNum
 {
-  DWORD wstyle = windowStyleForGSStyle(style);
+  DWORD wstyle = [self windowStyleForGSStyle:style];
 
   NSAssert(handlesWindowDecorations,
 	   @"-stylewindow:: called when handlesWindowDecorations==NO");
@@ -1741,7 +1861,7 @@ DWORD windowStyleForGSStyle(unsigned int style)
 {
   if (handlesWindowDecorations)
     {
-      DWORD wstyle = windowStyleForGSStyle(style);
+      DWORD wstyle = [self windowStyleForGSStyle:style];
       RECT rect = {100, 100, 200, 200};
       
       AdjustWindowRectEx(&rect, wstyle, NO, 0);

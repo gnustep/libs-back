@@ -1,3 +1,9 @@
+2005-10-20 Tom MacSween <macsweent@sympatico.ca>
+
+	* Source/win32/: Fixed a compile error when debug flags were
+	activated. Removed detailed documation from MS. Read and
+	write correctly from defaults.
+
 2005-09-19  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.10.1
