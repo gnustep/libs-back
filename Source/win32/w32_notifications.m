@@ -300,7 +300,8 @@
    unsigned int GSStyle;
     
    NSString * GSClass=[[aNotification object] className];
-   [[aNotification object] setShowsResizeIndicator:NO];
+   // FIXME: Implement this in NSWindow first...
+   //[[aNotification object] setShowsResizeIndicator:NO];
    // set window style
    if ( [GSClass isEqual:@"NSMenuPanel"]==YES)
    {

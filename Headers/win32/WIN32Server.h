@@ -183,7 +183,7 @@ typedef struct w32serverFlags {
 - (void) decodeWM_COMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 
 // diagnotic and debugging
-- (BOOL) displayEvent:(uint)uMsg;   
+- (BOOL) displayEvent:(unsigned int)uMsg;   
 - (void) registerForWindowEvents;
 - (void) registerForViewEvents;
 @end

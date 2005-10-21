@@ -1125,7 +1125,7 @@ printf("\n\n##############################################################\n");
 
 }
 
-- (BOOL) displayEvent:(uint)uMsg;   // diagnotic filter
+- (BOOL) displayEvent:(unsigned int)uMsg;   // diagnotic filter
 {
   [self subclassResponsibility: _cmd];
   return YES;
@@ -1557,7 +1557,7 @@ printf("\n\n##############################################################\n");
   printf("checking for NSMiniaturizableWindowMask %u\n",(style & NSMiniaturizableWindowMask));
   printf("GS Window Style %u\n",style);
   printf("Extended Style %d  [hex] %X\n",(int)estyle,(UINT)estyle );     
-   printf("Win32 Style picked %ld [hex] %X\n",wstyle,(uint)wstyle); 
+   printf("Win32 Style picked %ld [hex] %X\n",wstyle,(unsigned int)wstyle); 
   printf("\n##############################################################\n");    
 #endif
 

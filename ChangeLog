@@ -1,3 +1,10 @@
+2005-10-20  Adam Fedor  <fedor@gnu.org>
+
+	* Headers/win32/WIN32Server.h: uint -> unsigned int
+	* Source/win32/...: Idem.
+	* Source/win32/w32_notifications.m: Comment out unimplmented
+	windows method.
+
 2005-10-20 Tom MacSween <macsweent@sympatico.ca>
 
 	* Source/win32/: Fixed a compile error when debug flags were

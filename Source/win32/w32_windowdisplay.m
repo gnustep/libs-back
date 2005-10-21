@@ -144,7 +144,7 @@ invalidateWindow(HWND hwnd, RECT rect)
    #ifdef __W32_debug__
    printf("\n\n##############################################################\n");
    printf("GS Window Style %u\n",style);     
-   printf("Win32 Style picked %ld [hex] %X\n",wstyle,(uint)wstyle); 
+   printf("Win32 Style picked %ld [hex] %X\n",wstyle,(unsigned int)wstyle); 
    printf("\n\n##############################################################\n");   
    #endif
    return wstyle;
