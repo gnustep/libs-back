@@ -45,6 +45,7 @@ win32_C_FILES = \
 win32_OBJC_FILES = \
 WIN32Server.m  \
 w32_debug.m \
+w32_notifications.m \
 w32_activate.m \
 w32_create.m \
 w32_general.m \

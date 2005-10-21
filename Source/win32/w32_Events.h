@@ -49,22 +49,24 @@
 #include "win32/WIN32Geometry.h"
 #include "w32_config.h"
 
+@interface WIN32Server (w32_notifications)
   
-@interface WIN32Server (w32_activate)
-- (LRESULT) decodeWM_ACTIVEParams: (WPARAM)wParam :(LPARAM)lParam : (HWND)hwnd;
-- (LRESULT) decodeWM_ACTIVEAPPParams: (HWND)hwnd :(WPARAM)wParam : (LPARAM)lParam;
-- (void) decodeWM_NCACTIVATEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) ApplicationDidFinishLaunching: (NSNotification*)aNotification;
 - (void) ApplicationWillFinishLaunching: (NSNotification*)aNotification;
 - (void) ApplicationWillHideNotification: (NSNotification*)aNotification;
 - (void) WindowWillMiniaturizeNotification:(NSNotification*)aNotification;
 - (void) MenuWillTearOff: (NSNotification*)aNotification;
 - (void) MenuwillPopUP: (NSNotification*)aNotification;
+- (void) WindowDidCreateWindow: (NSNotification*)aNotification;
 
 @end
 
+@interface WIN32Server (w32_activate)
+- (LRESULT) decodeWM_ACTIVEParams: (WPARAM)wParam :(LPARAM)lParam : (HWND)hwnd;
+- (LRESULT) decodeWM_ACTIVEAPPParams: (HWND)hwnd :(WPARAM)wParam : (LPARAM)lParam;
+- (void) decodeWM_NCACTIVATEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 
-
+@end
 
 @interface WIN32Server (w32_movesize)
 
@@ -75,25 +77,27 @@
 - (void) decodeWM_WINDOWPOSCHANGEDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (LRESULT) decodeWM_GETMINMAXINFOParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (LRESULT) decodeWM_EXITSIZEMOVEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
-- (LRESULT) decodeWM_SIZINGParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam;
+- (void) decodeWM_SIZINGParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam;
+- (LRESULT) decodeWM_MOVINGParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam;
 @end
 
 @interface WIN32Server (w32_create)
 
 - (LRESULT) decodeWM_NCCREATEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (LRESULT) decodeWM_CREATEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
-- (void) trackWindow:(NSNotification*)aNotification;
+
 @end 
 
 @interface WIN32Server (w32_windowdisplay)
-
+- (DWORD) windowStyleForGSStyle: (unsigned int) style;
 - (void) decodeWM_SHOWWINDOWParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_NCPAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (LRESULT) decodeWM_ERASEBKGNDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_PAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_SYNCPAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_CAPTURECHANGEDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
-- (void) decodeWM_GETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
+- (HICON) decodeWM_GETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
+- (HICON) decodeWM_SETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) resizeBackingStoreFor: (HWND)hwnd;
 @end
 
@@ -115,7 +119,8 @@
 - (void) decodeWM_NCDESTROYParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_QUERYOPENParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_SYSCOMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
-- (void) resetForGSWindowStyle: (HWND)hwnd gsStryle:(int)aStyle;
+- (void) decodeWM_COMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
+- (void) resetForGSWindowStyle: (HWND)hwnd w32Style:(DWORD)aStyle;
 //- (LRESULT) decodeWM_LBUTTONDOWNParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 
 @end 
@@ -123,7 +128,7 @@
 
 @interface WIN32Server (w32_debug)
 
-- (BOOL) displayEvent: (unsigned int)uMsg;   // diagnotic filter
+- (BOOL) displayEvent: (uint)uMsg;   // diagnotic filter
 - (void) test_Geomemetry: (HWND)hwnd;
 - (void) print_result: (RECT)msrect and: (NSRect)gsrect and: (RECT)control;
 - (NSMutableString *) w32_createDetails: (LPCREATESTRUCT)details;
@@ -134,6 +139,7 @@
 - (NSMutableString *) gswindowstate: (NSWindow *)theWindow;
 - (NSMutableString *) MINMAXDetails: (MINMAXINFO *) mm;
 - (NSMutableString *) subViewDetails: (NSWindow *)theWindow;
+- (void) handleNotification: (NSNotification*)aNotification;
 
 @end
 

@@ -44,7 +44,11 @@
 #include <AppKit/NSEvent.h>
 #include <AppKit/NSCursor.h>
 #include <AppKit/NSText.h>
+#include <AppKit/NSPopUpButton.h>
+#include <AppKit/NSPanel.h>
 #include <AppKit/DPSOperators.h>
+#include <AppKit/NSImage.h>
+
 
 #include "win32/WIN32Server.h"
 
@@ -69,17 +73,14 @@
 //#define __W32_debug__  // event frame debugging/logging
 
 #define EVENT_WINDOW(lp) (GSWindowWithNumber((int)lp)) 
-@interface WIN32Server : GSDisplayServer
-{
-  HINSTANCE hinstance;
 
-  HWND currentFocus;
-  HWND desiredFocus;
-  HWND currentActive;
+DWORD windowStyleForGSStyle(unsigned int style);
    
-  struct {
+typedef struct w32serverFlags {
     
     BOOL useWMTaskBar;
+    BOOL useWMStyles;
+    BOOL HAVE_SERVER_PREFS;
     int _last_WM_ACTIVATE;
     int  eventQueCount;
     int  menuRef;                   // reference to menu window
@@ -91,24 +92,44 @@
     BOOL HOLD_TRANSIENT_FOR_SIZE;   // override GS size event on popup context
     BOOL HOLD_TRANSIENT_FOR_MOVE;   // override GS move event on popup context
     BOOL HAVE_MAIN_MENU;            // do we have a main menu?
+    BOOL HOLD_PAINT_FOR_SIZING;
     BOOL _is_menu;                  // is event window the main menu?
     BOOL _eventHandled;             // did we handle the event?
     BOOL _is_cache;                 // is the event window a cache rep
     BOOL _hasGSClassName;           // does the event window have a GSclassName
     int lastEventType;     
     int hold;
-  } flags;
+  } serverFlags;
+
+@interface WIN32Server : GSDisplayServer
+{
+  serverFlags flags;
+  HINSTANCE hinstance;
+
+  HWND currentFocus;
+  HWND desiredFocus;
+  HWND currentActive;
+  HICON  currentAppIcon;
+  // config window
+  NSWindow *configWindow;
+  NSPopUpButton * styleButton;
+  NSButton * taskbarButton;
+  NSButton * saveButton;
 }
 
 - (LRESULT) windowEventProc: (HWND)hwnd : (UINT)uMsg 
 		       : (WPARAM)wParam : (LPARAM)lParam;
 			
+- (void) initConfigWindow;
+- (void) setStyle:(id)sender;
+- (void) setTaskBar:(id)sender;
+- (void) setSave:(id)sender;
+
 - (void) setFlagsforEventLoop: (HWND)hwnd;
 - (NSString *) getNativeClassName: (HWND)hwnd;
 - (NSString *) getWindowtext: (HWND)hwnd;
 
-// declared but should be implimented in a subclass window server 
-// (subclass resposibility)
+// declared but should be implimented in a subclass window server (subclass resposibility)
 - (LRESULT) decodeWM_ACTIVEParams: (WPARAM)wParam : (LPARAM)lParam 
 				 : (HWND)hwnd;
 - (LRESULT) decodeWM_ACTIVEAPPParams: (HWND)hwnd : (WPARAM)wParam 
@@ -116,8 +137,8 @@
 - (void) decodeWM_NCACTIVATEParams: (WPARAM)wParam : (LPARAM)lParam 
 				  : (HWND)hwnd;
 /*
-    Hooks for the subclass to process notifications and syncronize the
-    win32 env with the application.
+    hooks for the subclass to process notifications and syncronize the win32 env
+    with the application
 */
 - (void) ApplicationDidFinishLaunching: (NSNotification*)aNotification;
 - (void) ApplicationWillFinishLaunching: (NSNotification*)aNotification;
@@ -133,17 +154,20 @@
 - (void) decodeWM_WINDOWPOSCHANGEDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (LRESULT) decodeWM_GETMINMAXINFOParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (LRESULT) decodeWM_EXITSIZEMOVEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
+- (LRESULT) decodeWM_MOVINGParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam;
+- (void) decodeWM_SIZINGParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam;
 
 - (LRESULT) decodeWM_NCCREATEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (LRESULT) decodeWM_CREATEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 
+- (DWORD) windowStyleForGSStyle: (unsigned int) style;
 - (void) decodeWM_SHOWWINDOWParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_NCPAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (LRESULT) decodeWM_ERASEBKGNDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_PAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_SYNCPAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_CAPTURECHANGEDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
-- (void) decodeWM_GETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
+//- (HICON) decodeWM_GETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) resizeBackingStoreFor: (HWND)hwnd;
 
 //- (LRESULT) decodeWM_SETTEXTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
@@ -156,9 +180,10 @@
 - (void) decodeWM_NCDESTROYParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_QUERYOPENParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_SYSCOMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
+- (void) decodeWM_COMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 
 // diagnotic and debugging
-- (BOOL) displayEvent: (unsigned int)uMsg;   
+- (BOOL) displayEvent:(uint)uMsg;   
 - (void) registerForWindowEvents;
 - (void) registerForViewEvents;
 @end

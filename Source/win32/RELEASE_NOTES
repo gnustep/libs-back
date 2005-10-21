@@ -1,8 +1,60 @@
-August 22, 2005
-
  CYGWIN 1.5.17(0.129/4/2) or higher
  CYGWIN CYGWIN_NT-5.1
  CYGWIN 2005-05-25 19:38
+ 
+September 29, 2005
+ Fixed in this release:
+  
+   fixed a compile errors when the debug flags were activated
+ 
+   Removed Detailed Documentation that was mistakenly release in august
+ 
+   backend now reads and writes correctly to the defaults db
+ 
+ New Features:
+ 
+   Fully impliment window style mapping to allow for native win32 look.
+   The Main menu still looks like the standard GNUstep menu sence it is unique to
+   Gnustep.  All other window look and act like win32 windows
+   
+   GSUseWMTaskbar is now working correctly, and I have also added another defaults flag
+   called GSUseWMStyles which tells cygwin what style of windows it should use.
+ 
+   There is now a small configure panel which can be accessed in the app menu
+   under info -> server Preferneces.  This will allow you to select win32 style windows,
+   Gnustep style window, or a combination of each if you like.
+   
+   All of the notification related code has been moved to w32_notifications.m 
+   inorder to keep it in one place for managability.
+   
+   
+   Future release:
+  
+  complete context menu handling
+  
+  More robust window registration under win32.
+  
+  Parent - child window mapping down to the win32 level. This should give access
+           to more events and improve server to server communication, and hopfully
+           get a step closer to native evwent handling.
+  
+  display of custom app icons on the taskbar.
+  
+  Rect tracing when resizing windows
+  
+  log file manager; this is allready in progress but not ready for release
+  
+  integration with GSWorkspace
+  
+  re impliment keyboard events so that cut copy past and other key equivilents work
+   
+   PLEASE try it out and send FEEDBACK
+
+    Tom MacSween  
+    macsweent@sympatico.ca
+   
+August 22, 2005
+
  
  Project OverView:
  I started this to simply fix the display of toolbars under cygwin...
@@ -177,33 +229,5 @@ August 22, 2005
     w32_windowdisplay.m
   
   
-  Future release:
   
-  complete context menu handling
-  
-  Fully impliment window style mapping to allow for native win32 look.
-  
-  More robust window registration under win32.
-  
-  Parent - child window mapping down to the win32 level. This should give access
-           to more events and improve server to server communication, and hopfully
-           get a step closer to native evwent handling.
-  
-  display of custom app icons on the taskbar.
-  
-  Rect tracing when resizing windows
-  
-  log file manager; this is allready in progress but not ready for release
-  
-  integration with GSWorkspace
-  
-  re impliment keyboard events so that cut copy past and other key equivilents work
-    
-  Final closing remarks:
-  I think I have addressed most if not all of the major issues with the win32backend... 
-   
-   PLEASE try it out and send FEEDBACK
-
-    Tom MacSween  
-    macsweent@sympatico.ca
     

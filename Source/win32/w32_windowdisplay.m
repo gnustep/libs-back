@@ -64,62 +64,94 @@ invalidateWindow(HWND hwnd, RECT rect)
     }
 }
 
-
 @implementation WIN32Server (w32_windowdisplay)
 
+/* styles are mapped between the two systems 
+ * I have not changed current inplimentation of mouse or keyboard
+ * events. */
+- (DWORD) windowStyleForGSStyle: (unsigned int) style
+{
+
 /*
-  WM_SHOWWINDOW Notification
+    NSUtilityWindowMask         16
+    NSDocModalWindowMask        32
+    NSBorderlessWindowMask      0
+    NSTitledWindowMask          1
+    NSClosableWindowMask        2
+    NSMiniaturizableWindowMask  4
+    NSResizableWindowMask       8
+    NSIconWindowMask            64
+    NSMiniWindowMask            128
 
-  The WM_SHOWWINDOW message is sent to a window when the window is
-  about to be hidden or shown.  A window receives this message through
-  its WindowProc function.
-
-  Syntax
-
-  WM_SHOWWINDOW
-
-  WPARAM wParam
-  LPARAM lParam;
-
-  Parameters
-
-  wParam
-  Specifies whether a window is being shown. If wParam is TRUE, the
-  window is being shown. If wParam is FALSE, the window is being
-  hidden. lParam Specifies the status of the window being shown. If
-  lParam is zero, the message was sent because of a call to the
-  ShowWindow function; otherwise, lParam is one of the following
-  values.
- 
-  SW_OTHERUNZOOM
-    The window is being uncovered because a maximize window was restored or 
-    minimized. 
-  SW_OTHERZOOM
-    The window is being covered by another window that has been maximized. 
-  SW_PARENTCLOSING
-    The window's owner window is being minimized.
-  SW_PARENTOPENING
-    The window's owner window is being restored.
-
-  Return Value
-
-  If an application processes this message, it should return zero.
-
-  Remarks
-
-  The DefWindowProc function hides or shows the window, as specified
-  by the message. If a window has the WS_VISIBLE style when it is
-  created, the window receives this message after it is created, but
-  before it is displayed. A window also receives this message when its
-  visibility state is changed by the ShowWindow or ShowOwnedPopups
-  function.  The WM_SHOWWINDOW message is not sent under the following
-  circumstances:
-
-  When a top-level, overlapped window is created with the WS_MAXIMIZE
-  or WS_MINIMIZE style. When the SW_SHOWNORMAL flag is specified in
-  the call to the ShowWindow function.
-
+  NSMenu(style) =  NSTitledWindowMask | NSClosableWindowMask =3;
 */
+
+   DWORD wstyle = 0;
+        
+   if (flags.useWMStyles==NO)
+      return WS_POPUP;
+        
+   switch (style)
+   {
+      case 0:
+         wstyle=WS_POPUP;
+         break;
+      case NSTitledWindowMask: // 1
+         wstyle = WS_CAPTION;
+         break;
+      case NSClosableWindowMask: // 2
+         wstyle =WS_CAPTION+WS_SYSMENU;
+         break;
+      case NSMiniaturizableWindowMask: //4
+         wstyle =WS_MINIMIZEBOX+WS_SYSMENU;
+         break;
+      case NSResizableWindowMask: // 8
+         wstyle=WS_SIZEBOX;
+      case NSMiniWindowMask: //128
+      case NSIconWindowMask: // 64
+         wstyle = WS_ICONIC; 
+         break;
+      //case NSUtilityWindowMask: //16
+      //case NSDocModalWindowMask: //32
+         break;
+      // combinations
+      case NSTitledWindowMask+NSClosableWindowMask: //3
+         wstyle =WS_CAPTION+WS_SYSMENU;
+         break;
+      case NSTitledWindowMask+NSClosableWindowMask+NSMiniaturizableWindowMask: //7
+         wstyle =WS_CAPTION+WS_MINIMIZEBOX+WS_SYSMENU;
+         break;
+      case NSTitledWindowMask+NSResizableWindowMask: // 9
+         wstyle = WS_CAPTION+WS_SIZEBOX;
+         break;
+      case NSTitledWindowMask+NSClosableWindowMask+NSResizableWindowMask: // 11
+         wstyle =WS_CAPTION+WS_SIZEBOX+WS_SYSMENU;
+         break;
+      case NSTitledWindowMask+NSResizableWindowMask+NSMiniaturizableWindowMask: //13
+         wstyle = WS_SIZEBOX+WS_MINIMIZEBOX+WS_SYSMENU+WS_CAPTION;
+         break;   
+      case NSTitledWindowMask+NSClosableWindowMask+NSResizableWindowMask+
+                                                NSMiniaturizableWindowMask: //15
+         wstyle =WS_CAPTION+WS_SIZEBOX+WS_MINIMIZEBOX+WS_SYSMENU;
+         break;
+        
+      default:
+         wstyle =WS_POPUP; //WS_CAPTION+WS_SYSMENU;
+         break;
+   }
+
+   //NSLog(@"Window wstyle %d for style %d", wstyle, style);
+   #ifdef __W32_debug__
+   printf("\n\n##############################################################\n");
+   printf("GS Window Style %u\n",style);     
+   printf("Win32 Style picked %ld [hex] %X\n",wstyle,(uint)wstyle); 
+   printf("\n\n##############################################################\n");   
+   #endif
+   return wstyle;
+}
+
+/*deprecated remove from code */
+
 - (void) decodeWM_SHOWWINDOWParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   //SW_OTHERUNZOOM //window is being uncovered
@@ -173,97 +205,12 @@ invalidateWindow(HWND hwnd, RECT rect)
 #endif    
 }
 
-/*
-
-  WM_NCPAINT
-  The WM_NCPAINT message is sent to a window when its frame must be
-  painted.  A window receives this message through its WindowProc
-  function.
-
-  LRESULT CALLBACK WindowProc(
-  HWND hwnd, // handle to window
-  UINT uMsg, // WM_NCPAINT
-  WPARAM wParam, // handle to update region (HRGN)
-  LPARAM lParam // not used
-  );
-
-  Parameters
-
-  wParam
-  Handle to the update region of the window. The update region is
-  clipped to the window frame. When wParam is 1, the entire window
-  frame needs to be updated.
-  lParam
-  This parameter is not used.
-
-  Return Values
-  An application returns zero if it processes this message.
-
-  Remarks
-  The DefWindowProc function paints the window frame.
-
-  An application can intercept the WM_NCPAINT message and paint its
-  own custom window frame. The clipping region for a window is always
-  rectangular, even if the shape of the frame is altered.  The wParam
-  value can be passed to GetDCEx as in the following example.
-
-  case WM_NCPAINT:
-  {
-  HDC hdc;
-  hdc = GetDCEx(hwnd, (HRGN)wParam, DCX_WINDOW|DCX_INTERSECTRGN);
-  // Paint into this DC
-  ReleaseDC(hwnd, hdc);
-  } 
-*/
-
 - (void) decodeWM_NCPAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
 #ifdef __TESTEVENT__
   printf("WM_NCPAINT\n");
 #endif
 }
-
-
-/*
-
-  WM_ERASEBKGND Notification
-
-  The WM_ERASEBKGND message is sent when the window background must be
-  erased (for example, when a window is resized). The message is sent
-  to prepare an invalidated portion of a window for painting.
-
-  Syntax
-
-  WM_ERASEBKGND
-
-  WPARAM wParam 
-  LPARAM lParam;
-
-  Parameters
-
-  wParam
-  Handle to the device context.
-  lParam
-  This parameter is not used.
-
-  Return Value
-
-  An application should return nonzero if it erases the background;
-  otherwise, it should return zero.
-
-  Remarks
-
-  The DefWindowProc function erases the background by using the class
-  background brush specified by the hbrBackground member of the
-  WNDCLASS structure. If hbrBackground is NULL, the application should
-  process the WM_ERASEBKGND message and erase the background.  An
-  application should return nonzero in response to WM_ERASEBKGND if it
-  processes the message and erases the background; this indicates that
-  no further erasing is required. If the application returns zero, the
-  window will remain marked for erasing. (Typically, this indicates
-  that the fErase member of the PAINTSTRUCT structure will be TRUE.)
-
-*/
 
 - (LRESULT) decodeWM_ERASEBKGNDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
@@ -275,85 +222,36 @@ invalidateWindow(HWND hwnd, RECT rect)
   return (LRESULT)1;
 }
 
-/*
-
-  WM_PAINT
-  The WM_PAINT message is sent when the system or another application
-  makes a request to paint a portion of an application's window. The
-  message is sent when the UpdateWindow or RedrawWindow function is
-  called, or by the DispatchMessage function when the application
-  obtains a WM_PAINT message by using the GetMessage or PeekMessage
-  function.  A window receives this message through its WindowProc
-  function.
-
-  LRESULT CALLBACK WindowProc(
-  HWND hwnd, // handle to window
-  UINT uMsg, // WM_PAINT
-  WPARAM wParam, // not used
-  LPARAM lParam // not used
-  );
-  Parameters
-  wParam
-    This parameter is not used.
-  lParam
-    This parameter is not used.
-
-  Return Values
-    An application returns zero if it processes this message.
-
-  Remarks
-
-  The WM_PAINT message is generated by the system and should not be
-  sent by an application. To force a window to draw into a specific
-  device context, use the WM_PRINT or WM_PRINTCLIENT message. Note
-  that this requires the target window to support the WM_PRINTCLIENT
-  message. Most common controls support the WM_PRINTCLIENT message.
-  The DefWindowProc function validates the update region. The function
-  may also send the WM_NCPAINT message to the window procedure if the
-  window frame must be painted and send the WM_ERASEBKGND message if
-  the window background must be erased.  The system sends this message
-  when there are no other messages in the application's message queue.
-  DispatchMessage determines where to send the message; GetMessage
-  determines which message to dispatch.  GetMessage returns the
-  WM_PAINT message when there are no other messages in the
-  application's message queue, and DispatchMessage sends the message
-  to the appropriate window procedure.  A window may receive internal
-  paint messages as a result of calling RedrawWindow with the
-  RDW_INTERNALPAINT flag set. In this case, the window may not have an
-  update region. An application should call the GetUpdateRect function
-  to determine whether the window has an update region. If
-  GetUpdateRect returns zero, the application should not call the
-  BeginPaint and EndPaint functions.  An application must check for
-  any necessary internal painting by looking at its internal data
-  structures for each WM_PAINT message, because a WM_PAINT message may
-  have been caused by both a non-NULL update region and a call to
-  RedrawWindow with the RDW_INTERNALPAINT flag set.  The system sends
-  an internal WM_PAINT message only once. After an internal WM_PAINT
-  message is returned from GetMessage or PeekMessage or is sent to a
-  window by UpdateWindow, the system does not post or send further
-  WM_PAINT messages until the window is invalidated or until
-  RedrawWindow is called again with the RDW_INTERNALPAINT flag set.
-  For some common controls, the default WM_PAINT message processing
-  checks the wParam parameter. If wParam is non-NULL, the control
-  assumes that the value is an HDC and paints using that device
-  context.
-
-*/
 - (void) decodeWM_PAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   // reused from original author (added debug code)
   RECT rect;
+   //LPPAINTSTRUCT lpPaint;
+   //HDC theHdc;
 
+   /*BOOL InvalidateRect(
+   HWND hWnd,           // handle to window
+   CONST RECT* lpRect,  // rectangle coordinates
+   BOOL bErase          // erase state
+   );*/
+
+   //theHdc=BeginPaint(hwnd,lpPaint);
+   //if(flags.HOLD_PAINT_FOR_SIZING==FALSE)
+   // {
   if (GetUpdateRect(hwnd, &rect, NO))
     {
+      //InvalidateRect(hwnd,rect,YES);
+	   
       invalidateWindow(hwnd, rect);
       // validate the whole window, for in some cases an infinite series
       // of WM_PAINT is triggered
       ValidateRect(hwnd, NULL);
     }
-	  
+   // } 
   flags._eventHandled=YES;
+   //flags.HOLD_PAINT_FOR_SIZING=FALSE;
 
+   //printf("WM_PAINT\n");
 #ifdef __PAINT__
   printf("%s",[[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
   printf("%s",[[self MSRectDetails:rect] cString]);
@@ -361,79 +259,15 @@ invalidateWindow(HWND hwnd, RECT rect)
 #endif
 }
 
-
-/*
-  WM_SYNCPAINT
-  The WM_SYNCPAINT message is used to synchronize painting while
-  avoiding linking independent GUI threads.  A window receives this
-  message through its WindowProc function.
-
-  LRESULT CALLBACK WindowProc(
-  HWND hwnd, // handle to window
-  UINT uMsg, // WM_SYNCPAINT
-  WPARAM wParam, // not used
-  LPARAM lParam // not used
-  );
-  Parameters
-    This message has no parameters.
-
-  Return Values
-    An application returns zero if it processes this message.
-
-  Remarks
-
-  When a window has been hidden, shown, moved, or sized, the system
-  may determine that it is necessary to send a WM_SYNCPAINT message to
-  the top-level windows of other threads. Applications must pass
-  WM_SYNCPAINT to DefWindowProc for processing. The DefWindowProc
-  function will send a WM_NCPAINT message to the window procedure if
-  the window frame must be painted and send a WM_ERASEBKGND message if
-  the window background must be erased.
-
-*/
-
 - (void) decodeWM_SYNCPAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   // stub for future dev
-#ifdef __TESTEVENT__
-  printf("WM_SYNCPAINT\n");
-#endif
+   //#ifdef __TESTEVENT__
+   //printf("WM_SYNCPAINT\n");
+   //#endif
 }
 
-/*
 
-  WM_CAPTURECHANGED Notification
-
-  The WM_CAPTURECHANGED message is sent to the window that is losing
-  the mouse capture.  A window receives this message through its
-  WindowProc function.
-
-  Syntax
-
-  WM_CAPTURECHANGED
-
-  WPARAM wParam
-  LPARAM lParam;
-
-  Parameters
-
-  wParam
-    This parameter is not used.
-  lParam
-    Handle to the window gaining the mouse capture.
-
-  Return Value
-
-  An application should return zero if it processes this message.
-
-  Remarks
-
-  A window receives this message even if it calls ReleaseCapture
-  itself. An application should not attempt to set the mouse capture
-  in response to this message.  When it receives this message, a
-  window should redraw itself, if necessary, to reflect the new
-  mouse-capture state.  
-*/
 - (void) decodeWM_CAPTURECHANGEDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   // stub for future dev
@@ -442,61 +276,20 @@ invalidateWindow(HWND hwnd, RECT rect)
 #endif
 }
 
-
-/*
-
-  WM_GETICON Notification
-
-  The WM_GETICON message is sent to a window to retrieve a handle to
-  the large or small icon associated with a window. The system
-  displays the large icon in the ALT+TAB dialog, and the small icon in
-  the window caption.  A window receives this message through its
-  WindowProc function.
-
-  Syntax
-
-  WM_GETICON
-
-  WPARAM wParam
-  LPARAM lParam;
-
-  Parameters
-  wParam
-    Specifies the type of icon being retrieved. This parameter can be
-    one of the following values.
-  ICON_BIG
-    Retrieve the large icon for the window.
-  ICON_SMALL
-    Retrieve the small icon for the window.
-  ICON_SMALL2
-    Windows XP: Retrieves the small icon provided by the
-    application. If the application does not provide one, the system
-    uses the system-generated icon for that window.
-  lParam
-    This parameter is not used.
-
-  Return Value
-    The return value is a handle to the large or small icon, depending
-    on the value of wParam. When an application receives this message,
-    it can return a handle to a large or small icon, or pass the
-    message to the DefWindowProc function.
-
-  Remarks
-
-  When an application receives this message, it can return a handle to
-  a large or small icon, or pass the message to DefWindowProc.
-  DefWindowProc returns a handle to the large or small icon associated
-  with the window, depending on the value of wParam.
-
-*/
-- (void) decodeWM_GETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
+- (HICON) decodeWM_GETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   // stub for future dev
-#ifdef __TESTEVENT__
+
   printf("WM_GETICON\n");
-#endif
+   
+   return currentAppIcon;
 }
 
+- (HICON) decodeWM_SETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
+{
+   printf("WM_SETICON\n");
+    return currentAppIcon;
+}
 
 - (void) resizeBackingStoreFor: (HWND)hwnd
 {

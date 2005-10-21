@@ -65,10 +65,9 @@ static NSString * spacer =@"<BLANK_LINE>\n";
   printf(" top %ld",msrect.top);
   printf(" right %ld",msrect.right);
   printf(" Bottom %ld\n",msrect.bottom);
-
 }
 
-- (BOOL) displayEvent: (unsigned int)uMsg
+- (BOOL) displayEvent:(uint)uMsg
 {
 
 #ifdef __W32_debug__ //_logging
@@ -107,10 +106,10 @@ static NSString * spacer =@"<BLANK_LINE>\n";
     case WM_WINDOWPOSCHANGING:  return __STATE; break;
     case WM_WINDOWPOSCHANGED:   return __STATE; break;
     case WM_MOVE:               return __MOVE_FLAG;             break;
-    case WM_MOVING:             return __STATE; break;
+      case WM_MOVING:             return __MOVING_FLAG;           break;
     case WM_SIZE:               return __SIZE_FLAG;             break;
     case WM_SIZING:             return __SIZING_FLAG;           break;
-    case WM_ENTERSIZEMOVE:      return __STATE; break;
+      case WM_ENTERSIZEMOVE:      return __ENTERSIZEMOVE_FLAG;    break;
     case WM_EXITSIZEMOVE:       return __EXITSIZEMOVE_FLAG;     break;
     case WM_ACTIVATE:           return __ACTIVE_FLAG;           break;
     case WM_ACTIVATEAPP:        return __ACTIVE_FLAG;           break;
@@ -132,10 +131,10 @@ static NSString * spacer =@"<BLANK_LINE>\n";
     case WM_INITMENU:           return __STATE; break;
     case WM_MENUSELECT:         return __STATE; break;
     case WM_ENTERIDLE:          return __STATE; break;
-    case WM_COMMAND:            return __STATE; break;
+      case WM_COMMAND:            return __COMMAND_FLAG;          break;
     case WM_SYSKEYDOWN:         return __STATE; break;
     case WM_SYSKEYUP:           return __STATE; break;
-    case WM_SYSCOMMAND:         return __STATE; break;
+      case WM_SYSCOMMAND:         return __SYSCOMMAND_FLAG;       break;
     case WM_HELP:               return __STATE; break;
     case WM_GETICON:            return __STATE; break;
     case WM_CANCELMODE:         return __STATE; break;
@@ -292,44 +291,6 @@ typedef struct tagCREATESTRUCT {
   return output;
 }
 
-/*
-  The MINMAXINFO structure contains information about a window's maximized 
-  size and position and its minimum and maximum tracking size.
-
-  Syntax
-
-  typedef struct {
-  POINT ptReserved;
-  POINT ptMaxSize;
-  POINT ptMaxPosition;
-  POINT ptMinTrackSize;
-  POINT ptMaxTrackSize;
-  } MINMAXINFO;
-
-  Members
-
-  ptReserved
-    Reserved; do not use.
-  ptMaxSize
-    Specifies the maximized width (POINT. x) and the maximized height
-    (POINT. y) of the window. For systems with multiple monitors, this
-    refers to the primary monitor.  ptMaxPosition Specifies the
-    position of the left side of the maximized window (POINT. x) and
-    the position of the top of the maximized window (POINT. y). For
-    systems with multiple monitors, this refers to the monitor on
-    which the window maximizes.
-
-  ptMinTrackSize
-    Specifies the minimum tracking width (POINT. x) and the minimum
-    tracking height (POINT. y) of the window. This is unchanged for
-    systems with multiple monitors.
-
-  ptMaxTrackSize
-    Specifies the maximum tracking width (POINT. x) and the maximum
-    tracking height (POINT. y) of the window. For systems with
-    multiple monitors, this is the size for a window that is made as
-    large as the virtual screen.
-*/
 - (NSMutableString *) MINMAXDetails:(MINMAXINFO *) mm
 {
   NSMutableString * output =[NSMutableString stringWithString:spacer];
@@ -378,4 +339,18 @@ typedef struct tagCREATESTRUCT {
   return output;
 }
 
+- (void) handleNotification:(NSNotification*)aNotification
+{
+   #ifdef __APPNOTIFICATIONS__
+   printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+   printf("+++                NEW EVENT                                 +++\n");
+   printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+   printf("WM_APPNOTIFICATION -1\n %s\nPosted by current application\n",
+                                [[aNotification name] cString]);
+   NSWindow *theWindow=[aNotification object];
+                               
+   printf("%s",[[self gswindowstate:theWindow] cString]);
+   #endif
+} 
 @end
+

@@ -2,7 +2,7 @@
 
    Copyright (C) 2005 Free Software Foundation, Inc.
 
-   Written Tom MacSween <macsweent@sympatico.ca>
+   Written By: Tom MacSween <macsweent@sympatico.ca>
    Date August 2005
    This file is part of the GNU Objective C User Interface Library.
 
@@ -52,8 +52,12 @@
 #define __ERASEBKGND__
 #define __GETMINMAXINFO__
 #define __EXITSIZEMOVE__
-#define __APPNOTIFICATIONS__
+ //#define __APPNOTIFICATIONS__
 #define __SIZING__
+ #define __SYSCOMMAND__
+ #define __COMMAND__
+ #define __MOVING__
+ #define __ENTERSIZEMOVE__
 
 #define __SETFOCUS_FLAG 1
 #define __ACTIVE_FLAG 1
@@ -69,6 +73,10 @@
 #define __GETMINMAXINFO_FLAG 1
 #define __EXITSIZEMOVE_FLAG 1
 #define __SIZING_FLAG 1
+ #define __SYSCOMMAND_FLAG 1
+ #define __COMMAND_FLAG 1
+ #define __MOVING_FLAG 1
+ #define __ENTERSIZEMOVE_FLAG 1
 #else
 #define __ACTIVE_FLAG 0
 #define __CREATE_FLAG 0
@@ -84,6 +92,10 @@
 #define __GETMINMAXINFO_FLAG 0
 #define __EXITSIZEMOVE_FLAG 0
 #define __SIZING_FLAG 0
+ #define __SYSCOMMAND_FLAG 0
+ #define __COMMAND_FLAG 0
+ #define __MOVING_FLAG 0
+ #define __ENTERSIZEMOVE_FLAG 0
 #endif
 
 #endif //_W32_CONFIG_h_INCLUDE
