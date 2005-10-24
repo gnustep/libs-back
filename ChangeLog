@@ -1,3 +1,8 @@
+2005-10-23  Adam Fedor  <fedor@gnu.org>
+
+	* configure.ac: Check for invalid backend graphics name.
+	Error if no X11 libraries if using x11 server.
+
 2005-10-20  Adam Fedor  <fedor@gnu.org>
 
 	* Headers/win32/WIN32Server.h: uint -> unsigned int

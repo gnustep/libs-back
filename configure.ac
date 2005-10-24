@@ -391,6 +391,10 @@ elif test x"$BUILD_GRAPHICS" = "xcairo"; then
     LIBS="$CAIRO_LIBS $LIBS"
     CPPFLAGS="$CAIRO_CFLAGS $CPPFLAGS"
   fi
+elif test x"$BUILD_GRAPHICS" = "xxlib"; then
+ : # Nothing to do
+else
+  AC_MSG_ERROR([Invalid graphics backend $BUILD_GRAPHICS])
 fi
 if test x"$BUILD_GRAPHICS" = "xwinlib"; then
   LIBS="$WIN32_LIBS $LIBS"
@@ -398,6 +402,12 @@ fi
 if test x"$BUILD_GRAPHICS" = "xxlib"; then
   LIBS="$XFT_LIBS $LIBS"
   CPPFLAGS="$XFT_CFLAGS $CPPFLAGS"
+fi
+
+if test $BUILD_SERVER = x11; then
+  if test $set_x_paths = no; then
+    AC_MSG_ERROR([No X11 libraries/headers for building x11 server])
+  fi
 fi
 
 AH_TOP([
