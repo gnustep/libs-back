@@ -6908,6 +6908,12 @@ echo "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
     LIBS="$CAIRO_LIBS $LIBS"
     CPPFLAGS="$CAIRO_CFLAGS $CPPFLAGS"
   fi
+elif test x"$BUILD_GRAPHICS" = "xxlib"; then
+ : # Nothing to do
+else
+  { { echo "$as_me:$LINENO: error: Invalid graphics backend $BUILD_GRAPHICS" >&5
+echo "$as_me: error: Invalid graphics backend $BUILD_GRAPHICS" >&2;}
+   { (exit 1); exit 1; }; }
 fi
 if test x"$BUILD_GRAPHICS" = "xwinlib"; then
   LIBS="$WIN32_LIBS $LIBS"
@@ -6915,6 +6921,14 @@ fi
 if test x"$BUILD_GRAPHICS" = "xxlib"; then
   LIBS="$XFT_LIBS $LIBS"
   CPPFLAGS="$XFT_CFLAGS $CPPFLAGS"
+fi
+
+if test $BUILD_SERVER = x11; then
+  if test $set_x_paths = no; then
+    { { echo "$as_me:$LINENO: error: No X11 libraries/headers for building x11 server" >&5
+echo "$as_me: error: No X11 libraries/headers for building x11 server" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
 fi
 
 
