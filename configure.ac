@@ -30,8 +30,8 @@ AC_PREREQ(2.57)
 AC_CONFIG_SRCDIR([back.make.in])
 AC_CONFIG_HEADER(config.h)
 
-if test -z "$GNUSTEP_SYSTEM_ROOT"; then
-  AC_MSG_ERROR([You must run the GNUstep.sh script before configuring])
+if test -z "$GNUSTEP_MAKEFILES"; then
+  AC_MSG_ERROR([You must have the gnustep-make package installed and set up the GNUSTEP_MAKEFILES environment variable to contain the path to the makefiles directory before configuring!])
 fi
 
 #--------------------------------------------------------------------
