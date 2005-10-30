@@ -1,7 +1,9 @@
 2005-10-30 Richard Frith-Macdonald <rfm@gnu.org>
 
-	* Source/win32/Win33Server.m: synchronize defaults so settings are
+	* Source/win32/WIN33Server.m: synchronize defaults so settings are
 	not lost.  Tidy a lot of stuff to conform to coding standards.
+	Update event handling code to use ET_WINMSG rather than less versatile
+	deprecated API.
 
 2005-10-23  Adam Fedor  <fedor@gnu.org>
 

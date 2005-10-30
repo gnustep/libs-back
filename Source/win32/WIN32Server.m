@@ -110,6 +110,20 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
                  extra: (void*)extra
                forMode: (NSString*)mode
 {
+  if (type == ET_WINMSG)
+    {
+      MSG	*m = (MSG*)extra;
+
+      if (m->message == WM_QUIT)
+	{
+	  // Exit the program
+	  return;
+	}
+      else
+	{
+	  DispatchMessage(m); 
+	} 
+    } 
   if (mode != nil)
     [self callback: mode];
 }
@@ -212,6 +226,8 @@ printf("\n\n##############################################################\n");
 
 - (void) setupRunLoopInputSourcesForMode: (NSString*)mode
 {
+  NSRunLoop *currentRunLoop = [NSRunLoop currentRunLoop];
+
 #ifdef __debugServer__
 printf("\n\n##############################################################\n");  
 printf("##- (void) setupRunLoopInputSourcesForMode: (NSString*)mode #######\n");
@@ -219,7 +235,6 @@ printf("\n\n##############################################################\n");
 #endif
 
 #ifdef    __CYGWIN__
-  NSRunLoop *currentRunLoop = [NSRunLoop currentRunLoop];
   int fdMessageQueue;
 #define WIN_MSG_QUEUE_FNAME    "/dev/windows"
 
@@ -243,11 +258,18 @@ printf("\n\n##############################################################\n");
 		   selector: @selector(callback:)
 		   userInfo: nil
 		   repeats: YES];
-  [[NSRunLoop currentRunLoop] addTimer: timer forMode: mode];
+  [currentRunLoop addTimer: timer forMode: mode];
 #else
-  [[NSRunLoop currentRunLoop] addMsgTarget: self
-				withMethod: @selector(callback:)
-				   forMode: mode];
+
+/* OBSOLETE
+  [currentRunLoop addMsgTarget: self
+			withMethod: @selector(callback:)
+			   forMode: mode];
+*/
+  [currentRunLoop addEvent: (void*)0
+                  type: ET_WINMSG
+                  watcher: (id<RunLoopEvents>)self
+                  forMode: mode];
 #endif
 #endif
 }
