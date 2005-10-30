@@ -4,7 +4,7 @@
 
    Written by: Fred Kiefer <FredKiefer@gmx.de>
    Date: March 2002
-   Part of this code have been re-written by:
+   Part of this code have been re-written by: 
    Tom MacSween <macsweent@sympatico.ca>
    Date August 2005
    This file is part of the GNU Objective C User Interface Library.
@@ -52,11 +52,11 @@
 #ifdef __CYGWIN__
 #include <sys/file.h>
 #endif
-static NSString * Version=@"(C) 2005 FSF gnustep-back 0.10.1";
+static NSString * Version =@"(C) 2005 FSF gnustep-back 0.10.1";
 // custom event notifications
 static NSString *NSMenuWillTearOff = @"MenuWillTearOff";
 static NSString *NSMenuwillPopUP =@"MenuwillPopUP";
-static NSString *NSWindowDidCreateWindow=@"WindowDidCreateWindow";
+static NSString *NSWindowDidCreateWindow =@"WindowDidCreateWindow";
 
 static NSEvent *process_key_event(HWND hwnd, WPARAM wParam, LPARAM lParam, 
 				  NSEventType eventType);
@@ -110,7 +110,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
                  extra: (void*)extra
                forMode: (NSString*)mode
 {
-  if (mode !=nil)
+  if (mode != nil)
     [self callback: mode];
 }
 
@@ -122,7 +122,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 {
   [self callback: nil];
 #ifdef __W32_debug_Event_loop 
-  NSEvent * theEvent=[super getEventMatchingMask: mask
+  NSEvent * theEvent = [super getEventMatchingMask: mask
 		beforeDate: limit
 		inMode: mode
 		dequeue: flag];
@@ -275,34 +275,39 @@ printf("\n\n##############################################################\n");
   //flags.useWMTaskBar = YES;
   //flags.useWMStyles = YES;
   
-  if ([[NSUserDefaults standardUserDefaults] stringForKey:@"GSUseWMTaskbar"] !=nil)
+  if ([[NSUserDefaults standardUserDefaults] stringForKey: @"GSUseWMTaskbar"]
+    != nil)
     {
       flags.useWMTaskBar = [[NSUserDefaults standardUserDefaults] 
-                                boolForKey:@"GSUseWMTaskbar"];
-      flags.HAVE_SERVER_PREFS=YES; 
+                                boolForKey: @"GSUseWMTaskbar"];
+      flags.HAVE_SERVER_PREFS = YES; 
     }
-   else
+  else
     {
-       flags.HAVE_SERVER_PREFS=NO;
+       flags.HAVE_SERVER_PREFS = NO;
     }
     
-   if ([[NSUserDefaults standardUserDefaults] stringForKey:@"GSUseWMStyles"] !=nil)
+  if ([[NSUserDefaults standardUserDefaults] stringForKey: @"GSUseWMStyles"]
+    != nil)
     {
       flags.useWMStyles = [[NSUserDefaults standardUserDefaults] 
-                                boolForKey:@"GSUseWMStyles"];
-      flags.HAVE_SERVER_PREFS=YES;  
+                                boolForKey: @"GSUseWMStyles"];
+      flags.HAVE_SERVER_PREFS = YES;  
     }
-    else
+  else
     {
-       flags.HAVE_SERVER_PREFS=NO;
+      flags.HAVE_SERVER_PREFS = NO;
     }
     
-   if (flags.useWMStyles==YES)
-        handlesWindowDecorations = YES;
+  if (flags.useWMStyles == YES)
+    {
+      handlesWindowDecorations = YES;
+    }
    
-   /* the backend needs to be able to keep tabs on events that are only produced by 
-      GNUstep so that it can make changes or override behavior in favor of the real 
-      platform window server */ 
+   /* the backend needs to be able to keep tabs on events that
+    * are only produced by GNUstep so that it can make changes
+    * or override behavior in favor of the real platform window server
+    */ 
   [nc addObserver: self
 	  selector: @selector(ApplicationDidFinishLaunching:)
 	  name: NSApplicationDidFinishLaunchingNotification
@@ -334,7 +339,7 @@ printf("\n\n##############################################################\n");
 	  name: NSMenuwillPopUP
 	  object: nil];
 	  
-   [nc addObserver: self
+  [nc addObserver: self
 	 selector: @selector(WindowDidCreateWindow:)
 	 name: NSWindowDidCreateWindow
 	 object: nil];
@@ -343,7 +348,7 @@ printf("\n\n##############################################################\n");
   [self registerForWindowEvents];
   [self registerForViewEvents];
 #endif
-  flags.eventQueCount=0;
+  flags.eventQueCount =0;
 	  
   return self;
 }
@@ -392,178 +397,187 @@ to control debug output... or log specific event to a log panel.
 */
 - (void) initConfigWindow
 {
-   unsigned int style = NSTitledWindowMask 
-                     | NSClosableWindowMask;
-   NSRect       rect;
-   NSView *     content;
+  unsigned int style = NSTitledWindowMask | NSClosableWindowMask;
+  NSRect       rect;
+  NSView      *content;
+  NSTextField *theText;
+  NSTextField *theText2;
 
-   rect = NSMakeRect (715,800,236,182);
-   configWindow = RETAIN([[NSWindow alloc] initWithContentRect: rect
+  rect = NSMakeRect (715,800,236,182);
+  configWindow = RETAIN([[NSWindow alloc] initWithContentRect: rect
                                               styleMask: style
                                                 backing: NSBackingStoreBuffered
                                                   defer: YES]);
-   [configWindow setTitle:@"server Preferences"];
-   [configWindow setReleasedWhenClosed:NO];
+  [configWindow setTitle: @"server Preferences"];
+  [configWindow setReleasedWhenClosed: NO];
 
-   content = [configWindow contentView];
-   NSTextField *theText=[[NSTextField alloc] initWithFrame: NSMakeRect (27,155,190,22)];
-   [theText setStringValue:@"Win32 GNUStep Display Server"];
-   [theText setEditable:NO];
-   [theText setEnabled:NO];
-   [theText setSelectable:NO];
-   [[theText cell] setBackgroundColor:[NSColor lightGrayColor]];
-   [[theText cell] setBordered:NO];
-   [[theText cell] setBezeled:NO];
-   [content addSubview:theText];
+  content = [configWindow contentView];
+  theText = [[NSTextField alloc] initWithFrame: NSMakeRect (27,155,190,22)];
+  [theText setStringValue: @"Win32 GNUStep Display Server"];
+  [theText setEditable: NO];
+  [theText setEnabled: NO];
+  [theText setSelectable: NO];
+  [[theText cell] setBackgroundColor: [NSColor lightGrayColor]];
+  [[theText cell] setBordered: NO];
+  [[theText cell] setBezeled: NO];
+  [content addSubview: theText];
    
-   /*NSTextField *theText1=[[NSTextField alloc] initWithFrame: NSMakeRect (27,135,190,22)];
-   [theText1 setStringValue:@"Revitalized By Tom MacSween"];
-   [theText1 setEditable:NO];
-   [theText1 setEnabled:NO];
-   [theText1 setSelectable:NO];
-   [[theText1 cell] setBackgroundColor:[NSColor lightGrayColor]];
-   [[theText1 cell] setBordered:NO];
-   [[theText1 cell] setBezeled:NO];
-   [content addSubview:theText1];*/
+  /*
+  NSTextField *theText1;
+
+  theText1 = [[NSTextField alloc] initWithFrame: NSMakeRect (27,135,190,22)];
+  [theText1 setStringValue: @"Revitalized By Tom MacSween"];
+  [theText1 setEditable: NO];
+  [theText1 setEnabled: NO];
+  [theText1 setSelectable: NO];
+  [[theText1 cell] setBackgroundColor: [NSColor lightGrayColor]];
+  [[theText1 cell] setBordered: NO];
+  [[theText1 cell] setBezeled: NO];
+  [content addSubview: theText1];*/
    
-   NSTextField *theText2=[[NSTextField alloc] initWithFrame: NSMakeRect (17,115,200,22)];
-   [theText2 setStringValue:Version];
-   [theText2 setEditable:NO];
-   [theText2 setEnabled:NO];
-   [theText2 setSelectable:NO];
-   [[theText2 cell] setBackgroundColor:[NSColor lightGrayColor]];
-   [[theText2 cell] setBordered:NO];
-   [[theText2 cell] setBezeled:NO];
-   [content addSubview:theText2];
+  theText2 = [[NSTextField alloc] initWithFrame: NSMakeRect (17,115,200,22)];
+  [theText2 setStringValue: Version];
+  [theText2 setEditable: NO];
+  [theText2 setEnabled: NO];
+  [theText2 setSelectable: NO];
+  [[theText2 cell] setBackgroundColor: [NSColor lightGrayColor]];
+  [[theText2 cell] setBordered: NO];
+  [[theText2 cell] setBezeled: NO];
+  [content addSubview: theText2];
    
    // popup for style
-   styleButton = [[NSPopUpButton  alloc] initWithFrame: NSMakeRect (30,80,171,22)];
-   [styleButton setAutoenablesItems:YES];
-   [styleButton setTarget:self];
-   [styleButton setAction: @selector(setStyle:)];
-   [styleButton setTitle: @"Select window Style"];
-   [styleButton addItemWithTitle:@"GNUStep window Style"];
-   [styleButton addItemWithTitle:@"MicroSoft window Style"];
-   [content addSubview:styleButton];
+  styleButton
+    = [[NSPopUpButton  alloc] initWithFrame: NSMakeRect (30,80,171,22)];
+  [styleButton setAutoenablesItems: YES];
+  [styleButton setTarget: self];
+  [styleButton setAction: @selector(setStyle:)];
+  [styleButton setTitle: @"Select window Style"];
+  [styleButton addItemWithTitle: @"GNUStep window Style"];
+  [styleButton addItemWithTitle: @"MicroSoft window Style"];
+  [content addSubview: styleButton];
    
-   // set the tags on the items
-   [[styleButton itemAtIndex:0] setTag:0];
-   [[styleButton itemAtIndex:1] setTag:1];
-   [[styleButton itemAtIndex:2] setTag:2];
+  // set the tags on the items
+  [[styleButton itemAtIndex: 0] setTag: 0];
+  [[styleButton itemAtIndex: 1] setTag: 1];
+  [[styleButton itemAtIndex: 2] setTag: 2];
   
   
-   // check box for using taskbar
-   taskbarButton = [[NSButton  alloc] initWithFrame: NSMakeRect (30,55,171,22)];
-   [taskbarButton setButtonType: NSSwitchButton];
-   [taskbarButton setTitle: @"Use Win Taskbar"];
-   [taskbarButton setTarget:self];
-   [taskbarButton setAction: @selector(setTaskBar:)];
-   [content addSubview:taskbarButton];
-   // save to defaults
-   saveButton = [[NSButton  alloc] initWithFrame: NSMakeRect (30,25,171,22)];
-   [saveButton setButtonType: NSMomentaryPushInButton];
-   [saveButton setTitle: @"Save to defaults"];
-   [saveButton setTarget:self];
-   [saveButton setAction: @selector(setSave:)];
-   [content addSubview:saveButton];
-   [saveButton setEnabled:NO];
+  // check box for using taskbar
+  taskbarButton = [[NSButton  alloc] initWithFrame: NSMakeRect (30,55,171,22)];
+  [taskbarButton setButtonType: NSSwitchButton];
+  [taskbarButton setTitle: @"Use Win Taskbar"];
+  [taskbarButton setTarget: self];
+  [taskbarButton setAction: @selector(setTaskBar:)];
+  [content addSubview: taskbarButton];
+  // save to defaults
+  saveButton = [[NSButton  alloc] initWithFrame: NSMakeRect (30,25,171,22)];
+  [saveButton setButtonType: NSMomentaryPushInButton];
+  [saveButton setTitle: @"Save to defaults"];
+  [saveButton setTarget: self];
+  [saveButton setAction: @selector(setSave:)];
+  [content addSubview: saveButton];
+  [saveButton setEnabled: NO];
 
 
    // set the buttons to match the current state
-   if(flags.useWMStyles==YES)
-      [styleButton selectItemAtIndex:2];
-   else
-      [styleButton selectItemAtIndex:1];
+  if (flags.useWMStyles == YES)
+    [styleButton selectItemAtIndex: 2];
+  else
+    [styleButton selectItemAtIndex: 1];
     
-   if(flags.useWMTaskBar==YES)
-      [taskbarButton setState:NSOnState];
-   else
-      [taskbarButton setState:NSOffState]; 
+  if (flags.useWMTaskBar == YES)
+    [taskbarButton setState: NSOnState];
+  else
+    [taskbarButton setState: NSOffState]; 
 }
    
  // config window actions
       
-- (void) setStyle:(id)sender
+- (void) setStyle: (id)sender
 {
-   //defaults key: GSUseWMStyles
-   // code flag: flags.useWMStyles
-   [saveButton setEnabled:YES];
+  //defaults key: GSUseWMStyles
+  // code flag: flags.useWMStyles
+  [saveButton setEnabled: YES];
     
-   if ([[sender selectedItem] tag] >1)
+  if ([[sender selectedItem] tag] > 1)
     {
-      flags.useWMStyles=YES;
-      flags.useWMTaskBar=YES;
-      [taskbarButton setState:NSOnState];
+      flags.useWMStyles = YES;
+      flags.useWMTaskBar = YES;
+      [taskbarButton setState: NSOnState];
     }
-   else
+  else
     {
-      flags.useWMStyles=NO;
-      flags.useWMTaskBar=NO;
-      [taskbarButton setState:NSOffState];
+      flags.useWMStyles = NO;
+      flags.useWMTaskBar = NO;
+      [taskbarButton setState: NSOffState];
     }
 }
 
-- (void) setTaskBar:(id)sender
+- (void) setTaskBar: (id)sender
 {
-   //defaults key: GSUseWMTaskbar
-   // code flag: flags.useWMTaskBar
-   [saveButton setEnabled:YES];
-   flags.useWMTaskBar=[sender state];
+  //defaults key: GSUseWMTaskbar
+  // code flag: flags.useWMTaskBar
+  [saveButton setEnabled: YES];
+  flags.useWMTaskBar = [sender state];
 }
 
-- (void) setSave:(id)sender
+- (void) setSave: (id)sender
 {
-   NSString * theValue=@"NO";
+  NSString *theValue = @"NO";
    //NSUserDefaults	*defs = [NSUserDefaults standardUserDefaults];
    //printf("Save to defaults\n");
-   if(flags.useWMTaskBar ==YES)
-      theValue=@"YES";
+  if (flags.useWMTaskBar == YES)
+    theValue = @"YES";
         
-   [[NSUserDefaults standardUserDefaults] 
-      setObject:theValue forKey:@"GSUseWMTaskbar"];
+  [[NSUserDefaults standardUserDefaults] 
+    setObject: theValue forKey: @"GSUseWMTaskbar"];
         
-   theValue=@"NO";
-   if(flags.useWMStyles ==YES)
-      theValue=@"YES";
+  theValue = @"NO";
+  if (flags.useWMStyles == YES)
+    theValue = @"YES";
         
-   [[NSUserDefaults standardUserDefaults] 
-      setObject:theValue forKey:@"GSUseWMStyles"];
+  [[NSUserDefaults standardUserDefaults] 
+     setObject: theValue forKey: @"GSUseWMStyles"];
     
     // user must restart application for changes
     
-   NSRunInformationalAlertPanel(@"Server Preferences Changed",
+  NSRunInformationalAlertPanel(@"Server Preferences Changed",
                      @"Changes will take affect on the next restart",
                       @"OK",nil, nil);
-   flags.HAVE_SERVER_PREFS=YES;
-   [configWindow close];
-   [saveButton setEnabled:NO];
+  flags.HAVE_SERVER_PREFS = YES;
+  [configWindow close];
+  [saveButton setEnabled: NO];
+  [[NSUserDefaults standardUserDefaults] synchronize]; 
 }
 
-- (void) showServerPrefs:(id)sender
+- (void) showServerPrefs: (id)sender
 {
-   [configWindow makeKeyAndOrderFront:self];
+  [configWindow makeKeyAndOrderFront: self];
 }
 
 /* 
-    when debug is active (#define __W32_debug__) the following additional notifications
-    are registered for in the backend server.  Helps to show where appevents and server
-    events are happening relitive to each other
+
+ when debug is active (#define __W32_debug__) the following
+ additional notifications are registered for in the backend server.
+ Helps to show where appevents and server
+ events are happening relitive to each other
 
 
 NSWindowDidBecomeKeyNotification
     Posted whenever an NSWindow becomes the key window.
-    The notification object is the NSWindow that has become key. This notification 
-    does not contain a userInfo dictionary.
+    The notification object is the NSWindow that has become key.
+    This notification does not contain a userInfo dictionary.
 
 NSWindowDidBecomeMainNotification
     Posted whenever an NSWindow becomes the main window.
-    The notification object is the NSWindow that has become main. This notification 
-    does not contain a userInfo dictionary.
+    The notification object is the NSWindow that has become main.
+    This notification does not contain a userInfo dictionary.
     
 NSWindowDidChangeScreenNotification
-    Posted whenever a portion of an NSWindow’s frame moves onto or off of a screen.
-    The notification object is the NSWindow that has changed screens. This 
-    notification does not contain a userInfo dictionary.
+    Posted whenever a portion of an NSWindow’s frame moves onto
+    or off of a screen.
+    The notification object is the NSWindow that has changed screens.
+    This notification does not contain a userInfo dictionary.
     This notification is not sent in Mac OS X versions earlier than 10.4.
 
 NSWindowDidChangeScreenProfileNotification
@@ -649,89 +663,95 @@ NSWindowWillMoveNotification
     notification does not contain a userInfo dictionary.  
 */
 
--(void)registerForWindowEvents
+- (void) registerForWindowEvents
 {
-    NSNotificationCenter	*nc = [NSNotificationCenter defaultCenter];
+  NSNotificationCenter	*nc = [NSNotificationCenter defaultCenter];
         
-    [nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSWindowDidDeminiaturizeNotification
-	  object: nil];
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSWindowDidDeminiaturizeNotification
+	   object: nil];
 	  
-    [nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSWindowDidMiniaturizeNotification
-	  object: nil];
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSWindowDidMiniaturizeNotification
+	   object: nil];
 	  
-    [nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSWindowDidBecomeKeyNotification
-	  object: nil];
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSWindowDidBecomeKeyNotification
+	   object: nil];
 	  
-    [nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSWindowDidBecomeMainNotification
-	  object: nil]; 
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSWindowDidBecomeMainNotification
+	   object: nil]; 
 
-    [nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSWindowDidChangeScreenNotification
-	  object: nil];
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSWindowDidChangeScreenNotification
+	   object: nil];
     
-    /* [nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSWindowDidChangeScreenProfileNotification
-	  object: nil];*/
+  /*
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSWindowDidChangeScreenProfileNotification
+	   object: nil];
+  */
 
-    [nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSWindowDidExposeNotification
-	  object: nil];
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSWindowDidExposeNotification
+	   object: nil];
 
-    /*[nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSWindowDidEndSheetNotification
-	  object: nil];*/
+  /*
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSWindowDidEndSheetNotification
+	   object: nil];
+  */
 	  
-    [nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSWindowDidMoveNotification
-	  object: nil];
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSWindowDidMoveNotification
+	   object: nil];
 
-    [nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSWindowDidResignKeyNotification
-	  object: nil];
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSWindowDidResignKeyNotification
+	   object: nil];
 	  
-    [nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSWindowDidResignMainNotification
-	  object: nil];
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSWindowDidResignMainNotification
+	   object: nil];
 	  
-    [nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSWindowDidResizeNotification
-	  object: nil];
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSWindowDidResizeNotification
+	   object: nil];
 	  
-    [nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSWindowDidUpdateNotification
-	  object: nil];
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSWindowDidUpdateNotification
+	   object: nil];
 
-    /*[nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSWindowWillBeginSheetNotification
-	  object: nil];*/
+  /*
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSWindowWillBeginSheetNotification
+	   object: nil];
+  */
     
-    [nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSWindowWillCloseNotification
-	  object: nil];
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSWindowWillCloseNotification
+	   object: nil];
 
-    [nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSWindowWillMoveNotification
-	  object: nil];    
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSWindowWillMoveNotification
+	   object: nil];    
 }
 
 /*
@@ -742,15 +762,15 @@ NSViewBoundsDidChangeNotification
     notifications.  The notification object is the NSView whose bounds
     rectangle has changed. This notification does not contain a
     userInfo dictionary.  The following methods can result in
-    notification posting:
+    notification posting: 
 
-        setBounds:
-        setBoundsOrigin:
-        setBoundsRotation:
-        setBoundsSize:
-        translateOriginToPoint:
-        scaleUnitSquareToSize:
-        rotateByAngle:
+        setBounds: 
+        setBoundsOrigin: 
+        setBoundsRotation: 
+        setBoundsSize: 
+        translateOriginToPoint: 
+        scaleUnitSquareToSize: 
+        rotateByAngle: 
 
     Note that the bounds rectangle resizes automatically to track the
     frame rectangle. Because the primary change is that of the frame
@@ -765,17 +785,17 @@ NSViewFocusDidChangeNotification
 */
 - (void) registerForViewEvents
 {
-    NSNotificationCenter	*nc = [NSNotificationCenter defaultCenter];
+  NSNotificationCenter	*nc = [NSNotificationCenter defaultCenter];
         
-    [nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSViewBoundsDidChangeNotification
-	  object: nil];
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSViewBoundsDidChangeNotification
+	   object: nil];
 
-    [nc addObserver: self
-	  selector: @selector(handleNotification:)
-	  name: NSViewFocusDidChangeNotification
-	  object: nil];
+  [nc addObserver: self
+	 selector: @selector(handleNotification:)
+	     name: NSViewFocusDidChangeNotification
+	   object: nil];
 }
 
 
@@ -935,7 +955,7 @@ printf("\n\n##############################################################\n");
   return 0;
 }
 
-- (LRESULT) decodeWM_ACTIVEAPPParams: (HWND)hwnd :(WPARAM)wParam : (LPARAM)lParam
+- (LRESULT) decodeWM_ACTIVEAPPParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
 {
   [self subclassResponsibility: _cmd];
   return 0;
@@ -953,12 +973,12 @@ printf("\n\n##############################################################\n");
   return 0;
 }
 
-- (void) decodeWM_SIZINGParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
+- (void) decodeWM_SIZINGParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
 {
    [self subclassResponsibility: _cmd];
 }
 
-- (LRESULT) decodeWM_MOVINGParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
+- (LRESULT) decodeWM_MOVINGParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
 {
    [self subclassResponsibility: _cmd];
    return 0;
@@ -1090,7 +1110,7 @@ printf("\n\n##############################################################\n");
 }
 
 
-- (void) decodeWM_CLOSEParams:(WPARAM)wParam :(LPARAM)lParam :(HWND)hwnd
+- (void) decodeWM_CLOSEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   [self subclassResponsibility: _cmd];
 }
@@ -1125,7 +1145,7 @@ printf("\n\n##############################################################\n");
 
 }
 
-- (BOOL) displayEvent:(unsigned int)uMsg;   // diagnotic filter
+- (BOOL) displayEvent: (unsigned int)uMsg;   // diagnotic filter
 {
   [self subclassResponsibility: _cmd];
   return YES;
@@ -1141,26 +1161,26 @@ printf("\n\n##############################################################\n");
 // main event loop
 
 
-- (NSString *) getNativeClassName:(HWND)hwnd
+- (NSString *) getNativeClassName: (HWND)hwnd
 {
   char * windowType[80];
-  UINT wsize=80;
+  UINT wsize =80;
   
   if (RealGetWindowClass(hwnd,(LPTSTR)windowType,wsize)>0)
     {
-      return [NSString stringWithCString:(char *)windowType length:wsize+1];
+      return [NSString stringWithCString: (char *)windowType length: wsize+1];
     }
   
   return nil;
 }
 
-- (NSString *) getWindowtext:(HWND)hwnd
+- (NSString *) getWindowtext: (HWND)hwnd
 {
   char * windowText[80];
-  int wsize=80;
+  int wsize = 80;
   
-  if (GetWindowText(hwnd,(LPTSTR)windowText,wsize)>0)
-    return [NSString stringWithCString:(char *)windowText length:wsize+1];
+  if (GetWindowText(hwnd,(LPTSTR)windowText,wsize) > 0)
+    return [NSString stringWithCString: (char *)windowText length: wsize + 1];
   
   return nil;
 }
@@ -1170,19 +1190,19 @@ printf("\n\n##############################################################\n");
  * Reset all of our flags before the next run through the event switch
  *
  */
-- (void) setFlagsforEventLoop:(HWND)hwnd
+- (void) setFlagsforEventLoop: (HWND)hwnd
 {
-  flags._eventHandled=NO;
+  flags._eventHandled = NO;
 
-  flags._is_menu=NO;
-  if((HWND)flags.menuRef ==hwnd && flags.HAVE_MAIN_MENU==YES)
-    flags._is_menu=YES;
+  flags._is_menu = NO;
+  if ((HWND)flags.menuRef == hwnd && flags.HAVE_MAIN_MENU == YES)
+    flags._is_menu = YES;
   // note some cache windows are needed..... just get the zeros 
-  flags._is_cache =[[EVENT_WINDOW(hwnd) className] isEqual:@"GSCacheW"];
+  flags._is_cache = [[EVENT_WINDOW(hwnd) className] isEqual: @"GSCacheW"];
   
-  flags._hasGSClassName=NO;
-  if([EVENT_WINDOW(hwnd) className] !=nil)
-    flags._hasGSClassName=YES;
+  flags._hasGSClassName = NO;
+  if ([EVENT_WINDOW(hwnd) className] != nil)
+    flags._hasGSClassName = YES;
     
   // future house keeping can go here
 
@@ -1193,10 +1213,10 @@ printf("\n\n##############################################################\n");
 { 
   NSEvent *ev = nil;
 
-  [self setFlagsforEventLoop:hwnd];
+  [self setFlagsforEventLoop: hwnd];
  
 #ifdef __W32_debug__        
-  if ([self displayEvent:uMsg]==YES)
+  if ([self displayEvent: uMsg]== YES)
     {     
       printf("\n\n\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
       printf("+++                NEW EVENT CYCLE %u                        +++\n",uMsg);
@@ -1204,247 +1224,247 @@ printf("\n\n##############################################################\n");
 #ifdef __W32_debug_Event_loop 
       printf("Events Posted = %d\n",flags.eventQueCount);
       printf("EVENT Que Count = %d\n",(int)[GSCurrentServer() eventQueCount]);
-      printf("%s",[[GSCurrentServer() dumpQue:10] cString]);
+      printf("%s",[[GSCurrentServer() dumpQue: 10] cString]);
 #endif   
     }
 #endif
 
   switch (uMsg) 
     { 
-   case WM_SIZING:
-       [self decodeWM_SIZINGParams:hwnd : wParam : lParam];
-    case WM_NCCREATE:
-      return [self decodeWM_NCCREATEParams: wParam : lParam : hwnd];
-      break;
-    case WM_NCCALCSIZE:
-      [self decodeWM_NCCALCSIZEParams:wParam : lParam : hwnd]; 
-      break;
-    case WM_NCACTIVATE:
-      [self decodeWM_NCACTIVATEParams: wParam : lParam : hwnd]; 
-      break;
-    case WM_NCPAINT:
-      if (flags.useWMStyles==NO)
-      [self decodeWM_NCPAINTParams:wParam :lParam :hwnd]; 
-      break;
-   //case WM_SHOWWINDOW:
-      //[self decodeWM_SHOWWINDOWParams:wParam :lParam :hwnd]; 
-      //break;
-    case WM_NCDESTROY:
-      [self decodeWM_NCDESTROYParams:wParam :lParam :hwnd]; 
-      break;
-    case WM_GETTEXT:
-      [self decodeWM_GETTEXTParams:wParam :lParam :hwnd]; 
-      break;
-    case WM_STYLECHANGING: 
-      break;
-    case WM_STYLECHANGED: 
-      break;
-    case WM_GETMINMAXINFO:
-      return [self decodeWM_GETMINMAXINFOParams:wParam :lParam :hwnd];
-      break;
-    case WM_CREATE: 
-      return [self decodeWM_CREATEParams:wParam :lParam :hwnd];
-      break;
-    case WM_WINDOWPOSCHANGING:
-      [self decodeWM_WINDOWPOSCHANGINGParams:wParam :lParam :hwnd]; 
-      break;
-    case WM_WINDOWPOSCHANGED:
-      [self decodeWM_WINDOWPOSCHANGEDParams:wParam :lParam :hwnd]; 
-      break;
-    case WM_MOVE:
-      return [self decodeWM_MOVEParams:hwnd :wParam :lParam];
-      break;
-    case WM_MOVING: 
-      return [self decodeWM_MOVINGParams:hwnd :wParam :lParam];
-      break;
-    case WM_SIZE:
-      return [self decodeWM_SIZEParams:hwnd :wParam :lParam];
-      break;
-    case WM_ENTERSIZEMOVE: 
-      break;
-    case WM_EXITSIZEMOVE:
-      //return [self decodeWM_EXITSIZEMOVEParams:wParam :lParam :hwnd];
-      return DefWindowProc(hwnd, uMsg, wParam, lParam); 
-      break; 
-    case WM_ACTIVATE:
-      if ((int)lParam !=0)
-         [self decodeWM_ACTIVEParams:wParam :lParam : hwnd]; 
-      break;
-    case WM_ACTIVATEAPP:
-      //if (_is_cache == NO) 
-      return [self decodeWM_ACTIVEAPPParams:hwnd :wParam : lParam];
-      break;
-    case WM_SETFOCUS:
-      return [self decodeWM_SETFOCUSParams: wParam : lParam :hwnd]; 
-      break;
-    case WM_KILLFOCUS:
-      if (wParam == (int)hwnd)
-	return 0;
-      else
-	[self decodeWM_KILLFOCUSParams: wParam :lParam :hwnd]; 
-      break;
-    case WM_SETCURSOR: 
-      break;
-    case WM_QUERYOPEN:
-      [self decodeWM_QUERYOPENParams: wParam :lParam :hwnd]; 
-      break;
-    case WM_CAPTURECHANGED:
-      [self decodeWM_CAPTURECHANGEDParams: wParam :lParam :hwnd]; 
-      break;
-    case WM_ERASEBKGND:
-      return [self decodeWM_ERASEBKGNDParams:wParam :lParam :hwnd];
-      break;
-    case WM_PAINT:
-      [self decodeWM_PAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd]; 
-    case WM_SYNCPAINT:
-      if (flags.useWMStyles==NO)
-      [self decodeWM_SYNCPAINTParams:wParam :lParam :hwnd]; 
-      break;
-    case WM_CLOSE:
-      [self decodeWM_CLOSEParams:wParam :lParam :hwnd]; 
-      break;
-    case WM_DESTROY:
-      [self decodeWM_DESTROYParams: wParam :lParam :hwnd];
-      break;
-    case WM_QUIT:
-      break;
-    case WM_USER:
-      break;
-    case WM_APP:
-      break;  
-    case WM_ENTERMENULOOP:
-      break;
-    case WM_EXITMENULOOP:
-      break;
-    case WM_INITMENU:
-      break;
-    case WM_MENUSELECT:
-      break;
-    case WM_ENTERIDLE:
-      break;
-    case WM_COMMAND:
-      [self decodeWM_COMMANDParams:wParam :lParam :hwnd];
-      break;
-    case WM_SYSKEYDOWN:
-      break;
-    case WM_SYSKEYUP:
-      break;
-    case WM_SYSCOMMAND:
-      [self decodeWM_SYSCOMMANDParams:wParam :lParam :hwnd];
-      break;
-    case WM_HELP:
-      break;
-   //case WM_GETICON:
-      //return [self decodeWM_GETICONParams:wParam :lParam :hwnd];
-      //break;
-   //case WM_SETICON:
-      //return [self decodeWM_SETICONParams: wParam : lParam : hwnd];
-      //break;
-   case WM_CANCELMODE:  // new added by Tom MacSween
-      break;
-    case WM_ENABLE:
-    case WM_CHILDACTIVATE:
-      break;
-    case WM_NULL:
-      break; 
-      
- /* resued from WIN32EventServer.m (now removed from this project) */        
-    case WM_NCHITTEST: //MOUSE
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCHITTEST", hwnd);
-      break;
-    case WM_NCMOUSEMOVE: //MOUSE
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCMOUSEMOVE", hwnd);
-      break;
-    case WM_NCLBUTTONDOWN:  //MOUSE
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCLBUTTONDOWN", hwnd);
-      break;
-    case WM_NCLBUTTONUP: //MOUSE
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCLBUTTONUP", hwnd);
-      break;
-    case WM_MOUSEACTIVATE: //MOUSE
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEACTIVATE", hwnd);
-      break;
-    case WM_MOUSEMOVE: //MOUSE
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEMOVE", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSMouseMoved);
-      break;
-    case WM_LBUTTONDOWN: //MOUSE
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONDOWN", hwnd);
-      //[self decodeWM_LBUTTONDOWNParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd];
-      ev = process_mouse_event(hwnd, wParam, lParam, NSLeftMouseDown);
-      break;
-    case WM_LBUTTONUP: //MOUSE
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONUP", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSLeftMouseUp);
-      break;
-    case WM_LBUTTONDBLCLK: //MOUSE
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONDBLCLK", hwnd);
-      break;
-    case WM_MBUTTONDOWN: //MOUSE
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONDOWN", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSOtherMouseDown);
-      break;
-    case WM_MBUTTONUP: //MOUSE
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONUP", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSOtherMouseUp);
-      break;
-    case WM_MBUTTONDBLCLK: //MOUSE
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONDBLCLK", hwnd);
-      break;
-    case WM_RBUTTONDOWN: //MOUSE
-      {
-	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONDOWN", hwnd);
-	ev = process_mouse_event(hwnd, wParam, lParam, NSRightMouseDown);
-      }
-      break;
-    case WM_RBUTTONUP: //MOUSE
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONUP", hwnd);
-      {
-	ev = process_mouse_event(hwnd, wParam, lParam, NSRightMouseUp);
-      }
-      break;
-    case WM_RBUTTONDBLCLK: //MOUSE
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONDBLCLK", hwnd);
-      break;
-    case WM_MOUSEWHEEL: //MOUSE
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEWHEEL", hwnd);
-      ev = process_mouse_event(hwnd, wParam, lParam, NSScrollWheel);
-      break;
-      
-      case WM_KEYDOWN:  //KEYBOARD
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KEYDOWN", hwnd);
-      ev = process_key_event(hwnd, wParam, lParam, NSKeyDown);
-      break;
-    case WM_KEYUP:  //KEYBOARD
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KEYUP", hwnd);
-      ev = process_key_event(hwnd, wParam, lParam, NSKeyUp);
-      break;
+      case WM_SIZING: 
+	 [self decodeWM_SIZINGParams: hwnd : wParam : lParam];
+      case WM_NCCREATE: 
+	return [self decodeWM_NCCREATEParams: wParam : lParam : hwnd];
+	break;
+      case WM_NCCALCSIZE: 
+	[self decodeWM_NCCALCSIZEParams: wParam : lParam : hwnd]; 
+	break;
+      case WM_NCACTIVATE: 
+	[self decodeWM_NCACTIVATEParams: wParam : lParam : hwnd]; 
+	break;
+      case WM_NCPAINT: 
+	if (flags.useWMStyles == NO)
+	[self decodeWM_NCPAINTParams: wParam : lParam : hwnd]; 
+	break;
+     //case WM_SHOWWINDOW: 
+	//[self decodeWM_SHOWWINDOWParams: wParam : lParam : hwnd]; 
+	//break;
+      case WM_NCDESTROY: 
+	[self decodeWM_NCDESTROYParams: wParam : lParam : hwnd]; 
+	break;
+      case WM_GETTEXT: 
+	[self decodeWM_GETTEXTParams: wParam : lParam : hwnd]; 
+	break;
+      case WM_STYLECHANGING: 
+	break;
+      case WM_STYLECHANGED: 
+	break;
+      case WM_GETMINMAXINFO: 
+	return [self decodeWM_GETMINMAXINFOParams: wParam : lParam : hwnd];
+	break;
+      case WM_CREATE: 
+	return [self decodeWM_CREATEParams: wParam : lParam : hwnd];
+	break;
+      case WM_WINDOWPOSCHANGING: 
+	[self decodeWM_WINDOWPOSCHANGINGParams: wParam : lParam : hwnd]; 
+	break;
+      case WM_WINDOWPOSCHANGED: 
+	[self decodeWM_WINDOWPOSCHANGEDParams: wParam : lParam : hwnd]; 
+	break;
+      case WM_MOVE: 
+	return [self decodeWM_MOVEParams: hwnd : wParam : lParam];
+	break;
+      case WM_MOVING: 
+	return [self decodeWM_MOVINGParams: hwnd : wParam : lParam];
+	break;
+      case WM_SIZE: 
+	return [self decodeWM_SIZEParams: hwnd : wParam : lParam];
+	break;
+      case WM_ENTERSIZEMOVE: 
+	break;
+      case WM_EXITSIZEMOVE: 
+	//return [self decodeWM_EXITSIZEMOVEParams: wParam : lParam : hwnd];
+	return DefWindowProc(hwnd, uMsg, wParam, lParam); 
+	break; 
+      case WM_ACTIVATE: 
+	if ((int)lParam !=0)
+	   [self decodeWM_ACTIVEParams: wParam : lParam : hwnd]; 
+	break;
+      case WM_ACTIVATEAPP: 
+	//if (_is_cache == NO) 
+	return [self decodeWM_ACTIVEAPPParams: hwnd : wParam : lParam];
+	break;
+      case WM_SETFOCUS: 
+	return [self decodeWM_SETFOCUSParams: wParam : lParam : hwnd]; 
+	break;
+      case WM_KILLFOCUS: 
+	if (wParam == (int)hwnd)
+	  return 0;
+	else
+	  [self decodeWM_KILLFOCUSParams: wParam : lParam : hwnd]; 
+	break;
+      case WM_SETCURSOR: 
+	break;
+      case WM_QUERYOPEN: 
+	[self decodeWM_QUERYOPENParams: wParam : lParam : hwnd]; 
+	break;
+      case WM_CAPTURECHANGED: 
+	[self decodeWM_CAPTURECHANGEDParams: wParam : lParam : hwnd]; 
+	break;
+      case WM_ERASEBKGND: 
+	return [self decodeWM_ERASEBKGNDParams: wParam : lParam : hwnd];
+	break;
+      case WM_PAINT: 
+	[self decodeWM_PAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd]; 
+      case WM_SYNCPAINT: 
+	if (flags.useWMStyles == NO)
+	[self decodeWM_SYNCPAINTParams: wParam : lParam : hwnd]; 
+	break;
+      case WM_CLOSE: 
+	[self decodeWM_CLOSEParams: wParam : lParam : hwnd]; 
+	break;
+      case WM_DESTROY: 
+	[self decodeWM_DESTROYParams: wParam : lParam : hwnd];
+	break;
+      case WM_QUIT: 
+	break;
+      case WM_USER: 
+	break;
+      case WM_APP: 
+	break;  
+      case WM_ENTERMENULOOP: 
+	break;
+      case WM_EXITMENULOOP: 
+	break;
+      case WM_INITMENU: 
+	break;
+      case WM_MENUSELECT: 
+	break;
+      case WM_ENTERIDLE: 
+	break;
+      case WM_COMMAND: 
+	[self decodeWM_COMMANDParams: wParam : lParam : hwnd];
+	break;
+      case WM_SYSKEYDOWN: 
+	break;
+      case WM_SYSKEYUP: 
+	break;
+      case WM_SYSCOMMAND: 
+	[self decodeWM_SYSCOMMANDParams: wParam : lParam : hwnd];
+	break;
+      case WM_HELP: 
+	break;
+     //case WM_GETICON: 
+	//return [self decodeWM_GETICONParams: wParam : lParam : hwnd];
+	//break;
+     //case WM_SETICON: 
+	//return [self decodeWM_SETICONParams: wParam : lParam : hwnd];
+	//break;
+     case WM_CANCELMODE:  // new added by Tom MacSween
+	break;
+      case WM_ENABLE: 
+      case WM_CHILDACTIVATE: 
+	break;
+      case WM_NULL: 
+	break; 
+	
+   /* resued from WIN32EventServer.m (now removed from this project) */        
+      case WM_NCHITTEST: //MOUSE
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCHITTEST", hwnd);
+	break;
+      case WM_NCMOUSEMOVE: //MOUSE
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCMOUSEMOVE", hwnd);
+	break;
+      case WM_NCLBUTTONDOWN:  //MOUSE
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCLBUTTONDOWN", hwnd);
+	break;
+      case WM_NCLBUTTONUP: //MOUSE
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCLBUTTONUP", hwnd);
+	break;
+      case WM_MOUSEACTIVATE: //MOUSE
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEACTIVATE", hwnd);
+	break;
+      case WM_MOUSEMOVE: //MOUSE
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEMOVE", hwnd);
+	ev = process_mouse_event(hwnd, wParam, lParam, NSMouseMoved);
+	break;
+      case WM_LBUTTONDOWN: //MOUSE
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONDOWN", hwnd);
+	//[self decodeWM_LBUTTONDOWNParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd];
+	ev = process_mouse_event(hwnd, wParam, lParam, NSLeftMouseDown);
+	break;
+      case WM_LBUTTONUP: //MOUSE
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONUP", hwnd);
+	ev = process_mouse_event(hwnd, wParam, lParam, NSLeftMouseUp);
+	break;
+      case WM_LBUTTONDBLCLK: //MOUSE
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONDBLCLK", hwnd);
+	break;
+      case WM_MBUTTONDOWN: //MOUSE
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONDOWN", hwnd);
+	ev = process_mouse_event(hwnd, wParam, lParam, NSOtherMouseDown);
+	break;
+      case WM_MBUTTONUP: //MOUSE
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONUP", hwnd);
+	ev = process_mouse_event(hwnd, wParam, lParam, NSOtherMouseUp);
+	break;
+      case WM_MBUTTONDBLCLK: //MOUSE
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONDBLCLK", hwnd);
+	break;
+      case WM_RBUTTONDOWN: //MOUSE
+	{
+	  NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONDOWN", hwnd);
+	  ev = process_mouse_event(hwnd, wParam, lParam, NSRightMouseDown);
+	}
+	break;
+      case WM_RBUTTONUP: //MOUSE
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONUP", hwnd);
+	{
+	  ev = process_mouse_event(hwnd, wParam, lParam, NSRightMouseUp);
+	}
+	break;
+      case WM_RBUTTONDBLCLK: //MOUSE
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONDBLCLK", hwnd);
+	break;
+      case WM_MOUSEWHEEL: //MOUSE
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEWHEEL", hwnd);
+	ev = process_mouse_event(hwnd, wParam, lParam, NSScrollWheel);
+	break;
+	
+	case WM_KEYDOWN:  //KEYBOARD
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KEYDOWN", hwnd);
+	ev = process_key_event(hwnd, wParam, lParam, NSKeyDown);
+	break;
+      case WM_KEYUP:  //KEYBOARD
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KEYUP", hwnd);
+	ev = process_key_event(hwnd, wParam, lParam, NSKeyUp);
+	break;
 
-    case WM_POWERBROADCAST: //SYSTEM
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "POWERBROADCAST", hwnd);
-      break;
-    case WM_TIMECHANGE:  //SYSTEM
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "TIMECHANGE", hwnd);
-      break;
-    case WM_DEVICECHANGE: //SYSTEM
-      NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "DEVICECHANGE", hwnd);
-      break;
-      
-    default:
-      // Process all other messages.
-#ifdef __W32_debug__      
-      printf("Uhandled message: %d on window %s\n",uMsg,[[GSWindowWithNumber((int)hwnd) className] cString]);
-#endif      
-      NSDebugLLog(@"NSEvent", @"Got unhandled Message %d for %d", uMsg, hwnd);
-      break;
+      case WM_POWERBROADCAST: //SYSTEM
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "POWERBROADCAST", hwnd);
+	break;
+      case WM_TIMECHANGE:  //SYSTEM
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "TIMECHANGE", hwnd);
+	break;
+      case WM_DEVICECHANGE: //SYSTEM
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "DEVICECHANGE", hwnd);
+	break;
+	
+      default: 
+	// Process all other messages.
+  #ifdef __W32_debug__      
+	printf("Uhandled message: %d on window %s\n",uMsg,[[GSWindowWithNumber((int)hwnd) className] cString]);
+  #endif      
+	NSDebugLLog(@"NSEvent", @"Got unhandled Message %d for %d", uMsg, hwnd);
+	break;
     } 
     
     /*
      * see if the event was handled in the the main loop or in the
-     * menu loop.  if eventHandled=YES then we are done and need to
+     * menu loop.  if eventHandled = YES then we are done and need to
      * tell the windows event handler we are finished 
      */
-  if (flags._eventHandled==YES)
+  if (flags._eventHandled == YES)
     return 0;
   
   if (ev != nil)
@@ -1452,10 +1472,10 @@ printf("\n\n##############################################################\n");
       [GSCurrentServer() postEvent: ev atStart: NO];
       flags.eventQueCount++;
 #ifdef __W32_debug__      
-      if([ev type]==NSAppKitDefined)
+      if ([ev type]== NSAppKitDefined)
 	{
 	  printf("uMsg %d ",uMsg);
-	  printf("Post event %s ",[[ev eventNameWithSubtype:YES] cString]);
+	  printf("Post event %s ",[[ev eventNameWithSubtype: YES] cString]);
 	  printf("on window %s\n",[[[ev window] className] cString]);
 	}
 #endif	    
@@ -1533,20 +1553,20 @@ printf("\n\n##############################################################\n");
   DWORD wstyle;
   DWORD estyle;
 
-  flags.currentGS_Style=style;
+  flags.currentGS_Style = style;
     
-   wstyle =[self windowStyleForGSStyle:style];
+   wstyle = [self windowStyleForGSStyle: style];
 
-  if ((style & NSMiniaturizableWindowMask) ==NSMiniaturizableWindowMask)//&& flags.useWMTaskBar == YES)
+  if ((style & NSMiniaturizableWindowMask) == NSMiniaturizableWindowMask)
     {
-         if(flags.useWMTaskBar==YES)
-            estyle = WS_EX_APPWINDOW;
-         else
-            estyle =WS_EX_TOOLWINDOW;
+      if (flags.useWMTaskBar == YES)
+	estyle = WS_EX_APPWINDOW;
+      else
+	estyle = WS_EX_TOOLWINDOW;
     }
   else
     {
-      estyle =WS_EX_TOOLWINDOW;
+      estyle = WS_EX_TOOLWINDOW;
     } 
 
   r = GSScreenRectToMS(frame, style, self);
@@ -1595,10 +1615,10 @@ printf("\n\n##############################################################\n");
 
 - (void) stylewindow: (unsigned int)style : (int) winNum
 {
-  DWORD wstyle = [self windowStyleForGSStyle:style];
+  DWORD wstyle = [self windowStyleForGSStyle: style];
 
   NSAssert(handlesWindowDecorations,
-	   @"-stylewindow:: called when handlesWindowDecorations==NO");
+	   @"-stylewindow: : called when handlesWindowDecorations == NO");
 
   NSDebugLLog(@"WTrace", @"stylewindow: %d : %d", style, winNum);
   SetWindowLong((HWND)winNum, GWL_STYLE, wstyle);
@@ -1679,7 +1699,7 @@ printf("\n\n##############################################################\n");
 
   if (flags.useWMTaskBar)
     {
-      /* When using this policy, we make these changes:
+      /* When using this policy, we make these changes: 
          - don't show the application icon window
 	 - Never order out the main menu, just minimize it, so that
 	 when the user clicks on it in the taskbar it will activate the
@@ -1710,27 +1730,27 @@ printf("\n\n##############################################################\n");
 
   switch (op)
     {
-    case NSWindowOut:
-      SetWindowPos((HWND)winNum, NULL, 0, 0, 0, 0, 
-		   SWP_HIDEWINDOW | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER);
-      break;
-    case NSWindowBelow:
-      if (otherWin == 0)
-	otherWin = (int)HWND_BOTTOM;
-      SetWindowPos((HWND)winNum, (HWND)otherWin, 0, 0, 0, 0, 
-		   SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
-      break;
-    case NSWindowAbove:
-      if (otherWin <= 0)
-	{
-	  /* FIXME: Need to find the current key window (otherWin == 0
-	     means keep the window below the current key.)  */
-	  otherWin = winNum;
-	  winNum = (int)HWND_TOP;
-	}
-      SetWindowPos((HWND) otherWin, (HWND)winNum, 0, 0, 0, 0, 
-		   SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
-      break;
+      case NSWindowOut: 
+	SetWindowPos((HWND)winNum, NULL, 0, 0, 0, 0, 
+		     SWP_HIDEWINDOW | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER);
+	break;
+      case NSWindowBelow: 
+	if (otherWin == 0)
+	  otherWin = (int)HWND_BOTTOM;
+	SetWindowPos((HWND)winNum, (HWND)otherWin, 0, 0, 0, 0, 
+		     SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+	break;
+      case NSWindowAbove: 
+	if (otherWin <= 0)
+	  {
+	    /* FIXME: Need to find the current key window (otherWin == 0
+	       means keep the window below the current key.)  */
+	    otherWin = winNum;
+	    winNum = (int)HWND_TOP;
+	  }
+	SetWindowPos((HWND) otherWin, (HWND)winNum, 0, 0, 0, 0, 
+		     SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+	break;
     }
 }
 
@@ -1758,18 +1778,17 @@ printf("\n\n##############################################################\n");
   r = GSScreenRectToMS(frame, [window styleMask], self);
   GetWindowRect((HWND)winNum, &r2);
 
-  SetWindowPos((HWND)winNum, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top, 
-	       SWP_NOZORDER); 
+  SetWindowPos((HWND)winNum, NULL,
+    r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOZORDER); 
 
-  if ((win->useHDC) &&
-      (r.right - r.left != r2.right - r2.left) &&
-      (r.bottom - r.top != r2.bottom - r2.top))
+  if ((win->useHDC)
+    && (r.right - r.left != r2.right - r2.left)
+    && (r.bottom - r.top != r2.bottom - r2.top))
     {
       HDC hdc, hdc2;
       HBITMAP hbitmap;
       HGDIOBJ old;
       
-      //NSLog(@"Change backing store to %d %d", r.right - r.left, r.bottom - r.top);
       old = SelectObject(win->hdc, win->old);
       DeleteObject(old);
       DeleteDC(win->hdc);
@@ -1861,7 +1880,7 @@ printf("\n\n##############################################################\n");
 {
   if (handlesWindowDecorations)
     {
-      DWORD wstyle = [self windowStyleForGSStyle:style];
+      DWORD wstyle = [self windowStyleForGSStyle: style];
       RECT rect = {100, 100, 200, 200};
       
       AdjustWindowRectEx(&rect, wstyle, NO, 0);
@@ -1968,26 +1987,26 @@ printf("\n\n##############################################################\n");
   NSDebugLLog(@"WTrace", @"standardcursor: %d", style);
   switch (style)
     {
-    case GSArrowCursor:
-      hCursor = LoadCursor(NULL, IDC_ARROW);
-      break;
-    case GSIBeamCursor:
-      hCursor = LoadCursor(NULL, IDC_IBEAM);
-      break;
-    case GSCrosshairCursor:
-      hCursor = LoadCursor(NULL, IDC_CROSS);
-      break;
-    case GSPointingHandCursor:
-      hCursor = LoadCursor(NULL, IDC_HAND);
-      break;
-    case GSResizeLeftRightCursor:
-      hCursor = LoadCursor(NULL, IDC_SIZEWE);
-      break;
-    case GSResizeUpDownCursor:
-      hCursor = LoadCursor(NULL, IDC_SIZENS);
-      break;
-    default:
-      return;
+      case GSArrowCursor: 
+	hCursor = LoadCursor(NULL, IDC_ARROW);
+	break;
+      case GSIBeamCursor: 
+	hCursor = LoadCursor(NULL, IDC_IBEAM);
+	break;
+      case GSCrosshairCursor: 
+	hCursor = LoadCursor(NULL, IDC_CROSS);
+	break;
+      case GSPointingHandCursor: 
+	hCursor = LoadCursor(NULL, IDC_HAND);
+	break;
+      case GSResizeLeftRightCursor: 
+	hCursor = LoadCursor(NULL, IDC_SIZEWE);
+	break;
+      case GSResizeUpDownCursor: 
+	hCursor = LoadCursor(NULL, IDC_SIZENS);
+	break;
+      default: 
+	return;
     }
   *cid = (void*)hCursor;
 }
@@ -2035,62 +2054,62 @@ process_char(WPARAM wParam, unsigned *eventModifierFlags)
 {
   switch (wParam)
     {
-    case VK_RETURN: return NSCarriageReturnCharacter;
-    case VK_TAB:    return NSTabCharacter;
-    case VK_ESCAPE:  return 0x1b;
-    case VK_BACK:   return NSBackspaceCharacter;
+      case VK_RETURN: return NSCarriageReturnCharacter;
+      case VK_TAB:    return NSTabCharacter;
+      case VK_ESCAPE:  return 0x1b;
+      case VK_BACK:   return NSBackspaceCharacter;
 
-      /* The following keys need to be reported as function keys */
-#define WIN_FUNCTIONKEY \
-*eventModifierFlags = *eventModifierFlags | NSFunctionKeyMask;
-    case VK_F1: WIN_FUNCTIONKEY return NSF1FunctionKey;
-    case VK_F2: WIN_FUNCTIONKEY return NSF2FunctionKey;
-    case VK_F3: WIN_FUNCTIONKEY return NSF3FunctionKey;
-    case VK_F4: WIN_FUNCTIONKEY return NSF4FunctionKey;
-    case VK_F5: WIN_FUNCTIONKEY return NSF5FunctionKey;
-    case VK_F6: WIN_FUNCTIONKEY return NSF6FunctionKey;
-    case VK_F7: WIN_FUNCTIONKEY return NSF7FunctionKey;
-    case VK_F8: WIN_FUNCTIONKEY return NSF8FunctionKey;
-    case VK_F9: WIN_FUNCTIONKEY return NSF9FunctionKey;
-    case VK_F10: WIN_FUNCTIONKEY return NSF10FunctionKey;
-    case VK_F11: WIN_FUNCTIONKEY return NSF12FunctionKey;
-    case VK_F12: WIN_FUNCTIONKEY return NSF12FunctionKey;
-    case VK_F13: WIN_FUNCTIONKEY return NSF13FunctionKey;
-    case VK_F14: WIN_FUNCTIONKEY return NSF14FunctionKey;
-    case VK_F15: WIN_FUNCTIONKEY return NSF15FunctionKey;
-    case VK_F16: WIN_FUNCTIONKEY return NSF16FunctionKey;
-    case VK_F17: WIN_FUNCTIONKEY return NSF17FunctionKey;
-    case VK_F18: WIN_FUNCTIONKEY return NSF18FunctionKey;
-    case VK_F19: WIN_FUNCTIONKEY return NSF19FunctionKey;
-    case VK_F20: WIN_FUNCTIONKEY return NSF20FunctionKey;
-    case VK_F21: WIN_FUNCTIONKEY return NSF21FunctionKey;
-    case VK_F22: WIN_FUNCTIONKEY return NSF22FunctionKey;
-    case VK_F23: WIN_FUNCTIONKEY return NSF23FunctionKey;
-    case VK_F24: WIN_FUNCTIONKEY return NSF24FunctionKey;
+	/* The following keys need to be reported as function keys */
+  #define WIN_FUNCTIONKEY \
+  *eventModifierFlags = *eventModifierFlags | NSFunctionKeyMask;
+      case VK_F1: WIN_FUNCTIONKEY return NSF1FunctionKey;
+      case VK_F2: WIN_FUNCTIONKEY return NSF2FunctionKey;
+      case VK_F3: WIN_FUNCTIONKEY return NSF3FunctionKey;
+      case VK_F4: WIN_FUNCTIONKEY return NSF4FunctionKey;
+      case VK_F5: WIN_FUNCTIONKEY return NSF5FunctionKey;
+      case VK_F6: WIN_FUNCTIONKEY return NSF6FunctionKey;
+      case VK_F7: WIN_FUNCTIONKEY return NSF7FunctionKey;
+      case VK_F8: WIN_FUNCTIONKEY return NSF8FunctionKey;
+      case VK_F9: WIN_FUNCTIONKEY return NSF9FunctionKey;
+      case VK_F10: WIN_FUNCTIONKEY return NSF10FunctionKey;
+      case VK_F11: WIN_FUNCTIONKEY return NSF12FunctionKey;
+      case VK_F12: WIN_FUNCTIONKEY return NSF12FunctionKey;
+      case VK_F13: WIN_FUNCTIONKEY return NSF13FunctionKey;
+      case VK_F14: WIN_FUNCTIONKEY return NSF14FunctionKey;
+      case VK_F15: WIN_FUNCTIONKEY return NSF15FunctionKey;
+      case VK_F16: WIN_FUNCTIONKEY return NSF16FunctionKey;
+      case VK_F17: WIN_FUNCTIONKEY return NSF17FunctionKey;
+      case VK_F18: WIN_FUNCTIONKEY return NSF18FunctionKey;
+      case VK_F19: WIN_FUNCTIONKEY return NSF19FunctionKey;
+      case VK_F20: WIN_FUNCTIONKEY return NSF20FunctionKey;
+      case VK_F21: WIN_FUNCTIONKEY return NSF21FunctionKey;
+      case VK_F22: WIN_FUNCTIONKEY return NSF22FunctionKey;
+      case VK_F23: WIN_FUNCTIONKEY return NSF23FunctionKey;
+      case VK_F24: WIN_FUNCTIONKEY return NSF24FunctionKey;
 
-    case VK_DELETE:      WIN_FUNCTIONKEY return NSDeleteFunctionKey;
-    case VK_HOME:        WIN_FUNCTIONKEY return NSHomeFunctionKey;
-    case VK_LEFT:        WIN_FUNCTIONKEY return NSLeftArrowFunctionKey;
-    case VK_RIGHT:       WIN_FUNCTIONKEY return NSRightArrowFunctionKey;
-    case VK_UP:          WIN_FUNCTIONKEY return NSUpArrowFunctionKey;
-    case VK_DOWN:        WIN_FUNCTIONKEY return NSDownArrowFunctionKey;
-    case VK_PRIOR:       WIN_FUNCTIONKEY return NSPrevFunctionKey;
-    case VK_NEXT:        WIN_FUNCTIONKEY return NSNextFunctionKey;
-    case VK_END:         WIN_FUNCTIONKEY return NSEndFunctionKey;
-      //case VK_BEGIN:       WIN_FUNCTIONKEY return NSBeginFunctionKey;
-    case VK_SELECT:      WIN_FUNCTIONKEY return NSSelectFunctionKey;
-    case VK_PRINT:       WIN_FUNCTIONKEY return NSPrintFunctionKey;
-    case VK_EXECUTE:     WIN_FUNCTIONKEY return NSExecuteFunctionKey;
-    case VK_INSERT:      WIN_FUNCTIONKEY return NSInsertFunctionKey;
-    case VK_HELP:        WIN_FUNCTIONKEY return NSHelpFunctionKey;
-    case VK_CANCEL:      WIN_FUNCTIONKEY return NSBreakFunctionKey;
-      //case VK_MODECHANGE:  WIN_FUNCTIONKEY return NSModeSwitchFunctionKey;
-    case VK_SCROLL:      WIN_FUNCTIONKEY return NSScrollLockFunctionKey;
-    case VK_PAUSE:       WIN_FUNCTIONKEY return NSPauseFunctionKey;
-    case VK_OEM_CLEAR:   WIN_FUNCTIONKEY return NSClearDisplayFunctionKey;
-#undef WIN_FUNCTIONKEY
-    default:
-      return 0;
+      case VK_DELETE:      WIN_FUNCTIONKEY return NSDeleteFunctionKey;
+      case VK_HOME:        WIN_FUNCTIONKEY return NSHomeFunctionKey;
+      case VK_LEFT:        WIN_FUNCTIONKEY return NSLeftArrowFunctionKey;
+      case VK_RIGHT:       WIN_FUNCTIONKEY return NSRightArrowFunctionKey;
+      case VK_UP:          WIN_FUNCTIONKEY return NSUpArrowFunctionKey;
+      case VK_DOWN:        WIN_FUNCTIONKEY return NSDownArrowFunctionKey;
+      case VK_PRIOR:       WIN_FUNCTIONKEY return NSPrevFunctionKey;
+      case VK_NEXT:        WIN_FUNCTIONKEY return NSNextFunctionKey;
+      case VK_END:         WIN_FUNCTIONKEY return NSEndFunctionKey;
+	//case VK_BEGIN:       WIN_FUNCTIONKEY return NSBeginFunctionKey;
+      case VK_SELECT:      WIN_FUNCTIONKEY return NSSelectFunctionKey;
+      case VK_PRINT:       WIN_FUNCTIONKEY return NSPrintFunctionKey;
+      case VK_EXECUTE:     WIN_FUNCTIONKEY return NSExecuteFunctionKey;
+      case VK_INSERT:      WIN_FUNCTIONKEY return NSInsertFunctionKey;
+      case VK_HELP:        WIN_FUNCTIONKEY return NSHelpFunctionKey;
+      case VK_CANCEL:      WIN_FUNCTIONKEY return NSBreakFunctionKey;
+	//case VK_MODECHANGE:  WIN_FUNCTIONKEY return NSModeSwitchFunctionKey;
+      case VK_SCROLL:      WIN_FUNCTIONKEY return NSScrollLockFunctionKey;
+      case VK_PAUSE:       WIN_FUNCTIONKEY return NSPauseFunctionKey;
+      case VK_OEM_CLEAR:   WIN_FUNCTIONKEY return NSClearDisplayFunctionKey;
+  #undef WIN_FUNCTIONKEY
+      default: 
+	return 0;
     }
 }
 
@@ -2119,7 +2138,8 @@ process_key_event(HWND hwnd, WPARAM wParam, LPARAM lParam,
   repeat = (lParam & 0xFFFF) != 0;
 
   pos = GetMessagePos();
-  eventLocation = MSWindowPointToGS(hwnd,  GET_X_LPARAM(pos), GET_Y_LPARAM(pos));
+  eventLocation
+    = MSWindowPointToGS(hwnd,  GET_X_LPARAM(pos), GET_Y_LPARAM(pos));
 
   ltime = GetMessageTime();
   time = ltime / 1000;
@@ -2140,27 +2160,27 @@ process_key_event(HWND hwnd, WPARAM wParam, LPARAM lParam,
 
   switch(wParam)
     {
-    case VK_SHIFT:
-    case VK_CAPITAL:
-    case VK_CONTROL:
-    case VK_MENU:
-    case VK_NUMLOCK:
-      eventType = NSFlagsChanged;
-      break;
-    case VK_NUMPAD0: 
-    case VK_NUMPAD1: 
-    case VK_NUMPAD2: 
-    case VK_NUMPAD3: 
-    case VK_NUMPAD4: 
-    case VK_NUMPAD5: 
-    case VK_NUMPAD6: 
-    case VK_NUMPAD7: 
-    case VK_NUMPAD8: 
-    case VK_NUMPAD9:
-      eventFlags |= NSNumericPadKeyMask;
-      break;
-    default:
-      break;
+      case VK_SHIFT: 
+      case VK_CAPITAL: 
+      case VK_CONTROL: 
+      case VK_MENU: 
+      case VK_NUMLOCK: 
+	eventType = NSFlagsChanged;
+	break;
+      case VK_NUMPAD0: 
+      case VK_NUMPAD1: 
+      case VK_NUMPAD2: 
+      case VK_NUMPAD3: 
+      case VK_NUMPAD4: 
+      case VK_NUMPAD5: 
+      case VK_NUMPAD6: 
+      case VK_NUMPAD7: 
+      case VK_NUMPAD8: 
+      case VK_NUMPAD9: 
+	eventFlags |= NSNumericPadKeyMask;
+	break;
+      default: 
+	break;
     }
 
 

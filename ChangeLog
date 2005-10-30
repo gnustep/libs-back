@@ -1,3 +1,8 @@
+2005-10-30 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/win32/Win33Server.m: synchronize defaults so settings are
+	not lost.  Tidy a lot of stuff to conform to coding standards.
+
 2005-10-23  Adam Fedor  <fedor@gnu.org>
 
 	* configure.ac: Check for invalid backend graphics name.
