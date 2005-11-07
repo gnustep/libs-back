@@ -619,9 +619,25 @@ _log_matrix(cairo_t * ct)
 {
   NSAffineTransform *transform;
   NSAffineTransformStruct tstruct;
+  cairo_matrix_t flip_matrix;
 
   transform = [NSAffineTransform transform];
   cairo_get_matrix(_ct, &local_matrix);
+/*
+  NSLog(@"Before flip %f %f, %f, %f, %f, %f", local_matrix.xx, local_matrix.yx, 
+	local_matrix.xy, local_matrix.yy, local_matrix.x0, local_matrix.y0);
+*/
+  if (_surface)
+  {
+     cairo_matrix_init_translate(&flip_matrix, 0, -[_surface size].height);
+     cairo_matrix_multiply(&local_matrix, &local_matrix, &flip_matrix);
+   }
+  cairo_matrix_init_scale(&flip_matrix, 1, -1);
+  cairo_matrix_multiply(&local_matrix, &local_matrix, &flip_matrix);
+/*
+  NSLog(@"After flip %f %f, %f, %f, %f, %f", local_matrix.xx, local_matrix.yx, 
+	local_matrix.xy, local_matrix.yy, local_matrix.x0, local_matrix.y0);
+*/ 
   tstruct.m11 = local_matrix.xx;
   tstruct.m12 = local_matrix.yx;
   tstruct.m21 = local_matrix.xy;
@@ -642,7 +658,6 @@ _log_matrix(cairo_t * ct)
 		    tstruct.m11, tstruct.m12,
 		    tstruct.m21, tstruct.m22, 
 		    tstruct.tX, tstruct.tY);
-  //cairo_set_matrix(_ct, &local_matrix);
   cairo_transform(_ct, &local_matrix);
 }
 
@@ -1094,7 +1109,14 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
     }
 
   cairo_set_source_surface(_ct, surface, 0, 0);
-  cairo_rectangle(_ct, 0, 0, pixelsWide, pixelsHigh);
+  if (_viewIsFlipped)
+    {
+      cairo_rectangle(_ct, 0, -pixelsHigh, pixelsWide, pixelsHigh);
+    }
+  else 
+    {
+      cairo_rectangle(_ct, 0, 0, pixelsWide, pixelsHigh);
+    }
   cairo_fill(_ct);
   cairo_surface_destroy(surface);
   cairo_restore(_ct);
@@ -1120,6 +1142,7 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
 
   /*
     NSLog(NSStringFromRect(aRect));
+    NSLog(NSStringFromPoint(aPoint));
     NSLog(@"src %p(%p,%@) des %p(%p,%@)", 
     source,cairo_get_target(source->_ct),NSStringFromSize([source->_surface size]),
     self,cairo_get_target(_ct),NSStringFromSize([_surface size]));
@@ -1135,8 +1158,8 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
   height = NSHeight(aRect);
   /*
   cairo_user_to_device(source->_ct, &minx, &miny);
-  cairo_device_to_user(_ct, &minx, &miny);
   cairo_user_to_device_distance(source->_ct, &width, &height);
+  cairo_device_to_user(_ct, &minx, &miny);
   cairo_device_to_user_distance(_ct, &width, &height);
   NSLog(@"Rect %@  = %f, %f, %f, %f", NSStringFromRect(aRect), minx, miny, width, height);
   */

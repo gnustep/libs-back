@@ -154,7 +154,7 @@
   return YES;
 }
 
-// FIXME: This function is not exported by Cairo
+// FIXME: This function is not exported by Cairo. The parameters have changed in recent cairo!!!
 extern
 cairo_status_t
 _cairo_scaled_font_text_to_glyphs (cairo_scaled_font_t *scaled_font,
@@ -163,31 +163,41 @@ _cairo_scaled_font_text_to_glyphs (cairo_scaled_font_t *scaled_font,
 				   int 		       *num_glyphs);
 
 static
-cairo_glyph_t _cairo_glyph_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph)
+BOOL _cairo_extents_for_text(cairo_scaled_font_t *scaled_font, const char *utf8,
+			     cairo_text_extents_t *ctext)
 {
-  cairo_glyph_t cglyph;
-  char str[2];
   cairo_glyph_t *glyphs = NULL;
   int num_glyphs;
   cairo_status_t status;
 
-  str[0] = glyph;
-  str[1] = 0;
-  
-  status = _cairo_scaled_font_text_to_glyphs(scaled_font, str, 
+  status = _cairo_scaled_font_text_to_glyphs(scaled_font, utf8, 
 					     &glyphs, &num_glyphs);
   if (glyphs)
     {
-      cglyph = glyphs[0];
+      cairo_scaled_font_glyph_extents(scaled_font, glyphs, num_glyphs, ctext);
       free(glyphs);
+
+      return YES;
     }
 
-  return cglyph;
+  return NO;
+}
+
+static
+BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
+				cairo_text_extents_t *ctext)
+{
+  char str[3];
+
+  // FIXME: This is wrong for none ASCII characters!
+  str[0] = glyph;
+  str[1] = 0;
+  
+  return _cairo_extents_for_text(scaled_font, str, ctext);
 }
 
 - (NSSize) advancementForGlyph: (NSGlyph)glyph
 {
-  cairo_glyph_t cglyph;
   cairo_text_extents_t ctext;
   int entry;
 
@@ -198,39 +208,40 @@ cairo_glyph_t _cairo_glyph_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph
       return _cachedSizes[entry];
     }
 
-  cglyph = _cairo_glyph_for_NSGlyph(_scaled, glyph);
-  cairo_scaled_font_glyph_extents(_scaled, &cglyph, 1, &ctext);
-  _cachedGlyphs[entry] = glyph;
-  _cachedSizes[entry] = NSMakeSize(ctext.x_advance, ctext.y_advance);
+  if (_cairo_extents_for_NSGlyph(_scaled, glyph, &ctext))
+    {
+      _cachedGlyphs[entry] = glyph;
+      _cachedSizes[entry] = NSMakeSize(ctext.x_advance, ctext.y_advance);
 
-  return _cachedSizes[entry];
+      return _cachedSizes[entry];
+    }
+
+  return NSZeroSize;
 }
 
 - (NSRect) boundingRectForGlyph: (NSGlyph)glyph
 {
-  cairo_glyph_t cglyph;
   cairo_text_extents_t ctext;
 
-  cglyph = _cairo_glyph_for_NSGlyph(_scaled, glyph);
-  cairo_scaled_font_glyph_extents(_scaled, &cglyph, 1, &ctext);
+  if (_cairo_extents_for_NSGlyph(_scaled, glyph, &ctext))
+    {
+      return NSMakeRect(ctext.x_bearing, ctext.y_bearing,
+			ctext.width, ctext.height);
+    }
 
-  return NSMakeRect(ctext.x_bearing, ctext.y_bearing,
-		    ctext.width, ctext.height);
+  return NSZeroRect;
 }
 
 - (float) widthOfString: (NSString *)string
 {
   cairo_text_extents_t ctext;
-  cairo_status_t status;
-  cairo_glyph_t *glyphs = NULL;
-  int	     num_glyphs;
 
-  status = _cairo_scaled_font_text_to_glyphs(_scaled, [string UTF8String], 
-					     &glyphs, &num_glyphs);
-  cairo_scaled_font_glyph_extents(_scaled, glyphs, num_glyphs, &ctext);
-  free(glyphs);
+  if (_cairo_extents_for_text(_scaled, [string UTF8String], &ctext))
+    {
+      return ctext.width;
+    }
 
-  return ctext.width;
+  return 0.0;
 }
 
 -(NSGlyph) glyphWithName: (NSString *) glyphName
@@ -265,39 +276,24 @@ cairo_glyph_t _cairo_glyph_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph
 	     length: (int)length 
 	         on: (cairo_t*)ct
 {
-  static cairo_glyph_t *cglyphs = NULL;
-  static int maxlength = 0;
-  size_t i;
-  cairo_text_extents_t gext;
   cairo_matrix_t font_matrix;
-  double dx, dy;
+  char str[length+1];
+  int i;
 
-  cairo_get_current_point(ct, &dx, &dy);
-  // FIXME: Need some adjustment here
-  dy -= 5;
-
-  if (length > maxlength)
+  for (i = 0; i < length; i++)
     {
-      maxlength = length;
-      cglyphs = realloc(cglyphs, sizeof(cairo_glyph_t) * maxlength);
+      str[i] = glyphs[i];
     }
+  str[length] = 0;
 
   cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
 		    -matrix[3], matrix[4], matrix[5]);
   cairo_set_font_face(ct, [_faceInfo fontFace]);
   cairo_set_font_matrix(ct, &font_matrix);
 
-  for (i = 0; i < length; i++)
-    {
-      cglyphs[i] = _cairo_glyph_for_NSGlyph(_scaled, glyphs[i]);
-      cglyphs[i].x = dx;
-      cglyphs[i].y = dy;
-      cairo_glyph_extents(ct, cglyphs + i, 1, &gext);
-      dx += gext.x_advance;
-      dy += gext.y_advance;
-    }
- 
-  cairo_show_glyphs(ct, cglyphs, length);
+  // FIXME: Need some adjustment here
+  cairo_rel_move_to(ct, 0.0, -5.0);
+  cairo_show_text(ct, str);
 }
  
 @end

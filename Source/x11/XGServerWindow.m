@@ -893,10 +893,6 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 		      pid_atom, XA_CARDINAL,
 		      32, PropModeReplace, 
 		      (unsigned char*)&pid, 1);
-
-      // We should store the GNUStepMenuImage in the root window
-      // and use that as our title bar icon
-      //  pid_atom = XInternAtom(dpy, "_NET_WM_ICON", False);
     }
 }
 
@@ -955,6 +951,136 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 		 NSWidth(window->xframe),
 		 NSHeight(window->xframe));
 }
+
+/*
+  Code to build up a NET WM icon from our application icon
+ */
+static long *iconPropertyData;
+static int iconSize;
+static BOOL didCreateNetIcon;
+
+-(int) _createNetIcon
+{
+  NSImage *image;
+  NSBitmapImageRep *rep;
+  int i, j, w, h, samples;
+  unsigned char *data;
+  int index;
+ 
+  NSAssert(!didCreateNetIcon, @"called _createNetIcon twice");
+  
+  image = [NSApp applicationIconImage];
+  if (image == nil)
+    {
+      return 0;
+    }
+
+  didCreateNetIcon = YES;
+
+  rep = (NSBitmapImageRep *)[image bestRepresentationForDevice:nil];
+  if (![rep isKindOfClass: [NSBitmapImageRep class]])
+    {
+      NSLog(@"Wrong bitmap class for WM icon %@ %@", rep, image);
+      return 0;
+    }
+
+  if ([rep bitsPerSample] != 8
+      || (![[rep colorSpaceName] isEqual: NSDeviceRGBColorSpace]
+	  && ![[rep colorSpaceName] isEqual: NSCalibratedRGBColorSpace])
+      || [rep isPlanar])
+    {
+      NSLog(@"Wrong image type for WM icon");
+      return 0;
+    }
+
+  h = [rep pixelsHigh];
+  w = [rep pixelsWide];
+  samples = [rep samplesPerPixel];
+  data = [rep bitmapData];
+
+  iconSize = 2 + w * h;
+  iconPropertyData = (long *)objc_malloc(sizeof(long) * iconSize);
+  if (iconPropertyData == NULL)
+    {
+      NSLog(@"No memory for WM icon");
+      return 0;
+    }
+
+  memset(iconPropertyData, 0, sizeof(long)*iconSize);
+  index = 0;
+  iconPropertyData[index++] = w;
+  iconPropertyData[index++] = h;
+
+  for (i = 0; i < h; i++)
+    {
+      unsigned char *d = data;
+
+      for (j = 0; j < w; j++)
+	{
+	  unsigned char A, R, G, B;
+
+	  // red
+	  R = d[0];
+	  // green
+	  G = d[1];
+	  // blue
+	  B = d[2];
+	  // alpha
+#if 0
+/*
+  For unclear reasons the alpha handling does not work, so we simulate it.
+*/
+	  if (samples == 4)
+	    {
+	      A = d[4];
+	    }
+	  else
+	    {
+	      A = 255;
+	    }
+#else
+	  if (R || G || B)
+	    {
+	      A = 255;
+	    }
+	  else
+	    {
+	      A = 0;
+	    }
+#endif
+
+          iconPropertyData[index++] = A << 24 | R << 16 | G << 8 | B;
+	  d += samples;
+	}
+      data += [rep bytesPerRow];
+    }
+  
+  return 1;
+}   
+
+- (void) _setNetWMIconFor: (Window) window
+{
+  // We store the GNUStepMenuImage in the window
+  // and use that as our title bar icon
+  static Atom icon_atom = None;
+
+  /* Initialize the atom if needed */
+  if (icon_atom == None)
+    icon_atom = XInternAtom(dpy, "_NET_WM_ICON", False);
+
+  if (!didCreateNetIcon)
+    {
+      [self _createNetIcon];
+    }
+
+  if (iconPropertyData)
+    {
+      XChangeProperty(dpy, window,
+		      icon_atom, XA_CARDINAL, 
+		      32, PropModeReplace,
+		      (unsigned char *)iconPropertyData, iconSize);
+    }
+} 
 
 - (int) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style
 	      : (int)screen
@@ -1069,6 +1195,11 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   if ((generic.wm & XGWM_WINDOWMAKER) == 0)
     {
       setWindowHintsForStyle (dpy, window->ident, style);
+    }
+
+  if ((generic.wm & XGWM_EWMH) != 0)
+    {
+      [self _setNetWMIconFor: window->ident];
     }
 
   // Use the globally active input mode
