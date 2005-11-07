@@ -1,3 +1,15 @@
+2005-11-07  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (_createNetIcon, _setNetWMIconFor:):
+	New methods to create and set NET WM icon for window.
+	* Source/x11/XGServerWindow.m (-window::::): Use this methods to
+	set window icon. 
+
+	* Source/cairo/CairoGState.m (-DPSImage::::::::): Try to deal with
+	flipped views.
+	* Source/cairo/CairoFontInfo.m: Reduced the amount of unexported cairo
+	functions we use.
+
 2005-10-30 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/win32/WIN33Server.m: synchronize defaults so settings are
