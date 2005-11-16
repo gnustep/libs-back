@@ -202,7 +202,7 @@ typedef struct tagCREATESTRUCT {
     
   [output appendFormat:@"Application window count is: %d\n",c];
 
-  for(i=0;i<c;i++)
+  for (i=0;i<c;i++)
     {
       NSWindow * theWindow=[anArray objectAtIndex:i];
         

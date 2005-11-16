@@ -228,7 +228,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	autorelease];
 
     [[NSNotificationCenter defaultCenter] addObserver: self
-	selector: @selector(activityOnFileHandle: )
+	selector: @selector(activityOnFileHandle:)
 	name: NSFileHandleDataAvailableNotification
 	object: fileDescriptor];
     [fileDescriptor waitForDataInBackgroundAndNotifyForModes:
@@ -414,7 +414,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 		  xEvent.xbutton.window = cWin->parent;
 		  XUngrabPointer(dpy, CurrentTime);
 		  XSendEvent(dpy, cWin->parent, True,
-			     ButtonPressMask, &xEvent );
+			     ButtonPressMask, &xEvent);
 		  XFlush(dpy);
 		  break;
 		}

@@ -225,7 +225,7 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
 
   destRect.size = sourceRect.size;
   destRect.origin = destPoint;
-  rectTo = GSViewRectToWin( self, destRect );
+  rectTo = GSViewRectToWin(self, destRect);
   x = rectTo.left;
   y = rectTo.top;
 
@@ -234,19 +234,19 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
 
   sourceDC = [source getHDC];
   
-  if( !sourceDC )
+  if (!sourceDC)
     {
       return;
     }
 
-  if( self == source )
+  if (self == source)
     {
       hDC = sourceDC;
     }
   else
     {
       hDC = [self getHDC];
-      if( !hDC )
+      if (!hDC)
         {
 	  [source releaseHDC: sourceDC];
 	  return;
@@ -275,8 +275,8 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
       }
 
     default:
-      success = BitBlt( hDC, x, y, (rectFrom.right - rectFrom.left), h,
-			sourceDC, rectFrom.left, rectFrom.top, SRCCOPY );
+      success = BitBlt(hDC, x, y, (rectFrom.right - rectFrom.left), h,
+			sourceDC, rectFrom.left, rectFrom.top, SRCCOPY);
       break;
     }
 
@@ -406,7 +406,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
     bytesPerRow = (bitsPerPixel * pixelsWide) / 8;
 
   // make sure its sane - also handles row padding if hint missing
-  while((bytesPerRow * 8) < (bitsPerPixel * pixelsWide))
+  while ((bytesPerRow * 8) < (bitsPerPixel * pixelsWide))
     bytesPerRow++;
 
   if (!(GetDeviceCaps(hDC, RASTERCAPS) &  RC_DI_BITMAP)) 
@@ -637,7 +637,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
       BeginPath(hDC);
 
-      for(j = 0; j < count; j++) 
+      for (j = 0; j < count; j++) 
         {
 	  type = [path elementAtIndex: j associatedPoints: points];
 	  switch(type) 
@@ -656,9 +656,9 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 		POINT bp[3];
 		
 #if GDI_WIDELINE_BEZIERPATH_BUG
-		if(drawType == path_stroke && lineWidth > 1)
+		if (drawType == path_stroke && lineWidth > 1)
 		  {
-		    if(j != 0) 
+		    if (j != 0) 
 		      {
 			NSPoint movePoints[3];
 		    
@@ -675,7 +675,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 		  }
 		PolyBezierTo(hDC, bp, 3);
 #if GDI_WIDELINE_BEZIERPATH_BUG
-		if(drawType == path_stroke && lineWidth > 1)
+		if (drawType == path_stroke && lineWidth > 1)
 		  MoveToEx(hDC, bp[2].x, bp[2].y, NULL);
 #endif
 	      }

@@ -1168,7 +1168,7 @@ pasteboardTypeForMimeType(Display *xDisplay, NSZone *zone, Atom *typelist)
   Atom *type = typelist;
   NSMutableArray *newTypes = [[NSMutableArray allocWithZone: zone] init];
 
-  while(*type != None)
+  while (*type != None)
     {
       char *s = XGetAtomName(xDisplay, *type);
       

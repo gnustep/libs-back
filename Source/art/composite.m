@@ -1279,7 +1279,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
   }
 
 
-#define DO_STUFF( HANDLE_SPAN ) \
+#define DO_STUFF(HANDLE_SPAN) \
 { \
   int y; \
   int x0, x1; \
@@ -1381,7 +1381,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
 	memset(dst, 0, n * DI.bytes_per_pixel);
 	if (!DI.inline_alpha)
 	  memset(dst_alpha, 0, n);
-      )
+)
     }
   else if (op == NSCompositeHighlight)
     {
@@ -1392,7 +1392,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
 	  for (; n; n--, d++)
 	    (*d) ^= 0xff;
 	}
-      )
+)
     }
   else if (op == NSCompositeCopy)
     {
@@ -1425,7 +1425,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
 		memset(dst_alpha, ri.a, n);
 	      }
 	  }
-      )
+)
     }
   else if (blit_func)
     {
@@ -1473,7 +1473,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
 	c.dst = dst;
 	c.dsta = dst_alpha;
 	blit_func(&c, n);
-      )
+)
     }
   else
     {

@@ -2449,7 +2449,7 @@ static BOOL didCreatePixmaps;
   gui_win = GSWindowWithNumber(win);
 
   n = [window->exposedRects count];
-  if( n > 0 )
+  if (n > 0)
     {
       NSView *v;
       NSValue *val[n];
@@ -2458,7 +2458,7 @@ static BOOL didCreatePixmaps;
       v = [gui_win contentView];
 	
       [window->exposedRects getObjects: val];
-      for( i = 0; i < n; ++i)
+      for (i = 0; i < n; ++i)
 	{
 	  NSRect rect = [val[i] rectValue];
 	  [v setNeedsDisplayInRect: rect];

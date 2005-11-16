@@ -81,7 +81,7 @@ static cairo_matrix_t local_matrix;
      cairo_get_target(_ct),
      copy,
      cairo_get_target(copy->_ct)
-     );
+);
    */
 
   RETAIN(_font);

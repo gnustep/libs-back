@@ -863,16 +863,16 @@ static const char *hexdigits = "0123456789abcdef";
 	    bytesPerRow, pixelsHigh, bytes);
       return;
     }
-  if(hasAlpha)
+  if (hasAlpha)
     spp = samplesPerPixel - 1;
   else
     spp = samplesPerPixel;
 
-  if(samplesPerPixel > 1) 
+  if (samplesPerPixel > 1) 
     {
-      if(isPlanar || hasAlpha) 
+      if (isPlanar || hasAlpha) 
 	{
-	  if(bitsPerSample != 8) 
+	  if (bitsPerSample != 8) 
 	    {
 	      NSLog(@"Image format conversion not supported for bps!=8");
 	      return;
@@ -894,7 +894,7 @@ static const char *hexdigits = "0123456789abcdef";
     }
   
   // The context is now waiting for data on its standard input
-  if(isPlanar || hasAlpha) 
+  if (isPlanar || hasAlpha) 
     {
       // We need to do a format conversion.
       // We do this on the fly, sending data to the context as soon as

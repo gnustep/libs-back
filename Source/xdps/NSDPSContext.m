@@ -251,18 +251,18 @@ GNUstepErrorProc (DPSContext ctxt, DPSErrorCode errCode,
   {
     NSDPSContext *ctxt = context_list, *previous=nil;
     
-    while(ctxt) 
+    while (ctxt) 
       {
-	if(ctxt == self)
+	if (ctxt == self)
 	  break;
 	previous = ctxt;
 	ctxt = ctxt->next_context;
       }
-    if(!ctxt)
+    if (!ctxt)
       NSLog(@"Internal Error: Couldn't find context to delete");
     else 
       {
-	if(previous)
+	if (previous)
 	  previous->next_context = next_context;
 	else
 	  context_list = next_context;
@@ -293,7 +293,7 @@ GNUstepErrorProc (DPSContext ctxt, DPSErrorCode errCode,
 {
   NSDPSContext *ctxt;
   ctxt = context_list;
-  while(ctxt) 
+  while (ctxt) 
     {
       [ctxt wait];
       ctxt = ctxt->next_context;
@@ -517,7 +517,7 @@ GNUstepErrorProc (DPSContext ctxt, DPSErrorCode errCode,
      we find a version that works we can put an additional test here. For now,
      just turn them off.
   */
-  ext_flags = (ext_flags & ~(COMPOSITE_EXT | ALPHAIMAGE_EXT | DISSOLVE_EXT ));
+  ext_flags = (ext_flags & ~(COMPOSITE_EXT | ALPHAIMAGE_EXT | DISSOLVE_EXT));
 
   NSDebugLLog(@"NSDPSContext", @"Using DPS Revision: %d\n", dps_revision);
   NSDebugLLog(@"NSDPSContext", @"DPS Default Matrix: [%f %f %f %f %f %f]\n", 

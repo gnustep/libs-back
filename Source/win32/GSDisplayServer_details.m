@@ -42,7 +42,7 @@
   else
     c=acount;
        
-  if(c==0)
+  if (c==0)
     {
       [output appendString:@"0 Events Que is empty\n"];
       return output;

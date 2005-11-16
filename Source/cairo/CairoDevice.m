@@ -78,7 +78,7 @@ NSAffineTransform * WMCairoMatrixToNSAffine (cairo_matrix_t *cairo_mp)
 - (id) copyWithZone: (NSZone *)zone
 {
 	CairoType *aCT = (CairoType *)NSCopyObject(self, 0, zone);
-	NSLog (@":::FIXME::: %@ %s copy %0x to %0x",[self description], sel_get_name(_cmd), self, aCT );
+	NSLog (@":::FIXME::: %@ %s copy %0x to %0x",[self description], sel_get_name(_cmd), self, aCT);
 	aCT->_cr = cairo_create();
 	cairo_copy(aCT->_cr,_cr);
 NSLog(@"cairo_copy %d to %d [%s]",_cr,aCT->_cr,cairo_status_string(_cr));
@@ -261,7 +261,7 @@ NSMapTable * buffermap;
 
 - (id) initWithWindowDevice: (gswindow_device_t *)device
 {
-	NSLog (@":::FIXME::: %@ %s",[self description], sel_get_name(_cmd) );
+	NSLog (@":::FIXME::: %@ %s",[self description], sel_get_name(_cmd));
 	_gsdevice = device;
 	id oldbuffer = NSMapGet(buffermap, (const void*)(device->ident));
 	if (oldbuffer != nil)
@@ -334,7 +334,7 @@ NSMapTable * buffermap;
 
 - (void) dealloc
 {
-	NSLog (@":::FIXME::: %@ %s",[self description], sel_get_name(_cmd) );
+	NSLog (@":::FIXME::: %@ %s",[self description], sel_get_name(_cmd));
 	if (_deviceid)
 		NSMapRemove(buffermap, _deviceid);
 	if (_pixmap)
@@ -347,7 +347,7 @@ NSMapTable * buffermap;
 @implementation CairoDevice
 - (id) init
 {
-	NSLog (@":::FIXME::: %@ %s",[self description], sel_get_name(_cmd) );
+	NSLog (@":::FIXME::: %@ %s",[self description], sel_get_name(_cmd));
 	_ct = [[CairoType alloc] init];
 
 	return self;
@@ -391,7 +391,7 @@ NSMapTable * buffermap;
 - (id) copyWithZone: (NSZone *)zone
 {
 	CairoDevice *aCD = (CairoDevice *)NSCopyObject(self, 0, zone);
-	NSLog (@":::FIXME::: %@ %s copy to %0x",[self description], sel_get_name(_cmd), aCD );
+	NSLog (@":::FIXME::: %@ %s copy to %0x",[self description], sel_get_name(_cmd), aCD);
 	aCD->_ct = [_ct copyWithZone:zone];
 //	aCD->_buffer = [_buffer copy];
 	RETAIN(_buffer);

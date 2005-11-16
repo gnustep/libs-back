@@ -233,10 +233,10 @@ invalidateWindow(HWND hwnd, RECT rect)
    HWND hWnd,           // handle to window
    CONST RECT* lpRect,  // rectangle coordinates
    BOOL bErase          // erase state
-   );*/
+);*/
 
    //theHdc=BeginPaint(hwnd,lpPaint);
-   //if(flags.HOLD_PAINT_FOR_SIZING==FALSE)
+   //if (flags.HOLD_PAINT_FOR_SIZING==FALSE)
    // {
   if (GetUpdateRect(hwnd, &rect, NO))
     {

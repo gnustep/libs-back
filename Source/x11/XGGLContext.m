@@ -67,7 +67,7 @@
   win = [view window];
   NSAssert(win, @"request of an X window attachment on a view that is not on a NSWindow");
 
-  if ( [view isRotatedOrScaledFromBase] )
+  if ([view isRotatedOrScaledFromBase])
     [NSException raise: NSInvalidArgumentException
 		 format: @"Cannot attach an Xwindow to a view that is rotated or scaled"];
   
@@ -203,10 +203,10 @@ static XGGLContext *currentGLContext;
 
 - (void) _detach
 {
-  if( xsubwin )
+  if (xsubwin)
     {
       MAKE_DISPLAY(dpy);
-      if ( currentGLContext == self )
+      if (currentGLContext == self)
 	{
 	  [XGGLContext clearCurrentContext];
 	}
@@ -226,7 +226,7 @@ static XGGLContext *currentGLContext;
 {
   GLXContext other;
   MAKE_DISPLAY(dpy);
-  if( context == nil ||  ![context isKindOfClass: [XGGLContext class]] )
+  if (context == nil ||  ![context isKindOfClass: [XGGLContext class]])
     [NSException raise: NSInvalidArgumentException
 		 format: @"%@ is an invalid context", context];
   other = ((XGGLContext *)context)->glx_context;
@@ -270,7 +270,7 @@ static XGGLContext *currentGLContext;
   [super init];
   glx_context = None;
   
-  if( _format && [_format isKindOfClass: [XGGLPixelFormat class]])
+  if (_format && [_format isKindOfClass: [XGGLPixelFormat class]])
     {
       MAKE_DISPLAY(dpy);
       ASSIGN(format, (XGGLPixelFormat *)_format);
@@ -298,7 +298,7 @@ static XGGLContext *currentGLContext;
   NSDebugMLLog(@"GLX", @"deallocating");
   [self _detach];
   RELEASE(format);
-  if( glx_context != None )
+  if (glx_context != None)
     {
       MAKE_DISPLAY(dpy);
       glXDestroyContext(dpy, glx_context);
@@ -309,7 +309,7 @@ static XGGLContext *currentGLContext;
 - (void) makeCurrentContext
 {
   MAKE_DISPLAY(dpy);
-  if( xsubwin == nil )
+  if (xsubwin == nil)
     [NSException raise: NSGenericException
 		 format: @"GL Context is not bind, cannot be made current"];
   
@@ -369,7 +369,7 @@ static XGGLContext *currentGLContext;
 {
   XGXSubWindow *win;
   MAKE_DISPLAY(dpy);
-  if( !view )
+  if (!view)
     [NSException raise: NSInvalidArgumentException
 		 format: @"setView called with a nil value"];
 
@@ -391,7 +391,7 @@ static XGGLContext *currentGLContext;
 //     };    
   
 //     conf_tab = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrs,  &n_elem);
-//     if ( n_elem > 0 )
+//     if (n_elem > 0)
 //       {
 // 	printf("found %d context\n", n_elem);
 // // 	win = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 10, 10,
@@ -422,7 +422,7 @@ static XGGLContext *currentGLContext;
 
 - (NSView *)view
 {
-  if(xsubwin)
+  if (xsubwin)
     return xsubwin->attached;
   else
     return nil;

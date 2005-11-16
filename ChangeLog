@@ -1,3 +1,38 @@
+2005-11-16 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/art/composite.m:
+	* Source/art/ftfont-old.m:
+	* Source/art/ftfont.m:
+	* Source/art/shfill.m:
+	* Source/cairo/CairoDevice.m:
+	* Source/cairo/CairoFreeTypeFontInfo.m:
+	* Source/cairo/CairoGState.m:
+	* Source/gsc/GSContext.m:
+	* Source/gsc/GSStreamContext.m:
+	* Source/win32/GSDisplayServer_details.m:
+	* Source/win32/WIN32Server.m:
+	* Source/win32/w32_activate.m:
+	* Source/win32/w32_debug.m:
+	* Source/win32/w32_movesize.m:
+	* Source/win32/w32_notifications.m:
+	* Source/win32/w32_windowdisplay.m:
+	* Source/winlib/WIN32GState.m:
+	* Source/x11/XGGLContext.m:
+	* Source/x11/XGGLFormat.m:
+	* Source/x11/XGServerEvent.m:
+	* Source/x11/XGServerWindow.m:
+	* Source/xdps/AFMFileFontInfo.m:
+	* Source/xdps/NSDPSContext.m:
+	* Source/xdps/NSDPSContextOps.m:
+	* Source/xlib/XGBitmap.m:
+	* Source/xlib/XGCommonFont.m:
+	* Source/xlib/XGFontSetFontInfo.m:
+	* Source/xlib/XGGState.m:
+	* Tools/font_cacher.m:
+	* Tools/xpbs.m:
+	Some fixups for coding style violations.  Should have no effect other
+	than to render code more consistent/readable.
+
 2005-11-07  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (_createNetIcon, _setNetWMIconFor:):

@@ -63,23 +63,23 @@
 #define CHECK_NULL_OUTPUT(outvar) \
   do { if (outvar == NULL) {\
     DPS_ERROR(DPSnulloutput, @"NULL output variable specified"); \
-    return; } } while(0)
+    return; } } while (0)
 
 #define CHECK_INVALID_FONT(ident) \
   do { if (ident >= [fontid count]) { \
     DPS_ERROR(DPSinvalidfont, @"Cannot find indicated font"); \
-    return; } } while(0)
+    return; } } while (0)
 
 #define CHECK_STACK_UNDERFLOW(stack) \
   do { if (GSIArrayCount((GSIArray)stack) == 0) { \
     DPS_ERROR(DPSstackunderflow, @"Attempt to pop from empty stack"); \
-    return; } } while(0)
+    return; } } while (0)
 
 #if 0
 #define CHECK_TYPECHECK(obj, kind) \
   do { if ([kind class] != Nil && !GSObjCIsKindOf(GSObjCClass(obj), [kind class])) {\
     DPS_ERROR(DPStypecheck, @"Invalid object"); \
-    return; } } while(0)
+    return; } } while (0)
 #else
 #define CHECK_TYPECHECK(obj,kind)
 #endif
@@ -414,7 +414,7 @@ static unsigned int unique_index = 0;
 
 - (int) GSDefineGState
 {
-  if(gstate == nil)
+  if (gstate == nil)
     {
       DPS_ERROR(DPSundefined, @"No gstate");
       return 0;
@@ -430,7 +430,7 @@ static unsigned int unique_index = 0;
 
 - (void) GSReplaceGState: (int)gst
 {
-  if(gst <= 0)
+  if (gst <= 0)
     return;
   NSMapInsert(gtable, (void *)gst, AUTORELEASE([gstate copy]));
 }
@@ -845,7 +845,7 @@ static unsigned int unique_index = 0;
 
 - (void) GSWSetViewIsFlipped: (BOOL) flipped
 {
-  if(gstate)
+  if (gstate)
     gstate->viewIsFlipped = flipped;
 }
 

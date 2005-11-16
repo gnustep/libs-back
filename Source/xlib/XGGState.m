@@ -117,7 +117,7 @@ static	Region	emptyRegion;
 
 - (void) dealloc
 {
-  if ( sharedGC == NO && xgcntxt ) 
+  if (sharedGC == NO && xgcntxt) 
     {
       XFreeGC(XDPY, xgcntxt);
     }
@@ -979,7 +979,7 @@ static	Region	emptyRegion;
 	    }
 	  y0 = pts[i].y * 2;
 	  y1 = p1.y * 2;
-	  if ((y0 < yh  &&  yh < y1) || (y1 < yh  &&  yh < y0) )
+	  if ((y0 < yh  &&  yh < y1) || (y1 < yh  &&  yh < y0))
 	    {
 	      int dy = yh - pts[i].y * 2;
 	      int ldy = y1 - y0;
@@ -1065,7 +1065,7 @@ static	Region	emptyRegion;
       BOOL doit;
       BOOL complex = NO;
       
-      for(j = 0; j < count; j++) 
+      for (j = 0; j < count; j++) 
         {
 	  doit = NO;
 	  type = [flatPath elementAtIndex: j associatedPoints: points];
@@ -1588,7 +1588,7 @@ static	Region	emptyRegion;
     bytesPerRow = (bitsPerPixel * pixelsWide) / 8;
 
   /* make sure its sane - also handles row padding if hint missing */
-  while((bytesPerRow * 8) < (bitsPerPixel * pixelsWide))
+  while ((bytesPerRow * 8) < (bitsPerPixel * pixelsWide))
     bytesPerRow++;
 
   /* get the colour space */
@@ -1597,12 +1597,12 @@ static	Region	emptyRegion;
       if ([colorSpaceName isEqualToString: NSDeviceRGBColorSpace] ||
 	  [colorSpaceName isEqualToString: NSCalibratedRGBColorSpace])
 	cspace = rgb_colorspace;
-      else if([colorSpaceName isEqualToString: NSDeviceCMYKColorSpace])
+      else if ([colorSpaceName isEqualToString: NSDeviceCMYKColorSpace])
 	cspace = cmyk_colorspace;
-      else if([colorSpaceName isEqualToString: NSDeviceWhiteColorSpace] ||
+      else if ([colorSpaceName isEqualToString: NSDeviceWhiteColorSpace] ||
 	      [colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace])
 	cspace = gray_colorspace;
-      else if([colorSpaceName isEqualToString: NSDeviceBlackColorSpace] ||
+      else if ([colorSpaceName isEqualToString: NSDeviceBlackColorSpace] ||
 	      [colorSpaceName isEqualToString: NSCalibratedBlackColorSpace])
         {
 	  cspace = gray_colorspace;
@@ -1612,7 +1612,7 @@ static	Region	emptyRegion;
         {
 	  // if we dont recognise the name use RGB or greyscale as appropriate
 	  NSLog(@"XGContext (DPSImage): Unknown colour space %@", colorSpaceName);
-	  if(samplesPerPixel > 2)
+	  if (samplesPerPixel > 2)
 	    cspace = rgb_colorspace;
 	  else
 	    cspace = gray_colorspace;
