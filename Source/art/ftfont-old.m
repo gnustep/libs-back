@@ -1068,27 +1068,27 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
     }
 
 	  uch = (ch & 0x1f) << 6;
-	  ADD_UTF_BYTE(0, )
+	  ADD_UTF_BYTE(0,)
 	}
       else if (ch < 0xf0)
 	{
 	  uch = (ch & 0x0f) << 12;
-	  ADD_UTF_BYTE(6, ADD_UTF_BYTE(0, ))
+	  ADD_UTF_BYTE(6, ADD_UTF_BYTE(0,))
 	}
       else if (ch < 0xf8)
 	{
 	  uch = (ch & 0x07) << 18;
-	  ADD_UTF_BYTE(12, ADD_UTF_BYTE(6, ADD_UTF_BYTE(0, )))
+	  ADD_UTF_BYTE(12, ADD_UTF_BYTE(6, ADD_UTF_BYTE(0,)))
 	}
       else if (ch < 0xfc)
 	{
 	  uch = (ch & 0x03) << 24;
-	  ADD_UTF_BYTE(18, ADD_UTF_BYTE(12, ADD_UTF_BYTE(6, ADD_UTF_BYTE(0, ))))
+	  ADD_UTF_BYTE(18, ADD_UTF_BYTE(12, ADD_UTF_BYTE(6, ADD_UTF_BYTE(0,))))
 	}
       else if (ch < 0xfe)
 	{
 	  uch = (ch & 0x01) << 30;
-	  ADD_UTF_BYTE(24, ADD_UTF_BYTE(18, ADD_UTF_BYTE(12, ADD_UTF_BYTE(6, ADD_UTF_BYTE(0, )))))
+	  ADD_UTF_BYTE(24, ADD_UTF_BYTE(18, ADD_UTF_BYTE(12, ADD_UTF_BYTE(6, ADD_UTF_BYTE(0,)))))
 	}
       else
 	uch = 0xfffd;
@@ -1974,7 +1974,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 #else
 		  cur.flags
 #endif
-		  );
+		);
 	      continue;
 	    }
 
@@ -2243,7 +2243,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 #else
 	    advancementImgd.flags
 #endif
-	    );
+	);
 	  return NSZeroSize;
 	}
 
@@ -2467,7 +2467,7 @@ dd-3*cc+3*bb-aa = (d-3*c+3*b-a)*n^3
 
 aa= (d - 3c + 3b - a) m^3  + (3c - 6b + 3a) m^2  + (3b - 3a) m + a
 
-bb= (( d - 3c + 3b -  a) m^2  + (2c - 4b + 2a) m +  b -  a) n
+bb= ((d - 3c + 3b -  a) m^2  + (2c - 4b + 2a) m +  b -  a) n
   + aa
 
 cc= ((d - 3c + 3b - a) m + c - 2b + a) n^2
@@ -2498,10 +2498,10 @@ q(0.5) = 1/8*(a + 3*b + 3*c + d)
 b+c=1/3*(a+4f+d)
 
 p(1/4) = 1/64*
-p(3/4) = 1/64*( 4e+24f+36g)
+p(3/4) = 1/64*(4e+24f+36g)
 
 q(1/4) = 1/64*
-q(3/4) = 1/64*(  a +  9b + 27c + 27d)
+q(3/4) = 1/64*(a +  9b + 27c + 27d)
 
 3b+c=1/3*(3a+8f+d)
 
@@ -2516,7 +2516,7 @@ c=1/3*(2f+g)
 q(t) = (1-t)^3*e + (1-t)^2*t*(e+2f) + (1-t)*t^2*(2f+g) + t^3*g =
 ((1-t)^3+(1-t)^2*t)*e + (1-t)^2*t*2f + (1-t)*t^2*2f + (t^3+(1-t)*t^2)*g =
 
-((1-t)^3+(1-t)^2*t)*e + 2f*(t*(1-t)*( (1-t)+t)) + (t^3+(1-t)*t^2)*g =
+((1-t)^3+(1-t)^2*t)*e + 2f*(t*(1-t)*((1-t)+t)) + (t^3+(1-t)*t^2)*g =
 ((1-t)^3+(1-t)^2*t)*e + 2*(1-t)*t*f + (t^3+(1-t)*t^2)*g =
 (1-t)^2*e + 2*(1-t)*t*f + t^2*g
 
@@ -3069,7 +3069,7 @@ static int filters[3][7]=
 		       + (j > -2 && j<sx - 1? src[j + 1] * filters[0][4] : 0)
 		       + (j > -3 && j<sx - 2? src[j + 2] * filters[0][5] : 0)
 		       + (j > -4 && j<sx - 3? src[j + 3] * filters[0][6] : 0)
-		       ) / 65536;
+		) / 65536;
 		      j++;
 		      v1 = (0 +
 		       + (j >  2 && j<sx + 3? src[j - 3] * filters[1][0] : 0)
@@ -3079,7 +3079,7 @@ static int filters[3][7]=
 		       + (j > -2 && j<sx - 1? src[j + 1] * filters[1][4] : 0)
 		       + (j > -3 && j<sx - 2? src[j + 2] * filters[1][5] : 0)
 		       + (j > -4 && j<sx - 3? src[j + 3] * filters[1][6] : 0)
-		       ) / 65536;
+		) / 65536;
 		      j++;
 		      v2 = (0 +
 		       + (j >  2 && j<sx + 3? src[j - 3] * filters[2][0] : 0)
@@ -3089,7 +3089,7 @@ static int filters[3][7]=
 		       + (j > -2 && j<sx - 1? src[j + 1] * filters[2][4] : 0)
 		       + (j > -3 && j<sx - 2? src[j + 2] * filters[2][5] : 0)
 		       + (j > -4 && j<sx - 3? src[j + 3] * filters[2][6] : 0)
-		       ) / 65536;
+		) / 65536;
 		      j++;
 
 		      scratch[i + mode] = v0>0?v0:0;

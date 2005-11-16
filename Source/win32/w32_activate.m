@@ -64,7 +64,7 @@
 #ifdef __WM_ACTIVE__
   BOOL target=NO;
 
-  if((int)lParam == flags.menuRef)
+  if ((int)lParam == flags.menuRef)
     target=YES;
 
   printf("RECEIVER [hwnd]%s\n",[[EVENT_WINDOW(hwnd) className] cString]);
@@ -88,7 +88,7 @@
     {
     case TRUE:
       {
-	if(active==YES)
+	if (active==YES)
 	  {
 	    if (flags._is_menu==YES) // have menu and app active
 	      {
@@ -97,7 +97,7 @@
 	    else  // Not a menu and app is active
 	      {
 		// window is Visable
-		if([EVENT_WINDOW(hwnd) isVisible]==YES) 
+		if ([EVENT_WINDOW(hwnd) isVisible]==YES) 
 		  {
 		    // future implimentation if needed
 		  }    

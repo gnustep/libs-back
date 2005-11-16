@@ -66,10 +66,10 @@ static unsigned __NSHashCString(void *table, const void *aString)
     register unsigned hash = 0, hash2;
     register int i, n = strlen((char*)aString);
 
-    for(i=0; i < n; i++) {
+    for (i=0; i < n; i++) {
         hash <<= 4;
         hash += *p++;
-        if((hash2 = hash & 0xf0000000))
+        if ((hash2 = hash & 0xf0000000))
             hash ^= (hash2 >> 24) ^ hash2;
     }
     return hash;
@@ -460,7 +460,7 @@ afmEnumerator (char* resourceType, char* resourceName, char* resourceFile,
 
   /* Check whether the font info is cached */
   fontInfo = [globalFontInfoDictionary objectForKey: name];
-  if(fontInfo != nil)
+  if (fontInfo != nil)
     {
       RELEASE(self);
       // retain to act like we were alloc'd
@@ -496,7 +496,7 @@ afmEnumerator (char* resourceType, char* resourceName, char* resourceFile,
   RELEASE(self);
   /* Grab an unscaled font info and create a new scaled one. */
   baseFontInfo = [[AFMFileFontInfo alloc] initUnscaledWithFontName: name];
-  if(baseFontInfo == nil) 
+  if (baseFontInfo == nil) 
     {
       return nil;
     }

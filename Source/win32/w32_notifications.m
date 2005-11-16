@@ -169,7 +169,7 @@
     
    [self initConfigWindow];
    // if info does not exist add it and create a submenu for it
-   if([theMenu itemWithTitle:@"Info"] ==nil)
+   if ([theMenu itemWithTitle:@"Info"] ==nil)
     {
       anItem=[NSMenuItem new];
       [anItem setTitle:@"Info"];
@@ -303,7 +303,7 @@
    // FIXME: Implement this in NSWindow first...
    //[[aNotification object] setShowsResizeIndicator:NO];
    // set window style
-   if ( [GSClass isEqual:@"NSMenuPanel"]==YES)
+   if ([GSClass isEqual:@"NSMenuPanel"]==YES)
    {
       GSStyle= [[aNotification object] styleMask];
       //windowNum=[[aNotification object] windowNumber];

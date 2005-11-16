@@ -340,7 +340,7 @@ load_font_set(Display *dpy, const char *given_font_name,
 	      xlfd_elms[11],	// avg width
 	      "*",		// registry
 	      "*"		// encoding
-	     );
+	);
     }
   else
     {
@@ -359,7 +359,7 @@ load_font_set(Display *dpy, const char *given_font_name,
 	      xlfd_elms[10],	// avg width
 	      "*",		// registry
 	      "*"		// encoding
-             );
+);
     }
 
   // N.B. def_string is owned by the X server: Don't release it.
@@ -438,20 +438,20 @@ glyphs2utf8(const NSGlyph* glyphs, int length, UTF8Str* ustr)
       else if (*g < 0x00000800)
 	{
 	  p[i++] = 0xc0 | ((*g >>  6) & 0x1f);
-	  p[i++] = 0x80 | ( *g        & 0x3f);
+	  p[i++] = 0x80 | (*g        & 0x3f);
 	}
       else if (*g < 0x00010000)
 	{
 	  p[i++] = 0xe0 | ((*g >> 12) & 0x0f);
 	  p[i++] = 0x80 | ((*g >>  6) & 0x3f);
-	  p[i++] = 0x80 | ( *g        & 0x3f);
+	  p[i++] = 0x80 | (*g        & 0x3f);
 	}
       else if (*g < 0x00200000)
 	{
 	  p[i++] = 0xf0 | ((*g >> 18) & 0x07);
 	  p[i++] = 0x80 | ((*g >> 12) & 0x3f);
 	  p[i++] = 0x80 | ((*g >>  6) & 0x3f);
-	  p[i++] = 0x80 | ( *g        & 0x3f);
+	  p[i++] = 0x80 | (*g        & 0x3f);
 	}
       else if (*g < 0x04000000)
 	{
@@ -459,7 +459,7 @@ glyphs2utf8(const NSGlyph* glyphs, int length, UTF8Str* ustr)
 	  p[i++] = 0x80 | ((*g >> 18) & 0x3f);
 	  p[i++] = 0x80 | ((*g >> 12) & 0x3f);
 	  p[i++] = 0x80 | ((*g >>  6) & 0x3f);
-	  p[i++] = 0x80 | ( *g        & 0x3f);
+	  p[i++] = 0x80 | (*g        & 0x3f);
 	}
       else if (*g < 0x80000000)
 	{
@@ -468,7 +468,7 @@ glyphs2utf8(const NSGlyph* glyphs, int length, UTF8Str* ustr)
 	  p[i++] = 0x80 | ((*g >> 18) & 0x3f);
 	  p[i++] = 0x80 | ((*g >> 12) & 0x3f);
 	  p[i++] = 0x80 | ((*g >>  6) & 0x3f);
-	  p[i++] = 0x80 | ( *g        & 0x3f);
+	  p[i++] = 0x80 | (*g        & 0x3f);
 	}
       else
 	{

@@ -147,7 +147,7 @@ static FTC_Manager ftc_manager;
 					error, glyph, advancementImgd.font.face_id,
 					advancementImgd.font.pix_width, advancementImgd.font.pix_height,
 					advancementImgd.flags
-				 );
+				);
 			return NSZeroSize;
 		}
 

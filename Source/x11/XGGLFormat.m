@@ -78,7 +78,7 @@
       append1 (GLX_RGBA);
     }
 
-  while(*ptr)
+  while (*ptr)
     {
       switch(*ptr)
 	{
@@ -192,9 +192,9 @@
     conf.visual = glXChooseVisual(dpy, DefaultScreen(dpy),
 				  [data mutableBytes]);
   
-  if ( ((GSglxMinorVersion (dpy) >= 3) 
+  if (((GSglxMinorVersion (dpy) >= 3) 
 	? (void *)conf.tab : (void *)conf.visual)
-       == NULL )
+       == NULL)
     {
       NSDebugMLLog(@"GLX", @"no pixel format found matching what is required");
       RELEASE(self);
@@ -208,7 +208,7 @@
       if (GSglxMinorVersion (dpy) >= 3)
 	{	
 	  int i;
-	  for (i = 0; i < n_elem; ++i )
+	  for (i = 0; i < n_elem; ++i)
 	    {
 	      int val;
 	      NSDebugMLLog(@"GLX", @"inspecting %dth", i+1);

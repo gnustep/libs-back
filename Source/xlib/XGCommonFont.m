@@ -247,7 +247,7 @@ NSFontTraitMask XGTraitsOfFont(Display *dpy, XFontStruct *info)
   if (string != nil)
     {
       if (![string isEqualToString: @"iso8859"] &&
-	  ![string isEqualToString: @"iso10646"] )
+	  ![string isEqualToString: @"iso10646"])
 	mask |= NSNonStandardCharacterSetFontMask;
     }
   string = XGFontPropString(dpy, info, XA_CHARSET_ENCODING);

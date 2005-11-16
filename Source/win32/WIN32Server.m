@@ -1598,7 +1598,7 @@ printf("\n\n##############################################################\n");
   printf("handlesWindowDecorations %s\n",handlesWindowDecorations ? "YES" : "NO");
   printf("checking for NSMiniaturizableWindowMask %u\n",(style & NSMiniaturizableWindowMask));
   printf("GS Window Style %u\n",style);
-  printf("Extended Style %d  [hex] %X\n",(int)estyle,(UINT)estyle );     
+  printf("Extended Style %d  [hex] %X\n",(int)estyle,(UINT)estyle);     
    printf("Win32 Style picked %ld [hex] %X\n",wstyle,(unsigned int)wstyle); 
   printf("\n##############################################################\n");    
 #endif

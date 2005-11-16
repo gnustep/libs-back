@@ -1287,17 +1287,17 @@
     }
 
   // send the PostScript code
-  if(hasAlpha && working_alphaimage == YES) 
+  if (hasAlpha && working_alphaimage == YES) 
     {
       // FIXME
       NSLog(@"Alphaimage not implemented");
       return;
     } 
-  else if(samplesPerPixel > 1) 
+  else if (samplesPerPixel > 1) 
     {
-      if(isPlanar || (hasAlpha && (working_alphaimage == NO))) 
+      if (isPlanar || (hasAlpha && (working_alphaimage == NO))) 
 	{
-	  if(bitsPerSample != 8) 
+	  if (bitsPerSample != 8) 
 	    {
 	      NSLog(@"Image format conversion not supported for bps!=8");
 	      return;
@@ -1311,7 +1311,7 @@
     PSWImageHeader(pixelsWide, pixelsHigh, bitsPerSample);
   
   // The context is now waiting for data on its standard input
-  if(isPlanar || (hasAlpha && (working_alphaimage == NO))) 
+  if (isPlanar || (hasAlpha && (working_alphaimage == NO))) 
     {
       // We need to do a format conversion.
       // We do this on the fly, sending data to the context as soon as
@@ -1319,27 +1319,27 @@
       int i, j, spp, isAlpha, alpha;
       unsigned char val;
       isAlpha = hasAlpha && (working_alphaimage == NO);
-      if(isAlpha)
+      if (isAlpha)
 	spp = samplesPerPixel - 1;
       else
 	spp = samplesPerPixel;
       
-      for(j=0; j<bytes; j++) 
+      for (j=0; j<bytes; j++) 
 	{
-	  if(isAlpha) 
+	  if (isAlpha) 
 	    {
-	      if(isPlanar)
+	      if (isPlanar)
 		alpha = data[spp][j];
 	      else
 		alpha = data[0][spp+j*samplesPerPixel];
 	    }
 	  for (i = 0; i < spp; i++) 
 	    {
-	      if(isPlanar)
+	      if (isPlanar)
 		val = data[i][j];
 	      else
 		val = data[0][i+j*samplesPerPixel];
-	      if(isAlpha)
+	      if (isAlpha)
 		val = 255 - ((255-val)*(long)alpha)/255;
 	      DPSWriteData(dps_context, &val, 1);
 	    }

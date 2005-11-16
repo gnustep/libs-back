@@ -373,9 +373,9 @@ static void function_eval_in2_out3(function_t *f,double *a_in,double *out)
 
 		for (i=0;i<3;i++)
 		{
-			f->sample_cache[0][i]=function_getsample(f,sample[0]  +(sample[1]  )*f->size[0],i);
+			f->sample_cache[0][i]=function_getsample(f,sample[0]  +(sample[1])*f->size[0],i);
 			if (sample[0]+1<f->size[0])
-				f->sample_cache[1][i]=function_getsample(f,sample[0]+1+(sample[1]  )*f->size[0],i);
+				f->sample_cache[1][i]=function_getsample(f,sample[0]+1+(sample[1])*f->size[0],i);
 			if (sample[1]+1<f->size[1])
 				f->sample_cache[2][i]=function_getsample(f,sample[0]  +(sample[1]+1)*f->size[0],i);
 			if (sample[0]+1<f->size[0] && sample[1]+1<f->size[1])

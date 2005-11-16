@@ -48,10 +48,10 @@
                    data2: rect.origin.y];                   
          
 
-  if(hwnd==(HWND)flags.menuRef)
+  if (hwnd==(HWND)flags.menuRef)
     {
       //need native code here?
-      if(flags.HOLD_MENU_FOR_MOVE==FALSE)
+      if (flags.HOLD_MENU_FOR_MOVE==FALSE)
 	{
 	  [EVENT_WINDOW(hwnd) sendEvent:ev];
 	}
@@ -59,7 +59,7 @@
     }
   else
     {
-      if(flags.HOLD_TRANSIENT_FOR_MOVE==FALSE)
+      if (flags.HOLD_TRANSIENT_FOR_MOVE==FALSE)
 	[EVENT_WINDOW(hwnd) sendEvent:ev];
     }   
 		  
@@ -137,9 +137,9 @@
 				   data1: rect.size.width
 				   data2: rect.size.height];
                
-	if(hwnd==(HWND)flags.menuRef)
+	if (hwnd==(HWND)flags.menuRef)
 	  {
-	    if(flags.HOLD_MENU_FOR_SIZE==FALSE)
+	    if (flags.HOLD_MENU_FOR_SIZE==FALSE)
 	      {
                   [[NSApp mainMenu] setMenuChangedMessagesEnabled:YES];
 		[EVENT_WINDOW(hwnd) sendEvent:ev];
@@ -174,9 +174,9 @@
 				   data1: rect.size.width
 				   data2: rect.size.height];
                
-	if(hwnd==(HWND)flags.menuRef)
+	if (hwnd==(HWND)flags.menuRef)
 	  {
-	    if(flags.HOLD_MENU_FOR_SIZE==FALSE)
+	    if (flags.HOLD_MENU_FOR_SIZE==FALSE)
 	      {
                [EVENT_WINDOW(hwnd) _setVisible:YES];
 		[EVENT_WINDOW(hwnd) sendEvent:ev];
@@ -233,7 +233,7 @@
    RECT drect;
    NSEvent *ev =nil;
 
-   if(wParam==TRUE)
+   if (wParam==TRUE)
    {
       // get first rect from NCCALCSIZE_PARAMS Structure
       newRects=(NCCALCSIZE_PARAMS *)lParam;

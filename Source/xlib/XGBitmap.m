@@ -67,7 +67,7 @@
 	_amask  = (1<<(aw)) -1;      \
 	_ashift = (as);              \
 	_awidth = (aw);              \
-       } while(0)
+       } while (0)
 
 
 #define PixelToRGB(pixel,r,g,b)  \
@@ -75,7 +75,7 @@
 	(r) = (pixel >> _rshift) & _rmask; \
 	(g) = (pixel >> _gshift) & _gmask; \
 	(b) = (pixel >> _bshift) & _bmask; \
-        } while(0)
+        } while (0)
 
 /* Note that RGBToPixel assumes that the
    r,g,b values are in the correct domain.
@@ -87,7 +87,7 @@
         pixel = ((r) << _rshift)  \
                |((g) << _gshift)  \
                |((b) << _bshift); \
-        } while(0)
+        } while (0)
 
 #define CLAMP(a) \
     do { \
@@ -109,7 +109,7 @@
 	pixels[centry] = color.pixel;				\
 	colors[centry] = color;					\
       }								\
-  } while(0)
+  } while (0)
 
 /* Composite source image (pixmap) onto a destination image with alpha.
    Only works for op=Sover now
@@ -248,7 +248,7 @@ _pixmap_combine_alpha(RContext *context,
       unsigned		row;
       int cind;
 
-      for(cind = 0; cind < CSIZE; cind++)
+      for (cind = 0; cind < CSIZE; cind++)
 	{
 	  empty[cind] = YES;
 	}
@@ -418,7 +418,7 @@ _get_bit_value(unsigned char *base, long msb_off, int bit_width)
    * being returned.
    */
   value=base[byte2];
-  if(byte1!=byte2)
+  if (byte1!=byte2)
     value|= base[byte1]<<8;
   value >>= shift;
 
@@ -438,12 +438,12 @@ _get_image_pixel(int col, unsigned char *r, unsigned char *g,
 	unsigned char *b, unsigned char *a,
 	unsigned char **planes, int *bit_off,
 	int spp, int bpp, int bps,
-	int pro_mul, int cspace, BOOL has_alpha, BOOL one_is_black )
+	int pro_mul, int cspace, BOOL has_alpha, BOOL one_is_black)
 {
   int p, values[5]; 
   long off = col * bpp;
 
-  for(p = 0; p < spp; p++)
+  for (p = 0; p < spp; p++)
     {
       int raw_value = _get_bit_value(planes[p], off + bit_off[p], bps);
       values[p] = raw_value * pro_mul;
@@ -483,13 +483,13 @@ _get_image_pixel(int col, unsigned char *r, unsigned char *g,
 static void
 _create_image_row(struct _bitmap_decompose *img)
 {
-  if(img->cur_screen_row >= img->screen_h)
+  if (img->cur_screen_row >= img->screen_h)
    {
       NSLog(@"Tried to create too many screen rows");
       return;
    }
 
-  if(img->is_direct_packed)
+  if (img->is_direct_packed)
     /* do direct copy, only limited formats supported */
     { 
       unsigned char *ptr = img->plane[0];
@@ -503,18 +503,18 @@ _create_image_row(struct _bitmap_decompose *img)
       int i, fc = img->first_vis_col, lc = img->last_vis_col;
 
       /* do the offset from the right */
-      ptr += fc * ( (is_grey ? 1 : 3) + (ha ? 1 : 0) );
+      ptr += fc * ((is_grey ? 1 : 3) + (ha ? 1 : 0));
       rptr += fc;
       gptr += fc;
       bptr += fc;
       aptr += fc;
 
-      for(i = fc;i <= lc; i++)
+      for (i = fc;i <= lc; i++)
         {
           *rptr = *ptr++;
-	  if(is_grey)
+	  if (is_grey)
             {
-	      if(oib)
+	      if (oib)
 		*rptr = 255 - *rptr;
 	      *gptr = *bptr = *rptr;
             }
@@ -569,25 +569,25 @@ _create_image_row(struct _bitmap_decompose *img)
 
       /* loop for each required row */
       zero_count = YES;
-      for(tr = s_row; tr <= e_row; tr++)
+      for (tr = s_row; tr <= e_row; tr++)
         {
           /* move to the required image row */
-          while(img->cur_image_row < tr)
+          while (img->cur_image_row < tr)
             {
               int p;
-              for(p = 0; p < spp; p++)
+              for (p = 0; p < spp; p++)
                 plane[p] += bpr;
               img->cur_image_row++;
             }
 
 	  /* for each screen pixel */
-	  for(sc = fc; sc <= lc; sc++)
+	  for (sc = fc; sc <= lc; sc++)
 	    {
 	      int s_col = col_starts[sc];
 	      int e_col = col_ends[sc];
 	      int tc;
 
-	      if(zero_count)
+	      if (zero_count)
 		{
 		  r_sum[sc] = 0;
 		  g_sum[sc] = 0;
@@ -597,7 +597,7 @@ _create_image_row(struct _bitmap_decompose *img)
 		}
 
 	      /* for each image pixel */
-	      for(tc = s_col; tc <= e_col; tc++)
+	      for (tc = s_col; tc <= e_col; tc++)
 		{
 		  unsigned char r, g, b, a;
 		  _get_image_pixel(tc, &r, &g, &b, &a,
@@ -621,7 +621,7 @@ _create_image_row(struct _bitmap_decompose *img)
 	 * one bit, thus giving us the nearest value and therefore a
 	 * better approximation t the colour we hope.
 	 */
-	for(sc = fc; sc <= lc; sc++)
+	for (sc = fc; sc <= lc; sc++)
 	  {
 	    int count = pix_count[sc];
 	    int half = count >> 1;
@@ -656,26 +656,26 @@ _set_ranges(int src_len, int dst_len,
 {
   float dst_f = (float)dst_len;
   int d;
-  if(fast_min || (src_len <= dst_len))
+  if (fast_min || (src_len <= dst_len))
     /* magnifying */
     {
       float src_f = (float)src_len;
-      for(d = 0; d < dst_len; d++)
+      for (d = 0; d < dst_len; d++)
         {
           int middle = (int)((((float)d + 0.5) * src_f) / dst_f);
           *start_ptr++ = middle;
           *end_ptr++ = middle;
-	  if(middle >= src_len)
+	  if (middle >= src_len)
 	    NSLog(@"Problem with magnification!");
         }
     }
   else
     {
       int start = 0;
-      for(d = 0; d < dst_len; d++)
+      for (d = 0; d < dst_len; d++)
         {
           int end_i = (int)(0.5 + (((d+1) * src_len) / dst_f));
-	  if((end_i > src_len) || (end_i < 1))
+	  if ((end_i > src_len) || (end_i < 1))
 	    NSLog(@"Problem with minification!");
           *start_ptr++ = start;
           *end_ptr++ = end_i - 1;
@@ -721,7 +721,7 @@ _bitmap_combine_alpha(RContext *context,
 	  NSLog(@"HSB colourspace not supported for images");
 	  return -1;
         case rgb_colorspace:
-          if(num_of_colours != 3)
+          if (num_of_colours != 3)
             {
 	      NSLog(@"Bad number of colour planes - %d", num_of_colours);
 	      NSLog(@"RGB colourspace requires three planes excluding alpha");
@@ -729,7 +729,7 @@ _bitmap_combine_alpha(RContext *context,
             }
 	  break;
         case cmyk_colorspace:
-          if(num_of_colours != 4)
+          if (num_of_colours != 4)
             {
 	      NSLog(@"Bad number of colour planes - %d", num_of_colours);
 	      NSLog(@"CMYK colourspace requires four planes excluding alpha");
@@ -737,7 +737,7 @@ _bitmap_combine_alpha(RContext *context,
             }
 	  break;
         case gray_colorspace:
-          if(num_of_colours != 1)
+          if (num_of_colours != 1)
             {
 	      NSLog(@"Bad number of colour planes - %d", num_of_colours);
 	      NSLog(@"Gray colourspace requires one plane excluding alpha");
@@ -816,18 +816,18 @@ _bitmap_combine_alpha(RContext *context,
     int i;
 
     /* zero them */
-    for(i=0;i<5;i++)
+    for (i=0;i<5;i++)
       {
         img.plane[i] = NULL;
         img.bit_off[i] = 0;
       }
 
     /* set as appropriate */
-    if(is_planar)
-      for(i=0;i<img.spp;i++)
+    if (is_planar)
+      for (i=0;i<img.spp;i++)
         img.plane[i] = data_planes[i];
     else
-      for(i=0;i<img.spp;i++)
+      for (i=0;i<img.spp;i++)
        {
          img.plane[i] = data_planes[0];
          img.bit_off[i] = i * img.bps;
@@ -848,7 +848,7 @@ _bitmap_combine_alpha(RContext *context,
    * floating point calculation.
    */
 
-  if(!is_planar && (img.screen_w == img.image_w)
+  if (!is_planar && (img.screen_w == img.image_w)
   	&& (img.screen_h == img.image_h) && (img.bps == 8)
 	&& ((img.cspace == gray_colorspace) || (img.cspace == rgb_colorspace))
 	&& ((img.bpr * 8) == (img.bps * img.spp * img.image_w)))
@@ -877,12 +877,12 @@ _bitmap_combine_alpha(RContext *context,
     }
 
   /* skip the top rows if a shift is needed */
-  if(row_shift)
+  if (row_shift)
     {
-      if(img.is_direct_packed)	/* need to move data */
+      if (img.is_direct_packed)	/* need to move data */
 	{
 	  int i;
-	  for(i=0;i<img.spp;i++)
+	  for (i=0;i<img.spp;i++)
 	    img.plane[i] += row_shift * img.bpr;
 	}
       img.cur_screen_row = row_shift;
@@ -1029,7 +1029,7 @@ _bitmap_combine_alpha(RContext *context,
 	BOOL empty[CSIZE];
 	int cind;
 
-	for(cind = 0; cind < CSIZE; cind++)
+	for (cind = 0; cind < CSIZE; cind++)
 	  {
 	    empty[cind] = YES;
 	  }
@@ -1159,7 +1159,7 @@ _bitmap_combine_alpha(RContext *context,
   free(img.g);
   free(img.b);
   free(img.a);
-  if(!img.is_direct_packed)
+  if (!img.is_direct_packed)
     {
       free(img.row_starts);
       free(img.row_ends);
@@ -1265,7 +1265,7 @@ _pixmap_read_alpha(RContext *context,
       BOOL empty[CSIZE];
       int cind;
       
-      for(cind = 0; cind < CSIZE; cind++)
+      for (cind = 0; cind < CSIZE; cind++)
 	{
 	  empty[cind] = YES;
 	}

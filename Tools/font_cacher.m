@@ -422,7 +422,7 @@ static int fontDefSorter(NSArray *el1, NSArray *el2, void *context)
     return NSOrderedDescending;
   else if (w1 < w2)
     return NSOrderedAscending;
-  else if(w2 < w1)
+  else if (w2 < w1)
     return NSOrderedDescending;
       
   return NSOrderedSame;
