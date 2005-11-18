@@ -1,3 +1,11 @@
+2005-11-18  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-window::::): Don't use the NET WM
+	window icon for Window Maker. 
+	* Source/x11/XGServerWindow.m (_createNetIcon:::, _setNetWMIconFor:):
+	Rewrote this methods to be prepared to use the mini window icon,
+	when that gets available in back.
+
 2005-11-16 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/art/composite.m:

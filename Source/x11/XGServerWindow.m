@@ -953,35 +953,25 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 }
 
 /*
-  Code to build up a NET WM icon from our application icon
+ * Code to build up a NET WM icon from our application icon
  */
-static long *iconPropertyData;
-static int iconSize;
-static BOOL didCreateNetIcon;
 
--(int) _createNetIcon
+-(BOOL) _createNetIcon: (NSImage*)image 
+		result: (long**)pixeldata 
+		  size: (int*)size
 {
-  NSImage *image;
   NSBitmapImageRep *rep;
   int i, j, w, h, samples;
   unsigned char *data;
   int index;
+  long *iconPropertyData;
+  int iconSize;
  
-  NSAssert(!didCreateNetIcon, @"called _createNetIcon twice");
-  
-  image = [NSApp applicationIconImage];
-  if (image == nil)
-    {
-      return 0;
-    }
-
-  didCreateNetIcon = YES;
-
   rep = (NSBitmapImageRep *)[image bestRepresentationForDevice:nil];
   if (![rep isKindOfClass: [NSBitmapImageRep class]])
     {
       NSLog(@"Wrong bitmap class for WM icon %@ %@", rep, image);
-      return 0;
+      return NO;
     }
 
   if ([rep bitsPerSample] != 8
@@ -990,7 +980,7 @@ static BOOL didCreateNetIcon;
       || [rep isPlanar])
     {
       NSLog(@"Wrong image type for WM icon");
-      return 0;
+      return NO;
     }
 
   h = [rep pixelsHigh];
@@ -1003,7 +993,7 @@ static BOOL didCreateNetIcon;
   if (iconPropertyData == NULL)
     {
       NSLog(@"No memory for WM icon");
-      return 0;
+      return NO;
     }
 
   memset(iconPropertyData, 0, sizeof(long)*iconSize);
@@ -1055,14 +1045,22 @@ static BOOL didCreateNetIcon;
       data += [rep bytesPerRow];
     }
   
-  return 1;
+  *pixeldata = iconPropertyData;
+  *size = iconSize;
+  return YES;
 }   
 
 - (void) _setNetWMIconFor: (Window) window
 {
-  // We store the GNUStepMenuImage in the window
-  // and use that as our title bar icon
+  // We store the GNUstep application icon image in the window
+  // and use that as our title bar icon.
+  // FIXME: This code should rather use the window mini icon, 
+  // but currently this image is not available in the backend.
   static Atom icon_atom = None;
+  static BOOL didCreateNetIcon = NO;
+  static long *iconPropertyData = NULL;
+  static int iconSize;
+  NSImage *image;
 
   /* Initialize the atom if needed */
   if (icon_atom == None)
@@ -1070,7 +1068,17 @@ static BOOL didCreateNetIcon;
 
   if (!didCreateNetIcon)
     {
-      [self _createNetIcon];
+      if (iconPropertyData != NULL)
+        {
+	  objc_free(iconPropertyData);
+	}
+
+      image = [NSApp applicationIconImage];
+      if (image != nil)
+        {
+	  didCreateNetIcon = YES;
+	  [self _createNetIcon: image result: &iconPropertyData size: &iconSize];
+	}
     }
 
   if (iconPropertyData)
@@ -1197,7 +1205,10 @@ static BOOL didCreateNetIcon;
       setWindowHintsForStyle (dpy, window->ident, style);
     }
 
-  if ((generic.wm & XGWM_EWMH) != 0)
+  // For window managers supporting EWMH, but not Window Maker, 
+  // where we use a different solution, set the window icon.
+  if (((generic.wm & XGWM_EWMH) != 0) && 
+      ((generic.wm & XGWM_WINDOWMAKER) == 0))
     {
       [self _setNetWMIconFor: window->ident];
     }
