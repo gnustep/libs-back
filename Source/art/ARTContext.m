@@ -725,6 +725,25 @@ very expensive
 }
 
 
+static unsigned int flip_bytes(unsigned int i)
+{
+  return ((i>>24)&0xff)
+	|((i>> 8)&0xff00)
+	|((i<< 8)&0xff0000)
+	|((i<<24)&0xff000000);
+}
+
+static int byte_order(void)
+{
+  union
+  {
+    unsigned int i;
+    char c;
+  } foo;
+  foo.i = 1;
+  return foo.c != 1;
+}
+
 
 - (id) initWithContextInfo: (NSDictionary *)info
 {
@@ -794,7 +813,21 @@ very expensive
     bpp = i->bits_per_pixel;
     XDestroyImage(i);
 
-    /* Only returns if the visual was usable. */
+    /* If the server doesn't have the same endianness as we do, we need
+       to flip the masks around (well, at least sometimes; not sure
+       what'll really happen for 15/16bpp modes).  */
+    {
+      int us = byte_order(); /* True iff we're big-endian.  */
+      int them = ImageByteOrder(d); /* True iff the server is big-endian.  */
+      if (us != them)
+	{
+	  visual->red_mask = flip_bytes(visual->red_mask);
+	  visual->green_mask = flip_bytes(visual->green_mask);
+	  visual->blue_mask = flip_bytes(visual->blue_mask);
+	}
+    }
+
+    /* Only returns if the visual was usable.  */
     artcontext_setup_draw_info(&DI, visual->red_mask, visual->green_mask,
 			       visual->blue_mask, bpp);
   }
@@ -848,7 +881,7 @@ very expensive
 /* Private backend methods */
 +(void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
 {
-	[(XWindowBuffer *)driver _exposeRect: rect];
+  [(XWindowBuffer *)driver _exposeRect: rect];
 }
 
 @end
