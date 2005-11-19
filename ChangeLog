@@ -1,3 +1,9 @@
+2005-11-19 21:39  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Source/art/ARTContext.m (flip_bytes, byte_order)
+	(-initWithContextInfo:): Detect if the server doesn't have the same
+	endianness and adjust the color bitmasks if necessary.
+
 2005-11-18  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-window::::): Don't use the NET WM
