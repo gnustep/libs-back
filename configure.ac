@@ -393,6 +393,8 @@ elif test x"$BUILD_GRAPHICS" = "xcairo"; then
   fi
 elif test x"$BUILD_GRAPHICS" = "xxlib"; then
  : # Nothing to do
+elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
+ : # Nothing to do
 else
   AC_MSG_ERROR([Invalid graphics backend $BUILD_GRAPHICS])
 fi

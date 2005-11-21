@@ -1,3 +1,8 @@
+2005-11-20  Adam Fedor  <fedor@gnu.org>
+
+	* configure.ac: Check for winlib as well so we don't get invalid
+	backend.
+
 2005-11-19 21:39  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/ARTContext.m (flip_bytes, byte_order)
