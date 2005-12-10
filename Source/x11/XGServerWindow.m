@@ -1488,7 +1488,6 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 
 - (void) titlewindow: (NSString *)window_title : (int) win
 {
-  XTextProperty windowName;
   gswindow_device_t *window;
 
   window = WINDOW_WITH_TAG(win);
@@ -1498,8 +1497,22 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   NSDebugLLog(@"XGTrace", @"DPStitlewindow: %@ : %d", window_title, win);
   if (window_title && window->ident)
     {
-      const char *title = [window_title lossyCString];
-      XStringListToTextProperty((char**)&title, 1, &windowName);
+      XTextProperty windowName;
+      const char *title;
+      int error = XLocaleNotSupported;
+
+#ifdef X_HAVE_UTF8_STRING
+      title = [window_title UTF8String];
+      error = Xutf8TextListToTextProperty(dpy, (char **)&title, 1, 
+					  XUTF8StringStyle,
+					  &windowName);
+#endif
+      if (error != Success) 
+        {
+	  title = [window_title lossyCString];
+	  XStringListToTextProperty((char **)&title, 1,
+				    &windowName);
+	}
       XSetWMName(dpy, window->ident, &windowName);
       XSetWMIconName(dpy, window->ident, &windowName);
       XFree(windowName.value);
