@@ -1,3 +1,8 @@
+2005-12-10  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-titlewindow::): Use UTF8 window
+	title where possible.
+
 2005-11-20  Adam Fedor  <fedor@gnu.org>
 
 	* configure.ac: Check for winlib as well so we don't get invalid
