@@ -1,3 +1,8 @@
+2005-12-16  Adam Fedor  <fedor@gnu.org>
+
+	* configure.in: Check for Xutf8LookupString
+	* Source/x11/XIMInputServer.m: Use it.
+
 2005-12-10  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-titlewindow::): Use UTF8 window

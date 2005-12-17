@@ -77,8 +77,12 @@
 /* Define to 1 if you have the <X11/extensions/XShm.h> header file. */
 #undef HAVE_X11_EXTENSIONS_XSHM_H
 
-/* Define if you have a functional XFreeType installation, including libXft. */
+/* Define if you have a functional XFreeType installation, including libXft.
+   */
 #undef HAVE_XFT
+
+/* Define to 1 if you have the `Xutf8LookupString' function. */
+#undef HAVE_XUTF8LOOKUPSTRING
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT

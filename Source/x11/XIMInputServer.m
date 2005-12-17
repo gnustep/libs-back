@@ -141,10 +141,12 @@
     {
       [dbuf setLength: BUF_LEN];
 #ifdef HAVE_UTF8
+#ifdef HAVE_XUTF8LOOKUPSTRING
       if (encoding == NSUTF8StringEncoding)
         count = Xutf8LookupString(windev->ic, event, buf, BUF_LEN, 
       		                  &keysym, &status);
       else 
+#endif
 #endif
         count = XmbLookupString(windev->ic, event, buf, BUF_LEN, 
 			        &keysym, &status);
