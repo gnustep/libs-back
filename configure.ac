@@ -193,6 +193,7 @@ if test $WITH_XFT = yes; then
     AC_DEFINE(HAVE_UTF8,1,[Define if you have XftDrawStringUtf8])
   fi
   AC_CHECK_LIB(Xft, XftPatternGetString, have_xftpgs=yes, have_xftpgs=no)
+  AC_HAVE_FUNCS(Xutf8LookupString)
   AC_CHECK_LIB(fontconfig, FcPatternCreate, have_fc=yes, have_fc=no)
   AC_CHECK_HEADER(fontconfig/fontconfig.h)
   if test "$have_fc" = yes -a "$ac_cv_header_fontconfig_fontconfig_h" = yes; then
