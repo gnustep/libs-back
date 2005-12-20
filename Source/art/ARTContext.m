@@ -874,7 +874,7 @@ static int byte_order(void)
 {
 	NSLog(@"ARTContext -beep: why here?");
 #ifndef RDS
-	XBell([(XGServer *)server xDisplay], 50);
+	XBell([(XGServer *)server xDisplay], 0);
 #endif
 }
 
