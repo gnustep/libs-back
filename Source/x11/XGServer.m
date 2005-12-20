@@ -595,7 +595,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 
 - (void) beep
 {
-  XBell(dpy, 50);
+  XBell(dpy, 0);
 }
 
 - glContextClass
