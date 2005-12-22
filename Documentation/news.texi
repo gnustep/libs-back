@@ -7,6 +7,14 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.10.2}
+
+The Backend can set UTF8 window titles where this is allowed.
+
+@c ====================================================================
+@c Keep the next line just below the list of changes in most recent version.
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.10.1}
 
 The art graphics module is the default now. As was previously the
@@ -21,10 +29,6 @@ The Cairo module has been significantly updated and now works with
 Cariro version 1.0, although you need to make some minor changes to the
 Cairo library before it will work with GNUstep. Due to this, this module
 is still considered beta. Ask on the mailing lists for help with this.
-
-@c ====================================================================
-@c Keep the next line just below the list of changes in most recent version.
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.10.0}
 

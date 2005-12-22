@@ -1,6 +1,11 @@
 NEWS
 ****
 
+Noteworthy changes in version `0.10.2'
+======================================
+
+The Backend can set UTF8 window titles where this is allowed.
+
 Noteworthy changes in version `0.10.1'
 ======================================
 
@@ -8,8 +13,8 @@ The art graphics module is the default now. As was previously the case,
 if the proper libraries are not found, the configuration will
 automatically switch to xlib on winlib (whichever is appropriate).
 
-There was a great deal of work by Tom MacSween on the windows module to
-get windows and taskbars working together, closing, opening, hiding,
+   There was a great deal of work by Tom MacSween on the windows module
+to get windows and taskbars working together, closing, opening, hiding,
 and just general good window management.
 
    The Cairo module has been significantly updated and now works with

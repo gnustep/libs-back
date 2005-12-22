@@ -1,3 +1,10 @@
+2005-12-22  Adam Fedor  <fedor@gnu.org>
+
+	* Version 0.10.2
+
+	* Source/art/ARTContext (-beep): Removed, unused.
+	* Source/xdps/NSDPSContext.m (-beep): Idem.
+
 2005-12-20  Adam Fedor  <fedor@gnu.org>
 
 	* Source/art/ARTContext.m ([ARTContext -beep]): Respect user setting
