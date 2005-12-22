@@ -870,14 +870,6 @@ static int byte_order(void)
 	return nil;
 }
 
-- (void) beep
-{
-	NSLog(@"ARTContext -beep: why here?");
-#ifndef RDS
-	XBell([(XGServer *)server xDisplay], 0);
-#endif
-}
-
 /* Private backend methods */
 +(void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
 {

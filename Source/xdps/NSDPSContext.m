@@ -747,11 +747,4 @@ GNUstepErrorProc (DPSContext ctxt, DPSErrorCode errCode,
   return nil;
 }
 
-
-
-- (void) NSBeep
-{
-  XBell([(XGServer *)server xDisplay], 0);
-}
-
 @end
