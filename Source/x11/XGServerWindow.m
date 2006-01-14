@@ -181,11 +181,11 @@ setNormalHints(Display *d, gswindow_device_t *w)
 
 /* Motif window hints struct */
 typedef struct {
-  uint32_t flags;
-  uint32_t functions;
-  uint32_t decorations;
-  int32_t input_mode;
-  uint32_t status;
+  unsigned long flags;
+  unsigned long functions;
+  unsigned long decorations;
+  unsigned long input_mode;
+  unsigned long status;
 } MwmHints;
 
 /* Number of entries in the struct */
@@ -245,7 +245,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   
   /* Get the already-set window hints */
   success = XGetWindowProperty (dpy, window, mwhints_atom, 0, 
-		      sizeof (MwmHints) / sizeof (uint32_t),
+		      sizeof (MwmHints) / sizeof (unsigned long),
 		      False, AnyPropertyType, &type_ret, &format_ret, 
 		      &nitems_ret, &bytes_after_ret, 
 		      (unsigned char **)&hints);
@@ -331,7 +331,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   /* Set the hints */
   XChangeProperty (dpy, window, mwhints_atom, mwhints_atom, 32, 
 		   PropModeReplace, (unsigned char *)hints, 
-		   sizeof (MwmHints) / sizeof (uint32_t));
+		   sizeof (MwmHints) / sizeof (unsigned long));
   
   /* Free the hints if allocated by the X server for us */
   if (needToFreeHints == YES)
@@ -877,6 +877,10 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
      */
     win_attrs.flags = GSExtraFlagsAttr;
     win_attrs.extra_flags = GSNoApplicationIconFlag;
+/* Warning ... X-bug .. when we specify 32bit data X actually expects data
+ * of type 'long' or 'unsigned long' even on machines where those types
+ * hold 64bit values.
+ */
     XChangeProperty(dpy, ROOT,
 	generic.win_decor_atom, generic.win_decor_atom,
 	32, PropModeReplace, (unsigned char *)&win_attrs,
@@ -887,8 +891,12 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
     {
       // Store the id of our process
       Atom pid_atom = XInternAtom(dpy, "_NET_WM_PID", False);
-      int32_t pid = [pInfo processIdentifier];
+      long pid = [pInfo processIdentifier];
 
+/* Warning ... X-bug .. when we specify 32bit data X actually expects data
+ * of type 'long' or 'unsigned long' even on machines where those types
+ * hold 64bit values.
+ */
       XChangeProperty(dpy, ROOT,
 		      pid_atom, XA_CARDINAL,
 		      32, PropModeReplace, 
@@ -957,14 +965,14 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
  */
 
 -(BOOL) _createNetIcon: (NSImage*)image 
-		result: (int32_t**)pixeldata 
+		result: (long**)pixeldata 
 		  size: (int*)size
 {
   NSBitmapImageRep *rep;
   int i, j, w, h, samples;
   unsigned char *data;
   int index;
-  int32_t *iconPropertyData;
+  long *iconPropertyData;
   int iconSize;
  
   rep = (NSBitmapImageRep *)[image bestRepresentationForDevice:nil];
@@ -989,14 +997,14 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   data = [rep bitmapData];
 
   iconSize = 2 + w * h;
-  iconPropertyData = (int32_t *)objc_malloc(sizeof(int32_t) * iconSize);
+  iconPropertyData = (long *)objc_malloc(sizeof(long) * iconSize);
   if (iconPropertyData == NULL)
     {
       NSLog(@"No memory for WM icon");
       return NO;
     }
 
-  memset(iconPropertyData, 0, sizeof(int32_t)*iconSize);
+  memset(iconPropertyData, 0, sizeof(long)*iconSize);
   index = 0;
   iconPropertyData[index++] = w;
   iconPropertyData[index++] = h;
@@ -1058,7 +1066,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   // but currently this image is not available in the backend.
   static Atom icon_atom = None;
   static BOOL didCreateNetIcon = NO;
-  static int32_t *iconPropertyData = NULL;
+  static long *iconPropertyData = NULL;
   static int iconSize;
   NSImage *image;
 
@@ -1196,6 +1204,10 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   window->siz_hints.flags = USPosition|PPosition|USSize|PSize;
 
   // Always send GNUstepWMAttributes
+/* Warning ... X-bug .. when we specify 32bit data X actually expects data
+ * of type 'long' or 'unsigned long' even on machines where those types
+ * hold 64bit values.
+ */
   XChangeProperty(dpy, window->ident, generic.win_decor_atom, 
 		      generic.win_decor_atom, 32, PropModeReplace, 
 		      (unsigned char *)&window->win_attrs,
@@ -1430,6 +1442,10 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       window->siz_hints.height = NSHeight(h);
 
       // send to the WM window style hints
+/* Warning ... X-bug .. when we specify 32bit data X actually expects data
+ * of type 'long' or 'unsigned long' even on machines where those types
+ * hold 64bit values.
+ */
       XChangeProperty(dpy, window->ident, generic.win_decor_atom, 
 			  generic.win_decor_atom, 32, PropModeReplace, 
 			  (unsigned char *)&window->win_attrs,
@@ -1542,6 +1558,10 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 
   // send WindowMaker WM window style hints
   // Always send GNUstepWMAttributes
+/* Warning ... X-bug .. when we specify 32bit data X actually expects data
+ * of type 'long' or 'unsigned long' even on machines where those types
+ * hold 64bit values.
+ */
   XChangeProperty(dpy, window->ident,
 	generic.win_decor_atom, generic.win_decor_atom,
 	32, PropModeReplace, (unsigned char *)&window->win_attrs,
@@ -2129,6 +2149,10 @@ static BOOL didCreatePixmaps;
 	 * is not mapped, we have stored the required info for when
 	 * the WM maps it.
 	 */
+/* Warning ... X-bug .. when we specify 32bit data X actually expects data
+ * of type 'long' or 'unsigned long' even on machines where those types
+ * hold 64bit values.
+ */
         XChangeProperty(dpy, window->ident,
 	    generic.win_decor_atom, generic.win_decor_atom,
 	    32, PropModeReplace, (unsigned char *)&window->win_attrs,
@@ -2152,7 +2176,7 @@ static BOOL didCreatePixmaps;
       if ((generic.wm & XGWM_EWMH) != 0)
 	{
 	  int len;
-	  int32_t data[2];
+	  long data[2];
 
 	  data[0] = generic.wintypes.win_normal_atom;
 	  data[1] = None;
@@ -2205,6 +2229,10 @@ static BOOL didCreatePixmaps;
 	      data[0] = generic.wintypes.win_desktop_atom;
 	    }
 
+/* Warning ... X-bug .. when we specify 32bit data X actually expects data
+ * of type 'long' or 'unsigned long' even on machines where those types
+ * hold 64bit values.
+ */
 	  XChangeProperty(dpy, window->ident, generic.wintypes.win_type_atom,
 			  XA_ATOM, 32, PropModeReplace, 
 			  (unsigned char *)&data, len);
@@ -2212,7 +2240,7 @@ static BOOL didCreatePixmaps;
       else if ((generic.wm & XGWM_GNOME) != 0)
 	{
 	  XEvent event;
-	  int32_t    flag = WIN_LAYER_NORMAL;
+	  long    flag = WIN_LAYER_NORMAL;
 
 	  if (level == NSDesktopWindowLevel)
 	    flag = WIN_LAYER_DESKTOP;
@@ -2615,7 +2643,7 @@ static BOOL didCreatePixmaps;
     }
   else
     {
-      uint32_t opacity;
+      unsigned long opacity;
 
       opacity = (unsigned int)(alpha * 0xffffffff);
       XChangeProperty(window->display, window->ident, opacity_atom,
