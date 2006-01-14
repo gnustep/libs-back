@@ -117,7 +117,7 @@ static void test_xshm(Display *display, int drawing_depth)
       }
 
     shminfo.shmaddr = shmat(shminfo.shmid, 0, 0);
-    if ((int)shminfo.shmaddr == -1 || num_xshm_test_errors)
+    if ((intptr_t)shminfo.shmaddr == -1 || num_xshm_test_errors)
       {
 	NSLog(@"XShm not supported, shmat() failed: %m.");
 	XDestroyImage(ximage);
@@ -294,7 +294,7 @@ no_xshm:
 	}
 
       wi->shminfo.shmaddr = wi->ximage->data = shmat(wi->shminfo.shmid, 0, 0);
-      if ((int)wi->shminfo.shmaddr == -1)
+      if ((intptr_t)wi->shminfo.shmaddr == -1)
 	{
 	  NSLog(@"Warning: shmat() failed: %m.");
 	  NSLog(xshm_warning);

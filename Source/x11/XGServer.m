@@ -452,7 +452,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 
   screen = [[XGScreenContext alloc] initForDisplay: dpy screen: screen_number];
   AUTORELEASE(screen);
-  NSMapInsert(screenList, (void *)screen_number, (void *)screen);
+  NSMapInsert(screenList, (void *)(uintptr_t)screen_number, (void *)screen);
   defScreen = screen_number;
 
   XSetErrorHandler(XGErrorHandler);
@@ -514,14 +514,14 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 		   format: @"Request for invalid screen"];
     }
 
-  screen = NSMapGet(screenList, (void *)screen_number);
+  screen = NSMapGet(screenList, (void *)(uintptr_t)screen_number);
   if (screen == NULL)
     {
       XGScreenContext *screen;
       screen = [[XGScreenContext alloc] 
 		 initForDisplay: dpy screen: screen_number];
       AUTORELEASE(screen);
-      NSMapInsert(screenList, (void *)screen_number, (void *)screen);
+      NSMapInsert(screenList, (void *)(uintptr_t)screen_number, (void *)screen);
     }
   return screen;
 }
