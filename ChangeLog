@@ -1,3 +1,12 @@
+2006-01-14 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/gsc/GSContext.m:
+	* Source/x11/XGServer.m:
+	* Source/x11/XGServerWindow.m:
+	* Source/x11/XWindowBuffer.m:
+	Some fixes for 64bit processor support (that doesn't mean it's
+	working yet).
+
 2006-01-09 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/win32/WIN32Server.m: Attempt to terminate gracefully when

@@ -67,7 +67,7 @@ static BOOL handlesWindowDecorations = YES;
  */
 static char	*rootName = 0;
 
-#define WINDOW_WITH_TAG(windowNumber) (gswindow_device_t *)NSMapGet(windowtags, (void *)windowNumber) 
+#define WINDOW_WITH_TAG(windowNumber) (gswindow_device_t *)NSMapGet(windowtags, (void *)(uintptr_t)windowNumber) 
 
 /* Current mouse grab window */
 static gswindow_device_t *grab_window = NULL;
@@ -181,11 +181,11 @@ setNormalHints(Display *d, gswindow_device_t *w)
 
 /* Motif window hints struct */
 typedef struct {
-  unsigned long flags;
-  unsigned long functions;
-  unsigned long decorations;
-  long input_mode;
-  unsigned long status;
+  uint32_t flags;
+  uint32_t functions;
+  uint32_t decorations;
+  int32_t input_mode;
+  uint32_t status;
 } MwmHints;
 
 /* Number of entries in the struct */
@@ -245,7 +245,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   
   /* Get the already-set window hints */
   success = XGetWindowProperty (dpy, window, mwhints_atom, 0, 
-		      sizeof (MwmHints) / sizeof (long),
+		      sizeof (MwmHints) / sizeof (uint32_t),
 		      False, AnyPropertyType, &type_ret, &format_ret, 
 		      &nitems_ret, &bytes_after_ret, 
 		      (unsigned char **)&hints);
@@ -331,7 +331,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   /* Set the hints */
   XChangeProperty (dpy, window, mwhints_atom, mwhints_atom, 32, 
 		   PropModeReplace, (unsigned char *)hints, 
-		   sizeof (MwmHints) / sizeof (long));
+		   sizeof (MwmHints) / sizeof (uint32_t));
   
   /* Free the hints if allocated by the X server for us */
   if (needToFreeHints == YES)
@@ -368,11 +368,11 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 + (gswindow_device_t *) _windowForXParent: (Window)xWindow
 {
   NSMapEnumerator	enumerator;
-  Window		x;
+  void		*key;
   gswindow_device_t	*d;
 
   enumerator = NSEnumerateMapTable(windowmaps);
-  while (NSNextMapEnumeratorPair(&enumerator, (void**)&x, (void**)&d) == YES)
+  while (NSNextMapEnumeratorPair(&enumerator, &key, (void**)&d) == YES)
     {
       if (d->root != d->parent && d->parent == xWindow)
 	{
@@ -887,7 +887,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
     {
       // Store the id of our process
       Atom pid_atom = XInternAtom(dpy, "_NET_WM_PID", False);
-      int pid = [pInfo processIdentifier];
+      int32_t pid = [pInfo processIdentifier];
 
       XChangeProperty(dpy, ROOT,
 		      pid_atom, XA_CARDINAL,
@@ -900,7 +900,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
    this context */
 - (void) _destroyServerWindows
 {
-  int num;
+  void *key;
   gswindow_device_t *d;
   NSMapEnumerator   enumerator;
   NSMapTable        *mapcopy;
@@ -909,10 +909,10 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
      the map table */
   mapcopy = NSCopyMapTableWithZone(windowtags, [self zone]);
   enumerator = NSEnumerateMapTable(mapcopy);
-  while (NSNextMapEnumeratorPair(&enumerator, (void**)&num, (void**)&d) == YES)
+  while (NSNextMapEnumeratorPair(&enumerator, &key, (void**)&d) == YES)
     {
       if (d->display == dpy && d->ident != d->root)
-	[self termwindow: num];
+	[self termwindow: (int)(intptr_t)key];
     }
   NSFreeMapTable(mapcopy);
 }
@@ -957,14 +957,14 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
  */
 
 -(BOOL) _createNetIcon: (NSImage*)image 
-		result: (long**)pixeldata 
+		result: (int32_t**)pixeldata 
 		  size: (int*)size
 {
   NSBitmapImageRep *rep;
   int i, j, w, h, samples;
   unsigned char *data;
   int index;
-  long *iconPropertyData;
+  int32_t *iconPropertyData;
   int iconSize;
  
   rep = (NSBitmapImageRep *)[image bestRepresentationForDevice:nil];
@@ -989,14 +989,14 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   data = [rep bitmapData];
 
   iconSize = 2 + w * h;
-  iconPropertyData = (long *)objc_malloc(sizeof(long) * iconSize);
+  iconPropertyData = (int32_t *)objc_malloc(sizeof(int32_t) * iconSize);
   if (iconPropertyData == NULL)
     {
       NSLog(@"No memory for WM icon");
       return NO;
     }
 
-  memset(iconPropertyData, 0, sizeof(long)*iconSize);
+  memset(iconPropertyData, 0, sizeof(int32_t)*iconSize);
   index = 0;
   iconPropertyData[index++] = w;
   iconPropertyData[index++] = h;
@@ -1058,7 +1058,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   // but currently this image is not available in the backend.
   static Atom icon_atom = None;
   static BOOL didCreateNetIcon = NO;
-  static long *iconPropertyData = NULL;
+  static int32_t *iconPropertyData = NULL;
   static int iconSize;
   NSImage *image;
 
@@ -1077,11 +1077,13 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       if (image != nil)
         {
 	  didCreateNetIcon = YES;
-	  [self _createNetIcon: image result: &iconPropertyData size: &iconSize];
+	  [self _createNetIcon: image
+			result: &iconPropertyData
+			  size: &iconSize];
 	}
     }
 
-  if (iconPropertyData)
+  if (iconPropertyData != 0)
     {
       XChangeProperty(dpy, window,
 		      icon_atom, XA_CARDINAL, 
@@ -1296,7 +1298,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   if (window->region)
     XDestroyRegion (window->region);
   RELEASE(window->exposedRects);
-  NSMapRemove(windowtags, (void*)win);
+  NSMapRemove(windowtags, (void*)(uintptr_t)win);
   objc_free(window);
 }
 
@@ -2150,7 +2152,7 @@ static BOOL didCreatePixmaps;
       if ((generic.wm & XGWM_EWMH) != 0)
 	{
 	  int len;
-	  long data[2];
+	  int32_t data[2];
 
 	  data[0] = generic.wintypes.win_normal_atom;
 	  data[1] = None;
@@ -2210,7 +2212,7 @@ static BOOL didCreatePixmaps;
       else if ((generic.wm & XGWM_GNOME) != 0)
 	{
 	  XEvent event;
-	  int    flag = WIN_LAYER_NORMAL;
+	  int32_t    flag = WIN_LAYER_NORMAL;
 
 	  if (level == NSDesktopWindowLevel)
 	    flag = WIN_LAYER_DESKTOP;
@@ -2613,7 +2615,7 @@ static BOOL didCreatePixmaps;
     }
   else
     {
-      unsigned int opacity;
+      uint32_t opacity;
 
       opacity = (unsigned int)(alpha * 0xffffffff);
       XChangeProperty(window->display, window->ident, opacity_atom,
@@ -2623,7 +2625,7 @@ static BOOL didCreatePixmaps;
         {
 	  XChangeProperty(window->display, window->parent, opacity_atom,
 			  XA_CARDINAL, 32, PropModeReplace,
-			  (unsigned char*)&opacity, 1L);
+			  (unsigned char*)&opacity, 1);
 	}
     }
 }
@@ -2714,15 +2716,16 @@ static BOOL   cursor_hidden = NO;
 
 - (void) _DPSsetcursor: (Cursor)c : (BOOL)set
 {
-  Window win;
+  void	*key;
   NSMapEnumerator enumerator;
   gswindow_device_t  *d;
 
   NSDebugLLog (@"NSCursor", @"_DPSsetcursor: cursor = %p, set = %d", c, set);
   
   enumerator = NSEnumerateMapTable (windowmaps);
-  while (NSNextMapEnumeratorPair (&enumerator, (void**)&win, (void**)&d) == YES)
+  while (NSNextMapEnumeratorPair (&enumerator, &key, (void**)&d) == YES)
     {
+      Window win = (Window)key;
       if (set)
         XDefineCursor(dpy, win, c);
       else

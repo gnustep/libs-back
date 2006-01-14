@@ -419,7 +419,8 @@ static unsigned int unique_index = 0;
       DPS_ERROR(DPSundefined, @"No gstate");
       return 0;
     }
-  NSMapInsert(gtable, (void *)++unique_index, AUTORELEASE([gstate copy]));
+  NSMapInsert(gtable,
+    (void *)(uintptr_t)++unique_index, AUTORELEASE([gstate copy]));
   return unique_index;
 }
 
@@ -432,7 +433,7 @@ static unsigned int unique_index = 0;
 {
   if (gst <= 0)
     return;
-  NSMapInsert(gtable, (void *)gst, AUTORELEASE([gstate copy]));
+  NSMapInsert(gtable, (void *)(uintptr_t)gst, AUTORELEASE([gstate copy]));
 }
 
 /* ----------------------------------------------------------------------- */
@@ -864,27 +865,27 @@ static unsigned int unique_index = 0;
   if (n < 0)
     DPS_ERROR(DPSinvalidparam, @"Invalid userobject index");
   else 
-    NSMapInsert(gtable, (void *)n, obj);
+    NSMapInsert(gtable, (void *)(uintptr_t)n, obj);
 }
 
 - (void)DPSexecuserobject: (int)index
 {
-  if (index < 0 || NSMapGet(gtable, (void *)index) == nil)
+  if (index < 0 || NSMapGet(gtable, (void *)(uintptr_t)index) == nil)
     {
       DPS_ERROR(DPSinvalidparam, @"Invalid userobject index");
       return;
     }
-  ctxt_push((id)NSMapGet(gtable, (void *)index), opstack);
+  ctxt_push((id)NSMapGet(gtable, (void *)(uintptr_t)index), opstack);
 }
 
 - (void)DPSundefineuserobject: (int)index
 {
-  if (index < 0 || NSMapGet(gtable, (void *)index) == nil)
+  if (index < 0 || NSMapGet(gtable, (void *)(uintptr_t)index) == nil)
     {
       DPS_ERROR(DPSinvalidparam, @"Invalid gstate index");
       return;
     }
-  NSMapRemove(gtable, (void *)index);
+  NSMapRemove(gtable, (void *)(uintptr_t)index);
 }
 
 - (void)DPSclear 
