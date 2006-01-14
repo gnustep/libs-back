@@ -4,8 +4,12 @@
 	* Source/x11/XGServer.m:
 	* Source/x11/XGServerWindow.m:
 	* Source/x11/XWindowBuffer.m:
-	Some fixes for 64bit processor support (that doesn't mean it's
-	working yet).
+	* Headers/x11/XGServerWindow.h:
+	Some fixes for 64bit processor support.  In particular, allow for
+	bug/feature of X that 32bit data supplied in XChangeProperty must
+	actually be 64bit on a 64bit machine.  The X client library discards
+	the upper 32bits of each value when encoding the data to be sent to
+	the server.  These changes fix WindowMaker interaction on AMD64.
 
 2006-01-09 Richard Frith-Macdonald <rfm@gnu.org>
 

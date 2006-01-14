@@ -30,19 +30,29 @@
 #undef BOOL
 #include <x11/XGServer.h>
 
-//
-// WindowMaker window manager interaction
-//
+/*
+ * WindowMaker window manager interaction
+ *
+ * NB.  Despite the fact that all the fields in this table are notionally
+ * 32bit values (WindowMaker defines them as CARD32 and Pixmap types and
+ * the X protocol spec says Pixmap is 32bits) they actually all have to be
+ * long values (64bits on a 64bit processor).  This is because of a bug in
+ * X-windows property functions, such that they assume that where property
+ * data is specified as 32bit it is actually a long.
+ * The X headers automatically adjust the size of a Pixmap to be that of
+ * a long, so we can declare Pixmap fields to be that size, but we must
+ * explicitly use 'unsigned long' rather than CARD32 foir the others.
+ */
 typedef struct {
-    CARD32 flags;
-    CARD32 window_style;
-    CARD32 window_level;
-    CARD32 reserved;
+    unsigned long flags;
+    unsigned long window_style;
+    unsigned long window_level;
+    unsigned long reserved;
     Pixmap miniaturize_pixmap;		// pixmap for miniaturize button
     Pixmap close_pixmap;		// pixmap for close button
     Pixmap miniaturize_mask;		// miniaturize pixmap mask
     Pixmap close_mask;			// close pixmap mask
-    CARD32 extra_flags;
+    unsigned long extra_flags;
 } GNUstepWMAttributes;
 
 #define GSWindowStyleAttr	(1<<0)
