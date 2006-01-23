@@ -5,6 +5,9 @@
  * August 31, 2003
  * Written by Banlu Kemiyatorn <object at gmail dot com>
  * Base on original code of Alex Malmberg
+ * Rewrite: Fred Kiefer <fredkiefer@gmx.de>
+ * Date: Jan 2006
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
  * License as published by the Free Software Foundation; either
@@ -26,23 +29,17 @@
 
 @ implementation CairoFaceInfo 
 
-- (id) initWithName: (NSString *)name 
-	 familyName: (NSString *)familyName 
-	displayName: (NSString *)displayName 
-	  cairoName: (NSString *)cairoName 
-	     weight: (int)weight 
-	     traits: (unsigned int)traits 
-	 cairoSlant: (cairo_font_slant_t)cairoSlant 
-	cairoWeight: (cairo_font_weight_t)cairoWeight
+- (id) initWithfamilyName: (NSString *)familyName 
+                   weight: (int)weight 
+                   traits: (unsigned int)traits 
+                  pattern: (FcPattern *)pattern
 {
-  [self setName: name];
+	_pattern = pattern;
+	FcPatternReference(_pattern);
+
   [self setFamilyName: familyName];
-  [self setDisplayName: displayName];
-  [self setCairoName: cairoName];
   [self setWeight: weight];
   [self setTraits: traits];
-  [self setCairoSlant: cairoSlant];
-  [self setCairoWeight: cairoWeight];
 
   return self;
 }
@@ -53,10 +50,10 @@
     {
       cairo_font_face_destroy(_fontFace);
     }
+	FcPatternDestroy(_pattern);
+
   RELEASE(_familyName);
-  RELEASE(_faceName);
-  RELEASE(_displayName);
-  RELEASE(_cairoName);
+
   [super dealloc];
 }
 
@@ -65,39 +62,9 @@
   ASSIGN(_familyName, name);
 }
 
-- (void) setName: (NSString *)name
-{
-  ASSIGN(_faceName, name);
-}
-
-- (void) setDisplayName: (NSString *)name
-{
-  ASSIGN(_displayName, name);
-}
-
-- (const char *) cairoCName
-{
-  return [_cairoName lossyCString];
-}
-
-- (void) setCairoName: (NSString *)name
-{
-  ASSIGN(_cairoName, name);
-}
-
 - (NSString *)familyName
 {
   return _familyName;
-}
-
-- (NSString *) name
-{
-  return _faceName;
-}
-
-- (NSString *) displayName
-{
-  return _displayName;
 }
 
 - (int) weight
@@ -115,26 +82,6 @@
   return _traits;
 }
 
-- (cairo_font_weight_t) cairoWeight
-{
-  return _c_weight;
-}
-
-- (cairo_font_slant_t) cairoSlant
-{
-  return _c_slant;
-}
-
-- (void) setCairoWeight: (cairo_font_weight_t)weight
-{
-  _c_weight = weight;
-}
-
-- (void) setCairoSlant: (cairo_font_slant_t)slant
-{
-  _c_slant = slant;
-}
-
 - (void) setTraits: (unsigned int)traits
 {
   _traits = traits;
@@ -145,18 +92,27 @@
   return 257;
 }
 
-extern cairo_font_face_t *
-_cairo_toy_font_face_create(const char          *family, 
-			    cairo_font_slant_t   slant, 
-			    cairo_font_weight_t  weight);
-
 - (cairo_font_face_t *)fontFace
 {
   if (!_fontFace)
     {
-      // FIXME: This function is not exported by cairo
-      _fontFace = _cairo_toy_font_face_create([_cairoName cString], 
-					      _c_slant, _c_weight);
+			FcResult result;
+			FcPattern *resolved;
+
+      FcConfigSubstitute (NULL, _pattern, FcMatchPattern); 
+			FcDefaultSubstitute(_pattern);
+			resolved = FcFontMatch(NULL, _pattern, &result);
+
+      _fontFace = cairo_ft_font_face_create_for_pattern(resolved);
+			FcPatternDestroy(resolved);
+
+			if ((!_fontFace) || (cairo_font_face_status(_fontFace) != CAIRO_STATUS_SUCCESS))
+			  {
+					NSLog(@"Creating a font face failed %@", _familyName);
+					cairo_font_face_destroy(_fontFace);
+					_fontFace = NULL;
+					return NULL;
+				}
     }
 
   return _fontFace;
