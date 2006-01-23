@@ -5,6 +5,9 @@
  * August 31, 2003
  * Written by Banlu Kemiyatorn <object at gmail dot com>
  * Base on original code of Alex Malmberg
+ * Rewrite: Fred Kiefer <fredkiefer@gmx.de>
+ * Date: Jan 2006
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
  * License as published by the Free Software Foundation; either
@@ -54,102 +57,149 @@ NSMutableDictionary * __allFonts;
   return face;
 }
 
+// Make a GNUStep style font descriptor from a FcPattern
+static NSArray *faFromFc(FcPattern *pat)
+{
+  int weight, slant, spacing, nsweight;
+  unsigned int nstraits = 0;
+  char *family;
+  NSMutableString *name, *style;
+
+  if (FcPatternGetInteger(pat, FC_WEIGHT, 0, &weight) != FcResultMatch ||
+      FcPatternGetInteger(pat, FC_SLANT,  0, &slant) != FcResultMatch ||
+      FcPatternGetString(pat, FC_FAMILY, 0, (FcChar8 **)&family) != FcResultMatch)
+    return nil;
+
+  if (FcPatternGetInteger(pat, FC_SPACING, 0, &spacing) == FcResultMatch)
+    if (spacing==FC_MONO || spacing==FC_CHARCELL)
+      nstraits |= NSFixedPitchFontMask;
+  
+  name = [NSMutableString stringWithCapacity: 100];
+  style = [NSMutableString stringWithCapacity: 100];
+  [name appendString: [NSString stringWithUTF8String: family]];
+
+  switch (weight) 
+    {
+    case FC_WEIGHT_LIGHT:
+      [style appendString: @"Light"];
+      nsweight = 3;
+      break;
+    case FC_WEIGHT_MEDIUM:
+      nsweight = 6;
+      break;
+    case FC_WEIGHT_DEMIBOLD:
+      [style appendString: @"Demibold"];
+      nsweight = 7;
+      break;
+    case FC_WEIGHT_BOLD:
+      [style appendString: @"Bold"];
+      nsweight = 9;
+      nstraits |= NSBoldFontMask;
+      break;
+    case FC_WEIGHT_BLACK:
+      [style appendString: @"Black"];
+      nsweight = 12;
+      nstraits |= NSBoldFontMask;
+      break;
+    default:
+      nsweight = 6;
+    }
+
+  switch (slant) 
+    {
+    case FC_SLANT_ROMAN:
+      break;
+    case FC_SLANT_ITALIC:
+      [style appendString: @"Italic"];
+      nstraits |= NSItalicFontMask;
+      break;
+    case FC_SLANT_OBLIQUE:
+      [style appendString: @"Oblique"];
+      nstraits |= NSItalicFontMask;
+      break;
+    }
+
+  if ([style length] > 0)
+    {
+      [name appendString: @"-"];
+      [name appendString: style];
+    }
+  else
+    {
+      [style appendString: @"Roman"];
+    }
+
+  return [NSArray arrayWithObjects: name, 
+		  style, 
+		  [NSNumber numberWithInt: nsweight], 
+		  [NSNumber numberWithUnsignedInt: nstraits],
+		  nil];
+}
+
 - (void) enumerateFontsAndFamilies
 {
-  static BOOL done = NO;
+  int i;
+  NSMutableDictionary *fcxft_allFontFamilies = [[NSMutableDictionary alloc] init];
+  NSMutableDictionary *fcxft_allFonts = [[NSMutableDictionary alloc] init];
+  NSMutableArray *fcxft_allFontNames = [[NSMutableArray alloc] init];
 
-  if (!done)
+  FcPattern *pat = FcPatternCreate();
+  FcObjectSet *os = FcObjectSetBuild(FC_FAMILY, FC_SLANT, FC_WEIGHT, NULL);
+  FcFontSet *fs = FcFontList(NULL, pat, os);
+
+  FcPatternDestroy(pat);
+  FcObjectSetDestroy(os);
+
+  for (i=0; i < fs->nfont; i++)
     {
-      NSArray *fontDef;
-      NSMutableArray *fontDefs;
-      CairoFaceInfo *aFace;
+      char *family;
 
-      __allFonts = [[NSMutableDictionary alloc] init];
-      allFontFamilies =[[NSMutableDictionary alloc] init];
+      if (FcPatternGetString(fs->fonts[i], FC_FAMILY, 0, (FcChar8 **)&family) == FcResultMatch)
+        {
+          NSArray *fontArray;
 
-      fontDefs =[NSMutableArray arrayWithCapacity:10];
-      [allFontFamilies setObject: fontDefs forKey:@"Helvetica"];
+          if ((fontArray = faFromFc(fs->fonts[i])))
+            {
+              NSString *familyString;
+              NSMutableArray *familyArray;
+              CairoFaceInfo *aFont;
+              NSString *name = [fontArray objectAtIndex: 0];
 
-      fontDef =[NSArray arrayWithObjects: @"Helvetica", @"Medium",
-			[NSNumber numberWithInt: 5],
-			[NSNumber numberWithUnsignedInt:0], nil];
-      [fontDefs addObject:fontDef];
-      aFace = [[CairoFaceInfo alloc] initWithName: @"Medium" 
-				     familyName: @"Helvetica" 
-				     displayName: @"Helvetica" 
-				     cairoName: @"serif" 
-				     weight: 5 
-				     traits: 0 
-				     cairoSlant: CAIRO_FONT_SLANT_NORMAL 
-				     cairoWeight: CAIRO_FONT_WEIGHT_NORMAL];
-      [__allFonts setObject: aFace forKey: @"Helvetica"];
-      RELEASE(aFace);
-    
-      fontDef =[NSArray arrayWithObjects: @"Helvetica-Bold", @"Bold",
-			[NSNumber numberWithInt: 9],
-			[NSNumber numberWithUnsignedInt:NSBoldFontMask],
-			nil];
-      [fontDefs addObject:fontDef];
-      aFace = [[CairoFaceInfo alloc] initWithName: @"Bold" 
-				     familyName: @"Helvetica" 
-				     displayName: @"Helvetica Bold" 
-				     cairoName: @"serif" 
-				     weight: 9 
-				     traits: NSBoldFontMask 
-				     cairoSlant: CAIRO_FONT_SLANT_NORMAL 
-				     cairoWeight: CAIRO_FONT_WEIGHT_BOLD];
-      [__allFonts setObject: aFace forKey: @"Helvetica-Bold"];
-      RELEASE(aFace);
-      
-      fontDef =[NSArray arrayWithObjects: @"Helvetica-Oblique", @"Oblique",
-			[NSNumber numberWithInt: 5],
-			[NSNumber numberWithUnsignedInt:NSItalicFontMask],
-			nil];
-      [fontDefs addObject:fontDef];
-      aFace = [[CairoFaceInfo alloc] initWithName: @"Oblique" 
-				     familyName: @"Helvetica" 
-				     displayName: @"Helvetica Oblique" 
-				     cairoName: @"serif" 
-				     weight: 5 
-				     traits: NSItalicFontMask 
-				     cairoSlant: CAIRO_FONT_SLANT_OBLIQUE 
-				     cairoWeight: CAIRO_FONT_WEIGHT_NORMAL];
-      [__allFonts setObject: aFace forKey: @"Helvetica-Oblique"];
-      RELEASE(aFace);
-
-      fontDefs =[NSMutableArray arrayWithCapacity:10];
-      [allFontFamilies setObject: fontDefs forKey:@"Courier"];
-      
-      fontDef =[NSArray arrayWithObjects: @"Courier", @"Medium",
-			[NSNumber numberWithInt: 5],
-			[NSNumber numberWithUnsignedInt:NSFixedPitchFontMask],
-			nil];
-      [fontDefs addObject:fontDef];
-      aFace = [[CairoFaceInfo alloc] initWithName: @"Medium" 
-				     familyName: @"Courier" 
-				     displayName: @"Courier" 
-				     cairoName: @"Courier" 
-				     weight: 5 
-				     traits: NSFixedPitchFontMask 
-				     cairoSlant: CAIRO_FONT_SLANT_NORMAL 
-				     cairoWeight: CAIRO_FONT_WEIGHT_NORMAL];
-      [__allFonts setObject: aFace forKey: @"Courier"];
-      RELEASE(aFace);
-      
-      ASSIGN(allFontNames, [__allFonts allKeys]);
-      done = YES;
+              familyString = [NSString stringWithUTF8String: family];
+              if (!(familyArray = [fcxft_allFontFamilies objectForKey: familyString]))
+                {
+									NSDebugLog(@"Found font family %@", familyString);
+                  familyArray = [[NSMutableArray alloc] init];
+                  [fcxft_allFontFamilies setObject: familyArray forKey: familyString];
+                  RELEASE(familyArray);
+                }
+              NSDebugLog(@"fc enumerator: adding font: %@", name);
+              [familyArray addObject: fontArray];
+              [fcxft_allFontNames addObject: name];      
+              aFont = [[CairoFaceInfo alloc] initWithfamilyName: familyString
+																						 weight: [[fontArray objectAtIndex: 2] intValue]
+																						 traits: [[fontArray objectAtIndex: 3] unsignedIntValue]
+																						 pattern: fs->fonts[i]];
+              [fcxft_allFonts setObject: aFont forKey: name];
+              RELEASE(aFont);
+            }
+        }
     }
-  //NSLog (@"%@", allFontNames);
+  FcFontSetDestroy (fs); 
+
+  allFontNames = fcxft_allFontNames;
+  allFontFamilies = fcxft_allFontFamilies;
+  __allFonts = fcxft_allFonts;
 }
 
 - (NSString *) defaultSystemFontName
 {
-  return @"Helvetica";
+  return @"Adobe Helvetica";
 }
 
 - (NSString *) defaultBoldSystemFontName
 {
-  return @"Helvetica-Bold";
+  return @"Adobe Helvetica-Bold";
 }
 
 - (NSString *) defaultFixedPitchFontName
