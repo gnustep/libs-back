@@ -154,35 +154,6 @@
   return YES;
 }
 
-// FIXME: This function is not exported by Cairo. The parameters have changed in recent cairo!!!
-extern
-cairo_status_t
-_cairo_scaled_font_text_to_glyphs (cairo_scaled_font_t *scaled_font,
-				   const char          *utf8, 
-				   cairo_glyph_t      **glyphs, 
-				   int 		       *num_glyphs);
-
-static
-BOOL _cairo_extents_for_text(cairo_scaled_font_t *scaled_font, const char *utf8,
-			     cairo_text_extents_t *ctext)
-{
-  cairo_glyph_t *glyphs = NULL;
-  int num_glyphs;
-  cairo_status_t status;
-
-  status = _cairo_scaled_font_text_to_glyphs(scaled_font, utf8, 
-					     &glyphs, &num_glyphs);
-  if (glyphs)
-    {
-      cairo_scaled_font_glyph_extents(scaled_font, glyphs, num_glyphs, ctext);
-      free(glyphs);
-
-      return YES;
-    }
-
-  return NO;
-}
-
 static
 BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
 				cairo_text_extents_t *ctext)
@@ -192,8 +163,9 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
   // FIXME: This is wrong for none ASCII characters!
   str[0] = glyph;
   str[1] = 0;
-  
-  return _cairo_extents_for_text(scaled_font, str, ctext);
+
+  cairo_scaled_font_text_extents(scaled_font, str, ctext);
+  return cairo_scaled_font_status(scaled_font) == CAIRO_STATUS_SUCCESS;
 }
 
 - (NSSize) advancementForGlyph: (NSGlyph)glyph
@@ -236,7 +208,8 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
 {
   cairo_text_extents_t ctext;
 
-  if (_cairo_extents_for_text(_scaled, [string UTF8String], &ctext))
+	cairo_scaled_font_text_extents(_scaled, [string UTF8String], &ctext);
+  if (cairo_scaled_font_status(_scaled) == CAIRO_STATUS_SUCCESS)
     {
       return ctext.width;
     }

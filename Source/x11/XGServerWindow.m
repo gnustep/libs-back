@@ -67,7 +67,7 @@ static BOOL handlesWindowDecorations = YES;
  */
 static char	*rootName = 0;
 
-#define WINDOW_WITH_TAG(windowNumber) (gswindow_device_t *)NSMapGet(windowtags, (void *)windowNumber) 
+#define WINDOW_WITH_TAG(windowNumber) (gswindow_device_t *)NSMapGet(windowtags, (void *)(uintptr_t)windowNumber) 
 
 /* Current mouse grab window */
 static gswindow_device_t *grab_window = NULL;
@@ -184,7 +184,7 @@ typedef struct {
   unsigned long flags;
   unsigned long functions;
   unsigned long decorations;
-  long input_mode;
+  unsigned long input_mode;
   unsigned long status;
 } MwmHints;
 
@@ -245,7 +245,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   
   /* Get the already-set window hints */
   success = XGetWindowProperty (dpy, window, mwhints_atom, 0, 
-		      sizeof (MwmHints) / sizeof (long),
+		      sizeof (MwmHints) / sizeof (unsigned long),
 		      False, AnyPropertyType, &type_ret, &format_ret, 
 		      &nitems_ret, &bytes_after_ret, 
 		      (unsigned char **)&hints);
@@ -331,7 +331,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   /* Set the hints */
   XChangeProperty (dpy, window, mwhints_atom, mwhints_atom, 32, 
 		   PropModeReplace, (unsigned char *)hints, 
-		   sizeof (MwmHints) / sizeof (long));
+		   sizeof (MwmHints) / sizeof (unsigned long));
   
   /* Free the hints if allocated by the X server for us */
   if (needToFreeHints == YES)
@@ -368,11 +368,11 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 + (gswindow_device_t *) _windowForXParent: (Window)xWindow
 {
   NSMapEnumerator	enumerator;
-  Window		x;
+  void		*key;
   gswindow_device_t	*d;
 
   enumerator = NSEnumerateMapTable(windowmaps);
-  while (NSNextMapEnumeratorPair(&enumerator, (void**)&x, (void**)&d) == YES)
+  while (NSNextMapEnumeratorPair(&enumerator, &key, (void**)&d) == YES)
     {
       if (d->root != d->parent && d->parent == xWindow)
 	{
@@ -877,6 +877,10 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
      */
     win_attrs.flags = GSExtraFlagsAttr;
     win_attrs.extra_flags = GSNoApplicationIconFlag;
+/* Warning ... X-bug .. when we specify 32bit data X actually expects data
+ * of type 'long' or 'unsigned long' even on machines where those types
+ * hold 64bit values.
+ */
     XChangeProperty(dpy, ROOT,
 	generic.win_decor_atom, generic.win_decor_atom,
 	32, PropModeReplace, (unsigned char *)&win_attrs,
@@ -887,8 +891,12 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
     {
       // Store the id of our process
       Atom pid_atom = XInternAtom(dpy, "_NET_WM_PID", False);
-      int pid = [pInfo processIdentifier];
+      long pid = [pInfo processIdentifier];
 
+/* Warning ... X-bug .. when we specify 32bit data X actually expects data
+ * of type 'long' or 'unsigned long' even on machines where those types
+ * hold 64bit values.
+ */
       XChangeProperty(dpy, ROOT,
 		      pid_atom, XA_CARDINAL,
 		      32, PropModeReplace, 
@@ -900,7 +908,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
    this context */
 - (void) _destroyServerWindows
 {
-  int num;
+  void *key;
   gswindow_device_t *d;
   NSMapEnumerator   enumerator;
   NSMapTable        *mapcopy;
@@ -909,10 +917,10 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
      the map table */
   mapcopy = NSCopyMapTableWithZone(windowtags, [self zone]);
   enumerator = NSEnumerateMapTable(mapcopy);
-  while (NSNextMapEnumeratorPair(&enumerator, (void**)&num, (void**)&d) == YES)
+  while (NSNextMapEnumeratorPair(&enumerator, &key, (void**)&d) == YES)
     {
       if (d->display == dpy && d->ident != d->root)
-	[self termwindow: num];
+	[self termwindow: (int)(intptr_t)key];
     }
   NSFreeMapTable(mapcopy);
 }
@@ -1077,11 +1085,13 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       if (image != nil)
         {
 	  didCreateNetIcon = YES;
-	  [self _createNetIcon: image result: &iconPropertyData size: &iconSize];
+	  [self _createNetIcon: image
+			result: &iconPropertyData
+			  size: &iconSize];
 	}
     }
 
-  if (iconPropertyData)
+  if (iconPropertyData != 0)
     {
       XChangeProperty(dpy, window,
 		      icon_atom, XA_CARDINAL, 
@@ -1194,6 +1204,10 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   window->siz_hints.flags = USPosition|PPosition|USSize|PSize;
 
   // Always send GNUstepWMAttributes
+/* Warning ... X-bug .. when we specify 32bit data X actually expects data
+ * of type 'long' or 'unsigned long' even on machines where those types
+ * hold 64bit values.
+ */
   XChangeProperty(dpy, window->ident, generic.win_decor_atom, 
 		      generic.win_decor_atom, 32, PropModeReplace, 
 		      (unsigned char *)&window->win_attrs,
@@ -1296,7 +1310,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   if (window->region)
     XDestroyRegion (window->region);
   RELEASE(window->exposedRects);
-  NSMapRemove(windowtags, (void*)win);
+  NSMapRemove(windowtags, (void*)(uintptr_t)win);
   objc_free(window);
 }
 
@@ -1428,6 +1442,10 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       window->siz_hints.height = NSHeight(h);
 
       // send to the WM window style hints
+/* Warning ... X-bug .. when we specify 32bit data X actually expects data
+ * of type 'long' or 'unsigned long' even on machines where those types
+ * hold 64bit values.
+ */
       XChangeProperty(dpy, window->ident, generic.win_decor_atom, 
 			  generic.win_decor_atom, 32, PropModeReplace, 
 			  (unsigned char *)&window->win_attrs,
@@ -1540,6 +1558,10 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 
   // send WindowMaker WM window style hints
   // Always send GNUstepWMAttributes
+/* Warning ... X-bug .. when we specify 32bit data X actually expects data
+ * of type 'long' or 'unsigned long' even on machines where those types
+ * hold 64bit values.
+ */
   XChangeProperty(dpy, window->ident,
 	generic.win_decor_atom, generic.win_decor_atom,
 	32, PropModeReplace, (unsigned char *)&window->win_attrs,
@@ -2127,6 +2149,10 @@ static BOOL didCreatePixmaps;
 	 * is not mapped, we have stored the required info for when
 	 * the WM maps it.
 	 */
+/* Warning ... X-bug .. when we specify 32bit data X actually expects data
+ * of type 'long' or 'unsigned long' even on machines where those types
+ * hold 64bit values.
+ */
         XChangeProperty(dpy, window->ident,
 	    generic.win_decor_atom, generic.win_decor_atom,
 	    32, PropModeReplace, (unsigned char *)&window->win_attrs,
@@ -2203,6 +2229,10 @@ static BOOL didCreatePixmaps;
 	      data[0] = generic.wintypes.win_desktop_atom;
 	    }
 
+/* Warning ... X-bug .. when we specify 32bit data X actually expects data
+ * of type 'long' or 'unsigned long' even on machines where those types
+ * hold 64bit values.
+ */
 	  XChangeProperty(dpy, window->ident, generic.wintypes.win_type_atom,
 			  XA_ATOM, 32, PropModeReplace, 
 			  (unsigned char *)&data, len);
@@ -2210,7 +2240,7 @@ static BOOL didCreatePixmaps;
       else if ((generic.wm & XGWM_GNOME) != 0)
 	{
 	  XEvent event;
-	  int    flag = WIN_LAYER_NORMAL;
+	  long    flag = WIN_LAYER_NORMAL;
 
 	  if (level == NSDesktopWindowLevel)
 	    flag = WIN_LAYER_DESKTOP;
@@ -2613,7 +2643,7 @@ static BOOL didCreatePixmaps;
     }
   else
     {
-      unsigned int opacity;
+      unsigned long opacity;
 
       opacity = (unsigned int)(alpha * 0xffffffff);
       XChangeProperty(window->display, window->ident, opacity_atom,
@@ -2623,7 +2653,7 @@ static BOOL didCreatePixmaps;
         {
 	  XChangeProperty(window->display, window->parent, opacity_atom,
 			  XA_CARDINAL, 32, PropModeReplace,
-			  (unsigned char*)&opacity, 1L);
+			  (unsigned char*)&opacity, 1);
 	}
     }
 }
@@ -2714,15 +2744,16 @@ static BOOL   cursor_hidden = NO;
 
 - (void) _DPSsetcursor: (Cursor)c : (BOOL)set
 {
-  Window win;
+  void	*key;
   NSMapEnumerator enumerator;
   gswindow_device_t  *d;
 
   NSDebugLLog (@"NSCursor", @"_DPSsetcursor: cursor = %p, set = %d", c, set);
   
   enumerator = NSEnumerateMapTable (windowmaps);
-  while (NSNextMapEnumeratorPair (&enumerator, (void**)&win, (void**)&d) == YES)
+  while (NSNextMapEnumeratorPair (&enumerator, &key, (void**)&d) == YES)
     {
+      Window win = (Window)key;
       if (set)
         XDefineCursor(dpy, win, c);
       else

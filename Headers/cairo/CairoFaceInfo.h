@@ -5,6 +5,9 @@
  * August 31, 2003
  * Written by Banlu Kemiyatorn <object at gmail dot com>
  * Base on code by Alexander Malmberg <alexander@malmberg.org>
+ * Rewrite: Fred Kiefer <fredkiefer@gmx.de>
+ * Date: Jan 2006
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
  * License as published by the Free Software Foundation; either
@@ -23,54 +26,35 @@
 #ifndef CAIROFACEINFO_H
 #define CAIROFACEINFO_H
 #include <Foundation/Foundation.h>
-#include <cairo.h>
+#include <cairo-ft.h>
 
 @interface CairoFaceInfo : NSObject
 {
 	int _weight;
 	unsigned int _traits;
 
-	cairo_font_slant_t _c_slant;
-	cairo_font_weight_t _c_weight;
 	cairo_font_face_t *_fontFace; 
+  FcPattern *_pattern;
 
-	NSString *_faceName;
 	NSString *_familyName;
-	NSString *_displayName;
-	NSString *_cairoName;
 }
 
-- (id) initWithName: (NSString *)name 
-	 familyName: (NSString *)familyName 
-	displayName: (NSString *)displayName 
-	  cairoName: (NSString *)cairoName 
-	     weight: (int)weight 
-	     traits: (unsigned int)traits 
-	 cairoSlant: (cairo_font_slant_t)cairoSlant 
-        cairoWeight: (cairo_font_weight_t)cairoWeight;
-- (unsigned int) cacheSize;
+- (id) initWithfamilyName: (NSString *)familyName 
+                   weight: (int)weight 
+                   traits: (unsigned int)traits 
+                  pattern: (FcPattern *)pattern;
 
-- (cairo_font_weight_t) cairoWeight;
-- (void) setCairoWeight: (cairo_font_weight_t) weight;
-- (cairo_font_slant_t) cairoSlant;
-- (void) setCairoSlant: (cairo_font_slant_t) slant;
+- (unsigned int) cacheSize;
 
 - (int) weight;
 - (void) setWeight: (int)weight;
 - (unsigned int) traits;
 - (void) setTraits: (unsigned int)traits;
 
-- (NSString *) displayName;
-- (void) setDisplayName: (NSString *)name;
 - (NSString *) familyName;
 - (void) setFamilyName: (NSString *)name;
-- (NSString *) name;
-- (void) setName: (NSString *)name;
-- (const char *) cairoCName;
-- (void) setCairoName: (NSString *)name;
+
 - (cairo_font_face_t *)fontFace;
-
-
 
 @end
 #endif
