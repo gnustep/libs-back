@@ -192,18 +192,30 @@ static NSArray *faFromFc(FcPattern *pat)
   __allFonts = fcxft_allFonts;
 }
 
-- (NSString *) defaultSystemFontName
+-(NSString *) defaultSystemFontName
 {
-  return @"Adobe Helvetica";
+  if ([allFontNames containsObject: @"Bitstream Vera Sans"])
+    return @"Bitstream Vera Sans";
+  if ([allFontNames containsObject: @"FreeSans"])
+    return @"FreeSans";
+  return @"Helvetica";
 }
 
-- (NSString *) defaultBoldSystemFontName
+-(NSString *) defaultBoldSystemFontName
 {
-  return @"Adobe Helvetica-Bold";
+  if ([allFontNames containsObject: @"Bitstream Vera Sans-Bold"])
+    return @"Bitstream Vera Sans-Bold";
+  if ([allFontNames containsObject: @"FreeSans-Bold"])
+    return @"FreeSans-Bold";
+  return @"Helvetica-Bold";
 }
 
-- (NSString *) defaultFixedPitchFontName
+-(NSString *) defaultFixedPitchFontName
 {
+  if ([allFontNames containsObject: @"Bitstream Vera Sans Mono"])
+    return @"Bitstream Vera Sans Mono";
+  if ([allFontNames containsObject: @"FreeMono"])
+    return @"FreeMono";
   return @"Courier";
 }
 

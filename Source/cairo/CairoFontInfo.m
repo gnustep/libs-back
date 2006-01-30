@@ -20,6 +20,7 @@
  * Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
  */
 
+#include "GNUstepBase/Unicode.h"
 #include <AppKit/NSAffineTransform.h>
 #include "cairo/CairoFontInfo.h"
 #include "cairo/CairoFontEnumerator.h"
@@ -158,11 +159,23 @@ static
 BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
 				cairo_text_extents_t *ctext)
 {
-  char str[3];
+  unichar ustr[2];
+  char str[4];
+  unsigned char *b;
+  unsigned int size = 4;
+  int length = 1;
 
-  // FIXME: This is wrong for none ASCII characters!
-  str[0] = glyph;
-  str[1] = 0;
+  ustr[0] = glyph;
+  ustr[1] = 0;
+
+  b = (unsigned char *)str;
+  if (!GSFromUnicode(&b, &size, ustr, length, 
+		     NSUTF8StringEncoding, NULL, GSUniTerminate))
+    {
+      NSLog(@"Conversion failed for %@", 
+	    [NSString stringWithCharacters: ustr length: length]);
+      return NO;
+    }
 
   cairo_scaled_font_text_extents(scaled_font, str, ctext);
   return cairo_scaled_font_status(scaled_font) == CAIRO_STATUS_SUCCESS;
@@ -250,23 +263,52 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
 	         on: (cairo_t*)ct
 {
   cairo_matrix_t font_matrix;
-  char str[length+1];
+  unichar ustr[length+1];
+  char str[3*length+1];
+  unsigned char *b;
   int i;
+  unsigned int size = 3*length+1;
 
   for (i = 0; i < length; i++)
     {
-      str[i] = glyphs[i];
+      ustr[i] = glyphs[i];
     }
-  str[length] = 0;
+  ustr[length] = 0;
+
+  b = (unsigned char *)str;
+  if (!GSFromUnicode(&b, &size, ustr, length, 
+		     NSUTF8StringEncoding, NULL, GSUniTerminate))
+    {
+      NSLog(@"Conversion failed for %@", 
+	    [NSString stringWithCharacters: ustr length: length]);
+      return;
+    }
 
   cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
 		    -matrix[3], matrix[4], matrix[5]);
-  cairo_set_font_face(ct, [_faceInfo fontFace]);
   cairo_set_font_matrix(ct, &font_matrix);
+  if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
+    {
+	NSLog(@"Error while setting font matrix: %s", 
+	      cairo_status_to_string(cairo_status(ct)));
+	return;
+    }
+  cairo_set_font_face(ct, [_faceInfo fontFace]);
+  if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
+    {
+	NSLog(@"Error while setting font face: %s", 
+	      cairo_status_to_string(cairo_status(ct)));
+	return;
+    }
 
   // FIXME: Need some adjustment here
   cairo_rel_move_to(ct, 0.0, -5.0);
   cairo_show_text(ct, str);
+  if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
+    {
+	NSLog(@"Error drawing string: '%s' for string %s", 
+	      cairo_status_to_string(cairo_status(ct)), str);
+    }
 }
  
 @end
