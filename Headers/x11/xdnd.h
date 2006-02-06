@@ -120,6 +120,7 @@ void xdnd_init (DndClass * dnd, Display * display);
 void xdnd_set_dnd_aware (DndClass * dnd, Window window, Atom * typelist);
 int xdnd_is_dnd_aware (DndClass * dnd, Window window, int *version, Atom * typelist);
 void xdnd_set_type_list (DndClass * dnd, Window window, Atom * typelist);
+void xdnd_get_type_list (DndClass * dnd, Window window, Atom ** typelist);
 void xdnd_send_enter (DndClass * dnd, Window window, Window from, Atom * typelist);
 void xdnd_send_position (DndClass * dnd, Window window, Window from, Atom action, int x, int y, unsigned long etime);
 void xdnd_send_status (DndClass * dnd, Window window, Window from, int will_accept,
@@ -128,6 +129,7 @@ void xdnd_send_leave (DndClass * dnd, Window window, Window from);
 void xdnd_send_drop (DndClass * dnd, Window window, Window from, unsigned long etime);
 void xdnd_send_finished (DndClass * dnd, Window window, Window from, int error);
 int xdnd_convert_selection (DndClass * dnd, Window window, Window requester, Atom type);
+int xdnd_set_selection_owner (DndClass * dnd, Window window, Atom type);
 void xdnd_selection_send (DndClass * dnd, XSelectionRequestEvent * request, unsigned char *data, int length);
 
 #endif 	/* !_X_DND_H */

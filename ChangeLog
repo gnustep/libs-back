@@ -1,3 +1,8 @@
+2006-02-06  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/x11/xdnd.h: Declare two more functions used in xpbs.m.
+	* Tools/gpbs.m: Removed compiler warnings about mismatching declarations.
+
 2006-01-29  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoFontInfo.m (_cairo_extents_for_NSGlyph,
