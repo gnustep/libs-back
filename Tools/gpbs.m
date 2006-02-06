@@ -274,7 +274,7 @@ NSMutableDictionary	*pasteboards = nil;
   ASSIGN(data, d);
 }
 
-- (id) type
+- (NSString*) type
 {
   return type;
 }
@@ -367,7 +367,9 @@ NSMutableDictionary	*pasteboards = nil;
   return e;
 }
 
-- (void) addTypes: newTypes owner: newOwner pasteboard: pb
+- (void) addTypes: (NSArray*)newTypes 
+	    owner: (id)newOwner 
+       pasteboard: (id)pb
 {
   int	i;
   BOOL	wants = NO;
@@ -575,7 +577,7 @@ NSMutableDictionary	*pasteboards = nil;
 
 - (int) addTypes: (NSArray*)types
 	   owner: (id)owner
-      pasteboard: (id)pboard
+      pasteboard: (NSPasteboard*)pboard
 	oldCount: (int)count;
 - (NSString*) availableTypeFromArray: (NSArray*)types
 			 changeCount: (int*)count;
@@ -586,7 +588,7 @@ NSMutableDictionary	*pasteboards = nil;
 	  mustBeCurrent: (BOOL)flag;
 - (int) declareTypes: (NSArray*)types
 	       owner: (id)owner
-	  pasteboard: (id)pboard;
+	  pasteboard: (NSPasteboard*)pboard;
 - (PasteboardEntry*) entryByCount: (int)count;
 - (NSString*) name;
 - (void) releaseGlobally;
