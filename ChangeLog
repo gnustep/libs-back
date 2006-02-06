@@ -1,5 +1,11 @@
 2006-02-06  Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/x11/XGServer.m (_initXContext): Don't set the environment
+	value for NSHOST. Patch by Tim MacIntosh <tmcintos@avalon.net>. 
+	See mails on dev mailing list for more explaination.
+
+2006-02-06  Fred Kiefer <FredKiefer@gmx.de>
+
 	* Headers/x11/xdnd.h: Declare two more functions used in xpbs.m.
 	* Tools/gpbs.m: Removed compiler warnings about mismatching declarations.
 

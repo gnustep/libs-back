@@ -361,15 +361,16 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 - _initXContext
 {
   int			screen_number, display_number;
-  NSString		*display_name, *host;
+  NSString		*display_name;
   XGScreenContext       *screen;
 
-  host = [[NSUserDefaults standardUserDefaults] stringForKey: @"NSHost"];
   display_name = [server_info objectForKey: GSDisplayName];
   if (display_name == nil)
     {
+      NSString *host = [[NSUserDefaults standardUserDefaults] stringForKey: @"NSHost"];
       NSString *dn = [server_info objectForKey: GSDisplayNumber];
       NSString *sn = [server_info objectForKey: GSScreenNumber];
+
       if (dn || sn)
 	{
 	  if (dn == NULL)
@@ -380,35 +381,8 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 	    host = @"";
 	  display_name = [NSString stringWithFormat: @"%@:%@.%@", host, dn,sn];
 	}
-    }
-
-  if (display_name == nil)
-    {
-      if (host == nil)
-	{
-	  NSString	*d = [[[NSProcessInfo processInfo] environment]
-	    objectForKey: @"DISPLAY"];
-
-	  host = _parse_display_name(d, &display_number, &screen_number);
-	  if (display_number != 0)
-	    {
-	      NSLog(@"NOTE: Only one display per host fully supported.");
-	    }
-	  if ([host isEqual: @""] == NO)
-	    {
-	      /**
-	       * If we are using the DISPLAY environment variable to
-	       * determine where to display, set the NSHost default
-	       * so that other parts of the system know where we are
-	       * displaying.
-	       */
-	      [[NSUserDefaults standardUserDefaults] registerDefaults:
-		  [NSDictionary dictionaryWithObject: host
-			                      forKey: @"NSHost"]];
-	    }
-	}
-      else if ([host isEqual: @""] == NO)
-	{
+      else if ((host != nil) && ([host isEqual: @""] == NO))
+        {
 	  /**
 	   * If the NSHost default told us to display somewhere, we need
 	   * to generate a display name for X from the host name and the
