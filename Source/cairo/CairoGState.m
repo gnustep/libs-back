@@ -1025,8 +1025,10 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
   unsigned char	*tmp;
   int i = 0;
   int j;
+  int index;
   unsigned int pixels = pixelsHigh * pixelsWide;
   const unsigned char *bits = data[0];
+  unsigned char *rowData;
 
 /*
   NSLog(@"%@ DPSimage %dx%d (%p)", self, pixelsWide, pixelsHigh,
@@ -1039,33 +1041,64 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
       return;
     }
 
-  switch (bitsPerSample * samplesPerPixel)
+  // default is 8 bit grayscale 
+  if (!bitsPerSample)
+    bitsPerSample = 8;
+  if (!samplesPerPixel)
+    samplesPerPixel = 1;
+
+  // FIXME - does this work if we are passed a planar image but no hints ?
+  if (!bitsPerPixel)
+    bitsPerPixel = bitsPerSample * samplesPerPixel;
+  if (!bytesPerRow)
+    bytesPerRow = (bitsPerPixel * pixelsWide) / 8;
+
+  /* make sure its sane - also handles row padding if hint missing */
+  while ((bytesPerRow * 8) < (bitsPerPixel * pixelsWide))
+    bytesPerRow++;
+
+  switch (bitsPerPixel)
     {
     case 32:
+      rowData = (unsigned char *)bits;
       tmp = objc_malloc(pixels * 4);
-      while (i < pixels * 4)
-	{
-	  tmp[i+0] = bits[i+2];
-	  tmp[i+1] = bits[i+1];
-	  tmp[i+2] = bits[i+0];
-	  tmp[i+3] = bits[i+3];
-	  i += 4;
+      index = 0;
+
+      for (i = 0; i < pixelsHigh; i++)
+        {
+	  unsigned char *d = rowData;
+
+	  for (j = 0; j < pixelsWide; j++)
+	    {
+	      tmp[index++] = d[2];
+	      tmp[index++] = d[1];
+	      tmp[index++] = d[0];
+	      tmp[index++] = d[3];
+	      d += 4;
+	    }
+	  rowData += bytesPerRow;
 	}
       bits = tmp;
       format = CAIRO_FORMAT_ARGB32;
       break;
     case 24:
+      rowData = (unsigned char *)bits;
       tmp = objc_malloc(pixels * 4);
-      i = 0;
-      j = 0;
-      while (i < pixels * 4)
-	{
-	  tmp[i+0] = bits[j+2];
-	  tmp[i+1] = bits[j+1];
-	  tmp[i+2] = bits[j+0];
-	  tmp[i+3] = 0;
-	  i += 4;
-	  j += 3;
+      index = 0;
+
+      for (i = 0; i < pixelsHigh; i++)
+        {
+	  unsigned char *d = rowData;
+
+	  for (j = 0; j < pixelsWide; j++)
+	    {
+	      tmp[index++] = d[2];
+	      tmp[index++] = d[1];
+	      tmp[index++] = d[0];
+	      tmp[index++] = 0;
+	      d += 3;
+	    }
+	  rowData += bytesPerRow;
 	}
       bits = tmp;
       format = CAIRO_FORMAT_RGB24;
@@ -1095,16 +1128,16 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
 						format,
 						pixelsWide,
 						pixelsHigh,
-						bytesPerRow);
-
-  if (bits != data[0])
-    {
-      objc_free(bits);
-    }
+						pixelsWide * 4);
 
   if (surface == NULL)
     {
       NSLog(@"Image surface could not be created");
+      if (bits != data[0])
+        {
+	  objc_free((unsigned char *)bits);
+	}
+
       return;
     }
 
@@ -1120,6 +1153,12 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
   cairo_fill(_ct);
   cairo_surface_destroy(surface);
   cairo_restore(_ct);
+
+  if (bits != data[0])
+    {
+      objc_free((unsigned char *)bits);
+    }
+
 }
 
 - (void) compositerect: (NSRect)aRect op: (NSCompositingOperation)op
