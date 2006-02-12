@@ -4,6 +4,9 @@
  * Copyright (C) 2003 Free Software Foundation, Inc.
  * August 31, 2003
  * Written by Banlu Kemiyatorn <object at gmail dot com>
+ * Rewrite: Fred Kiefer <fredkiefer@gmx.de>
+ * Date: Jan 2006
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
  * License as published by the Free Software Foundation; either
@@ -31,8 +34,6 @@
 
 #define FIXME()  NSLog(@":::FIXME::: %@ %s", [self description], sel_get_name(_cmd))
 
-static cairo_matrix_t local_matrix;
-
 /* Be warned that CairoGState didn't derived GSGState */
 @implementation CairoGState 
 
@@ -58,6 +59,7 @@ static cairo_matrix_t local_matrix;
     {
       cairo_path_t *path;
       cairo_status_t status;
+      cairo_matrix_t local_matrix;
  
       // FIXME: Need some way to do a copy
       //cairo_copy(copy->_ct, _ct);
@@ -75,14 +77,6 @@ static cairo_matrix_t local_matrix;
 	  NSLog(@"Cairo status %s in copy", cairo_status_to_string(status));
 	}
     }
-
-  /*
-     NSLog(@"copy state %p(%p) to %p(%p)",self,
-     cairo_get_target(_ct),
-     copy,
-     cairo_get_target(copy->_ct)
-);
-   */
 
   RETAIN(_font);
   RETAIN(_surface);
@@ -106,7 +100,6 @@ static cairo_matrix_t local_matrix;
 
 - (void) dealloc
 {
-  //NSLog(@"destate %p",self);
   if (_ct)
     {
       cairo_destroy(_ct);
@@ -120,6 +113,8 @@ static cairo_matrix_t local_matrix;
 static void
 _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
 {
+  cairo_matrix_t local_matrix;
+
   cairo_matrix_init_scale(&local_matrix, 1, -1);
 
   if (surface != nil)
@@ -167,16 +162,15 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
   _offset = NSMakePoint(x, y);
 
   [self DPSinitgraphics];
-/*
-  NSLog(@"after: surface %p on state %p %@",
-	cairo_get_target (_ct), self,
-	NSStringFromSize([_surface size]));
-*/
 }
 
 @end 
 
 @implementation CairoGState (Ops)
+
+// FIXME: Hack to be able to set alpha
+static float last_r, last_g, last_b;
+
 /*
  * Color operations
  */
@@ -225,22 +219,22 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
 
 - (void) DPScurrentrgbcolor: (float *)r : (float *)g : (float *)b
 {
-  double dr, dg, db;
-
-  //FIXME: 
+  //FIXME: cairo removed this function
   //cairo_current_rgb_color(_ct, &dr, &dg, &db);
-  dr = dg = db = 0.8;
-  *r = dr;
-  *g = dg;
-  *b = db;
+  *r = last_r;
+  *g = last_g;
+  *b = last_b;
 }
 
 - (void) DPSsetalpha: (float)a
 {
-//  float r, g, b;
+  float r, g, b;
 
-  //FIXME
-  //cairo_set_source_rgba(_ct, r, g, b, a);
+  // FIXME: Hack to be able to set alpha
+  r = last_r;
+  g = last_g;
+  b = last_b;
+  cairo_set_source_rgba(_ct, r, g, b, a);
 }
 
 - (void) DPSsetcmykcolor: (float)c : (float)m : (float)y : (float)k
@@ -250,12 +244,12 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
   r = 1 - c;
   g = 1 - m;
   b = 1 - y;
-  cairo_set_source_rgb(_ct, r, g, b);
+  [self DPSsetrgbcolor: r : g : b];
 }
 
 - (void) DPSsetgray: (float)gray
 {
-  cairo_set_source_rgb(_ct, gray, gray, gray);
+  [self DPSsetrgbcolor: gray : gray : gray];
 }
 
 - (void) DPSsethsbcolor: (float)h : (float)s : (float)b
@@ -276,6 +270,10 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
 
 - (void) DPSsetrgbcolor: (float)r : (float)g: (float)b
 {
+  // FIXME: Hack to be able to set alpha
+  last_r = r;
+  last_g = g;
+  last_b = b;
   cairo_set_source_rgb(_ct, r, g, b);
 }
 
@@ -573,6 +571,8 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
 
 - (void) DPSconcat: (const float *)m
 {
+  cairo_matrix_t local_matrix;
+
   cairo_matrix_init(&local_matrix, m[0], m[1], m[2], m[3], m[4], m[5]);
   cairo_transform(_ct, &local_matrix);
 }
@@ -600,26 +600,18 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
 
 - (void) _flipCairoFont
 {
+  cairo_matrix_t local_matrix;
+
   cairo_matrix_init_scale(&local_matrix, 1, -1);
   cairo_set_font_matrix(_ct, &local_matrix);
 }
-
-/*
-static void
-_log_matrix(cairo_t * ct)
-{
-  cairo_get_matrix(ct, &local_matrix);
-
-  NSLog(@"%g %g %g %g %g %g", local_matrix.xx, local_matrix.yx, local_matrix.xy, 
-                              local_matrix.yy, local_matrix.x0, local_matrix.y0);
-}
-*/
 
 - (NSAffineTransform *) GSCurrentCTM
 {
   NSAffineTransform *transform;
   NSAffineTransformStruct tstruct;
   cairo_matrix_t flip_matrix;
+  cairo_matrix_t local_matrix;
 
   transform = [NSAffineTransform transform];
   cairo_get_matrix(_ct, &local_matrix);
@@ -651,6 +643,7 @@ _log_matrix(cairo_t * ct)
 - (void) GSSetCTM: (NSAffineTransform *)ctm
 {
   NSAffineTransformStruct tstruct;
+  cairo_matrix_t local_matrix;
 
   _flipCairoSurfaceMatrix(_ct, _surface);
   tstruct = [ctm transformStruct];
@@ -664,6 +657,7 @@ _log_matrix(cairo_t * ct)
 - (void) GSConcatCTM: (NSAffineTransform *)ctm
 {
   NSAffineTransformStruct tstruct;
+  cairo_matrix_t local_matrix;
 
   tstruct =  [ctm transformStruct];
   cairo_matrix_init(&local_matrix,
@@ -905,61 +899,6 @@ _log_matrix(cairo_t * ct)
     }
 }
 
-/*
-static NSString *
-_opName(NSCompositingOperation op)
-{
-  switch (op)
-    {
-    case NSCompositeClear:
-      return @"NSCompositeClear";
-
-    case NSCompositeCopy:
-      return @"NSCompositeCopy";
-
-    case NSCompositeSourceOver:
-      return @"NSCompositeSourceOver";
-
-    case NSCompositeSourceIn:
-      return @"NSCompositeSourceIn";
-
-    case NSCompositeSourceOut:
-      return @"NSCompositeSourceOut";
-
-    case NSCompositeSourceAtop:
-      return @"NSCompositeSourceAtop";
-
-    case NSCompositeDestinationOver:
-      return @"NSCompositeDestinationOver";
-
-    case NSCompositeDestinationIn:
-      return @"NSCompositeDestinationIn";
-
-    case NSCompositeDestinationOut:
-      return @"NSCompositeDestinationOut";
-
-    case NSCompositeDestinationAtop:
-      return @"NSCompositeDestinationAtop";
-
-    case NSCompositeXOR:
-      return @"NSCompositeXOR";
-
-    case NSCompositePlusDarker:
-      return @"NSCompositePlusDarker";
-
-    case NSCompositeHighlight:
-      return @"NSCompositeHighlight";
-
-    case NSCompositePlusLighter:
-      return @"NSCompositePlusLighter";
-
-    default:
-      return @"default";
-
-    }
-}
-*/
-
 static void
 _set_op(cairo_t * ct, NSCompositingOperation op)
 {
@@ -1029,6 +968,7 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
   unsigned int pixels = pixelsHigh * pixelsWide;
   const unsigned char *bits = data[0];
   unsigned char *rowData;
+  cairo_matrix_t local_matrix;
 
 /*
   NSLog(@"%@ DPSimage %dx%d (%p)", self, pixelsWide, pixelsHigh,
@@ -1107,17 +1047,11 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
       NSLog(@"Image format not support");
       return;
     }
-//      [self DPSinitclip];
 
-  tstruct = [matrix transformStruct];
-  /*
-     NSLog(@"%g %g %g %g %g %g",
-     tstruct.m11, tstruct.m12,
-     tstruct.m21, tstruct.m22,
-     tstruct.tX, tstruct.tY);
-  */
   cairo_save(_ct);
   _flipCairoSurfaceMatrix(_ct, _surface);
+  tstruct = [matrix transformStruct];
+
   cairo_matrix_init(&local_matrix,
 		    tstruct.m11, tstruct.m12,
 		    tstruct.m21, tstruct.m22, 
@@ -1191,6 +1125,11 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
   _set_op(_ct, op);
 
   src = cairo_get_target(source->_ct);
+  if (src == cairo_get_target(_ct))
+    {
+      //NSLog(@"Copy onto self");
+    }
+
   minx = NSMinX(aRect);
   miny = NSMinY(aRect);
   width = NSWidth(aRect);
@@ -1202,12 +1141,16 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
   cairo_device_to_user_distance(_ct, &width, &height);
   NSLog(@"Rect %@  = %f, %f, %f, %f", NSStringFromRect(aRect), minx, miny, width, height);
   */
-  cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny);
-  cairo_rectangle (_ct, aPoint.x, aPoint.y, width, height);
-/*
-  cairo_set_source_surface(_ct, src, aPoint.x - NSMinX(aRect), aPoint.y - NSMinY(aRect));
-  cairo_rectangle (_ct, aPoint.x, aPoint.y, NSWidth(aRect), NSHeight(aRect));
-*/
+  if (_viewIsFlipped)
+    {
+      cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny-height);
+      cairo_rectangle (_ct, aPoint.x, aPoint.y-height, width, height);
+    }
+  else 
+    {
+      cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny);
+      cairo_rectangle (_ct, aPoint.x, aPoint.y, width, height);
+    }
 
   if (delta < 1.0)
   {
