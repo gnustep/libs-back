@@ -1,3 +1,9 @@
+2005-02-12  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-compositeGState:...fraction:): Deal
+	with flipped views. Also some cleanup in the whole file and a hack
+	to set alpha.
+
 2005-02-11  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-DPSImage::::::::): Handle missing
