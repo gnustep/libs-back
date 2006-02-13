@@ -69,6 +69,15 @@
       path = cairo_copy_path(_ct);
       cairo_append_path(copy->_ct, path);
       cairo_path_destroy(path);
+      
+      cairo_set_operator(copy->_ct, cairo_get_operator(_ct));
+      cairo_set_source(copy->_ct, cairo_get_source(_ct));
+      cairo_set_tolerance(copy->_ct, cairo_get_tolerance(_ct));
+      cairo_set_antialias(copy->_ct, cairo_get_antialias(_ct));
+      cairo_set_line_width(copy->_ct, cairo_get_line_width(_ct));
+      cairo_set_line_cap(copy->_ct, cairo_get_line_cap(_ct));
+      cairo_set_line_join(copy->_ct, cairo_get_line_join(_ct));
+      cairo_set_miter_limit(copy->_ct, cairo_get_miter_limit(_ct));
       //NSLog(@"copy gstate old %d new %d", _ct, copy->_ct);
  
       status = cairo_status(copy->_ct);
@@ -438,6 +447,7 @@ static float last_r, last_g, last_b;
   //NSLog(@"in flip %p (%p)", self, cairo_get_target(_ct));
   /* Cairo's default line width is 2.0 */
   cairo_set_line_width(_ct, 1.0);
+  cairo_set_operator(_ct, CAIRO_OPERATOR_OVER);
 }
 
 - (void) DPScurrentflat: (float *)flatness
@@ -1049,6 +1059,7 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
     }
 
   cairo_save(_ct);
+  cairo_set_operator(_ct, CAIRO_OPERATOR_SOURCE);
   _flipCairoSurfaceMatrix(_ct, _surface);
   tstruct = [matrix transformStruct];
 
@@ -1092,15 +1103,16 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
     {
       objc_free((unsigned char *)bits);
     }
-
 }
 
 - (void) compositerect: (NSRect)aRect op: (NSCompositingOperation)op
 {
+  cairo_save(_ct);
   _set_op(_ct, op);
   cairo_rectangle(_ct, NSMinX(aRect), NSMinY(aRect), NSWidth(aRect),
 		  NSHeight(aRect));
   cairo_fill(_ct);
+  cairo_restore(_ct);
 }
 
 - (void) compositeGState: (CairoGState *)source 
@@ -1143,8 +1155,8 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
   */
   if (_viewIsFlipped)
     {
-      cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny-height);
-      cairo_rectangle (_ct, aPoint.x, aPoint.y-height, width, height);
+      cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny - height);
+      cairo_rectangle (_ct, aPoint.x, aPoint.y - height, width, height);
     }
   else 
     {
