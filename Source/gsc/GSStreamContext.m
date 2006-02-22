@@ -83,8 +83,12 @@ fpfloat(FILE *stream, float f)
   if (info && [info objectForKey: @"NSOutputFile"])
     {
       NSString *path = [info objectForKey: @"NSOutputFile"];
-      NSLog(@"Printing to %s", [path fileSystemRepresentation]);
+      NSDebugLLog(@"GSContext", @"Printing to %@", path);
+#if	defined(__MINGW32__)
+      gstream = _wfopen([path fileSystemRepresentation], L"wb");
+#else
       gstream = fopen([path fileSystemRepresentation], "w");
+#endif
       if (!gstream)
         {
 	  NSDebugLLog(@"GSContext", @"%@: Could not open printer file %@",
