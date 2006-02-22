@@ -1,17 +1,22 @@
-2005-02-13  Fred Kiefer <FredKiefer@gmx.de>
+2006-02-22 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/gsc/GSStreamContext.m: Fix opening of file on mingw32
+	Don't log where we are printingf to unless debugging is on.
+
+2006-02-13  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-copyWithZone:): Handle more of the
 	state parameters in copy.
 	* Source/cairo/CairoGState.m (-compositerect:op:): Protect
 	operator setting with save/restore.
 
-2005-02-12  Fred Kiefer <FredKiefer@gmx.de>
+2006-02-12  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-compositeGState:...fraction:): Deal
 	with flipped views. Also some cleanup in the whole file and a hack
 	to set alpha.
 
-2005-02-11  Fred Kiefer <FredKiefer@gmx.de>
+2006-02-11  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-DPSImage::::::::): Handle missing
 	parameters, row end padding and destroy the temporary image at the
