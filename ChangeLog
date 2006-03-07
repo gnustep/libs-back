@@ -1,3 +1,8 @@
+2006-03-07  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-compositeGState:...fraction:,
+	DPSimage::...:): Handle flipped views correctly.
+
 2006-02-22 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/gsc/GSStreamContext.m: Fix opening of file on mingw32

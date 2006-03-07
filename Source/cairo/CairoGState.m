@@ -443,7 +443,10 @@ static float last_r, last_g, last_b;
     {
       NSLog(@"Cairo status %s in DPSinitgraphics", cairo_status_to_string(status));
     }
-  _flipCairoSurfaceMatrix(_ct, _surface);
+  if (!_viewIsFlipped)
+    {
+      _flipCairoSurfaceMatrix(_ct, _surface);
+    }
   //NSLog(@"in flip %p (%p)", self, cairo_get_target(_ct));
   /* Cairo's default line width is 2.0 */
   cairo_set_line_width(_ct, 1.0);
@@ -590,7 +593,10 @@ static float last_r, last_g, last_b;
 - (void) DPSinitmatrix
 {
   cairo_identity_matrix(_ct);
-  _flipCairoSurfaceMatrix(_ct, _surface);
+  if (!_viewIsFlipped)
+    {
+      _flipCairoSurfaceMatrix(_ct, _surface);
+    }
 }
 
 - (void) DPSrotate: (float)angle
@@ -629,6 +635,8 @@ static float last_r, last_g, last_b;
   NSLog(@"Before flip %f %f, %f, %f, %f, %f", local_matrix.xx, local_matrix.yx, 
 	local_matrix.xy, local_matrix.yy, local_matrix.x0, local_matrix.y0);
 */
+  if (!_viewIsFlipped)
+    {
   if (_surface)
   {
      cairo_matrix_init_translate(&flip_matrix, 0, -[_surface size].height);
@@ -636,6 +644,7 @@ static float last_r, last_g, last_b;
    }
   cairo_matrix_init_scale(&flip_matrix, 1, -1);
   cairo_matrix_multiply(&local_matrix, &local_matrix, &flip_matrix);
+    }
 /*
   NSLog(@"After flip %f %f, %f, %f, %f, %f", local_matrix.xx, local_matrix.yx, 
 	local_matrix.xy, local_matrix.yy, local_matrix.x0, local_matrix.y0);
@@ -655,7 +664,10 @@ static float last_r, last_g, last_b;
   NSAffineTransformStruct tstruct;
   cairo_matrix_t local_matrix;
 
-  _flipCairoSurfaceMatrix(_ct, _surface);
+  if (!_viewIsFlipped)
+    {
+      _flipCairoSurfaceMatrix(_ct, _surface);
+    }
   tstruct = [ctm transformStruct];
   cairo_matrix_init(&local_matrix,
 		    tstruct.m11, tstruct.m12,
@@ -1058,17 +1070,6 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
       return;
     }
 
-  cairo_save(_ct);
-  cairo_set_operator(_ct, CAIRO_OPERATOR_SOURCE);
-  _flipCairoSurfaceMatrix(_ct, _surface);
-  tstruct = [matrix transformStruct];
-
-  cairo_matrix_init(&local_matrix,
-		    tstruct.m11, tstruct.m12,
-		    tstruct.m21, tstruct.m22, 
-		    tstruct.tX, tstruct.tY);
-  cairo_transform(_ct, &local_matrix);
-
   surface = cairo_image_surface_create_for_data((void*)bits,
 						format,
 						pixelsWide,
@@ -1086,13 +1087,41 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
       return;
     }
 
-  cairo_set_source_surface(_ct, surface, 0, 0);
+  cairo_save(_ct);
+  cairo_set_operator(_ct, CAIRO_OPERATOR_SOURCE);
+  tstruct = [matrix transformStruct];
+
+  cairo_matrix_init(&local_matrix,
+		    tstruct.m11, tstruct.m12,
+		    tstruct.m21, tstruct.m22, 
+		    tstruct.tX, tstruct.tY);
+  cairo_transform(_ct, &local_matrix);
   if (_viewIsFlipped)
     {
-      cairo_rectangle(_ct, 0, -pixelsHigh, pixelsWide, pixelsHigh);
+      cairo_pattern_t *pattern;
+      cairo_matrix_t local_matrix;
+      
+      pattern = cairo_pattern_create_for_surface (surface);
+      cairo_matrix_init_scale(&local_matrix, 1, -1);
+      cairo_matrix_translate(&local_matrix, 0, -2*pixelsHigh);
+      cairo_pattern_set_matrix(pattern, &local_matrix);
+      cairo_set_source(_ct, pattern);
+      cairo_pattern_destroy(pattern);
+
+      cairo_rectangle(_ct, 0, pixelsHigh, pixelsWide, pixelsHigh);
     }
   else 
     {
+      cairo_pattern_t *pattern;
+      cairo_matrix_t local_matrix;
+      
+      pattern = cairo_pattern_create_for_surface (surface);
+      cairo_matrix_init_scale(&local_matrix, 1, -1);
+      cairo_matrix_translate(&local_matrix, 0, -pixelsHigh);
+      cairo_pattern_set_matrix(pattern, &local_matrix);
+      cairo_set_source(_ct, pattern);
+      cairo_pattern_destroy(pattern);
+
       cairo_rectangle(_ct, 0, 0, pixelsWide, pixelsHigh);
     }
   cairo_fill(_ct);
@@ -1160,7 +1189,23 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
     }
   else 
     {
-      cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny);
+      if (!source->_viewIsFlipped)
+        {
+	  // Undo flipping of the source coordinate system
+	  cairo_pattern_t *pattern;
+	  cairo_matrix_t local_matrix;
+	  
+	  pattern = cairo_pattern_create_for_surface(src);
+	  cairo_matrix_init_scale(&local_matrix, 1, -1);
+	  cairo_matrix_translate(&local_matrix, -aPoint.x + minx, -aPoint.y + miny - height);
+	  cairo_pattern_set_matrix(pattern, &local_matrix);
+	  cairo_set_source(_ct, pattern);
+	  cairo_pattern_destroy(pattern);
+	}
+      else
+        {
+	  cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny);
+	}
       cairo_rectangle (_ct, aPoint.x, aPoint.y, width, height);
     }
 
