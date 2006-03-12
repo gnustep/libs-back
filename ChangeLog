@@ -1,3 +1,8 @@
+2006-03-13  Fred Kiefer <FredKiefer@gmx.de>
+	
+	* Source/x11/XGServerWindow.m (-termwindow:): Reset the window
+	cache, if it points to the terminated window.
+
 2006-03-12  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/NSBezierPathCairo.m
