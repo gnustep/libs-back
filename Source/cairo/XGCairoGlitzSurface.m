@@ -21,7 +21,6 @@
    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include <math.h>
 #include "cairo/XGCairoGlitzSurface.h"
 
 #define GSWINDEVICE ((gswindow_device_t *)gsDevice)

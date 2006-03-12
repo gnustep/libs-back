@@ -42,7 +42,9 @@
       free(_cachedGlyphs);
     }
   _cachedSizes = malloc(sizeof(NSSize) * size);
+  memset(_cachedSizes, 0, sizeof(NSSize) * size);
   _cachedGlyphs = malloc(sizeof(unsigned int) * size);
+  memset(_cachedGlyphs, 0, sizeof(unsigned int) * size);
 }
 
 - (BOOL) setupAttributes
@@ -90,6 +92,7 @@
       return NO;
     }
   _scaled = cairo_scaled_font_create(face, &font_matrix, &ctm, options);
+  cairo_font_options_destroy(options);
   if (!_scaled)
     {
       return NO;

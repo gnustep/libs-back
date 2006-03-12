@@ -20,12 +20,19 @@
  */
 #include "cairo/CairoContext.h"
 #include "cairo/CairoGState.h"
+#include "cairo/CairoSurface.h"
 #include "cairo/CairoFontInfo.h"
 #include "cairo/CairoFontEnumerator.h"
-#include "NSBezierPathCairo.h"
 #include "x11/XGServer.h"
+#include "config.h"
 
-#define XRGSTATE ((CairoGState *)gstate)
+#ifdef USE_GLITZ
+#include "cairo/XGCairoGlitzSurface.h"
+#else
+#include "cairo/XGCairoSurface.h"
+#endif
+
+#define CGSTATE ((CairoGState *)gstate)
 
 
 @implementation CairoContext
@@ -33,19 +40,22 @@
 + (void) initializeBackend
 {
   //NSLog (@"CairoContext : Initializing cairo backend");
-  [NSGraphicsContext setDefaultContextClass:self];
+  [NSGraphicsContext setDefaultContextClass: self];
 
-  [CairoSurface initializeBackend];
+#ifdef USE_GLITZ
+  [CairoSurface setDefaultSurfaceClass: [XGCairoGlitzSurface class]];
+#else
+  [CairoSurface setDefaultSurfaceClass: [XGCairoSurface class]];
+#endif
   [GSFontEnumerator setDefaultClass: [CairoFontEnumerator class]];
   [GSFontInfo setDefaultClass: [CairoFontInfo class]];
-  [NSBezierPath initializeCairoBezierPath];
 }
 
 - (void) GSWSetViewIsFlipped: (BOOL)flipped
 {
   if (gstate)
     {
-      ((CairoGState *) gstate)->_viewIsFlipped = flipped;
+      CGSTATE->_viewIsFlipped = flipped;
     }
 }
 
@@ -80,12 +90,12 @@
 
 - (void) GSCurrentDevice: (void **)device : (int *)x : (int *)y
 {
-  [XRGSTATE GSCurrentDevice: device : x : y];
+  [CGSTATE GSCurrentDevice: device : x : y];
 }
 
 - (void) GSSetDevice: (void *)device : (int)x : (int)y
 {
-  [XRGSTATE GSSetDevice: device : x : y];
+  [CGSTATE GSSetDevice: device : x : y];
 }
 
 @end
