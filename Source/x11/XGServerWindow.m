@@ -1299,6 +1299,11 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       XDestroyWindow(dpy, window->ident);
       if (window->gc)
 	XFreeGC (dpy, window->gc);
+      if (generic.cachedWindow != 0 && 
+	  window->ident == ((gswindow_device_t*)(generic.cachedWindow))->ident)
+        {
+	  generic.cachedWindow = 0;
+	}
       NSMapRemove(windowmaps, (void*)window->ident);
     }
 
