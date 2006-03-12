@@ -20,8 +20,6 @@
    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include <Foundation/NSUserDefaults.h>
-#include <math.h>
 #include "cairo/XGCairoXImageSurface.h"
 
 #define GSWINDEVICE ((gswindow_device_t *)gsDevice)
@@ -43,7 +41,7 @@
 		       8, 0);
   image->data = malloc(image->height * image->bytes_per_line);
   //NSLog(@"alloc %d %d %d",image->width,image->height,(image->height * image->bytes_per_line));
-  _surface = cairo_image_surface_create_for_data(image->data, CAIRO_FORMAT_ARGB32, 
+  _surface = cairo_image_surface_create_for_data((unsigned char*)image->data, CAIRO_FORMAT_ARGB32, 
 						 image->width, image->height, image->width*4);
   
   return self;

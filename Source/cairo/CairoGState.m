@@ -29,7 +29,6 @@
 #include "cairo/CairoFontInfo.h"
 #include "cairo/CairoSurface.h"
 #include "cairo/CairoContext.h"
-#include "NSBezierPathCairo.h"
 #include <math.h>
 
 #define FIXME()  NSLog(@":::FIXME::: %@ %s", [self description], sel_get_name(_cmd))
@@ -800,9 +799,45 @@ static float last_r, last_g, last_b;
   cairo_new_path(_ct);
 }
 
+- (NSBezierPath *) bezierPath
+{
+  int i;
+  cairo_path_t *cpath;
+  cairo_path_data_t *data;
+  NSBezierPath *path =[NSBezierPath bezierPath];
+
+  cpath = cairo_copy_path(_ct);
+
+  for (i=0; i < cpath->num_data; i += cpath->data[i].header.length) 
+    {
+      data = &cpath->data[i];
+      switch (data->header.type) 
+        {
+	  case CAIRO_PATH_MOVE_TO:
+	    [path moveToPoint: NSMakePoint(data[1].point.x, data[1].point.y)];
+	    break;
+	  case CAIRO_PATH_LINE_TO:
+	    [path lineToPoint: NSMakePoint(data[1].point.x, data[1].point.y)];
+	    break;
+	  case CAIRO_PATH_CURVE_TO:
+	    [path curveToPoint: NSMakePoint(data[1].point.x, data[1].point.y) 
+		 controlPoint1: NSMakePoint(data[2].point.x, data[2].point.y) 
+		 controlPoint2: NSMakePoint(data[3].point.x, data[3].point.y)];
+	    break;
+	  case CAIRO_PATH_CLOSE_PATH:
+	    [path closePath];
+	    break;
+	}
+    }
+
+  cairo_path_destroy(cpath);
+
+  return path;
+}
+
 - (void) DPSpathbbox: (float *)llx : (float *)lly : (float *)urx : (float *)ury
 {
-  NSBezierPath *path = [NSBezierPath bezierPathFromCairo: _ct];
+  NSBezierPath *path = [self bezierPath];
   NSRect rect = [path controlPointBounds];
 
   if (llx)
@@ -861,11 +896,10 @@ static float last_r, last_g, last_b;
 
 - (void) DPSreversepath
 {
-  NSBezierPath *path = [NSBezierPath bezierPathFromCairo: _ct];
+  NSBezierPath *path = [self bezierPath];
 
   path = [path bezierPathByReversingPath];
-  cairo_new_path(_ct);
-  [path appendBezierPathToCairo: _ct];
+  [self GSSendBezierPath: path];
 }
 
 - (void) DPSrlineto: (float)x : (float)y
@@ -885,8 +919,46 @@ static float last_r, last_g, last_b;
 
 - (void) GSSendBezierPath: (NSBezierPath *)path
 {
+  int i, n;
+  int count = 10;
+  float dash_pattern[10];
+  float phase;
+  NSPoint pts[3];
+  NSBezierPathElement e;
+  SEL elmsel = @selector(elementAtIndex: associatedPoints:);
+  IMP elmidx = [path methodForSelector: elmsel];
+
   cairo_new_path(_ct);
-  [path appendBezierPathToCairo: _ct];
+
+  n = [path elementCount];
+  for (i = 0; i < n; i++)
+    {
+      e = (NSBezierPathElement)(*elmidx)(path, elmsel, i, pts);
+      switch (e)
+	{
+	case NSMoveToBezierPathElement:
+	  cairo_move_to(_ct, pts[0].x, pts[0].y);
+	  break;
+	case NSLineToBezierPathElement:
+	  cairo_line_to(_ct, pts[0].x, pts[0].y);
+	  break;
+	case NSCurveToBezierPathElement:
+	  cairo_curve_to(_ct, pts[0].x, pts[0].y, pts[1].x, pts[1].y,
+			 pts[2].x, pts[2].y);
+	  break;
+	case NSClosePathBezierPathElement:
+	  cairo_close_path(_ct);
+	  break;
+	}
+    }
+
+  cairo_set_line_width(_ct, [path lineWidth]);
+  cairo_set_line_join(_ct, (cairo_line_join_t)[path lineJoinStyle]);
+  cairo_set_line_cap(_ct, (cairo_line_cap_t)[path lineCapStyle]);
+  cairo_set_miter_limit(_ct, [path miterLimit]);
+
+  [path getLineDash: dash_pattern count: &count phase: &phase];
+  [self DPSsetdash: dash_pattern : count : phase];
 }
 
 - (void) GSRectClipList: (const NSRect *)rects : (int)count
@@ -1184,7 +1256,25 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
   */
   if (_viewIsFlipped)
     {
-      cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny - height);
+/*
+      if (!source->_viewIsFlipped)
+        {
+	  // Undo flipping of the source coordinate system
+	  cairo_pattern_t *pattern;
+	  cairo_matrix_t local_matrix;
+	  
+	  pattern = cairo_pattern_create_for_surface(src);
+	  cairo_matrix_init_scale(&local_matrix, 1, -1);
+	  cairo_matrix_translate(&local_matrix, -aPoint.x + minx, -aPoint.y + miny);
+	  cairo_pattern_set_matrix(pattern, &local_matrix);
+	  cairo_set_source(_ct, pattern);
+	  cairo_pattern_destroy(pattern);
+	}
+      else 
+*/
+        {
+	  cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny - height);
+	}
       cairo_rectangle (_ct, aPoint.x, aPoint.y - height, width, height);
     }
   else 

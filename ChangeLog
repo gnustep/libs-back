@@ -1,3 +1,30 @@
+2006-03-12  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/NSBezierPathCairo.m
+	* Source/cairo/NSBezierPathCairo.h
+	* Source/cairo/CairoDevice.m
+	* Source/cairo/CairoFontManager.m
+	* Source/cairo/CairoFreeTypeFontInfo.m
+	* Headers/cairo/CairoDevice.m
+	* Headers/cairo/CairoFontManager.m
+	* Headers/cairo/CairoFreeTypeFontInfo.m:
+	Removed these files.
+	* Source/cairo/GNUmakefile:
+	Removed references to obsolete files.
+	* Source/cairo/CairoFontInfo.m (-setCacheSize:):
+	Fill the cache with zeros.
+	* Source/cairo/CairoFontInfo.m (-setupAttributes):
+	Free the font options.
+	* Source/cairo/CairoGState.m (:bezierPath, -GSSendBezierPath:):
+	Added NSBezierPath methods. 	
+	* Source/cairo/XGCairoXImageSurface.m
+	* Source/cairo/CairoContext.m
+	* Source/cairo/XGCairoSurface.m
+	* Source/cairo/CairoSurface.m
+	* Source/cairo/XGCairoGlitzSurface.m
+	* Headers/cairo/CairoSurface.h:
+	Clean up of cairo backend code.
+	
 2006-03-07  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-compositeGState:...fraction:,

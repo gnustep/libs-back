@@ -22,15 +22,6 @@
 
 #include "cairo/CairoSurface.h"
 
-#include <math.h>
-#include "config.h"
-
-#ifdef USE_GLITZ
-@class XGCairoGlitzSurface;
-#else
-@class XGCairoSurface;
-#endif
-
 static Class __defaultSurfaceClass;
 
 @implementation CairoSurface 
@@ -38,18 +29,6 @@ static Class __defaultSurfaceClass;
 + (void) setDefaultSurfaceClass: (Class)aClass
 {
   __defaultSurfaceClass = aClass;
-}
-
-+ (void) initializeBackend
-{
-  if (BUILD_SERVER == SERVER_x11)
-    {
-#ifdef USE_GLITZ
-    [self setDefaultSurfaceClass: [XGCairoGlitzSurface class]];
-#else
-    [self setDefaultSurfaceClass: [XGCairoSurface class]];
-#endif
-    }
 }
 
 + (id) allocWithZone: (NSZone*)zone

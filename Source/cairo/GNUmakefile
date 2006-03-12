@@ -36,10 +36,11 @@ cairo_OBJC_FILES = CairoSurface.m \
   CairoFontEnumerator.m \
   CairoFaceInfo.m \
   XGCairoSurface.m \
-  XGCairoXImageSurface.m \
-  NSBezierPathCairo.m \
-#  CairoFontManager.m \
-#  CairoFreeTypeFontInfo.m \
+  XGCairoXImageSurface.m 
+
+ifeq ($(WITH_GLITZ),yes)
+cairo_OBJC_FILES += XGCairoGlitzSurface.m
+endif
 
 
 -include GNUmakefile.preamble
