@@ -4,9 +4,9 @@
 # The version number of this release.
 GNUSTEP_BACK_MAJOR_VERSION=0
 GNUSTEP_BACK_MINOR_VERSION=10
-GNUSTEP_BACK_SUBMINOR_VERSION=2
+GNUSTEP_BACK_SUBMINOR_VERSION=3
 # This numeric value should match above
-VERSION_NUMBER=010.2
+VERSION_NUMBER=010.3
 # This numeric value should match the compatible gui interface version
 INTERFACE_VERSION_NUMBER=010
 
