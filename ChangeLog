@@ -1,3 +1,7 @@
+2006-03-13  Adam Fedor  <fedor@gnu.org>
+
+	* Version 0.10.3
+
 2006-03-13  Fred Kiefer <FredKiefer@gmx.de>
 	
 	* Source/x11/XGServerWindow.m (-termwindow:): Reset the window
