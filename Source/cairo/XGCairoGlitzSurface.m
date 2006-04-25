@@ -22,6 +22,8 @@
 */
 
 #include "cairo/XGCairoGlitzSurface.h"
+#include <cairo-glitz.h>
+#include <glitz-glx.h>
 
 #define GSWINDEVICE ((gswindow_device_t *)gsDevice)
 
@@ -29,14 +31,12 @@
 
 - (id) initWithDevice: (void *)device
 {
-  glitz_format_t *format;
-  Colormap cm;
-  XVisualInfo *vi;
-  unsigned long format_options = GLITZ_FORMAT_OPTION_ONSCREEN_MASK;
+  glitz_drawable_format_t templ;
+  glitz_drawable_format_t *dformat = NULL;
+  glitz_drawable_t *drawable = NULL;
+  glitz_format_t *format = NULL;
+  glitz_surface_t *surface = NULL;
 
-  /* FIXME format is ignore when Visual isn't NULL
-   * Cairo may change this API
-   */
   gsDevice = device;
 
   /*
@@ -48,41 +48,50 @@
     }
   */
 
-  format_options |= GLITZ_FORMAT_OPTION_NO_MULTISAMPLE_MASK;
-  format_options |= GLITZ_FORMAT_OPTION_SINGLEBUFFER_MASK;
-  
-  format = glitz_glx_find_standard_format(GSWINDEVICE->display,
+  templ.doublebuffer = 0;
+  dformat = glitz_glx_find_drawable_format(GSWINDEVICE->display,
 					  GSWINDEVICE->screen,
-					  format_options,
-					  GLITZ_STANDARD_RGB24);
+					  GLITZ_FORMAT_DOUBLEBUFFER_MASK,
+					  &templ,
+					  0);
   
-  if (!format)
+  if (!dformat)
     {
       NSLog(@"XGCairoGlitzSurface : %d : no format",__LINE__);
       exit(1);
     }
 
-  vi = glitz_glx_get_visual_info_from_format(GSWINDEVICE->display,
-					     GSWINDEVICE->screen,
-					     format);
-  
-  if (!vi)
+  drawable = glitz_glx_create_drawable_for_window(GSWINDEVICE->display,
+						  GSWINDEVICE->screen,
+						  dformat,
+						  GSWINDEVICE->ident,
+						  GSWINDEVICE->xframe.size.width,
+						  GSWINDEVICE->xframe.size.height);
+  if (!drawable)
     {
-      NSLog(@"XGCairoGlitzSurface : %d : no visual info",__LINE__);
+      NSLog(@"XGCairoGlitzSurface : %d : no glitz drawable", __LINE__);
       exit(1);
     }
-  
-  /*
-    cm = XCreateColormap(GSWINDEVICE->display,
-    GSWINDEVICE->root, vi->visual, AllocNone);
-    
-    XSetWindowColormap(GSWINDEVICE->display,GSWINDEVICE->ident,cm);
-  */
 
-  _surface = cairo_glitz_surface_create(glitz_glx_surface_create(GSWINDEVICE->display,
-								 GSWINDEVICE->screen,
-								 format,
-								 GSWINDEVICE->ident));
+  format = glitz_find_standard_format(drawable, GLITZ_STANDARD_ARGB32);
+  if (!format)
+    {
+      NSLog(@"XGCairoGlitzSurface : %d : couldn't find ARGB32 surface format", __LINE__);
+      exit(1);
+    }
+
+  surface = glitz_surface_create(drawable, format,
+				 GSWINDEVICE->xframe.size.width,
+				 GSWINDEVICE->xframe.size.height,
+				 0, NULL);
+  if (!surface)
+    {
+      NSLog(@"XGCairoGlitzSurface : %d : couldn't create glitz surface", __LINE__);
+      exit(1);
+    }
+
+  glitz_surface_attach(surface, drawable, GLITZ_DRAWABLE_BUFFER_FRONT_COLOR, 0, 0);
+  _surface = cairo_glitz_surface_create(surface);
   
   return self;
 }

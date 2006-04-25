@@ -27,7 +27,6 @@
 #include "x11/XGServerWindow.h"
 
 #include "cairo/CairoSurface.h"
-#include <glitz.h>
 
 @interface XGCairoGlitzSurface : CairoSurface
 {
