@@ -1,12 +1,12 @@
-README
-******
+1 README
+********
 
-This is version 0.10.2 of the GNUstep GUI Backend (`gnustep-back').
+This is version 0.10.3 of the GNUstep GUI Backend (`gnustep-back').
 
 Here is some introductory info to get you started:
 
-Initial reading
-===============
+1.1 Initial reading
+===================
 
    * The file `ANNOUNCE' contains a very brief overview of the library.
      It also tells you where to get the most recent version.
@@ -15,8 +15,8 @@ Initial reading
 
    * The file `INSTALL' gives instructions for installing the library.
 
-How can you help?
-=================
+1.2 How can you help?
+=====================
 
    * Give us feedback!  Tell us what you like; tell us what you think
      could be better.  Send us bug reports at <bug-gnustep@gnu.org>.
