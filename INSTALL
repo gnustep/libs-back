@@ -1,19 +1,19 @@
-Installation
-************
+1 Installation
+**************
 
-Introduction
-============
+1.1 Introduction
+================
 
 This file documents the installation of the GNUstep Backend Library,
 `gnustep-back'. If you are installing this package as part of the
 GNUstep core package, read the file GNUstep-HOWTO for more complete
 instructions on how to install the entire GNUstep package (including
-this library).  GNUstep-HOWTO is located at <http://www.gnustep.org>
+this library).  GNUstep-HOWTO is located at `http://www.gnustep.org'
 
    You must have installed gnustep-gui before installing this library.
 
-Configuration
-=============
+1.2 Configuration
+=================
 
 Configuration is performed by running the `configure' program at a
 shell prompt. You may want to use some of the optional arguments to the
@@ -37,7 +37,7 @@ backend, you could do this:
 
      configure --enable-graphics=xlib --with-name=xlib
      make install
-     
+
      make distclean
      configure --enable-graphics=art --with-name=art
      make install
@@ -47,8 +47,8 @@ program:
 
      defaults write NSGlobalDomain GSBackend libgnustep-xlib
 
-Compilation
-===========
+1.3 Compilation
+===============
 
 To compile this library, type make. After this is complete, type make
 install (make sure you are the root user). Some additional options you
@@ -56,8 +56,8 @@ can use with make are `debug=yes' to make a debugging version of the
 library and `shared=no' to make a static version of the library. See
 the gstep-make package for more information on these options.
 
-Installing
-==========
+1.4 Installing
+==============
 
 To install, type
 

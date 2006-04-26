@@ -1538,6 +1538,21 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 	}
       XSetWMName(dpy, window->ident, &windowName);
       XSetWMIconName(dpy, window->ident, &windowName);
+
+      {
+      /* Set _NET_WM_NAME and _NET_WM_ICON_NAME */
+      Atom _utf8 = XInternAtom (dpy, "UTF8_STRING", False);
+      Atom _net_wm_name = XInternAtom (dpy, "_NET_WM_NAME", False);
+      Atom _net_wm_icon_name = XInternAtom (dpy, "_NET_WM_ICON_NAME", False);
+      char *name = (char *)[window_title UTF8String];
+      XChangeProperty(dpy, window->ident, _net_wm_name, _utf8,
+		      8, PropModeReplace, 
+		      (unsigned char *)name, strlen(name));
+      XChangeProperty(dpy, window->ident, _net_wm_icon_name, _utf8,
+		      8, PropModeReplace, 
+		      (unsigned char *)name, strlen(name));
+      }
+
       XFree(windowName.value);
     }
 }
