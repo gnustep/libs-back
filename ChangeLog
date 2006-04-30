@@ -1,3 +1,10 @@
+2006-04-30  David Ayers  <d.ayers@inode.at>
+
+	* Source/x11/raster.c (RCreateImage): Remove unused variables.
+
+	* Source/x11/XGServerEvent.m (gotShmCompletion:) Declare privat
+	interface for shared memory handling.
+	
 2006-03-13  Adam Fedor  <fedor@gnu.org>
 
 	* Source/x11/XGServerWindow.m (titlewindow::): Set NAME and ICON_NAME

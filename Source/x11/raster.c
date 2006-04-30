@@ -47,7 +47,6 @@ RImage*
 RCreateImage(unsigned width, unsigned height, int alpha)
 {
     RImage *image=NULL;
-    unsigned bla1, bla2;
     
     assert(width>0 && height>0);
 

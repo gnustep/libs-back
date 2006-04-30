@@ -93,6 +93,12 @@ void __objc_xgcontextevent_linking (void)
 static SEL    procSel = 0;
 static void (*procEvent)(id, SEL, XEvent*) = 0;
 
+#ifdef XSHM
+@interface NSGraphicsContext (SharedMemory)
+-(void) gotShmCompletion: (Drawable)d;
+@end
+#endif
+
 @interface XGServer (Private)
 - (void) receivedEvent: (void*)data
                   type: (RunLoopEventType)type
