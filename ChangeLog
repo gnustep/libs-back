@@ -1,3 +1,8 @@
+2006-05-03  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-nativeWindow:::::): Implemented to
+	support using an X window for GNUstep drawing.
+
 2006-04-30  David Ayers  <d.ayers@inode.at>
 
 	* Source/x11/raster.c (RCreateImage): Remove unused variables.
