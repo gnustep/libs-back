@@ -1,3 +1,13 @@
+2006-05-04  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-styleoffsets::::::): New method to
+	compute window frame offset based on the _NET_FRAME_EXTENTS or
+	_KDE_NET_WM_FRAME_STRUT property. This is based on a slightly
+	extended patch by Yen-Ju Chen <yjchenx@hotmail.com>.
+	Call this new method from [styleoffsets:::::] and [_OSFrameToXHints:].
+	* Source/x11/XGServerWindow.m (-iconTileImage): Make sure the
+	window pointer gets freed.
+
 2006-05-03  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-nativeWindow:::::): Implemented to
