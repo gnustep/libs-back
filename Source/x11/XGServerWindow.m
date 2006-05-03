@@ -1275,6 +1275,123 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
   return window->number;
 }
 
+- (int) nativeWindow: (void *)winref : (NSRect*)frame : (NSBackingStoreType*)type 
+		    : (unsigned int*)style : (int*)screen
+{
+  static int		last_win_num = 0;
+  gswindow_device_t	*window;
+  gswindow_device_t	*root;
+  XGCValues		values;
+  unsigned long		valuemask;
+  RContext              *context;
+  XWindowAttributes win_attributes;
+  Window windowRef;
+  NSRect xframe;
+
+  windowRef = *((Window*)winref);
+  NSDebugLLog(@"XGTrace", @"nativeWindow: %d", windowRef);
+  if (!XGetWindowAttributes(dpy, windowRef, &win_attributes))
+    {
+      return 0;
+    }
+
+  *screen = XScreenNumberOfScreen(win_attributes.screen);
+  *type = NSBackingStoreNonretained;
+  *style = NSBorderlessWindowMask;
+  root = [self _rootWindowForScreen: *screen];
+  context = [self xrContextForScreen: *screen];
+
+  /* Create the window structure and set the style early so we can use it to
+  convert frames. */
+  window = objc_malloc(sizeof(gswindow_device_t));
+  memset(window, '\0', sizeof(gswindow_device_t));
+  window->display = dpy;
+  window->screen = *screen;
+  window->ident = windowRef;
+  window->root = root->ident;
+  window->parent = root->ident;
+  window->type = *type;
+  window->win_attrs.flags |= GSWindowStyleAttr;
+  window->win_attrs.window_style = *style;
+
+  window->border = win_attributes.border_width;
+  window->depth = win_attributes.depth;
+  window->xframe = NSMakeRect(win_attributes.x, win_attributes.y, 
+			      win_attributes.width, win_attributes.height);
+  window->xwn_attrs.colormap = win_attributes.colormap;
+  window->xwn_attrs.save_under = win_attributes.save_under;
+  window->xwn_attrs.override_redirect = win_attributes.override_redirect;
+  window->map_state = win_attributes.map_state;
+
+  window->xwn_attrs.border_pixel = context->black;
+  window->xwn_attrs.background_pixel = context->white;
+  window->visibility = -1;
+
+  // Create an X GC for the content view set it's colors
+  values.foreground = window->xwn_attrs.background_pixel;
+  values.background = window->xwn_attrs.background_pixel;
+  values.function = GXcopy;
+  valuemask = (GCForeground | GCBackground | GCFunction);
+  window->gc = XCreateGC(dpy, window->ident, valuemask, &values);
+
+  /*
+   * Initial attributes for any GNUstep window tell Window Maker not to
+   * create an app icon for us.
+   */
+  window->win_attrs.flags |= GSExtraFlagsAttr;
+  window->win_attrs.extra_flags |= GSNoApplicationIconFlag;
+
+  /*
+   * Prepare size/position hints, but don't set them now - ordering
+   * the window in should automatically do it.
+   */
+  *frame = [self _XFrameToOSFrame: window->xframe for: window];
+
+  // Use the globally active input mode
+  window->gen_hints.flags = InputHint;
+  window->gen_hints.input = False;
+  // All the windows of a GNUstep application belong to one group.
+  window->gen_hints.flags |= WindowGroupHint;
+  window->gen_hints.window_group = ROOT;
+  window->exposedRects = [NSMutableArray new];
+  window->region = XCreateRegion();
+  window->buffer = 0;
+  window->alpha_buffer = 0;
+  window->ic = 0;
+
+  /*
+   * Prepare size/position hints, but don't set them now - ordering
+   * the window in should automatically do it.
+   */
+  xframe = [self _XFrameToOSFrame: window->xframe for: window];
+  xframe = [self _OSFrameToXHints: xframe for: window];
+  window->siz_hints.x = NSMinX(xframe);
+  window->siz_hints.y = NSMinY(xframe);
+  window->siz_hints.width = NSWidth(xframe);
+  window->siz_hints.height = NSHeight(xframe);
+  window->siz_hints.flags = USPosition|PPosition|USSize|PSize;
+
+  // make sure that new window has the correct cursor
+  [self _initializeCursorForXWindow: window->ident];
+
+  /*
+   * FIXME - should this be protected by a lock for thread safety?
+   * generate a unique tag for this new window.
+   */
+  do
+    {
+      last_win_num++;
+    }
+  while (last_win_num == 0 || WINDOW_WITH_TAG(last_win_num) != 0);
+  window->number = last_win_num;
+
+  // Insert window into the mapping
+  NSMapInsert(windowmaps, (void*)window->ident, window);
+  NSMapInsert(windowtags, (void*)window->number, window);
+  [self _setWindowOwnedByServer: window->number];
+  return window->number;
+}
+
 - (void) termwindow: (int)win
 {
   gswindow_device_t *window;
