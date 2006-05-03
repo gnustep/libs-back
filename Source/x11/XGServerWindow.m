@@ -353,6 +353,11 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 }
 @end
 
+@interface XGServer (WindowOps)
+- (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
+                     : (unsigned int) style : (Window) win;
+@end
+
 @implementation XGServer (WindowOps)
 
 -(BOOL) handlesWindowDecorations
@@ -420,15 +425,15 @@ NSDebugLLog(@"Frame", @"O2X %d, %@, %@", win->number,
   NSRect	x;
   float	t, b, l, r;
 
-  [self styleoffsets: &l : &r : &t : &b : win->win_attrs.window_style];
+  [self styleoffsets: &l : &r : &t : &b : win->win_attrs.window_style : win->ident];
 
   x.size.width = o.size.width;
   x.size.height = o.size.height;
   x.origin.x = o.origin.x - l;
   x.origin.y = o.origin.y + o.size.height;
   x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y - t;
-NSDebugLLog(@"Frame", @"O2H %d, %@, %@", win->number,
-  NSStringFromRect(o), NSStringFromRect(x));
+  NSDebugLLog(@"Frame", @"O2H %d, %@, %@", win->number,
+	      NSStringFromRect(o), NSStringFromRect(x));
   return x;
 }
 
@@ -1443,6 +1448,15 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b 
 		     : (unsigned int) style
 {
+  [self styleoffsets: l : r : t : b : style : (Window) 0];
+}
+
+- (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b 
+		     : (unsigned int) style : (Window) win
+{
+  static Atom _net_frame_extents = None;
+  static Atom _kde_frame_strut = None;
+
   if (!handlesWindowDecorations)
     {
       /*
@@ -1454,7 +1468,44 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       return;
     }
 
-  /* First try to get the offset information that we have obtained from
+  /* First check _NET_FRAME_EXTENTS */
+  if (win  && ((generic.wm & XGWM_EWMH) != 0)) 
+    {
+      int count;
+      unsigned long *extents;
+
+      if (_net_frame_extents == None)
+        {
+	  _net_frame_extents = XInternAtom (dpy, "_NET_FRAME_EXTENTS", False);
+	}
+
+      extents = (unsigned long *)PropGetCheckProperty(dpy, win, _net_frame_extents, 
+						      XA_CARDINAL, 32, 4, &count);
+
+      if (!extents && (generic.wm & XGWM_KDE)) 
+        {
+	  if (_kde_frame_strut == None)
+	    {
+	      _kde_frame_strut = XInternAtom (dpy, "_KDE_NET_WM_FRAME_STRUT", False);
+	    }
+	  extents = (unsigned long *)PropGetCheckProperty(dpy, win, _kde_frame_strut, 
+							  XA_CARDINAL, 32, 4, &count);
+	}
+
+      if (extents) 
+        {
+	  NSDebugLLog(@"Frame", @"Window %d, left %d, right %d, top %d, bottom %d", 
+		      win, extents[0], extents[1], extents[2], extents[3]);
+	  *l = extents[0];
+	  *r = extents[1];
+	  *t = extents[2];
+	  *b = extents[3];
+	  XFree(extents);
+	  return;
+	}
+    }
+
+  /* Nextt try to get the offset information that we have obtained from
      the WM. This will only work if the application has already created
      a window that has been reparented by the WM. Otherwise we have to
      guess.
@@ -3296,6 +3347,7 @@ _computeDepth(int class, int bpp)
   Atom icon_tile_atom;
   Atom rgba_image_atom;
   Window win;
+  Window *pwin;
   int count;
   unsigned char *tile;
   NSImage *iconTileImage;
@@ -3311,13 +3363,14 @@ _computeDepth(int class, int bpp)
   rgba_image_atom = XInternAtom(dpy,"_RGBA_IMAGE", False);
   
   win = DefaultRootWindow(dpy);
-  win = *(Window *)PropGetCheckProperty(dpy, win, noticeboard_atom, XA_WINDOW,
+  pwin = (Window *)PropGetCheckProperty(dpy, win, noticeboard_atom, XA_WINDOW,
 					32, -1, &count);
-  if (win == (Window)NULL) 
+  if (pwin == NULL) 
     return [super iconTileImage];
   
-  tile = PropGetCheckProperty(dpy, win, icon_tile_atom, rgba_image_atom,
+  tile = PropGetCheckProperty(dpy, *pwin, icon_tile_atom, rgba_image_atom,
 			      8, -1, &count);
+  XFree(pwin);
   if (tile == NULL || count < 4)
     return [super iconTileImage];
   
