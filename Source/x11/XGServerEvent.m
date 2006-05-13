@@ -770,7 +770,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	      /*
 	       * Set size hints info to be up to date with new size.
 	       */
-	      h = [self _OSFrameToXHints: n for: cWin];
+	      h = [self _XFrameToXHints: x for: cWin];
 	      cWin->siz_hints.width = h.size.width;
 	      cWin->siz_hints.height = h.size.height;
 

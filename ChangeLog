@@ -1,3 +1,12 @@
+2006-05-13  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/x11/XGServer.h,
+	* Source/x11/XGServerWindow.m (-_XFrameToXHints:for:): New method to
+	compute X hints directly from X frame. Previously the X frame
+	was converted to an OS frame and from this the X hints were computed.
+	* Source/x11/XGServerWindow.m, Source/x11/XGServerEvent.m:
+	Replaced all usages of _OSFrameToXHints:for: with _XFrameToXHints:for:.
+	
 2006-05-04  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-styleoffsets::::::): New method to
