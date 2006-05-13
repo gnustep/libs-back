@@ -410,8 +410,8 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   x = o;
   x.origin.y = x.origin.y + o.size.height;
   x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y;
-NSDebugLLog(@"Frame", @"O2X %d, %@, %@", win->number,
-  NSStringFromRect(o), NSStringFromRect(x));
+  NSDebugLLog(@"Frame", @"O2X %d, %@, %@", win->number,
+	      NSStringFromRect(o), NSStringFromRect(x));
   return x;
 }
 
@@ -450,7 +450,7 @@ NSDebugLLog(@"Frame", @"O2X %d, %@, %@", win->number,
   o.origin.x = x.origin.x;
   o.origin.y = win->siz_hints.height - x.origin.y;
   o.origin.y = o.origin.y - o.size.height;
-  NSDebugLLog(@"GGFrame", @"%@ %@", NSStringFromRect(x), NSStringFromRect(o));
+  NSDebugLLog(@"Frame", @"X2O %@ %@", NSStringFromRect(x), NSStringFromRect(o));
   return o;
 }
 
@@ -467,9 +467,31 @@ NSDebugLLog(@"Frame", @"O2X %d, %@, %@", win->number,
   o = x;
   o.origin.y = DisplayHeight(dpy, win->screen) - o.origin.y;
   o.origin.y = o.origin.y - o.size.height;
-NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
-  NSStringFromRect(x), NSStringFromRect(o));
+  NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
+	      NSStringFromRect(x), NSStringFromRect(o));
   return o;
+}
+
+/*
+ * Convert a window frame in X absolute screen coordinates to
+ * a frame suitable for setting X hints for a window manager.
+ */
+- (NSRect) _XFrameToXHints: (NSRect)o for: (void*)window
+{
+  gswindow_device_t	*win = (gswindow_device_t*)window;
+  NSRect	x;
+  float	t, b, l, r;
+
+  [self styleoffsets: &l : &r : &t : &b : win->win_attrs.window_style : win->ident];
+
+  // FIXME: When adding the frame here, we get X window errors!
+  x.size.width = o.size.width; // + l + r;
+  x.size.height = o.size.height; // + t + b;
+  x.origin.x = o.origin.x - l;
+  x.origin.y = o.origin.y - t;
+  NSDebugLLog(@"Frame", @"X2H %d, %@, %@", win->number,
+	      NSStringFromRect(o), NSStringFromRect(x));
+  return x;
 }
 
 
@@ -1200,8 +1222,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
    * Prepare size/position hints, but don't set them now - ordering
    * the window in should automatically do it.
    */
-  frame = [self _XFrameToOSFrame: window->xframe for: window];
-  frame = [self _OSFrameToXHints: frame for: window];
+  frame = [self _XFrameToXHints: window->xframe for: window];
   window->siz_hints.x = NSMinX(frame);
   window->siz_hints.y = NSMinY(frame);
   window->siz_hints.width = NSWidth(frame);
@@ -1368,8 +1389,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
    * Prepare size/position hints, but don't set them now - ordering
    * the window in should automatically do it.
    */
-  xframe = [self _XFrameToOSFrame: window->xframe for: window];
-  xframe = [self _OSFrameToXHints: xframe for: window];
+  xframe = [self _XFrameToXHints: window->xframe for: window];
   window->siz_hints.x = NSMinX(xframe);
   window->siz_hints.y = NSMinY(xframe);
   window->siz_hints.width = NSWidth(xframe);
@@ -1476,17 +1496,18 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
 
       if (_net_frame_extents == None)
         {
-	  _net_frame_extents = XInternAtom (dpy, "_NET_FRAME_EXTENTS", False);
+	  _net_frame_extents = XInternAtom(dpy, "_NET_FRAME_EXTENTS", False);
 	}
 
       extents = (unsigned long *)PropGetCheckProperty(dpy, win, _net_frame_extents, 
 						      XA_CARDINAL, 32, 4, &count);
 
-      if (!extents && (generic.wm & XGWM_KDE)) 
+
+      if (!extents) // && (generic.wm & XGWM_KDE)) 
         {
 	  if (_kde_frame_strut == None)
 	    {
-	      _kde_frame_strut = XInternAtom (dpy, "_KDE_NET_WM_FRAME_STRUT", False);
+	      _kde_frame_strut = XInternAtom(dpy, "_KDE_NET_WM_FRAME_STRUT", False);
 	    }
 	  extents = (unsigned long *)PropGetCheckProperty(dpy, win, _kde_frame_strut, 
 							  XA_CARDINAL, 32, 4, &count);
@@ -1607,8 +1628,7 @@ NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
       window->win_attrs.window_style = style;
 
       /* Fix up hints */
-      h = [self _XFrameToOSFrame: window->xframe for: window];
-      h = [self _OSFrameToXHints: h for: window];
+      h = [self _XFrameToXHints: window->xframe for: window];
       window->siz_hints.x = NSMinX(h);
       window->siz_hints.y = NSMinY(h);
       window->siz_hints.width = NSWidth(h);
@@ -2203,9 +2223,10 @@ static BOOL didCreatePixmaps;
 {
   NSEvent *e;
   NSRect xVal;
+  NSRect xHint;
+  NSRect frame;
   gswindow_device_t *window;
   NSWindow *nswin;
-  NSRect frame;
   BOOL resize = NO;
   BOOL move = NO;
 
@@ -2232,12 +2253,12 @@ static BOOL didCreatePixmaps;
       move = YES;
     }
 
-  xVal = [self _OSFrameToXHints: rect for: window];
-  window->siz_hints.width = (int)xVal.size.width;
-  window->siz_hints.height = (int)xVal.size.height;
-  window->siz_hints.x = (int)xVal.origin.x;
-  window->siz_hints.y = (int)xVal.origin.y;
   xVal = [self _OSFrameToXFrame: rect for: window];
+  xHint = [self _XFrameToXHints: xVal for: window];
+  window->siz_hints.width = (int)xHint.size.width;
+  window->siz_hints.height = (int)xHint.size.height;
+  window->siz_hints.x = (int)xHint.origin.x;
+  window->siz_hints.y = (int)xHint.origin.y;
 
   NSDebugLLog(@"Moving", @"Place %d - o:%@, x:%@", window->number,
     NSStringFromRect(rect), NSStringFromRect(xVal));
