@@ -271,7 +271,7 @@ static NSArray *faFromFc(FcPattern *pat)
   return extents.width;
 }
 
-- (float) widthOfGlyphs: (const NSGlyph *) glyphs lenght: (int) len
+- (float) widthOfGlyphs: (const NSGlyph *) glyphs length: (int) len
 {
   XGlyphInfo extents;
   unichar buf[len];
@@ -383,7 +383,7 @@ static NSArray *faFromFc(FcPattern *pat)
 		  xp.x, xp.y, (XftChar16*)cstr, length);
 }
 
-- (void) drawGlyphs: (const NSGlyph *) glyphs lenght: (int) len
+- (void) drawGlyphs: (const NSGlyph *) glyphs length: (int) len
 	  onDisplay: (Display*) xdpy drawable: (Drawable) draw
 	       with: (GC) xgcntxt at: (XPoint) xp
 {
@@ -403,7 +403,7 @@ static NSArray *faFromFc(FcPattern *pat)
 		  xp.x, xp.y, (XftChar16*)buf, len);
 }
 
-- (void) draw: (const char*) s lenght: (int) len 
+- (void) draw: (const char*) s length: (int) len 
     onDisplay: (Display*) xdpy drawable: (Drawable) draw
 	 with: (GC) xgcntxt at: (XPoint) xp
 {
@@ -427,7 +427,7 @@ static NSArray *faFromFc(FcPattern *pat)
     }
 }
 
-- (float) widthOf: (const char*) s lenght: (int) len
+- (float) widthOf: (const char*) s length: (int) len
 {
   XGlyphInfo extents;
 

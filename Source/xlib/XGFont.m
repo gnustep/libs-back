@@ -202,7 +202,7 @@ static BOOL XGInitAtoms(Display *dpy)
   XDrawString(xdpy, draw, xgcntxt, xp.x, xp.y, cstr, length);
 }
 
-- (void) draw: (const char*) s lenght: (int) len 
+- (void) draw: (const char*) s length: (int) len 
     onDisplay: (Display*) xdpy drawable: (Drawable) draw
 	 with: (GC) xgcntxt at: (XPoint) xp
 {
@@ -210,7 +210,7 @@ static BOOL XGInitAtoms(Display *dpy)
   XDrawString(xdpy, draw, xgcntxt, xp.x, xp.y, s, len);
 }
 
-- (void) drawGlyphs: (const NSGlyph *) glyphs lenght: (int) len
+- (void) drawGlyphs: (const NSGlyph *) glyphs length: (int) len
 	  onDisplay: (Display*) xdpy drawable: (Drawable) draw
 	       with: (GC) xgcntxt at: (XPoint) xp
 {
@@ -235,12 +235,12 @@ static BOOL XGInitAtoms(Display *dpy)
   return XTextWidth(font_info, cstr, length);
 }
 
-- (float) widthOf: (const char*) s lenght: (int) len
+- (float) widthOf: (const char*) s length: (int) len
 {
   return XTextWidth(font_info, s, len);
 }
 
-- (float) widthOfGlyphs: (const NSGlyph *) glyphs lenght: (int) len
+- (float) widthOfGlyphs: (const NSGlyph *) glyphs length: (int) len
 {
   unsigned char buf[len];
   int i;

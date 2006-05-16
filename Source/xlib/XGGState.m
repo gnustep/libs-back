@@ -1236,11 +1236,11 @@ static	Region	emptyRegion;
     [self setColor: &fillColor state: COLOR_FILL];
 
   len = strlen(s);
-  width = [(XGFontInfo *)font widthOf: s lenght: len];
+  width = [(XGFontInfo *)font widthOf: s length: len];
   xp = XGWindowPointToX(self, [path currentPoint]);
   // Hack: Only draw when alpha is not zero
   if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
-    [(XGFontInfo *)font draw: s lenght: len 
+    [(XGFontInfo *)font draw: s length: len 
 	       onDisplay: XDPY drawable: draw
 	       with: xgcntxt at: xp];
 
@@ -1249,7 +1249,7 @@ static	Region	emptyRegion;
       NSAssert(alpha_buffer, NSInternalInconsistencyException);
 
       [self setAlphaColor: fillColor.field[AINDEX]];
-      [(XGFontInfo *)font draw: s lenght: len 
+      [(XGFontInfo *)font draw: s length: len 
 		 onDisplay: XDPY drawable: alpha_buffer
 		 with: agcntxt at: xp];
     }
@@ -1283,11 +1283,11 @@ static	Region	emptyRegion;
   if ((cstate & COLOR_FILL) == 0)
     [self setColor: &fillColor state: COLOR_FILL];
 
-  width = [(XGFontInfo *)font widthOfGlyphs: glyphs lenght: length];
+  width = [(XGFontInfo *)font widthOfGlyphs: glyphs length: length];
   xp = XGWindowPointToX(self, [path currentPoint]);
   // Hack: Only draw when alpha is not zero
   if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
-    [(XGFontInfo *)font drawGlyphs: glyphs lenght: length
+    [(XGFontInfo *)font drawGlyphs: glyphs length: length
 	       onDisplay: XDPY drawable: draw
 	       with: xgcntxt at: xp];
 
@@ -1296,7 +1296,7 @@ static	Region	emptyRegion;
       NSAssert(alpha_buffer, NSInternalInconsistencyException);
 
       [self setAlphaColor: fillColor.field[AINDEX]];
-      [(XGFontInfo *)font drawGlyphs: glyphs lenght: length
+      [(XGFontInfo *)font drawGlyphs: glyphs length: length
 		 onDisplay: XDPY drawable: alpha_buffer
 		 with: agcntxt at: xp];
     }

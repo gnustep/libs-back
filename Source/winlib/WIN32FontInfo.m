@@ -172,7 +172,7 @@ NSString *win32_font_family(NSString *fontName);
 {
 }
 
-- (void) draw:(const char*)s lenght: (int)len 
+- (void) draw:(const char*)s length: (int)len 
 	 onDC: (HDC)hdc at: (POINT)p
 {
   HFONT old;
