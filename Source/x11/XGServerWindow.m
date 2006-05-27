@@ -2956,13 +2956,19 @@ static BOOL   cursor_hidden = NO;
   void	*key;
   NSMapEnumerator enumerator;
   gswindow_device_t  *d;
+  Window root;
 
   NSDebugLLog (@"NSCursor", @"_DPSsetcursor: cursor = %p, set = %d", c, set);
-  
+
+  root = DefaultRootWindow(dpy);
   enumerator = NSEnumerateMapTable (windowmaps);
   while (NSNextMapEnumeratorPair (&enumerator, &key, (void**)&d) == YES)
     {
       Window win = (Window)key;
+
+      if (win == root)
+	continue;
+
       if (set)
         XDefineCursor(dpy, win, c);
       else

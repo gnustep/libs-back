@@ -1,3 +1,8 @@
+2006-05-27  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_DPSsetcursor::): Don't set cursor
+	on root window. Patch by Mircea Trache <aer@shaw.ca>.
+
 2006-05-13  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/x11/XGServer.h,
@@ -5,7 +10,7 @@
 	compute X hints directly from X frame. Previously the X frame
 	was converted to an OS frame and from this the X hints were computed.
 	* Source/x11/XGServerWindow.m, Source/x11/XGServerEvent.m:
-	Replaced all usages of _OSFrameToXHints:for: with _XFrameToXHints:for:.
+	Replaced all usages of [_OSFrameToXHints:for:] with [_XFrameToXHints:for:].
 	
 2006-05-04  Fred Kiefer <FredKiefer@gmx.de>
 
