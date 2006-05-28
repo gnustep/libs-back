@@ -408,9 +408,11 @@
     }
 }
 
-static int fontDefSorter(NSArray *el1, NSArray *el2, void *context)
+static NSComparisonResult fontDefSorter(id e1, id e2, void *context)
 {
   // This is not exactly the order the OpenStep specification states.
+  NSArray *el1 = (NSArray *)e1;
+  NSArray *el2 = (NSArray *)e2;
   NSFontTraitMask t1 = [[el1 objectAtIndex: 3] unsignedIntValue];
   NSFontTraitMask t2 = [[el2 objectAtIndex: 3] unsignedIntValue];
   int w1 = [[el1 objectAtIndex: 2] intValue];

@@ -717,6 +717,8 @@ static	Region	emptyRegion;
       do_copy = NO;
       comp_gcv.function = GXcopy;
       break;
+    default:
+      comp_gcv.function = GXcopy;
     }
 
   if (comp_gcv.function != GXcopy)
@@ -957,7 +959,11 @@ static	Region	emptyRegion;
       int    x[count], w[count], y0, y1;
       int    yh = y * 2 + 1;   // shift y of horizontal line
       XPoint lastP, p1;
-      
+
+      // To keep compiler happy
+      lastP.x = 0;
+      lastP.y = 0;
+
       /* intersect horizontal line with path */
       for (i = 0, cnt = 0; i < count - 1; i++)
 	{
@@ -1065,6 +1071,12 @@ static	Region	emptyRegion;
       BOOL doit;
       BOOL complex = NO;
       
+      // To keep compiler happy
+      last_p.x = 0;
+      last_p.y = 0;
+      p.x = 0;
+      p.y = 0;
+
       for (j = 0; j < count; j++) 
         {
 	  doit = NO;

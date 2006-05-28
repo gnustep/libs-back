@@ -215,12 +215,14 @@ static BOOL XGInitAtoms(Display *dpy)
 	       with: (GC) xgcntxt at: (XPoint) xp
 {
   // This font must already be active!
-  unsigned char buf[len];
+  char buf[len];
   int i;
+
   for (i = 0; i < len; i++)
     {
       buf[i] = glyphs[i];
     }
+
   XDrawString(xdpy, draw, xgcntxt, xp.x, xp.y, buf, len);
 }
 
@@ -242,12 +244,14 @@ static BOOL XGInitAtoms(Display *dpy)
 
 - (float) widthOfGlyphs: (const NSGlyph *) glyphs length: (int) len
 {
-  unsigned char buf[len];
+  char buf[len];
   int i;
+
   for (i = 0; i < len; i++)
     {
       buf[i] = glyphs[i];
     }
+
   return XTextWidth(font_info, buf, len);
 }
 

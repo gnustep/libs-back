@@ -48,16 +48,18 @@ accessibleRectForWindow (gswindow_device_t* win)
     Display* xdpy = [XGServer currentXDisplay];
     Window root;
     Window ignoreWindow;
-    int x, y, w, h;
+    int x, y;
+    unsigned int w, h;
     int ignoreInt;
+    unsigned int ignoreUInt;
     XRectangle winRect;
     
     if (!XGetGeometry (xdpy, GET_XDRAWABLE (win),
                        &root,
                        &x, &y,
                        &w, &h,
-                       &ignoreInt,
-                       &ignoreInt))
+                       &ignoreUInt,
+                       &ignoreUInt))
       {
         NSDebugLLog (@"XGGeometry", @"invalide Drawable in gswindow_device");
         return XGMakeRect (0, 0, 0, 0);
@@ -75,7 +77,7 @@ accessibleRectForWindow (gswindow_device_t* win)
                        &root,
                        &ignoreInt, &ignoreInt,
                        &w, &h,
-                       &ignoreInt, &ignoreInt))
+                       &ignoreUInt, &ignoreUInt))
       {
         NSDebugLLog (@"XGGeometry",  @"could not determine size of root");
         return XGMakeRect (0, 0, 0, 0);
