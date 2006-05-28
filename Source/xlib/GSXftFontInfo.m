@@ -169,7 +169,7 @@ static NSArray *faFromFc(FcPattern *pat)
   NSMutableArray *fcxft_allFontNames = [[NSMutableArray alloc] init];
 
   FcPattern *pat = FcPatternCreate();
-  FcObjectSet *os = FcObjectSetBuild(FC_FAMILY, FC_SLANT, FC_WEIGHT, 0);
+  FcObjectSet *os = FcObjectSetBuild(FC_FAMILY, FC_SLANT, FC_WEIGHT, NULL);
   FcFontSet *fs = FcFontList(0, pat, os);
 
   FcPatternDestroy(pat);
@@ -211,6 +211,33 @@ static NSArray *faFromFc(FcPattern *pat)
   allFontNames = fcxft_allFontNames;
   allFontFamilies = fcxft_allFontFamilies;
   allFonts = fcxft_allFonts;
+}
+
+-(NSString *) defaultSystemFontName
+{
+  if ([allFontNames containsObject: @"Bitstream Vera Sans"])
+    return @"Bitstream Vera Sans";
+  if ([allFontNames containsObject: @"FreeSans"])
+    return @"FreeSans";
+  return @"Helvetica";
+}
+
+-(NSString *) defaultBoldSystemFontName
+{
+  if ([allFontNames containsObject: @"Bitstream Vera Sans-Bold"])
+    return @"Bitstream Vera Sans-Bold";
+  if ([allFontNames containsObject: @"FreeSans-Bold"])
+    return @"FreeSans-Bold";
+  return @"Helvetica-Bold";
+}
+
+-(NSString *) defaultFixedPitchFontName
+{
+  if ([allFontNames containsObject: @"Bitstream Vera Sans Mono"])
+    return @"Bitstream Vera Sans Mono";
+  if ([allFontNames containsObject: @"FreeMono"])
+    return @"FreeMono";
+  return @"Courier";
 }
 
 @end
@@ -274,7 +301,7 @@ static NSArray *faFromFc(FcPattern *pat)
 - (float) widthOfGlyphs: (const NSGlyph *) glyphs length: (int) len
 {
   XGlyphInfo extents;
-  unichar buf[len];
+  XftChar16 buf[len];
   int i;
 
   for (i = 0; i < len; i++)
@@ -374,7 +401,7 @@ static NSArray *faFromFc(FcPattern *pat)
 		      allowLossyConversion: YES];
   int length = [d length];
   const char *cstr = (const char*)[d bytes];
-  XGGState *state = [(XGContext *)GSCurrentContext() currentGState];
+  XGGState *state = (XGGState *)[(XGContext *)GSCurrentContext() currentGState];
   XftDraw *xftdraw = [state xftDrawForDrawable: draw];
   XftColor xftcolor = [state xftColor];
 
@@ -387,12 +414,12 @@ static NSArray *faFromFc(FcPattern *pat)
 	  onDisplay: (Display*) xdpy drawable: (Drawable) draw
 	       with: (GC) xgcntxt at: (XPoint) xp
 {
-  XGGState *state = [(XGContext *)GSCurrentContext() currentGState];
+  XGGState *state = (XGGState *)[(XGContext *)GSCurrentContext() currentGState];
   XftDraw *xftdraw = [state xftDrawForDrawable: draw];
   XftColor xftcolor = [state xftColor];
-  unichar buf[len];
+  XftChar16 buf[len];
   int i;
-
+ 
   for (i = 0; i < len; i++)
     {
       buf[i] = glyphs[i];
@@ -403,12 +430,12 @@ static NSArray *faFromFc(FcPattern *pat)
 		  xp.x, xp.y, (XftChar16*)buf, len);
 }
 
-- (void) draw: (const char*) s length: (int) len 
+- (void) draw: (const char*) s lenght: (int) len 
     onDisplay: (Display*) xdpy drawable: (Drawable) draw
 	 with: (GC) xgcntxt at: (XPoint) xp
 {
   int length = strlen(s);
-  XGGState *state = [(XGContext *)GSCurrentContext() currentGState];
+  XGGState *state = (XGGState *)[(XGContext *)GSCurrentContext() currentGState];
   XftDraw *xftdraw = [state xftDrawForDrawable: draw];
   XftColor xftcolor = [state xftColor];
 
@@ -427,7 +454,7 @@ static NSArray *faFromFc(FcPattern *pat)
     }
 }
 
-- (float) widthOf: (const char*) s length: (int) len
+- (float) widthOf: (const char*) s lenght: (int) len
 {
   XGlyphInfo extents;
 
@@ -448,6 +475,7 @@ static NSArray *faFromFc(FcPattern *pat)
 
   return extents.width;
 }
+
 
 - (void) setActiveFor: (Display*) xdpy gc: (GC) xgcntxt
 {

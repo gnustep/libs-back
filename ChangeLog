@@ -1,3 +1,17 @@
+2006-05-29  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m (FcFontEnumerator
+	-defaultSystemFontName, -defaultBoldSystemFontName,
+	-defaultFixedPitchFontName): Added this methods which return
+	values similar to the art and cairo backend.
+	Removed compiler warnings from this file.
+	* Source/xlib/XGFontSetFontInfo.m (-dealloc): Call super dealloc.
+	* Source/xlib/XGGeometry.m
+	* Source/xlib/XGFont.m
+	* Source/xlib/XGGState.m:
+	* Tools/font_cacher.m:
+	Removed compiler warnings. 
+
 2006-05-27  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-_DPSsetcursor::): Don't set cursor

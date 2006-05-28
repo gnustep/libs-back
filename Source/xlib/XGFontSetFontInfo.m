@@ -153,6 +153,7 @@ static BOOL char_struct_for_glyph(NSGlyph glyph, XFontSet font_set,
       XFreeFontSet(XSERVER, _font_set);
       _font_set = NULL;
     }
+  [super dealloc];
 }
 
 - (NSSize) advancementForGlyph: (NSGlyph)glyph
@@ -198,8 +199,8 @@ static BOOL char_struct_for_glyph(NSGlyph glyph, XFontSet font_set,
 }
 
 - (void) drawGlyphs: (const NSGlyph *)glyphs
-             length: (int)len
-	  onDisplay: (Display *)dpy
+             lenght: (int)len
+          onDisplay: (Display *)dpy
 	   drawable: (Drawable)win
 	       with: (GC)gc
 	         at: (XPoint)xp
@@ -215,7 +216,7 @@ static BOOL char_struct_for_glyph(NSGlyph glyph, XFontSet font_set,
 }
 
 - (float) widthOfGlyphs: (const NSGlyph *)glyphs
-                 length: (int)len
+                 lenght: (int)len
 {
   UTF8Str   ustr;
   float	    val;
