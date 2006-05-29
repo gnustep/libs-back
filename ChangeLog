@@ -1,5 +1,11 @@
 2006-05-29  Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/xlib/XGGState.m (-dealloc, -deepen):
+	Free XFT drawing structures and don't reuse the same ones for
+	copies of the gstate. Fixes bug #13705.
+	
+2006-05-29  Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/xlib/GSXftFontInfo.m (FcFontEnumerator
 	-defaultSystemFontName, -defaultBoldSystemFontName,
 	-defaultFixedPitchFontName): Added this methods which return
