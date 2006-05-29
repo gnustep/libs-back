@@ -125,6 +125,17 @@ static	Region	emptyRegion;
     XFreeGC(XDPY, agcntxt);
   if (clipregion)
     XDestroyRegion(clipregion);
+
+#ifdef HAVE_XFT
+  if (xft_draw != NULL)
+    {
+      XftDrawDestroy(xft_draw);
+    }
+  if (xft_alpha_draw != NULL)
+    {
+      XftDrawDestroy(xft_alpha_draw);
+    }
+#endif
   [super dealloc];
 }
 
@@ -148,6 +159,10 @@ static	Region	emptyRegion;
       self->clipregion = region;
     }
 
+#ifdef HAVE_XFT
+  xft_draw = NULL;
+  xft_alpha_draw = NULL;
+#endif
   return self;
 }
 
