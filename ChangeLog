@@ -1,3 +1,7 @@
+2006-06-22 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Tools/gpbs.m: Fix to get profiling to work for this daemon
+
 2006-05-29  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/XGGState.m (-dealloc, -deepen):

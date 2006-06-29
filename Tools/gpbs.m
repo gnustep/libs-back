@@ -1176,6 +1176,9 @@ init(int argc, char** argv, char **env)
 
   for (count = 0; count < NSIG; count++)
     {
+#ifdef	SIGPROF
+      if (count == SIGPROF) continue;
+#endif
       signal((int)count, ihandler);
     }
 #ifdef SIGPIPE
