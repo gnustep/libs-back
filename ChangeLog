@@ -1,3 +1,13 @@
+2006-07-04 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/art/ftfont.m:
+	* Source/x11/XGServer.m:
+	* Source/x11/XGDragView.m:
+	* Source/GSBackend.m:
+	* Source/gsc/GSGState.m:
+	* Tools/gpbs.m:
+	Avoid spurious warnings produced by gcc-4.1
+
 2006-06-22 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Tools/gpbs.m: Fix to get profiling to work for this daemon

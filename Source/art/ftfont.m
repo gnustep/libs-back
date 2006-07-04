@@ -169,16 +169,17 @@ static NSMutableSet *families_seen, *families_pending;
 
 @implementation FTFaceInfo
 
--(NSString *) description
+- (NSString *) description
 {
   return [NSString stringWithFormat: @"<FTFaceInfo %p: '%@' %@ %i %i>",
     self, displayName, files, weight, traits];
 }
 
 /* FTFaceInfo:s should never be deallocated */
--(void) dealloc
+- (void) dealloc
 {
   NSLog(@"Warning: -dealloc called on %@",self);
+  GSNOSUPERDEALLOC;
 }
 
 @end
@@ -597,13 +598,13 @@ static void load_font_configuration(void)
 @end
 
 @implementation FTFontEnumerator
--(void) enumerateFontsAndFamilies
+- (void) enumerateFontsAndFamilies
 {
   ASSIGN(allFontNames, fcfg_allFontNames);
   ASSIGN(allFontFamilies, fcfg_allFontFamilies);
 }
 
--(NSString *) defaultSystemFontName
+- (NSString *) defaultSystemFontName
 {
   if ([fcfg_allFontNames containsObject: @"BitstreamVeraSans-Roman"])
     return @"BitstreamVeraSans-Roman";
@@ -612,7 +613,7 @@ static void load_font_configuration(void)
   return @"Helvetica";
 }
 
--(NSString *) defaultBoldSystemFontName
+- (NSString *) defaultBoldSystemFontName
 {
   if ([fcfg_allFontNames containsObject: @"BitstreamVeraSans-Bold"])
     return @"BitstreamVeraSans-Bold";
@@ -621,7 +622,7 @@ static void load_font_configuration(void)
   return @"Helvetica-Bold";
 }
 
--(NSString *) defaultFixedPitchFontName
+- (NSString *) defaultFixedPitchFontName
 {
   if ([fcfg_allFontNames containsObject: @"BitstreamVeraSansMono-Roman"])
     return @"BitstreamVeraSansMono-Roman";
@@ -857,13 +858,13 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   return self;
 }
 
--(void) set
+- (void) set
 {
   NSLog(@"ignore -set method of font '%@'\n", fontName);
 }
 
 
--(float) defaultLineHeightForFont
+- (float) defaultLineHeightForFont
 {
   return lineHeight;
 }
@@ -885,7 +886,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
                 first for every character, the second for 'wch'; results are
                 undefined if 0x8 is combined with 0x2 or 0x1
  */
--(void) drawString: (const char *)s
+- (void) drawString: (const char *)s
 	at: (int)x : (int)y
 	to: (int)x0 : (int)y0 : (int)x1 : (int)y1
 	: (unsigned char *)buf : (int)bpl
@@ -1385,7 +1386,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 }
 
 
--(void) drawGlyphs: (const NSGlyph *)glyphs : (int)length
+- (void) drawGlyphs: (const NSGlyph *)glyphs : (int)length
 	at: (int)x : (int)y
 	to: (int)x0 : (int)y0 : (int)x1 : (int)y1
 	: (unsigned char *)buf : (int)bpl
@@ -1700,7 +1701,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
     }
 }
 
--(void) drawGlyphs: (const NSGlyph *)glyphs : (int)length
+- (void) drawGlyphs: (const NSGlyph *)glyphs : (int)length
 	at: (int)x : (int)y
 	to: (int)x0 : (int)y0 : (int)x1 : (int)y1
 	: (unsigned char *)buf : (int)bpl
@@ -2015,7 +2016,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 }
 
 
--(BOOL) glyphIsEncoded: (NSGlyph)glyph
+- (BOOL) glyphIsEncoded: (NSGlyph)glyph
 {
   FT_Face face;
   FT_Size size;
@@ -2141,7 +2142,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 		    (bbox.xMax - bbox.xMin) / 64.0, (bbox.yMax - bbox.yMin) / 64.0);
 }
 
--(NSPoint) positionOfGlyph: (NSGlyph)g
+- (NSPoint) positionOfGlyph: (NSGlyph)g
 	precededByGlyph: (NSGlyph)prev
 	isNominal: (BOOL *)nominal
 {
@@ -2219,7 +2220,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 }
 
 
--(NSGlyph) glyphWithName: (NSString *)glyphName
+- (NSGlyph) glyphWithName: (NSString *)glyphName
 {
   FT_Face face;
   FT_Size size;
@@ -2388,12 +2389,12 @@ static int charpath_cubic_to(FT_Vector *c1, FT_Vector *c2, FT_Vector *to, void *
 }
 
 static FT_Outline_Funcs charpath_funcs = {
-move_to:charpath_move_to,
-line_to:charpath_line_to,
-conic_to:charpath_conic_to,
-cubic_to:charpath_cubic_to,
-shift:10,
-delta:0,
+  move_to:charpath_move_to,
+  line_to:charpath_line_to,
+  conic_to:charpath_conic_to,
+  cubic_to:charpath_cubic_to,
+  shift:10,
+  delta:0,
 };
 
 
@@ -2450,18 +2451,18 @@ static int bezierpath_cubic_to(FT_Vector *c1, FT_Vector *c2, FT_Vector *to, void
 }
 
 static FT_Outline_Funcs bezierpath_funcs = {
-move_to:bezierpath_move_to,
-line_to:bezierpath_line_to,
-conic_to:bezierpath_conic_to,
-cubic_to:bezierpath_cubic_to,
-shift:10,
-delta:0,
+  move_to:bezierpath_move_to,
+  line_to:bezierpath_line_to,
+  conic_to:bezierpath_conic_to,
+  cubic_to:bezierpath_cubic_to,
+  shift:10,
+  delta:0,
 };
 
 
 /* TODO: sometimes gets 'glyph transformation failed', probably need to
 add code to avoid loading bitmaps for glyphs */
--(void) outlineString: (const char *)s
+- (void) outlineString: (const char *)s
 		   at: (float)x : (float)y
 	       gstate: (void *)func_param
 {
@@ -2542,7 +2543,7 @@ add code to avoid loading bitmaps for glyphs */
 }
 
 
--(void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs
+- (void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs
 			     count: (int)count
 		      toBezierPath: (NSBezierPath *)path
 {
@@ -2690,7 +2691,7 @@ static int filters[3][7]=
 @implementation FTFontInfo_subpixel
 
 #if 0
--(void) drawGlyphs: (const NSGlyph *)glyphs : (int)length
+- (void) drawGlyphs: (const NSGlyph *)glyphs : (int)length
 	at: (int)x : (int)y
 	to: (int)x0 : (int)y0 : (int)x1 : (int)y1
 	: (unsigned char *)buf : (int)bpl
@@ -3052,12 +3053,12 @@ static int filters[3][7]=
 
 
 @interface NSFont (backend)
--(NSGlyph) glyphForCharacter: (unichar)ch;
--(NSString *) nameOfGlyph: (NSGlyph)glyph;
+- (NSGlyph) glyphForCharacter: (unichar)ch;
+- (NSString *) nameOfGlyph: (NSGlyph)glyph;
 @end
 
 @implementation NSFont (backend)
--(NSGlyph) glyphForCharacter: (unichar)ch
+- (NSGlyph) glyphForCharacter: (unichar)ch
 {
   FTFontInfo *fi=fontInfo;
   NSGlyph g;
@@ -3069,7 +3070,7 @@ static int filters[3][7]=
     return NSNullGlyph;
 }
 
--(NSString *) nameOfGlyph: (NSGlyph)glyph
+- (NSString *) nameOfGlyph: (NSGlyph)glyph
 {
   FTFontInfo *fi=fontInfo;
   FT_Face face;
@@ -3120,7 +3121,7 @@ fb03 'ffi'
 fb04 'ffl'
 */
 
--(unsigned int) _findSafeBreakMovingBackwardFrom: (unsigned int)ch
+- (unsigned int) _findSafeBreakMovingBackwardFrom: (unsigned int)ch
 {
 	NSString *str=[_textStorage string];
 	while (ch>0 && [str characterAtIndex: ch-1]=='f')
@@ -3128,7 +3129,7 @@ fb04 'ffl'
 	return ch;
 }
 
--(unsigned int) _findSafeBreakMovingForwardFrom: (unsigned int)ch
+- (unsigned int) _findSafeBreakMovingForwardFrom: (unsigned int)ch
 {
 	unsigned int l=[_textStorage length];
 	NSString *str=[_textStorage string];
@@ -3139,150 +3140,150 @@ fb04 'ffl'
 	return ch;
 }
 
--(void) _generateGlyphsForRun: (glyph_run_t *)run  at: (unsigned int)pos
+- (void) _generateGlyphsForRun: (glyph_run_t *)run  at: (unsigned int)pos
 {
-	glyph_t *g;
-	unsigned int glyph_size;
-	unsigned int i,j;
-	unsigned int ch,ch2,ch3;
+  glyph_t *g;
+  unsigned int glyph_size;
+  unsigned int i,j;
+  unsigned int ch,ch2,ch3;
 
-	FTFontInfo *fi=[run->font fontInfo];
+  FTFontInfo *fi = [run->font fontInfo];
 
-	NSCharacterSet *cs=[NSCharacterSet controlCharacterSet];
-	IMP characterIsMember=[cs methodForSelector: @selector(characterIsMember:)];
+  NSCharacterSet *cs = [NSCharacterSet controlCharacterSet];
+  IMP characterIsMember = [cs methodForSelector: @selector(characterIsMember:)];
 
-	unsigned int c=run->head.char_length;
-	unichar buf[c];
+  unsigned int c=run->head.char_length;
+  unichar buf[c];
 
 
-	[[_textStorage string] getCharacters: buf
-		range: NSMakeRange(pos,c)];
+  [[_textStorage string] getCharacters: buf
+				 range: NSMakeRange(pos,c)];
 
-	/* first guess */
-	glyph_size=c;
-	g=run->glyphs=malloc(sizeof(glyph_t)*glyph_size);
-	memset(g,0,sizeof(glyph_t)*glyph_size);
+  /* first guess */
+  glyph_size=c;
+  g=run->glyphs=malloc(sizeof(glyph_t)*glyph_size);
+  memset(g,0,sizeof(glyph_t)*glyph_size);
 
-	for (i=j=0;i<c;i++,g++,j++)
+  for (i=j=0;i<c;i++,g++,j++)
+    {
+      ch=buf[i];
+      ch2=ch3=0;
+      if (i+1<c)
+      {
+	      ch2=buf[i+1];
+	      if (i+2<c)
+		      ch3=buf[i+2];
+      }
+
+      g->char_offset=i;
+      if (characterIsMember(cs,@selector(characterIsMember:),ch))
+      {
+	      g->g=NSControlGlyph;
+	      continue;
+      }
+
+      if (ch == NSAttachmentCharacter)
+      {
+	      g->g=GSAttachmentGlyph;
+	      continue;
+      }
+
+      if (run->ligature>=1)
+      {
+	      if (ch=='f' && ch2=='f' && ch3=='l' && fi->ligature_ffl)
+	      {
+		      g->g=fi->ligature_ffl + 1;
+		      i+=2;
+		      continue;
+	      }
+	      if (ch=='f' && ch2=='f' && ch3=='i' && fi->ligature_ffi)
+	      {
+		      g->g=fi->ligature_ffi + 1;
+		      i+=2;
+		      continue;
+	      }
+	      if (ch=='f' && ch2=='f' && fi->ligature_ff)
+	      {
+		      g->g=fi->ligature_ff + 1;
+		      i++;
+		      continue;
+	      }
+	      if (ch=='f' && ch2=='i' && fi->ligature_fi)
+	      {
+		      g->g=fi->ligature_fi + 1;
+		      i++;
+		      continue;
+	      }
+	      if (ch=='f' && ch2=='l' && fi->ligature_fl)
+	      {
+		      g->g=fi->ligature_fl + 1;
+		      i++;
+		      continue;
+	      }
+      }
+
+      if (ch>=0xd800 && ch<=0xdfff)
 	{
-		ch=buf[i];
-		ch2=ch3=0;
-		if (i+1<c)
+	  if (ch >= 0xd800 && ch < 0xdc00 && ch2 >= 0xdc00 && ch2 <= 0xdfff)
+	    {
+	      ch = ((ch & 0x3ff) << 10) + (ch2 & 0x3ff) + 0x10000;
+	      i++;
+	    }
+	  else
+	    ch = 0xfffd;
+      }
+
+      g->g=FTC_CMapCache_Lookup(ftc_cmapcache, fi->faceId, fi->unicodeCmap, ch) + 1;
+
+      if (g->g == 1 && ch<0x10000)
+	{
+	  unichar *decomp;
+	  decomp = uni_is_decomp(ch);
+	  if (decomp)
+	    {
+	      int c=0;
+	      for (;*decomp;decomp++)
 		{
-			ch2=buf[i+1];
-			if (i+2<c)
-				ch3=buf[i+2];
-		}
+		  glyph_size++;
+		  run->glyphs=realloc(run->glyphs,sizeof(glyph_t)*glyph_size);
+		  g=run->glyphs+j;
+		  memset(&run->glyphs[glyph_size-1],0,sizeof(glyph_t));
 
-		g->char_offset=i;
-		if (characterIsMember(cs,@selector(characterIsMember:),ch))
+		  g->g = FTC_CMapCache_Lookup(ftc_cmapcache, fi->faceId, fi->unicodeCmap, *decomp) + 1;
+		  if (g->g == 1)
+		    break;
+		  c++;
+		  g++;
+		  j++;
+		  g->char_offset=i;
+		}
+	      if (*decomp)
 		{
-			g->g=NSControlGlyph;
-			continue;
+		  g-=c;
+		  j-=c;
+		  g->g=0;
 		}
-
-		if (ch == NSAttachmentCharacter)
+	      else
 		{
-			g->g=GSAttachmentGlyph;
-			continue;
+		  g--;
+		  j--;
 		}
-
-		if (run->ligature>=1)
-		{
-			if (ch=='f' && ch2=='f' && ch3=='l' && fi->ligature_ffl)
-			{
-				g->g=fi->ligature_ffl + 1;
-				i+=2;
-				continue;
-			}
-			if (ch=='f' && ch2=='f' && ch3=='i' && fi->ligature_ffi)
-			{
-				g->g=fi->ligature_ffi + 1;
-				i+=2;
-				continue;
-			}
-			if (ch=='f' && ch2=='f' && fi->ligature_ff)
-			{
-				g->g=fi->ligature_ff + 1;
-				i++;
-				continue;
-			}
-			if (ch=='f' && ch2=='i' && fi->ligature_fi)
-			{
-				g->g=fi->ligature_fi + 1;
-				i++;
-				continue;
-			}
-			if (ch=='f' && ch2=='l' && fi->ligature_fl)
-			{
-				g->g=fi->ligature_fl + 1;
-				i++;
-				continue;
-			}
-		}
-
-		if (ch>=0xd800 && ch<=0xdfff)
-		{
-			if (ch >= 0xd800 && ch < 0xdc00 && ch2 >= 0xdc00 && ch2 <= 0xdfff)
-			{
-				ch = ((ch & 0x3ff) << 10) + (ch2 & 0x3ff) + 0x10000;
-				i++;
-			}
-			else
-				ch = 0xfffd;
-		}
-
-		g->g=FTC_CMapCache_Lookup(ftc_cmapcache, fi->faceId, fi->unicodeCmap, ch) + 1;
-
-		if (g->g == 1 && ch<0x10000)
-		{
-			unichar *decomp;
-			decomp=uni_is_decomp(ch);
-			if (decomp)
-			{
-				int c=0;
-				for (;*decomp;decomp++)
-				{
-					glyph_size++;
-					run->glyphs=realloc(run->glyphs,sizeof(glyph_t)*glyph_size);
-					g=run->glyphs+j;
-					memset(&run->glyphs[glyph_size-1],0,sizeof(glyph_t));
-
-					g->g=FTC_CMapCache_Lookup(ftc_cmapcache, fi->faceId, fi->unicodeCmap, *decomp) + 1;
-					if (g->g == 1)
-						break;
-					c++;
-					g++;
-					j++;
-					g->char_offset=i;
-				}
-				if (*decomp)
-				{
-					g-=c;
-					j-=c;
-					g->g=0;
-				}
-				else
-				{
-					g--;
-					j--;
-				}
-			}
-		}
+	    }
 	}
+    }
 
-	/* TODO: shrink allocated array if possible */
-	run->head.glyph_length=j;
+  /* TODO: shrink allocated array if possible */
+  run->head.glyph_length=j;
 }
 @end
 
 
 @interface FTFontInfo (experimental_glyph_printing_extension)
--(const char *) nameOfGlyph: (NSGlyph)g;
+- (const char *) nameOfGlyph: (NSGlyph)g;
 @end
 
 @implementation FTFontInfo (experimental_glyph_printing_extension)
--(const char *) nameOfGlyph: (NSGlyph)g
+- (const char *) nameOfGlyph: (NSGlyph)g
 {
 static char buf[1024]; /* !!TODO!! */
   FT_Size size;

@@ -36,8 +36,14 @@
 
 #if BUILD_SERVER == SERVER_x11
 #include <x11/XGServer.h>
+@interface XGServer (Initialize)
++ (void) initializeBackend;
+@end
 #elif BUILD_SERVER == SERVER_win32
 #include <win32/WIN32Server.h>
+@interface WIN32Server (Initialize)
++ (void) initializeBackend;
+@end
 #endif
 
 /* Call the correct initalization routines for the choosen

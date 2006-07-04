@@ -596,12 +596,14 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 @implementation XGServer (InputMethod)
 - (NSString *) inputMethodStyle
 {
-  return inputServer ? [(XIMInputServer *)inputServer inputMethodStyle] : nil;
+  return inputServer ? [(XIMInputServer *)inputServer inputMethodStyle]
+    : (NSString*)nil;
 }
 
 - (NSString *) fontSize: (int *)size
 {
-  return inputServer ? [(XIMInputServer *)inputServer fontSize: size] : nil;
+  return inputServer ? [(XIMInputServer *)inputServer fontSize: size]
+    : (NSString*)nil;
 }
 
 - (BOOL) clientWindowRect: (NSRect *)rect
