@@ -155,7 +155,7 @@ mimeTypeForPasteboardType(Display *xDisplay, NSZone *zone, NSArray *types)
 
 static	XGDragView	*sharedDragView = nil;
 
-+ (XGDragView*) sharedDragView
++ (id) sharedDragView
 {
   if (sharedDragView == nil)
     {

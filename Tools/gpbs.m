@@ -220,7 +220,7 @@ NSMutableDictionary	*pasteboards = nil;
 {
   if (verbose)
     {
-      NSLog(@"get data for %x\n", (unsigned)self);
+      NSLog(@"get data for %p\n", self);
     }
   return data;
 }
@@ -269,7 +269,7 @@ NSMutableDictionary	*pasteboards = nil;
 {
   if (verbose)
     {
-      NSLog(@"set data for %x\n", (unsigned)self);
+      NSLog(@"set data for %p\n", self);
     }
   ASSIGN(data, d);
 }

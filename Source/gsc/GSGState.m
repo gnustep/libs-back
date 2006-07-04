@@ -416,8 +416,8 @@ typedef enum {
   */
   uch = NULL;
   ulen = 0;
-  GSToUnicode(&uch, &ulen, s, strlen(s), [font mostCompatibleStringEncoding], 
-	      NSDefaultMallocZone(), 0);
+  GSToUnicode(&uch, &ulen, (const unsigned char*)s, strlen(s),
+    [font mostCompatibleStringEncoding], NSDefaultMallocZone(), 0);
 
   for (i = 0; i < ulen; i++)
     {
