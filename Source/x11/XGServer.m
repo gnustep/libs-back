@@ -39,6 +39,14 @@
 #include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSDebug.h>
 
+#include <signal.h>
+/* Terminate cleanly if we get a signal to do so */
+static void
+terminate(int sig)
+{
+  [NSApp terminate: NSApp];
+}
+
 #ifdef HAVE_WRASTER_H
 #include "wraster.h"
 #else
@@ -347,6 +355,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 {
   NSDebugLog(@"Initializing GNUstep x11 backend.\n");
   [GSDisplayServer setDefaultServerClass: [XGServer class]];
+  signal(SIGTERM, terminate);
 }
 
 /**
