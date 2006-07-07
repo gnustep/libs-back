@@ -1,3 +1,9 @@
+2006-07-07 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/x11/XGServer.m:
+	Handle SIGTERM by calling ([NSApp terminate: NSApp]) to shut down
+	cleanly.
+
 2006-07-04 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/art/ftfont.m:
