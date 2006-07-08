@@ -548,6 +548,14 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 		    e = [self _handleTakeFocusAtom: xEvent 
 			                forContext: gcontext];
 		  }
+		else if ((Atom)xEvent.xclient.data.l[0]
+			 == generic.net_wm_ping_atom)
+		  {
+		    xEvent.xclient.window = RootWindow(dpy, cWin->screen);
+		    XSendEvent(dpy, xEvent.xclient.window, False, 
+			       (SubstructureRedirectMask | SubstructureNotifyMask), 
+			       &xEvent);
+		  }
 	      }
 	    else if (xEvent.xclient.message_type == dnd.XdndEnter)
 	      {

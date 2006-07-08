@@ -1,3 +1,10 @@
+2006-07-09  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Header/x11/XGGeneric.h,
+	* Source/x11/XGServerWindow.m (-_setupRootWindow, -window::::),
+	* Source/x11/XGServerEvent.m (-processEvent:):
+	Impelemented hanlding for _NET_WM_PING.
+
 2006-07-07 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGServer.m:
