@@ -785,6 +785,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   generic.protocols_atom = XInternAtom(dpy, "WM_PROTOCOLS", False);
   generic.take_focus_atom = XInternAtom(dpy, "WM_TAKE_FOCUS", False);
   generic.delete_win_atom = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
+  generic.net_wm_ping_atom = XInternAtom(dpy, "_NET_WM_PING", False);
   generic.miniaturize_atom
     = XInternAtom(dpy, "_GNUSTEP_WM_MINIATURIZE_WINDOW", False);
   generic.win_decor_atom = XInternAtom(dpy,"_GNUSTEP_WM_ATTR", False);
@@ -1267,6 +1268,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   window->numProtocols = 0;
   window->protocols[window->numProtocols++] = generic.take_focus_atom;
   window->protocols[window->numProtocols++] = generic.delete_win_atom;
+  window->protocols[window->numProtocols++] = generic.net_wm_ping_atom;
   if ((generic.wm & XGWM_WINDOWMAKER) != 0)
     {
       window->protocols[window->numProtocols++] = generic.miniaturize_atom;
