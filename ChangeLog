@@ -1,3 +1,10 @@
+2006-08-01 Riccardo Mottola <riccardo@kaffe.org>
+
+	* Headers/xlib/XGPrivate.h,
+	Headers/xlib/GSXftFontInfo.h,
+	Headers/xlib/XGFontSetFontInfo.h:
+	changed method signatures to fix bug intruduced by RFM during typo fixes
+
 2006-07-09  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Header/x11/XGGeneric.h,

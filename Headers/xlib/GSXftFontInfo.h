@@ -47,10 +47,10 @@
 - (void) drawString:  (NSString*)string
 	  onDisplay: (Display*) xdpy drawable: (Drawable) draw
 	       with: (GC) xgcntxt at: (XPoint) xp;
-- (void) draw: (const char*) s lenght: (int) len 
+- (void) draw: (const char*) s length: (int) len 
     onDisplay: (Display*) xdpy drawable: (Drawable) draw
 	 with: (GC) xgcntxt at: (XPoint) xp;
-- (float) widthOf: (const char*) s lenght: (int) len;
+- (float) widthOf: (const char*) s length: (int) len;
 - (void) setActiveFor: (Display*) xdpy gc: (GC) xgcntxt;
 
 @end
