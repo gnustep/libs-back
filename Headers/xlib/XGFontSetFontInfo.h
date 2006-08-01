@@ -65,13 +65,13 @@
 - (BOOL) glyphIsEncoded: (NSGlyph)glyph;
 - (NSGlyph) glyphWithName: (NSString *)glyphName;
 - (void) drawGlyphs: (const NSGlyph *)glyphs
-             lenght: (int)len
+             length: (int)len
           onDisplay: (Display *)dpy
 	   drawable: (Drawable)win
 	       with: (GC)gc
 	         at: (XPoint)xp;
 - (float) widthOfGlyphs: (const NSGlyph *)glyphs
-                 lenght: (int)len;
+                 length: (int)len;
 - (void) setActiveFor: (Display *)dpy
                    gc: (GC)gc;
 
