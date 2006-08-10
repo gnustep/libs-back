@@ -33,7 +33,7 @@
   HFONT hFont;
 }
 
-- (void) draw: (const char*)s lenght: (int)len 
+- (void) draw: (const char*)s length: (int)len 
 	 onDC: (HDC)hdc at: (POINT)p;
 - (void) drawGlyphs: (const NSGlyph*)s
 	     length: (int)len 
