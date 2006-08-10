@@ -3,6 +3,8 @@
    Copyright (C) 2002 Free Software Foundation, Inc.
 
    Written by: <author name="Fred Kiefer><email>FredKiefer@gmx.de</email></author>
+   Additions by: Christopher Armstrong (carmstrong@fastmail.com.au)
+
    Date: March 2002
    
    This file is part of the GNU Objective C User Interface Library.
@@ -86,8 +88,8 @@ POINT GSWindowPointToMS(WIN32GState *s, NSPoint p)
   p.x += s->offset.x;
   p.y += s->offset.y;
   p1.x = p.x;
-  p1.y = h -p.y;
-
+  p1.y = h - p.y;
+  
   return p1;
 }
 
@@ -259,8 +261,8 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
       {
 #ifdef USE_ALPHABLEND
 	// Use (0..1) fraction to set a (0..255) alpha constant value
-	BYTE SourceCosntantAlpha = (BYTE)(delta * 255);
-	BLENDFUNCTION blendFunc = {AC_SRC_OVER, 0, SourceCosntantAlpha, AC_SRC_ALPHA};
+	BYTE SourceConstantAlpha = (BYTE)(delta * 255);
+	BLENDFUNCTION blendFunc = {AC_SRC_OVER, 0, SourceConstantAlpha, AC_SRC_ALPHA};
 	success = AlphaBlend(hDC,
 			     x, y, (rectFrom.right - rectFrom.left), h,
 			     sourceDC,
@@ -273,7 +275,16 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
 	  break;
 #endif
       }
-
+    case NSCompositeCopy:
+      {
+	success = BitBlt(hDC, x, y, (rectFrom.right - rectFrom.left), h,
+			sourceDC, rectFrom.left, rectFrom.top, SRCCOPY);
+	break;	      
+      }
+    case NSCompositeClear:
+      {
+	break;
+      }
     default:
       success = BitBlt(hDC, x, y, (rectFrom.right - rectFrom.left), h,
 			sourceDC, rectFrom.left, rectFrom.top, SRCCOPY);
@@ -476,6 +487,33 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 	  tmp[i+3] = bits[i+3];
 	  i += 4;
 	}
+      bits = tmp;
+    }
+  else if (bitsPerPixel == 24)
+   {
+      unsigned char* tmp;
+      unsigned int pixels = pixelsHigh * pixelsWide;
+      unsigned int i = 0, j = 0;
+ 
+      bmih->biBitCount = 32;
+
+      NSDebugLLog(@"WIN32GState", @"24bit picure with pixelsWide:%d "
+	@"pixelsHigh:%d", pixelsWide, pixelsHigh);
+      
+      tmp = objc_malloc(pixels * 4);
+      //memset(tmp, 0xFF, pixels*4);
+      while (i < (pixels*4))
+        {
+          // We expand the bytes in a 24bit image into 32bits as Windows
+	  // seems to handle it better (and I can't figure out the correct
+	  // rearrangement for 24bit images anyway).
+          tmp[i+0] = bits[j+2];
+          tmp[i+1] = bits[j+1];
+          tmp[i+2] = bits[j+0];
+          tmp[i+3] = 0xFF;
+	  i+=4;
+          j+=3;
+        }
       bits = tmp;
     }
   else if (bitsPerPixel == 16)
@@ -970,6 +1008,12 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   int cap;
   DWORD penStyle;
 
+  // Temporary variables for gathering pen information
+  float* thePattern = NULL;
+  DWORD* iPattern = NULL;
+  int count = 0;
+  float phase = 0.0;
+  
   SetBkMode(hDC, TRANSPARENT);
   br.lbStyle = BS_SOLID;
   br.lbColor = wfcolor;
@@ -1011,26 +1055,39 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
       cap = PS_ENDCAP_SQUARE;
       break;
     }
+  
+  // Get the size of the pen line dash
+  [path getLineDash:NULL count:&count phase:NULL];
+  
+  if (count > 0)
+  {
+    penStyle = PS_GEOMETRIC | PS_USERSTYLE;
+    // The user has defined a dash pattern for stroking on
+    // the path. Note that we lose the floating point information
+    // here, as windows only supports DWORD elements, not float.
+    thePattern = objc_malloc(sizeof(float) * count);
+    [path getLineDash:thePattern count:&count phase:&phase];
 
-  penStyle = PS_GEOMETRIC | PS_SOLID;
-  if (path)
-    {
-      float thePattern[10];
-      int count = 10;
-      float phase;
-
-      [path getLineDash: thePattern count: &count phase: &phase];
-
-      if (count && (count < 10))
-	{
-	  penStyle = PS_GEOMETRIC | PS_DASH;
-	}
-    }
+    iPattern = objc_malloc(sizeof(DWORD) * count);
+    int i  = 0;
+    for (i = 0 ; i < count; i ++)
+      iPattern[i] = (DWORD)thePattern[i];
+    objc_free(thePattern);
+    thePattern = NULL;
+  }
+  else
+    penStyle = PS_GEOMETRIC | PS_SOLID;
 
   pen = ExtCreatePen(penStyle | join | cap, 
 		     lineWidth,
 		     &br,
 		     0, NULL);
+
+  if (iPattern)
+  {
+    objc_free(iPattern);
+    iPattern = NULL;
+  }
 
   oldPen = SelectObject(hDC, pen);
 
