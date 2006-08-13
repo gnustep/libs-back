@@ -2,8 +2,8 @@
 
    Copyright (C) 2002 Free Software Foundation, Inc.
 
-   Written by: <author name="Fred Kiefer><email>FredKiefer@gmx.de</email></author>
-   Additions by: Christopher Armstrong (carmstrong@fastmail.com.au)
+   Written by: Fred Kiefer <FredKiefer@gmx.de>
+   Additions by: Christopher Armstrong <carmstrong@fastmail.com.au>
 
    Date: March 2002
    
@@ -21,7 +21,8 @@
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+   Boston, MA 02111 USA.
    */
 
 // Currently the use of alpha blending is switched off by default.
@@ -216,10 +217,11 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
   int x;
   int y;
   NSRect destRect;
-  BOOL success;
+  BOOL success = NO;
 
-  NSDebugLLog(@"WIN32GState", @"compositeGState: fromRect: %@ toPoint: %@ op: %d",
-	      NSStringFromRect(sourceRect), NSStringFromPoint(destPoint), op);
+  NSDebugLLog(@"WIN32GState",
+    @"compositeGState: fromRect: %@ toPoint: %@ op: %d",
+    NSStringFromRect(sourceRect), NSStringFromPoint(destPoint), op);
 
   rectFrom = GSViewRectToWin(source, sourceRect);
   //rectFrom = GSXWindowRectToMS(sourceRect);
@@ -262,7 +264,8 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
 #ifdef USE_ALPHABLEND
 	// Use (0..1) fraction to set a (0..255) alpha constant value
 	BYTE SourceConstantAlpha = (BYTE)(delta * 255);
-	BLENDFUNCTION blendFunc = {AC_SRC_OVER, 0, SourceConstantAlpha, AC_SRC_ALPHA};
+	BLENDFUNCTION blendFunc
+	  = {AC_SRC_OVER, 0, SourceConstantAlpha, AC_SRC_ALPHA};
 	success = AlphaBlend(hDC,
 			     x, y, (rectFrom.right - rectFrom.left), h,
 			     sourceDC,
@@ -344,40 +347,40 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
 
   switch (op)
     {
-    case   NSCompositeClear:
-      break;
-    case   NSCompositeHighlight:
-      {
-	HDC hDC;
-	RECT rect = GSViewRectToWin(self, aRect);
-
-	hDC = [self getHDC];
-	if (!hDC)
-	  {
-	    return;
-	  } 
-
-	InvertRect(hDC, &rect);
-	[self releaseHDC: hDC];
+      case   NSCompositeClear:
 	break;
-      }
-    case   NSCompositeCopy:
-    // FIXME
-    case   NSCompositeSourceOver:
-    case   NSCompositeSourceIn:
-    case   NSCompositeSourceOut:
-    case   NSCompositeSourceAtop:
-    case   NSCompositeDestinationOver:
-    case   NSCompositeDestinationIn:
-    case   NSCompositeDestinationOut:
-    case   NSCompositeDestinationAtop:
-    case   NSCompositeXOR:
-    case   NSCompositePlusDarker:
-    case   NSCompositePlusLighter:
-    default:
-      [self DPSrectfill: NSMinX(aRect) : NSMinY(aRect) 
-	    : NSWidth(aRect) : NSHeight(aRect)];
-      break;
+      case   NSCompositeHighlight:
+	{
+	  HDC hDC;
+	  RECT rect = GSViewRectToWin(self, aRect);
+
+	  hDC = [self getHDC];
+	  if (!hDC)
+	    {
+	      return;
+	    } 
+
+	  InvertRect(hDC, &rect);
+	  [self releaseHDC: hDC];
+	  break;
+	}
+      case   NSCompositeCopy:
+      // FIXME
+      case   NSCompositeSourceOver:
+      case   NSCompositeSourceIn:
+      case   NSCompositeSourceOut:
+      case   NSCompositeSourceAtop:
+      case   NSCompositeDestinationOver:
+      case   NSCompositeDestinationIn:
+      case   NSCompositeDestinationOut:
+      case   NSCompositeDestinationAtop:
+      case   NSCompositeXOR:
+      case   NSCompositePlusDarker:
+      case   NSCompositePlusLighter:
+      default:
+	[self DPSrectfill: NSMinX(aRect) : NSMinY(aRect) 
+	      : NSWidth(aRect) : NSHeight(aRect)];
+	break;
     }
 }
 
@@ -397,10 +400,12 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   int xres, yres;
   UINT fuColorUse;
 
-  if (isPlanar || !([colorSpaceName isEqualToString: NSDeviceRGBColorSpace] ||
-		    [colorSpaceName isEqualToString: NSCalibratedRGBColorSpace]))
+  if (isPlanar
+    || !([colorSpaceName isEqualToString: NSDeviceRGBColorSpace]
+    || [colorSpaceName isEqualToString: NSCalibratedRGBColorSpace]))
     {
-      NSLog(@"Bitmap type currently not supported %d %@", isPlanar, colorSpaceName);
+      NSLog(@"Bitmap type currently not supported %d %@",
+	isPlanar, colorSpaceName);
       return NULL;
     }
 
@@ -857,18 +862,16 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 - (void)DPSrectstroke: (float)x : (float)y : (float)w : (float)h 
 {
   NSRect rect = [ctm rectInMatrixSpace: NSMakeRect(x, y, w, h)]; 
-  NSBezierPath *oldPath = path;
 
-  // Samll adjustment so that the line is visible
+  /* // Samll adjustment so that the line is visible
   if (rect.size.width > 0)
     rect.size.width--;
   if (rect.size.height > 0)
     rect.size.height--;
-  rect.origin.y += 1;
+  rect.origin.y += 1; */
 
-  path = [NSBezierPath bezierPathWithRect: rect];
+  [path appendBezierPathWithRect: rect];
   [self DPSstroke];
-  path = oldPath;
 }
 
 - (void)DPSrectclip: (float)x : (float)y : (float)w : (float)h 
@@ -1011,7 +1014,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   // Temporary variables for gathering pen information
   float* thePattern = NULL;
   DWORD* iPattern = NULL;
-  int count = 0;
+  int patternCount = 0;
   float phase = 0.0;
   
   SetBkMode(hDC, TRANSPARENT);
@@ -1026,68 +1029,71 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
   switch (joinStyle)
     {
-    case NSBevelLineJoinStyle:
-      join = PS_JOIN_BEVEL;
-      break;
-    case NSMiterLineJoinStyle:
-      join = PS_JOIN_MITER;
-      break;
-    case NSRoundLineJoinStyle:
-      join = PS_JOIN_ROUND;
-      break;
-    default:
-      join = PS_JOIN_MITER;
-      break;
+      case NSBevelLineJoinStyle:
+	join = PS_JOIN_BEVEL;
+	break;
+      case NSMiterLineJoinStyle:
+	join = PS_JOIN_MITER;
+	break;
+      case NSRoundLineJoinStyle:
+	join = PS_JOIN_ROUND;
+	break;
+      default:
+	join = PS_JOIN_MITER;
+	break;
     }
 
   switch (lineCap)
     {
-    case NSButtLineCapStyle:
-      cap = PS_ENDCAP_FLAT;
-      break;
-    case NSSquareLineCapStyle:
-      cap = PS_ENDCAP_SQUARE;
-      break;
-    case NSRoundLineCapStyle:
-      cap = PS_ENDCAP_ROUND;
-      break;
-    default:
-      cap = PS_ENDCAP_SQUARE;
-      break;
+      case NSButtLineCapStyle:
+	cap = PS_ENDCAP_FLAT;
+	break;
+      case NSSquareLineCapStyle:
+	cap = PS_ENDCAP_SQUARE;
+	break;
+      case NSRoundLineCapStyle:
+	cap = PS_ENDCAP_ROUND;
+	break;
+      default:
+	cap = PS_ENDCAP_SQUARE;
+	break;
     }
   
   // Get the size of the pen line dash
-  [path getLineDash:NULL count:&count phase:NULL];
+  [path getLineDash: NULL count: &patternCount phase: NULL];
   
-  if (count > 0)
-  {
-    penStyle = PS_GEOMETRIC | PS_USERSTYLE;
-    // The user has defined a dash pattern for stroking on
-    // the path. Note that we lose the floating point information
-    // here, as windows only supports DWORD elements, not float.
-    thePattern = objc_malloc(sizeof(float) * count);
-    [path getLineDash:thePattern count:&count phase:&phase];
+  if (patternCount > 0)
+    {
+      penStyle = PS_GEOMETRIC | PS_USERSTYLE;
 
-    iPattern = objc_malloc(sizeof(DWORD) * count);
-    int i  = 0;
-    for (i = 0 ; i < count; i ++)
-      iPattern[i] = (DWORD)thePattern[i];
-    objc_free(thePattern);
-    thePattern = NULL;
-  }
+      // The user has defined a dash pattern for stroking on
+      // the path. Note that we lose the floating point information
+      // here, as windows only supports DWORD elements, not float.
+      thePattern = objc_malloc(sizeof(float) * patternCount);
+      [path getLineDash: thePattern count: &patternCcount phase: &phase];
+
+      iPattern = objc_malloc(sizeof(DWORD) * patternCount);
+      int i  = 0;
+      for (i = 0 ; i < patternCount; i ++)
+	iPattern[i] = (DWORD)thePattern[i];
+      objc_free(thePattern);
+      thePattern = NULL;
+    }
   else
-    penStyle = PS_GEOMETRIC | PS_SOLID;
+    {
+      penStyle = PS_GEOMETRIC | PS_SOLID;
+    }
 
   pen = ExtCreatePen(penStyle | join | cap, 
 		     lineWidth,
 		     &br,
-		     0, NULL);
+		     patternCount, iPattern);
 
   if (iPattern)
-  {
-    objc_free(iPattern);
-    iPattern = NULL;
-  }
+    {
+      objc_free(iPattern);
+      iPattern = NULL;
+    }
 
   oldPen = SelectObject(hDC, pen);
 
