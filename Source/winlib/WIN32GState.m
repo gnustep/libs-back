@@ -1070,7 +1070,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
       // the path. Note that we lose the floating point information
       // here, as windows only supports DWORD elements, not float.
       thePattern = objc_malloc(sizeof(float) * patternCount);
-      [path getLineDash: thePattern count: &patternCcount phase: &phase];
+      [path getLineDash: thePattern count: &patternCount phase: &phase];
 
       iPattern = objc_malloc(sizeof(DWORD) * patternCount);
       int i  = 0;
