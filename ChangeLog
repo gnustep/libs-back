@@ -1,3 +1,9 @@
+2006-08-17 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m:
+	changed method signatures to fix typos (lenght->length)
+	Patch by: Hans Baier <hansfbaier@gmail.com>
+	
 2006-08-13 Christopher Armstrong <carmstrong@fastmail.com.au>
 
 	* Source/winlib/WIN32GState.m: Fixups to last patch
