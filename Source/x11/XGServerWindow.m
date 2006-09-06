@@ -141,7 +141,7 @@ setNormalHints(Display *d, gswindow_device_t *w)
     NSDebugLLog(@"XGTrace", @"Hint incr %d: %d, %d",
       w->number, w->siz_hints.width_inc, w->siz_hints.height_inc);
   if (handlesWindowDecorations
-      && !(w->win_attrs.window_style & NSResizableWindowMask))
+    && !(w->win_attrs.window_style & NSResizableWindowMask))
     {
       /* Some silly window managers (*cough* metacity *cough*) ignore
 	 our "non-resizable" hints unless we set the min and max
@@ -360,7 +360,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 
 @implementation XGServer (WindowOps)
 
--(BOOL) handlesWindowDecorations
+- (BOOL) handlesWindowDecorations
 {
   return handlesWindowDecorations;
 }
@@ -401,6 +401,8 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
  * Convert a window frame in OpenStep absolute screen coordinates to
  * a frame in X absolute screen coordinates by flipping an applying
  * offsets to allow for the X window decorations.
+ * The result is the rectangle of the window we can actually draw
+ * to (in the X coordinate system).
  */
 - (NSRect) _OSFrameToXFrame: (NSRect)o for: (void*)window
 {
@@ -447,10 +449,11 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 }
 
 /*
- * Convert a window frame in X  coordinates relative to the X-window to a frame
- * in OpenStep  coordinates relative to the window by flipping.
+ * Convert a rectangle in X  coordinates relative to the X-window
+ * to a rectangle in OpenStep coordinates in the topmost view in the
+ * NSWindow.
  */
-- (NSRect) _XWinFrameToOSWinFrame: (NSRect)x for: (void*)window
+- (NSRect) _XWinRectToOSViewRect: (NSRect)x for: (void*)window
 {
   gswindow_device_t	*win = (gswindow_device_t*)window;
   NSRect	o;
@@ -459,7 +462,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   o.origin.x = x.origin.x;
   o.origin.y = win->siz_hints.height - x.origin.y;
   o.origin.y = o.origin.y - o.size.height;
-  NSDebugLLog(@"Frame", @"XW2OW %@ %@",
+  NSDebugLLog(@"Frame", @"XW2OV %@ %@",
     NSStringFromRect(x), NSStringFromRect(o));
   return o;
 }
@@ -2633,13 +2636,12 @@ static BOOL didCreatePixmaps;
       // to set the clipping path.
       XUnionRectWithRegion (&rectangle, window->region, window->region);
 
-      // Transform the rectangle's coordinates to PS coordinates and add
+      // Transform the rectangle's coordinates to OS coordinates and add
       // this new rectangle to the list of exposed rectangles.
       {
- 	rect = [self _XWinFrameToOSWinFrame: 
-		       NSMakeRect(rectangle.x, rectangle.y,
-				  rectangle.width, rectangle.height)
- 		                        for: window];
+ 	rect = [self _XWinRectToOSViewRect: NSMakeRect(
+	  rectangle.x, rectangle.y, rectangle.width, rectangle.height)
+	  for: window];
 	[window->exposedRects addObject: [NSValue valueWithRect: rect]];
       }
     }
@@ -2726,7 +2728,7 @@ static BOOL didCreatePixmaps;
   // FIXME: It seems wierd to trigger a front-end method from here...
 
   // We simply invalidate the 
-  // corresponding rectangle of the contentview.
+  // corresponding rectangle of the top most view of the window.
 
   gui_win = GSWindowWithNumber(win);
 
@@ -2737,7 +2739,7 @@ static BOOL didCreatePixmaps;
       NSValue *val[n];
       int i;
 
-      v = [gui_win contentView];
+      v = [gui_win _windowView];
 	
       [window->exposedRects getObjects: val];
       for (i = 0; i < n; ++i)
