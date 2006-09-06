@@ -1,3 +1,13 @@
+2006-09-06 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Headers/x11/XGGeneric.h: New ivars to hold offsets for different
+	window styles.
+	* Source/x11/XGServerWindow.m: Offset handling and frame management
+	routines rewritten to try to get it right more often.
+	* Source/x11/XGServerEvent.m: Rewritten code which handles reparenting
+	notification so that we calculate the offsets of our window properly.
+	NB. these fixups require corresponding fixups in the gui library.
+
 2006-08-17 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/GSXftFontInfo.m:

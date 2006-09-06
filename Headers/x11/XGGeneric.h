@@ -19,7 +19,8 @@
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+   Boston, MA 02111 USA.
    */
 
 #ifndef	INCLUDED_XGGENERIC_H
@@ -49,6 +50,16 @@ typedef struct {
   Atom win_override_atom;
   Atom win_topmenu_atom;
 } XGWMWinTypes;
+
+/*
+ * Frame offsets for window inside parent decoration window.
+ */
+typedef struct {
+  short	l;	// offset from left
+  short	r;	// offset from right
+  short	t;	// offset from top
+  short	b;	// offset from bottom
+} Offsets;
 
 /*
  * Structure containing ivars that are common to all X backend contexts.
@@ -88,7 +99,7 @@ struct XGGeneric {
   int			rMouseMask;
   Window		appRootWindow;
   void			*cachedWindow;	// last gswindow_device_t used.
-  XPoint                parent_offset;  // WM defined parent info
+  Offsets		offsets[16];
   XGWMWinTypes          wintypes;
 };
 
