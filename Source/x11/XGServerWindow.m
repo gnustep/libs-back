@@ -501,17 +501,12 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 
   [self styleoffsets: &l : &r : &t : &b : style : win->ident];
 
-  /* WARNING: there was a comment here saying
-   * // 'When adding the frame here, we get X window errors!'
-   * x.size.width = o.size.width; // + l + r;
-   * x.size.height = o.size.height; // + t + b;
-   *
-   * but this seems to work OK for me after latest fixups in
-   * calculating offsets.  Maybe we will get errors again and
-   * need to comment out the size modification once more.
+  /* WARNING: if we adjust the frame size we get problems,
+   * but we do seem to need to adjust the position to allow for
+   * decorations.
    */
-  x.size.width = o.size.width + l + r;
-  x.size.height = o.size.height + t + b;
+  x.size.width = o.size.width;
+  x.size.height = o.size.height;
   x.origin.x = o.origin.x - l;
   x.origin.y = o.origin.y - t;
   NSDebugLLog(@"Frame", @"X2H %d, %x, %@, %@", win->number, style,
