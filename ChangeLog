@@ -4,6 +4,8 @@
 	window styles.
 	* Source/x11/XGServerWindow.m: Offset handling and frame management
 	routines rewritten to try to get it right more often.
+	Fix long-standing bug positioning windows ... so initial positions
+	of titled windows should not conflict with horizontal menu.
 	* Source/x11/XGServerEvent.m: Rewritten code which handles reparenting
 	notification so that we calculate the offsets of our window properly.
 	NB. these fixups require corresponding fixups in the gui library.
