@@ -405,13 +405,19 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 - (NSRect) _OSFrameToXFrame: (NSRect)o for: (void*)window
 {
   gswindow_device_t	*win = (gswindow_device_t*)window;
+  unsigned int		style = win->win_attrs.window_style;
   NSRect	x;
+  float	t, b, l, r;
 
-  x = o;
-  x.origin.y = x.origin.y + o.size.height;
+  [self styleoffsets: &l : &r : &t : &b : style : win->ident];
+
+  x.size.width = o.size.width - l - r;
+  x.size.height = o.size.height - t - b;
+  x.origin.x = o.origin.x + l;
+  x.origin.y = o.origin.y + o.size.height;
   x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y;
-  NSDebugLLog(@"Frame", @"O2X %d, %@, %@", win->number,
-	      NSStringFromRect(o), NSStringFromRect(x));
+  NSDebugLLog(@"Frame", @"O2X %d, %x, %@, %@", win->number, style,
+    NSStringFromRect(o), NSStringFromRect(x));
   return x;
 }
 
@@ -422,18 +428,19 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 - (NSRect) _OSFrameToXHints: (NSRect)o for: (void*)window
 {
   gswindow_device_t	*win = (gswindow_device_t*)window;
+  unsigned int		style = win->win_attrs.window_style;
   NSRect	x;
   float	t, b, l, r;
 
-  [self styleoffsets: &l : &r : &t : &b : win->win_attrs.window_style : win->ident];
+  [self styleoffsets: &l : &r : &t : &b : style : win->ident];
 
-  x.size.width = o.size.width;
-  x.size.height = o.size.height;
-  x.origin.x = o.origin.x - l;
+  x.size.width = o.size.width - l - r;
+  x.size.height = o.size.height - t - b;
+  x.origin.x = o.origin.x + l;
   x.origin.y = o.origin.y + o.size.height;
-  x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y - t;
-  NSDebugLLog(@"Frame", @"O2H %d, %@, %@", win->number,
-	      NSStringFromRect(o), NSStringFromRect(x));
+  x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y;
+  NSDebugLLog(@"Frame", @"O2H %d, %x, %@, %@", win->number, style,
+    NSStringFromRect(o), NSStringFromRect(x));
   return x;
 }
 
@@ -450,7 +457,8 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   o.origin.x = x.origin.x;
   o.origin.y = win->siz_hints.height - x.origin.y;
   o.origin.y = o.origin.y - o.size.height;
-  NSDebugLLog(@"Frame", @"X2O %@ %@", NSStringFromRect(x), NSStringFromRect(o));
+  NSDebugLLog(@"Frame", @"XW2OW %@ %@",
+    NSStringFromRect(x), NSStringFromRect(o));
   return o;
 }
 
@@ -462,13 +470,21 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 - (NSRect) _XFrameToOSFrame: (NSRect)x for: (void*)window
 {
   gswindow_device_t	*win = (gswindow_device_t*)window;
+  unsigned int		style = win->win_attrs.window_style;
   NSRect	o;
+  float	t, b, l, r;
 
+  [self styleoffsets: &l : &r : &t : &b : style : win->ident];
   o = x;
+  o.origin.y = o.origin.y + o.size.height + t;
   o.origin.y = DisplayHeight(dpy, win->screen) - o.origin.y;
-  o.origin.y = o.origin.y - o.size.height;
-  NSDebugLLog(@"Frame", @"X2O %d, %@, %@", win->number,
-	      NSStringFromRect(x), NSStringFromRect(o));
+  o.origin.y -= b;
+  o.origin.x -= l;
+  o.size.width += l + r;
+  o.size.height += t + b;
+
+  NSDebugLLog(@"Frame", @"X2O %d, %x, %@, %@", win->number, style,
+    NSStringFromRect(x), NSStringFromRect(o));
   return o;
 }
 
@@ -479,18 +495,27 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 - (NSRect) _XFrameToXHints: (NSRect)o for: (void*)window
 {
   gswindow_device_t	*win = (gswindow_device_t*)window;
+  unsigned int		style = win->win_attrs.window_style;
   NSRect	x;
   float	t, b, l, r;
 
-  [self styleoffsets: &l : &r : &t : &b : win->win_attrs.window_style : win->ident];
+  [self styleoffsets: &l : &r : &t : &b : style : win->ident];
 
-  // FIXME: When adding the frame here, we get X window errors!
-  x.size.width = o.size.width; // + l + r;
-  x.size.height = o.size.height; // + t + b;
+  /* WARNING: there was a comment here saying
+   * // 'When adding the frame here, we get X window errors!'
+   * x.size.width = o.size.width; // + l + r;
+   * x.size.height = o.size.height; // + t + b;
+   *
+   * but this seems to work OK for me after latest fixups in
+   * calculating offsets.  Maybe we will get errors again and
+   * need to comment out the size modification once more.
+   */
+  x.size.width = o.size.width + l + r;
+  x.size.height = o.size.height + t + b;
   x.origin.x = o.origin.x - l;
   x.origin.y = o.origin.y - t;
-  NSDebugLLog(@"Frame", @"X2H %d, %@, %@", win->number,
-	      NSStringFromRect(o), NSStringFromRect(x));
+  NSDebugLLog(@"Frame", @"X2H %d, %x, %@, %@", win->number, style,
+    NSStringFromRect(o), NSStringFromRect(x));
   return x;
 }
 
@@ -1152,9 +1177,14 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 
   window->win_attrs.flags |= GSWindowStyleAttr;
   if (handlesWindowDecorations)
-    window->win_attrs.window_style = style;
+    {
+      window->win_attrs.window_style = style;
+    }
   else
-    window->win_attrs.window_style = style & (NSIconWindowMask | NSMiniWindowMask);
+    {
+      window->win_attrs.window_style
+	= style & (NSIconWindowMask | NSMiniWindowMask);
+    }
 
   frame = [self _OSFrameToXFrame: frame for: window];
 
@@ -1248,8 +1278,8 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 
   // For window managers supporting EWMH, but not Window Maker, 
   // where we use a different solution, set the window icon.
-  if (((generic.wm & XGWM_EWMH) != 0) && 
-      ((generic.wm & XGWM_WINDOWMAKER) == 0))
+  if (((generic.wm & XGWM_EWMH) != 0)
+    && ((generic.wm & XGWM_WINDOWMAKER) == 0))
     {
       [self _setNetWMIconFor: window->ident];
     }
@@ -1478,6 +1508,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 {
   static Atom _net_frame_extents = None;
   static Atom _kde_frame_strut = None;
+  Offsets	*o;
 
   if (!handlesWindowDecorations)
     {
@@ -1498,27 +1529,30 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 
       if (_net_frame_extents == None)
         {
-	  _net_frame_extents = XInternAtom(dpy, "_NET_FRAME_EXTENTS", False);
+	  _net_frame_extents = XInternAtom(dpy,
+	    "_NET_FRAME_EXTENTS", False);
 	}
 
-      extents = (unsigned long *)PropGetCheckProperty(dpy, win, _net_frame_extents, 
-						      XA_CARDINAL, 32, 4, &count);
+      extents = (unsigned long *)PropGetCheckProperty(dpy,
+	win, _net_frame_extents, XA_CARDINAL, 32, 4, &count);
 
 
       if (!extents) // && (generic.wm & XGWM_KDE)) 
         {
 	  if (_kde_frame_strut == None)
 	    {
-	      _kde_frame_strut = XInternAtom(dpy, "_KDE_NET_WM_FRAME_STRUT", False);
+	      _kde_frame_strut = XInternAtom(dpy,
+		"_KDE_NET_WM_FRAME_STRUT", False);
 	    }
-	  extents = (unsigned long *)PropGetCheckProperty(dpy, win, _kde_frame_strut, 
-							  XA_CARDINAL, 32, 4, &count);
+	  extents = (unsigned long *)PropGetCheckProperty(dpy,
+	    win, _kde_frame_strut, XA_CARDINAL, 32, 4, &count);
 	}
 
       if (extents) 
         {
-	  NSDebugLLog(@"Frame", @"Window %d, left %d, right %d, top %d, bottom %d", 
-		      win, extents[0], extents[1], extents[2], extents[3]);
+	  NSDebugLLog(@"Frame",
+	    @"Window %d, left %d, right %d, top %d, bottom %d", 
+	    win, extents[0], extents[1], extents[2], extents[3]);
 	  *l = extents[0];
 	  *r = extents[1];
 	  *t = extents[2];
@@ -1528,77 +1562,60 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 	}
     }
 
-  /* Nextt try to get the offset information that we have obtained from
+  if (style == NSBorderlessWindowMask
+    || (style & NSIconWindowMask) || (style & NSMiniWindowMask))
+    {
+      *l = *r = *t = *b = 0.0;
+      return;
+    }
+
+  /* Next try to get the offset information that we have obtained from
      the WM. This will only work if the application has already created
      a window that has been reparented by the WM. Otherwise we have to
      guess.
   */
-  if (generic.parent_offset.x || generic.parent_offset.y)
+  o = generic.offsets + (style & 15);
+  if (o->l || o->r || o->t || o->b)
     {
-      if (style == NSBorderlessWindowMask
-	  || (style & NSIconWindowMask) || (style & NSMiniWindowMask))
-	{
-	  *l = *r = *t = *b = 0.0;
-	}
-      else
-	{
-	  *l = *r = *t = *b = generic.parent_offset.x;
-	  if (NSResizableWindowMask & style)
-	    {
-	      /* We just have to guess this. Usually it doesn't matter */
-	      if ((generic.wm & XGWM_WINDOWMAKER) != 0)
-		*b = 9;
-	      else if ((generic.wm & XGWM_EWMH) != 0)
-		*b = 7;
-	    }
-	  if ((style & NSTitledWindowMask) || (style & NSClosableWindowMask)
-	      || (style & NSMiniaturizableWindowMask))
-	    {
-	      *t = generic.parent_offset.y;
-	    }
-	}
+      *l = o->l;
+      *r = o->r;
+      *b = o->b;
+      *t = o->t;
+      NSDebugLLog(@"Frame",
+	@"Window %d, offsets %f, %f, %f, %f", 
+	win, *l, *r, *t, *b);
     }
   else if ((generic.wm & XGWM_WINDOWMAKER) != 0)
     {
-      if (style == NSBorderlessWindowMask
-	  || (style & NSIconWindowMask) || (style & NSMiniWindowMask))
+      *l = *r = *t = *b = 1.0;
+      if (NSResizableWindowMask & style)
 	{
-	  *l = *r = *t = *b = 0.0;
+	  *b = 9.0;
 	}
-      else
+      if ((style & NSTitledWindowMask) || (style & NSClosableWindowMask)
+	|| (style & NSMiniaturizableWindowMask))
 	{
-	  *l = *r = *t = *b = 0;
-	  if (NSResizableWindowMask & style)
-	    {
-	      *b = 9;
-	    }
-	  if ((style & NSTitledWindowMask) || (style & NSClosableWindowMask)
-	      || (style & NSMiniaturizableWindowMask))
-	    {
-	      *t = 22;
-	    }
+	  *t = 25.0;
 	}
+      NSDebugLLog(@"Frame",
+	@"Window %d, windowmaker %f, %f, %f, %f", 
+	win, *l, *r, *t, *b);
     }
   else if ((generic.wm & XGWM_EWMH) != 0)
     {
-      if (style == NSBorderlessWindowMask
-	  || (style & NSIconWindowMask) || (style & NSMiniWindowMask))
+      *l = *r = *t = *b = 4;
+      if (NSResizableWindowMask & style)
 	{
-	  *l = *r = *t = *b = 0.0;
+	  *b = 7;
 	}
-      else
+      if ((style & NSTitledWindowMask) || (style & NSClosableWindowMask)
+	|| (style & NSMiniaturizableWindowMask))
 	{
-	  *l = *r = *t = *b = 4;
-	  if (NSResizableWindowMask & style)
-	    {
-	      *b = 7;
-	    }
-	  if ((style & NSTitledWindowMask) || (style & NSClosableWindowMask)
-	      || (style & NSMiniaturizableWindowMask))
-	    {
-	      *t = 20;
-	    }
+	  *t = 20;
 	}
+      NSDebugLLog(@"Frame",
+	@"Window %d, EWMH %f, %f, %f, %f", 
+	win, *l, *r, *t, *b);
     }
   else
     {
@@ -1608,6 +1625,9 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
        * This should make a good guess - at the moment use no offsets.
        */
       *l = *r = *t = *b = 0.0;
+      NSDebugLLog(@"Frame",
+	@"Window %d, unknown %f, %f, %f, %f", 
+	win, *l, *r, *t, *b);
     }
 }
 
