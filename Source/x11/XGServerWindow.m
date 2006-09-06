@@ -415,7 +415,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   x.size.height = o.size.height - t - b;
   x.origin.x = o.origin.x + l;
   x.origin.y = o.origin.y + o.size.height;
-  x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y;
+  x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y + t;
   NSDebugLLog(@"Frame", @"O2X %d, %x, %@, %@", win->number, style,
     NSStringFromRect(o), NSStringFromRect(x));
   return x;
@@ -424,6 +424,8 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 /*
  * Convert a window frame in OpenStep absolute screen coordinates to
  * a frame suitable for setting X hints for a window manager.
+ * NB. Hints use the coordinates of the parent decoration window,
+ * but the size of the actual window.
  */
 - (NSRect) _OSFrameToXHints: (NSRect)o for: (void*)window
 {
@@ -436,7 +438,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 
   x.size.width = o.size.width - l - r;
   x.size.height = o.size.height - t - b;
-  x.origin.x = o.origin.x + l;
+  x.origin.x = o.origin.x;
   x.origin.y = o.origin.y + o.size.height;
   x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y;
   NSDebugLLog(@"Frame", @"O2H %d, %x, %@, %@", win->number, style,
