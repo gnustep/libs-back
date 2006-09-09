@@ -1,3 +1,7 @@
+2006-09-08 Adam Fedor <fedor@gnu.org>
+
+	Tools/gpbs.1: Add documentation on options (from Dennis Leeuw).
+
 2006-09-06 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Headers/x11/XGGeneric.h: New ivars to hold offsets for different
