@@ -1,3 +1,8 @@
+2006-09-09 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/x11/XGServerWindow.m: ([_XFrameToOSFrame:for:]) fix transform
+	error.
+
 2006-09-08 Adam Fedor <fedor@gnu.org>
 
 	Tools/gpbs.1: Add documentation on options (from Dennis Leeuw).
