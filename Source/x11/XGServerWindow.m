@@ -416,8 +416,8 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   x.size.width = o.size.width - l - r;
   x.size.height = o.size.height - t - b;
   x.origin.x = o.origin.x + l;
-  x.origin.y = o.origin.y + o.size.height;
-  x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y + t;
+  x.origin.y = o.origin.y + o.size.height - t;
+  x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y;
   NSDebugLLog(@"Frame", @"O2X %d, %x, %@, %@", win->number, style,
     NSStringFromRect(o), NSStringFromRect(x));
   return x;
@@ -481,9 +481,8 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 
   [self styleoffsets: &l : &r : &t : &b : style : win->ident];
   o = x;
-  o.origin.y = o.origin.y + o.size.height + t;
-  o.origin.y = DisplayHeight(dpy, win->screen) - o.origin.y;
-  o.origin.y -= b;
+  o.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y;
+  o.origin.y = o.origin.y - x.size.height - b;
   o.origin.x -= l;
   o.size.width += l + r;
   o.size.height += t + b;
