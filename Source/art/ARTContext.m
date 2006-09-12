@@ -196,8 +196,8 @@ very expensive
 
   numarray[0] = ax; numarray[1] = ay;
 
-  x = p.x;
-  y = wi->sy - p.y;
+  x = p.x - offset.x;
+  y = offset.y - p.y;
   [(id<FTFontInfo>)font
     drawString: s
     at: x:y
@@ -229,8 +229,8 @@ very expensive
   numarray[0] = ax; numarray[1] = ay;
   numarray[2] = cx; numarray[3] = cy;
 
-  x = p.x;
-  y = wi->sy - p.y;
+  x = p.x - offset.x;
+  y = offset.y - p.y;
   [(id<FTFontInfo>)font
     drawString: s
     at: x:y
@@ -270,8 +270,8 @@ very expensive
   if ([path isEmpty]) return;
   p = [path currentPoint];
 
-  x = p.x;
-  y = wi->sy - p.y;
+  x = p.x - offset.x;
+  y = offset.y - p.y;
   [(id<FTFontInfo>)font
     drawString: s
     at: x:y
@@ -300,8 +300,8 @@ very expensive
 
   numarray[0] = cx; numarray[1] = cy;
 
-  x = p.x;
-  y = wi->sy - p.y;
+  x = p.x - offset.x;
+  y = offset.y - p.y;
   [(id<FTFontInfo>)font
     drawString: s
     at: x:y
@@ -327,8 +327,8 @@ very expensive
   if ([path isEmpty]) return;
   p = [path currentPoint];
 
-  x = p.x;
-  y = wi->sy - p.y;
+  x = p.x - offset.x;
+  y = offset.y - p.y;
   [(id<FTFontInfo>)font
     drawString: s
     at: x:y
@@ -354,8 +354,8 @@ very expensive
   if ([path isEmpty]) return;
   p = [path currentPoint];
 
-  x = p.x;
-  y = wi->sy - p.y;
+  x = p.x - offset.x;
+  y = offset.y - p.y;
   [(id<FTFontInfo>)font
     drawString: s
     at: x:y
@@ -381,8 +381,8 @@ very expensive
   if (!path || [path isEmpty]) return;
   p = [path currentPoint];
 
-  x = p.x;
-  y = wi->sy - p.y;
+  x = p.x - offset.x;
+  y = offset.y - p.y;
   [(id<FTFontInfo>)font
     drawString: s
     at: x:y
@@ -409,8 +409,8 @@ very expensive
   if (!path || [path isEmpty]) return;
   p = [path currentPoint];
 
-  x = p.x;
-  y = wi->sy - p.y;
+  x = p.x - offset.x;
+  y = offset.y - p.y;
   if (wi->has_alpha)
     {
       [(id<FTFontInfo>)font

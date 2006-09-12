@@ -61,7 +61,7 @@ typedef struct
 } rect_trace_t;
 
 static void _rect_setup(rect_trace_t *t, NSRect r, int cx0, int cx1,
-		 NSAffineTransform *ctm, int up, int *y0, int wi_sy)
+		 NSAffineTransform *ctm, int up, int *y0, NSPoint offset)
 {
   float fx[4], fy[4];
   NSPoint p;
@@ -91,10 +91,10 @@ static void _rect_setup(rect_trace_t *t, NSRect r, int cx0, int cx1,
   if (fabs(fy[2] - floor(fy[2] + .5)) < 0.001) fy[2] = floor(fy[2] + .5);
   if (fabs(fy[3] - floor(fy[3] + .5)) < 0.001) fy[3] = floor(fy[3] + .5);
 
-  t->x[0] = floor(fx[0]); t->y[0] = wi_sy - floor(fy[0]);
-  t->x[1] = floor(fx[1]); t->y[1] = wi_sy - floor(fy[1]);
-  t->x[2] = floor(fx[2]); t->y[2] = wi_sy - floor(fy[2]);
-  t->x[3] = floor(fx[3]); t->y[3] = wi_sy - floor(fy[3]);
+  t->x[0] = floor(fx[0]) - offset.x; t->y[0] = offset.y - floor(fy[0]);
+  t->x[1] = floor(fx[1]) - offset.x; t->y[1] = offset.y - floor(fy[1]);
+  t->x[2] = floor(fx[2]) - offset.x; t->y[2] = offset.y - floor(fy[2]);
+  t->x[3] = floor(fx[3]) - offset.x; t->y[3] = offset.y - floor(fy[3]);
 
   /* If we're tracing the 'other way', we just flip the y-coordinates
   and unflip when returning them */
@@ -628,7 +628,7 @@ static void function_free(function_t *f)
 		dst=wi->data+wi->bytes_per_line*clip_y0+clip_x0*DI.bytes_per_pixel;
 		dsta=wi->alpha+wi->sx*clip_y0+clip_x0;
 
-		_rect_setup(&rt,rect,clip_x0,clip_x1,matrix,0,&y,wi->sy);
+		_rect_setup(&rt,rect,clip_x0,clip_x1,matrix,0,&y,offset);
 
 		while (y<clip_y0)
 		{
@@ -652,7 +652,7 @@ static void function_free(function_t *f)
 				r.dst=dst+x0*DI.bytes_per_pixel;
 				r.dsta=dsta+x0;
 
-				p=[inverse transformPoint: NSMakePoint(clip_x0+x0,wi->sy-y)];
+				p=[inverse transformPoint: NSMakePoint(clip_x0+x0-offset.x,offset.y-y)];
 				in[0]=p.x;
 				in[1]=p.y;
 
@@ -695,7 +695,7 @@ static void function_free(function_t *f)
 				{
 				  if (state)
 				    {
-					p=[inverse transformPoint: NSMakePoint(clip_x0+x0,wi->sy-y)];
+					p=[inverse transformPoint: NSMakePoint(clip_x0+x0-offset.x,offset.y-y)];
 					in[0]=p.x;
 					in[1]=p.y;
 
@@ -728,7 +728,7 @@ static void function_free(function_t *f)
 				}
 			      if (state)
 				{
-					p=[inverse transformPoint: NSMakePoint(clip_x0+x0,wi->sy-y)];
+					p=[inverse transformPoint: NSMakePoint(clip_x0+x0-offset.y,offset.y-y)];
 					in[0]=p.x;
 					in[1]=p.y;
 

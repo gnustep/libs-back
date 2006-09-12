@@ -259,7 +259,7 @@ typedef struct
 } rect_trace_t;
 
 static void _rect_setup(rect_trace_t *t, NSRect r, int cx0, int cx1,
-		 NSAffineTransform *ctm, int up, int *y0, int wi_sy)
+		 NSAffineTransform *ctm, int up, int *y0, NSPoint offset)
 {
   float fx[4], fy[4];
   NSPoint p;
@@ -289,10 +289,10 @@ static void _rect_setup(rect_trace_t *t, NSRect r, int cx0, int cx1,
   if (fabs(fy[2] - floor(fy[2] + .5)) < 0.001) fy[2] = floor(fy[2] + .5);
   if (fabs(fy[3] - floor(fy[3] + .5)) < 0.001) fy[3] = floor(fy[3] + .5);
 
-  t->x[0] = floor(fx[0]); t->y[0] = wi_sy - floor(fy[0]);
-  t->x[1] = floor(fx[1]); t->y[1] = wi_sy - floor(fy[1]);
-  t->x[2] = floor(fx[2]); t->y[2] = wi_sy - floor(fy[2]);
-  t->x[3] = floor(fx[3]); t->y[3] = wi_sy - floor(fy[3]);
+  t->x[0] = floor(fx[0]) - offset.x; t->y[0] = offset.y - floor(fy[0]);
+  t->x[1] = floor(fx[1]) - offset.x; t->y[1] = offset.y - floor(fy[1]);
+  t->x[2] = floor(fx[2]) - offset.x; t->y[2] = offset.y - floor(fy[2]);
+  t->x[3] = floor(fx[3]) - offset.x; t->y[3] = offset.y - floor(fy[3]);
 
   /* If we're tracing the 'other way', we just flip the y-coordinates
   and unflip when returning them */
@@ -493,11 +493,11 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
   cy1 = clip_y1;
 
   sp = [ags->ctm pointInMatrixSpace: aRect.origin];
-  sp.x = floor(sp.x);
-  sp.y = floor(ags->wi->sy - sp.y);
+  sp.x = floor(sp.x - ags->offset.x);
+  sp.y = floor(ags->offset.y - sp.y);
   dp = [ctm pointInMatrixSpace: aPoint];
-  dp.x = floor(dp.x);
-  dp.y = floor(wi->sy - dp.y);
+  dp.x = floor(dp.x - offset.x);
+  dp.y = floor(offset.y - dp.y);
 
   if (dp.x - cx0 > sp.x)
     cx0 = dp.x - sp.x;
@@ -613,7 +613,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
   {
     int ry;
     int x0, x1;
-    _rect_setup(&state, aRect, sx0, sx0 + cx1, ags->ctm, order, &ry, ags->wi->sy);
+    _rect_setup(&state, aRect, sx0, sx0 + cx1, ags->ctm, order, &ry, ags->offset);
     if (order)
       {
 	if (ry < sy0)
@@ -875,11 +875,11 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
   cy1 = clip_y1;
 
   sp = [ags->ctm pointInMatrixSpace: aRect.origin];
-  sp.x = floor(sp.x);
-  sp.y = floor(ags->wi->sy - sp.y);
+  sp.x = floor(sp.x - ags->offset.x);
+  sp.y = floor(ags->offset.y - sp.y);
   dp = [ctm pointInMatrixSpace: aPoint];
-  dp.x = floor(dp.x);
-  dp.y = floor(wi->sy - dp.y);
+  dp.x = floor(dp.x - offset.x);
+  dp.y = floor(offset.y - dp.y);
 
   if (dp.x - cx0 > sp.x)
     cx0 = dp.x - sp.x;
@@ -987,7 +987,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
   {
     int ry;
     int x0, x1;
-    _rect_setup(&state, aRect, sx0, sx0 + cx1, ags->ctm, order, &ry, ags->wi->sy);
+    _rect_setup(&state, aRect, sx0, sx0 + cx1, ags->ctm, order, &ry, ags->offset);
     if (order)
       {
 	if (ry < sy0)
@@ -1254,7 +1254,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
   {
     int ry;
     int x0, x1;
-    _rect_setup(&state, aRect, cx0, cx0 + cx1, ctm, 0, &ry, wi->sy);
+    _rect_setup(&state, aRect, cx0, cx0 + cx1, ctm, 0, &ry, offset);
     if (ry >= cy0 + cy1)
       return;
     delta = ry - cy0;

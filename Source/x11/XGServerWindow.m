@@ -450,19 +450,22 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 
 /*
  * Convert a rectangle in X  coordinates relative to the X-window
- * to a rectangle in OpenStep coordinates in the topmost view in the
- * NSWindow.
+ * to a rectangle in OpenStep coordinates (base coordinates of the NSWindow).
  */
-- (NSRect) _XWinRectToOSViewRect: (NSRect)x for: (void*)window
+- (NSRect) _XWinRectToOSWinRect: (NSRect)x for: (void*)window
 {
   gswindow_device_t	*win = (gswindow_device_t*)window;
+  unsigned int		style = win->win_attrs.window_style;
   NSRect	o;
+  float	t, b, l, r;
+
+  [self styleoffsets: &l : &r : &t : &b : style : win->ident];
   o.size.width = x.size.width;
   o.size.height = x.size.height;
-  o.origin.x = x.origin.x;
-  o.origin.y = win->siz_hints.height - x.origin.y;
-  o.origin.y = o.origin.y - o.size.height;
-  NSDebugLLog(@"Frame", @"XW2OV %@ %@",
+  o.origin.x = x.origin.x - l;
+  o.origin.y = NSHeight(win->xframe) - x.origin.y;
+  o.origin.y = o.origin.y - x.size.height - b;
+  NSDebugLLog(@"Frame", @"XW2OW %@ %@",
     NSStringFromRect(x), NSStringFromRect(o));
   return o;
 }
@@ -1847,6 +1850,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   unsigned width, height;
   gswindow_device_t *window;
   NSGraphicsContext *ctxt;
+  float	t, b, l, r;
 
   NSDebugLLog(@"XGTrace", @"DPSwindowdevice: %d ", win);
   window = WINDOW_WITH_TAG(win);
@@ -1863,8 +1867,8 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   height = NSHeight(window->xframe);
 
   if (window->buffer
-      && (window->buffer_width != width || window->buffer_height != height)
-      && (window->gdriverProtocol & GDriverHandlesBacking) == 0)
+    && (window->buffer_width != width || window->buffer_height != height)
+    && (window->gdriverProtocol & GDriverHandlesBacking) == 0)
     {
       [isa waitAllContexts];
       XFreePixmap(dpy, window->buffer);
@@ -1883,8 +1887,11 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
     }
 
   ctxt = GSCurrentContext();
-  GSSetDevice(ctxt, window, 0, NSHeight(window->xframe));
+  [self styleoffsets: &l : &r : &t : &b
+		    : window->win_attrs.window_style : window->ident];
+  GSSetDevice(ctxt, window, l, NSHeight(window->xframe) + b);
   DPSinitmatrix(ctxt);
+  //DPStranslate(ctxt, -l, -b);
   DPSinitclip(ctxt);
 }
 
@@ -2638,7 +2645,7 @@ static BOOL didCreatePixmaps;
       // Transform the rectangle's coordinates to OS coordinates and add
       // this new rectangle to the list of exposed rectangles.
       {
- 	rect = [self _XWinRectToOSViewRect: NSMakeRect(
+ 	rect = [self _XWinRectToOSWinRect: NSMakeRect(
 	  rectangle.x, rectangle.y, rectangle.width, rectangle.height)
 	  for: window];
 	[window->exposedRects addObject: [NSValue valueWithRect: rect]];
@@ -2738,7 +2745,7 @@ static BOOL didCreatePixmaps;
       NSValue *val[n];
       int i;
 
-      v = [gui_win _windowView];
+      v = [[gui_win contentView] superview];
 	
       [window->exposedRects getObjects: val];
       for (i = 0; i < n; ++i)

@@ -158,6 +158,11 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
     return 0;
 }
 
+@interface XGServer (WindowOps)
+- (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
+                     : (unsigned int) style : (Window) win;
+@end
+
 @implementation XGServer (EventOps)
 
 - (int) XGErrorHandler: (Display*)display : (XErrorEvent*)err
@@ -296,6 +301,25 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
     }
 }
 
+/*
+ */
+- (NSPoint) _XPointToOSPoint: (NSPoint)x for: (void*)window
+{
+  gswindow_device_t	*win = (gswindow_device_t*)window;
+  unsigned int		style = win->win_attrs.window_style;
+  NSPoint	o;
+  float	t, b, l, r;
+
+  [self styleoffsets: &l : &r : &t : &b : style : win->ident];
+  o.x = x.x + l;
+  o.y = NSHeight(win->xframe) - x.y + b;
+
+  NSDebugLLog(@"Frame", @"X2OP %d, %x, %@, %@", win->number, style,
+    NSStringFromPoint(x), NSStringFromPoint(o));
+  return o;
+}
+
+
 - (void) processEvent: (XEvent *) event
 {
   static int		clickCount = 1;
@@ -322,21 +346,21 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 		    xEvent.xbutton.window, xEvent.xbutton.time,
 		    generic.lastClick);
 	/*
-	     * hardwired test for a double click
-	     *
-	     * For multiple clicks, the clicks must remain in the same
-	     * region of the same window and must occur in a limited time.
-	     *
-	     * default time of 300 should be user set;
-	     * perhaps the movement of 3 should also be a preference?
-	     */
+	 * hardwired test for a double click
+	 *
+	 * For multiple clicks, the clicks must remain in the same
+	 * region of the same window and must occur in a limited time.
+	 *
+	 * default time of 300 should be user set;
+	 * perhaps the movement of 3 should also be a preference?
+	 */
 	{
 	  BOOL	incrementCount = YES;
 
-  #define	CLICK_TIME	300
-  #define	CLICK_MOVE	3
+#define	CLICK_TIME	300
+#define	CLICK_MOVE	3
 	  if (xEvent.xbutton.time
-	      >= (unsigned long)(generic.lastClick + CLICK_TIME))
+	    >= (unsigned long)(generic.lastClick + CLICK_TIME))
 	    incrementCount = NO;
 	  else if (generic.lastClickWindow != xEvent.xbutton.window)
 	    incrementCount = NO;
@@ -385,7 +409,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	    eventType = NSScrollWheel;
 	  }
 	else if (xEvent.xbutton.button == generic.downMouse
-		 && generic.downMouse != 0)
+	  && generic.downMouse != 0)
 	  {
 	    deltaY = -1.;
 	    eventType = NSScrollWheel;
@@ -403,7 +427,9 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	if (cWin == 0)
 	  break;
 	eventLocation.x = xEvent.xbutton.x;
-	eventLocation.y = NSHeight(cWin->xframe)-xEvent.xbutton.y;
+	eventLocation.y = xEvent.xbutton.y;
+	eventLocation = [self _XPointToOSPoint: eventLocation
+					   for: cWin];
 
 	if (generic.flags.useWindowMakerIcons == 1)
 	  {
@@ -468,7 +494,9 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	if (cWin == 0)
 	  break;
 	eventLocation.x = xEvent.xbutton.x;
-	eventLocation.y = NSHeight(cWin->xframe)-xEvent.xbutton.y;
+	eventLocation.y = xEvent.xbutton.y;
+	eventLocation = [self _XPointToOSPoint: eventLocation
+					   for: cWin];
 
 	e = [NSEvent mouseEventWithType: eventType
 		     location: eventLocation
@@ -609,8 +637,8 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 		NSMinX(cWin->xframe);
 	      eventLocation.y = XDND_POSITION_ROOT_Y(&xEvent) - 
 		NSMinY(cWin->xframe);
-	      eventLocation.y = NSHeight(cWin->xframe) - 
-		eventLocation.y;
+	      eventLocation = [self _XPointToOSPoint: eventLocation
+						 for: cWin];
 	      time = XDND_POSITION_TIME(&xEvent);
 	      action = XDND_POSITION_ACTION(&xEvent);
 	      operation = GSDragOperationForAction(action);
@@ -1218,8 +1246,9 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 
 	  deltaX = - eventLocation.x;
 	  deltaY = - eventLocation.y;
-	  eventLocation = NSMakePoint(xEvent.xmotion.x,
-	    NSHeight(cWin->xframe) - xEvent.xmotion.y);
+	  eventLocation = NSMakePoint(xEvent.xmotion.x, xEvent.xmotion.y);
+	  eventLocation = [self _XPointToOSPoint: eventLocation
+					     for: cWin];
 	  deltaX += eventLocation.x;
 	  deltaY += eventLocation.y;
 
@@ -1626,14 +1655,12 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType)
 
   /* Process location */
   window = [XGServer _windowWithTag: [[NSApp keyWindow] windowNumber]];
-  eventLocation.x = xEvent->xbutton.x;
-  if (window)
+  if (window != 0)
     {
-      eventLocation.y = window->siz_hints.height - xEvent->xbutton.y;
-    }
-  else
-    {
+      eventLocation.x = xEvent->xbutton.x;
       eventLocation.y = xEvent->xbutton.y;
+      eventLocation = [context _XPointToOSPoint: eventLocation
+					    for: window];
     }
     
   /* Process characters */
