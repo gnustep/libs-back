@@ -6,7 +6,8 @@
    
    Copyright (C) 2001-2005 Free Software Foundation, Inc.
 
-   Written by:  <author name="Wim Oudshoorn"><email>woudshoo@xs4all.nl</email></author>
+   Written by:  <author name="Wim Oudshoorn">
+   <email>woudshoo@xs4all.nl</email></author>
    Date: Nov, 2001
    
    This file is part of the GNU Objective C User Interface Library.
@@ -23,7 +24,8 @@
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+   Boston, MA 02111 USA.
    */
 
 /*
@@ -115,7 +117,7 @@ static inline XRectangle
 XGIntersectionRect (XRectangle aRect, XRectangle bRect)
 {
   if (XGMaxX (aRect) <= XGMinX (bRect) || XGMaxX (bRect) <= XGMinX (aRect)
-      || XGMaxY (aRect) <= XGMinY (bRect) || XGMaxY (bRect) <= XGMinY (aRect))
+    || XGMaxY (aRect) <= XGMinY (bRect) || XGMaxY (bRect) <= XGMinY (aRect))
     {
       return XGMakeRect (0, 0, 0, 0);
     }
@@ -207,8 +209,7 @@ XGWindowPointToX (XGGState *s, NSPoint p)
 {
   XPoint newPoint;
 
-  newPoint.x = gs_floor(p.x + s->offset.x);
-
+  newPoint.x = gs_floor(p.x - s->offset.x);
   newPoint.y = gs_floor(s->offset.y - p.y);
 
   return newPoint;
@@ -219,9 +220,9 @@ XGWindowRectToX (XGGState *s, NSRect r)
 {
   XRectangle newRect;
 
-  newRect.x = gs_floor(r.origin.x + s->offset.x);
+  newRect.x = gs_floor(r.origin.x - s->offset.x);
   /* We gs_floor the extreme points, and get the width as the difference */
-  newRect.width = gs_floor(r.origin.x + s->offset.x + r.size.width) 
+  newRect.width = gs_floor(r.origin.x - s->offset.x + r.size.width) 
                   - newRect.x;
 
   newRect.y = gs_floor(s->offset.y - r.origin.y - r.size.height);
