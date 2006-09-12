@@ -596,17 +596,18 @@ static int warn = 0;
 	 events. */
       {
 	XEvent e;
+
 	while (XCheckTypedEvent(window->display,
-	    XShmGetEventBase(window->display) + ShmCompletion,
-	    &e))
+	  XShmGetEventBase(window->display) + ShmCompletion, &e))
 	  {
 	    [isa _gotShmCompletion: ((XShmCompletionEvent *)&e)->drawable];
 	  }
       }
     }
   else if (ximage)
-    XPutImage(display, drawable, gc, ximage,
-	      x, y, x, y, w, h);
+    {
+      XPutImage(display, drawable, gc, ximage, x, y, x, y, w, h);
+    }
 }
 
 -(void) needsAlpha
