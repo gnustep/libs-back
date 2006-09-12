@@ -9,7 +9,7 @@
 	* Source/x11/XGServerWindow.m:
 	* Source/x11/XGServerEvent.m:
 	Get backend to generate NSEvent objects with event location given in
-	OpernStep coordinates.
+	OpenStep coordinates. Fix flushwindowrect coordinate handling.
 	Update art backend to try to honor the x and y window offsets
 	provided in the graphics state.
 

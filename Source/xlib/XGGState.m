@@ -245,6 +245,8 @@ static	Region	emptyRegion;
     }
 
   XSetRegion(XDPY, xgcntxt, clipregion);
+NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
+  self, NSStringFromRect([self clipRect]));
 }
 
 /* Returns the clip region, which must be freed by the caller */
@@ -1485,10 +1487,12 @@ static	Region	emptyRegion;
 - (void)DPSrectclip: (float)x : (float)y : (float)w : (float)h 
 {
   XRectangle    xrect;
+  NSRect	orect;
 
   CHECK_GC;
 
-  xrect = XGViewRectToX(self, NSMakeRect(x, y, w, h));
+  orect = NSMakeRect(x, y, w, h);
+  xrect = XGViewRectToX(self, orect);
 
   if (clipregion == 0)
     {
@@ -1522,7 +1526,10 @@ static	Region	emptyRegion;
     [self setColor: &fillColor state: COLOR_FILL];
 
   bounds = XGViewRectToX(self, NSMakeRect(x, y, w, h));
-  // Hack: Only draw when alpha is not zero
+NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
+  self, bounds.x, bounds.y, bounds.width, bounds.height);
+
+// Hack: Only draw when alpha is not zero
   if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
     XFillRectangle(XDPY, draw, xgcntxt,
 		   bounds.x, bounds.y, bounds.width, bounds.height);
