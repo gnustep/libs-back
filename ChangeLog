@@ -1,3 +1,18 @@
+2006-09-12 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/art/ARTContext.m:
+	* Source/art/path.m:
+	* Source/art/composite.m:
+	* Source/art/shfill.m:
+	* Source/art/image.m:
+	* Source/xlib/XGGState.m:
+	* Source/x11/XGServerWindow.m:
+	* Source/x11/XGServerEvent.m:
+	Get backend to generate NSEvent objects with event location given in
+	OpernStep coordinates.
+	Update art backend to try to honor the x and y window offsets
+	provided in the graphics state.
+
 2006-09-09 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGServerWindow.m: ([_XFrameToOSFrame:for:]) fix transform

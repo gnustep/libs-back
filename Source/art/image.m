@@ -248,10 +248,10 @@ seem to cause edges to be off by a pixel
   if (fabs(fy[2] - floor(fy[2] + .5)) < 0.001) fy[2] = floor(fy[2] + .5);
   if (fabs(fy[3] - floor(fy[3] + .5)) < 0.001) fy[3] = floor(fy[3] + .5);
 
-  x[0] = floor(fx[0]); y[0] = wi->sy - floor(fy[0]);
-  x[1] = floor(fx[1]); y[1] = wi->sy - floor(fy[1]);
-  x[2] = floor(fx[2]); y[2] = wi->sy - floor(fy[2]);
-  x[3] = floor(fx[3]); y[3] = wi->sy - floor(fy[3]);
+  x[0] = floor(fx[0]) - offset.x; y[0] = offset.y - floor(fy[0]);
+  x[1] = floor(fx[1]) - offset.x; y[1] = offset.y - floor(fy[1]);
+  x[2] = floor(fx[2]) - offset.x; y[2] = offset.y - floor(fy[2]);
+  x[3] = floor(fx[3]) - offset.x; y[3] = offset.y - floor(fy[3]);
 
   tx[0] = 0;         ty[0] = ii->height;
   tx[1] = ii->width; ty[1] = ii->height;
@@ -626,8 +626,8 @@ seem to cause edges to be off by a pixel
       else
 	alpha_dest = NULL;
 
-      ox = [matrix transformPoint: NSMakePoint(0, 0)].x;
-      oy = wi->sy - [matrix transformPoint: NSMakePoint(0, 0)].y - pixelsHigh;
+      ox = [matrix transformPoint: NSMakePoint(0, 0)].x - offset.x;
+      oy = offset.y - [matrix transformPoint: NSMakePoint(0, 0)].y - pixelsHigh;
 
       for (y = 0; y < pixelsHigh; y++)
 	{
