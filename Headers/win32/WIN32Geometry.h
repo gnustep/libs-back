@@ -19,7 +19,8 @@
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+   Boston, MA 02111 USA.
 */
 
 #ifndef _WIN32Geometry_h_INCLUDE
@@ -29,70 +30,69 @@
 
 #include <windows.h>
 
-static inline
-NSPoint MSWindowPointToGS(HWND hwnd,  int x, int y)
+@class WIN32Server;
+
+static inline NSPoint
+MSWindowPointToGS(WIN32Server *svr, HWND hwnd, int x, int y)
 {
+  NSGraphicsContext *ctxt;
+  RECT rect;
+  float h, l, r, t, b;
   NSPoint p1;
-  RECT rect;
-  int h;
+  NSWindow *window;
 
+  ctxt = GSCurrentContext();
+  window = GSWindowWithNumber((int)hwnd);
   GetClientRect(hwnd, &rect);
   h = rect.bottom - rect.top;
+  [svr styleoffsets: &l : &r : &t : &b : [window styleMask]];
 
-  p1.x = x;
-  p1.y = h - y;
+  p1.x = x + l;
+  p1.y = h - y + b;
   return p1;
 }
 
-static inline
-POINT GSWindowPointToMS(HWND hwnd, NSPoint p)
+static inline NSRect
+MSWindowRectToGS(WIN32Server *svr, HWND hwnd, RECT r0)
 {
-  POINT p1;
+  NSGraphicsContext *ctxt;
   RECT rect;
-  int h;
-
-  GetClientRect(hwnd, &rect);
-  h = rect.bottom - rect.top;
-
-  p1.x = p.x;
-  p1.y = h -p.y;
-
-  return p1;
-}
-
-static inline
-NSRect MSWindowRectToGS(HWND hwnd,  RECT r)
-{
+  float h, l, r, t, b;
   NSRect r1;
-  RECT rect;
-  int h;
+  NSWindow *window;
 
+  ctxt = GSCurrentContext();
+  window = GSWindowWithNumber((int)hwnd);
   GetClientRect(hwnd, &rect);
   h = rect.bottom - rect.top;
+  [svr styleoffsets: &l : &r : &t : &b : [window styleMask]];
 
-  r1.origin.x = r.left;
-  r1.origin.y = h - r.bottom;
-  r1.size.width = r.right - r.left;
-  r1.size.height = r.bottom -r.top;
-
+  r1.origin.x = r0.left + l;
+  r1.origin.y = h - r0.bottom + b;
+  r1.size.width = r0.right - r0.left;
+  r1.size.height = r0.bottom - r0.top;
   return r1;
 }
 
-static inline
-RECT GSWindowRectToMS(HWND hwnd, NSRect r)
+static inline RECT
+GSWindowRectToMS(WIN32Server *svr, HWND hwnd, NSRect r0)
 {
-  RECT r1;
+  NSGraphicsContext *ctxt;
   RECT rect;
-  int h;
+  float h, l, r, t, b;
+  RECT r1;
+  NSWindow *window;
 
+  ctxt = GSCurrentContext();
+  window = GSWindowWithNumber((int)hwnd);
   GetClientRect(hwnd, &rect);
   h = rect.bottom - rect.top;
+  [svr styleoffsets: &l : &r : &t : &b : [window styleMask]];
 
-  r1.left = r.origin.x;
-  r1.bottom = h - r.origin.y;
-  r1.right = r.origin.x + r.size.width;
-  r1.top = h - r.origin.y - r.size.height;
-
+  r1.left = r0.origin.x - l;
+  r1.bottom = h - r0.origin.y + b;
+  r1.right = r1.left + r0.size.width;
+  r1.top = r1.bottom - r0.size.height;
   return r1;
 }
 
@@ -145,19 +145,11 @@ NSRect MSScreenRectToGS(RECT r, unsigned int styleMask, WIN32Server *self)
 {
   NSRect r1;
   int screen_height = GetSystemMetrics(SM_CYSCREEN);
-  float	t, b, l, rr;
-
-  [self styleoffsets: &l : &rr : &t : &b : styleMask];
 
   r1.origin.x = r.left;
   r1.origin.y = screen_height - r.bottom;
   r1.size.width = r.right - r.left;
   r1.size.height = r.bottom - r.top;
-
-  r1.origin.x += l;
-  r1.origin.y += b;
-  r1.size.width -= l + rr;
-  r1.size.height -= t + b;
 
   return r1;
 }
@@ -178,14 +170,6 @@ RECT GSScreenRectToMS(NSRect r, unsigned int styleMask, WIN32Server *self)
 {
   RECT r1;
   int screen_height = GetSystemMetrics(SM_CYSCREEN);
-  float	t, b, l, rr;
-
-  [self styleoffsets: &l : &rr : &t : &b : styleMask];
-
-  r.origin.x -= l;
-  r.origin.y -= b;
-  r.size.width += l + rr;
-  r.size.height += t + b;
 
   r1.left = r.origin.x;
   r1.bottom = screen_height - r.origin.y;
