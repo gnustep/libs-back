@@ -27,10 +27,10 @@
 
 #include "w32_Events.h"
 
-static void invalidateWindow(HWND hwnd, RECT rect);
+static void invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect);
 
 static void 
-invalidateWindow(HWND hwnd, RECT rect)
+invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 {
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
 
@@ -44,8 +44,6 @@ invalidateWindow(HWND hwnd, RECT rect)
 		      win->hdc, rect.left, rect.top, SRCCOPY);
       if (!result)
         {
-	  NSLog(@"validated window %d %@", hwnd, 
-		NSStringFromRect(MSWindowRectToGS((HWND)hwnd, rect)));
 	  NSLog(@"validateWindow failed %d", GetLastError());
       }
       ReleaseDC((HWND)hwnd, hdc);
@@ -53,14 +51,14 @@ invalidateWindow(HWND hwnd, RECT rect)
   else 
     {
       NSWindow *window = GSWindowWithNumber((int)hwnd);
-      NSRect r = MSWindowRectToGS((HWND)hwnd, rect);
+      NSRect r = MSWindowRectToGS(svr, (HWND)hwnd, rect);
       
       /*
 	NSLog(@"Invalidated window %d %@ (%d, %d, %d, %d)", hwnd, 
 	NSStringFromRect(r), rect.left, rect.top, rect.right, rect.bottom);
       */
       // Repaint the window's client area. 
-      [[window contentView] setNeedsDisplayInRect: r];
+      [[[window contentView] superview] setNeedsDisplayInRect: r];
     }
 }
 
@@ -242,7 +240,7 @@ invalidateWindow(HWND hwnd, RECT rect)
     {
       //InvalidateRect(hwnd,rect,YES);
 	   
-      invalidateWindow(hwnd, rect);
+      invalidateWindow(self, hwnd, rect);
       // validate the whole window, for in some cases an infinite series
       // of WM_PAINT is triggered
       ValidateRect(hwnd, NULL);

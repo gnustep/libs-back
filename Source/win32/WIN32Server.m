@@ -21,7 +21,8 @@
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+   Boston, MA 02111 USA.
    */
 
 #include <Foundation/NSDebug.h>
@@ -58,16 +59,16 @@ static NSString *NSMenuWillTearOff = @"MenuWillTearOff";
 static NSString *NSMenuwillPopUP =@"MenuwillPopUP";
 static NSString *NSWindowDidCreateWindow =@"WindowDidCreateWindow";
 
-static NSEvent *process_key_event(HWND hwnd, WPARAM wParam, LPARAM lParam, 
-				  NSEventType eventType);
-static NSEvent *process_mouse_event(HWND hwnd, WPARAM wParam, LPARAM lParam, 
-				    NSEventType eventType);
+static NSEvent *process_key_event(WIN32Server *svr,
+  HWND hwnd, WPARAM wParam, LPARAM lParam, NSEventType eventType);
+static NSEvent *process_mouse_event(WIN32Server *svr,
+  HWND hwnd, WPARAM wParam, LPARAM lParam, NSEventType eventType);
 
 //static BOOL HAVE_MAIN_MENU = NO;
 static BOOL handlesWindowDecorations = NO;
 
 static void 
-validateWindow(HWND hwnd, RECT rect);
+validateWindow(WIN32Server *svr, HWND hwnd, RECT rect);
 LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 			     WPARAM wParam, LPARAM lParam);
 
@@ -1409,27 +1410,27 @@ printf("\n\n##############################################################\n");
 	break;
       case WM_MOUSEMOVE: //MOUSE
 	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEMOVE", hwnd);
-	ev = process_mouse_event(hwnd, wParam, lParam, NSMouseMoved);
+	ev = process_mouse_event(self, hwnd, wParam, lParam, NSMouseMoved);
 	break;
       case WM_LBUTTONDOWN: //MOUSE
 	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONDOWN", hwnd);
 	//[self decodeWM_LBUTTONDOWNParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd];
-	ev = process_mouse_event(hwnd, wParam, lParam, NSLeftMouseDown);
+	ev = process_mouse_event(self, hwnd, wParam, lParam, NSLeftMouseDown);
 	break;
       case WM_LBUTTONUP: //MOUSE
 	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONUP", hwnd);
-	ev = process_mouse_event(hwnd, wParam, lParam, NSLeftMouseUp);
+	ev = process_mouse_event(self, hwnd, wParam, lParam, NSLeftMouseUp);
 	break;
       case WM_LBUTTONDBLCLK: //MOUSE
 	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONDBLCLK", hwnd);
 	break;
       case WM_MBUTTONDOWN: //MOUSE
 	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONDOWN", hwnd);
-	ev = process_mouse_event(hwnd, wParam, lParam, NSOtherMouseDown);
+	ev = process_mouse_event(self, hwnd, wParam, lParam, NSOtherMouseDown);
 	break;
       case WM_MBUTTONUP: //MOUSE
 	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONUP", hwnd);
-	ev = process_mouse_event(hwnd, wParam, lParam, NSOtherMouseUp);
+	ev = process_mouse_event(self, hwnd, wParam, lParam, NSOtherMouseUp);
 	break;
       case WM_MBUTTONDBLCLK: //MOUSE
 	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONDBLCLK", hwnd);
@@ -1437,13 +1438,13 @@ printf("\n\n##############################################################\n");
       case WM_RBUTTONDOWN: //MOUSE
 	{
 	  NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONDOWN", hwnd);
-	  ev = process_mouse_event(hwnd, wParam, lParam, NSRightMouseDown);
+	  ev = process_mouse_event(self, hwnd, wParam, lParam, NSRightMouseDown);
 	}
 	break;
       case WM_RBUTTONUP: //MOUSE
 	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONUP", hwnd);
 	{
-	  ev = process_mouse_event(hwnd, wParam, lParam, NSRightMouseUp);
+	  ev = process_mouse_event(self, hwnd, wParam, lParam, NSRightMouseUp);
 	}
 	break;
       case WM_RBUTTONDBLCLK: //MOUSE
@@ -1451,16 +1452,16 @@ printf("\n\n##############################################################\n");
 	break;
       case WM_MOUSEWHEEL: //MOUSE
 	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEWHEEL", hwnd);
-	ev = process_mouse_event(hwnd, wParam, lParam, NSScrollWheel);
+	ev = process_mouse_event(self, hwnd, wParam, lParam, NSScrollWheel);
 	break;
 	
 	case WM_KEYDOWN:  //KEYBOARD
 	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KEYDOWN", hwnd);
-	ev = process_key_event(hwnd, wParam, lParam, NSKeyDown);
+	ev = process_key_event(self, hwnd, wParam, lParam, NSKeyDown);
 	break;
       case WM_KEYUP:  //KEYBOARD
 	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KEYUP", hwnd);
-	ev = process_key_event(hwnd, wParam, lParam, NSKeyUp);
+	ev = process_key_event(self, hwnd, wParam, lParam, NSKeyUp);
 	break;
 
       case WM_POWERBROADCAST: //SYSTEM
@@ -1708,10 +1709,17 @@ printf("\n\n##############################################################\n");
 - (void) windowdevice: (int) winNum
 {
   NSGraphicsContext *ctxt;
+  RECT rect;
+  float h, l, r, t, b;
+  NSWindow *window;
 
   NSDebugLLog(@"WTrace", @"windowdevice: %d", winNum);
   ctxt = GSCurrentContext();
-  GSSetDevice(ctxt, (void*)winNum, 0, 0);
+  window = GSWindowWithNumber(winNum);
+  GetClientRect((HWND)winNum, &rect);
+  h = rect.bottom - rect.top;
+  [self styleoffsets: &l : &r : &t : &b : [window styleMask]];
+  GSSetDevice(ctxt, (void*)winNum, l, h + b);
   DPSinitmatrix(ctxt);
   DPSinitclip(ctxt);
 }
@@ -1894,8 +1902,8 @@ printf("\n\n##############################################################\n");
 /** Causes buffered graphics to be flushed to the screen */
 - (void) flushwindowrect: (NSRect)rect : (int) winNum
 {
-  RECT r = GSWindowRectToMS((HWND)winNum, rect);
-  validateWindow((HWND)winNum, r);
+  RECT r = GSWindowRectToMS(self, (HWND)winNum, rect);
+  validateWindow(self, (HWND)winNum, r);
 }
 
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
@@ -2137,7 +2145,7 @@ process_char(WPARAM wParam, unsigned *eventModifierFlags)
 }
 
 static NSEvent*
-process_key_event(HWND hwnd, WPARAM wParam, LPARAM lParam, 
+process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam, 
 		  NSEventType eventType)
 {
   NSEvent *event;
@@ -2162,7 +2170,7 @@ process_key_event(HWND hwnd, WPARAM wParam, LPARAM lParam,
 
   pos = GetMessagePos();
   eventLocation
-    = MSWindowPointToGS(hwnd,  GET_X_LPARAM(pos), GET_Y_LPARAM(pos));
+    = MSWindowPointToGS(svr, hwnd,  GET_X_LPARAM(pos), GET_Y_LPARAM(pos));
 
   ltime = GetMessageTime();
   time = ltime / 1000;
@@ -2255,7 +2263,7 @@ process_key_event(HWND hwnd, WPARAM wParam, LPARAM lParam,
 }
 
 static NSEvent*
-process_mouse_event(HWND hwnd, WPARAM wParam, LPARAM lParam, 
+process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam, 
 		    NSEventType eventType)
 {
   NSEvent *event;
@@ -2270,7 +2278,7 @@ process_mouse_event(HWND hwnd, WPARAM wParam, LPARAM lParam,
   static LONG lastTime = 0;
 
   gcontext = GSCurrentContext();
-  eventLocation = MSWindowPointToGS(hwnd,  GET_X_LPARAM(lParam), 
+  eventLocation = MSWindowPointToGS(svr, hwnd,  GET_X_LPARAM(lParam), 
 				    GET_Y_LPARAM(lParam));
   ltime = GetMessageTime();
   time = ltime / 1000;
@@ -2355,7 +2363,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
 
 static void 
-validateWindow(HWND hwnd, RECT rect)
+validateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 {
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
 
@@ -2370,7 +2378,7 @@ validateWindow(HWND hwnd, RECT rect)
       if (!result)
         {
 	  NSLog(@"validated window %d %@", hwnd, 
-		NSStringFromRect(MSWindowRectToGS((HWND)hwnd, rect)));
+		NSStringFromRect(MSWindowRectToGS(svr, (HWND)hwnd, rect)));
 	  NSLog(@"validateWindow failed %d", GetLastError());
 	}
       ReleaseDC((HWND)hwnd, hdc);

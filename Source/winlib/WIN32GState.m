@@ -82,14 +82,9 @@ static inline
 POINT GSWindowPointToMS(WIN32GState *s, NSPoint p)
 {
   POINT p1;
-  int h;
 
-  h = WindowHeight([s window]);
-
-  p.x += s->offset.x;
-  p.y += s->offset.y;
-  p1.x = p.x;
-  p1.y = h - p.y;
+  p1.x = p.x - s->offset.x;
+  p1.y = s->offset.y - p.y;
   
   return p1;
 }
@@ -98,17 +93,11 @@ static inline
 RECT GSWindowRectToMS(WIN32GState *s, NSRect r)
 {
   RECT r1;
-  int h;
 
-  h = WindowHeight([s window]);
-
-  r.origin.x += s->offset.x;
-  r.origin.y += s->offset.y;
-
-  r1.left = r.origin.x;
-  r1.right = r.origin.x + r.size.width;
-  r1.bottom = h - r.origin.y;
-  r1.top = h - r.origin.y - r.size.height;
+  r1.left = r.origin.x - s->offset.x;
+  r1.bottom = s->offset.y - r.origin.y;
+  r1.right = r1.left + r.size.width;
+  r1.top = r1.bottom - r.size.height;
 
   return r1;
 }
