@@ -2628,9 +2628,11 @@ static BOOL didCreatePixmaps;
 			     forDriver: window->gdriver];
 	}
       else
-	XCopyArea (dpy, window->buffer, window->ident, window->gc,
+        {
+	  XCopyArea (dpy, window->buffer, window->ident, window->gc,
 		   rectangle.x, rectangle.y, rectangle.width, rectangle.height,
 		   rectangle.x, rectangle.y);
+	}
     }
   else
     {
@@ -2684,26 +2686,30 @@ static BOOL didCreatePixmaps;
 
   [self styleoffsets: &l : &r : &t : &b
 		    : window->win_attrs.window_style : window->ident];
-  xi = NSMinX(rect) - l;
-  yi = NSHeight(window->xframe) + b - NSMaxY(rect);
+  rect.origin.x = xi = NSMinX(rect) - l;
+  rect.origin.y = yi = NSHeight(window->xframe) + b - NSMaxY(rect);
   width = NSWidth(rect);
   height = NSHeight(rect);
-
-  NSDebugLLog (@"XGFlush", 
-	       @"copy X rect ((%d, %d), (%d, %d))", xi, yi, width, height);
 
   if (width > 0 || height > 0)
     {
       [isa waitAllContexts];
       if ((window->gdriverProtocol & GDriverHandlesBacking))
 	{
+	  NSDebugLLog (@"XGFlush", 
+	       @"expose X rect ((%d, %d), (%d, %d))", xi, yi, width, height);
 	  /* Temporary protocol until we standardize the backing buffer */
 	  [[GSCurrentContext() class] handleExposeRect: rect
 			     forDriver: window->gdriver];
 	}
-	else
+      else
+        {
+	  NSDebugLLog (@"XGFlush", 
+	       @"copy X rect ((%d, %d), (%d, %d))", xi, yi, width, height);
+
 	  XCopyArea (dpy, window->buffer, window->ident, window->gc, 
 		     xi, yi, width, height, xi, yi);
+	}
     }
 
   XFlush(dpy);
