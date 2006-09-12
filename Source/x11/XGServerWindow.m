@@ -2659,6 +2659,7 @@ static BOOL didCreatePixmaps;
   XGCValues values;
   unsigned long valuemask;
   gswindow_device_t *window;
+  float	l, r, t, b;
 
   window = WINDOW_WITH_TAG(win);
   if (win == 0 || window == NULL)
@@ -2667,7 +2668,7 @@ static BOOL didCreatePixmaps;
       return;
     }
 
-  NSDebugLLog(@"XGTrace", @"DPSflushwindowrect: %@ : %d", 
+  NSDebugLLog(@"XGFlush", @"DPSflushwindowrect: %@ : %d", 
 	      NSStringFromRect(rect), win);
   if (window->type == NSBackingStoreNonretained)
     {
@@ -2675,23 +2676,20 @@ static BOOL didCreatePixmaps;
       return;
     }
 
-  /* FIXME: Doesn't take into account any offset added to the window
-     (from PSsetgcdrawable) or possible scaling (unlikely in X-windows,
-     but what about other devices?) */
-  rect.origin.y = NSHeight(window->xframe) - NSMaxY(rect);
-
   values.function = GXcopy;
   values.plane_mask = AllPlanes;
   values.clip_mask = None;
   valuemask = (GCFunction | GCPlaneMask | GCClipMask);
   XChangeGC(dpy, window->gc, valuemask, &values);
 
-  xi = NSMinX(rect);		// width/height seems
-  yi = NSMinY(rect);		// to require +1 pixel
-  width = NSWidth(rect) + 1;	// to copy out
-  height = NSHeight(rect) + 1;
+  [self styleoffsets: &l : &r : &t : &b
+		    : window->win_attrs.window_style : window->ident];
+  xi = NSMinX(rect) - l;
+  yi = NSHeight(window->xframe) + b - NSMaxY(rect);
+  width = NSWidth(rect);
+  height = NSHeight(rect);
 
-  NSDebugLLog (@"NSWindow", 
+  NSDebugLLog (@"XGFlush", 
 	       @"copy X rect ((%d, %d), (%d, %d))", xi, yi, width, height);
 
   if (width > 0 || height > 0)
