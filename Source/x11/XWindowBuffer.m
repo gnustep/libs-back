@@ -95,6 +95,7 @@ static void test_xshm(Display *display, int drawing_depth)
 	DefaultVisual(display, DefaultScreen(display)),
 	drawing_depth, ZPixmap, NULL, &shminfo,
 	1, 1);
+    XSync(display, False);
     if (!ximage || num_xshm_test_errors)
       {
 	NSLog(@"XShm not supported, XShmCreateImage failed.");
@@ -126,7 +127,10 @@ static void test_xshm(Display *display, int drawing_depth)
       }
 
     shminfo.readOnly = 0;
-    if (!XShmAttach(display, &shminfo) || num_xshm_test_errors)
+    if (!XShmAttach(display, &shminfo))
+       num_xshm_test_errors++;
+    XSync(display, False);
+    if (num_xshm_test_errors)
       {
 	NSLog(@"XShm not supported, XShmAttach() failed.");
 	XDestroyImage(ximage);
