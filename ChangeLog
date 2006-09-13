@@ -1,3 +1,9 @@
+2006-09-13 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/x11/XGServerWindow.m: use generic.wintypes.win_modal_atom
+	for popup menu in gnome/ewmh window manager so that popup menus work
+	in modal windows.  Reported as bug 17713 by Yen-Ju Chen.
+
 2006-09-12 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/art/ARTContext.m:

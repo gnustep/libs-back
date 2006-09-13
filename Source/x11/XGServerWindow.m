@@ -2425,14 +2425,15 @@ static BOOL didCreatePixmaps;
 	    }
 	  else if (level == NSMainMenuWindowLevel)
 	    {
-	      // For strange reasons menu level does not work out for the main menu
+	      // For strange reasons menu level does not
+	      // work out for the main menu
 	      //data[0] = generic.wintypes.win_topmenu_atom;
 	      data[0] = generic.wintypes.win_dock_atom;
 	      //len = 2;
 	    }
-	  else if (level == NSSubmenuWindowLevel ||
-		   level == NSFloatingWindowLevel ||
-		   level == NSTornOffMenuWindowLevel)
+	  else if (level == NSSubmenuWindowLevel
+	    || level == NSFloatingWindowLevel
+	    || level == NSTornOffMenuWindowLevel)
 	    {
 #ifdef USE_KDE_OVERRIDE
 	      data[0] = generic.wintypes.win_override_atom;
@@ -2444,8 +2445,8 @@ static BOOL didCreatePixmaps;
 	      len = 1;
 #endif
 	    }
-	  else if (level == NSDockWindowLevel ||
-		   level == NSStatusWindowLevel)
+	  else if (level == NSDockWindowLevel
+	    || level == NSStatusWindowLevel)
 	    {
 	      data[0] =generic.wintypes.win_dock_atom;
 	    }
@@ -2457,7 +2458,7 @@ static BOOL didCreatePixmaps;
 	      data[1] = generic.wintypes.win_floating_atom;
 	      len = 2;
 #else
-	      data[0] = generic.wintypes.win_floating_atom;
+	      data[0] = generic.wintypes.win_modal_atom;
 	      len = 1;
 #endif
 	    }
@@ -2482,16 +2483,16 @@ static BOOL didCreatePixmaps;
 	  if (level == NSDesktopWindowLevel)
 	    flag = WIN_LAYER_DESKTOP;
 	  else if (level == NSSubmenuWindowLevel 
-		   || level == NSFloatingWindowLevel 
-		   || level == NSTornOffMenuWindowLevel)
+	    || level == NSFloatingWindowLevel 
+	    || level == NSTornOffMenuWindowLevel)
 	    flag = WIN_LAYER_ONTOP;
 	  else if (level == NSMainMenuWindowLevel)
 	    flag = WIN_LAYER_MENU;
 	  else if (level == NSDockWindowLevel
-		   || level == NSStatusWindowLevel)
+	    || level == NSStatusWindowLevel)
 	    flag = WIN_LAYER_DOCK;
 	  else if (level == NSModalPanelWindowLevel
-		   || level == NSPopUpMenuWindowLevel)
+	    || level == NSPopUpMenuWindowLevel)
 	    flag = WIN_LAYER_ONTOP;
 	  else if (level == NSScreenSaverWindowLevel)
 	    flag = WIN_LAYER_ABOVE_DOCK;
