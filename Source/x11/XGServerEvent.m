@@ -950,7 +950,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	      NSDebugLLog(@"NSEvent", @"Expose frame %d %d %d %d\n",
 			  rectangle.x, rectangle.y,
 			  rectangle.width, rectangle.height);
-#if 0
+#if 1
 	      [self _addExposedRectangle: rectangle : cWin->number];
 
 	      if (xEvent.xexpose.count == 0)
