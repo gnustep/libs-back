@@ -161,6 +161,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 @interface XGServer (WindowOps)
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
                      : (unsigned int) style : (Window) win;
+- (NSRect) _XWinRectToOSWinRect: (NSRect)r for: (void*)windowNumber;
 @end
 
 @implementation XGServer (EventOps)
@@ -949,10 +950,31 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	      NSDebugLLog(@"NSEvent", @"Expose frame %d %d %d %d\n",
 			  rectangle.x, rectangle.y,
 			  rectangle.width, rectangle.height);
+#if 0
 	      [self _addExposedRectangle: rectangle : cWin->number];
 
 	      if (xEvent.xexpose.count == 0)
 		[self _processExposedRectangles: cWin->number];
+#else
+	      {
+	        NSRect		rect;
+		NSTimeInterval	ts = (NSTimeInterval)generic.lastMotion;
+
+		rect = [self _XWinRectToOSWinRect: NSMakeRect(
+		  rectangle.x, rectangle.y, rectangle.width, rectangle.height)
+		  for: cWin];
+		e = [NSEvent otherEventWithType: NSAppKitDefined
+		  location: rect.origin
+		  modifierFlags: eventFlags
+		  timestamp: ts
+		  windowNumber: cWin->number
+		  context: gcontext
+		  subtype: GSAppKitRegionExposed
+		  data1: rect.size.width
+		  data2: rect.size.height];
+	      }
+
+#endif
 	    }
 	  break;
 	}
