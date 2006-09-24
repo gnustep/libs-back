@@ -1,3 +1,13 @@
+2006-09-24 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/x11/XGServerEvent.m: Use #if to disable old window exposure
+	mechanism in favour of sending exposure events to the front end.
+	Hopefully this will fix a bug where the old bypassing of the gui
+	event queue could cause an attempt to copy from a region outside
+	the image buffer.
+	If there are no problems with this, we should remove the old, complex
+	mechanism.
+
 2006-09-13 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGServerWindow.m: use generic.wintypes.win_modal_atom
