@@ -351,7 +351,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 @implementation XGServer 
 
 /* Initialize AppKit backend */
-+ (void)initializeBackend
++ (void) initializeBackend
 {
   NSDebugLog(@"Initializing GNUstep x11 backend.\n");
   [GSDisplayServer setDefaultServerClass: [XGServer class]];
@@ -367,7 +367,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   return [(XGServer*)GSCurrentServer() xDisplay];
 }
 
-- _initXContext
+- (id) _initXContext
 {
   int			screen_number, display_number;
   NSString		*display_name;
@@ -376,7 +376,8 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   display_name = [server_info objectForKey: GSDisplayName];
   if (display_name == nil)
     {
-      NSString *host = [[NSUserDefaults standardUserDefaults] stringForKey: @"NSHost"];
+      NSString *host = [[NSUserDefaults standardUserDefaults]
+	stringForKey: @"NSHost"];
       NSString *dn = [server_info objectForKey: GSDisplayNumber];
       NSString *sn = [server_info objectForKey: GSScreenNumber];
 
@@ -540,7 +541,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
    Returns the closest color in the current colormap to the indicated
    X color
 */
-- (XColor)xColorFromColor: (XColor)color forScreen: (int)screen_number
+- (XColor) xColorFromColor: (XColor)color forScreen: (int)screen_number
 {
   Status ret;
   RColor rcolor;

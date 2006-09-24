@@ -1234,15 +1234,24 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   valuemask = (GCForeground | GCBackground | GCFunction);
   window->gc = XCreateGC(dpy, window->ident, valuemask, &values);
 
-  // Set the X event mask
-  XSelectInput(dpy, window->ident, ExposureMask | KeyPressMask |
-				KeyReleaseMask | ButtonPressMask |
-			     ButtonReleaseMask | ButtonMotionMask |
-			   StructureNotifyMask | PointerMotionMask |
-			       EnterWindowMask | LeaveWindowMask |
-			       FocusChangeMask | PropertyChangeMask |
-			    ColormapChangeMask | KeymapStateMask |
-			    VisibilityChangeMask);
+  /* Set the X event mask
+   */
+  XSelectInput(dpy, window->ident, ExposureMask
+    | KeyPressMask
+    | KeyReleaseMask
+    | ButtonPressMask
+    | ButtonReleaseMask
+    | ButtonMotionMask
+    | StructureNotifyMask
+    | PointerMotionMask
+    | EnterWindowMask
+    | LeaveWindowMask
+    | FocusChangeMask
+//    | PropertyChangeMask
+//    | ColormapChangeMask
+    | KeymapStateMask
+    | VisibilityChangeMask
+    );
 
   /*
    * Initial attributes for any GNUstep window tell Window Maker not to
