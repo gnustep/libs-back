@@ -59,6 +59,7 @@ typedef struct {
   short	r;	// offset from right
   short	t;	// offset from top
   short	b;	// offset from bottom
+  BOOL	known;	// obtained from Reparent event or just guessed?
 } Offsets;
 
 /*
