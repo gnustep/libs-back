@@ -1307,36 +1307,43 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	    generic.cachedWindow
 	      = [XGServer _windowForXWindow:xEvent.xreparent.window];
 	  }
+	if (cWin != 0)
+	  {
+	    cWin->parent = xEvent.xreparent.parent;
+	  }
+
 	if (cWin != 0 && xEvent.xreparent.parent != cWin->root
 	  && (xEvent.xreparent.x != 0 || xEvent.xreparent.y != 0))
 	  {
 	    Window		parent = xEvent.xreparent.parent;
 	    XWindowAttributes	wattr;
+	    float		l;
+	    float		r;
+	    float		t;
+	    float		b;
 	    Offsets		*o;
 
-	    /* FIXME: if offsets have changed, we should go through window
-	       list and fix up hints */
-
 	    /* Get the WM offset info which we hope is the same
-	     * for all parented windows
+	     * for all parented windows with the same style.
 	     * The coordinates in the event are insufficient to determine
 	     * the offsets as the new parent window may have a border,
 	     * so we must get the attributes of that window and use them
 	     * to determine our offsets.
 	     */
 	    XGetWindowAttributes(dpy, parent, &wattr);
-	    o = generic.offsets + (cWin->win_attrs.window_style & 15);
-	    o->l = xEvent.xreparent.x + wattr.border_width;
-	    o->t = xEvent.xreparent.y + wattr.border_width;
+	    NSDebugLLog(@"NSEvent", @"Parent border,width,height %d,%d,%d\n",
+	      wattr.border_width, wattr.width, wattr.height);
+	    l = xEvent.xreparent.x + wattr.border_width;
+	    t = xEvent.xreparent.y + wattr.border_width;
 
 	    /* Find total parent size and subtract window size and
 	     * top-left-corner offset to determine bottom-right-corner
 	     * offset.
 	     */
-	    o->r = wattr.width + wattr.border_width * 2;
-	    o->r -= (cWin->xframe.size.width + o->l);
-	    o->b = wattr.height + wattr.border_width * 2;
-	    o->b -= (cWin->xframe.size.height + o->t);
+	    r = wattr.width + wattr.border_width * 2;
+	    r -= (cWin->xframe.size.width + l);
+	    b = wattr.height + wattr.border_width * 2;
+	    b -= (cWin->xframe.size.height + t);
 
 	    // Some window manager e.g. KDE2 put in multiple windows,
 	    // so we have to find the right parent, closest to root
@@ -1349,6 +1356,8 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	      {
 		Window	new_parent = parent;
 
+		r = wattr.width + wattr.border_width * 2;
+		b = wattr.height + wattr.border_width * 2;
 		while (new_parent && (new_parent != cWin->root))
 		  {
 		    Window root;
@@ -1374,21 +1383,69 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 		      }
 		    if (new_parent && new_parent != cWin->root)
 		      {
-			XWindowAttributes wattr;
-			XGetWindowAttributes(dpy, parent, &wattr);
-			if (wattr.x || wattr.y)
-			  {
-			    o->l += wattr.x + wattr.border_width;
-			    o->t += wattr.y + wattr.border_width;
-			    o->r = wattr.width + wattr.border_width * 2;
-			    o->b = wattr.height + wattr.border_width * 2;
-			  }
+			XWindowAttributes	pattr;
+
+			XGetWindowAttributes(dpy, parent, &pattr);
+			l += pattr.x + pattr.border_width;
+			t += pattr.y + pattr.border_width;
+			r = pattr.width + pattr.border_width * 2;
+			b = pattr.height + pattr.border_width * 2;
 		      }
 		  } /* while */
-		o->r -= (cWin->xframe.size.width + o->l);
-		o->b -= (cWin->xframe.size.height + o->t);
+		r -= (cWin->xframe.size.width + l);
+		b -= (cWin->xframe.size.height + t);
 	      } /* generic.flags.doubleParentWindow */
-	    cWin->parent = parent;
+
+	    o = generic.offsets + (cWin->win_attrs.window_style & 15);
+	    if (o->known == NO)
+	      {
+	        o->l = l;
+	        o->r = r;
+	        o->t = t;
+	        o->b = b;
+		o->known = YES;
+		/* FIXME: if offsets have changed, from previously guessed
+		 * versions, we should go through window list and fix up
+		 * hints.
+		 */
+	      }
+	    else
+	      {
+	        BOOL	changed = NO;
+
+	        if (l != o->l)
+		  {
+		    NSLog(@"Ignore left offset change from %d to %d",
+		      (int)o->l, (int)l);
+		    changed = YES;
+		  }
+	        if (r != o->r)
+		  {
+		    NSLog(@"Ignore right offset change from %d to %d",
+		      (int)o->r, (int)r);
+		    changed = YES;
+		  }
+	        if (t != o->t)
+		  {
+		    NSLog(@"Ignore top offset change from %d to %d",
+		      (int)o->t, (int)t);
+		    changed = YES;
+		  }
+	        if (b != o->b)
+		  {
+		    NSLog(@"Ignore bottom offset change from %d to %d",
+		      (int)o->b, (int)b);
+		    changed = YES;
+		  }
+		if (changed == YES)
+		  {
+		    NSLog(@"Reparent was with offset %d %d\n",
+		      xEvent.xreparent.x, xEvent.xreparent.y);
+		    NSLog(@"Parent border,width,height %d,%d,%d\n",
+		      wattr.border_width, wattr.width, wattr.height);
+		  }
+	      }
+
 	  }
 	break;
 
@@ -1416,7 +1473,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 
 	    // We shouldn't get here unless we forgot to trap an event above
       default:
-  #ifdef XSHM
+#ifdef XSHM
 	if (xEvent.type == XShmGetEventBase(dpy)+ShmCompletion
 	    && [gcontext respondsToSelector: @selector(gotShmCompletion:)])
 	  {
@@ -1424,7 +1481,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 			((XShmCompletionEvent *)&xEvent)->drawable];
 	    break;
 	  }
-  #endif
+#endif
 	NSLog(@"Received an untrapped event\n");
 	break;
     }
