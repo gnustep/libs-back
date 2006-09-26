@@ -32,6 +32,7 @@
 #include <Foundation/NSAutoreleasePool.h>
 #include <Foundation/NSDebug.h>
 #include <Foundation/NSException.h>
+#include <Foundation/NSThread.h>
 #include <AppKit/DPSOperators.h>
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSCursor.h>
@@ -580,7 +581,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   window->xwn_attrs.save_under = False;
   window->xwn_attrs.override_redirect = False;
   window->map_state = IsUnmapped;
-  window->visibility = -1;
+  window->visibility = 2;
 
   // Create an X GC for the content view set it's colors
   values.foreground = window->xwn_attrs.background_pixel;
@@ -690,13 +691,48 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   [self orderwindow: NSWindowAbove : 0 : window->number];
 
   XSync(dpy, False);
-  while (XPending(dpy) > 0)
+  while (XPending(dpy) > 0 || window->visibility > 1)
     {
+      if (XPending(dpy) == 0)
+        {
+	  NSDate	*until;
+
+	  /* In theory, after executing XSync() all events resulting from
+	   * our window creation and ordering front should be available in
+	   * the X event queue.  However, it's possible that a window manager
+	   * could send soime events after the XSync() has been satisfied,
+	   * so if we have not received a visibility notification we can wait
+	   * for up to a second for more events.
+	   */
+	  until = [NSDate dateWithTimeIntervalSinceNow: 1.0];
+	  while (XPending(dpy) == 0 && [until timeIntervalSinceNow] > 0.0)
+	    {
+	      CREATE_AUTORELEASE_POOL(pool);
+
+	      [NSThread sleepUntilDate:
+	        [NSDate dateWithTimeIntervalSinceNow: 0.01]];
+	      DESTROY(pool);
+	    }
+	  if (XPending(dpy) == 0)
+	    {
+	      NSLog(@"Waited for a second, but the X system never"
+	        @" made the window visible");
+	      break;
+	    }
+	}
       XNextEvent(dpy, &xEvent);
       NSDebugLLog(@"Offset", @"Testing ... event %d window %d\n",
 	xEvent.type, xEvent.xany.window);
+      if (xEvent.xany.window != window->ident)
+        {
+	  continue;
+	}
       switch (xEvent.type)
 	{
+	  case VisibilityNotify:
+	    window->visibility = xEvent.xvisibility.state;
+	    break;
+
 	  case ReparentNotify:
 	    NSDebugLLog(@"Offset", @"%d ReparentNotify - offset %d %d\n",
 			xEvent.xreparent.window, xEvent.xreparent.x,
@@ -820,6 +856,10 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
       XNextEvent(dpy, &xEvent);
       NSDebugLLog(@"Offset", @"Destroying ... event %d window %d\n",
 	xEvent.type, xEvent.xany.window);
+      if (xEvent.xany.window != window->ident)
+        {
+	  continue;
+	}
     }
   if (generic.offsets[style].known == NO)
     {
