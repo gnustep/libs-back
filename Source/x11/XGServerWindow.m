@@ -538,6 +538,8 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   RContext              *context;
   XEvent		xEvent;
 
+  NSDebugLLog(@"Offset", @"Checking offsets for style %d\n", style);
+
   root = [self _rootWindowForScreen: 0];
   context = [self xrContextForScreen: 0];
 
@@ -691,7 +693,8 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   while (XPending(dpy) > 0)
     {
       XNextEvent(dpy, &xEvent);
-
+      NSDebugLLog(@"Offset", @"Testing ... event %d window %d\n",
+	xEvent.type, xEvent.xany.window);
       switch (xEvent.type)
 	{
 	  case ReparentNotify:
@@ -700,16 +703,15 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 			xEvent.xreparent.y);
 	    window->parent = xEvent.xreparent.parent;
 
-	    if (window != 0 && xEvent.xreparent.parent != window->root
-	      && (xEvent.xreparent.x != 0 || xEvent.xreparent.y != 0))
+	    if (xEvent.xreparent.parent != window->root)
 	      {
-		Window		parent = xEvent.xreparent.parent;
+		Window			parent = xEvent.xreparent.parent;
 		XWindowAttributes	wattr;
-		float		l;
-		float		r;
-		float		t;
-		float		b;
-		Offsets		*o;
+		float			l;
+		float			r;
+		float			t;
+		float			b;
+		Offsets			*o;
 
 		/* Get the WM offset info which we hope is the same
 		 * for all parented windows with the same style.
@@ -813,8 +815,13 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 
   [self termwindow: window->number];
   XSync(dpy, False);
-  while (XPending(dpy) > 0) XNextEvent(dpy, &xEvent);
-  if (generic.offsets[(window->win_attrs.window_style & 15)].known == NO)
+  while (XPending(dpy) > 0)
+    {
+      XNextEvent(dpy, &xEvent);
+      NSDebugLLog(@"Offset", @"Destroying ... event %d window %d\n",
+	xEvent.type, xEvent.xany.window);
+    }
+  if (generic.offsets[style].known == NO)
     {
       NSLog(@"Failed to determine offsets for style %d", style);
       return NO;
