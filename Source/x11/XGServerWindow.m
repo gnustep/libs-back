@@ -68,6 +68,9 @@ static BOOL handlesWindowDecorations = YES;
  */
 static char	*rootName = 0;
 
+static Atom _net_frame_extents = None;
+static Atom _kde_frame_strut = None;
+
 #define WINDOW_WITH_TAG(windowNumber) (gswindow_device_t *)NSMapGet(windowtags, (void *)(uintptr_t)windowNumber) 
 
 /* Current mouse grab window */
@@ -538,6 +541,12 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   XClassHint		classhint;
   RContext              *context;
   XEvent		xEvent;
+  int			count;
+  unsigned long		*extents;
+  Offsets		*o = generic.offsets + (style & 15);
+  int			repp = 0;
+  int			repx = 0;
+  int			repy = 0;
 
   NSDebugLLog(@"Offset", @"Checking offsets for style %d\n", style);
 
@@ -737,115 +746,154 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 	    NSDebugLLog(@"Offset", @"%d ReparentNotify - offset %d %d\n",
 			xEvent.xreparent.window, xEvent.xreparent.x,
 			xEvent.xreparent.y);
-	    window->parent = xEvent.xreparent.parent;
-
-	    if (xEvent.xreparent.parent != window->root)
-	      {
-		Window			parent = xEvent.xreparent.parent;
-		XWindowAttributes	wattr;
-		float			l;
-		float			r;
-		float			t;
-		float			b;
-		Offsets			*o;
-
-		/* Get the WM offset info which we hope is the same
-		 * for all parented windows with the same style.
-		 * The coordinates in the event are insufficient to determine
-		 * the offsets as the new parent window may have a border,
-		 * so we must get the attributes of that window and use them
-		 * to determine our offsets.
-		 */
-		XGetWindowAttributes(dpy, parent, &wattr);
-		NSDebugLLog(@"Offset", @"Parent border,width,height %d,%d,%d\n",
-		  wattr.border_width, wattr.width, wattr.height);
-		l = xEvent.xreparent.x + wattr.border_width;
-		t = xEvent.xreparent.y + wattr.border_width;
-
-		/* Find total parent size and subtract window size and
-		 * top-left-corner offset to determine bottom-right-corner
-		 * offset.
-		 */
-		r = wattr.width + wattr.border_width * 2;
-		r -= (window->xframe.size.width + l);
-		b = wattr.height + wattr.border_width * 2;
-		b -= (window->xframe.size.height + t);
-
-		// Some window manager e.g. KDE2 put in multiple windows,
-		// so we have to find the right parent, closest to root
-		/* FIXME: This section of code has caused problems with
-		   certain users. An X error occurs in XQueryTree and
-		   later a seg fault in XFree. It's 'commented' out for
-		   now unless you set the default 'GSDoubleParentWindows'
-		*/
-		if (generic.flags.doubleParentWindow)
-		  {
-		    Window	new_parent = parent;
-
-		    r = wattr.width + wattr.border_width * 2;
-		    b = wattr.height + wattr.border_width * 2;
-		    while (new_parent && (new_parent != window->root))
-		      {
-			Window root;
-			Window *children;
-			unsigned int nchildren;
-
-			parent = new_parent;
-			NSLog(@"QueryTree window is %d (root %d cwin root %d)", 
-			      parent, root, window->root);
-			if (!XQueryTree(dpy, parent, &root, &new_parent, 
-			  &children, &nchildren))
-			  {
-			    new_parent = None;
-			    if (children)
-			      {
-				NSLog(@"Bad pointer from failed X call?");
-				children = 0;
-			      }
-			  }
-			if (children)
-			  {
-			    XFree(children);
-			  }
-			if (new_parent && new_parent != window->root)
-			  {
-			    XGetWindowAttributes(dpy, parent, &wattr);
-			    l += wattr.x + wattr.border_width;
-			    t += wattr.y + wattr.border_width;
-			    r = wattr.width + wattr.border_width * 2;
-			    b = wattr.height + wattr.border_width * 2;
-			  }
-		      } /* while */
-		    r -= (window->xframe.size.width + l);
-		    b -= (window->xframe.size.height + t);
-		  } /* generic.flags.doubleParentWindow */
-
-		o = generic.offsets + (window->win_attrs.window_style & 15);
-		o->l = l;
-		o->r = r;
-		o->t = t;
-		o->b = b;
-		NSDebugLLog(@"Offset",
-		  @"Style %d lrtb set to %d,%d,%d,%d\n",
-		  style, (int)l, (int)r, (int)t, (int)b);
-		if (o->known == YES)
-		  {
-		    if (l != o->l)
-		      NSLog(@"Left offset change from %d to %d",
-			(int)o->l, (int)l);
-		    if (r != o->r)
-		      NSLog(@"Right offset change from %d to %d",
-			(int)o->r, (int)r);
-		    if (t != o->t)
-		      NSLog(@"Top offset change from %d to %d",
-			(int)o->t, (int)t);
-		    if (b != o->b)
-		      NSLog(@"Bottom offset change from %d to %d",
-			(int)o->b, (int)b);
-		  }
-		o->known = YES;
-	      }
+	    repp = xEvent.xreparent.parent;
+	    repx = xEvent.xreparent.x;
+	    repy = xEvent.xreparent.y;
 	    break;
+	}
+    }
+
+  /* If our window manager supports _NET_FRAME_EXTENTS we trust that as
+   * definitive information.
+   */
+  if (_net_frame_extents == None)
+    {
+      _net_frame_extents = XInternAtom(dpy,
+	"_NET_FRAME_EXTENTS", False);
+    }
+  extents = (unsigned long *)PropGetCheckProperty(dpy,
+    window->ident, _net_frame_extents, XA_CARDINAL, 32, 4, &count);
+  if (extents != 0)
+    {
+      NSDebugLLog(@"Offset",
+	@"Offsets retrieved from _NET_FRAME_EXTENTS");
+    }
+  if (extents == 0)
+    {
+      /* If our window manager supports _KDE_NET_WM_FRAME_STRUT we assume
+       * its as reliable as _NET_FRAME_EXTENTS
+       */
+      if (_kde_frame_strut == None)
+	{
+	  _kde_frame_strut = XInternAtom(dpy,
+	    "_KDE_NET_WM_FRAME_STRUT", False);
+	}
+      extents = (unsigned long *)PropGetCheckProperty(dpy,
+	window->ident, _kde_frame_strut, XA_CARDINAL, 32, 4, &count);
+      if (extents!= 0)
+        {
+	  NSDebugLLog(@"Offset",
+	    @"Offsets retrieved from _KDE_NET_WM_FRAME_STRUT");
+	}
+    }
+
+  if (extents != 0) 
+    {
+      o->l = extents[0];
+      o->r = extents[1];
+      o->t = extents[2];
+      o->b = extents[3];
+      o->known = YES;
+      NSDebugLLog(@"Offset", @"Extents left %d, right %d, top %d, bottom %d", 
+	extents[0], extents[1], extents[2], extents[3]);
+      XFree(extents);
+    }
+  else if (repp != 0)
+    {
+      NSDebugLLog(@"Offset",
+	@"Offsets retrieved from ReparentNotify");
+      window->parent = repp;
+      if (repp != window->root)
+	{
+	  Window		parent = repp;
+	  XWindowAttributes	wattr;
+	  float			l;
+	  float			r;
+	  float			t;
+	  float			b;
+
+	  /* Get the WM offset info which we hope is the same
+	   * for all parented windows with the same style.
+	   * The coordinates in the event are insufficient to determine
+	   * the offsets as the new parent window may have a border,
+	   * so we must get the attributes of that window and use them
+	   * to determine our offsets.
+	   */
+	  XGetWindowAttributes(dpy, parent, &wattr);
+	  NSDebugLLog(@"Offset", @"Parent border,width,height %d,%d,%d\n",
+	    wattr.border_width, wattr.width, wattr.height);
+	  l = repx + wattr.border_width;
+	  t = repy + wattr.border_width;
+
+	  /* Find total parent size and subtract window size and
+	   * top-left-corner offset to determine bottom-right-corner
+	   * offset.
+	   */
+	  r = wattr.width + wattr.border_width * 2;
+	  r -= (window->xframe.size.width + l);
+	  b = wattr.height + wattr.border_width * 2;
+	  b -= (window->xframe.size.height + t);
+
+	  // Some window manager e.g. KDE2 put in multiple windows,
+	  // so we have to find the right parent, closest to root
+	  /* FIXME: This section of code has caused problems with
+	     certain users. An X error occurs in XQueryTree and
+	     later a seg fault in XFree. It's 'commented' out for
+	     now unless you set the default 'GSDoubleParentWindows'
+	     or we are reparented to 0,0 (which presumably must mean
+	     that we have a double parent).
+	  */
+	  if (generic.flags.doubleParentWindow == YES
+	    || (repx == 0 && repy == 0))
+	    {
+	      Window	new_parent = parent;
+
+	      r = wattr.width + wattr.border_width * 2;
+	      b = wattr.height + wattr.border_width * 2;
+	      while (new_parent && (new_parent != window->root))
+		{
+		  Window root;
+		  Window *children = 0;
+		  unsigned int nchildren;
+
+		  parent = new_parent;
+		  NSLog(@"QueryTree window is %d (root %d cwin root %d)", 
+			parent, root, window->root);
+		  if (!XQueryTree(dpy, parent, &root, &new_parent, 
+		    &children, &nchildren))
+		    {
+		      new_parent = None;
+		      if (children)
+			{
+			  NSLog(@"Bad pointer from failed X call?");
+			  children = 0;
+			}
+		    }
+		  if (children)
+		    {
+		      XFree(children);
+		    }
+		  if (new_parent && new_parent != window->root)
+		    {
+		      XGetWindowAttributes(dpy, parent, &wattr);
+		      l += wattr.x + wattr.border_width;
+		      t += wattr.y + wattr.border_width;
+		      r = wattr.width + wattr.border_width * 2;
+		      b = wattr.height + wattr.border_width * 2;
+		    }
+		} /* while */
+	      r -= (window->xframe.size.width + l);
+	      b -= (window->xframe.size.height + t);
+	    } /* generic.flags.doubleParentWindow */
+
+	  o->l = l;
+	  o->r = r;
+	  o->t = t;
+	  o->b = b;
+	  o->known = YES;
+	  NSDebugLLog(@"Offset",
+	    @"Style %d lrtb set to %d,%d,%d,%d\n",
+	    style, (int)o->l, (int)o->r, (int)o->t, (int)o->b);
 	}
     }
 
@@ -861,7 +909,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 	  continue;
 	}
     }
-  if (generic.offsets[style].known == NO)
+  if (o->known == NO)
     {
       NSLog(@"Failed to determine offsets for style %d", style);
       return NO;
@@ -1957,8 +2005,6 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b 
 		     : (unsigned int) style : (Window) win
 {
-  static Atom _net_frame_extents = None;
-  static Atom _kde_frame_strut = None;
   Offsets	*o;
 
   if (!handlesWindowDecorations)
