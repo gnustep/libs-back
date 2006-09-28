@@ -179,10 +179,18 @@ printf("\n\n##############################################################\n");
 
   NSDebugLog(@"Initializing GNUstep win32 backend.\n");
   defs = [NSUserDefaults standardUserDefaults];
-  if ([defs objectForKey: @"GSWIN32HandlesWindowDecorations"])
+  if ([defs objectForKey: @"GSBackHandlesWindowDecorations"])
     {
       handlesWindowDecorations =
-	[defs boolForKey: @"GSWINHandlesWindowDecorations"];
+	[defs boolForKey: @"GSBackHandlesWindowDecorations"];
+    }
+  else
+    {
+      if ([defs objectForKey: @"GSWIN32HandlesWindowDecorations"])
+	{
+	  handlesWindowDecorations =
+	    [defs boolForKey: @"GSWINHandlesWindowDecorations"];
+	}
     }
   [GSDisplayServer setDefaultServerClass: [WIN32Server class]];
   //Flag to handle main menu window type -- parent of other menu windows 

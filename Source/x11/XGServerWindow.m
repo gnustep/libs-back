@@ -1227,9 +1227,19 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
    */
   defs = [NSUserDefaults standardUserDefaults];
 
-  if ([defs objectForKey: @"GSX11HandlesWindowDecorations"])
-    handlesWindowDecorations
-      = [defs boolForKey: @"GSX11HandlesWindowDecorations"];
+  if ([defs objectForKey: @"GSBackHandlesWindowDecorations"])
+    {
+      handlesWindowDecorations
+	= [defs boolForKey: @"GSBackHandlesWindowDecorations"];
+    }
+  else
+    {
+      if ([defs objectForKey: @"GSX11HandlesWindowDecorations"])
+        {
+	  handlesWindowDecorations
+	    = [defs boolForKey: @"GSX11HandlesWindowDecorations"];
+	}
+    }
 
   generic.flags.useWindowMakerIcons = NO;
   if ((generic.wm & XGWM_WINDOWMAKER) != 0)

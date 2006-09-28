@@ -1,3 +1,10 @@
+2006-09-28 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/win32/WIN32Server.m: Use GSBackHandlesWindowDecorations
+	* Source/x11/XGServerWindow.m:  ditto
+	New user default to turn on backend handling of window decorations
+	for all backends which support it.
+
 2006-09-27 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGServerWindow.m: Add more debug for checking style
