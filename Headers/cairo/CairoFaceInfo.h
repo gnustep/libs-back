@@ -26,6 +26,8 @@
 #ifndef CAIROFACEINFO_H
 #define CAIROFACEINFO_H
 #include <Foundation/Foundation.h>
+#include <ft2build.h>  
+#include FT_FREETYPE_H
 #include <cairo-ft.h>
 
 @interface CairoFaceInfo : NSObject

@@ -1,3 +1,20 @@
+2006-09-29 Hans Baier <hansfbaier@googlemail.com>
+
+	* Source/cairo/CairoGState.m: Added hack to retrieve current rgb
+	and alpha from cairos internal structures. Will be replaced by proper
+	code when the cairo functions are available
+	* Source/cairo/CairoGState.m:
+	* Headers/cairo/CairoGState.h: refactored class as a subclass of 
+	GSGState. Removed all unimplemented methods implemented in the 
+	superclass.
+	* Headers/cairo/CairoFaceInfo.h: fixed header file to include the
+	needed freetype headers
+	* Source/cairo/XGCairoGlitzSurface.m: fixed glitz api change
+	glitz_glx_find_drawable_format -> 
+	glitz_glx_find_drawable_format_for_visual. Compiles now but doesnt
+	work yet, because I don't know how to retrieve a proper VisualID.
+	someone who knows, please fix it!
+	
 2006-09-28 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/win32/WIN32Server.m: Use GSBackHandlesWindowDecorations
@@ -17,6 +34,7 @@
 	offsets. Wait for up to a second for visibility events in case
 	XSync() does not work to ensure we receive them.
 
+>>>>>>> .r23660
 2006-09-25 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Headers/x11/XGGeneric.h: Extra fielkd to flag when style offsets

@@ -49,11 +49,11 @@
   */
 
   templ.doublebuffer = 0;
-  dformat = glitz_glx_find_drawable_format(GSWINDEVICE->display,
-					  GSWINDEVICE->screen,
-					  GLITZ_FORMAT_DOUBLEBUFFER_MASK,
-					  &templ,
-					  0);
+  dformat = glitz_glx_find_drawable_format_for_visual(GSWINDEVICE->display,
+						      GSWINDEVICE->screen,
+						      //				       GLITZ_FORMAT_DOUBLEBUFFER_MASK,
+						      //				       &templ,
+						      DefaultVisual(GSWINDEVICE->display, GSWINDEVICE->screen)); //FIXME: this does not work
   
   if (!dformat)
     {
@@ -90,7 +90,7 @@
       exit(1);
     }
 
-  glitz_surface_attach(surface, drawable, GLITZ_DRAWABLE_BUFFER_FRONT_COLOR, 0, 0);
+  glitz_surface_attach(surface, drawable, GLITZ_DRAWABLE_BUFFER_FRONT_COLOR);
   _surface = cairo_glitz_surface_create(surface);
   
   return self;

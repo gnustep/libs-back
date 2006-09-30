@@ -1,3 +1,4 @@
+
 /*
  * CairoGState.m
 
@@ -172,11 +173,7 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
   [self DPSinitgraphics];
 }
 
-@end 
-
-@implementation CairoGState (Ops)
-
-// FIXME: Hack to be able to set alpha
+// FIXME: This is for the color getters on non solid type patterns
 static float last_r, last_g, last_b;
 
 /*
@@ -184,9 +181,19 @@ static float last_r, last_g, last_b;
  */
 - (void) DPScurrentalpha: (float *)a
 {
-  //FIXME
-  *a = 1.0;
+  cairo_pattern_t *pattern; 
+  //cairo removed this function
   //*a = cairo_current_alpha(_ct);
+
+  pattern = cairo_get_source(_ct);
+  if (cairo_pattern_get_type(pattern) == CAIRO_PATTERN_TYPE_SOLID)
+    {
+      void *colors = (((void *)pattern) + 68);
+      *a = *((double *) colors + 3);
+    }
+  else 
+    *a = 1.0;
+
 }
 
 - (void) DPScurrentcmykcolor: (float *)c : (float *)m : (float *)y :(float *)k
@@ -227,21 +234,31 @@ static float last_r, last_g, last_b;
 
 - (void) DPScurrentrgbcolor: (float *)r : (float *)g : (float *)b
 {
-  //FIXME: cairo removed this function
+  cairo_pattern_t *pattern; 
+  //cairo removed this function
   //cairo_current_rgb_color(_ct, &dr, &dg, &db);
-  *r = last_r;
-  *g = last_g;
-  *b = last_b;
+
+  pattern = cairo_get_source(_ct);
+  if (cairo_pattern_get_type(pattern) == CAIRO_PATTERN_TYPE_SOLID)
+    {
+      void *colors = (((void *)pattern) + 68);
+      *r = *((double *) colors + 0);
+      *g = *(((double *) colors + 1));
+      *b = *(((double *) colors + 2));
+    }
+  else 
+    {
+      *r = last_r;
+      *g = last_g;
+      *b = last_b;
+    }
 }
 
 - (void) DPSsetalpha: (float)a
 {
   float r, g, b;
 
-  // FIXME: Hack to be able to set alpha
-  r = last_r;
-  g = last_g;
-  b = last_b;
+  [self DPScurrentrgbcolor: &r: &g: &b];
   cairo_set_source_rgba(_ct, r, g, b, a);
 }
 
@@ -278,47 +295,15 @@ static float last_r, last_g, last_b;
 
 - (void) DPSsetrgbcolor: (float)r : (float)g: (float)b
 {
-  // FIXME: Hack to be able to set alpha
   last_r = r;
   last_g = g;
   last_b = b;
   cairo_set_source_rgb(_ct, r, g, b);
 }
 
-- (void) GSSetFillColorspace: (void *)spaceref
-{
-  FIXME();
-}
-
-- (void) GSSetStrokeColorspace: (void *)spaceref
-{
-  FIXME();
-}
-
-- (void) GSSetFillColor: (const float *)values
-{
-  FIXME();
-}
-
-- (void) GSSetStrokeColor: (const float *)values
-{
-  FIXME();
-}
-
 /*
  * Text operations
  */
-
-- (void) DPSashow: (float)x : (float)y : (const char *)s
-{
-  FIXME();
-}
-
-- (void) DPSawidthshow: (float)cx : (float)cy : (int)c : (float)ax 
-		      : (float)ay : (const char *)s
-{
-  FIXME();
-}
 
 - (void) DPScharpath: (const char *)s : (int)b
 {
@@ -334,31 +319,6 @@ static float last_r, last_g, last_b;
 - (void) DPSshow: (const char *)s
 {
   cairo_show_text(_ct, s);
-}
-
-- (void) DPSwidthshow: (float)x : (float)y : (int)c : (const char *)s
-{
-  FIXME();
-}
-
-- (void) DPSxshow: (const char *)s : (const float *)numarray : (int)size
-{
-  FIXME();
-}
-
-- (void) DPSxyshow: (const char *)s : (const float *)numarray : (int)size
-{
-  FIXME();
-}
-
-- (void) DPSyshow: (const char *)s : (const float *)numarray : (int)size
-{
-  FIXME();
-}
-
-- (void) GSSetCharacterSpacing: (float)extra
-{
-  FIXME();
 }
 
 - (void) GSSetFont: (GSFontInfo *)fontref
@@ -394,16 +354,6 @@ static float last_r, last_g, last_b;
 - (void) GSSetTextCTM: (NSAffineTransform *)ctm
 {
   [self GSSetCTM: ctm];
-}
-
-- (void) GSSetTextDrawingMode: (GSTextDrawingMode)mode
-{
-  FIXME();
-}
-
-- (void) GSSetTextPosition: (NSPoint)loc
-{
-  FIXME();
 }
 
 - (void) GSShowText: (const char *)string : (size_t)length
@@ -708,30 +658,6 @@ static float last_r, last_g, last_b;
 - (void) DPSarcn: (float)x : (float)y : (float)r : (float)angle1 : (float)angle2
 {
   cairo_arc_negative(_ct, x, y, r, angle1 * M_PI / 180, angle2 * M_PI / 180);
-}
-
-- (void) DPSarct: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)r
-{
-  FIXME();
-  /*
-     cairo_arc_to(_ct, x1, y1, x2, y2, r);
-   */
-  /*
-     NSBezierPath *newPath;
-
-     newPath = [[NSBezierPath alloc] init];
-     if ((path != nil) && ([path elementCount] != 0))
-     {
-     [newPath lineToPoint: [self currentPoint]];
-     }
-     [newPath appendBezierPathWithArcFromPoint: NSMakePoint(x1, y1)
-     toPoint: NSMakePoint(x2, y2)
-     radius: r];
-     [newPath transformUsingAffineTransform: ctm];
-     CHECK_PATH;
-     [path appendBezierPath: newPath];
-     RELEASE(newPath);
-   */
 }
 
 - (void) DPSclip
