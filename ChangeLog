@@ -34,7 +34,6 @@
 	offsets. Wait for up to a second for visibility events in case
 	XSync() does not work to ensure we receive them.
 
->>>>>>> .r23660
 2006-09-25 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Headers/x11/XGGeneric.h: Extra fielkd to flag when style offsets
