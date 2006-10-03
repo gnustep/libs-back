@@ -1,3 +1,11 @@
+2006-10-03 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/x11/XWindowBuffer.m: ([_exposeRect:])
+	Clip draw area to size of buffer rather than size of wiondow,
+	in case the two have become out of sync somehow.
+	* Source/win32/WIN32Server.m: Add help key mask
+	* Source/x11/XGServerEvent.m: ditto
+
 2006-10-02  Nicola Pero <nicola.pero@meta-innovation.com>
 
 	* configure.ac: Check the new variable GNUSTEP_IS_FLATTENED,

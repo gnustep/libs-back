@@ -74,6 +74,7 @@ static unsigned int _num_lock_mask;
 static char _control_pressed = 0;
 static char _command_pressed = 0;
 static char _alt_pressed = 0;
+static char _help_pressed = 0;
 /*
 Keys used for the modifiers (you may set them with user preferences).
 Note that the first and second key sym for a modifier must be different.
@@ -82,6 +83,7 @@ Otherwise, the _*_pressed tracking will be confused.
 static KeySym _control_keysyms[2];
 static KeySym _command_keysyms[2];
 static KeySym _alt_keysyms[2];
+static KeySym _help_keysyms[2];
 
 static BOOL _is_keyboard_initialized = NO;
 static BOOL _mod_ignore_shift = NO;
@@ -1141,6 +1143,19 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	    {
 	      _alt_pressed |= 2;
 	    }
+
+	  // Check if help is pressed
+	  _help_pressed = 0;
+	  if ((_help_keysyms[0] != NoSymbol)
+	      && check_modifier (&xEvent, _help_keysyms[0], modmap))
+	    {
+	      _help_pressed |= 1;
+	    }
+	  if ((_help_keysyms[1] != NoSymbol)
+	      && check_modifier (&xEvent, _help_keysyms[1], modmap))
+	    {
+	      _help_pressed |= 2;
+	    }
 	  XFreeModifiermap(modmap);
 	}
 	break;
@@ -1644,6 +1659,20 @@ initialize_keyboard (void)
   if (_alt_keysyms[0] == _alt_keysyms[1])
     _alt_keysyms[1] = NoSymbol;
 
+  // Initialize Help
+  _help_keysyms[0] = key_sym_from_defaults(display, defaults,
+                                          @"GSFirstHelpKey",
+                                          XK_Help);
+  if (XKeysymToKeycode(display, _help_keysyms[0]) == 0)
+    _help_keysyms[0] = NoSymbol;
+
+  _help_keysyms[1] = key_sym_from_defaults(display, defaults,
+                                          @"GSSecondAlternateKey",
+                                          NoSymbol);
+
+  if (_help_keysyms[0] == _help_keysyms[1])
+    _help_keysyms[1] = NoSymbol;
+
   
   set_up_num_lock ();
   _mod_ignore_shift = [defaults boolForKey: @"GSModifiersAreKeys"];
@@ -1727,6 +1756,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType)
   int		control_key = 0;
   int		command_key = 0;
   int		alt_key = 0;
+  int		help_key = 0;
   KeySym	modKeysym;  // process modifier independently of shift, etc.
   
   if (_is_keyboard_initialized == NO)
@@ -1785,10 +1815,18 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType)
 	{
 	  alt_key = 2;
 	}
+      else if (modKeysym == _help_keysyms[0]) 
+	{
+	  help_key = 1;
+	}
+      else if (modKeysym == _help_keysyms[1]) 
+	{
+	  help_key = 2;
+	}
     }
 
   originalType = eventType;
-  if (control_key || command_key || alt_key)
+  if (control_key || command_key || alt_key || help_key)
     {
       eventType = NSFlagsChanged;
       if (xEvent->xkey.type == KeyPress)
@@ -1799,6 +1837,8 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType)
 	    _command_pressed |= command_key;
 	  if (alt_key)
 	    _alt_pressed |= alt_key;
+	  if (help_key)
+	    _help_pressed |= help_key;
 	}
       else if (xEvent->xkey.type == KeyRelease)
 	{
@@ -1808,6 +1848,8 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType)
 	    _command_pressed &= ~command_key;
 	  if (alt_key)
 	    _alt_pressed &= ~alt_key;
+	  if (help_key)
+	    _help_pressed &= ~help_key;
 	}
     }
 
@@ -2016,6 +2058,9 @@ process_modifier_flags(unsigned int state)
 
   if (_alt_pressed != 0)
     eventModifierFlags = eventModifierFlags | NSAlternateKeyMask;
+  
+  if (_help_pressed != 0)
+    eventModifierFlags = eventModifierFlags | NSHelpKeyMask;
   
   // Other modifiers ignored for now. 
 

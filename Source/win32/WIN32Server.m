@@ -2193,6 +2193,8 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
     eventFlags |= NSShiftKeyMask;
   if (keyState[VK_MENU] & 128)
     eventFlags |= NSAlternateKeyMask;
+  if (keyState[VK_HELP] & 128)
+    eventFlags |= NSHelpKeyMask;
   if ((keyState[VK_LWIN] & 128) || (keyState[VK_RWIN] & 128))
     eventFlags |= NSCommandKeyMask;
 
@@ -2203,6 +2205,7 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
       case VK_CAPITAL: 
       case VK_CONTROL: 
       case VK_MENU: 
+      case VK_HELP: 
       case VK_NUMLOCK: 
 	eventType = NSFlagsChanged;
 	break;
@@ -2304,6 +2307,10 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
     {
       eventFlags |= NSAlternateKeyMask;
     }
+  if (GetKeyState(VK_HELP) < 0) 
+    {
+      eventFlags |= NSHelpKeyMask;
+    }
   // What about other modifiers?
 
   if (eventType == NSScrollWheel)
@@ -2326,9 +2333,9 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	  eventType = NSOtherMouseDragged;
 	}
     }
-  else if ((eventType == NSLeftMouseDown) || 
-	   (eventType == NSRightMouseDown) || 
-	   (eventType == NSOtherMouseDown))
+  else if ((eventType == NSLeftMouseDown)
+    || (eventType == NSRightMouseDown)
+    || (eventType == NSOtherMouseDown))
     {
       if (lastTime + GetDoubleClickTime() > ltime)
 	{
