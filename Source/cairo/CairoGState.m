@@ -23,6 +23,7 @@
  * Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
  */
 
+#include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
 #include <AppKit/NSColor.h>
 #include <AppKit/NSGraphics.h>
@@ -34,7 +35,6 @@
 
 #define FIXME()  NSLog(@":::FIXME::: %@ %s", [self description], sel_get_name(_cmd))
 
-/* Be warned that CairoGState didn't derived GSGState */
 @implementation CairoGState 
 
 + (void) initialize
@@ -44,20 +44,24 @@
     }
 }
 
-- (void) forwardInvocation: (NSInvocation *)anInvocation
+- (void) dealloc
 {
-  /* only for trapping any unknown message. */
-  NSLog (@":::UNKNOWN::: %@ %@", self, anInvocation);
-  exit(1);
+  if (_ct)
+    {
+      cairo_destroy(_ct);
+    }
+  RELEASE(_surface);
+
+  [super dealloc];
 }
 
 - (id) copyWithZone: (NSZone *)zone
 {
-  CairoGState *copy = (CairoGState *)NSCopyObject(self, 0, zone);
+  CairoGState *copy = (CairoGState *)[super copyWithZone: zone];
 
   if (_ct)
     {
-      cairo_path_t *path;
+      cairo_path_t *cpath;
       cairo_status_t status;
       cairo_matrix_t local_matrix;
  
@@ -66,9 +70,9 @@
       copy->_ct = cairo_create(cairo_get_target(_ct));
       cairo_get_matrix(_ct, &local_matrix);
       cairo_set_matrix(copy->_ct, &local_matrix);
-      path = cairo_copy_path(_ct);
-      cairo_append_path(copy->_ct, path);
-      cairo_path_destroy(path);
+      cpath = cairo_copy_path(_ct);
+      cairo_append_path(copy->_ct, cpath);
+      cairo_path_destroy(cpath);
       
       cairo_set_operator(copy->_ct, cairo_get_operator(_ct));
       cairo_set_source(copy->_ct, cairo_get_source(_ct));
@@ -87,68 +91,17 @@
 	}
     }
 
-  RETAIN(_font);
   RETAIN(_surface);
 
   return copy;
 }
 
-- (id) init
-{
-  [self DPSinitgraphics];
-  return self;
-}
-
-- (id) initWithDrawContext: (CairoContext *)drawContext
-{
-  //NSLog (@"CairoGState initWithDrawContext:%@", drawContext);
-  [self init];
-
-  return self;
-}
-
-- (void) dealloc
-{
-  if (_ct)
-    {
-      cairo_destroy(_ct);
-    }
-  RELEASE(_font);
-  RELEASE(_surface);
-
-  [super dealloc];
-}
-
-static void
-_flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
-{
-  cairo_matrix_t local_matrix;
-
-  cairo_matrix_init_scale(&local_matrix, 1, -1);
-
-  if (surface != nil)
-    {
-      cairo_matrix_translate(&local_matrix, 0, -[surface size].height);
-    }
-  cairo_set_matrix(ct, &local_matrix);
-}
-
-- (void) setOffset: (NSPoint)theOffset
-{
-  _offset = theOffset;
-}
-
-- (NSPoint) offset
-{
-  return _offset;
-}
-
 - (void) GSCurrentDevice: (void **)device: (int *)x : (int *)y
 {
   if (x)
-    *x = 0;
+    *x = offset.x;
   if (y)
-    *y = 0;
+    *y = offset.y;
   if (device)
     {
       if (_surface)
@@ -168,92 +121,38 @@ _flipCairoSurfaceMatrix(cairo_t *ct, CairoSurface *surface)
 {
   DESTROY(_surface);
   _surface = [[CairoSurface alloc] initWithDevice: device];
-  _offset = NSMakePoint(x, y);
-
+  [self setOffset: NSMakePoint(x, y)];
   [self DPSinitgraphics];
 }
-
-// FIXME: This is for the color getters on non solid type patterns
-static float last_r, last_g, last_b;
 
 /*
  * Color operations
  */
-- (void) DPScurrentalpha: (float *)a
+- (void) setColor: (device_color_t *)color state: (color_state_t)cState
 {
-  cairo_pattern_t *pattern; 
-  //cairo removed this function
-  //*a = cairo_current_alpha(_ct);
+  device_color_t c;
 
-  pattern = cairo_get_source(_ct);
-  if (cairo_pattern_get_type(pattern) == CAIRO_PATTERN_TYPE_SOLID)
+  [super setColor: color state: cState];
+  if (_ct == NULL)
     {
-      void *colors = (((void *)pattern) + 68);
-      *a = *((double *) colors + 3);
+      /* Window device isn't set yet */
+      return;
     }
-  else 
-    *a = 1.0;
-
-}
-
-- (void) DPScurrentcmykcolor: (float *)c : (float *)m : (float *)y :(float *)k
-{
-  float r, g, b;
-
-  [self DPScurrentrgbcolor: &r: &g: &b];
-  *c = 1 - r;
-  *m = 1 - g;
-  *y = 1 - b;
-  *k = 0;
-}
-
-- (void) DPScurrentgray: (float *)gray
-{
-  float r, g, b;
-
-  [self DPScurrentrgbcolor: &r: &g: &b];
-  *gray = (r + g + b) / 3.0;
-}
-
-- (void) DPScurrenthsbcolor: (float *)h : (float *)s : (float *)b
-{
-  NSColor *color;
-  float fr, fg, fb;
-  float alpha;
-
-  [self DPScurrentrgbcolor: &fr: &fg: &fb];
-  color = [NSColor colorWithCalibratedRed: fr
-		                    green: fg
-		                     blue: fb
-		                    alpha: 1.0];
-  [color getHue: h
-	 saturation: s
-	 brightness: b
-	 alpha: &alpha];
-}
-
-- (void) DPScurrentrgbcolor: (float *)r : (float *)g : (float *)b
-{
-  cairo_pattern_t *pattern; 
-  //cairo removed this function
-  //cairo_current_rgb_color(_ct, &dr, &dg, &db);
-
-  pattern = cairo_get_source(_ct);
-  if (cairo_pattern_get_type(pattern) == CAIRO_PATTERN_TYPE_SOLID)
+  c = *color;
+  gsColorToRGB(&c);
+  // FIXME: The underlying concept does not allow to determine if alpha is set or not.
+  if (c.field[AINDEX] > 0.0)
     {
-      void *colors = (((void *)pattern) + 68);
-      *r = *((double *) colors + 0);
-      *g = *(((double *) colors + 1));
-      *b = *(((double *) colors + 2));
+      cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], 
+			    c.field[AINDEX]);
     }
   else 
     {
-      *r = last_r;
-      *g = last_g;
-      *b = last_b;
+      cairo_set_source_rgb(_ct, c.field[0], c.field[1], c.field[2]);
     }
 }
 
+/*
 - (void) DPSsetalpha: (float)a
 {
   float r, g, b;
@@ -261,45 +160,7 @@ static float last_r, last_g, last_b;
   [self DPScurrentrgbcolor: &r: &g: &b];
   cairo_set_source_rgba(_ct, r, g, b, a);
 }
-
-- (void) DPSsetcmykcolor: (float)c : (float)m : (float)y : (float)k
-{
-  double r, g, b;
-
-  r = 1 - c;
-  g = 1 - m;
-  b = 1 - y;
-  [self DPSsetrgbcolor: r : g : b];
-}
-
-- (void) DPSsetgray: (float)gray
-{
-  [self DPSsetrgbcolor: gray : gray : gray];
-}
-
-- (void) DPSsethsbcolor: (float)h : (float)s : (float)b
-{
-  NSColor *color;
-  float red, green, blue, alpha;
- 
-  color = [NSColor colorWithCalibratedHue: h
-		               saturation: s
-		               brightness: b
-		                    alpha: 1.0];
-  [color getRed: &red
-	  green: &green
-	   blue: &blue
-	  alpha: &alpha];
-  [self DPSsetrgbcolor: red : green : blue];
-}
-
-- (void) DPSsetrgbcolor: (float)r : (float)g: (float)b
-{
-  last_r = r;
-  last_g = g;
-  last_b = b;
-  cairo_set_source_rgb(_ct, r, g, b);
-}
+*/
 
 /*
  * Text operations
@@ -310,8 +171,7 @@ static float last_r, last_g, last_b;
   char *c = malloc(b + 1);
 
   memcpy(c, s, b);
-  c[b + 1] = 0;
-
+  c[b] = 0;
   cairo_text_path(_ct, c);
   free(c);
 }
@@ -323,14 +183,17 @@ static float last_r, last_g, last_b;
 
 - (void) GSSetFont: (GSFontInfo *)fontref
 {
-  if (_font == fontref)
-    {
-      return;
-    }
+  [super GSSetFont: fontref];
+  {
+  cairo_matrix_t font_matrix;
+  const float *matrix; 
 
-  ASSIGN(_font, fontref);
-  //cairo_set_font_face(_ct, [((CairoFontInfo *)_font)->_faceInfo fontFace]);
-  //cairo_set_font_matrix(_ct, ((CairoFontInfo *)_font)->matrix);
+  matrix = [font matrix];
+  cairo_set_font_face(_ct, [((CairoFontInfo *)font)->_faceInfo fontFace]);
+  cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
+		    -matrix[3], matrix[4], matrix[5]);
+  cairo_set_font_matrix(_ct, &font_matrix);
+  }
 }
 
 - (void) GSSetFontSize: (float)size
@@ -338,34 +201,21 @@ static float last_r, last_g, last_b;
   cairo_set_font_size(_ct, size);
 }
 
-- (NSAffineTransform *) GSGetTextCTM
-{
-  return [self GSCurrentCTM];
-}
-
-- (NSPoint) GSGetTextPosition
-{
-  float x, y;
-
-  [self DPScurrentpoint: &x : &y];
-  return NSMakePoint(x, y);
-}
-
-- (void) GSSetTextCTM: (NSAffineTransform *)ctm
-{
-  [self GSSetCTM: ctm];
-}
-
 - (void) GSShowText: (const char *)string : (size_t)length
 {
-  FIXME();
+  char *c = malloc(length + 1);
+
+  memcpy(c, string, length);
+  c[length] = 0;
+  cairo_show_text(_ct, c);
+  free(c);
 }
 
 - (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t)length
 {
-  [_font drawGlyphs: glyphs
-             length: length
-                 on: _ct];
+  [(CairoFontInfo *)font drawGlyphs: glyphs
+		    length: length
+		    on: _ct];
 }
 
 /*
@@ -376,7 +226,7 @@ static float last_r, last_g, last_b;
 {
   cairo_status_t status;
 
-  DESTROY(_font);
+  [super DPSinitgraphics];
 
   if (_ct)
     {
@@ -392,11 +242,8 @@ static float last_r, last_g, last_b;
     {
       NSLog(@"Cairo status %s in DPSinitgraphics", cairo_status_to_string(status));
     }
-  if (!_viewIsFlipped)
-    {
-      _flipCairoSurfaceMatrix(_ct, _surface);
-    }
-  //NSLog(@"in flip %p (%p)", self, cairo_get_target(_ct));
+  [self DPSinitmatrix];
+
   /* Cairo's default line width is 2.0 */
   cairo_set_line_width(_ct, 1.0);
   cairo_set_operator(_ct, CAIRO_OPERATOR_OVER);
@@ -467,13 +314,12 @@ static float last_r, last_g, last_b;
   *limit = cairo_get_miter_limit(_ct);
 }
 
-- (void) DPScurrentpoint: (float *)x : (float *)y
+- (NSPoint) currentPoint
 {
   double dx, dy;
 
   cairo_get_current_point(_ct, &dx, &dy);
-  *x = dx;
-  *y = dy;
+  return NSMakePoint(dx, dy);
 }
 
 - (void) DPScurrentstrokeadjust: (int *)b
@@ -481,7 +327,7 @@ static float last_r, last_g, last_b;
   FIXME();
 }
 
-- (void) DPSsetdash: (const float *)pat : (int)size : (float)offset
+- (void) DPSsetdash: (const float *)pat : (int)size : (float)doffset
 {
   double *dpat;
   int i;
@@ -493,7 +339,7 @@ static float last_r, last_g, last_b;
       i--;
       dpat[i] = pat[i];
     }
-  cairo_set_dash(_ct, dpat, size, offset);
+  cairo_set_dash(_ct, dpat, size, doffset);
   free(dpat);
 }
 
@@ -531,6 +377,9 @@ static float last_r, last_g, last_b;
  * Matrix operations
  */
 
+// FIXME: All matrix and path operations need to call the super implemantion
+// to get the complex methods of the super class to work correctly.
+
 - (void) DPSconcat: (const float *)m
 {
   cairo_matrix_t local_matrix;
@@ -542,9 +391,25 @@ static float last_r, last_g, last_b;
 - (void) DPSinitmatrix
 {
   cairo_identity_matrix(_ct);
-  if (!_viewIsFlipped)
+  if (!viewIsFlipped)
     {
-      _flipCairoSurfaceMatrix(_ct, _surface);
+      cairo_matrix_t local_matrix;
+
+      cairo_matrix_init_scale(&local_matrix, 1, -1);
+      
+      if (_surface != nil)
+        {
+	  cairo_matrix_translate(&local_matrix, -offset.x, -offset.y);
+	}
+      cairo_set_matrix(_ct, &local_matrix);
+    }
+  else if (_surface != nil)
+    {
+      cairo_matrix_t local_matrix;
+
+      cairo_matrix_init_translate(&local_matrix, -offset.x, 
+				  offset.y - [_surface size].height);
+      cairo_set_matrix(_ct, &local_matrix);
     }
 }
 
@@ -563,14 +428,6 @@ static float last_r, last_g, last_b;
   cairo_translate(_ct, x, y);
 }
 
-- (void) _flipCairoFont
-{
-  cairo_matrix_t local_matrix;
-
-  cairo_matrix_init_scale(&local_matrix, 1, -1);
-  cairo_set_font_matrix(_ct, &local_matrix);
-}
-
 - (NSAffineTransform *) GSCurrentCTM
 {
   NSAffineTransform *transform;
@@ -584,15 +441,15 @@ static float last_r, last_g, last_b;
   NSLog(@"Before flip %f %f, %f, %f, %f, %f", local_matrix.xx, local_matrix.yx, 
 	local_matrix.xy, local_matrix.yy, local_matrix.x0, local_matrix.y0);
 */
-  if (!_viewIsFlipped)
+  if (!viewIsFlipped)
     {
-  if (_surface)
-  {
-     cairo_matrix_init_translate(&flip_matrix, 0, -[_surface size].height);
-     cairo_matrix_multiply(&local_matrix, &local_matrix, &flip_matrix);
-   }
-  cairo_matrix_init_scale(&flip_matrix, 1, -1);
-  cairo_matrix_multiply(&local_matrix, &local_matrix, &flip_matrix);
+      if (_surface)
+	{
+	  cairo_matrix_init_translate(&flip_matrix, 0, -[_surface size].height);
+	  cairo_matrix_multiply(&local_matrix, &local_matrix, &flip_matrix);
+	}
+      cairo_matrix_init_scale(&flip_matrix, 1, -1);
+      cairo_matrix_multiply(&local_matrix, &local_matrix, &flip_matrix);
     }
 /*
   NSLog(@"After flip %f %f, %f, %f, %f, %f", local_matrix.xx, local_matrix.yx, 
@@ -608,29 +465,18 @@ static float last_r, last_g, last_b;
   return transform;
 }
 
-- (void) GSSetCTM: (NSAffineTransform *)ctm
+- (void) GSSetCTM: (NSAffineTransform *)newCtm
 {
-  NSAffineTransformStruct tstruct;
-  cairo_matrix_t local_matrix;
-
-  if (!_viewIsFlipped)
-    {
-      _flipCairoSurfaceMatrix(_ct, _surface);
-    }
-  tstruct = [ctm transformStruct];
-  cairo_matrix_init(&local_matrix,
-		    tstruct.m11, tstruct.m12,
-		    tstruct.m21, tstruct.m22, 
-		    tstruct.tX, tstruct.tY);
-  cairo_transform(_ct, &local_matrix);
+  [self DPSinitmatrix];
+  [self GSConcatCTM: newCtm];
 }
 
-- (void) GSConcatCTM: (NSAffineTransform *)ctm
+- (void) GSConcatCTM: (NSAffineTransform *)newCtm
 {
   NSAffineTransformStruct tstruct;
   cairo_matrix_t local_matrix;
 
-  tstruct =  [ctm transformStruct];
+  tstruct =  [newCtm transformStruct];
   cairo_matrix_init(&local_matrix,
 		    tstruct.m11, tstruct.m12,
 		    tstruct.m21, tstruct.m22, 
@@ -641,14 +487,6 @@ static float last_r, last_g, last_b;
 /*
  * Paint operations
  */
-
-- (NSPoint) currentPoint
-{
-  double dx, dy;
-
-  cairo_get_current_point(_ct, &dx, &dy);
-  return NSMakePoint(dx, dy);
-}
 
 - (void) DPSarc: (float)x : (float)y : (float)r : (float)angle1 : (float)angle2
 {
@@ -697,12 +535,12 @@ static float last_r, last_g, last_b;
 
 - (void) DPSflattenpath
 {
-  cairo_path_t *path;
+  cairo_path_t *cpath;
 
-  path = cairo_copy_path_flat(_ct);
+  cpath = cairo_copy_path_flat(_ct);
   cairo_new_path(_ct);
-  cairo_append_path(_ct, path);
-  cairo_path_destroy(path);
+  cairo_append_path(_ct, cpath);
+  cairo_path_destroy(cpath);
 }
 
 - (void) DPSinitclip
@@ -730,7 +568,7 @@ static float last_r, last_g, last_b;
   int i;
   cairo_path_t *cpath;
   cairo_path_data_t *data;
-  NSBezierPath *path =[NSBezierPath bezierPath];
+  NSBezierPath *bpath =[NSBezierPath bezierPath];
 
   cpath = cairo_copy_path(_ct);
 
@@ -740,31 +578,31 @@ static float last_r, last_g, last_b;
       switch (data->header.type) 
         {
 	  case CAIRO_PATH_MOVE_TO:
-	    [path moveToPoint: NSMakePoint(data[1].point.x, data[1].point.y)];
+	    [bpath moveToPoint: NSMakePoint(data[1].point.x, data[1].point.y)];
 	    break;
 	  case CAIRO_PATH_LINE_TO:
-	    [path lineToPoint: NSMakePoint(data[1].point.x, data[1].point.y)];
+	    [bpath lineToPoint: NSMakePoint(data[1].point.x, data[1].point.y)];
 	    break;
 	  case CAIRO_PATH_CURVE_TO:
-	    [path curveToPoint: NSMakePoint(data[1].point.x, data[1].point.y) 
-		 controlPoint1: NSMakePoint(data[2].point.x, data[2].point.y) 
-		 controlPoint2: NSMakePoint(data[3].point.x, data[3].point.y)];
+	    [bpath curveToPoint: NSMakePoint(data[1].point.x, data[1].point.y) 
+		   controlPoint1: NSMakePoint(data[2].point.x, data[2].point.y) 
+		   controlPoint2: NSMakePoint(data[3].point.x, data[3].point.y)];
 	    break;
 	  case CAIRO_PATH_CLOSE_PATH:
-	    [path closePath];
+	    [bpath closePath];
 	    break;
 	}
     }
 
   cairo_path_destroy(cpath);
 
-  return path;
+  return bpath;
 }
 
 - (void) DPSpathbbox: (float *)llx : (float *)lly : (float *)urx : (float *)ury
 {
-  NSBezierPath *path = [self bezierPath];
-  NSRect rect = [path controlPointBounds];
+  NSBezierPath *bpath = [self bezierPath];
+  NSRect rect = [bpath controlPointBounds];
 
   if (llx)
     *llx = NSMinX(rect);
@@ -822,10 +660,10 @@ static float last_r, last_g, last_b;
 
 - (void) DPSreversepath
 {
-  NSBezierPath *path = [self bezierPath];
+  NSBezierPath *bpath = [self bezierPath];
 
-  path = [path bezierPathByReversingPath];
-  [self GSSendBezierPath: path];
+  bpath = [bpath bezierPathByReversingPath];
+  [self GSSendBezierPath: bpath];
 }
 
 - (void) DPSrlineto: (float)x : (float)y
@@ -843,7 +681,7 @@ static float last_r, last_g, last_b;
   cairo_stroke(_ct);
 }
 
-- (void) GSSendBezierPath: (NSBezierPath *)path
+- (void) GSSendBezierPath: (NSBezierPath *)bpath
 {
   int i, n;
   int count = 10;
@@ -852,14 +690,14 @@ static float last_r, last_g, last_b;
   NSPoint pts[3];
   NSBezierPathElement e;
   SEL elmsel = @selector(elementAtIndex: associatedPoints:);
-  IMP elmidx = [path methodForSelector: elmsel];
+  IMP elmidx = [bpath methodForSelector: elmsel];
 
   cairo_new_path(_ct);
 
-  n = [path elementCount];
+  n = [bpath elementCount];
   for (i = 0; i < n; i++)
     {
-      e = (NSBezierPathElement)(*elmidx)(path, elmsel, i, pts);
+      e = (NSBezierPathElement)(*elmidx)(bpath, elmsel, i, pts);
       switch (e)
 	{
 	case NSMoveToBezierPathElement:
@@ -878,45 +716,13 @@ static float last_r, last_g, last_b;
 	}
     }
 
-  cairo_set_line_width(_ct, [path lineWidth]);
-  cairo_set_line_join(_ct, (cairo_line_join_t)[path lineJoinStyle]);
-  cairo_set_line_cap(_ct, (cairo_line_cap_t)[path lineCapStyle]);
-  cairo_set_miter_limit(_ct, [path miterLimit]);
+  cairo_set_line_width(_ct, [bpath lineWidth]);
+  cairo_set_line_join(_ct, (cairo_line_join_t)[bpath lineJoinStyle]);
+  cairo_set_line_cap(_ct, (cairo_line_cap_t)[bpath lineCapStyle]);
+  cairo_set_miter_limit(_ct, [bpath miterLimit]);
 
-  [path getLineDash: dash_pattern count: &count phase: &phase];
+  [bpath getLineDash: dash_pattern count: &count phase: &phase];
   [self DPSsetdash: dash_pattern : count : phase];
-}
-
-- (void) GSRectClipList: (const NSRect *)rects : (int)count
-{
-  int i;
-  NSRect union_rect;
-
-  if (count == 0)
-    return;
-
-  /* FIXME see gsc
-     The specification is not clear if the union of the rects 
-     should produce the new clip rect or if the outline of all rects 
-     should be used as clip path.
-   */
-  union_rect = rects[0];
-  for (i = 1; i < count; i++)
-    union_rect = NSUnionRect(union_rect, rects[i]);
-
-  [self DPSrectclip: NSMinX(union_rect) : NSMinY(union_rect)
-	           : NSWidth(union_rect) : NSHeight(union_rect)];
-}
-
-- (void) GSRectFillList: (const NSRect *)rects : (int)count
-{
-  int i;
-
-  for (i = 0; i < count; i++)
-    {
-      [self DPSrectfill: NSMinX(rects[i]) : NSMinY(rects[i])
-	               : NSWidth(rects[i]) : NSHeight(rects[i])];
-    }
 }
 
 static void
@@ -1094,31 +900,31 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
 		    tstruct.m21, tstruct.m22, 
 		    tstruct.tX, tstruct.tY);
   cairo_transform(_ct, &local_matrix);
-  if (_viewIsFlipped)
+  if (viewIsFlipped)
     {
-      cairo_pattern_t *pattern;
+      cairo_pattern_t *cpattern;
       cairo_matrix_t local_matrix;
       
-      pattern = cairo_pattern_create_for_surface (surface);
+      cpattern = cairo_pattern_create_for_surface (surface);
       cairo_matrix_init_scale(&local_matrix, 1, -1);
       cairo_matrix_translate(&local_matrix, 0, -2*pixelsHigh);
-      cairo_pattern_set_matrix(pattern, &local_matrix);
-      cairo_set_source(_ct, pattern);
-      cairo_pattern_destroy(pattern);
+      cairo_pattern_set_matrix(cpattern, &local_matrix);
+      cairo_set_source(_ct, cpattern);
+      cairo_pattern_destroy(cpattern);
 
       cairo_rectangle(_ct, 0, pixelsHigh, pixelsWide, pixelsHigh);
     }
   else 
     {
-      cairo_pattern_t *pattern;
+      cairo_pattern_t *cpattern;
       cairo_matrix_t local_matrix;
       
-      pattern = cairo_pattern_create_for_surface (surface);
+      cpattern = cairo_pattern_create_for_surface (surface);
       cairo_matrix_init_scale(&local_matrix, 1, -1);
       cairo_matrix_translate(&local_matrix, 0, -pixelsHigh);
-      cairo_pattern_set_matrix(pattern, &local_matrix);
-      cairo_set_source(_ct, pattern);
-      cairo_pattern_destroy(pattern);
+      cairo_pattern_set_matrix(cpattern, &local_matrix);
+      cairo_set_source(_ct, cpattern);
+      cairo_pattern_destroy(cpattern);
 
       cairo_rectangle(_ct, 0, 0, pixelsWide, pixelsHigh);
     }
@@ -1180,21 +986,21 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
   cairo_device_to_user_distance(_ct, &width, &height);
   NSLog(@"Rect %@  = %f, %f, %f, %f", NSStringFromRect(aRect), minx, miny, width, height);
   */
-  if (_viewIsFlipped)
+  if (viewIsFlipped)
     {
 /*
-      if (!source->_viewIsFlipped)
+      if (!source->viewIsFlipped)
         {
 	  // Undo flipping of the source coordinate system
-	  cairo_pattern_t *pattern;
+	  cairo_pattern_t *cpattern;
 	  cairo_matrix_t local_matrix;
 	  
-	  pattern = cairo_pattern_create_for_surface(src);
+	  cpattern = cairo_pattern_create_for_surface(src);
 	  cairo_matrix_init_scale(&local_matrix, 1, -1);
 	  cairo_matrix_translate(&local_matrix, -aPoint.x + minx, -aPoint.y + miny);
-	  cairo_pattern_set_matrix(pattern, &local_matrix);
-	  cairo_set_source(_ct, pattern);
-	  cairo_pattern_destroy(pattern);
+	  cairo_pattern_set_matrix(cpattern, &local_matrix);
+	  cairo_set_source(_ct, cpattern);
+	  cairo_pattern_destroy(cpattern);
 	}
       else 
 */
@@ -1205,18 +1011,18 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
     }
   else 
     {
-      if (!source->_viewIsFlipped)
+      if (!source->viewIsFlipped)
         {
 	  // Undo flipping of the source coordinate system
-	  cairo_pattern_t *pattern;
+	  cairo_pattern_t *cpattern;
 	  cairo_matrix_t local_matrix;
 	  
-	  pattern = cairo_pattern_create_for_surface(src);
+	  cpattern = cairo_pattern_create_for_surface(src);
 	  cairo_matrix_init_scale(&local_matrix, 1, -1);
 	  cairo_matrix_translate(&local_matrix, -aPoint.x + minx, -aPoint.y + miny - height);
-	  cairo_pattern_set_matrix(pattern, &local_matrix);
-	  cairo_set_source(_ct, pattern);
-	  cairo_pattern_destroy(pattern);
+	  cairo_pattern_set_matrix(cpattern, &local_matrix);
+	  cairo_set_source(_ct, cpattern);
+	  cairo_pattern_destroy(cpattern);
 	}
       else
         {
@@ -1227,11 +1033,11 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
 
   if (delta < 1.0)
   {
-      cairo_pattern_t *pattern;
+      cairo_pattern_t *cpattern;
 
-      pattern = cairo_pattern_create_rgba(1.0, 1.0, 1.0, delta);
-      cairo_mask(_ct, pattern);
-      cairo_pattern_destroy(pattern);
+      cpattern = cairo_pattern_create_rgba(1.0, 1.0, 1.0, delta);
+      cairo_mask(_ct, cpattern);
+      cairo_pattern_destroy(cpattern);
   }
   cairo_fill(_ct);
   cairo_restore(_ct);

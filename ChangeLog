@@ -1,3 +1,16 @@
+2006-10-04 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/gsc/GSGState.h: Added copying protocol.
+	* Headers/cairo/CairoGState.h: Removed duplicated ivars that are
+	already defined in the new super class GSGState.
+	* Source/cairo/CairoGState.m: Changed to use super class ivars
+	where apropriate. Removed all compiler warnings. Changed colour
+	setting and getting to work with super class methods. 
+	Reimplemented DPSinitmatrix to handle offset and use this from
+	everywhere. Removed methods duplicating super class code. 
+	* Source/cairo/CairoContext.m (GSWSetViewIsFlipped:): Removed as
+	super class implementation should be used.
+
 2006-10-03 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XWindowBuffer.m: ([_exposeRect:])

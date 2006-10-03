@@ -23,14 +23,10 @@
 #ifndef CairoGState_h
 #define CairoGState_h
 
-#include <AppKit/NSAffineTransform.h>
-#include <AppKit/NSGraphicsContext.h>
 #include <cairo.h>
-
 #include "gsc/GSGState.h"
 
-@class CairoContext;
-@class CairoFontInfo;
+
 @class CairoSurface;
 
 @interface CairoGState : GSGState
@@ -38,12 +34,8 @@
   @public
     cairo_t *_ct;
     CairoSurface *_surface;
-    CairoFontInfo *_font;
-    BOOL _viewIsFlipped;
-    NSPoint _offset;
 }
 
-- (id) initWithDrawContext: (CairoContext *)drawContext;
 - (void) GSCurrentDevice: (void **)device: (int *)x : (int *)y;
 - (void) GSSetDevice: (void *)device : (int)x : (int)y;
 
