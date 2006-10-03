@@ -51,14 +51,6 @@
   [GSFontInfo setDefaultClass: [CairoFontInfo class]];
 }
 
-- (void) GSWSetViewIsFlipped: (BOOL)flipped
-{
-  if (gstate)
-    {
-      CGSTATE->_viewIsFlipped = flipped;
-    }
-}
-
 - (id) initWithContextInfo: (NSDictionary *)info
 {
   NSString *contextType;

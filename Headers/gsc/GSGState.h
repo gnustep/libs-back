@@ -48,7 +48,7 @@ typedef enum {
   COLOR_BOTH = 3               /* COLOR_BOTH = COLOR_FILL || COLOR_STROKE */
 } color_state_t;
 
-@interface GSGState : NSObject
+@interface GSGState : NSObject <NSCopying>
 {
 @public
   GSContext *drawcontext;
