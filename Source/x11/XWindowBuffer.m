@@ -39,7 +39,7 @@ static XWindowBuffer **window_buffers;
 static int num_window_buffers;
 
 
-static int use_shape_hack = 0; /* this is an ugly hack :) */
+static int use_shape_hack = 0; /* this is an ugly hack : ) */
 
 
 static int did_test_xshm = 0;
@@ -47,7 +47,7 @@ static int use_xshm = 1;
 static int num_xshm_test_errors = 0;
 
 static NSString *xshm_warning
-	= @"Falling back to normal XImage:s (will be slower).";
+	= @"Falling back to normal XImage: s (will be slower).";
 
 static int test_xshm_error_handler(Display *d, XErrorEvent *ev)
 {
@@ -153,7 +153,7 @@ static void test_xshm(Display *display, int drawing_depth)
     if (num_xshm_test_errors)
       {
 	NSLog(@"XShm not supported.");
-no_xshm:
+no_xshm: 
 	NSLog(xshm_warning);
 	use_xshm = 0;
       }
@@ -272,7 +272,7 @@ no_xshm:
       if (!use_xshm)
         goto no_xshm;
 
-      /* Use XShm if possible, else fall back to normal XImage:s */
+      /* Use XShm if possible, else fall back to normal XImage: s */
       wi->use_shm = 1;
       wi->ximage = XShmCreateImage(wi->display,
 	DefaultVisual(wi->display, DefaultScreen(wi->display)),
@@ -347,7 +347,7 @@ no_xshm:
 
       if (!wi->ximage)
 	{
-no_xshm:
+no_xshm: 
 	  wi->use_shm = 0;
 	  wi->ximage = XCreateImage(wi->display, DefaultVisual(wi->display,
 	    DefaultScreen(wi->display)), aDI->drawing_depth, ZPixmap, 0, NULL,
@@ -388,7 +388,7 @@ no_xshm:
 
 extern int XShmGetEventBase(Display *d);
 
--(void) _gotShmCompletion
+- (void) _gotShmCompletion
 {
   if (!use_shm)
     return;
@@ -425,7 +425,7 @@ extern int XShmGetEventBase(Display *d);
 //	XFlush(window->display);
 }
 
--(void) _exposeRect: (NSRect)rect
+- (void) _exposeRect: (NSRect)rect
 {
 /* TODO: Somehow, we can get negative coordinates in the rectangle. So far
 I've tracked them back to [NSWindow flushWindow]. Should probably figure
@@ -439,7 +439,7 @@ rects in the new size before we are updated.
 For now, we just intersect with our known size to avoid problems with X.
 
 And, to avoid problems with clever optimizations and float vs. double
-accuracy, we do the test using int:s.
+accuracy, we do the test using int: s.
 */
   int x, y, w, h;
 
@@ -458,13 +458,13 @@ accuracy, we do the test using int:s.
       h += y;
       y = 0;
     }
-  if (x + w > window->xframe.size.width)
+  if (x + w > sx)
     {
-      w = window->xframe.size.width - x;
+      w = sx - x;
     }
-  if (y + h > window->xframe.size.height)
+  if (y + h > sy)
     {
-      h = window->xframe.size.height - y;
+      h = sy - y;
     }
 
   if (w <= 0 || h <= 0)
@@ -614,7 +614,7 @@ static int warn = 0;
     }
 }
 
--(void) needsAlpha
+- (void) needsAlpha
 {
   if (has_alpha)
     return;
@@ -650,7 +650,7 @@ static int warn = 0;
   memset(alpha, 0xff, sx * sy);
 }
 
--(void) dealloc
+- (void) dealloc
 {
   int i;
 
@@ -686,14 +686,14 @@ static int warn = 0;
 }
 
 
-+(void) initialize
++ (void) initialize
 {
   NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
   use_shape_hack = [ud boolForKey: @"XWindowBuffer-shape-hack"];
 }
 
 
-+(void) _gotShmCompletion: (Drawable)d
++ (void) _gotShmCompletion: (Drawable)d
 {
   int i;
   for (i = 0; i < num_window_buffers; i++)
