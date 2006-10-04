@@ -126,7 +126,7 @@ XGErrorHandler(Display *display, XErrorEvent *err)
 }
 
 static NSEvent*process_key_event (XEvent* xEvent, XGServer* ctxt, 
-				  NSEventType eventType);
+  NSEventType eventType, NSMutableArray *event_queue);
 
 static unichar process_char (KeySym keysym, unsigned *eventModifierFlags);
 
@@ -1081,7 +1081,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	NSDebugLLog(@"NSEvent", @"%d KeyPress\n",
 		    xEvent.xkey.window);
 	generic.lastTime = xEvent.xkey.time;
-	e = process_key_event (&xEvent, self, NSKeyDown);
+	e = process_key_event (&xEvent, self, NSKeyDown, event_queue);
 	break;
 
 	    // a key has been released
@@ -1089,7 +1089,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	NSDebugLLog(@"NSEvent", @"%d KeyRelease\n",
 		    xEvent.xkey.window);
 	generic.lastTime = xEvent.xkey.time;
-	e = process_key_event (&xEvent, self, NSKeyUp);
+	e = process_key_event (&xEvent, self, NSKeyUp, event_queue);
 	break;
 
 	    // reports the state of the keyboard when pointer or
@@ -1600,6 +1600,12 @@ key_sym_from_defaults (Display *display, NSUserDefaults *defaults,
     return fallback;
 
   key_sym = XStringToKeysym ([keyDefaultName cString]);
+#if 0
+  if (key_sym == NoSymbol && [keyDefaultName intValue] > 0)
+    {
+      key_sym = [keyDefaultName intValue];
+    }
+#endif
   if (key_sym == NoSymbol)
     {
       // This is not necessarily an error.
@@ -1668,7 +1674,7 @@ initialize_keyboard (void)
 
   _help_keysyms[1] = key_sym_from_defaults(display, defaults,
                                           @"GSSecondAlternateKey",
-                                          NoSymbol);
+                                          XK_Super_L);
 
   if (_help_keysyms[0] == _help_keysyms[1])
     _help_keysyms[1] = NoSymbol;
@@ -1711,7 +1717,7 @@ set_up_num_lock (void)
     for (i = 0; i < (modifier_map->max_keypermod); i++)
       {
 	if ((modifier_map->modifiermap)[i + j*modifier_map->max_keypermod] 
-	    == _num_lock_keycode)
+	  == _num_lock_keycode)
 	  {
 	    _num_lock_mask = modifier_masks[j];
 	    XFreeModifiermap (modifier_map);
@@ -1742,7 +1748,8 @@ keysym_is_X_modifier (KeySym keysym)
 }
 
 static NSEvent*
-process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType)
+process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
+  NSMutableArray *event_queue)
 {
   NSString	*keys, *ukeys;
   KeySym	keysym;
@@ -1890,29 +1897,87 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType)
       eventType = NSFlagsChanged;
     }
 
-  /* Now we get the unicode character for the pressed key using 
-     our internal table */
-  unicode = process_char (keysym, &eventFlags);
-
-  /* If that didn't work, we use what X gave us */
-  if (unicode != 0)
+  if (help_key)
     {
+      unicode = NSHelpFunctionKey;
       keys = [NSString stringWithCharacters: &unicode  length: 1];
+      if (originalType == NSKeyDown)
+        {
+	  event = [NSEvent keyEventWithType: NSKeyDown
+		   location: eventLocation
+		   modifierFlags: eventFlags
+		   timestamp: (NSTimeInterval)xEvent->xkey.time
+		   windowNumber: window->number
+		   context: GSCurrentContext()
+		   characters: keys
+		   charactersIgnoringModifiers: keys
+		   isARepeat: NO
+		   keyCode: keyCode];
+	  [event_queue addObject: event];
+	  event = [NSEvent keyEventWithType: NSFlagsChanged
+		   location: eventLocation
+		   modifierFlags: eventFlags
+		   timestamp: (NSTimeInterval)xEvent->xkey.time
+		   windowNumber: window->number
+		   context: GSCurrentContext()
+		   characters: keys
+		   charactersIgnoringModifiers: keys
+		   isARepeat: NO
+		   keyCode: keyCode];
+	  return event;
+	}
+      else
+        {
+	  event = [NSEvent keyEventWithType: NSFlagsChanged
+		   location: eventLocation
+		   modifierFlags: eventFlags
+		   timestamp: (NSTimeInterval)xEvent->xkey.time
+		   windowNumber: window->number
+		   context: GSCurrentContext()
+		   characters: keys
+		   charactersIgnoringModifiers: keys
+		   isARepeat: NO
+		   keyCode: keyCode];
+	  [event_queue addObject: event];
+	  event = [NSEvent keyEventWithType: NSKeyUp
+		   location: eventLocation
+		   modifierFlags: eventFlags
+		   timestamp: (NSTimeInterval)xEvent->xkey.time
+		   windowNumber: window->number
+		   context: GSCurrentContext()
+		   characters: keys
+		   charactersIgnoringModifiers: keys
+		   isARepeat: NO
+		   keyCode: keyCode];
+	  return event;
+	}
     }
-
-  // Now the same ignoring modifiers, except Shift, ShiftLock, NumLock.
-  xEvent->xkey.state = (xEvent->xkey.state & (ShiftMask | LockMask 
-					      | _num_lock_mask));
-  ukeys = [context->inputServer lookupStringForEvent: (XKeyEvent *)xEvent
-		  window: window
-		  keysym: &keysym];
-  unicode = process_char (keysym, &eventFlags);
-  if (unicode != 0)
+  else
     {
-      ukeys = [NSString stringWithCharacters: &unicode  length: 1];
-    }
+      /* Now we get the unicode character for the pressed key using our
+       * internal table.
+       */
+      unicode = process_char (keysym, &eventFlags);
 
-  event = [NSEvent keyEventWithType: eventType
+      /* If that didn't work, we use what X gave us */
+      if (unicode != 0)
+	{
+	  keys = [NSString stringWithCharacters: &unicode  length: 1];
+	}
+
+      // Now the same ignoring modifiers, except Shift, ShiftLock, NumLock.
+      xEvent->xkey.state = (xEvent->xkey.state & (ShiftMask | LockMask 
+						  | _num_lock_mask));
+      ukeys = [context->inputServer lookupStringForEvent: (XKeyEvent *)xEvent
+		      window: window
+		      keysym: &keysym];
+      unicode = process_char (keysym, &eventFlags);
+      if (unicode != 0)
+	{
+	  ukeys = [NSString stringWithCharacters: &unicode  length: 1];
+	}
+
+      event = [NSEvent keyEventWithType: eventType
 		   location: eventLocation
 		   modifierFlags: eventFlags
 		   timestamp: (NSTimeInterval)xEvent->xkey.time
@@ -1923,7 +1988,8 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType)
 		   isARepeat: NO /* isARepeat can't be supported with X */
 		   keyCode: keyCode];
 
-  return event;
+      return event;
+    }
 }
 
 static unichar 
