@@ -1,9 +1,11 @@
 2006-10-04 Richard Frith-Macdonald <rfm@gnu.org>
 
-	* For help key, generate key/down/up ewvent as well as flag changes.
+	* Source/x11/XGServerEvent.m:
+	For help key, generate key/down/up ewvent as well as flag changes.
 	Use X Super_L key symbol as default backup help key, since many
 	keyboards don't have a help key mapping by default, but the super
 	keys are often the 'windows' keys available on PC keyboards.
+	* Version: bump version number for next release
 
 2006-10-04 Fred Kiefer <FredKiefer@gmx.de>
 
