@@ -199,7 +199,7 @@ static BOOL char_struct_for_glyph(NSGlyph glyph, XFontSet font_set,
 }
 
 - (void) drawGlyphs: (const NSGlyph *)glyphs
-             lenght: (int)len
+             length: (int)len
           onDisplay: (Display *)dpy
 	   drawable: (Drawable)win
 	       with: (GC)gc
@@ -216,7 +216,7 @@ static BOOL char_struct_for_glyph(NSGlyph glyph, XFontSet font_set,
 }
 
 - (float) widthOfGlyphs: (const NSGlyph *)glyphs
-                 lenght: (int)len
+                 length: (int)len
 {
   UTF8Str   ustr;
   float	    val;
