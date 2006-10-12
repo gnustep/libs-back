@@ -1,3 +1,7 @@
+2006-10-12  Adam Fedor  <fedor@gnu.org>
+
+	* Source/xlib/XGFontSetFontInfo.m (-drawGlyphs:length:onDisplay:drawable:with:at:], [-widthOfGlyphs:length:]): Fix spelling of length
+	
 2006-10-11 Nicola Pero <nicola.pero@meta-innovation.com>
 
 	* GNUmakefile (GNUSTEP_INSTALLATION_DOMAIN): Use GNUSTEP_INSTALLATION_DOMAIN
