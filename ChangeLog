@@ -1,3 +1,9 @@
+2006-10-15 11:14-EDT Mark Tracy
+
+	* Source/gsc/GSStreamContext.m: GSStreamContext did not implement 
+	GSRectFillList fix: copied code from GSGState.m.
+	Patch applied by Gregory Casamento
+	
 2006-10-12  Adam Fedor  <fedor@gnu.org>
 
 	* Source/xlib/XGFontSetFontInfo.m (-drawGlyphs:length:onDisplay:drawable:with:at:], [-widthOfGlyphs:length:]): Fix spelling of length
