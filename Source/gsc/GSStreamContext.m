@@ -675,9 +675,9 @@ fpfloat(FILE *stream, float f)
 {
   NSBezierPathElement type;
   NSPoint pts[3];
-  int i, count;
+  int i, count = 10;
   float pattern[10];
-  float phase;
+  float phase = 0.0;
 
   [self DPSnewpath];
   [self DPSsetlinewidth: [path lineWidth]];
@@ -722,7 +722,10 @@ fpfloat(FILE *stream, float f)
 
 - (void) GSRectFillList: (const NSRect *)rects: (int)count
 {
-  [self notImplemented: _cmd];
+  int i;
+  for (i = 0; i < count; i++)
+    [self DPSrectfill: NSMinX(rects[i]) : NSMinY(rects[i])
+	  : NSWidth(rects[i]) : NSHeight(rects[i])];
 }
 
 /* ----------------------------------------------------------------------- */
