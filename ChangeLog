@@ -1,4 +1,9 @@
-2006-10-15 11:14-EDT Mark Tracy
+2006-10-15 22:48-EDT Gregory John Casamento <greg_casamento@yahoo.com>
+
+	* Source/gsc/GSStreamContext.m: GSRectClipList() copied 
+	implementation from GSGState.m.
+
+2006-10-15 11:14-EDT Mark Tracy <tracy454 at concentric dot net>
 
 	* Source/gsc/GSStreamContext.m: GSStreamContext did not implement 
 	GSRectFillList fix: copied code from GSGState.m.
