@@ -717,7 +717,23 @@ fpfloat(FILE *stream, float f)
 
 - (void) GSRectClipList: (const NSRect *)rects: (int)count
 {
-  [self notImplemented: _cmd];
+  int i;
+  NSRect union_rect;
+
+  if (count == 0)
+    return;
+
+  /* 
+     The specification is not clear if the union of the rects 
+     should produce the new clip rect or if the outline of all rects 
+     should be used as clip path.
+  */
+  union_rect = rects[0];
+  for (i = 1; i < count; i++)
+    union_rect = NSUnionRect(union_rect, rects[i]);
+
+  [self DPSrectclip: NSMinX(union_rect) : NSMinY(union_rect)
+	  : NSWidth(union_rect) : NSHeight(union_rect)];
 }
 
 - (void) GSRectFillList: (const NSRect *)rects: (int)count
