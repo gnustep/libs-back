@@ -1872,7 +1872,8 @@ printf("\n\n##############################################################\n");
 
 - (NSArray *) windowlist
 {
-  return nil;
+  // FIXME 
+  return [super windowlist];
 }
 
 - (int) windowdepth: (int) winNum

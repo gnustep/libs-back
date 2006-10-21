@@ -2619,7 +2619,7 @@ static BOOL didCreatePixmaps;
       	window->siz_hints.y);
       setNormalHints(dpy, window);
       /* Set this to ignore any take focus events for this window */
-      generic.desiredOrderedWindow = winNum;
+      window->ignore_take_focus = YES;
     }
 
   switch (op)
@@ -3035,7 +3035,41 @@ static BOOL didCreatePixmaps;
 
 - (NSArray *) windowlist
 {
-  return nil;
+  gswindow_device_t *rootWindow;
+  Window *windowOrder;
+  gswindow_device_t *tmp;
+  NSMutableArray *ret;
+  int c;
+  static Atom client_stack_atom = None;
+ 
+  if (!client_stack_atom)
+    client_stack_atom = XInternAtom(dpy, "_NET_CLIENT_LIST_STACKING", False);
+
+  rootWindow = [self _rootWindowForScreen:0];
+  
+  windowOrder = (Window *)PropGetCheckProperty(dpy, rootWindow->ident,
+		  			       client_stack_atom,
+					       XA_WINDOW, 32, -1, &c);
+  if (windowOrder == NULL || !c)
+    {
+      return [super windowlist];
+    }
+
+  ret = [NSMutableArray array];
+  
+  while (c-- > 0)
+    {
+      tmp = [[self class] _windowForXWindow:windowOrder[c]];
+      /* CLIENT_LIST_STACKING returns all windows on the server, we're only
+       * interested in the ones which are ours. */
+      if (tmp)
+        {
+	  [ret addObject:[NSNumber numberWithInt:tmp->number]];
+        }
+    }
+  
+  XFree(windowOrder);
+  return ret;
 }
 
 - (int) windowdepth: (int)win
@@ -3328,7 +3362,6 @@ static BOOL didCreatePixmaps;
   NSDebugLLog(@"Focus", @"Setting focus to %d", window->number);
   generic.desiredFocusWindow = win;
   generic.focusRequestNumber = XNextRequest(dpy);
-  generic.desiredOrderedWindow = 0;
   XSetInputFocus(dpy, window->ident, RevertToParent, generic.lastTime);
   [inputServer ximFocusICWindow: window];
 }

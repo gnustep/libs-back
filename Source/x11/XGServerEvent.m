@@ -1540,6 +1540,11 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	 window to take focus after each one gets hidden. */
       NSDebugLLog(@"Focus", @"WM take focus while hiding");
     }
+  else if (cWin->ignore_take_focus == YES)
+    {
+      NSDebugLLog(@"Focus", @"Ignoring window focus request");
+      cWin->ignore_take_focus = NO;
+    }
   else if (cWin->number == key_num)
     {
       NSDebugLLog(@"Focus", @"Reasserting key window");
@@ -1554,12 +1559,6 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	 was key before, use that instead */
       NSDebugLLog(@"Focus", @"Key window is already %d", key_num);
       [GSServerForWindow(key_win) setinputfocus: key_num];
-    }
-  else if (generic.desiredOrderedWindow == cWin->number)
-    {
-      /* We just want to order the window, not give it focus */
-      NSDebugLLog(@"Focus", @"Ignoring focus request");
-      generic.desiredOrderedWindow = 0;
     }
   else
     {
