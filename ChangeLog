@@ -1,3 +1,14 @@
+2006-10-21  Matt Rice  <ratmice@yahoo.com>
+	
+	* Source/win32/WIN32Server.m: Update -windowlist implementation.
+	* Source/x11/XGServerWindow.m (-orderwin:::): Replace
+	desiredOrderedWindow with ignore_take_focus.
+	(windowlist): Implement.
+	(setinputfocus:): Replace desiredOrderedWindow with ignore_take_focus.
+	* Headers/x11/XGGeneric.h (XGGeneric): Remove desiredOrderedWindow.
+	* Headers/x11/XGServerWindow.h (gswindow_device_t):
+	Add ignore_take_focus.
+
 2006-10-15 22:48-EDT Gregory John Casamento <greg_casamento@yahoo.com>
 
 	* Source/gsc/GSStreamContext.m: GSRectClipList() copied 
