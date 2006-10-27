@@ -1127,8 +1127,8 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   numButtons = XGetPointerMapping(dpy, mouseNumbers, 5);
   if (numButtons > 5)
     {
-      NSLog(@"Warning - mouse/pointer seems to have more than 5 buttons"
-	@" - just using one to five");
+      NSDebugLLog(@"XGTrace", @"Warning - mouse/pointer seems to have more than 5 buttons "
+	@"(%d) - just using one to five", numButtons);
       numButtons = 5;
     }
   generic.lMouse = buttons[0];
