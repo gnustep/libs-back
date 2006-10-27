@@ -1,3 +1,12 @@
+2006-10-27 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XIMInputServer.m (-initWithDelegate:display:name:):
+	Replace call to GetStringEncoding with [NSString
+	localizedNameOfStringEncoding:] 
+	* Source/x11/XGServerWindow.m (-_setupMouse): Make log message on
+	multiple mouse buttons a debug log message. Seems like newer X
+	servers detect loads of mouse buttons which are not there.
+	
 2006-10-21  Matt Rice  <ratmice@yahoo.com>
 	
 	* Source/win32/WIN32Server.m: Update -windowlist implementation.

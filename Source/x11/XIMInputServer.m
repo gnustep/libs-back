@@ -92,7 +92,7 @@
       encoding = [NSString defaultCStringEncoding];
     }
   NSDebugLLog(@"XIM", @"XIM locale encoding for %s is %@", locale,
-	      GetEncodingName(encoding));
+	      [NSString localizedNameOfStringEncoding: encoding]);
 
 #ifdef USE_XIM
   if ([self ximInit: dpy] == NO)
