@@ -43,6 +43,7 @@
 #include <Foundation/NSData.h>
 #include <Foundation/NSValue.h>
 // For the encoding functions
+#include <GNUstepBase/GSMime.h>
 #include <GNUstepBase/Unicode.h>
 
 static Atom XA_SLANT = (Atom)0;
@@ -319,11 +320,16 @@ static BOOL XGInitAtoms(Display *dpy)
 
       if (enc != nil)
         {
-	  mostCompatibleStringEncoding = GSEncodingForRegistry(reg, enc);
-	  if (mostCompatibleStringEncoding == GSUndefinedEncoding)
-	    mostCompatibleStringEncoding = NSASCIIStringEncoding;
-	  encodingScheme = [NSString stringWithFormat: @"%@-%@", 
-				     reg, enc];
+	  if ([enc length] != 0 && [enc isEqualToString: @"0"] == NO)
+	    {
+	      encodingScheme = [NSString stringWithFormat: @"%@-%@", reg, enc];
+	    }
+	  else
+	    {
+	      encodingScheme = reg;
+	    }
+	  mostCompatibleStringEncoding
+	    = [GSMimeDocument encodingFromCharset: encodingScheme];
 	  NSDebugLog(@"Found encoding %d for %@", 
 		     mostCompatibleStringEncoding, encodingScheme);
 	  RETAIN(encodingScheme);
