@@ -1,3 +1,9 @@
+2006-10-28  Adam Fedor  <fedor@gnu.org>
+
+	* back.make.in: Use correct flags;
+	* Source/GNUmakefile.preamble: Add library depends for backend.
+	(Partial fix for Bug #16453, see also gui).
+
 2006-10-27 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XIMInputServer.m (-initWithDelegate:display:name:):
