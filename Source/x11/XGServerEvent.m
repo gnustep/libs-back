@@ -1521,6 +1521,12 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
   NSDebugLLog(@"Focus", @"take focus:%d (current=%d key=%d)",
 	      cWin->number, generic.currentFocusWindow, key_num);
 
+  /* Sometimes window managers lose the setinputfocus on the key window
+   * e.g. when ordering out a window with focus then ordering in the key window.   * it might search for a window until one accepts its take focus request.
+   */
+  if (key_num == cWin->number)
+    cWin->ignore_take_focus = NO;
+  
   /* Invalidate the previous request. It's possible the app lost focus
      before this request was fufilled and we are being focused again,
      or ??? */
