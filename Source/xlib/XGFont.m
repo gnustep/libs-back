@@ -332,6 +332,10 @@ static BOOL XGInitAtoms(Display *dpy)
 	    = [GSMimeDocument encodingFromCharset: encodingScheme];
 	  NSDebugLog(@"Found encoding %d for %@", 
 		     mostCompatibleStringEncoding, encodingScheme);
+	  if (mostCompatibleStringEncoding == GSUndefinedEncoding)
+	    {
+	      mostCompatibleStringEncoding = NSASCIIStringEncoding;
+	    }
 	  RETAIN(encodingScheme);
 	}
     }
