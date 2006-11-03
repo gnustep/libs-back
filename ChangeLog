@@ -1,3 +1,8 @@
+2006-11-03 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/xlib/XGFont.m: Assume ascii encoding as a fallback if no
+	mapping can be found from the font registry to the encoding.
+
 2006-10-31  Matt Rice  <ratmice@yahoo.com>
 	
 	* Source/x11/XGServerEvent.m (_handleTakeFocusAtom:forContext:):
