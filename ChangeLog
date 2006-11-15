@@ -1,3 +1,25 @@
+2006-11-15  Nicola Pero  <nicola.pero@meta-innovation.com>
+	
+	Notice: you should now use 'make DESTDIR=/tmp/xxx install' if you
+	want to relocate all the installation into /tmp/xxx/
+	* GNUmakefile.postamble: Use DESTDIR instead of INSTALL_ROOT_DIR
+	everywhere.
+
+	* Documentation/Back/GNUmakefile: Use GNUSTEP_INSTALLATION_DOMAIN
+	instead of GNUSTEP_INSTALLATION_DIR.
+	* Documentation/GNUmakefile: Same change.
+	* Fonts/GNUmakefile: Same change.
+	* Source/GNUmakefile: Same change.
+	* Source/art/GNUmakefile: Same change.
+	* Source/cairo/GNUmakefile: Same change.
+	* Source/gsc/GNUmakefile: Same change.
+	* Source/x11/GNUmakefile: Same change.
+	* Source/xdps/GNUmakefile: Same change.
+	* Source/xlib/GNUmakefile: Same change.
+	* Source/win32/GNUmakefile: Same change.
+	* Source/winlib/GNUmakefile: Same change.
+	* Tools/GNUmakefile: Same change.
+
 2006-11-03 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/xlib/XGFont.m: Assume ascii encoding as a fallback if no
