@@ -28,14 +28,14 @@
 # Things to do after compiling
 # after-all::
 
-$(INSTALL_ROOT_DIR)$(GNUSTEP_MAKEFILES)/Additional:
-	$(MKDIRS) $(INSTALL_ROOT_DIR)$(GNUSTEP_MAKEFILES)/Additional
+$(DESTDIR)$(GNUSTEP_MAKEFILES)/Additional:
+	$(MKDIRS) $(DESTDIR)$(GNUSTEP_MAKEFILES)/Additional
 
 # Things to do before installing
 ifeq ($(BACKEND_BUNDLE),)
-before-install:: $(INSTALL_ROOT_DIR)$(GNUSTEP_MAKEFILES)/Additional
+before-install:: $(DESTDIR)$(GNUSTEP_MAKEFILES)/Additional
 	$(INSTALL_DATA) back.make \
-	    $(INSTALL_ROOT_DIR)$(GNUSTEP_MAKEFILES)/Additional/back.make
+	    $(DESTDIR)$(GNUSTEP_MAKEFILES)/Additional/back.make
 endif
 
 # Things to do after installing
