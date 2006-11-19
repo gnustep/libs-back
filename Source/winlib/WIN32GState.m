@@ -198,6 +198,8 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
 		      op: (NSCompositingOperation) op
 		fraction: (float)delta
 {
+  NSAffineTransformStruct	sctms;
+  NSAffineTransformStruct	ctms;
   HDC sourceDC;
   HDC hDC;
   RECT rectFrom;
@@ -222,8 +224,10 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
   x = rectTo.left;
   y = rectTo.top;
 
-  if (source->ctm->matrix.m22 < 0 && ctm->matrix.m22 > 0) y += h;
-  if (source->ctm->matrix.m22 > 0 && ctm->matrix.m22 < 0) y -= h;
+  sctms = [source->ctm transformStruct];
+  ctms = [ctm transformStruct];
+  if (sctms.m22 < 0 && ctms.m22 > 0) y += h;
+  if (sctms.m22 > 0 && ctms.m22 < 0) y -= h;
 
   sourceDC = [source getHDC];
   

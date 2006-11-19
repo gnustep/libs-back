@@ -1,3 +1,17 @@
+2006-11-19 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/winlib/WIN32GState.m:
+	* Source/art/path.m:
+	* Source/art/ftfont.m:
+	* Source/art/ftfont-old.m:
+	* Source/art/shfill.m:
+	* Source/art/image.m:
+	* Source/xlib/XGGState.m:
+	* Source/x11/XGServerWindow.m:
+	Use accessor method (-transformStruct) to get at affine transform
+	internals.  Make art code closer to coding standars in an attempt
+	to improve readability.
+
 2006-11-15  Nicola Pero  <nicola.pero@meta-innovation.com>
 	
 	Notice: you should now use 'make DESTDIR=/tmp/xxx install' if you

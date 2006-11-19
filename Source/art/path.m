@@ -396,7 +396,7 @@ static void artcontext_render_svp(const ArtSVP *svp, int x0, int y0, int x1, int
 also fills in the axis coordinates (x0/y0 is min) and returns 1. Otherwise
 returns 0. (Actually, if pixel is NO, it's enough that the edges remain
 within one pixel.) */
--(int) _axis_rectangle: (float)x : (float)y : (float)w : (float)h
+- (int) _axis_rectangle: (float)x : (float)y : (float)w : (float)h
 		 vpath: (ArtVpath *)vp
 		  axis: (int *)px0 : (int *)py0 : (int *)px1 : (int *)py1
 		 pixel: (BOOL)pixel
@@ -405,16 +405,17 @@ within one pixel.) */
   float det;
   int i;
   int x0, y0, x1, y1;
+  NSAffineTransformStruct	ts = [ctm transformStruct];
 
   if (w < 0) x += w, w = -w;
   if (h < 0) y += h, h = -h;
 
-  matrix[0]= ctm->matrix.m11;
-  matrix[1]=-ctm->matrix.m12;
-  matrix[2]= ctm->matrix.m21;
-  matrix[3]=-ctm->matrix.m22;
-  matrix[4]= ctm->matrix.tX - offset.x;
-  matrix[5]=-ctm->matrix.tY + offset.y;
+  matrix[0] = ts.m11;
+  matrix[1] = -ts.m12;
+  matrix[2] = ts.m21;
+  matrix[3] = -ts.m22;
+  matrix[4] = ts.tX - offset.x;
+  matrix[5] = -ts.tY + offset.y;
 
   /* If the matrix is 'inverted', ie. if the determinant is negative,
      we need to flip the order of the vertices. Since it's a rectangle
@@ -464,16 +465,16 @@ within one pixel.) */
       else
 	*py0 = y0, *py1 = y1;
 
-      if (fabs(vp[0].x - vp[1].x) < 0.01 && fabs(vp[1].y - vp[2].y) < 0.01 &&
-	  fabs(vp[0].x - x0) < 0.01 && fabs(vp[0].y - y0) < 0.01 &&
-	  fabs(vp[2].x - x1) < 0.01 && fabs(vp[2].y - y1) < 0.01)
+      if (fabs(vp[0].x - vp[1].x) < 0.01 && fabs(vp[1].y - vp[2].y) < 0.01
+	&& fabs(vp[0].x - x0) < 0.01 && fabs(vp[0].y - y0) < 0.01
+	&& fabs(vp[2].x - x1) < 0.01 && fabs(vp[2].y - y1) < 0.01)
 	{
 	  return 1;
 	}
 
-      if (fabs(vp[0].y - vp[1].y) < 0.01 && fabs(vp[1].x - vp[2].x) < 0.01 &&
-	  fabs(vp[0].x - x0) < 0.01 && fabs(vp[0].y - y0) < 0.01 &&
-	  fabs(vp[2].x - x1) < 0.01 && fabs(vp[2].y - y1) < 0.01)
+      if (fabs(vp[0].y - vp[1].y) < 0.01 && fabs(vp[1].x - vp[2].x) < 0.01
+	&& fabs(vp[0].x - x0) < 0.01 && fabs(vp[0].y - y0) < 0.01
+	&& fabs(vp[2].x - x1) < 0.01 && fabs(vp[2].y - y1) < 0.01)
 	{
 	  return 1;
 	}
@@ -491,18 +492,14 @@ within one pixel.) */
       else
 	*py0 = floor(vp[2].y), *py1 = ceil(vp[0].y);
 
-      if (floor(vp[0].x) == floor(vp[1].x) &&
-	  floor(vp[0].y) == floor(vp[3].y) &&
-	  floor(vp[1].y) == floor(vp[2].y) &&
-	  floor(vp[2].x) == floor(vp[3].x))
+      if (floor(vp[0].x) == floor(vp[1].x) && floor(vp[0].y) == floor(vp[3].y)
+	&& floor(vp[1].y) == floor(vp[2].y) && floor(vp[2].x) == floor(vp[3].x))
 	{
 	  return 1;
 	}
 
-      if (floor(vp[0].y) == floor(vp[1].y) &&
-	  floor(vp[0].x) == floor(vp[3].x) &&
-	  floor(vp[1].x) == floor(vp[2].x) &&
-	  floor(vp[2].y) == floor(vp[3].y))
+      if (floor(vp[0].y) == floor(vp[1].y) && floor(vp[0].x) == floor(vp[3].x)
+	&& floor(vp[1].x) == floor(vp[2].x) && floor(vp[2].y) == floor(vp[3].y))
 	{
 	  return 1;
 	}
@@ -512,7 +509,7 @@ within one pixel.) */
 }
 
 
--(ArtVpath *) _vpath_from_current_path: (BOOL)fill
+- (ArtVpath *) _vpath_from_current_path: (BOOL)fill
 {
   ArtBpath *bpath, *bp2;
   ArtVpath *vp;
@@ -725,7 +722,7 @@ static void clip_svp_callback(void *data, int y, int start,
 }
 
 /* will free the passed in svp */
--(void) _clip_add_svp: (ArtSVP *)svp
+- (void) _clip_add_svp: (ArtSVP *)svp
 {
   clip_info_t ci;
   ci.span = NULL;
@@ -799,7 +796,7 @@ static void clip_svp_callback(void *data, int y, int start,
   art_svp_free(svp);
 }
 
--(void) _clip: (int)rule
+- (void) _clip: (int)rule
 {
   ArtVpath *vp;
   ArtSVP *svp;
@@ -910,7 +907,7 @@ static void clip_svp_callback(void *data, int y, int start,
 
 /** Filling **/
 
--(void) _fill: (int)rule
+- (void) _fill: (int)rule
 {
   ArtVpath *vp;
   ArtSVP *svp;
@@ -1039,26 +1036,44 @@ static void clip_svp_callback(void *data, int y, int start,
 
 	if (fill_color[3] == 255)
 	  {
-	    for (; y0 < y1; y0++, ri.dst += wi->bytes_per_line, ri.dsta += wi->sx)
-	      RENDER_RUN_OPAQUE_A(&ri, x1);
+	    while (y0 < y1)
+	      {
+		RENDER_RUN_OPAQUE_A(&ri, x1);
+		y0++;
+		ri.dst += wi->bytes_per_line;
+		ri.dsta += wi->sx;
+	      }
 	  }
 	else
 	  {
-	    for (; y0 < y1; y0++, ri.dst += wi->bytes_per_line, ri.dsta += wi->sx)
-	      RENDER_RUN_ALPHA_A(&ri, x1);
+	    while (y0 < y1)
+	      {
+		RENDER_RUN_ALPHA_A(&ri, x1);
+		y0++;
+		ri.dst += wi->bytes_per_line;
+		ri.dsta += wi->sx; 
+	      }
 	  }
       }
     else
       {
 	if (fill_color[3] == 255)
 	  {
-	    for (; y0 < y1; y0++, ri.dst += wi->bytes_per_line)
-	      RENDER_RUN_OPAQUE(&ri, x1);
+	    while (y0 < y1)
+	      {
+		RENDER_RUN_OPAQUE(&ri, x1);
+		y0++;
+		ri.dst += wi->bytes_per_line;
+	      }
 	  }
 	else
 	  {
-	    for (; y0 < y1; y0++, ri.dst += wi->bytes_per_line)
-	      RENDER_RUN_ALPHA(&ri, x1);
+	    while (y0 < y1)
+	      {
+		RENDER_RUN_ALPHA(&ri, x1);
+		y0++;
+		ri.dst += wi->bytes_per_line;
+	      }
 	  }
       }
     UPDATE_UNBUFFERED
@@ -1069,19 +1084,18 @@ static void clip_svp_callback(void *data, int y, int start,
 /** Stroking **/
 
 /* will free the passed in vpath */
--(void) _stroke: (ArtVpath *)vp
+- (void) _stroke: (ArtVpath *)vp
 {
   double temp_scale;
   ArtSVP *svp;
-
+  NSAffineTransformStruct	ts = [ctm transformStruct];
   float dash_adjust;
 
 
   /* TODO: this is a hack, but it's better than nothing */
   /* since we flip vertically, the signs here should really be
      inverted, but the fabs() means that it doesn't matter */
-  temp_scale = sqrt(fabs(ctm->matrix.m11 * ctm->matrix.m22 -
-			 ctm->matrix.m12 * ctm->matrix.m21));
+  temp_scale = sqrt(fabs(ts.m11 * ts.m22 - ts.m12 * ts.m21));
   if (temp_scale <= 0) temp_scale = 1;
 
 
@@ -1266,6 +1280,7 @@ static void clip_svp_callback(void *data, int y, int start,
 {
   ArtVpath *vp, *vp2;
   double matrix[6];
+  NSAffineTransformStruct	ts;
 
   if (!wi || !wi->data) return;
   if (all_clipped) return;
@@ -1291,12 +1306,13 @@ static void clip_svp_callback(void *data, int y, int start,
   vp[5].code = ART_END;
   vp[5].x = vp[5].y = 0;
 
-  matrix[0] = ctm->matrix.m11;
-  matrix[1] =-ctm->matrix.m12;
-  matrix[2] = ctm->matrix.m21;
-  matrix[3] =-ctm->matrix.m22;
-  matrix[4] = ctm->matrix.tX - offset.x;
-  matrix[5] =-ctm->matrix.tY + offset.y;
+  ts = [ctm transformStruct];
+  matrix[0] = ts.m11;
+  matrix[1] = -ts.m12;
+  matrix[2] = ts.m21;
+  matrix[3] = -ts.m22;
+  matrix[4] = ts.tX - offset.x;
+  matrix[5] = -ts.tY + offset.y;
 
   vp2 = art_vpath_affine_transform(vp, matrix);
   art_free(vp);
@@ -1353,11 +1369,11 @@ will give correct results as long as both axises are scaled the same.
 
 
 @interface ARTGState (path_testing)
--(void) GScurrentpath: (NSBezierPath **)p;
+- (void) GScurrentpath: (NSBezierPath **)p;
 @end
 
 @implementation ARTGState (path_testing)
--(void) GScurrentpath: (NSBezierPath **)p
+- (void) GScurrentpath: (NSBezierPath **)p
 {
   *p = [path copy];
 }
@@ -1365,7 +1381,7 @@ will give correct results as long as both axises are scaled the same.
 
 @implementation ARTContext (path_testing)
 /* TODO: this is just for testing */
--(void) GScurrentpath: (NSBezierPath **)p
+- (void) GScurrentpath: (NSBezierPath **)p
 {
   [(ARTGState *)gstate GScurrentpath: p];
 }

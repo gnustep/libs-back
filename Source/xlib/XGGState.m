@@ -420,6 +420,8 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
 - (void) copyBits: (XGGState*)source fromRect: (NSRect)aRect 
 				      toPoint: (NSPoint)aPoint
 {
+  NSAffineTransformStruct	sctms;
+  NSAffineTransformStruct	ctms;
   XRectangle	dst;
   XRectangle    src;
   NSRect	flushRect;
@@ -442,12 +444,14 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
   flushRect.size = aRect.size;
   flushRect.origin = aPoint;
   dst = XGViewRectToX(self, flushRect);
-  if (source->ctm->matrix.m22 < 0 && ctm->matrix.m22 > 0) dst.y += src.height;
-  if (source->ctm->matrix.m22 > 0 && ctm->matrix.m22 < 0) dst.y -= src.height;
+  sctms = [source->ctm transformStruct];
+  ctms = [ctm transformStruct];
+  if (sctms.m22 < 0 && ctms.m22 > 0) dst.y += src.height;
+  if (sctms.m22 > 0 && ctms.m22 < 0) dst.y -= src.height;
   NSDebugLLog(@"XGGraphics", @"Copy area from %@ to %@",
-	      NSStringFromRect(aRect), NSStringFromPoint(aPoint));
+    NSStringFromRect(aRect), NSStringFromPoint(aPoint));
   XCopyArea(XDPY, from, draw, xgcntxt,
-                src.x, src.y, src.width, src.height, dst.x, dst.y);
+    src.x, src.y, src.width, src.height, dst.x, dst.y);
 }
 
 - (void) _alphaBuffer: (gswindow_device_t *)dest_win
