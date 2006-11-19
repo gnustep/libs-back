@@ -584,15 +584,14 @@ seem to cause edges to be off by a pixel
 {
   BOOL identity_transform, is_rgb;
   image_info_t ii;
+  NSAffineTransformStruct	ts = [matrix transformStruct];
 
   if (!wi || !wi->data) return;
   if (all_clipped) return;
 
   [matrix appendTransform: ctm];
-  if (fabs(matrix->matrix.m11 - 1.0) < 0.001 &&
-      fabs(matrix->matrix.m12) < 0.001 &&
-      fabs(matrix->matrix.m22 - 1.0) < 0.001 &&
-      fabs(matrix->matrix.m21) < 0.001)
+  if (fabs(ts.m11 - 1.0) < 0.001 && fabs(ts.m12) < 0.001
+    && fabs(ts.m22 - 1.0) < 0.001 && fabs(ts.m21) < 0.001)
     identity_transform = YES;
   else
     identity_transform = NO;

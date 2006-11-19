@@ -50,6 +50,9 @@
 #else
 #include "x11/wraster.h"
 #endif
+
+// For X_HAVE_UTF8_STRING
+#include <X11/Xlib.h>
 #include <X11/cursorfont.h>
 
 #include <X11/extensions/shape.h>

@@ -907,6 +907,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
   FTC_CMapDescRec cmap;
   unsigned int glyph;
+  NSAffineTransformStruct	ts;
 
   int use_sbit;
 
@@ -934,6 +935,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   x -= x0;
   y -= y0;
 
+  ts = [transform stransformStruct];
 
 /*	NSLog(@"[%@ draw using matrix: (%g %g %g %g %g %g)] transform=%@\n",
 		self,
@@ -946,10 +948,10 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   {
     float xx, xy, yx, yy;
 
-    xx = matrix[0] * transform->matrix.m11 + matrix[1] * transform->matrix.m21;
-    yx = matrix[0] * transform->matrix.m12 + matrix[1] * transform->matrix.m22;
-    xy = matrix[2] * transform->matrix.m11 + matrix[3] * transform->matrix.m21;
-    yy = matrix[2] * transform->matrix.m12 + matrix[3] * transform->matrix.m22;
+    xx = matrix[0] * ts.m11 + matrix[1] * ts.m21;
+    yx = matrix[0] * ts.m12 + matrix[1] * ts.m22;
+    xy = matrix[2] * ts.m11 + matrix[3] * ts.m21;
+    yy = matrix[2] * ts.m12 + matrix[3] * ts.m22;
 
     /* If we're drawing 'normal' text (unscaled, unrotated, reasonable
        size), we can and should use the sbit cache for screen fonts. */
@@ -1123,17 +1125,17 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
                   if (delta_flags & 0x1)
                     x += delta_data[d++];
                   if (delta_flags & 0x2)
-                    y += (transform->matrix.m22 < 0) ?
+                    y += (ts.m22 < 0) ?
                         delta_data[d++] : -delta_data[d++];
                   if (delta_flags & 0x4)
                     {
                       x += sbit->xadvance + delta_data[0];
-                      y += /*sbit->yadvance +*/ (transform->matrix.m22 < 0) ?
+                      y += /*sbit->yadvance +*/ (ts.m22 < 0) ?
                           delta_data[1] : -delta_data[1];
                       if ((delta_flags & 0x8) && (uch == wch))
                         {
                           x += delta_data[2];
-                          y += (transform->matrix.m22 < 0) ?
+                          y += (ts.m22 < 0) ?
                               delta_data[3] : -delta_data[3];
                         }
                     }
@@ -1142,7 +1144,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
                       if (uch == wch)
                         {
                           x += sbit->xadvance + delta_data[0];
-                          y += /*sbit->yadvance +*/ (transform->matrix.m22 < 0) ?
+                          y += /*sbit->yadvance +*/ (ts.m22 < 0) ?
                             delta_data[1] : -delta_data[1];
                         }
                       else
@@ -1269,17 +1271,17 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
               if (delta_flags & 0x1)
                   x += delta_data[d++];
               if (delta_flags & 0x2)
-                  y += (transform->matrix.m22 < 0) ?
+                  y += (ts.m22 < 0) ?
                       delta_data[d++] : -delta_data[d++];
               if (delta_flags & 0x4)
                 {
                   x += sbit->xadvance + delta_data[0];
-                  y += /*sbit->yadvance +*/ (transform->matrix.m22 < 0) ?
+                  y += /*sbit->yadvance +*/ (ts.m22 < 0) ?
                       delta_data[1] : -delta_data[1];
                   if ((delta_flags & 0x8) && (uch == wch))
                     {
                       x += delta_data[2];
-                      y += (transform->matrix.m22 < 0) ?
+                      y += (ts.m22 < 0) ?
                           delta_data[3] : -delta_data[3];
                     }
                 }
@@ -1288,7 +1290,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
                   if (uch == wch)
                     {
                       x += sbit->xadvance + delta_data[0];
-                      y += /*sbit->yadvance +*/ (transform->matrix.m22 < 0) ?
+                      y += /*sbit->yadvance +*/ (ts.m22 < 0) ?
                           delta_data[1] : -delta_data[1];
                     }
                   else
@@ -1471,6 +1473,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   FT_Vector ftdelta;
 
   FT_Error error;
+  NSAffineTransformStruct	ts;
 
 
   if (!alpha)
@@ -1484,6 +1487,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   x -= x0;
   y -= y0;
 
+  ts = [transform stransformStruct];
 
 /*	NSLog(@"[%@ draw using matrix: (%g %g %g %g %g %g)] transform=%@\n",
 		self,
@@ -1496,10 +1500,10 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   {
     float xx, xy, yx, yy;
 
-    xx = matrix[0] * transform->matrix.m11 + matrix[1] * transform->matrix.m21;
-    yx = matrix[0] * transform->matrix.m12 + matrix[1] * transform->matrix.m22;
-    xy = matrix[2] * transform->matrix.m11 + matrix[3] * transform->matrix.m21;
-    yy = matrix[2] * transform->matrix.m12 + matrix[3] * transform->matrix.m22;
+    xx = matrix[0] * ts.m11 + matrix[1] * ts.m21;
+    yx = matrix[0] * ts.m12 + matrix[1] * ts.m22;
+    xy = matrix[2] * ts.m11 + matrix[3] * ts.m21;
+    yy = matrix[2] * ts.m12 + matrix[3] * ts.m22;
  
     /* If we're drawing 'normal' text (unscaled, unrotated, reasonable
        size), we can and should use the sbit cache for screen fonts. */
@@ -1845,6 +1849,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   FT_Vector ftdelta;
 
   FT_Error error;
+  NSAffineTransformStruct	ts;
 
 
   if (!alpha)
@@ -1858,6 +1863,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   x -= x0;
   y -= y0;
 
+  ts = [transform stransformStruct];
 
 /*	NSLog(@"[%@ draw using matrix: (%g %g %g %g %g %g)] transform=%@\n",
 		self,
@@ -1870,10 +1876,10 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   {
     float xx, xy, yx, yy;
 
-    xx = matrix[0] * transform->matrix.m11 + matrix[1] * transform->matrix.m21;
-    yx = matrix[0] * transform->matrix.m12 + matrix[1] * transform->matrix.m22;
-    xy = matrix[2] * transform->matrix.m11 + matrix[3] * transform->matrix.m21;
-    yy = matrix[2] * transform->matrix.m12 + matrix[3] * transform->matrix.m22;
+    xx = matrix[0] * ts.m11 + matrix[1] * ts.m21;
+    yx = matrix[0] * ts.m12 + matrix[1] * ts.m22;
+    xy = matrix[2] * ts.m11 + matrix[3] * ts.m21;
+    yy = matrix[2] * ts.m12 + matrix[3] * ts.m22;
  
     /* If we're drawing 'normal' text (unscaled, unrotated, reasonable
        size), we can and should use the sbit cache for screen fonts. */
@@ -2903,6 +2909,7 @@ static int filters[3][7]=
 
   FT_Matrix ftmatrix;
   FT_Vector ftdelta;
+  NSAffineTransformStruct	ts;
 
   BOOL subpixel = NO;
 
@@ -2917,6 +2924,7 @@ static int filters[3][7]=
   x -= x0;
   y -= y0;
 
+  ts = [transform stransformStruct];
 
 /*	NSLog(@"[%@ draw using matrix: (%g %g %g %g %g %g)]\n",
 		self,
@@ -2928,10 +2936,10 @@ static int filters[3][7]=
   {
     float xx, xy, yx, yy;
 
-    xx = matrix[0] * transform->matrix.m11 + matrix[1] * transform->matrix.m21;
-    yx = matrix[0] * transform->matrix.m12 + matrix[1] * transform->matrix.m22;
-    xy = matrix[2] * transform->matrix.m11 + matrix[3] * transform->matrix.m21;
-    yy = matrix[2] * transform->matrix.m12 + matrix[3] * transform->matrix.m22;
+    xx = matrix[0] * ts.m11 + matrix[1] * ts.m21;
+    yx = matrix[0] * ts.m12 + matrix[1] * ts.m22;
+    xy = matrix[2] * ts.m11 + matrix[3] * ts.m21;
+    yy = matrix[2] * ts.m12 + matrix[3] * ts.m22;
 
     /* if we're drawing 'normal' text (unscaled, unrotated, reasonable
        size), we can and should use the sbit cache */
