@@ -935,7 +935,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   x -= x0;
   y -= y0;
 
-  ts = [transform stransformStruct];
+  ts = [transform transformStruct];
 
 /*	NSLog(@"[%@ draw using matrix: (%g %g %g %g %g %g)] transform=%@\n",
 		self,
@@ -1487,7 +1487,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   x -= x0;
   y -= y0;
 
-  ts = [transform stransformStruct];
+  ts = [transform transformStruct];
 
 /*	NSLog(@"[%@ draw using matrix: (%g %g %g %g %g %g)] transform=%@\n",
 		self,
@@ -1863,7 +1863,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   x -= x0;
   y -= y0;
 
-  ts = [transform stransformStruct];
+  ts = [transform transformStruct];
 
 /*	NSLog(@"[%@ draw using matrix: (%g %g %g %g %g %g)] transform=%@\n",
 		self,
@@ -2924,7 +2924,7 @@ static int filters[3][7]=
   x -= x0;
   y -= y0;
 
-  ts = [transform stransformStruct];
+  ts = [transform transformStruct];
 
 /*	NSLog(@"[%@ draw using matrix: (%g %g %g %g %g %g)]\n",
 		self,
