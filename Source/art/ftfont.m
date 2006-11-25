@@ -2571,7 +2571,6 @@ add code to avoid loading bitmaps for glyphs */
 			     count: (int)count
 		      toBezierPath: (NSBezierPath *)path
 {
-#if 0
   int i;
   NSGlyph glyph;
 
@@ -2592,11 +2591,15 @@ add code to avoid loading bitmaps for glyphs */
       FT_Face face;
       FT_Glyph gl;
       FT_OutlineGlyph og;
+      FT_Size size;
 
       glyph = *glyphs - 1;
 
-      if (FTC_Manager_Lookup_Size(ftc_manager, &imgd.font, &face, 0))
+      if (FTC_Manager_LookupSize(ftc_manager, &scaler, &size))
 	continue;
+
+      face = size->face;
+      
       if (FT_Load_Glyph(face, glyph, FT_LOAD_DEFAULT))
 	continue;
 
@@ -2622,7 +2625,6 @@ add code to avoid loading bitmaps for glyphs */
     {
       [path moveToPoint: NSMakePoint(ftdelta.x / 64.0, ftdelta.y / 64.0)];
     }
-#endif
 }
 
 
