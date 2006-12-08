@@ -1678,7 +1678,7 @@ initialize_keyboard (void)
     _help_keysyms[0] = NoSymbol;
 
   _help_keysyms[1] = key_sym_from_defaults(display, defaults,
-                                          @"GSSecondAlternateKey",
+                                          @"GSSecondHelpKey",
                                           XK_Super_L);
 
   if (_help_keysyms[0] == _help_keysyms[1])
