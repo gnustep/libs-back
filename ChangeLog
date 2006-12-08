@@ -1,3 +1,10 @@
+2006-12-08 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/x11/XGServerEvent.m: Fix incorrect setting for second help
+	key.
+	* Documentation/Back/DefaultsSummary.gsdoc: Document mappings of
+	X keys to help keys.
+
 2006-11-25  Matt Rice  <ratmice@gmail.com>
 
 	* Source/art/ftfont.m (appendBezierPathWithGlyphs:count:toPath:):
