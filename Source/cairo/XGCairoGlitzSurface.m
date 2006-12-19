@@ -51,9 +51,7 @@
   templ.doublebuffer = 0;
   dformat = glitz_glx_find_drawable_format_for_visual(GSWINDEVICE->display,
 						      GSWINDEVICE->screen,
-						      //				       GLITZ_FORMAT_DOUBLEBUFFER_MASK,
-						      //				       &templ,
-						      DefaultVisual(GSWINDEVICE->display, GSWINDEVICE->screen)); //FIXME: this does not work
+						      XVisualIDFromVisual(DefaultVisual(GSWINDEVICE->display, GSWINDEVICE->screen)));
   
   if (!dformat)
     {
