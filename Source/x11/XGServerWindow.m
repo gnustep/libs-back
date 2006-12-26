@@ -1041,6 +1041,12 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 	      XInternAtom(dpy, "_KDE_NET_WM_WINDOW_TYPE_OVERRIDE", False);
 	  generic.wintypes.win_topmenu_atom = 
 	      XInternAtom(dpy, "_KDE_NET_WM_WINDOW_TYPE_TOPMENU", False);
+
+	  // Window state
+	  generic.netstates.net_wm_state_atom = 
+ 	      XInternAtom(dpy, "_NET_WM_STATE", False);
+	  generic.netstates.net_wm_state_skip_taskbar_atom = 
+ 	      XInternAtom(dpy, "_NET_WM_STATE_SKIP_TASKBAR", False);
 	}
       if (win1)
         {
@@ -2924,6 +2930,7 @@ static BOOL didCreatePixmaps;
 	{
 	  int len;
 	  long data[2];
+	  BOOL skipTaskbar = NO;
 
 	  data[0] = generic.wintypes.win_normal_atom;
 	  data[1] = None;
@@ -2932,6 +2939,7 @@ static BOOL didCreatePixmaps;
 	  if (level == NSModalPanelWindowLevel)
 	    {
 	      data[0] = generic.wintypes.win_modal_atom;
+	      skipTaskbar = YES;
 	    }
 	  else if (level == NSMainMenuWindowLevel)
 	    {
@@ -2940,6 +2948,7 @@ static BOOL didCreatePixmaps;
 	      //data[0] = generic.wintypes.win_topmenu_atom;
 	      data[0] = generic.wintypes.win_dock_atom;
 	      //len = 2;
+	      skipTaskbar = YES;
 	    }
 	  else if (level == NSSubmenuWindowLevel
 	    || level == NSFloatingWindowLevel
@@ -2954,11 +2963,13 @@ static BOOL didCreatePixmaps;
 	      data[0] = generic.wintypes.win_menu_atom;
 	      len = 1;
 #endif
+	      skipTaskbar = YES;
 	    }
 	  else if (level == NSDockWindowLevel
 	    || level == NSStatusWindowLevel)
 	    {
 	      data[0] =generic.wintypes.win_dock_atom;
+	      skipTaskbar = YES;
 	    }
 	  // Does this belong into a different category?
 	  else if (level == NSPopUpMenuWindowLevel)
@@ -2971,10 +2982,12 @@ static BOOL didCreatePixmaps;
 	      data[0] = generic.wintypes.win_modal_atom;
 	      len = 1;
 #endif
+	      skipTaskbar = YES;
 	    }
 	  else if (level == NSDesktopWindowLevel)
 	    {
 	      data[0] = generic.wintypes.win_desktop_atom;
+	      skipTaskbar = YES;
 	    }
 
 /* Warning ... X-bug .. when we specify 32bit data X actually expects data
@@ -2984,6 +2997,27 @@ static BOOL didCreatePixmaps;
 	  XChangeProperty(dpy, window->ident, generic.wintypes.win_type_atom,
 			  XA_ATOM, 32, PropModeReplace, 
 			  (unsigned char *)&data, len);
+
+/* 
+ * Change _NET_WM_STATE based on window level.
+ * This should be based on real window type (NSMenu, NSPanel, etc).
+ * This feature is only needed for window managers that cannot properly 
+ * handle the window type set above.
+ */
+	  if (skipTaskbar) 
+	    {
+	      len = 1;
+	      data[0] = generic.netstates.net_wm_state_skip_taskbar_atom;
+	      XChangeProperty(dpy, window->ident, 
+			      generic.netstates.net_wm_state_atom,
+			      XA_ATOM, 32, PropModeReplace, 
+			      (unsigned char *)&data, len);
+	    } 
+	  else 
+	    {
+	      XDeleteProperty(dpy, window->ident,
+			      generic.netstates.net_wm_state_atom);
+	    }
 	}
       else if ((generic.wm & XGWM_GNOME) != 0)
 	{

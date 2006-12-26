@@ -1,5 +1,13 @@
 2006-12-26 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Headers/x11/XGGeneric.h: Added XGWMNetStates.
+	* Source/x11/XGServerWindow.m (-_checkWindowManager,
+	-setwindowlevel::): Prevent some window types from showing up in
+	the taskbar for old window managers that cannot handle window types.
+	Patch by Yen-Ju Chen <yjchenx@gmail.com>.
+	
+2006-12-26 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Headers/cairo/XGCairoXImageSurface.h:
 	* Source/cairo/XGCairoXImageSurface.m (-initWithDevice:):  Use
 	XWindowBuffer to draw on.
