@@ -25,12 +25,13 @@
 
 #include "x11/XGServer.h"
 #include "x11/XGServerWindow.h"
-
+#include "x11/XWindowBuffer.h"
 #include "cairo/CairoSurface.h"
 
 @interface XGCairoXImageSurface : CairoSurface
 {
-	XImage *image;
+  @public
+	XWindowBuffer *wi;
 }
 @end
 

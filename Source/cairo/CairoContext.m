@@ -30,6 +30,7 @@
 #include "cairo/XGCairoGlitzSurface.h"
 #else
 #include "cairo/XGCairoSurface.h"
+#include "cairo/XGCairoXImageSurface.h"
 #endif
 
 #define CGSTATE ((CairoGState *)gstate)
@@ -45,7 +46,8 @@
 #ifdef USE_GLITZ
   [CairoSurface setDefaultSurfaceClass: [XGCairoGlitzSurface class]];
 #else
-  [CairoSurface setDefaultSurfaceClass: [XGCairoSurface class]];
+//  [CairoSurface setDefaultSurfaceClass: [XGCairoSurface class]];
+  [CairoSurface setDefaultSurfaceClass: [XGCairoXImageSurface class]];
 #endif
   [GSFontEnumerator setDefaultClass: [CairoFontEnumerator class]];
   [GSFontInfo setDefaultClass: [CairoFontInfo class]];
@@ -75,6 +77,26 @@
 {
   XFlush([(XGServer *)server xDisplay]);
 }
+
+/* Private backend methods */
++(void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
+{
+  [(XWindowBuffer *)driver _exposeRect: rect];
+}
+
+#ifdef XSHM
+
++(void) _gotShmCompletion: (Drawable)d
+{
+  [XWindowBuffer _gotShmCompletion: d];
+}
+
+-(void) gotShmCompletion: (Drawable)d
+{
+  [XWindowBuffer _gotShmCompletion: d];
+}
+
+#endif
 
 @end 
 
