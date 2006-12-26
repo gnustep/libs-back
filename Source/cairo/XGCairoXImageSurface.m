@@ -28,21 +28,30 @@
 
 - (id) initWithDevice: (void *)device
 {
-  /* FIXME format is ignore when Visual isn't NULL
-   * Cairo may change this API
-   */
+  struct XWindowBuffer_depth_info_s di;
+  XWindowBuffer *new_wi;
+
   gsDevice = device;
-  image = XCreateImage(GSWINDEVICE->display,
-		       DefaultVisual(GSWINDEVICE->display,
-				     DefaultScreen(GSWINDEVICE->display)),
-		       24, ZPixmap, 0, NULL,
-		       GSWINDEVICE->xframe.size.width,
-		       GSWINDEVICE->xframe.size.height,
-		       8, 0);
-  image->data = malloc(image->height * image->bytes_per_line);
-  //NSLog(@"alloc %d %d %d",image->width,image->height,(image->height * image->bytes_per_line));
-  _surface = cairo_image_surface_create_for_data((unsigned char*)image->data, CAIRO_FORMAT_ARGB32, 
-						 image->width, image->height, image->width*4);
+
+  di.drawing_depth = 24;
+  di.bytes_per_pixel = 4;
+  di.inline_alpha = YES;
+  di.inline_alpha_ofs = 0;
+  new_wi = [XWindowBuffer windowBufferForWindow: GSWINDEVICE depthInfo: &di];
+  if (new_wi != wi)
+    {
+      DESTROY(wi);
+      wi = new_wi;
+    }
+  else
+    {
+      DESTROY(new_wi);
+    }
+
+  _surface = cairo_image_surface_create_for_data((unsigned char*)wi->data, 
+                                                 CAIRO_FORMAT_ARGB32, 
+						 wi->sx, wi->sy, 
+                                                 wi->bytes_per_line);
   
   return self;
 }

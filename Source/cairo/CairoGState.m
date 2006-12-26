@@ -835,11 +835,18 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
 	  unsigned char *d = rowData;
 
 	  for (j = 0; j < pixelsWide; j++)
-	    {
+	  {
+#if GS_WORDS_BIGENDIAN
+	      tmp[index++] = d[3];
+	      tmp[index++] = d[0];
+	      tmp[index++] = d[1];
+	      tmp[index++] = d[2];
+#else
 	      tmp[index++] = d[2];
 	      tmp[index++] = d[1];
 	      tmp[index++] = d[0];
 	      tmp[index++] = d[3];
+#endif 
 	      d += 4;
 	    }
 	  rowData += bytesPerRow;
@@ -858,10 +865,17 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
 
 	  for (j = 0; j < pixelsWide; j++)
 	    {
+#if GS_WORDS_BIGENDIAN
+	      tmp[index++] = 0;
+	      tmp[index++] = d[0];
+	      tmp[index++] = d[1];
+	      tmp[index++] = d[2];
+#else
 	      tmp[index++] = d[2];
 	      tmp[index++] = d[1];
 	      tmp[index++] = d[0];
 	      tmp[index++] = 0;
+#endif
 	      d += 3;
 	    }
 	  rowData += bytesPerRow;
@@ -967,6 +981,7 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
   */
 
   cairo_save(_ct);
+  //cairo_new_path(_ct);
   _set_op(_ct, op);
 
   src = cairo_get_target(source->_ct);
