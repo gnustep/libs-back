@@ -51,6 +51,11 @@ typedef struct {
   Atom win_topmenu_atom;
 } XGWMWinTypes;
 
+typedef struct {
+  Atom net_wm_state_atom;
+  Atom net_wm_state_skip_taskbar_atom;
+} XGWMNetStates;
+
 /*
  * Frame offsets for window inside parent decoration window.
  */
@@ -101,6 +106,7 @@ struct XGGeneric {
   void			*cachedWindow;	// last gswindow_device_t used.
   Offsets		offsets[16];
   XGWMWinTypes          wintypes;
+  XGWMNetStates		netstates;
 };
 
 /* GNOME Window layers */
