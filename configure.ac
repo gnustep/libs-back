@@ -311,16 +311,16 @@ AC_ARG_ENABLE(glitz,
   enable_glitz=yes)
 
 if test "x$enable_glitz" = "xyes"; then
-  WITH_GLITZ=yes
   PKG_CHECK_MODULES(GLITZ, glitz-glx, have_glitz_glx=yes, have_glitz_glx=no)
   AC_CHECK_HEADER(glitz-glx.h,have_glitz_glx_h=yes, have_glitz_glx_h=no)
   if test "$have_glitz_glx" = yes -a "$have_glitz_glx_h" = yes; then
+    WITH_GLITZ=yes
     LIBS="$GLITZ_LIBS $LIBS"
     GRAPHIC_CFLAGS="$GLITZ_CFLAGS $GRAPHIC_CFLAGS"
     AC_DEFINE(HAVE_GLITZ_GLX,1,[Define if you have glitz])
+    AC_DEFINE(USE_GLITZ,1,[Define to enable glitz support])
   fi
   AC_SUBST(WITH_GLITZ)
-  AC_DEFINE(USE_GLITZ,1,[Define to enable glitz support])
 fi
 
 #--------------------------------------------------------------------
