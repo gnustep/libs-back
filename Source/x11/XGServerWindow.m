@@ -3265,8 +3265,8 @@ static BOOL didCreatePixmaps;
 
   [self styleoffsets: &l : &r : &t : &b
 		    : window->win_attrs.window_style : window->ident];
-  rect.origin.x = xi = NSMinX(rect) - l;
-  rect.origin.y = yi = NSHeight(window->xframe) + b - NSMaxY(rect);
+  xi = rect.origin.x = NSMinX(rect) - l;
+  yi = rect.origin.y = NSHeight(window->xframe) + b - NSMaxY(rect);
   width = NSWidth(rect);
   height = NSHeight(rect);
 
