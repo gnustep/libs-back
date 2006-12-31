@@ -1,3 +1,12 @@
+2006-12-31 Fred Kiefer <FredKiefer@gmx.de>
+	
+	* Source/cairo/CairoGState.m (-setOffset:, -DPSinitmatrix): Use
+	cairo functions to handle offset.
+	* Source/cairo/CairoGState.m (-GSCurrentCTM): Changed order of
+	transformations. 
+	* Source/cairo/CairoGState.m (-compositeGState:...fraction:):
+	Corrected cases for flipped surface.
+
 2006-12-31 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* configure.ac:  Explicitly add freetype libs and flags when building
