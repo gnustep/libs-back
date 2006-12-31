@@ -383,14 +383,18 @@ elif test x"$BUILD_GRAPHICS" = "xcairo"; then
     AC_MSG_ERROR([can't find cairo, required for graphics=cairo!])
     BUILD_GRAPHICS=xlib
   fi
+  if test "$have_freetype" = no; then
+    AC_MSG_WARN([can't find freetype, required for graphics=cairo])
+    BUILD_GRAPHICS=xlib
+  fi
   if test $BUILD_GRAPHICS = xlib; then
     if test $BUILD_SERVER = win32; then
       BUILD_GRAPHICS=winlib
     fi
     AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
   else
-    LIBS="$CAIRO_LIBS $LIBS"
-    CPPFLAGS="$CAIRO_CFLAGS $CPPFLAGS"
+    LIBS="$CAIRO_LIBS $FREETYPE_LIBS $LIBS"
+    CPPFLAGS="$CAIRO_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xxlib"; then
  : # Nothing to do
