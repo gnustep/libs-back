@@ -1,4 +1,3 @@
-
 /*
  * CairoGState.m
 
@@ -123,6 +122,19 @@
   _surface = [[CairoSurface alloc] initWithDevice: device];
   [self setOffset: NSMakePoint(x, y)];
   [self DPSinitgraphics];
+}
+
+- (void) setOffset: (NSPoint)theOffset
+{
+  NSSize size = {0, 0};
+
+  if (_surface != nil)
+    {
+      size = [_surface size];
+    }
+  [super setOffset: theOffset];
+  cairo_surface_set_device_offset([_surface surface], -theOffset.x, 
+				  theOffset.y - size.height);
 }
 
 /*
@@ -395,20 +407,13 @@
     {
       cairo_matrix_t local_matrix;
 
+      // cairo draws the other way around.
       cairo_matrix_init_scale(&local_matrix, 1, -1);
-      
+
       if (_surface != nil)
         {
-	  cairo_matrix_translate(&local_matrix, -offset.x, -offset.y);
+	  cairo_matrix_translate(&local_matrix, 0,  -[_surface size].height);
 	}
-      cairo_set_matrix(_ct, &local_matrix);
-    }
-  else if (_surface != nil)
-    {
-      cairo_matrix_t local_matrix;
-
-      cairo_matrix_init_translate(&local_matrix, -offset.x, 
-				  offset.y - [_surface size].height);
       cairo_set_matrix(_ct, &local_matrix);
     }
 }
@@ -437,31 +442,27 @@
 
   transform = [NSAffineTransform transform];
   cairo_get_matrix(_ct, &local_matrix);
-/*
-  NSLog(@"Before flip %f %f, %f, %f, %f, %f", local_matrix.xx, local_matrix.yx, 
-	local_matrix.xy, local_matrix.yy, local_matrix.x0, local_matrix.y0);
-*/
+
+  // Undo changes in DPSinitmatrix
   if (!viewIsFlipped)
     {
-      if (_surface)
-	{
-	  cairo_matrix_init_translate(&flip_matrix, 0, -[_surface size].height);
-	  cairo_matrix_multiply(&local_matrix, &local_matrix, &flip_matrix);
-	}
       cairo_matrix_init_scale(&flip_matrix, 1, -1);
       cairo_matrix_multiply(&local_matrix, &local_matrix, &flip_matrix);
+
+      if (_surface)
+	{
+	  cairo_matrix_init_translate(&flip_matrix, 0, [_surface size].height);
+	  cairo_matrix_multiply(&local_matrix, &local_matrix, &flip_matrix);
+	}
     }
-/*
-  NSLog(@"After flip %f %f, %f, %f, %f, %f", local_matrix.xx, local_matrix.yx, 
-	local_matrix.xy, local_matrix.yy, local_matrix.x0, local_matrix.y0);
-*/ 
+
   tstruct.m11 = local_matrix.xx;
   tstruct.m12 = local_matrix.yx;
   tstruct.m21 = local_matrix.xy;
   tstruct.m22 = local_matrix.yy;
   tstruct.tX = local_matrix.x0;
   tstruct.tY = local_matrix.y0;
-  [transform setTransformStruct:tstruct];
+  [transform setTransformStruct: tstruct];
   return transform;
 }
 
@@ -972,41 +973,37 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
   double minx, miny;
   double width, height;
 
-  /*
-    NSLog(NSStringFromRect(aRect));
-    NSLog(NSStringFromPoint(aPoint));
-    NSLog(@"src %p(%p,%@) des %p(%p,%@)", 
-    source,cairo_get_target(source->_ct),NSStringFromSize([source->_surface size]),
-    self,cairo_get_target(_ct),NSStringFromSize([_surface size]));
-  */
-
   cairo_save(_ct);
-  //cairo_new_path(_ct);
+  cairo_new_path(_ct);
   _set_op(_ct, op);
 
   src = cairo_get_target(source->_ct);
   if (src == cairo_get_target(_ct))
     {
-      //NSLog(@"Copy onto self");
+ /*
+      NSLog(@"Copy onto self");
+      NSLog(NSStringFromRect(aRect));
+      NSLog(NSStringFromPoint(aPoint));
+      NSLog(@"src %p(%p,%@) des %p(%p,%@)", 
+	    source,cairo_get_target(source->_ct),NSStringFromSize([source->_surface size]),
+	    self,cairo_get_target(_ct),NSStringFromSize([_surface size]));
+  */
     }
 
   minx = NSMinX(aRect);
   miny = NSMinY(aRect);
   width = NSWidth(aRect);
   height = NSHeight(aRect);
-  /*
-  cairo_user_to_device(source->_ct, &minx, &miny);
-  cairo_user_to_device_distance(source->_ct, &width, &height);
-  cairo_device_to_user(_ct, &minx, &miny);
-  cairo_device_to_user_distance(_ct, &width, &height);
-  NSLog(@"Rect %@  = %f, %f, %f, %f", NSStringFromRect(aRect), minx, miny, width, height);
-  */
+
   if (viewIsFlipped)
     {
-/*
       if (!source->viewIsFlipped)
         {
-	  // Undo flipping of the source coordinate system
+	  cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny - height);
+	}
+      else 
+        {
+	  // Both flipped
 	  cairo_pattern_t *cpattern;
 	  cairo_matrix_t local_matrix;
 	  
@@ -1017,18 +1014,13 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
 	  cairo_set_source(_ct, cpattern);
 	  cairo_pattern_destroy(cpattern);
 	}
-      else 
-*/
-        {
-	  cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny - height);
-	}
-      cairo_rectangle (_ct, aPoint.x, aPoint.y - height, width, height);
+      cairo_rectangle(_ct, aPoint.x, aPoint.y - height, width, height);
     }
   else 
     {
       if (!source->viewIsFlipped)
         {
-	  // Undo flipping of the source coordinate system
+	  // Both non-flipped. 
 	  cairo_pattern_t *cpattern;
 	  cairo_matrix_t local_matrix;
 	  
@@ -1043,7 +1035,7 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
         {
 	  cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny);
 	}
-      cairo_rectangle (_ct, aPoint.x, aPoint.y, width, height);
+      cairo_rectangle(_ct, aPoint.x, aPoint.y, width, height);
     }
 
   if (delta < 1.0)
