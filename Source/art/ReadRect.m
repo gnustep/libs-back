@@ -42,7 +42,7 @@
   NSMutableDictionary *md = [[NSMutableDictionary alloc] init];
   NSAffineTransform *matrix;
 
-  int x0, y0, x1, y1, w, h;
+  int x0, y0, x1, y1, w, h, ox, oy;
   NSPoint p;
 
   /* Get the bounding rect in pixel coordinates. */
@@ -94,6 +94,9 @@
   matrix=[ctm copy];
   [matrix translateXBy: -x0 yBy: -y0];
 
+  ox = [matrix transformPoint: NSMakePoint(0, 0)].x - offset.x;
+  oy = offset.y - [matrix transformPoint: NSMakePoint(0, 0)].y;
+
   [md setObject: NSDeviceRGBColorSpace  forKey: @"ColorSpace"];
   [md setObject: [NSNumber numberWithUnsignedInt: 1]  forKey: @"HasAlpha"];
   [md setObject: [NSNumber numberWithUnsignedInt: 8]  forKey: @"BitsPerSample"];
@@ -115,8 +118,8 @@
 
     c.dst = [d mutableBytes];
 
-    c.src = wi->data + (wi->sy - y1) * wi->bytes_per_line + x0 * DI.bytes_per_pixel;
-    c.srca = wi->alpha + (wi->sy - y1) * wi->sx + x0;
+    c.src = wi->data + (oy - y1) * wi->bytes_per_line + (x0 + ox) * DI.bytes_per_pixel;
+    c.srca = wi->alpha + (oy - y1) * wi->sx + (x0 + ox);
 
     for (y = 0; y < h; y++)
       {
