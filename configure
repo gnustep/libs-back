@@ -7395,6 +7395,11 @@ echo "$as_me: error: can't find cairo, required for graphics=cairo!" >&2;}
    { (exit 1); exit 1; }; }
     BUILD_GRAPHICS=xlib
   fi
+  if test "$have_freetype" = no; then
+    { echo "$as_me:$LINENO: WARNING: can't find freetype, required for graphics=cairo" >&5
+echo "$as_me: WARNING: can't find freetype, required for graphics=cairo" >&2;}
+    BUILD_GRAPHICS=xlib
+  fi
   if test $BUILD_GRAPHICS = xlib; then
     if test $BUILD_SERVER = win32; then
       BUILD_GRAPHICS=winlib
@@ -7402,8 +7407,8 @@ echo "$as_me: error: can't find cairo, required for graphics=cairo!" >&2;}
     { echo "$as_me:$LINENO: Switching to $BUILD_GRAPHICS" >&5
 echo "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
   else
-    LIBS="$CAIRO_LIBS $LIBS"
-    CPPFLAGS="$CAIRO_CFLAGS $CPPFLAGS"
+    LIBS="$CAIRO_LIBS $FREETYPE_LIBS $LIBS"
+    CPPFLAGS="$CAIRO_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xxlib"; then
  : # Nothing to do
