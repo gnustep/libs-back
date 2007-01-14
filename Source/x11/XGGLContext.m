@@ -167,7 +167,23 @@
   win_info = [XGServer _windowWithTag: [win windowNumber]];
   NSAssert(win_info, NSInternalInconsistencyException);
 
-  rect = [attached convertRect: [attached bounds] toView: nil];
+  if ([server handlesWindowDecorations] == YES)
+    {
+      /* The window manager handles window decorations, so the
+       * the parent X window is equal to the content view and
+       * we must therefore use content view coordinates.
+       */
+      rect = [attached convertRect: [attached bounds]
+			    toView: [[attached window] contentView]];
+    }
+  else
+    {
+      /* The GUI library handles window decorations, so the
+       * the parent X window is equal to the NSWindow frame
+       * and we can use window base coordinates.
+       */
+      rect = [attached convertRect: [attached bounds] toView: nil];
+    }
 
   x = NSMinX(rect);
   y = NSHeight(win_info->xframe) - NSMaxY(rect);
