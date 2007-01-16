@@ -1,3 +1,9 @@
+2007-01-15  Adam Fedor  <fedor@gnu.org>
+
+	* Source/x11/XGServerWindow.m ([XGServer -orderwindow:::]): Set
+	icon hints regardless of window manager (patch #5434 from Yen-Ju
+	Chen).
+
 2007-01-14 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGGLContext.m: Fixup coordinates of subwindow for
