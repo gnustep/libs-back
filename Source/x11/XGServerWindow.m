@@ -2515,12 +2515,11 @@ static BOOL didCreatePixmaps;
       XSetWMHints(dpy, window->ident, &window->gen_hints);
 
       /*
-       * If we are asked to set hints for the appicon and Window Maker is
-       * to control it, we must let Window maker know that this window is
+       * If we are asked to set hints for the appicon and the window manager is
+       * to control it, we must let the window manager know that this window is
        * the icon window for the app root window.
        */
-      if ((window->win_attrs.window_style & NSIconWindowMask) != 0
-	&& generic.flags.useWindowMakerIcons == 1)
+      if ((window->win_attrs.window_style & NSIconWindowMask) != 0)
 	{
 	  XWMHints gen_hints;
 
