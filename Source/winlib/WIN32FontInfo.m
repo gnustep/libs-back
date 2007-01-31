@@ -24,6 +24,7 @@
 */
 
 
+#include <Foundation/NSCharacterSet.h>
 #include <Foundation/NSDictionary.h>
 #include <Foundation/NSString.h>
 #include <Foundation/NSArray.h>
@@ -160,6 +161,58 @@ NSString *win32_font_family(NSString *fontName);
   return NSMakePoint(0, 0);
 }
 
+- (NSCharacterSet*) coveredCharacterSet
+{
+  if (coveredCharacterSet == nil)
+    {
+      NSMutableCharacterSet	*ms;
+      unsigned	count; 
+      GLYPHSET *gs = 0;
+      HDC hdc;
+      HFONT old;
+
+      hdc = GetDC(NULL);
+      old = SelectObject(hdc, hFont);
+      count = (unsigned)GetFontUnicodeRanges(hdc, 0);
+      if (count > 0)
+	{
+          gs = (GLYPHSET*)objc_malloc(count);
+          if ((unsigned)GetFontUnicodeRanges(hdc, gs) == count)
+	    {
+	      numberOfGlyphs = gs->cGlyphsSupported;
+	      if (gs->flAccel == 1 /* GS_8BIT_INDICES */)
+		{
+		  for (count = 0; count < gs->cRanges; count++)
+		    {
+		      NSRange	range;
+
+		      range.location = gs->ranges[count].wcLow & 0xff;
+		      range.length = gs->ranges[count].cGlyphs;
+		      [ms addCharactersInRange: range];
+		    }
+		}
+	      else
+		{
+		  for (count = 0; count < gs->cRanges; count++)
+		    {
+		      NSRange	range;
+
+		      range.location = gs->ranges[count].wcLow;
+		      range.length = gs->ranges[count].cGlyphs;
+		      [ms addCharactersInRange: range];
+		    }
+		}
+	    }
+          objc_free(gs);
+	}
+      SelectObject(hdc, old);
+      ReleaseDC(NULL, hdc);
+      coveredCharacterSet = [ms copy];
+      RELEASE(ms);
+    }
+  return coveredCharacterSet;
+}
+
 - (void) drawString:  (NSString*)string
 	       onDC: (HDC)hdc
 		 at: (POINT)p
@@ -205,6 +258,15 @@ NSString *win32_font_family(NSString *fontName);
   old = SelectObject(hdc, hFont);
   TextOutW(hdc, p.x, p.y - ascender, buf, len); 
   SelectObject(hdc, old);
+}
+
+- (unsigned) numberOfglyphs
+{
+  if (coveredCharacterSet == nil)
+    {
+      [self coveredCharacterSet];
+    }
+  return numberOfGlyphs;
 }
 
 @end
