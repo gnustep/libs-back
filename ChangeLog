@@ -1,5 +1,14 @@
 2007-01-31 Richard Frith-Macdonald <rfm@gnu.org>
 
+	* Source/win32/WIN32Server.m:
+	* Source/win32/GNUmakefile:
+	* Source/win32/w32_GLcontext.m:
+	* Source/win32/w32_GLformat.m:
+	* Headers/win32/WIN32OpenGL.h:
+	OpenGL support patch by: Xavier Glattard <xavier.glattard@free.fr>.
+
+2007-01-31 Richard Frith-Macdonald <rfm@gnu.org>
+
 	* Source\winlib\WIN32FontInfo.m: Attempt to make unicode clean
 	* Source\winlib\WIN32FontEnumerator.m: ditto
 	* Source\win32\WIN32Server.m: Implement -windowlist method.

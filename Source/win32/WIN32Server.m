@@ -25,6 +25,7 @@
    Boston, MA 02111 USA.
    */
 
+#include "config.h"
 #include <Foundation/NSDebug.h>
 #include <Foundation/NSString.h>
 #include <Foundation/NSArray.h>
@@ -48,6 +49,9 @@
 
 #include "win32/WIN32Server.h"
 #include "win32/WIN32Geometry.h"
+#ifdef HAVE_WGL
+#include "win32/WIN32OpenGL.h"
+#endif 
 #include "w32_config.h"
 
 #ifdef __CYGWIN__
@@ -1520,6 +1524,24 @@ printf("\n\n##############################################################\n");
   return DefWindowProc(hwnd, uMsg, wParam, lParam); 
 }
 
+- glContextClass
+{
+#ifdef HAVE_WGL
+  return [Win32GLContext class];
+#else
+  return nil;
+#endif
+}
+
+- glPixelFormatClass
+{
+#ifdef HAVE_WGL
+  return [Win32GLPixelFormat class];
+#else
+  return nil;
+#endif
+}
+
 
 @end
 
@@ -1587,7 +1609,7 @@ printf("\n\n##############################################################\n");
 
   flags.currentGS_Style = style;
     
-   wstyle = [self windowStyleForGSStyle: style];
+   wstyle = [self windowStyleForGSStyle: style] | WS_CLIPCHILDREN;
 
   if ((style & NSMiniaturizableWindowMask) == NSMiniaturizableWindowMask)
     {
@@ -2111,9 +2133,6 @@ printf("\n\n##############################################################\n");
 
   SetCursor((HCURSOR)cid);
 }
-
-
-
 
 
 @end
