@@ -20,7 +20,8 @@
 
  * You should have received a copy of the GNU Library General Public
  * License along with this library; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+ * Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02111 USA.
  */
 
 #include "cairo/CairoFaceInfo.h"
@@ -34,8 +35,8 @@
                    traits: (unsigned int)traits 
                   pattern: (FcPattern *)pattern
 {
-	_pattern = pattern;
-	FcPatternReference(_pattern);
+  _pattern = pattern;
+  FcPatternReference(_pattern);
 
   [self setFamilyName: familyName];
   [self setWeight: weight];
@@ -50,8 +51,7 @@
     {
       cairo_font_face_destroy(_fontFace);
     }
-	FcPatternDestroy(_pattern);
-
+  FcPatternDestroy(_pattern);
   RELEASE(_familyName);
 
   [super dealloc];
@@ -96,23 +96,24 @@
 {
   if (!_fontFace)
     {
-			FcResult result;
-			FcPattern *resolved;
+      FcResult result;
+      FcPattern *resolved;
 
       FcConfigSubstitute (NULL, _pattern, FcMatchPattern); 
-			FcDefaultSubstitute(_pattern);
-			resolved = FcFontMatch(NULL, _pattern, &result);
+      FcDefaultSubstitute(_pattern);
+      resolved = FcFontMatch(NULL, _pattern, &result);
 
       _fontFace = cairo_ft_font_face_create_for_pattern(resolved);
-			FcPatternDestroy(resolved);
+      FcPatternDestroy(resolved);
 
-			if ((!_fontFace) || (cairo_font_face_status(_fontFace) != CAIRO_STATUS_SUCCESS))
-			  {
-					NSLog(@"Creating a font face failed %@", _familyName);
-					cairo_font_face_destroy(_fontFace);
-					_fontFace = NULL;
-					return NULL;
-				}
+      if ((!_fontFace)
+	|| (cairo_font_face_status(_fontFace) != CAIRO_STATUS_SUCCESS))
+	{
+	  NSLog(@"Creating a font face failed %@", _familyName);
+	  cairo_font_face_destroy(_fontFace);
+	  _fontFace = NULL;
+	  return NULL;
+	}
     }
 
   return _fontFace;

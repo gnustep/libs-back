@@ -20,7 +20,8 @@
 
  * You should have received a copy of the GNU Library General Public
  * License along with this library; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+ * Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02111 USA.
  */
 
 #include <Foundation/NSObject.h>
@@ -49,7 +50,7 @@ NSMutableDictionary * __allFonts;
 {
   CairoFaceInfo *face;
 
-  face =[__allFonts objectForKey: name];
+  face = [__allFonts objectForKey: name];
   if (!face)
     {
       NSLog (@"Font not found %@", name);
@@ -65,9 +66,10 @@ static NSArray *faFromFc(FcPattern *pat)
   char *family;
   NSMutableString *name, *style;
 
-  if (FcPatternGetInteger(pat, FC_WEIGHT, 0, &weight) != FcResultMatch ||
-      FcPatternGetInteger(pat, FC_SLANT,  0, &slant) != FcResultMatch ||
-      FcPatternGetString(pat, FC_FAMILY, 0, (FcChar8 **)&family) != FcResultMatch)
+  if (FcPatternGetInteger(pat, FC_WEIGHT, 0, &weight) != FcResultMatch
+    || FcPatternGetInteger(pat, FC_SLANT,  0, &slant) != FcResultMatch
+    || FcPatternGetString(pat, FC_FAMILY, 0, (FcChar8 **)&family)
+      != FcResultMatch)
     return nil;
 
   if (FcPatternGetInteger(pat, FC_SPACING, 0, &spacing) == FcResultMatch)
@@ -80,43 +82,43 @@ static NSArray *faFromFc(FcPattern *pat)
 
   switch (weight) 
     {
-    case FC_WEIGHT_LIGHT:
-      [style appendString: @"Light"];
-      nsweight = 3;
-      break;
-    case FC_WEIGHT_MEDIUM:
-      nsweight = 6;
-      break;
-    case FC_WEIGHT_DEMIBOLD:
-      [style appendString: @"Demibold"];
-      nsweight = 7;
-      break;
-    case FC_WEIGHT_BOLD:
-      [style appendString: @"Bold"];
-      nsweight = 9;
-      nstraits |= NSBoldFontMask;
-      break;
-    case FC_WEIGHT_BLACK:
-      [style appendString: @"Black"];
-      nsweight = 12;
-      nstraits |= NSBoldFontMask;
-      break;
-    default:
-      nsweight = 6;
+      case FC_WEIGHT_LIGHT:
+	[style appendString: @"Light"];
+	nsweight = 3;
+	break;
+      case FC_WEIGHT_MEDIUM:
+	nsweight = 6;
+	break;
+      case FC_WEIGHT_DEMIBOLD:
+	[style appendString: @"Demibold"];
+	nsweight = 7;
+	break;
+      case FC_WEIGHT_BOLD:
+	[style appendString: @"Bold"];
+	nsweight = 9;
+	nstraits |= NSBoldFontMask;
+	break;
+      case FC_WEIGHT_BLACK:
+	[style appendString: @"Black"];
+	nsweight = 12;
+	nstraits |= NSBoldFontMask;
+	break;
+      default:
+	nsweight = 6;
     }
 
   switch (slant) 
     {
-    case FC_SLANT_ROMAN:
-      break;
-    case FC_SLANT_ITALIC:
-      [style appendString: @"Italic"];
-      nstraits |= NSItalicFontMask;
-      break;
-    case FC_SLANT_OBLIQUE:
-      [style appendString: @"Oblique"];
-      nstraits |= NSItalicFontMask;
-      break;
+      case FC_SLANT_ROMAN:
+	break;
+      case FC_SLANT_ITALIC:
+	[style appendString: @"Italic"];
+	nstraits |= NSItalicFontMask;
+	break;
+      case FC_SLANT_OBLIQUE:
+	[style appendString: @"Oblique"];
+	nstraits |= NSItalicFontMask;
+	break;
     }
 
   if ([style length] > 0)
@@ -139,9 +141,9 @@ static NSArray *faFromFc(FcPattern *pat)
 - (void) enumerateFontsAndFamilies
 {
   int i;
-  NSMutableDictionary *fcxft_allFontFamilies = [[NSMutableDictionary alloc] init];
-  NSMutableDictionary *fcxft_allFonts = [[NSMutableDictionary alloc] init];
-  NSMutableArray *fcxft_allFontNames = [[NSMutableArray alloc] init];
+  NSMutableDictionary *fcxft_allFontFamilies = [NSMutableDictionary new];
+  NSMutableDictionary *fcxft_allFonts = [NSMutableDictionary new];
+  NSMutableArray *fcxft_allFontNames = [NSMutableArray new];
 
   FcPattern *pat = FcPatternCreate();
   FcObjectSet *os = FcObjectSetBuild(FC_FAMILY, FC_SLANT, FC_WEIGHT, NULL);
@@ -150,11 +152,12 @@ static NSArray *faFromFc(FcPattern *pat)
   FcPatternDestroy(pat);
   FcObjectSetDestroy(os);
 
-  for (i=0; i < fs->nfont; i++)
+  for (i = 0; i < fs->nfont; i++)
     {
       char *family;
 
-      if (FcPatternGetString(fs->fonts[i], FC_FAMILY, 0, (FcChar8 **)&family) == FcResultMatch)
+      if (FcPatternGetString(fs->fonts[i], FC_FAMILY, 0, (FcChar8 **)&family)
+	== FcResultMatch)
         {
           NSArray *fontArray;
 
@@ -166,20 +169,22 @@ static NSArray *faFromFc(FcPattern *pat)
               NSString *name = [fontArray objectAtIndex: 0];
 
               familyString = [NSString stringWithUTF8String: family];
-              if (!(familyArray = [fcxft_allFontFamilies objectForKey: familyString]))
+              familyArray = [fcxft_allFontFamilies objectForKey: familyString];
+              if (familyArray == nil)
                 {
-									NSDebugLog(@"Found font family %@", familyString);
+		  NSDebugLog(@"Found font family %@", familyString);
                   familyArray = [[NSMutableArray alloc] init];
-                  [fcxft_allFontFamilies setObject: familyArray forKey: familyString];
+                  [fcxft_allFontFamilies setObject: familyArray
+					    forKey: familyString];
                   RELEASE(familyArray);
                 }
               NSDebugLog(@"fc enumerator: adding font: %@", name);
               [familyArray addObject: fontArray];
               [fcxft_allFontNames addObject: name];      
               aFont = [[CairoFaceInfo alloc] initWithfamilyName: familyString
-																						 weight: [[fontArray objectAtIndex: 2] intValue]
-																						 traits: [[fontArray objectAtIndex: 3] unsignedIntValue]
-																						 pattern: fs->fonts[i]];
+		weight: [[fontArray objectAtIndex: 2] intValue]
+		traits: [[fontArray objectAtIndex: 3] unsignedIntValue]
+		pattern: fs->fonts[i]];
               [fcxft_allFonts setObject: aFont forKey: name];
               RELEASE(aFont);
             }
@@ -192,7 +197,7 @@ static NSArray *faFromFc(FcPattern *pat)
   __allFonts = fcxft_allFonts;
 }
 
--(NSString *) defaultSystemFontName
+- (NSString *) defaultSystemFontName
 {
   if ([allFontNames containsObject: @"Bitstream Vera Sans"])
     return @"Bitstream Vera Sans";
@@ -201,7 +206,7 @@ static NSArray *faFromFc(FcPattern *pat)
   return @"Helvetica";
 }
 
--(NSString *) defaultBoldSystemFontName
+- (NSString *) defaultBoldSystemFontName
 {
   if ([allFontNames containsObject: @"Bitstream Vera Sans-Bold"])
     return @"Bitstream Vera Sans-Bold";
@@ -210,7 +215,7 @@ static NSArray *faFromFc(FcPattern *pat)
   return @"Helvetica-Bold";
 }
 
--(NSString *) defaultFixedPitchFontName
+- (NSString *) defaultFixedPitchFontName
 {
   if ([allFontNames containsObject: @"Bitstream Vera Sans Mono"])
     return @"Bitstream Vera Sans Mono";

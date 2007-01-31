@@ -101,8 +101,8 @@ static BOOL anti_alias_by_default;
 
   BOOL screenFont;
 
-
   FTFaceInfo *face_info;
+  FT_Size	ft_size;
 
   /*
   Profiling (2003-11-14) shows that calls to -advancementForGlyph: accounted
@@ -675,7 +675,6 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 		 matrix: (const float *)fmatrix
 	     screenFont: (BOOL)p_screenFont
 {
-  FT_Size	size;
   NSArray	*rfi;
   FTFaceInfo	*font_entry;
   FT_Error	error;
@@ -758,22 +757,22 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   scaler.height = pix_height;
   scaler.pixel = 1;
   
-  if ((error = FTC_Manager_LookupSize(ftc_manager, &scaler, &size)))
+  if ((error = FTC_Manager_LookupSize(ftc_manager, &scaler, &ft_size)))
     {
       NSLog(@"FTC_Manager_LookupSize() failed for '%@', error %08x!",
 	name, error);
       return self;
     }
 
-//	xHeight = size->metrics.height / 64.0;
+//	xHeight = ft_size->metrics.height / 64.0;
 /* TODO: these are _really_ messed up when fonts are flipped */
   /* TODO: need to look acrefully at these and make sure they are correct */
-  ascender = fabs(((int)size->metrics.ascender) / 64.0);
-  descender = fabs(((int)size->metrics.descender) / 64.0);
-  lineHeight = (int)size->metrics.height / 64.0;
+  ascender = fabs(((int)ft_size->metrics.ascender) / 64.0);
+  descender = fabs(((int)ft_size->metrics.descender) / 64.0);
+  lineHeight = (int)ft_size->metrics.height / 64.0;
   xHeight = ascender * 0.5; /* TODO */
   maximumAdvancement
-    = NSMakeSize((size->metrics.max_advance / 64.0), ascender + descender);
+    = NSMakeSize((ft_size->metrics.max_advance / 64.0), ascender + descender);
 
   fontBBox
     = NSMakeRect(0, descender, maximumAdvancement.width, ascender + descender);
@@ -787,7 +786,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
   {
     int i;
-    FT_Face face = size->face;
+    FT_Face face = ft_size->face;
     FT_CharMap cmap;
     FT_Encoding e;
     unicodeCmap = 0;
@@ -873,12 +872,64 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   NSLog(@"ignore -set method of font '%@'", fontName);
 }
 
+- (NSCharacterSet*) coveredCharacterSet
+{
+  if (coveredCharacterSet == nil)
+    {
+      NSMutableCharacterSet	*m = [NSMutableCharacterSet new];
+      unsigned			count = 0;
+      FT_Face			face = ft_size->face;
+      FT_ULong			charcode;
+      FT_UInt			glyphindex;
+
+      charcode = FT_Get_First_Char(face, &glyphindex);
+      if (glyphindex != 0)
+        {
+          NSRange	range;
+	  
+	  range.location = charcode;
+	  range.length = 0;
+
+	  while (glyphindex != 0)
+	    {
+	      count++;
+	      if (charcode == NSMaxRange(range))
+	        {
+		  range.length++;
+		}
+	      else
+	        {
+	          [m addCharactersInRange: range];
+		  range.location = charcode;
+		  range.length = 0;
+		}
+	      charcode = FT_Get_Next_Char(face, charcode, &glyphindex);
+	    }
+	  if (range.length > 0)
+	    {
+	      [m addCharactersInRange: range];
+	    }
+	}
+      coveredCharacterSet = [m copy];
+      numberOfGlyphs = count;
+      RELEASE(m);
+    }
+  return coveredCharacterSet;
+}
 
 - (float) defaultLineHeightForFont
 {
   return lineHeight;
 }
 
+- (unsigned) numberOfGlyphs
+{
+  if (coveredCharacterSet == nil)
+    {
+      [self coveredCharacterSet];
+    }
+  return numberOfGlyphs;
+}
 
 #include <GNUstepBase/Unicode.h>
 
@@ -2636,7 +2687,7 @@ static int filters[3][7]=
 };
 
 
-+(void) initializeBackend
++ (void) initializeBackend
 {
   [GSFontEnumerator setDefaultClass: [FTFontEnumerator class]];
   [GSFontInfo setDefaultClass: [FTFontInfo class]];
