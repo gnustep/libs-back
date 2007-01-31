@@ -11,14 +11,15 @@
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
    
-   This library is distributed in the hope that it will be useful,
+   This library is distributed in the hope that it will be useful, 
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    Library General Public License for more details.
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02111 USA.
    */
    
  #include "w32_Events.h"
@@ -156,61 +157,65 @@
  
 - (void) ApplicationDidFinishLaunching: (NSNotification*)aNotification  
 {
-   NSMenu * theMenu = [NSApp mainMenu];
-   NSMenu * subMenu;
-   NSMenuItem * anItem;
-   LONG result;
-   // Get our MainMenu  window refference:
+  NSMenu * theMenu = [NSApp mainMenu];
+  NSMenu * subMenu;
+  NSMenuItem * anItem;
+  LONG result;
+  // Get our MainMenu  window refference:
 
-   flags.menuRef=[[theMenu window] windowNumber];
-   flags.HAVE_MAIN_MENU=YES;
+  flags.menuRef = [[theMenu window] windowNumber];
+  flags.HAVE_MAIN_MENU = YES;
     
-   // add an entry in the main menu to bring up the config window
+  // add an entry in the main menu to bring up the config window
     
-   [self initConfigWindow];
-   // if info does not exist add it and create a submenu for it
-   if ([theMenu itemWithTitle:@"Info"] ==nil)
+  [self initConfigWindow];
+  // if info does not exist add it and create a submenu for it
+  if ([theMenu itemWithTitle:@"Info"] == nil)
     {
-      anItem=[NSMenuItem new];
-      [anItem setTitle:@"Info"];
-      [theMenu insertItem:anItem atIndex:0];            
-      subMenu=[NSMenu new];
-      [theMenu setSubmenu:subMenu forItem:anItem];
-      [anItem setEnabled:YES];
+      anItem = [NSMenuItem new];
+      [anItem setTitle: @"Info"];
+      [theMenu insertItem: anItem atIndex: 0];            
+      subMenu = [NSMenu new];
+      [theMenu setSubmenu: subMenu forItem: anItem];
+      [anItem setEnabled: YES];
     }
     
-   // add 'Server Preference' to the 'Info' item submenu
-   subMenu=[[theMenu itemWithTitle:@"Info"] submenu];
-   [subMenu addItemWithTitle:@"Server Preferences" 
-                            action:@selector(showServerPrefs:) 
-                            keyEquivalent:nil];
+  // add 'Server Preference' to the 'Info' item submenu
+  subMenu = [[theMenu itemWithTitle: @"Info"] submenu];
+  [subMenu addItemWithTitle: @"Server Preferences" 
+		     action: @selector(showServerPrefs:) 
+	      keyEquivalent: nil];
                             
-   anItem=(NSMenuItem *)[subMenu itemWithTitle:@"Server Preferences"];
-   [anItem setTarget:self];
-   [anItem setEnabled:YES];
-         
-   if (flags.HAVE_SERVER_PREFS==NO)
-      {
-         NSRunInformationalAlertPanel(@"Server Preferences Not Set",
-         @"Please set server Preferences\nlook in [info]->[Server Preferences]\nto change settings",
-                      @"OK",nil, nil);
+  anItem = (NSMenuItem *)[subMenu itemWithTitle: @"Server Preferences"];
+  [anItem setTarget: self];
+  [anItem setEnabled: YES];
+        
+  if (flags.HAVE_SERVER_PREFS == NO)
+    {
+      NSRunInformationalAlertPanel(@"Server Preferences Not Set", 
+        @"Please set server Preferences\nlook in "
+	@"[info]->[Server Preferences]\nto change settings", 
+	@"OK", nil, nil);
 
-         [configWindow makeKeyAndOrderFront:self];
-      }
+      [configWindow makeKeyAndOrderFront: self];
+    }
     
 /*
-   reset the style on the main menu panel so when it hides it will go the the task bar
-   I will use WS_EX_Left for this. Note that this is native code mixed with GNUStep
-*/
-   if (flags.useWMStyles==YES)
+ * reset the style on the main menu panel so when it hides it will
+ * go the the task bar. I will use WS_EX_Left for this.
+ * Note that this is native code mixed with GNUStep
+ */
+  if (flags.useWMStyles == YES)
     {
-      ShowWindow((HWND)flags.menuRef,SW_HIDE);
+      ShowWindow((HWND)flags.menuRef, SW_HIDE);
       SetLastError(0);
-      result=SetWindowLong((HWND)flags.menuRef,GWL_EXSTYLE,(LONG)WS_EX_LEFT);
+      result = SetWindowLong((HWND)flags.menuRef, GWL_EXSTYLE, (LONG)WS_EX_LEFT);
       // should check error here...
-      result=SetWindowText((HWND)flags.menuRef,[[theMenu title] cString]);
+      result = SetWindowTextW((HWND)flags.menuRef, 
+	(const unichar*)[[theMenu title]
+	cStringUsingEncoding: NSUnicodeStringEncoding]);
 
-      ShowWindow((HWND)flags.menuRef,SW_SHOWNORMAL);
+      ShowWindow((HWND)flags.menuRef, SW_SHOWNORMAL);
         
       // set app icon image for win32      
    }
@@ -222,7 +227,7 @@
    printf("reseting menu style\n");
    if (result==0)
     {
-        printf("setting mainMenu Style: Error %ld\n",GetLastError());
+        printf("setting mainMenu Style: Error %ld\n", GetLastError());
     }
    fflush(stdout);
    #endif
@@ -237,7 +242,7 @@
     
    #ifdef __WM_ACTIVE__
    printf("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU\n");
-   printf("got Notification: %s\n",
+   printf("got Notification: %s\n", 
    [[aNotification name] cString]);
    fflush(stdout);
    #endif
@@ -249,50 +254,51 @@
    flags.HOLD_MINI_FOR_MOVE=TRUE;
 }
 
--(void) MenuWillTearOff:(NSNotification*)aNotification
+- (void) MenuWillTearOff:(NSNotification*)aNotification
 {
-   LONG result;
-   NSMutableString * iconTitle =[NSMutableString stringWithString:@"MENU "];
-   NSMenu * theMenu=[aNotification object];
-   int windowNum =[[theMenu window] windowNumber];
+  LONG result;
+  NSMutableString * iconTitle =[NSMutableString stringWithString:@"MENU "];
+  NSMenu * theMenu=[aNotification object];
+  int windowNum =[[theMenu window] windowNumber];
     
-   ShowWindow((HWND)windowNum,SW_HIDE);
-   SetLastError(0);
-   result=SetWindowLong((HWND)windowNum,GWL_EXSTYLE,(LONG)WS_EX_LEFT);
-   // should check error here...
+  ShowWindow((HWND)windowNum, SW_HIDE);
+  SetLastError(0);
+  result = SetWindowLong((HWND)windowNum, GWL_EXSTYLE, (LONG)WS_EX_LEFT);
+  // should check error here...
     
-   // set the icon title
-   [iconTitle appendString: [theMenu title]];
-   result=SetWindowText((HWND)windowNum,[iconTitle cString]); 
-   ShowWindow((HWND)windowNum,SW_SHOWNORMAL);
+  // set the icon title
+  [iconTitle appendString: [theMenu title]];
+  result = SetWindowTextW((HWND)windowNum, (const unichar*)[iconTitle
+    cStringUsingEncoding: NSUnicodeStringEncoding]); 
+  ShowWindow((HWND)windowNum, SW_SHOWNORMAL);
 
-   #ifdef __APPNOTIFICATIONS__
-   printf("got menu tear off Notification\n");
-   printf("menu title is: %s\n",[[theMenu title] cString]);
-   #endif
+  #ifdef __APPNOTIFICATIONS__
+  printf("got menu tear off Notification\n");
+  printf("menu title is: %s\n", [[theMenu title] cString]);
+  #endif
 }
 
--(void) MenuwillPopUP:(NSNotification*)aNotification
+- (void) MenuwillPopUP:(NSNotification*)aNotification
 {
-   LONG result;
-   int windowNum=[[aNotification object] windowNumber]; 
+  LONG result;
+  int windowNum=[[aNotification object] windowNumber]; 
 
-   ShowWindow((HWND)windowNum,SW_HIDE);
-   SetLastError(0);
-   result=SetWindowLong((HWND)windowNum,GWL_EXSTYLE,(LONG)WS_EX_RIGHT);
-   // should check error here...
+  ShowWindow((HWND)windowNum, SW_HIDE);
+  SetLastError(0);
+  result=SetWindowLong((HWND)windowNum, GWL_EXSTYLE, (LONG)WS_EX_RIGHT);
+  // should check error here...
     
-   // set the icon title
-   result=SetWindowText((HWND)windowNum,"Context menu"); 
-   ShowWindow((HWND)windowNum,SW_SHOWNORMAL);
+  // set the icon title
+  result = SetWindowText((HWND)windowNum, "Context menu"); 
+  ShowWindow((HWND)windowNum, SW_SHOWNORMAL);
 
-   flags.HOLD_TRANSIENT_FOR_SIZE=TRUE;
-   flags.HOLD_TRANSIENT_FOR_MOVE=TRUE;
+  flags.HOLD_TRANSIENT_FOR_SIZE=TRUE;
+  flags.HOLD_TRANSIENT_FOR_MOVE=TRUE;
     
-   #ifdef __APPNOTIFICATIONS__
-   printf("got menu Popup Notification\n");
-   printf("window title is: %s\n",[[[aNotification object] title] cString]);
-   #endif
+  #ifdef __APPNOTIFICATIONS__
+  printf("got menu Popup Notification\n");
+  printf("window title is: %s\n", [[[aNotification object] title] cString]);
+  #endif
 }
 
 - (void) WindowDidCreateWindow:(NSNotification*)aNotification
@@ -308,7 +314,7 @@
       GSStyle= [[aNotification object] styleMask];
       //windowNum=[[aNotification object] windowNumber];
       //[self resetForGSWindowStyle:(HWND)windowNum w32Style:w32style];
-      //printf("GSClassName %s GS Style %u  w32 Style %X\n",[GSClass cString],GSStyle,(UINT)w32style);
+      //printf("GSClassName %s GS Style %u  w32 Style %X\n", [GSClass cString], GSStyle, (UINT)w32style);
     }
 }
 @end

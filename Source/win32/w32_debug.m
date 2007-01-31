@@ -250,8 +250,8 @@ typedef struct tagCREATESTRUCT {
   NSMutableString * output= [NSMutableString stringWithString:spacer];
   [output appendFormat:@"MenuRef = %d\n",flags.menuRef];
   [output appendFormat:@"Main Menu %s\n",flags._is_menu ? "YES" : "NO"];
-  [output appendFormat:@"WINDOW title %s\n",[[theWindow title]cString]];
-  [output appendFormat:@"WINDOW className %s\n",[[theWindow className]cString]];
+  [output appendFormat:@"WINDOW title %@\n", [theWindow title]];
+  [output appendFormat:@"WINDOW className %@\n", [theWindow className]];
   [output appendFormat:@"WINDOW isVisible: %s\n",[theWindow isVisible] ? "YES" : "NO"];
   [output appendFormat:@"WINDOW isAutodisplay: %s\n",[theWindow isAutodisplay] ? "YES" : "NO"];
   [output appendFormat:@"WINDOW isMiniaturized: %s\n",[theWindow isMiniaturized] ? "YES" : "NO"];
@@ -262,11 +262,11 @@ typedef struct tagCREATESTRUCT {
   [output appendFormat:@"WINDOW isMainWindow: %s\n",[theWindow isMainWindow] ? "YES" : "NO"];
   [output appendFormat:@"WINDOW isKeyWindow: %s\n",[theWindow isKeyWindow] ? "YES" : "NO"];
   [output appendFormat:@"WINDOW styleMask: %d\n",[theWindow styleMask]];
-  [output appendFormat:@"WINDOW frame:%s",[[self NSRectDetails:[theWindow frame]] cString]];
+  [output appendFormat:@"WINDOW frame:%@", [self NSRectDetails:[theWindow frame]]];
   //[output appendString:[self subViewDetails:theWindow]];
     
-  [output appendFormat:@"Native Class Name %s\n",
-	  [[self getNativeClassName:(HWND)[theWindow windowNumber]] cString]];
+  [output appendFormat:@"Native Class Name %@\n",
+	  [self getNativeClassName:(HWND)[theWindow windowNumber]]];
   [output appendFormat:@"Win32 GWL_EXStyle %ld\n",
 	  GetWindowLong((HWND)[theWindow windowNumber],GWL_EXSTYLE)];
               
@@ -286,8 +286,8 @@ typedef struct tagCREATESTRUCT {
 	  GetWindowLong((HWND)[theWindow windowNumber],GWL_ID)];
   [output appendString:spacer];
     
-  [output appendFormat:@"Win32 windowtext %s\n",
-	  [[self getWindowtext:(HWND)[theWindow windowNumber]] cString]];
+  [output appendFormat:@"Win32 windowtext %@\n",
+	  [self getWindowtext:(HWND)[theWindow windowNumber]]];
   return output;
 }
 
@@ -323,18 +323,16 @@ typedef struct tagCREATESTRUCT {
   NSRect svRect = [sView frame];
   NSRect tRect;
   NSMutableString * output =[NSMutableString stringWithString:spacer];
-  [output appendFormat:@"subView Details for %s\n",[[theWindow title] cString]];
-  [output appendFormat:@"superRect %s",
-	  [[self NSRectDetails:svRect] cString]];
-  [output appendFormat:@"contentRect %s",
-	  [[self NSRectDetails:cvRect] cString]];
+  [output appendFormat:@"subView Details for %@\n", [theWindow title]];
+  [output appendFormat:@"superRect %@", [self NSRectDetails:svRect]];
+  [output appendFormat:@"contentRect %@", [self NSRectDetails:cvRect]];
     
   for (i=0;i<c;i++)
     {
       temp=[theViews objectAtIndex:i];
       tRect =[temp frame];
-      [output appendFormat:@"subView %u rect %s",
-	      i,[[self NSRectDetails:tRect] cString]];
+      [output appendFormat:@"subView %u rect %@",
+	      i, [self NSRectDetails:tRect]];
     }
   return output;
 }
