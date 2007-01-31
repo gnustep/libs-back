@@ -14,14 +14,15 @@
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
    
-   This library is distributed in the hope that it will be useful,
+   This library is distributed in the hope that it will be useful, 
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    Library General Public License for more details.
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02111 USA.
    */
 
 
@@ -141,8 +142,8 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
    //NSLog(@"Window wstyle %d for style %d", wstyle, style);
    #ifdef __W32_debug__
    printf("\n\n##############################################################\n");
-   printf("GS Window Style %u\n",style);     
-   printf("Win32 Style picked %ld [hex] %X\n",wstyle,(unsigned int)wstyle); 
+   printf("GS Window Style %u\n", style);     
+   printf("Win32 Style picked %ld [hex] %X\n", wstyle, (unsigned int)wstyle); 
    printf("\n\n##############################################################\n");   
    #endif
    return wstyle;
@@ -167,13 +168,13 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 	  {            
 	  case 0:
 	    {
-	      ShowWindow(hwnd,SW_SHOW);
+	      ShowWindow(hwnd, SW_SHOW);
 	      flags._eventHandled=YES;
 	    }
 	    break;
 	  case SW_PARENTCLOSING:
 	    {
-	      ShowWindow(hwnd,SW_SHOW);
+	      ShowWindow(hwnd, SW_SHOW);
 	      flags._eventHandled=YES;
 	    }
 	    break;
@@ -195,10 +196,10 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
     }
 
 #ifdef __SHOWWINDOW__
-  printf("[wParam] show window %s\n",wParam ? "TRUE" : "FALSE");
-  printf("[lParam] requested SW_FLAG %d\n",wParam);
-  //printf("is Main Menu %d\n",_is_menu);
-  printf("%s",[[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
+  printf("[wParam] show window %s\n", wParam ? "TRUE" : "FALSE");
+  printf("[lParam] requested SW_FLAG %d\n", wParam);
+  //printf("is Main Menu %d\n", _is_menu);
+  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
   fflush(stdout);
 #endif    
 }
@@ -214,7 +215,7 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 {
   // GS handles this for now...
 #ifdef __ERASEBKGND__
-  printf("%s",[[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
+  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
   fflush(stdout);
 #endif
   return (LRESULT)1;
@@ -233,12 +234,12 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
    BOOL bErase          // erase state
 );*/
 
-   //theHdc=BeginPaint(hwnd,lpPaint);
+   //theHdc=BeginPaint(hwnd, lpPaint);
    //if (flags.HOLD_PAINT_FOR_SIZING==FALSE)
    // {
   if (GetUpdateRect(hwnd, &rect, NO))
     {
-      //InvalidateRect(hwnd,rect,YES);
+      //InvalidateRect(hwnd, rect, YES);
 	   
       invalidateWindow(self, hwnd, rect);
       // validate the whole window, for in some cases an infinite series
@@ -251,8 +252,8 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 
    //printf("WM_PAINT\n");
 #ifdef __PAINT__
-  printf("%s",[[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  printf("%s",[[self MSRectDetails:rect] cString]);
+  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
+  printf("%s", [[self MSRectDetails:rect] cString]);
   fflush(stdout);
 #endif
 }
@@ -321,8 +322,8 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 #ifdef __BACKING__
   NSDebugLLog(@"NSEvent", @"Change backing store to %d %d", r.right - r.left, r.bottom - r.top);
   printf("RESIZING BACKING Store\n");
-  printf("%s",[[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  printf("New Rect: %s",[[self MSRectDetails:r] cString]);
+  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
+  printf("New Rect: %s", [[self MSRectDetails:r] cString]);
   fflush(stdout);
 #endif
 }

@@ -14,14 +14,15 @@
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
    
-   This library is distributed in the hope that it will be useful,
+   This library is distributed in the hope that it will be useful, 
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    Library General Public License for more details.
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02111 USA.
    */
 
 
@@ -37,9 +38,9 @@
   #ifdef __WM_NCCREATE__
         printf("WM_NCCREATE\n");
   #ifdef __W32_debug__
-  printf("%s",[[self w32_createDetails:(LPCREATESTRUCT)lParam] cString]);
+  printf("%s", [[self w32_createDetails:(LPCREATESTRUCT)lParam] cString]);
   #endif
-  printf("\nRequested GS Window Style is %u\n",flags.currentGS_Style);
+  printf("\nRequested GS Window Style is %u\n", flags.currentGS_Style);
   fflush(stdout);
  #endif
 
@@ -86,18 +87,18 @@
 #ifdef __WM_CREATE__
   printf("WM_CREATE: *********************\n");
 #ifdef __W32_debug__
-  printf("%s",[[self w32_createDetails:(LPCREATESTRUCT)lParam] cString]);
+  printf("%s", [[self w32_createDetails:(LPCREATESTRUCT)lParam] cString]);
   fflush(stdout);
 #endif
   
 
-  printf("Parent isa %s\n",[[self getNativeClassName:GetParent(hwnd)] cString]);
-  printf("[hwnd]Native WindowType %s\n",[[self getNativeClassName:(HWND)hwnd] cString]);
-  printf("[hwnd]GS WindowType %s:\n",[[EVENT_WINDOW(hwnd) className] cString]);
-  printf("HAVE_MAIN_MENU = %s\n",flags.HAVE_MAIN_MENU ? "YES": "NO");
-  printf("Main Menu Window Num: %d    Currrent window Num:  %d\n",
-	 [[[NSApp mainMenu] window] windowNumber],(int)hwnd);
-  printf("Window Task bar flag %s\n",flags.useWMTaskBar ? "YES" : "NO");
+  printf("Parent isa %s\n", [[self getNativeClassName:GetParent(hwnd)] cString]);
+  printf("[hwnd]Native WindowType %s\n", [[self getNativeClassName:(HWND)hwnd] cString]);
+  printf("[hwnd]GS WindowType %s:\n", [[EVENT_WINDOW(hwnd) className] cString]);
+  printf("HAVE_MAIN_MENU = %s\n", flags.HAVE_MAIN_MENU ? "YES": "NO");
+  printf("Main Menu Window Num: %d    Currrent window Num:  %d\n", 
+	 [[[NSApp mainMenu] window] windowNumber], (int)hwnd);
+  printf("Window Task bar flag %s\n", flags.useWMTaskBar ? "YES" : "NO");
 #endif
 
   return 0;

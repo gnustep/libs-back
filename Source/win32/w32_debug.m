@@ -11,14 +11,15 @@
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
    
-   This library is distributed in the hope that it will be useful,
+   This library is distributed in the hope that it will be useful, 
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    Library General Public License for more details.
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02111 USA.
    */
 
 #include "w32_Events.h"
@@ -40,10 +41,10 @@ static NSString * spacer =@"<BLANK_LINE>\n";
   printf("*******************testing Conversion \n\n\n");
   printf("MSScreenRectToGS GSScreenRectToMS\n");
   gsrect = MSScreenRectToGS(r, [window styleMask], self);
-  msrect= GSScreenRectToMS(gsrect, [window styleMask],self);
+  msrect= GSScreenRectToMS(gsrect, [window styleMask], self);
   printf("*************************test complete\n\n\n");
   
-  [self print_result:msrect and:gsrect and:r];
+  [self print_result: msrect and: gsrect and: r];
   //TestsDone=YES;
 }
 
@@ -51,20 +52,20 @@ static NSString * spacer =@"<BLANK_LINE>\n";
 {
 
   printf("MS - Control\n");
-  printf("MSrect = left %ld ",control.left);
-  printf(" top %ld",control.top);
-  printf(" right %ld",control.right);
-  printf(" Bottom %ld\n",control.bottom);
+  printf("MSrect = left %ld ", control.left);
+  printf(" top %ld", control.top);
+  printf(" right %ld", control.right);
+  printf(" Bottom %ld\n", control.bottom);
   
   printf("GS - Calculated\n"); 
-  printf("NSRect = height %f width %f ",gsrect.size.height,gsrect.size.width);
-  printf(" X %f Y %f\n",gsrect.origin.x,gsrect.origin.y);
+  printf("NSRect = height %f width %f ", gsrect.size.height, gsrect.size.width);
+  printf(" X %f Y %f\n", gsrect.origin.x, gsrect.origin.y);
   
   printf("MS - Calculated\n");
-  printf("MSrect = left %ld ",msrect.left);
-  printf(" top %ld",msrect.top);
-  printf(" right %ld",msrect.right);
-  printf(" Bottom %ld\n",msrect.bottom);
+  printf("MSrect = left %ld ", msrect.left);
+  printf(" top %ld", msrect.top);
+  printf(" right %ld", msrect.right);
+  printf(" Bottom %ld\n", msrect.bottom);
 }
 
 - (BOOL) displayEvent:(unsigned int)uMsg
@@ -169,25 +170,26 @@ typedef struct tagCREATESTRUCT {
 
 - (NSMutableString *) w32_createDetails:(LPCREATESTRUCT)details
 {
+  NSMutableString * output= [NSMutableString stringWithString: spacer];
 
-  NSMutableString * output= [NSMutableString stringWithString:spacer];
   [output appendString:@"\n\nLPCREATESTRUCT details\n"];
     
-  [output appendFormat:@"HINSTANCE %p   ",details->hInstance];
+  [output appendFormat:@"HINSTANCE %p   ", details->hInstance];
     
-  [output appendFormat:@"HMENU %p\n",details->hMenu];
+  [output appendFormat:@"HMENU %p\n", details->hMenu];
     
     
-  [output appendFormat:@"Creating window: Parent is  %s:\n",
-	  [self getNativeClassName:details->hwndParent]];
+  [output appendFormat:@"Creating window: Parent is  %s:\n", 
+	  [self getNativeClassName: details->hwndParent]];
     
-  [output appendFormat:@"Co-ordanates:height[%d] width[%d] Pos[%d] Pox[%d]\n",
-	  details->cy,details->cx,details->y,details->x];
+  [output appendFormat:@"Co-ordanates: height[%d] width[%d] Pos[%d] Pox[%d]\n", 
+	  details->cy, details->cx, details->y, details->x];
                                             
-  [output appendFormat:@"Style %lu Name: %s Win32Class: %s Extended Style %ld\n\n\n",
-	  details->style,details->lpszName,
-	  details->lpszClass,details->dwExStyle];
-  [output appendString:spacer];
+  [output appendFormat:
+    @"Style %lu Name: %s Win32Class: %s Extended Style %ld\n\n\n", 
+    details->style, details->lpszName, 
+    details->lpszClass, details->dwExStyle];
+  [output appendString: spacer];
                                  
   return output;
 }
@@ -198,24 +200,24 @@ typedef struct tagCREATESTRUCT {
   int c=[anArray count];
     
     
-  NSMutableString * output= [NSMutableString stringWithString:spacer];
+  NSMutableString * output= [NSMutableString stringWithString: spacer];
     
-  [output appendFormat:@"Application window count is: %d\n",c];
+  [output appendFormat:@"Application window count is: %d\n", c];
 
   for (i=0;i<c;i++)
     {
-      NSWindow * theWindow=[anArray objectAtIndex:i];
+      NSWindow * theWindow=[anArray objectAtIndex: i];
         
-      [output appendString:[self WindowDetail:theWindow]];
+      [output appendString:[self WindowDetail: theWindow]];
     }
-  [output appendString:spacer];
+  [output appendString: spacer];
     
   return output;
 }
 
 - (NSMutableString *) WindowDetail:(NSWindow *) theWindow
 {   
-  return [self gswindowstate:theWindow];
+  return [self gswindowstate: theWindow];
     
 }
 
@@ -223,10 +225,10 @@ typedef struct tagCREATESTRUCT {
 {
   NSMutableString * output= [NSMutableString stringWithCString:"MSRect Details\n"];
 
-  [output appendFormat:@"left %ld ",aRect.left];
-  [output appendFormat:@"top %ld ",aRect.top];
-  [output appendFormat:@"right %ld ",aRect.right];
-  [output appendFormat:@"Bottom %ld\n",aRect.bottom];
+  [output appendFormat:@"left %ld ", aRect.left];
+  [output appendFormat:@"top %ld ", aRect.top];
+  [output appendFormat:@"right %ld ", aRect.right];
+  [output appendFormat:@"Bottom %ld\n", aRect.bottom];
 
   return output;
 }
@@ -236,10 +238,10 @@ typedef struct tagCREATESTRUCT {
 
   NSMutableString * output= [NSMutableString stringWithString:@" "];
 
-  [output appendFormat:@"height %ld width %ld ",(int)aRect.size.height
-	  ,(int)aRect.size.width];
-  [output appendFormat:@" XPos %ld YPos %ld\n",(int)aRect.origin.x
-	  ,(int)aRect.origin.y];
+  [output appendFormat:@"height %ld width %ld ", (int)aRect.size.height
+	  , (int)aRect.size.width];
+  [output appendFormat:@" XPos %ld YPos %ld\n", (int)aRect.origin.x
+	  , (int)aRect.origin.y];
 
   return output;
 }
@@ -247,66 +249,66 @@ typedef struct tagCREATESTRUCT {
 - (NSMutableString *) gswindowstate:(NSWindow *)theWindow
 {
   // NSRect cvRect=[[theWindow contentView] frame];
-  NSMutableString * output= [NSMutableString stringWithString:spacer];
-  [output appendFormat:@"MenuRef = %d\n",flags.menuRef];
-  [output appendFormat:@"Main Menu %s\n",flags._is_menu ? "YES" : "NO"];
+  NSMutableString * output= [NSMutableString stringWithString: spacer];
+  [output appendFormat:@"MenuRef = %d\n", flags.menuRef];
+  [output appendFormat:@"Main Menu %s\n", flags._is_menu ? "YES" : "NO"];
   [output appendFormat:@"WINDOW title %@\n", [theWindow title]];
   [output appendFormat:@"WINDOW className %@\n", [theWindow className]];
-  [output appendFormat:@"WINDOW isVisible: %s\n",[theWindow isVisible] ? "YES" : "NO"];
-  [output appendFormat:@"WINDOW isAutodisplay: %s\n",[theWindow isAutodisplay] ? "YES" : "NO"];
-  [output appendFormat:@"WINDOW isMiniaturized: %s\n",[theWindow isMiniaturized] ? "YES" : "NO"];
-  [output appendFormat:@"WINDOW viewsNeedDisplay: %s\n",[theWindow viewsNeedDisplay] ? "YES" : "NO"];
-  [output appendFormat:@"WINDOW isOpaque: %s\n",[theWindow isOpaque] ? "YES" : "NO"];
-  [output appendFormat:@"WINDOW isReleasedWhenClosed: %s\n ",[theWindow isReleasedWhenClosed] ? "YES" : "NO"];
-  [output appendFormat:@"WINDOW isOneShot: %s\n",[theWindow isOneShot] ? "YES" : "NO"];
-  [output appendFormat:@"WINDOW isMainWindow: %s\n",[theWindow isMainWindow] ? "YES" : "NO"];
-  [output appendFormat:@"WINDOW isKeyWindow: %s\n",[theWindow isKeyWindow] ? "YES" : "NO"];
-  [output appendFormat:@"WINDOW styleMask: %d\n",[theWindow styleMask]];
+  [output appendFormat:@"WINDOW isVisible: %s\n", [theWindow isVisible] ? "YES" : "NO"];
+  [output appendFormat:@"WINDOW isAutodisplay: %s\n", [theWindow isAutodisplay] ? "YES" : "NO"];
+  [output appendFormat:@"WINDOW isMiniaturized: %s\n", [theWindow isMiniaturized] ? "YES" : "NO"];
+  [output appendFormat:@"WINDOW viewsNeedDisplay: %s\n", [theWindow viewsNeedDisplay] ? "YES" : "NO"];
+  [output appendFormat:@"WINDOW isOpaque: %s\n", [theWindow isOpaque] ? "YES" : "NO"];
+  [output appendFormat:@"WINDOW isReleasedWhenClosed: %s\n ", [theWindow isReleasedWhenClosed] ? "YES" : "NO"];
+  [output appendFormat:@"WINDOW isOneShot: %s\n", [theWindow isOneShot] ? "YES" : "NO"];
+  [output appendFormat:@"WINDOW isMainWindow: %s\n", [theWindow isMainWindow] ? "YES" : "NO"];
+  [output appendFormat:@"WINDOW isKeyWindow: %s\n", [theWindow isKeyWindow] ? "YES" : "NO"];
+  [output appendFormat:@"WINDOW styleMask: %d\n", [theWindow styleMask]];
   [output appendFormat:@"WINDOW frame:%@", [self NSRectDetails:[theWindow frame]]];
-  //[output appendString:[self subViewDetails:theWindow]];
+  //[output appendString:[self subViewDetails: theWindow]];
     
-  [output appendFormat:@"Native Class Name %@\n",
+  [output appendFormat:@"Native Class Name %@\n", 
 	  [self getNativeClassName:(HWND)[theWindow windowNumber]]];
-  [output appendFormat:@"Win32 GWL_EXStyle %ld\n",
-	  GetWindowLong((HWND)[theWindow windowNumber],GWL_EXSTYLE)];
+  [output appendFormat:@"Win32 GWL_EXStyle %ld\n", 
+	  GetWindowLong((HWND)[theWindow windowNumber], GWL_EXSTYLE)];
               
-  [output appendFormat:@"Win32 GWL_STYLE %X\n",
-	  GetWindowLong((HWND)[theWindow windowNumber],GWL_STYLE)];
+  [output appendFormat:@"Win32 GWL_STYLE %X\n", 
+	  GetWindowLong((HWND)[theWindow windowNumber], GWL_STYLE)];
               
-  [output appendFormat:@"Win32 GWL_WNDPROC %ld\n",
-	  GetWindowLong((HWND)[theWindow windowNumber],GWL_WNDPROC)];
+  [output appendFormat:@"Win32 GWL_WNDPROC %ld\n", 
+	  GetWindowLong((HWND)[theWindow windowNumber], GWL_WNDPROC)];
               
-  [output appendFormat:@"Win32 GWL_HINSTANCE %ld\n",
-	  GetWindowLong((HWND)[theWindow windowNumber],GWL_HINSTANCE)];
+  [output appendFormat:@"Win32 GWL_HINSTANCE %ld\n", 
+	  GetWindowLong((HWND)[theWindow windowNumber], GWL_HINSTANCE)];
               
-  [output appendFormat:@"Win32 GWL_HWNDPARENT %ld\n",
-	  GetWindowLong((HWND)[theWindow windowNumber],GWL_HWNDPARENT)];
+  [output appendFormat:@"Win32 GWL_HWNDPARENT %ld\n", 
+	  GetWindowLong((HWND)[theWindow windowNumber], GWL_HWNDPARENT)];
               
-  [output appendFormat:@"Win32 GWL_ID %ld\n",
-	  GetWindowLong((HWND)[theWindow windowNumber],GWL_ID)];
-  [output appendString:spacer];
+  [output appendFormat:@"Win32 GWL_ID %ld\n", 
+	  GetWindowLong((HWND)[theWindow windowNumber], GWL_ID)];
+  [output appendString: spacer];
     
-  [output appendFormat:@"Win32 windowtext %@\n",
+  [output appendFormat:@"Win32 windowtext %@\n", 
 	  [self getWindowtext:(HWND)[theWindow windowNumber]]];
   return output;
 }
 
 - (NSMutableString *) MINMAXDetails:(MINMAXINFO *) mm
 {
-  NSMutableString * output =[NSMutableString stringWithString:spacer];
+  NSMutableString * output =[NSMutableString stringWithString: spacer];
   [output appendString:@"MINMAXINFO"];
     
-  [output appendFormat:@"ptMaxSize width[%ld] X height[%ld]\n",
-	  mm->ptMaxSize.x,mm->ptMaxSize.y];
+  [output appendFormat:@"ptMaxSize width[%ld] X height[%ld]\n", 
+	  mm->ptMaxSize.x, mm->ptMaxSize.y];
       
-  [output appendFormat:@"ptMaxPosition width[%ld] X height[%ld]\n",
-	  mm->ptMaxPosition.x,mm->ptMaxPosition.y];
+  [output appendFormat:@"ptMaxPosition width[%ld] X height[%ld]\n", 
+	  mm->ptMaxPosition.x, mm->ptMaxPosition.y];
       
-  [output appendFormat:@"ptMinTrackSize width[%ld] X height[%ld]\n",
-	  mm->ptMinTrackSize.x,mm->ptMinTrackSize.y];
+  [output appendFormat:@"ptMinTrackSize width[%ld] X height[%ld]\n", 
+	  mm->ptMinTrackSize.x, mm->ptMinTrackSize.y];
       
-  [output appendFormat:@"ptMaxTrackSize width[%ld] X height[%ld]\n",
-	  mm->ptMaxTrackSize.x,mm->ptMaxTrackSize.y];
+  [output appendFormat:@"ptMaxTrackSize width[%ld] X height[%ld]\n", 
+	  mm->ptMaxTrackSize.x, mm->ptMaxTrackSize.y];
           
   return output;
 }
@@ -322,17 +324,17 @@ typedef struct tagCREATESTRUCT {
   NSRect cvRect = [cView frame];
   NSRect svRect = [sView frame];
   NSRect tRect;
-  NSMutableString * output =[NSMutableString stringWithString:spacer];
+  NSMutableString * output =[NSMutableString stringWithString: spacer];
   [output appendFormat:@"subView Details for %@\n", [theWindow title]];
-  [output appendFormat:@"superRect %@", [self NSRectDetails:svRect]];
-  [output appendFormat:@"contentRect %@", [self NSRectDetails:cvRect]];
+  [output appendFormat:@"superRect %@", [self NSRectDetails: svRect]];
+  [output appendFormat:@"contentRect %@", [self NSRectDetails: cvRect]];
     
   for (i=0;i<c;i++)
     {
-      temp=[theViews objectAtIndex:i];
+      temp=[theViews objectAtIndex: i];
       tRect =[temp frame];
-      [output appendFormat:@"subView %u rect %@",
-	      i, [self NSRectDetails:tRect]];
+      [output appendFormat:@"subView %u rect %@", 
+	      i, [self NSRectDetails: tRect]];
     }
   return output;
 }
@@ -343,11 +345,11 @@ typedef struct tagCREATESTRUCT {
    printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
    printf("+++                NEW EVENT                                 +++\n");
    printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-   printf("WM_APPNOTIFICATION -1\n %s\nPosted by current application\n",
+   printf("WM_APPNOTIFICATION -1\n %s\nPosted by current application\n", 
                                 [[aNotification name] cString]);
    NSWindow *theWindow=[aNotification object];
                                
-   printf("%s",[[self gswindowstate:theWindow] cString]);
+   printf("%s", [[self gswindowstate: theWindow] cString]);
    #endif
 } 
 @end

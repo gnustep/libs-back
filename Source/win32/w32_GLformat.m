@@ -1,7 +1,7 @@
 /* -*- mode:ObjC -*-
    Win32GLContext - backend implementation of NSOpenGLContext
 
-   Copyright (C) 1998,2002,2007 Free Software Foundation, Inc.
+   Copyright (C) 1998, 2002, 2007 Free Software Foundation, Inc.
 
    Written by:  Xavier Glattard
    Date: Jan 2007
@@ -13,14 +13,15 @@
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
    
-   This library is distributed in the hope that it will be useful,
+   This library is distributed in the hope that it will be useful, 
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    Library General Public License for more details.
-   
+
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02111 USA.
    */
 
 #include "config.h"
@@ -165,24 +166,24 @@ static void attributesWGL2NS( LPPIXELFORMATDESCRIPTOR ppfd, NSOpenGLPixelFormatA
 
 - (id)initWithAttributes: (NSOpenGLPixelFormatAttribute *) attribs
 {
-  NSDebugMLLog(@"WGL",@"will init");
+  NSDebugMLLog(@"WGL", @"will init");
   self = [super init];
   if(self)      
   {
     wgl_drawable = 0;
     wgl_pixelformat = 0;
 
-    attributesNS2WGL(attribs,&pfd);
+    attributesNS2WGL(attribs, &pfd);
   }
   return self;
 }
 #if 0
   //FIXME, what screen number ?
   if (GSglxMinorVersion (dpy) >= 3)
-    conf.tab = glXChooseFBConfig(dpy, DefaultScreen(dpy), [data mutableBytes],
+    conf.tab = glXChooseFBConfig(dpy, DefaultScreen(dpy), [data mutableBytes], 
 				 &n_elem);
   else
-    conf.visual = glXChooseVisual(dpy, DefaultScreen(dpy),
+    conf.visual = glXChooseVisual(dpy, DefaultScreen(dpy), 
 				  [data mutableBytes]);
   
   if (((GSglxMinorVersion (dpy) >= 3) 
@@ -238,14 +239,14 @@ static void attributesWGL2NS( LPPIXELFORMATDESCRIPTOR ppfd, NSOpenGLPixelFormatA
 - (void) _setDrawable: (HDC) aDrawable
 {
   NSCAssert(
-      wgl_pixelformat = ChoosePixelFormat(aDrawable, &pfd),
+      wgl_pixelformat = ChoosePixelFormat(aDrawable, &pfd), 
       @"ChoosePixelFormat failed.");
   NSCAssert(
-      SetPixelFormat(aDrawable, wgl_pixelformat, &pfd),
+      SetPixelFormat(aDrawable, wgl_pixelformat, &pfd), 
       @"SetPixelFormat failed.");
   wgl_drawable = aDrawable;
 
-  NSDebugFLLog(@"WGL",@"found : %u",wgl_pixelformat);
+  NSDebugFLLog(@"WGL", @"found : %u", wgl_pixelformat);
 }
 
 - (void) dealloc

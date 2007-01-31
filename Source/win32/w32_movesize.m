@@ -11,14 +11,15 @@
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
    
-   This library is distributed in the hope that it will be useful,
+   This library is distributed in the hope that it will be useful, 
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    Library General Public License for more details.
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02111 USA.
    */
 
 #include "w32_Events.h"
@@ -64,13 +65,13 @@
     }   
 		  
 #ifdef __WM_MOVE__
-  printf("sending GS_EVENT %d  GS_SUBTYPE %d\n",[ev type],[ev subtype]);
-  printf("HOLD_MENU_FOR_MOVE is %s\n",flags.HOLD_MENU_FOR_MOVE ? "TRUE" : "FALSE");
-  printf("HOLD_MENU_FOR_SIZE is %s\n",flags.HOLD_MENU_FOR_SIZE ? "TRUE" : "FALSE");
+  printf("sending GS_EVENT %d  GS_SUBTYPE %d\n", [ev type], [ev subtype]);
+  printf("HOLD_MENU_FOR_MOVE is %s\n", flags.HOLD_MENU_FOR_MOVE ? "TRUE" : "FALSE");
+  printf("HOLD_MENU_FOR_SIZE is %s\n", flags.HOLD_MENU_FOR_SIZE ? "TRUE" : "FALSE");
   
-  printf("%s\n",[[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  printf("EVENTLOCATION %s",[[self NSRectDetails:rect] cString]);
-  printf("[hwnd rect] is %s",[[self NSRectDetails:[EVENT_WINDOW(hwnd) frame]] cString]);
+  printf("%s\n", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
+  printf("EVENTLOCATION %s", [[self NSRectDetails:rect] cString]);
+  printf("[hwnd rect] is %s", [[self NSRectDetails:[EVENT_WINDOW(hwnd) frame]] cString]);
   fflush(stdout);
 #endif
   
@@ -123,7 +124,7 @@
     case SIZE_MINIMIZED:
       {
       
-	if  (flags.HOLD_MINI_FOR_SIZE==TRUE) //// this is fix for [5,25 bug]
+	if  (flags.HOLD_MINI_FOR_SIZE==TRUE) //// this is fix for [5, 25 bug]
 	  break;
           
 	// make event
@@ -191,7 +192,7 @@
 	      {
 		[EVENT_WINDOW(hwnd) sendEvent:ev];
 		[self resizeBackingStoreFor:hwnd];
-		// fixes part one of bug [5,25] see notes
+		// fixes part one of bug [5, 25] see notes
 		         if (flags.useWMTaskBar==YES)
 		[EVENT_WINDOW(hwnd) deminiaturize:self];
 	      } 
@@ -204,13 +205,13 @@
     }
                       
 #ifdef __WM_SIZE__
-  printf("sending GS_EVENT %d  GS_SUBTYPE %d\n",[ev type],[ev subtype]);
-  printf("[wParam] SIZE_FLAG is %d\n",(int)wParam);
-  printf("HOLD_MENU_FOR_MOVE is %s\n",flags.HOLD_MENU_FOR_MOVE ? "TRUE" : "FALSE");
-  printf("HOLD_MENU_FOR_SIZE is %s\n",flags.HOLD_MENU_FOR_SIZE ? "TRUE" : "FALSE");
-  printf("%s",[[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  printf("size to:%s",[[self NSRectDetails:rect] cString]);
-  printf("[hwnd rect] is %s",[[self NSRectDetails:[EVENT_WINDOW(hwnd) frame]] cString]);
+  printf("sending GS_EVENT %d  GS_SUBTYPE %d\n", [ev type], [ev subtype]);
+  printf("[wParam] SIZE_FLAG is %d\n", (int)wParam);
+  printf("HOLD_MENU_FOR_MOVE is %s\n", flags.HOLD_MENU_FOR_MOVE ? "TRUE" : "FALSE");
+  printf("HOLD_MENU_FOR_SIZE is %s\n", flags.HOLD_MENU_FOR_SIZE ? "TRUE" : "FALSE");
+  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
+  printf("size to:%s", [[self NSRectDetails:rect] cString]);
+  printf("[hwnd rect] is %s", [[self NSRectDetails:[EVENT_WINDOW(hwnd) frame]] cString]);
   fflush(stdout);
 #endif 		  		  
 
@@ -272,11 +273,11 @@
 
 		            [EVENT_WINDOW(hwnd) sendEvent:ev];
 
-        //printf(" Rect 1 =\n%s",[[self MSRectDetails:drect] cString]);
+        //printf(" Rect 1 =\n%s", [[self MSRectDetails:drect] cString]);
 
    }
 
-   //printf("wParam is %s\n",wParam ? "TRUE" : "FALSE");*/
+   //printf("wParam is %s\n", wParam ? "TRUE" : "FALSE");*/
 }
 
 - (void) decodeWM_WINDOWPOSCHANGEDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
@@ -310,8 +311,8 @@
     }
 	  
 #ifdef __GETMINMAXINFO__
-  printf("%s",[[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  printf("%s",[[self MINMAXDetails:mm] cString]);
+  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
+  printf("%s", [[self MINMAXDetails:mm] cString]);
   fflush(stdout);
 #endif
   return 0; 
@@ -332,7 +333,7 @@
 	
 #ifdef __EXITSIZEMOVE__
   NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "EXITSIZEMOVE", hwnd);
-  printf("%s",[[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
+  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
   fflush(stdout);
 #endif
 	
