@@ -122,16 +122,14 @@ void add_font(NSMutableArray *fontDefs, NSString *fontName,
   else
     traits |= NSUnitalicFontMask;
   
-  fontStyle = [[NSString alloc] initWithBytes: lpelfe->elfStyle
-				       length: wcslen(lpelfe->elfStyle)
-				     encoding: NSUnicodeStringEncoding];
+  fontStyle = [NSString stringWithCharacters: lpelfe->elfStyle
+				      length: wcslen(lpelfe->elfStyle)];
   fontDef = [NSArray arrayWithObjects:
     fontName, 
     fontStyle, 
     [NSNumber numberWithInt: weight],
     [NSNumber numberWithUnsignedInt: traits],
     nil];
-  RELEASE(fontStyle);
   [fontDefs addObject: fontDef];
 }
 
@@ -140,12 +138,10 @@ int CALLBACK fontenum(ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEX *lpntme,
 {
   NSString *fontName;
 
-  fontName = [[NSString alloc] initWithBytes: lpelfe->elfFullName
-				      length: wcslen(lpelfe->elfFullName)
-				    encoding: NSUnicodeStringEncoding];
+  fontName = [NSString stringWithCharacters: lpelfe->elfFullName
+				     length: wcslen(lpelfe->elfFullName)];
   NSLog(@"Found font %@", fontName);
   add_font((NSMutableArray *)lParam, fontName, lpelfe, lpntme);
-  RELEASE(fontName);
   return 1;
 }
 
@@ -178,10 +174,8 @@ int CALLBACK fontfamilyenum(ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEX *lpntme,
   NSMutableArray *fontDefs;
   WIN32FontEnumerator *enumer = (WIN32FontEnumerator*)lParam;
 
-  fontName = AUTORELEASE([[NSString alloc]
-    initWithBytes: lpelfe->elfFullName
-    length: wcslen(lpelfe->elfFullName)
-    encoding: NSUnicodeStringEncoding]);
+  fontName = [NSString stringWithCharacters: lpelfe->elfFullName
+				     length: wcslen(lpelfe->elfFullName)];
 
   familyName = win32_font_family(fontName);
   fontDefs = [enumer->allFontFamilies objectForKey: familyName];

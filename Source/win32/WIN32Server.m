@@ -1199,12 +1199,13 @@ printf("\n\n##############################################################\n");
 
 - (NSString *) getNativeClassName: (HWND)hwnd
 {
-  char * windowType[80];
-  UINT wsize =80;
+  UINT wsize = 80;
+  unichar windowType[wsize + 1];
   
-  if (RealGetWindowClass(hwnd,(LPTSTR)windowType,wsize)>0)
+  if (RealGetWindowClassW(hwnd, windowType, wsize) > 0)
     {
-      return [NSString stringWithCString: (char *)windowType length: wsize+1];
+      return [NSString stringWithCharacters: windowType
+				     length: wcslen(windowType)];
     }
   
   return nil;
@@ -1212,11 +1213,14 @@ printf("\n\n##############################################################\n");
 
 - (NSString *) getWindowtext: (HWND)hwnd
 {
-  char * windowText[80];
   int wsize = 80;
+  unichar windowText[wsize + 1];
   
-  if (GetWindowText(hwnd,(LPTSTR)windowText,wsize) > 0)
-    return [NSString stringWithCString: (char *)windowText length: wsize + 1];
+  if (GetWindowTextW(hwnd, windowText, wsize) > 0)
+    {
+      return [NSString stringWithCharacters: windowText
+				     length: wcslen(windowText)];
+    }
   
   return nil;
 }
