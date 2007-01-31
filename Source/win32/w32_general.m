@@ -14,14 +14,15 @@
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
    
-   This library is distributed in the hope that it will be useful,
+   This library is distributed in the hope that it will be useful, 
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    Library General Public License for more details.
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02111 USA.
    */
 
 
@@ -32,7 +33,7 @@
 - (void) decodeWM_CLOSEParams:(WPARAM)wParam :(LPARAM)lParam :(HWND)hwnd;
 {
   NSEvent * ev;
-  NSPoint eventLocation = NSMakePoint(0,0);
+  NSPoint eventLocation = NSMakePoint(0, 0);
   ev = [NSEvent otherEventWithType: NSAppKitDefined
 		      location: eventLocation
 		      modifierFlags: 0
@@ -52,8 +53,8 @@
 #ifdef __CLOSE__
   NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "CLOSE", hwnd);
   printf("CLOSING\n");
-  printf("%s",[[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  printf("sending event %s \n",[[ev eventNameWithSubtype:YES] cString]);
+  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
+  printf("sending event %s \n", [[ev eventNameWithSubtype:YES] cString]);
   fflush(stdout);
 #endif      	    
 }
@@ -83,7 +84,7 @@ printf("WM_NCDESTROY\n");
   flags._eventHandled=YES;
 
 #ifdef __DESTROY__
-  printf("%s",[[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
+  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
   fflush(stdout);
 #endif
 }
@@ -142,8 +143,8 @@ printf("WM_NCDESTROY\n");
       break;
    }
    #ifdef __SYSCOMMAND__
-   printf("SYSTEM MENU REQUESTED 0x%X\n",wParam);
-   //printf("%s",[[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
+   printf("SYSTEM MENU REQUESTED 0x%X\n", wParam);
+   //printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
 #endif
 }
 
@@ -157,12 +158,12 @@ printf("WM_NCDESTROY\n");
   // to be completed for styles
   LONG result;
 
-  ShowWindow(hwnd,SW_HIDE);
+  ShowWindow(hwnd, SW_HIDE);
   SetLastError(0);
-   result=SetWindowLong(hwnd,GWL_EXSTYLE,WS_EX_APPWINDOW);
-   result=SetWindowLong(hwnd,GWL_STYLE,(LONG)aStyle);
+   result=SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
+   result=SetWindowLong(hwnd, GWL_STYLE, (LONG)aStyle);
   // should check error here...
-  ShowWindow(hwnd,SW_SHOWNORMAL);
+  ShowWindow(hwnd, SW_SHOWNORMAL);
 }
       
 @end 

@@ -1,6 +1,6 @@
 /* WIN32Server - Implements window handling for MSWindows
 
-   Copyright (C) 2002,2005 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2005 Free Software Foundation, Inc.
 
    Written by: Fred Kiefer <FredKiefer@gmx.de>
    Date: March 2002
@@ -14,14 +14,14 @@
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
    
-   This library is distributed in the hope that it will be useful,
+   This library is distributed in the hope that it will be useful, 
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    Library General Public License for more details.
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
    Boston, MA 02111 USA.
    */
 
@@ -63,9 +63,9 @@ static NSString *NSMenuWillTearOff = @"MenuWillTearOff";
 static NSString *NSMenuwillPopUP =@"MenuwillPopUP";
 static NSString *NSWindowDidCreateWindow =@"WindowDidCreateWindow";
 
-static NSEvent *process_key_event(WIN32Server *svr,
+static NSEvent *process_key_event(WIN32Server *svr, 
   HWND hwnd, WPARAM wParam, LPARAM lParam, NSEventType eventType);
-static NSEvent *process_mouse_event(WIN32Server *svr,
+static NSEvent *process_mouse_event(WIN32Server *svr, 
   HWND hwnd, WPARAM wParam, LPARAM lParam, NSEventType eventType);
 
 //static BOOL HAVE_MAIN_MENU = NO;
@@ -73,7 +73,7 @@ static BOOL handlesWindowDecorations = NO;
 
 static void 
 validateWindow(WIN32Server *svr, HWND hwnd, RECT rect);
-LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
+LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, 
 			     WPARAM wParam, LPARAM lParam);
 
 @implementation WIN32Server
@@ -99,7 +99,8 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 	}
       else
 	{
-	  // Don't translate messages, as this would give extra character messages.
+	  // Don't translate messages, as this would give
+	  // extra character messages.
 	  DispatchMessage(&msg); 
 	} 
     } 
@@ -147,7 +148,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 		inMode: mode
 		dequeue: flag];
 		
-	printf("Got EventType %d\n",[theEvent type]);
+	printf("Got EventType %d\n", [theEvent type]);
     return theEvent;	
 #else
 
@@ -163,14 +164,14 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 {
   [self callback: nil];
   [super discardEventsMatchingMask: mask
-			  beforeEvent: limit];
+		       beforeEvent: limit];
 }
 
 
 // server 
 
 /* Initialize AppKit backend */
-+ (void)initializeBackend
++ (void) initializeBackend
 {
 
 #ifdef __debugServer__
@@ -264,27 +265,10 @@ printf("\n\n##############################################################\n");
                   watcher: (id<RunLoopEvents>)self
                   forMode: mode];
 #else 
-#if 0
-  NSTimer *timer;
-
-  timer = [NSTimer timerWithTimeInterval: 0.01
-		   target: self
-		   selector: @selector(callback:)
-		   userInfo: nil
-		   repeats: YES];
-  [currentRunLoop addTimer: timer forMode: mode];
-#else
-
-/* OBSOLETE
-  [currentRunLoop addMsgTarget: self
-			withMethod: @selector(callback:)
-			   forMode: mode];
-*/
   [currentRunLoop addEvent: (void*)0
                   type: ET_WINMSG
                   watcher: (id<RunLoopEvents>)self
                   forMode: mode];
-#endif
 #endif
 }
 
@@ -439,7 +423,7 @@ to control debug output... or log specific event to a log panel.
   NSTextField *theText;
   NSTextField *theText2;
 
-  rect = NSMakeRect (715,800,236,182);
+  rect = NSMakeRect (715, 800, 236, 182);
   configWindow = RETAIN([[NSWindow alloc] initWithContentRect: rect
                                               styleMask: style
                                                 backing: NSBackingStoreBuffered
@@ -448,7 +432,7 @@ to control debug output... or log specific event to a log panel.
   [configWindow setReleasedWhenClosed: NO];
 
   content = [configWindow contentView];
-  theText = [[NSTextField alloc] initWithFrame: NSMakeRect (27,155,190,22)];
+  theText = [[NSTextField alloc] initWithFrame: NSMakeRect (27, 155, 190, 22)];
   [theText setStringValue: @"Win32 GNUStep Display Server"];
   [theText setEditable: NO];
   [theText setEnabled: NO];
@@ -461,7 +445,7 @@ to control debug output... or log specific event to a log panel.
   /*
   NSTextField *theText1;
 
-  theText1 = [[NSTextField alloc] initWithFrame: NSMakeRect (27,135,190,22)];
+  theText1 = [[NSTextField alloc] initWithFrame: NSMakeRect (27, 135, 190, 22)];
   [theText1 setStringValue: @"Revitalized By Tom MacSween"];
   [theText1 setEditable: NO];
   [theText1 setEnabled: NO];
@@ -471,7 +455,7 @@ to control debug output... or log specific event to a log panel.
   [[theText1 cell] setBezeled: NO];
   [content addSubview: theText1];*/
    
-  theText2 = [[NSTextField alloc] initWithFrame: NSMakeRect (17,115,200,22)];
+  theText2 = [[NSTextField alloc] initWithFrame: NSMakeRect (17, 115, 200, 22)];
   [theText2 setStringValue: Version];
   [theText2 setEditable: NO];
   [theText2 setEnabled: NO];
@@ -483,7 +467,7 @@ to control debug output... or log specific event to a log panel.
    
    // popup for style
   styleButton
-    = [[NSPopUpButton  alloc] initWithFrame: NSMakeRect (30,80,171,22)];
+    = [[NSPopUpButton  alloc] initWithFrame: NSMakeRect (30, 80, 171, 22)];
   [styleButton setAutoenablesItems: YES];
   [styleButton setTarget: self];
   [styleButton setAction: @selector(setStyle:)];
@@ -499,14 +483,14 @@ to control debug output... or log specific event to a log panel.
   
   
   // check box for using taskbar
-  taskbarButton = [[NSButton  alloc] initWithFrame: NSMakeRect (30,55,171,22)];
+  taskbarButton = [[NSButton  alloc] initWithFrame: NSMakeRect (30, 55, 171, 22)];
   [taskbarButton setButtonType: NSSwitchButton];
   [taskbarButton setTitle: @"Use Win Taskbar"];
   [taskbarButton setTarget: self];
   [taskbarButton setAction: @selector(setTaskBar:)];
   [content addSubview: taskbarButton];
   // save to defaults
-  saveButton = [[NSButton  alloc] initWithFrame: NSMakeRect (30,25,171,22)];
+  saveButton = [[NSButton  alloc] initWithFrame: NSMakeRect (30, 25, 171, 22)];
   [saveButton setButtonType: NSMomentaryPushInButton];
   [saveButton setTitle: @"Save to defaults"];
   [saveButton setTarget: self];
@@ -577,9 +561,9 @@ to control debug output... or log specific event to a log panel.
     
     // user must restart application for changes
     
-  NSRunInformationalAlertPanel(@"Server Preferences Changed",
-                     @"Changes will take affect on the next restart",
-                      @"OK",nil, nil);
+  NSRunInformationalAlertPanel(@"Server Preferences Changed", 
+                     @"Changes will take affect on the next restart", 
+                      @"OK", nil, nil);
   flags.HAVE_SERVER_PREFS = YES;
   [configWindow close];
   [saveButton setEnabled: NO];
@@ -639,7 +623,7 @@ NSWindowDidEndSheetNotification
     notification does not contain a userInfo dictionary.
 
 NSWindowDidExposeNotification
-    Posted whenever a portion of a nonretained NSWindow is exposed,
+    Posted whenever a portion of a nonretained NSWindow is exposed, 
     whether by being ordered in front of other windows or by other
     windows being removed from in front of it.  The notification
     object is the NSWindow that has been exposed. The userInfo
@@ -885,7 +869,7 @@ printf("\n\n##############################################################\n");
   if ((int)hwnd == win)
     {
       /*
-       * If the window at the point we want is excluded,
+       * If the window at the point we want is excluded, 
        * we must look through ALL windows at a lower level
        * until we find one which contains the same point.
        */
@@ -1259,12 +1243,12 @@ printf("\n\n##############################################################\n");
   if ([self displayEvent: uMsg]== YES)
     {     
       printf("\n\n\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-      printf("+++                NEW EVENT CYCLE %u                        +++\n",uMsg);
+      printf("+++                NEW EVENT CYCLE %u                        +++\n", uMsg);
       printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 #ifdef __W32_debug_Event_loop 
-      printf("Events Posted = %d\n",flags.eventQueCount);
-      printf("EVENT Que Count = %d\n",(int)[GSCurrentServer() eventQueCount]);
-      printf("%s",[[GSCurrentServer() dumpQue: 10] cString]);
+      printf("Events Posted = %d\n", flags.eventQueCount);
+      printf("EVENT Que Count = %d\n", (int)[GSCurrentServer() eventQueCount]);
+      printf("%s", [[GSCurrentServer() dumpQue: 10] cString]);
 #endif   
     }
 #endif
@@ -1493,7 +1477,7 @@ printf("\n\n##############################################################\n");
       default: 
 	// Process all other messages.
   #ifdef __W32_debug__      
-	printf("Uhandled message: %d on window %s\n",uMsg,[[GSWindowWithNumber((int)hwnd) className] cString]);
+	printf("Uhandled message: %d on window %s\n", uMsg, [[GSWindowWithNumber((int)hwnd) className] cString]);
   #endif      
 	NSDebugLLog(@"NSEvent", @"Got unhandled Message %d for %d", uMsg, hwnd);
 	break;
@@ -1514,9 +1498,9 @@ printf("\n\n##############################################################\n");
 #ifdef __W32_debug__      
       if ([ev type]== NSAppKitDefined)
 	{
-	  printf("uMsg %d ",uMsg);
-	  printf("Post event %s ",[[ev eventNameWithSubtype: YES] cString]);
-	  printf("on window %s\n",[[[ev window] className] cString]);
+	  printf("uMsg %d ", uMsg);
+	  printf("Post event %s ", [[ev eventNameWithSubtype: YES] cString]);
+	  printf("on window %s\n", [[[ev window] className] cString]);
 	}
 #endif	    
       return 0;
@@ -1631,11 +1615,11 @@ printf("\n\n##############################################################\n");
 
 #ifdef __debugServer__  
   printf("\n\n##############################################################\n"); 
-  printf("handlesWindowDecorations %s\n",handlesWindowDecorations ? "YES" : "NO");
-  printf("checking for NSMiniaturizableWindowMask %u\n",(style & NSMiniaturizableWindowMask));
-  printf("GS Window Style %u\n",style);
-  printf("Extended Style %d  [hex] %X\n",(int)estyle,(UINT)estyle);     
-   printf("Win32 Style picked %ld [hex] %X\n",wstyle,(unsigned int)wstyle); 
+  printf("handlesWindowDecorations %s\n", handlesWindowDecorations ? "YES" : "NO");
+  printf("checking for NSMiniaturizableWindowMask %u\n", (style & NSMiniaturizableWindowMask));
+  printf("GS Window Style %u\n", style);
+  printf("Extended Style %d  [hex] %X\n", (int)estyle, (UINT)estyle);     
+   printf("Win32 Style picked %ld [hex] %X\n", wstyle, (unsigned int)wstyle); 
   printf("\n##############################################################\n");    
 #endif
 
@@ -1643,21 +1627,21 @@ printf("\n\n##############################################################\n");
    * from here down is reused and unmodified from WIN32EventServer.m 
    * which has been removed form the subproject 
    */
-  NSDebugLLog(@"WTrace", @"window: %@ : %d : %d : %d", NSStringFromRect(frame),
+  NSDebugLLog(@"WTrace", @"window: %@ : %d : %d : %d", NSStringFromRect(frame), 
 	      type, style, screen);
   NSDebugLLog(@"WTrace", @"         device frame: %d, %d, %d, %d", 
 	      r.left, r.top, r.right - r.left, r.bottom - r.top);
-  hwnd = CreateWindowEx(estyle,
-			"GNUstepWindowClass",
-			"GNUstepWindow",
+  hwnd = CreateWindowEx(estyle, 
+			"GNUstepWindowClass", 
+			"GNUstepWindow", 
 			wstyle, 
 			r.left, 
 			r.top, 
 			r.right - r.left, 
-			r.bottom - r.top,
-			(HWND)NULL,
-			(HMENU)NULL,
-			hinstance,
+			r.bottom - r.top, 
+			(HWND)NULL, 
+			(HMENU)NULL, 
+			hinstance, 
 			(void*)type);
   NSDebugLLog(@"WTrace", @"         num/handle: %d", hwnd);
 
@@ -1675,7 +1659,7 @@ printf("\n\n##############################################################\n");
 {
   DWORD wstyle = [self windowStyleForGSStyle: style];
 
-  NSAssert(handlesWindowDecorations,
+  NSAssert(handlesWindowDecorations, 
 	   @"-stylewindow: : called when handlesWindowDecorations == NO");
 
   NSDebugLLog(@"WTrace", @"stylewindow: %d : %d", style, winNum);
@@ -1725,7 +1709,8 @@ printf("\n\n##############################################################\n");
 - (void) titlewindow: (NSString*)window_title : (int) winNum
 {
   NSDebugLLog(@"WTrace", @"titlewindow: %@ : %d", window_title, winNum);
-  SetWindowText((HWND)winNum, [window_title cString]);
+  SetWindowTextW((HWND)winNum, (const unichar*)
+    [window_title cStringUsingEncoding: NSUnicodeStringEncoding]);
 }
 
 - (void) miniwindow: (int) winNum
@@ -1843,7 +1828,7 @@ printf("\n\n##############################################################\n");
   r = GSScreenRectToMS(frame, [window styleMask], self);
   GetWindowRect((HWND)winNum, &r2);
 
-  SetWindowPos((HWND)winNum, NULL,
+  SetWindowPos((HWND)winNum, NULL, 
     r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOZORDER); 
 
   if ((win->useHDC)
@@ -1991,7 +1976,7 @@ printf("\n\n##############################################################\n");
     {
       /*
 	If we don't handle decorations, all our windows are going to be
-	border- and decorationless. In that case, -gui won't call this method,
+	border- and decorationless. In that case, -gui won't call this method, 
 	but we still use it internally.
       */
       *l = *r = *t = *b = 0.0;
@@ -2420,7 +2405,7 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 }
 
 
-LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
+LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, 
 			     WPARAM wParam, LPARAM lParam)
 {
   WIN32Server	*ctxt = (WIN32Server *)GSCurrentServer();

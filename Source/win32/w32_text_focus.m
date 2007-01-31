@@ -14,14 +14,15 @@
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
    
-   This library is distributed in the hope that it will be useful,
+   This library is distributed in the hope that it will be useful, 
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    Library General Public License for more details.
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02111 USA.
    */
 
 #include "w32_Events.h"
@@ -32,12 +33,12 @@
 //- (LRESULT) decodeWM_SETTEXTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 //{
 //printf("WM_SETTEXT\n");
-//printf("Window text is: %s\n",(LPSTR)lParam);
+//printf("Window text is: %s\n", (LPSTR)lParam);
 
-//BOOL result=SetWindowText(hwnd,(LPSTR)lParam);    
+//BOOL result=SetWindowText(hwnd, (LPSTR)lParam);    
     
   //      if (result==0)
-            //printf("error on setWindow text %ld\n",GetLastError());
+            //printf("error on setWindow text %ld\n", GetLastError());
         
 //return 0;
 //}
@@ -57,7 +58,7 @@
   win_num = (int)hwnd;
   
   currentFocus = hwnd;
-  eventLocation = NSMakePoint(0,0);
+  eventLocation = NSMakePoint(0, 0);
   if (currentFocus == desiredFocus)
     {
       /* This was from a request from the front end. Mark as done. */
@@ -66,7 +67,7 @@
   else
     {
       /* We need to do this directly and not send an event to the frontend - 
-	 that's too slow and allows the window state to get out of sync,
+	 that's too slow and allows the window state to get out of sync, 
 	 causing bad recursion problems */
       NSWindow *window = GSWindowWithNumber((int)hwnd);
       if ([window canBecomeKeyWindow] == YES)
@@ -82,7 +83,7 @@
   NSDebugLLog(@"Focus", @"Got focus:%d (current = %d, key = %d)", 
 	      win_num, currentFocus, key_num);
   NSDebugLLog(@"Focus", @"  result of focus request");
-  printf("%s",[[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
+  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
   fflush(stdout);
 #endif   
   return 0;
@@ -91,7 +92,7 @@
 - (void) decodeWM_KILLFOCUSParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   // reused from original author (added debug output)
-  NSPoint eventLocation = NSMakePoint(0,0);
+  NSPoint eventLocation = NSMakePoint(0, 0);
   NSEvent * ev=nil;
 
   ev = [NSEvent otherEventWithType:NSAppKitDefined
@@ -110,7 +111,7 @@
 #ifdef __KILLFOCUS__
   NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KILLFOCUS", hwnd);
   NSDebugLLog(@"Focus", @"Got KILLFOCUS (focus out) for %d", hwnd);
-  printf("%s",[[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
+  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
   fflush(stdout);
 #endif
 }

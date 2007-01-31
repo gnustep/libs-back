@@ -1,7 +1,7 @@
 /* -*- mode:ObjC -*-
    Win32GLContext - backend implementation of NSOpenGLContext
 
-   Copyright (C) 1998,2002,2007 Free Software Foundation, Inc.
+   Copyright (C) 1998, 2002, 2007 Free Software Foundation, Inc.
 
    Written by:  Xavier Glattard
    Date: Jan 2007
@@ -13,14 +13,15 @@
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
    
-   This library is distributed in the hope that it will be useful,
+   This library is distributed in the hope that it will be useful, 
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    Library General Public License for more details.
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02111 USA.
    */
 
 
@@ -39,9 +40,9 @@
 #define NSOPENGLSUBWINDOWNAME  "NSOpenGLSubwindow"
 
 extern LRESULT CALLBACK MainWndProc(
-     HWND hWnd,
-    UINT message,
-    WPARAM wParam,
+     HWND hWnd, 
+    UINT message, 
+    WPARAM wParam, 
     LPARAM lParam );
 
 @interface Win32Subwindow : NSObject
@@ -59,9 +60,9 @@ int
 setupPixelFormat(HDC hDC, LPPIXELFORMATDESCRIPTOR ppfd );
 
 LRESULT CALLBACK win32SubwindowProc( 
-    HWND hWnd,
-    UINT message,
-    WPARAM wParam,
+    HWND hWnd, 
+    UINT message, 
+    WPARAM wParam, 
     LPARAM lParam );
 
 @implementation Win32Subwindow 
@@ -79,8 +80,8 @@ LRESULT CALLBACK win32SubwindowProc(
   wclss.cbClsExtra = 0;
   wclss.cbWndExtra = 0;
   wclss.hInstance = hInstance;
-  wclss.hIcon = LoadIcon(NULL,IDI_APPLICATION);
-  wclss.hCursor = LoadCursor(NULL,IDC_ARROW);
+  wclss.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+  wclss.hCursor = LoadCursor(NULL, IDC_ARROW);
   wclss.hbrBackground = NULL;
   wclss.lpszMenuName = NULL;
   wclss.lpszClassName = NSOPENGLSUBWINDOWCLASS;
@@ -89,7 +90,7 @@ LRESULT CALLBACK win32SubwindowProc(
   atom = RegisterClass(&wclss);
   NSAssert(atom, @"Failed To Register The Win32Subwindow MS window class.");
 
-  NSDebugMLLog(@"WGL",@"MS window class initialized (%u)",atom);
+  NSDebugMLLog(@"WGL", @"MS window class initialized (%u)", atom);
 }
 
 - (id) initWithView: (NSOpenGLView *) view
@@ -142,7 +143,7 @@ LRESULT CALLBACK win32SubwindowProc(
 
     /* Grab the window class we have registered on [+initialize] */
     atom = GetClassInfo( hInstance, NSOPENGLSUBWINDOWCLASS, &wclss );
-    NSAssert(atom,@"MS window class not found !");
+    NSAssert(atom, @"MS window class not found !");
 
     RECT parent_rect;
     GetWindowRect((HWND)[win windowNumber], &parent_rect);
@@ -152,15 +153,15 @@ LRESULT CALLBACK win32SubwindowProc(
     width = NSWidth(rect);
     height = NSHeight(rect);
   
-    NSDebugMLLog(@"WGL",@"MS window creation (%d,%d,%u,%u)",x, y, width, height);
+    NSDebugMLLog(@"WGL", @"MS window creation (%d, %d, %u, %u)", x, y, width, height);
 
     winid = CreateWindow(
-	NSOPENGLSUBWINDOWCLASS, NSOPENGLSUBWINDOWNAME,
-	WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE,
-	x, y, width, height,
+	NSOPENGLSUBWINDOWCLASS, NSOPENGLSUBWINDOWNAME, 
+	WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE, 
+	x, y, width, height, 
 	(HWND)[win windowNumber], (HMENU)NULL, hInstance, (LPVOID)self);
 
-    NSAssert(winid,@"Failed to create a MS window");
+    NSAssert(winid, @"Failed to create a MS window");
 
     ShowCursor( TRUE );
   }
@@ -189,7 +190,7 @@ LRESULT CALLBACK win32SubwindowProc(
   win = [attached window];
   NSAssert1(win, @"%@'s window is nil now!", attached);
 
-  NSAssert1(![attached isRotatedOrScaledFromBase],
+  NSAssert1(![attached isRotatedOrScaledFromBase], 
 	    @"%@ is rotated or scaled, now!", attached);
   
   server = GSServerForWindow(win);
@@ -227,7 +228,7 @@ LRESULT CALLBACK win32SubwindowProc(
   width = NSWidth(rect);
   height = NSHeight(rect);
   
-  MoveWindow(winid,x, y, width, height,/*FIXME*/TRUE);
+  MoveWindow(winid, x, y, width, height, /*FIXME*/TRUE);
 }
 
 - (void) dealloc
@@ -361,7 +362,7 @@ static Win32GLContext *currentGLContext;
     [NSException raise: NSGenericException
 		 format: @"GL Context is not bind, cannot be made current"];
   
-  NSAssert(wgl_context && format->wgl_drawable,
+  NSAssert(wgl_context && format->wgl_drawable, 
 	   NSInternalInconsistencyException);
 
   NSDebugMLLog(@"WGL", @"before wglMakeCurrent");
@@ -420,11 +421,11 @@ static Win32GLContext *currentGLContext;
 //     GLXFBConfig  *conf_tab;
 //     int		n_elem;
 //     int attrs[] = { 
-//       GLX_DOUBLEBUFFER, 1,
-//       GLX_DEPTH_SIZE, 16,
-//       GLX_RED_SIZE, 1,
-//       GLX_BLUE_SIZE, 1,
-//       GLX_GREEN_SIZE, 1,
+//       GLX_DOUBLEBUFFER, 1, 
+//       GLX_DEPTH_SIZE, 16, 
+//       GLX_RED_SIZE, 1, 
+//       GLX_BLUE_SIZE, 1, 
+//       GLX_GREEN_SIZE, 1, 
 //       None
 //     };    
   
@@ -432,7 +433,7 @@ static Win32GLContext *currentGLContext;
 //     if (n_elem > 0)
 //       {
 // 	printf("found %d context\n", n_elem);
-// // 	win = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 10, 10,
+// // 	win = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 10, 10, 
 // // 				  800, 600, 1, 0, 1);
 // 	glx_drawable = glXCreateWindow(dpy, *conf_tab, xsubwin->winid,  NULL);
       
@@ -446,7 +447,7 @@ static Win32GLContext *currentGLContext;
 //FIXME
 //The following line should be the good one.  But it crashes my X server...
 
-//   glx_drawable = glXCreateWindow(dpy, *format->conf_tab, xsubwin->winid,
+//   glx_drawable = glXCreateWindow(dpy, *format->conf_tab, xsubwin->winid, 
 // 				 NULL);
   NSDebugMLLog(@"WGL", @"wgl_window : %u", win);
 }
@@ -469,37 +470,37 @@ static Win32GLContext *currentGLContext;
 @end
 
 LRESULT CALLBACK win32SubwindowProc( 
-    HWND hWnd,
-    UINT message,
-    WPARAM wParam,
+    HWND hWnd, 
+    UINT message, 
+    WPARAM wParam, 
     LPARAM lParam )
 {
   Win32Subwindow *wsubwin;
   Win32GLContext* ctx = nil;
 
-  NSDebugFLLog(@"WGLEvents",@"Entering.");
-  wsubwin = (Win32Subwindow*) GetWindowLongPtr(hWnd,GWLP_USERDATA);
+  NSDebugFLLog(@"WGLEvents", @"Entering.");
+  wsubwin = (Win32Subwindow*) GetWindowLongPtr(hWnd, GWLP_USERDATA);
   if(wsubwin) ctx = (Win32GLContext*)[wsubwin->attached openGLContext];
 
   switch (message) {
     case WM_CREATE:
-      NSDebugFLLog(@"WGLEvents",@"WM_CREATE event received.");
+      NSDebugFLLog(@"WGLEvents", @"WM_CREATE event received.");
       wsubwin = (Win32Subwindow*)(((LPCREATESTRUCT) lParam)->lpCreateParams);
       ctx = (Win32GLContext*)[wsubwin->attached openGLContext];
-      NSDebugFLLog(@"WGLEvents",@"subwindow : %@", wsubwin);
+      NSDebugFLLog(@"WGLEvents", @"subwindow : %@", wsubwin);
       // initialize OpenGL rendering
       NSCAssert(wsubwin->hDC = GetDC(hWnd), @"No DC");
       [ctx->format _setDrawable: wsubwin->hDC];
       //TODO setupPalette(wsubwin->hDC);
       NSCAssert(
-	  ctx->wgl_context = wglCreateContext(wsubwin->hDC),
+	  ctx->wgl_context = wglCreateContext(wsubwin->hDC), 
 	  @"wglCreateContext failed");
 //      wglMakeCurrent(wsubwin->hDC, hGLRC)
-      SetWindowLongPtr(hWnd,GWLP_USERDATA,(LONG_PTR)wsubwin);
-      NSDebugFLLog(@"WGLEvents",@"WM_CREATE done.");
+      SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)wsubwin);
+      NSDebugFLLog(@"WGLEvents", @"WM_CREATE done.");
       return 0;
     case WM_DESTROY:
-      NSDebugFLLog(@"WGLEvents",@"WM_DESTROY event received.");
+      NSDebugFLLog(@"WGLEvents", @"WM_DESTROY event received.");
       // finish OpenGL rendering
 
       if(ctx->wgl_context) {
@@ -510,7 +511,7 @@ LRESULT CALLBACK win32SubwindowProc(
         DeleteObject(hPalette);
       }*/
       ReleaseDC(hWnd, wsubwin->hDC);
-      NSDebugFLLog(@"WGLEvents",@"WM_DESTROY done.");
+      NSDebugFLLog(@"WGLEvents", @"WM_DESTROY done.");
       return 0;
 /*    case WM_SIZE:
       // track window size changes
@@ -562,12 +563,12 @@ LRESULT CALLBACK win32SubwindowProc(
       }
       break;*/
     default:
-      NSDebugFLLog(@"WGLEvents",@"other event received (%u).",message);
-//      return MainWndProc((HWND)GetWindowLongPtr(hWnd,GWLP_HWNDPARENT), message, wParam, lParam);
+      NSDebugFLLog(@"WGLEvents", @"other event received (%u).", message);
+//      return MainWndProc((HWND)GetWindowLongPtr(hWnd, GWLP_HWNDPARENT), message, wParam, lParam);
       return DefWindowProc(hWnd, message, wParam, lParam);
       break;
   }
-  NSDebugFLLog(@"WGLEvents",@"Failed.");
+  NSDebugFLLog(@"WGLEvents", @"Failed.");
   return FALSE;
 }
 

@@ -11,14 +11,15 @@
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
    
-   This library is distributed in the hope that it will be useful,
+   This library is distributed in the hope that it will be useful, 
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    Library General Public License for more details.
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02111 USA.
    */
 
 
@@ -67,13 +68,13 @@
   if ((int)lParam == flags.menuRef)
     target=YES;
 
-  printf("RECEIVER [hwnd]%s\n",[[EVENT_WINDOW(hwnd) className] cString]);
-  printf("ON [lParam]%s\n",[[EVENT_WINDOW(lParam) className] cString]);
+  printf("RECEIVER [hwnd]%s\n", [[EVENT_WINDOW(hwnd) className] cString]);
+  printf("ON [lParam]%s\n", [[EVENT_WINDOW(lParam) className] cString]);
 
-  printf("[lParam] %s",[[self gswindowstate:EVENT_WINDOW(lParam)] cString]);
-   printf("ACTIVATE_FLAG STATE %d \n",flags._last_WM_ACTIVATE);
+  printf("[lParam] %s", [[self gswindowstate:EVENT_WINDOW(lParam)] cString]);
+   printf("ACTIVATE_FLAG STATE %d \n", flags._last_WM_ACTIVATE);
 
-  printf("[hwnd] %s",[[self gswindowstate:EVENT_WINDOW(hwnd)] cString]);
+  printf("[hwnd] %s", [[self gswindowstate:EVENT_WINDOW(hwnd)] cString]);
   fflush(stdout);
 #endif
 
@@ -133,17 +134,17 @@
             
 #ifdef __WM_ACTIVATEAPP__
 
-  printf("NSApp is:[%s]\n",active ? "active" : "inactive");
-  printf("lParam is [%s]\n thread = [%u]\n  w32_Class[%s] \n",
-	 (int)wParam ? "TRUE": "FALSE",
-        (unsigned int)lParam,
+  printf("NSApp is:[%s]\n", active ? "active" : "inactive");
+  printf("lParam is [%s]\n thread = [%u]\n  w32_Class[%s] \n", 
+	 (int)wParam ? "TRUE": "FALSE", 
+        (unsigned int)lParam, 
 	 [[self getNativeClassName:hwnd] cString]);
   // debug GS_state details       
-  printf("%s",[[self gswindowstate:EVENT_WINDOW(hwnd)] cString]);
-  printf("%s",[[self gswindowstate:EVENT_WINDOW(wParam)] cString]);
-   printf("eventHandled=[%s]\n",flags._eventHandled ? "YES" : "NO");
+  printf("%s", [[self gswindowstate:EVENT_WINDOW(hwnd)] cString]);
+  printf("%s", [[self gswindowstate:EVENT_WINDOW(wParam)] cString]);
+   printf("eventHandled=[%s]\n", flags._eventHandled ? "YES" : "NO");
             
-  printf("REQUESTED STATE %d\n",flags._last_WM_ACTIVATE);
+  printf("REQUESTED STATE %d\n", flags._last_WM_ACTIVATE);
   fflush(stdout);
 #endif 
 
