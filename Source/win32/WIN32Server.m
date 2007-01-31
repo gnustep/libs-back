@@ -1872,8 +1872,38 @@ printf("\n\n##############################################################\n");
 
 - (NSArray *) windowlist
 {
-  // FIXME 
-  return [super windowlist];
+  NSMutableArray	*list = [NSMutableArray arrayWithCapacity: 100];
+  HWND			w;
+  HWND			next;
+
+  w = GetForegroundWindow();	// Try to start with frontmost window
+  if (w == NULL)
+    {
+      w = GetDesktopWindow();	// This should always succeed.
+    }
+
+  /* Step up to the frontmost window.
+   */
+  while ((next = GetNextWindow(w, GW_HWNDPREV)) != NULL)
+    {
+      w = next;
+    }
+  
+  /* Now walk down the window list populating the array.
+   */
+  while (w != NULL)
+    {
+      /* Only add windows we own.
+       * FIXME We should improve the API to support all windows on server.
+       */
+      if (GSWindowWithNumber((int)w) != nil)
+	{
+	  [list addObject: [NSNumber numberWithInt: (int)w]];
+	}
+      w = GetNextWindow(w, GW_HWNDNEXT);
+    }
+
+  return list;
 }
 
 - (int) windowdepth: (int) winNum
