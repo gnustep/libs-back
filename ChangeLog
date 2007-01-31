@@ -5,6 +5,7 @@
 	* Source\win32\GNUmakefile.preamble:
 	* Headers\winlib\WIN32FontInfo.h:
 	Implement number of glyphs and covered characterset.
+	Set maximumAdvancement.
 
 2007-01-31 Richard Frith-Macdonald <rfm@gnu.org>
 

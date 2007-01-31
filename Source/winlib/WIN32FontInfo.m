@@ -326,6 +326,9 @@ NSString *win32_font_family(NSString *fontName);
 			(float)metric.tmMaxCharWidth,
 			(float)metric.tmHeight);
 
+  maximumAdvancement = NSMakeSize((float)metric.tmMaxCharWidth,
+    (float)metric.tmHeight);
+
   weight = win32_font_weight(metric.tmWeight);
 
   traits = 0;
