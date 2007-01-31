@@ -31,10 +31,10 @@ GNUSTEP_INSTALL_LIBDIR=$(GNUSTEP_LIBRARIES_ROOT)
 ADDITIONAL_CPPFLAGS += -Wall $(CONFIG_SYSTEM_DEFS)
 
 # Additional flags to pass to the Objective-C compiler
-ADDITIONAL_OBJCFLAGS = 
+ADDITIONAL_OBJCFLAGS = -DWINVER=0x0500 
 
 # Additional flags to pass to the C compiler
-ADDITIONAL_CFLAGS = 
+ADDITIONAL_CFLAGS = -DWINVER=0x0500
 
 # Additional include directories the compiler should search
 ADDITIONAL_INCLUDE_DIRS += -I../../Headers \
