@@ -106,7 +106,7 @@ NSString *win32_font_family(NSString *fontName);
   hdc = GetDC(NULL);
   old = SelectObject(hdc, hFont);
   //GetCharWidthFloat(hdc, glyph, glyph, &w);
-  GetCharABCWidthsFloat(hdc, glyph, glyph, &abc);
+  GetCharABCWidthsFloatW(hdc, glyph, glyph, &abc);
   SelectObject(hdc, old);
   ReleaseDC(NULL, hdc);
 
@@ -124,7 +124,7 @@ NSString *win32_font_family(NSString *fontName);
 
   hdc = GetDC(NULL);
   old = SelectObject(hdc, hFont);
-  if (GDI_ERROR != GetGlyphOutline(hdc, glyph, 
+  if (GDI_ERROR != GetGlyphOutlineW(hdc, glyph, 
 				   GGO_METRICS, // || GGO_GLYPH_INDEX
 				   &gm, 0, NULL, NULL))
     {
@@ -161,8 +161,18 @@ NSString *win32_font_family(NSString *fontName);
 }
 
 - (void) drawString:  (NSString*)string
-	 onDC: (HDC)hdc at: (POINT)p
+	       onDC: (HDC)hdc
+		 at: (POINT)p
 {
+  HFONT old;
+
+  old = SelectObject(hdc, hFont);
+  TextOutW(hdc,
+    p.x,
+    p.y - ascender,
+    (const unichar*)[string cStringUsingEncoding: NSUnicodeStringEncoding],
+    [string length]); 
+  SelectObject(hdc, old);
 }
 
 - (void) draw:(const char*)s length: (int)len 
