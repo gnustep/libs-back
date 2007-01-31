@@ -52,6 +52,8 @@ w32_general.m \
 w32_movesize.m \
 w32_text_focus.m \
 w32_windowdisplay.m \
+w32_GLformat.m \
+w32_GLcontext.m \
 GSDisplayServer_details.m \
 
 -include GNUmakefile.preamble
