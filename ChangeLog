@@ -1,3 +1,9 @@
+2007-01-31 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source\winlib\WIN32FontInfo.m: Attempt to make unicode clean
+	* Source\winlib\WIN32FontEnumerator.m: ditto
+	* Source\win32\WIN32Server.m: Implement -windowlist method.
+
 2007-01-15  Adam Fedor  <fedor@gnu.org>
 
 	* Source/x11/XGServerWindow.m ([XGServer -orderwindow:::]): Set

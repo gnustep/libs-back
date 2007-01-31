@@ -19,7 +19,8 @@
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+   Boston, MA 02111 USA.
 */
 
 
@@ -72,7 +73,7 @@ NSString *win32_font_family(NSString *fontName);
   [super dealloc];
 }
 
-- (float) widthOf: (const char*) s length: (int) len
+- (float) widthOfString: (NSString*)string
 {
   SIZE size;
   HDC hdc;
@@ -80,22 +81,14 @@ NSString *win32_font_family(NSString *fontName);
 
   hdc = GetDC(NULL);
   old = SelectObject(hdc, hFont);
-  GetTextExtentPoint32(hdc, s, len, &size);
+  GetTextExtentPoint32W(hdc,
+    (const unichar*)[string cStringUsingEncoding: NSUnicodeStringEncoding],
+    [string length],
+    &size);
   SelectObject(hdc, old);
   ReleaseDC(NULL, hdc);
 
   return size.cx;
-}
-
-- (float) widthOfString: (NSString*)string
-{
-  const char *s;
-  int len;
-  
-  s = [string cString];
-  len = strlen(s);
-
-  return [self widthOf: s length: len];
 }
 
 - (NSMultibyteGlyphPacking)glyphPacking
@@ -213,7 +206,7 @@ NSString *win32_font_family(NSString *fontName);
   HDC hdc;
   TEXTMETRIC metric;
   HFONT old;
-  LOGFONT logfont;
+  LOGFONTW logfont;
   NSRange range;
 
   //NSLog(@"Creating Font %@ of size %f", fontName, matrix[0]);
@@ -233,8 +226,10 @@ NSString *win32_font_family(NSString *fontName);
     logfont.lfItalic = 1; 
 
   logfont.lfQuality = ANTIALIASED_QUALITY;
-  strncpy(logfont.lfFaceName, [familyName cString], LF_FACESIZE);
-  hFont = CreateFontIndirect(&logfont);
+  wcsncpy(logfont.lfFaceName,
+    (const unichar*)[familyName cStringUsingEncoding: NSUnicodeStringEncoding],
+    LF_FACESIZE);
+  hFont = CreateFontIndirectW(&logfont);
   if (!hFont)
     {
       NSLog(@"Could not create font %@", fontName);

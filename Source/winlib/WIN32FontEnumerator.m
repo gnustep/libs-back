@@ -19,7 +19,8 @@
    
    You should have received a copy of the GNU Library General Public
    License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+   Boston, MA 02111 USA.
 */
 
 #include "Foundation/NSArray.h"
@@ -103,9 +104,10 @@ NSString *win32_font_family(NSString *fontName)
 
 static 
 void add_font(NSMutableArray *fontDefs, NSString *fontName, 
-	      ENUMLOGFONTEX *lpelfe, NEWTEXTMETRICEX *lpntme)
+	      ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEX *lpntme)
 {
   NSArray *fontDef;
+  NSString *fontStyle;
   NSFontTraitMask traits = 0;
   int weight;
   
@@ -120,22 +122,30 @@ void add_font(NSMutableArray *fontDefs, NSString *fontName,
   else
     traits |= NSUnitalicFontMask;
   
-  fontDef = [NSArray arrayWithObjects: fontName, 
-		     [NSString stringWithCString: lpelfe->elfStyle], 
-		     [NSNumber numberWithInt: weight],
-		     [NSNumber numberWithUnsignedInt: traits], nil];
+  fontStyle = [[NSString alloc] initWithBytes: lpelfe->elfStyle
+				       length: wcslen(lpelfe->elfStyle)
+				     encoding: NSUnicodeStringEncoding];
+  fontDef = [NSArray arrayWithObjects:
+    fontName, 
+    fontStyle, 
+    [NSNumber numberWithInt: weight],
+    [NSNumber numberWithUnsignedInt: traits],
+    nil];
+  RELEASE(fontStyle);
   [fontDefs addObject: fontDef];
 }
 
-int CALLBACK fontenum(ENUMLOGFONTEX *lpelfe, NEWTEXTMETRICEX *lpntme,
+int CALLBACK fontenum(ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEX *lpntme,
 		      DWORD FontType, LPARAM lParam)
 {
   NSString *fontName;
 
-  NSLog(@"Found font %s", lpelfe->elfFullName);
-  fontName = [NSString stringWithCString: lpelfe->elfFullName];
+  fontName = [[NSString alloc] initWithBytes: lpelfe->elfFullName
+				      length: wcslen(lpelfe->elfFullName)
+				    encoding: NSUnicodeStringEncoding];
+  NSLog(@"Found font %@", fontName);
   add_font((NSMutableArray *)lParam, fontName, lpelfe, lpntme);
-
+  RELEASE(fontName);
   return 1;
 }
 
@@ -143,22 +153,24 @@ static
 void enumerate_font(NSMutableArray *fontDefs, NSString *fontFamily)
 {
   HDC hdc;
-  LOGFONT logfont;
+  LOGFONTW logfont;
   int res;
   CREATE_AUTORELEASE_POOL(pool);
 
   NSLog(@"Enumerate font family %@", fontFamily);
   hdc = GetDC(NULL);
   logfont.lfCharSet = DEFAULT_CHARSET;
-  strncpy(logfont.lfFaceName, [fontFamily cString], LF_FACESIZE);
+  wcsncpy(logfont.lfFaceName,
+    (const unichar*)[fontFamily cStringUsingEncoding: NSUnicodeStringEncoding],
+    LF_FACESIZE);
   logfont.lfPitchAndFamily = 0;
-  res = EnumFontFamiliesEx(hdc, &logfont, (FONTENUMPROC)fontenum, 
+  res = EnumFontFamiliesExW(hdc, &logfont, (FONTENUMPROCW)fontenum, 
 			   (LPARAM)fontDefs, 0);
   ReleaseDC(NULL, hdc);
   RELEASE(pool);
 }
 
-int CALLBACK fontfamilyenum(ENUMLOGFONTEX *lpelfe, NEWTEXTMETRICEX *lpntme,
+int CALLBACK fontfamilyenum(ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEX *lpntme,
 			    DWORD FontType, LPARAM lParam)
 {
   NSString *fontName;
@@ -166,8 +178,11 @@ int CALLBACK fontfamilyenum(ENUMLOGFONTEX *lpelfe, NEWTEXTMETRICEX *lpntme,
   NSMutableArray *fontDefs;
   WIN32FontEnumerator *enumer = (WIN32FontEnumerator*)lParam;
 
-  //NSLog(@"Found font family %s", lpelfe->elfFullName);
-  fontName = [NSString stringWithCString: lpelfe->elfFullName];
+  fontName = AUTORELEASE([[NSString alloc]
+    initWithBytes: lpelfe->elfFullName
+    length: wcslen(lpelfe->elfFullName)
+    encoding: NSUnicodeStringEncoding]);
+
   familyName = win32_font_family(fontName);
   fontDefs = [enumer->allFontFamilies objectForKey: familyName];
   if (fontDefs == nil)
@@ -179,25 +194,33 @@ int CALLBACK fontfamilyenum(ENUMLOGFONTEX *lpelfe, NEWTEXTMETRICEX *lpntme,
       // FIXME: Need to loop over all fonts for this family
       //add_font(fontDefs, fontName, lpelfe, lpntme);
       //enumerate_font(fontDefs, familyName);
-      fontDef = [NSArray arrayWithObjects: familyName, 
-			 @"Normal", 
-			 [NSNumber numberWithInt: 6],
-			 [NSNumber numberWithUnsignedInt: 0], nil];
+      fontDef = [NSArray arrayWithObjects:
+	familyName, 
+	@"Normal", 
+	[NSNumber numberWithInt: 6],
+	[NSNumber numberWithUnsignedInt: 0],
+	nil];
       [fontDefs addObject: fontDef];
-      fontDef = [NSArray arrayWithObjects: [familyName stringByAppendingString: @" Bold"], 
-			 @"Bold", 
-			 [NSNumber numberWithInt: 9],
-			 [NSNumber numberWithUnsignedInt: NSBoldFontMask], nil];
+      fontDef = [NSArray arrayWithObjects:
+	[familyName stringByAppendingString: @" Bold"], 
+	@"Bold", 
+	[NSNumber numberWithInt: 9],
+	[NSNumber numberWithUnsignedInt: NSBoldFontMask],
+	nil];
       [fontDefs addObject: fontDef];
-      fontDef = [NSArray arrayWithObjects: [familyName stringByAppendingString: @" Italic"], 
-			 @"Italic", 
-			 [NSNumber numberWithInt: 6],
-			 [NSNumber numberWithUnsignedInt: NSItalicFontMask], nil];
+      fontDef = [NSArray arrayWithObjects:
+	[familyName stringByAppendingString: @" Italic"], 
+	@"Italic", 
+	[NSNumber numberWithInt: 6],
+	[NSNumber numberWithUnsignedInt: NSItalicFontMask],
+	nil];
       [fontDefs addObject: fontDef];
-      fontDef = [NSArray arrayWithObjects: [familyName stringByAppendingString: @" Bold Italic"], 
-			 @"Bold Italic", 
-			 [NSNumber numberWithInt: 9],
-			 [NSNumber numberWithUnsignedInt: NSBoldFontMask | NSItalicFontMask], nil];
+      fontDef = [NSArray arrayWithObjects:
+	[familyName stringByAppendingString: @" Bold Italic"], 
+	@"Bold Italic", 
+	[NSNumber numberWithInt: 9],
+	[NSNumber numberWithUnsignedInt: NSBoldFontMask | NSItalicFontMask],
+	nil];
       [fontDefs addObject: fontDef];
 
       [(NSMutableArray*)(enumer->allFontNames) addObject: fontName];
