@@ -104,7 +104,7 @@ NSString *win32_font_family(NSString *fontName)
 
 static 
 void add_font(NSMutableArray *fontDefs, NSString *fontName, 
-	      ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEX *lpntme)
+	      ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEXW *lpntme)
 {
   NSArray *fontDef;
   NSString *fontStyle;
@@ -133,7 +133,7 @@ void add_font(NSMutableArray *fontDefs, NSString *fontName,
   [fontDefs addObject: fontDef];
 }
 
-int CALLBACK fontenum(ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEX *lpntme,
+int CALLBACK fontenum(ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEXW *lpntme,
 		      DWORD FontType, LPARAM lParam)
 {
   NSString *fontName;
@@ -166,7 +166,7 @@ void enumerate_font(NSMutableArray *fontDefs, NSString *fontFamily)
   RELEASE(pool);
 }
 
-int CALLBACK fontfamilyenum(ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEX *lpntme,
+int CALLBACK fontfamilyenum(ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEXW *lpntme,
 			    DWORD FontType, LPARAM lParam)
 {
   NSString *fontName;
@@ -230,7 +230,7 @@ int CALLBACK fontfamilyenum(ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEX *lpntme,
   if (!done)
     {
       HDC hdc;
-      LOGFONT logfont;
+      LOGFONTW logfont;
       int res;
       CREATE_AUTORELEASE_POOL(pool);
 
@@ -244,7 +244,7 @@ int CALLBACK fontfamilyenum(ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEX *lpntme,
       // This get ignored
       logfont.lfItalic = 0;
       logfont.lfWeight = FW_NORMAL;
-      res = EnumFontFamiliesEx(hdc, &logfont, (FONTENUMPROC)fontfamilyenum, 
+      res = EnumFontFamiliesExW(hdc, &logfont, (FONTENUMPROCW)fontfamilyenum, 
 			       (LPARAM)self, 0);
 
       ReleaseDC(NULL, hdc);
