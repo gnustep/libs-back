@@ -34,10 +34,12 @@
 
 - (NSMutableString *) dumpQue:(int)acount
 {
-  NSMutableString * output=[NSMutableString stringWithCString:"Dumping "];
-    
+  NSMutableString * output;
   int i=0;
   int c=[event_queue count];
+
+  output = [NSMutableString stringWithCapacity: 1024];
+  [output appendString: @"Dumping "];
   if (acount >=c || acount==0)
     acount=c;
   else
