@@ -204,7 +204,7 @@ NSString *win32_font_family(NSString *fontName);
 - (BOOL) setupAttributes
 {
   HDC hdc;
-  TEXTMETRIC metric;
+  TEXTMETRICW metric;
   HFONT old;
   LOGFONTW logfont;
   NSRange range;
@@ -238,7 +238,7 @@ NSString *win32_font_family(NSString *fontName);
     }
 
   old = SelectObject(hdc, hFont);
-  GetTextMetrics(hdc, &metric);
+  GetTextMetricsW(hdc, &metric);
   SelectObject(hdc, old);
   ReleaseDC(NULL, hdc);
 
