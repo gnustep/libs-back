@@ -17,7 +17,8 @@
 
  * You should have received a copy of the GNU Library General Public
  * License along with this library; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+ * Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02111 USA.
  */
 
 #include "GNUstepBase/Unicode.h"
@@ -233,7 +234,7 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
   return 0.0;
 }
 
--(NSGlyph) glyphWithName: (NSString *) glyphName
+- (NSGlyph) glyphWithName: (NSString *) glyphName
 {
   /* subclass should override */
   /* terrible! FIXME */
