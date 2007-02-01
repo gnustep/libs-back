@@ -99,7 +99,7 @@ NSString *win32_font_family(NSString *fontName);
 
 - (NSSize) advancementForGlyph: (NSGlyph)glyph
 {
-  unichar c = (unichar)glyph;
+  WORD c = (WORD)glyph;
   WORD windowsGlyph;
   HDC hdc;
   float w;
@@ -113,6 +113,7 @@ NSString *win32_font_family(NSString *fontName);
     {
       SelectObject(hdc, old);
       ReleaseDC(NULL, hdc);
+NSLog(@"No glyph for U%d", c);
       return NSMakeSize(0, 0);	// No such glyph
     }
   GetCharABCWidthsFloatW(hdc, windowsGlyph, windowsGlyph, &abc);
@@ -126,7 +127,7 @@ NSString *win32_font_family(NSString *fontName);
 
 - (NSRect) boundingRectForGlyph: (NSGlyph)glyph
 {
-  unichar c = (unichar)glyph;
+  WORD c = (WORD)glyph;
   WORD windowsGlyph;
   HDC hdc;
   HFONT old;
@@ -140,6 +141,7 @@ NSString *win32_font_family(NSString *fontName);
     {
       SelectObject(hdc, old);
       ReleaseDC(NULL, hdc);
+NSLog(@"No glyph for U%d", c);
       return NSMakeRect(0, 0, 0, 0);	// No such glyph
     }
   if (GDI_ERROR != GetGlyphOutlineW(hdc, windowsGlyph, 
