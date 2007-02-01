@@ -99,6 +99,8 @@ NSString *win32_font_family(NSString *fontName);
 
 - (NSSize) advancementForGlyph: (NSGlyph)glyph
 {
+  unichar c = (unichar)glyph;
+  WORD windowsGlyph;
   HDC hdc;
   float w;
   ABCFLOAT abc;
@@ -106,8 +108,14 @@ NSString *win32_font_family(NSString *fontName);
 
   hdc = GetDC(NULL);
   old = SelectObject(hdc, hFont);
-  //GetCharWidthFloat(hdc, glyph, glyph, &w);
-  GetCharABCWidthsFloatW(hdc, glyph, glyph, &abc);
+  // Convert from GNUstep glyph (unichar) to windows glyph.
+  if (GetGlyphIndicesW(hdc, &c, 1, &windowsGlyph, 0) == 0)
+    {
+      SelectObject(hdc, old);
+      ReleaseDC(NULL, hdc);
+      return NSMakeSize(0, 0);	// No such glyph
+    }
+  GetCharABCWidthsFloatW(hdc, windowsGlyph, windowsGlyph, &abc);
   SelectObject(hdc, old);
   ReleaseDC(NULL, hdc);
 
@@ -118,6 +126,8 @@ NSString *win32_font_family(NSString *fontName);
 
 - (NSRect) boundingRectForGlyph: (NSGlyph)glyph
 {
+  unichar c = (unichar)glyph;
+  WORD windowsGlyph;
   HDC hdc;
   HFONT old;
   GLYPHMETRICS gm;
@@ -125,7 +135,14 @@ NSString *win32_font_family(NSString *fontName);
 
   hdc = GetDC(NULL);
   old = SelectObject(hdc, hFont);
-  if (GDI_ERROR != GetGlyphOutlineW(hdc, glyph, 
+  // Convert from GNUstep glyph (unichar) to windows glyph.
+  if (GetGlyphIndicesW(hdc, &c, 1, &windowsGlyph, 0) == 0)
+    {
+      SelectObject(hdc, old);
+      ReleaseDC(NULL, hdc);
+      return NSMakeRect(0, 0, 0, 0);	// No such glyph
+    }
+  if (GDI_ERROR != GetGlyphOutlineW(hdc, windowsGlyph, 
 				   GGO_METRICS, // || GGO_GLYPH_INDEX
 				   &gm, 0, NULL, NULL))
     {
@@ -213,7 +230,7 @@ NSString *win32_font_family(NSString *fontName);
   return coveredCharacterSet;
 }
 
-- (void) drawString:  (NSString*)string
+- (void) drawString: (NSString*)string
 	       onDC: (HDC)hdc
 		 at: (POINT)p
 {
@@ -243,19 +260,19 @@ NSString *win32_font_family(NSString *fontName);
 	       onDC: (HDC)hdc
 		 at: (POINT)p
 {
+  WORD buf[len];
   HFONT old;
-  WORD	buf[len];
-  int	i;
+  int i;
 
+  old = SelectObject(hdc, hFont);
   /*
    * For now, assume that a glyph is a unicode character and can be
    * stored in a windows WORD
    */
   for (i = 0; i < len; i++)
     {
-      buf[i] = s[i];
+      buf[i] = (WORD)s[i];
     }
-  old = SelectObject(hdc, hFont);
   TextOutW(hdc, p.x, p.y - ascender, buf, len); 
   SelectObject(hdc, old);
 }
