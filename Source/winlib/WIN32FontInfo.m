@@ -99,8 +99,7 @@ NSString *win32_font_family(NSString *fontName);
 
 - (NSSize) advancementForGlyph: (NSGlyph)glyph
 {
-  WORD c = (WORD)glyph;
-  WORD windowsGlyph;
+  unichar u = (unichar)glyph;
   HDC hdc;
   float w;
   ABCFLOAT abc;
@@ -108,15 +107,8 @@ NSString *win32_font_family(NSString *fontName);
 
   hdc = GetDC(NULL);
   old = SelectObject(hdc, hFont);
-  // Convert from GNUstep glyph (unichar) to windows glyph.
-  if (GetGlyphIndicesW(hdc, &c, 1, &windowsGlyph, 0) == 0)
-    {
-      SelectObject(hdc, old);
-      ReleaseDC(NULL, hdc);
-NSLog(@"No glyph for U%d", c);
-      return NSMakeSize(0, 0);	// No such glyph
-    }
-  GetCharABCWidthsFloatW(hdc, windowsGlyph, windowsGlyph, &abc);
+  // FIXME ... currently a gnustep glyph is a unichar ... what if that changes.
+  GetCharABCWidthsFloatW(hdc, u, u, &abc);
   SelectObject(hdc, old);
   ReleaseDC(NULL, hdc);
 
@@ -137,7 +129,7 @@ NSLog(@"No glyph for U%d", c);
   hdc = GetDC(NULL);
   old = SelectObject(hdc, hFont);
   // Convert from GNUstep glyph (unichar) to windows glyph.
-  if (GetGlyphIndicesW(hdc, &c, 1, &windowsGlyph, 0) == 0)
+  if (GetGlyphIndicesW(hdc, &c, 1, &windowsGlyph, 0) == GDI_ERROR)
     {
       SelectObject(hdc, old);
       ReleaseDC(NULL, hdc);
