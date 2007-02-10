@@ -1,3 +1,17 @@
+2007-02-10 Fred Kiefer <FredKiefer@gmx.de>
+	
+	* Source/gsc/GSGState.m (-bezierPath): New method.
+	* Source/gsc/GSGState.m (-DPSpathbbox::::): Corrected to use new method.
+	* Source/cairo/CairoGState.m (-GSSetPatterColor:,
+	-pointInMatrixSpace:, -deltaPointInMatrixSpace:,
+	-rectInMatrixSpace:, -DPSarct:, -GSReadRect:): New methods to
+	override super implementation.
+	* Source/cairo/CairoGState.m (-GSCurrentCTM, -GSConcatCTM:,
+	-DPStranslate::, -DPSscale::, -DPSrotate:, -DPSinitmatrix,
+	-DPSconcat:) Protect all matrix operation from _ct being NULL.
+	* Source/cairo/CairoGState.m (-compositeGState:...fraction:):
+	Small improvents to both unflipped case.
+
 2007-02-08 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/winlib/WIN32FontInfo.m:

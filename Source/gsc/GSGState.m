@@ -889,22 +889,31 @@ typedef enum {
     [path removeAllPoints];
 }
 
+- (NSBezierPath *) bezierPath
+{
+  // This is rather slow, but it is not used very often
+  NSBezierPath *newPath = [path copy];
+  NSAffineTransform *ictm = [ctm copyWithZone: GSObjCZone(self)];
+
+  [ictm invert];
+  [newPath transformUsingAffineTransform: ictm];
+  RELEASE(ictm);
+  return AUTORELEASE(newPath);
+}
+
 - (void)DPSpathbbox: (float *)llx : (float *)lly : (float *)urx : (float *)ury 
 {
-  if (path)
-    {
-      NSRect rect = [path controlPointBounds];
-      
-      // FIXME Should convert back to user space
-      if (llx)
-	*llx = NSMinX(rect);
-      if (lly)
-	*lly = NSMinY(rect);
-      if (urx)
-	*urx = NSMaxX(rect);
-      if (ury)
-	*ury = NSMaxY(rect);
-    }
+  NSBezierPath *bpath = [self bezierPath];
+  NSRect rect = [bpath controlPointBounds];
+
+  if (llx)
+    *llx = NSMinX(rect);
+  if (lly)
+    *lly = NSMinY(rect);
+  if (urx)
+    *urx = NSMaxX(rect);
+  if (ury)
+    *ury = NSMaxY(rect);
 }
 
 - (void)DPSrcurveto: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)x3 
