@@ -753,57 +753,96 @@
 - (NSDictionary *) GSReadRect: (NSRect)r
 {
   NSMutableDictionary *dict;
-  NSData *data;
   NSSize ssize;
   NSAffineTransform *matrix;
   double x, y;
-  cairo_format_t format;
+  int ix, iy;
+  cairo_format_t format = CAIRO_FORMAT_ARGB32;
   cairo_surface_t *surface;
+  cairo_surface_t *isurface;
+  cairo_t *ct;
+  int size;
+  int i;
+  NSMutableData *data;
+  unsigned char *cdata;
 
-  surface = cairo_get_target(_ct);
-  dict = [NSMutableDictionary dictionary];
   x = NSWidth(r);
   y = NSHeight(r);
   cairo_user_to_device_distance(_ct, &x, &y);
-  ssize = NSMakeSize(x, y);
+  ix = floor(x);
+  iy = -floor(y);
+  ssize = NSMakeSize(ix, iy);
+
+/*
+  NSLog(@"rect %@ size %@", NSStringFromRect(r), NSStringFromSize(ssize));
+ */
+
+  dict = [NSMutableDictionary dictionary];
   [dict setObject: [NSValue valueWithSize: ssize] forKey: @"Size"];
   [dict setObject: NSDeviceRGBColorSpace forKey: @"ColorSpace"];
-  format = cairo_image_surface_get_format(surface);
-
-  if (format == CAIRO_FORMAT_ARGB32)
-    {
-      [dict setObject: [NSNumber numberWithUnsignedInt: 8] forKey: @"BitsPerSample"];
-      [dict setObject: [NSNumber numberWithUnsignedInt: 32]
-	    forKey: @"Depth"];
-      [dict setObject: [NSNumber numberWithUnsignedInt: 4] 
-	    forKey: @"SamplesPerPixel"];
-      [dict setObject: [NSNumber numberWithUnsignedInt: 1]
-	    forKey: @"HasAlpha"];
-    }
-  else if (format == CAIRO_FORMAT_RGB24)
-    {
-      [dict setObject: [NSNumber numberWithUnsignedInt: 8] forKey: @"BitsPerSample"];
-      [dict setObject: [NSNumber numberWithUnsignedInt: 24]
-	    forKey: @"Depth"];
-      [dict setObject: [NSNumber numberWithUnsignedInt: 3] 
-	    forKey: @"SamplesPerPixel"];
-      [dict setObject: [NSNumber numberWithUnsignedInt: 0]
-	    forKey: @"HasAlpha"];
-    }
+  
+  [dict setObject: [NSNumber numberWithUnsignedInt: 8] forKey: @"BitsPerSample"];
+  [dict setObject: [NSNumber numberWithUnsignedInt: 32]
+	forKey: @"Depth"];
+  [dict setObject: [NSNumber numberWithUnsignedInt: 4] 
+	forKey: @"SamplesPerPixel"];
+  [dict setObject: [NSNumber numberWithUnsignedInt: 1]
+	forKey: @"HasAlpha"];
 
   matrix = [self GSCurrentCTM];
   [matrix translateXBy: -r.origin.x - offset.x 
 	  yBy: r.origin.y + NSHeight(r) - offset.y];
   [dict setObject: matrix forKey: @"Matrix"];
-  DESTROY(matrix);
-  // FIXME
+
+  size = ix*iy*4;
+  data = [NSMutableData dataWithLength: size];
+  if (data == nil)
+    return nil;
+  cdata = [data mutableBytes];
+
+  surface = cairo_get_target(_ct);
+  isurface = cairo_image_surface_create_for_data(cdata, format, ix, iy, 4*ix);
+  ct = cairo_create(isurface);
+
+  if (viewIsFlipped)
+    {
+      cairo_matrix_t local_matrix;
+
+      cairo_matrix_init_scale(&local_matrix, 1, -1);
+      cairo_matrix_translate(&local_matrix, 0, -iy);
+      cairo_set_matrix(ct, &local_matrix);
+    }
+
+  cairo_set_source_surface(ct, surface, -r.origin.x, -r.origin.y);
+  cairo_rectangle(ct, 0, 0, ix, iy);
+  cairo_fill(ct);
+  cairo_destroy(ct);
+  cairo_surface_destroy(isurface);
+
+  for (i = 0; i < ix * iy; i++)
+    {
+      unsigned char d = cdata[4*i];
+
+#if GS_WORDS_BIGENDIAN
+      cdata[4*i] = cdata[4*i + 1];
+      cdata[4*i + 1] = cdata[4*i + 2];
+      cdata[4*i + 2] = cdata[4*i + 3];
+      cdata[4*i + 3] = d;
+#else
+      cdata[4*i] = cdata[4*i + 2];
+      //cdata[4*i + 1] = cdata[4*i + 1];
+      cdata[4*i + 2] = d;
+      //cdata[4*i + 3] = cdata[4*i + 3];
+#endif 
+    }
+
   [dict setObject: data forKey: @"Data"];
 
   return dict;
 }
 
 static void
-_set_op(cairo_t * ct, NSCompositingOperation op)
+_set_op(cairo_t *ct, NSCompositingOperation op)
 {
   switch (op)
     {
@@ -875,7 +914,7 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
 
 /*
   NSLog(@"%@ DPSimage %dx%d (%p)", self, pixelsWide, pixelsHigh,
-        cairo_current_target_surface (_ct));
+        cairo_get_target(_ct));
 */
   if (isPlanar || !([colorSpaceName isEqualToString: NSDeviceRGBColorSpace] ||
 		    [colorSpaceName isEqualToString: NSCalibratedRGBColorSpace]))
@@ -1080,13 +1119,11 @@ _set_op(cairo_t * ct, NSCompositingOperation op)
     {
       if (!source->viewIsFlipped)
         {
-	    NSLog(@"Fall 1 %g, %g", height, dh);
 	  cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny - dh);
 	  //cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny - height);
 	}
       else 
         {
-	    NSLog(@"Fall 2 %g, %g", height, dh);
 	  // Both flipped
 	  cairo_pattern_t *cpattern;
 	  cairo_matrix_t local_matrix;
