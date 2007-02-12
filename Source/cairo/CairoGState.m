@@ -191,17 +191,23 @@
 
 - (void) DPScharpath: (const char *)s : (int)b
 {
-  char *c = malloc(b + 1);
+  if (_ct)
+    {
+      char *c = malloc(b + 1);
 
-  memcpy(c, s, b);
-  c[b] = 0;
-  cairo_text_path(_ct, c);
-  free(c);
+      memcpy(c, s, b);
+      c[b] = 0;
+      cairo_text_path(_ct, c);
+      free(c);
+    }
 }
 
 - (void) DPSshow: (const char *)s
 {
-  cairo_show_text(_ct, s);
+  if (_ct)
+    {
+      cairo_show_text(_ct, s);
+    }
 }
 
 - (void) GSSetFont: (GSFontInfo *)fontref
@@ -211,33 +217,45 @@
 
   [super GSSetFont: fontref];
 
-  matrix = [font matrix];
-  cairo_set_font_face(_ct, [((CairoFontInfo *)font)->_faceInfo fontFace]);
-  cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
-		    -matrix[3], matrix[4], matrix[5]);
-  cairo_set_font_matrix(_ct, &font_matrix);
+  if (_ct)
+    {
+      matrix = [font matrix];
+      cairo_set_font_face(_ct, [((CairoFontInfo *)font)->_faceInfo fontFace]);
+      cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
+			-matrix[3], matrix[4], matrix[5]);
+      cairo_set_font_matrix(_ct, &font_matrix);
+    }
 }
 
 - (void) GSSetFontSize: (float)size
 {
-  cairo_set_font_size(_ct, size);
+  if (_ct)
+    {
+      cairo_set_font_size(_ct, size);
+    }
 }
 
 - (void) GSShowText: (const char *)string : (size_t)length
 {
-  char *c = malloc(length + 1);
+  if (_ct)
+    {
+      char *c = malloc(length + 1);
 
-  memcpy(c, string, length);
-  c[length] = 0;
-  cairo_show_text(_ct, c);
-  free(c);
+      memcpy(c, string, length);
+      c[length] = 0;
+      cairo_show_text(_ct, c);
+      free(c);
+    }
 }
 
 - (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t)length
 {
-  [(CairoFontInfo *)font drawGlyphs: glyphs
-		    length: length
-		    on: _ct];
+  if (_ct)
+    {
+      [(CairoFontInfo *)font drawGlyphs: glyphs
+			length: length
+			on: _ct];
+    }
 }
 
 /*
@@ -769,13 +787,9 @@
   x = NSWidth(r);
   y = NSHeight(r);
   cairo_user_to_device_distance(_ct, &x, &y);
-  ix = floor(x);
-  iy = -floor(y);
+  ix = abs(floor(x));
+  iy = abs(floor(y));
   ssize = NSMakeSize(ix, iy);
-
-/*
-  NSLog(@"rect %@ size %@", NSStringFromRect(r), NSStringFromSize(ssize));
- */
 
   dict = [NSMutableDictionary dictionary];
   [dict setObject: [NSValue valueWithSize: ssize] forKey: @"Size"];
@@ -1089,7 +1103,8 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   double width, height;
   double dh;
   NSSize size;
-  
+  double x, y;
+
   size = [source->_surface size];
   dh = size.height;
 
@@ -1109,18 +1124,21 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 	    self,cairo_get_target(_ct),NSStringFromSize([_surface size]));
   */
     }
-
+  x = aPoint.x;
+  y = aPoint.y;
   minx = NSMinX(aRect);
   miny = NSMinY(aRect);
   width = NSWidth(aRect);
   height = NSHeight(aRect);
+//  NSLog(@"Old values %g, %g, %g , %g", minx, miny, width, height);
+  cairo_user_to_device(source->_ct, &minx, &miny);
+//  NSLog(@"New values %g, %g, %g , %g", minx, miny, width, height);
 
   if (viewIsFlipped)
     {
       if (!source->viewIsFlipped)
         {
-	  cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny - dh);
-	  //cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny - height);
+	  cairo_set_source_surface(_ct, src, x - minx, y + miny);
 	}
       else 
         {
@@ -1130,12 +1148,13 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 	  
 	  cpattern = cairo_pattern_create_for_surface(src);
 	  cairo_matrix_init_scale(&local_matrix, 1, -1);
-	  cairo_matrix_translate(&local_matrix, -aPoint.x + minx, -aPoint.y + miny);
+	  cairo_matrix_translate(&local_matrix, -x + minx, -y - miny);
+//	  NSLog(@"y %g, miny %g, dh %g, height %g = res %g", y, miny, dh, height, -y - miny);
 	  cairo_pattern_set_matrix(cpattern, &local_matrix);
 	  cairo_set_source(_ct, cpattern);
 	  cairo_pattern_destroy(cpattern);
 	}
-      cairo_rectangle(_ct, aPoint.x, aPoint.y - height, width, height);
+      cairo_rectangle(_ct, x, y - height, width, height);
     }
   else 
     {
@@ -1147,17 +1166,16 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 
 	  cpattern = cairo_pattern_create_for_surface(src);
 	  cairo_matrix_init_scale(&local_matrix, 1, -1);
-	  cairo_matrix_translate(&local_matrix, -aPoint.x + minx, -aPoint.y + miny - dh);
-	  //cairo_matrix_translate(&local_matrix, -aPoint.x + minx, -aPoint.y + miny - height);
+	  cairo_matrix_translate(&local_matrix, -x + minx, -y - miny);
 	  cairo_pattern_set_matrix(cpattern, &local_matrix);
 	  cairo_set_source(_ct, cpattern);
 	  cairo_pattern_destroy(cpattern);
 	}
       else
         {
-	  cairo_set_source_surface(_ct, src, aPoint.x - minx, aPoint.y - miny);
+	  cairo_set_source_surface(_ct, src, x - minx, y + miny);
 	}
-      cairo_rectangle(_ct, aPoint.x, aPoint.y, width, height);
+      cairo_rectangle(_ct, x, y, width, height);
     }
 
   if (delta < 1.0)
