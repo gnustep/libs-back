@@ -682,10 +682,23 @@ XFT_CFLAGS
 XFT_LIBS
 WITH_XFT
 WITH_GLX
+WITH_WGL
 CAIRO_CFLAGS
 CAIRO_LIBS
+CAIRO_FT_CFLAGS
+CAIRO_FT_LIBS
+CAIRO_XLIB_CFLAGS
+CAIRO_XLIB_LIBS
+CAIRO_WIN32_CFLAGS
+CAIRO_WIN32_LIBS
+CAIRO_GLITZ_CFLAGS
+CAIRO_GLITZ_LIBS
 GLITZ_CFLAGS
 GLITZ_LIBS
+GLITZ_GLX_CFLAGS
+GLITZ_GLX_LIBS
+GLITZ_WGL_CFLAGS
+GLITZ_WGL_LIBS
 WITH_GLITZ
 WITH_WRASTER
 BUILD_GRAPHICS
@@ -1283,7 +1296,8 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-glx           Disable GLX support
   --disable-xim           Disable XIM support
-  --disable-glitz         Disable Glitz support
+  --disable-wgl           Disable WGL support
+  --enable-glitz          Enable Glitz support
   --enable-server=SRV     Build server type: x11, win32
   --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo
 
@@ -6314,7 +6328,8 @@ rm -f conftest*
    { echo "$as_me:$LINENO: result: $have_glx_rgba" >&5
 echo "${ECHO_T}$have_glx_rgba" >&6; }
    if test "$have_glx" = yes -a "$ac_cv_header_GL_glx_h" = yes -a "$have_glx_rgba" = yes; then
-     LIBS="-lGL ${LIBS}"
+     GLX_LIBS="-lGL"
+     GLX_FLAGS=""
      WITH_GLX=yes
 
 cat >>confdefs.h <<\_ACEOF
@@ -6323,7 +6338,6 @@ _ACEOF
 
    fi
 fi
-
 
 
 #--------------------------------------------------------------------
@@ -6668,7 +6682,7 @@ else
 fi
 
 if test "$have_gdi32" = yes; then
-  WIN32_LIBS="-lgdi32"
+  WIN32_LIBS="-lgdi32 -lm"
 fi
 { echo "$as_me:$LINENO: checking for main in -lmsimg32" >&5
 echo $ECHO_N "checking for main in -lmsimg32... $ECHO_C" >&6; }
@@ -6734,6 +6748,273 @@ fi
 if test "$have_msimg32" = yes; then
   WIN32_LIBS="${WIN32_LIBS} -lmsimg32"
 fi
+
+#--------------------------------------------------------------------
+# WGL support
+#--------------------------------------------------------------------
+WITH_WGL=no
+# Check whether --enable-wgl was given.
+if test "${enable_wgl+set}" = set; then
+  enableval=$enable_wgl;
+else
+  enable_wgl=yes
+fi
+
+if test "x$enable_wgl" = "xyes"; then
+   { echo "$as_me:$LINENO: checking for main in -lopengl32" >&5
+echo $ECHO_N "checking for main in -lopengl32... $ECHO_C" >&6; }
+if test "${ac_cv_lib_opengl32_main+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lopengl32  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_opengl32_main=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_opengl32_main=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_opengl32_main" >&5
+echo "${ECHO_T}$ac_cv_lib_opengl32_main" >&6; }
+if test $ac_cv_lib_opengl32_main = yes; then
+  have_wgl=yes
+else
+  have_wgl=no
+fi
+
+   save_CPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS"
+   if test "${ac_cv_header_windows_h+set}" = set; then
+  { echo "$as_me:$LINENO: checking for windows.h" >&5
+echo $ECHO_N "checking for windows.h... $ECHO_C" >&6; }
+if test "${ac_cv_header_windows_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_header_windows_h" >&5
+echo "${ECHO_T}$ac_cv_header_windows_h" >&6; }
+else
+  # Is the header compilable?
+{ echo "$as_me:$LINENO: checking windows.h usability" >&5
+echo $ECHO_N "checking windows.h usability... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <windows.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ echo "$as_me:$LINENO: checking windows.h presence" >&5
+echo $ECHO_N "checking windows.h presence... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <windows.h>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: windows.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: windows.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: windows.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: windows.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: windows.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: windows.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: windows.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: windows.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: windows.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: windows.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: windows.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: windows.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: windows.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: windows.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: windows.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: windows.h: in the future, the compiler will take precedence" >&2;}
+
+    ;;
+esac
+{ echo "$as_me:$LINENO: checking for windows.h" >&5
+echo $ECHO_N "checking for windows.h... $ECHO_C" >&6; }
+if test "${ac_cv_header_windows_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_windows_h=$ac_header_preproc
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_header_windows_h" >&5
+echo "${ECHO_T}$ac_cv_header_windows_h" >&6; }
+
+fi
+
+
+   CPPFLAGS="$save_CPPFLAGS"
+   if test "$have_wgl" = yes -a "$ac_cv_header_windows_h" = yes; then
+     { echo "$as_me:$LINENO: checking for wgl" >&5
+echo $ECHO_N "checking for wgl... $ECHO_C" >&6; }
+     WGL_LIBS="-lopengl32 -lgdi32"
+     WGL_CFLAGS=""
+
+     save_libs="$LIBS"
+     LIBS="$WGL_LIBS"
+     cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <windows.h>
+int
+main ()
+{
+int main() { wglCreateContext(0); }
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  use_wgl=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	use_wgl=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+     LIBS="$save_libs"
+     { echo "$as_me:$LINENO: result: $use_wgl" >&5
+echo "${ECHO_T}$use_wgl" >&6; }
+     WITH_WGL=$use_wgl
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_WGL 1
+_ACEOF
+
+   fi
+fi
+
 
 #--------------------------------------------------------------------
 # libart graphics libraries
@@ -6956,6 +7237,7 @@ fi
 #--------------------------------------------------------------------
 # Cairo graphics libraries
 #--------------------------------------------------------------------
+PKG_CAIRO=no
 
   succeeded=no
 
@@ -7055,20 +7337,657 @@ echo "${ECHO_T}$CAIRO_LIBS" >&6; }
      have_cairo=no
   fi
 
+PKG_CAIRO_FT=no
+
+  succeeded=no
+
+  if test -z "$PKG_CONFIG"; then
+    # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_PKG_CONFIG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { echo "$as_me:$LINENO: result: $PKG_CONFIG" >&5
+echo "${ECHO_T}$PKG_CONFIG" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+  fi
+
+  if test "$PKG_CONFIG" = "no" ; then
+     echo "pkg-config script not be found"
+     ## We don't want the user to see this warning
+     ## echo "*** The pkg-config script could not be found. Make sure it is"
+     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
+     ## echo "*** to the full path to pkg-config."
+     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
+  else
+     PKG_CONFIG_MIN_VERSION=0.9.0
+     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
+        { echo "$as_me:$LINENO: checking for cairo-ft" >&5
+echo $ECHO_N "checking for cairo-ft... $ECHO_C" >&6; }
+
+        if $PKG_CONFIG --exists "cairo-ft" ; then
+            { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+            succeeded=yes
+
+            { echo "$as_me:$LINENO: checking CAIRO_FT_CFLAGS" >&5
+echo $ECHO_N "checking CAIRO_FT_CFLAGS... $ECHO_C" >&6; }
+            CAIRO_FT_CFLAGS=`$PKG_CONFIG --cflags "cairo-ft"`
+            { echo "$as_me:$LINENO: result: $CAIRO_FT_CFLAGS" >&5
+echo "${ECHO_T}$CAIRO_FT_CFLAGS" >&6; }
+
+            { echo "$as_me:$LINENO: checking CAIRO_FT_LIBS" >&5
+echo $ECHO_N "checking CAIRO_FT_LIBS... $ECHO_C" >&6; }
+            CAIRO_FT_LIBS=`$PKG_CONFIG --libs "cairo-ft"`
+            { echo "$as_me:$LINENO: result: $CAIRO_FT_LIBS" >&5
+echo "${ECHO_T}$CAIRO_FT_LIBS" >&6; }
+        else
+            CAIRO_FT_CFLAGS=""
+            CAIRO_FT_LIBS=""
+            ## If we have a custom action on failure, don't print errors, but
+            ## do set a variable so people can do so.
+            CAIRO_FT_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "cairo-ft"`
+
+        fi
+
+
+
+     else
+        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
+        echo "*** See http://www.freedesktop.org/software/pkgconfig"
+     fi
+  fi
+
+  if test $succeeded = yes; then
+     have_cairo_ft=yes
+  else
+     have_cairo_ft=no
+  fi
+
+PKG_CAIRO_XLIB=no
+
+  succeeded=no
+
+  if test -z "$PKG_CONFIG"; then
+    # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_PKG_CONFIG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { echo "$as_me:$LINENO: result: $PKG_CONFIG" >&5
+echo "${ECHO_T}$PKG_CONFIG" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+  fi
+
+  if test "$PKG_CONFIG" = "no" ; then
+     echo "pkg-config script not be found"
+     ## We don't want the user to see this warning
+     ## echo "*** The pkg-config script could not be found. Make sure it is"
+     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
+     ## echo "*** to the full path to pkg-config."
+     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
+  else
+     PKG_CONFIG_MIN_VERSION=0.9.0
+     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
+        { echo "$as_me:$LINENO: checking for cairo-xlib" >&5
+echo $ECHO_N "checking for cairo-xlib... $ECHO_C" >&6; }
+
+        if $PKG_CONFIG --exists "cairo-xlib" ; then
+            { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+            succeeded=yes
+
+            { echo "$as_me:$LINENO: checking CAIRO_XLIB_CFLAGS" >&5
+echo $ECHO_N "checking CAIRO_XLIB_CFLAGS... $ECHO_C" >&6; }
+            CAIRO_XLIB_CFLAGS=`$PKG_CONFIG --cflags "cairo-xlib"`
+            { echo "$as_me:$LINENO: result: $CAIRO_XLIB_CFLAGS" >&5
+echo "${ECHO_T}$CAIRO_XLIB_CFLAGS" >&6; }
+
+            { echo "$as_me:$LINENO: checking CAIRO_XLIB_LIBS" >&5
+echo $ECHO_N "checking CAIRO_XLIB_LIBS... $ECHO_C" >&6; }
+            CAIRO_XLIB_LIBS=`$PKG_CONFIG --libs "cairo-xlib"`
+            { echo "$as_me:$LINENO: result: $CAIRO_XLIB_LIBS" >&5
+echo "${ECHO_T}$CAIRO_XLIB_LIBS" >&6; }
+        else
+            CAIRO_XLIB_CFLAGS=""
+            CAIRO_XLIB_LIBS=""
+            ## If we have a custom action on failure, don't print errors, but
+            ## do set a variable so people can do so.
+            CAIRO_XLIB_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "cairo-xlib"`
+
+        fi
+
+
+
+     else
+        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
+        echo "*** See http://www.freedesktop.org/software/pkgconfig"
+     fi
+  fi
+
+  if test $succeeded = yes; then
+     have_cairo_xlib=yes
+  else
+     have_cairo_xlib=no
+  fi
+
+PKG_CAIRO_WIN32=no
+
+  succeeded=no
+
+  if test -z "$PKG_CONFIG"; then
+    # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_PKG_CONFIG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { echo "$as_me:$LINENO: result: $PKG_CONFIG" >&5
+echo "${ECHO_T}$PKG_CONFIG" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+  fi
+
+  if test "$PKG_CONFIG" = "no" ; then
+     echo "pkg-config script not be found"
+     ## We don't want the user to see this warning
+     ## echo "*** The pkg-config script could not be found. Make sure it is"
+     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
+     ## echo "*** to the full path to pkg-config."
+     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
+  else
+     PKG_CONFIG_MIN_VERSION=0.9.0
+     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
+        { echo "$as_me:$LINENO: checking for cairo-win32" >&5
+echo $ECHO_N "checking for cairo-win32... $ECHO_C" >&6; }
+
+        if $PKG_CONFIG --exists "cairo-win32" ; then
+            { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+            succeeded=yes
+
+            { echo "$as_me:$LINENO: checking CAIRO_WIN32_CFLAGS" >&5
+echo $ECHO_N "checking CAIRO_WIN32_CFLAGS... $ECHO_C" >&6; }
+            CAIRO_WIN32_CFLAGS=`$PKG_CONFIG --cflags "cairo-win32"`
+            { echo "$as_me:$LINENO: result: $CAIRO_WIN32_CFLAGS" >&5
+echo "${ECHO_T}$CAIRO_WIN32_CFLAGS" >&6; }
+
+            { echo "$as_me:$LINENO: checking CAIRO_WIN32_LIBS" >&5
+echo $ECHO_N "checking CAIRO_WIN32_LIBS... $ECHO_C" >&6; }
+            CAIRO_WIN32_LIBS=`$PKG_CONFIG --libs "cairo-win32"`
+            { echo "$as_me:$LINENO: result: $CAIRO_WIN32_LIBS" >&5
+echo "${ECHO_T}$CAIRO_WIN32_LIBS" >&6; }
+        else
+            CAIRO_WIN32_CFLAGS=""
+            CAIRO_WIN32_LIBS=""
+            ## If we have a custom action on failure, don't print errors, but
+            ## do set a variable so people can do so.
+            CAIRO_WIN32_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "cairo-win32"`
+
+        fi
+
+
+
+     else
+        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
+        echo "*** See http://www.freedesktop.org/software/pkgconfig"
+     fi
+  fi
+
+  if test $succeeded = yes; then
+     have_cairo_win32=yes
+  else
+     have_cairo_win32=no
+  fi
+
+PKG_CAIRO_GLITZ=no
+
+  succeeded=no
+
+  if test -z "$PKG_CONFIG"; then
+    # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_PKG_CONFIG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { echo "$as_me:$LINENO: result: $PKG_CONFIG" >&5
+echo "${ECHO_T}$PKG_CONFIG" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+  fi
+
+  if test "$PKG_CONFIG" = "no" ; then
+     echo "pkg-config script not be found"
+     ## We don't want the user to see this warning
+     ## echo "*** The pkg-config script could not be found. Make sure it is"
+     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
+     ## echo "*** to the full path to pkg-config."
+     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
+  else
+     PKG_CONFIG_MIN_VERSION=0.9.0
+     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
+        { echo "$as_me:$LINENO: checking for cairo-glitz" >&5
+echo $ECHO_N "checking for cairo-glitz... $ECHO_C" >&6; }
+
+        if $PKG_CONFIG --exists "cairo-glitz" ; then
+            { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+            succeeded=yes
+
+            { echo "$as_me:$LINENO: checking CAIRO_GLITZ_CFLAGS" >&5
+echo $ECHO_N "checking CAIRO_GLITZ_CFLAGS... $ECHO_C" >&6; }
+            CAIRO_GLITZ_CFLAGS=`$PKG_CONFIG --cflags "cairo-glitz"`
+            { echo "$as_me:$LINENO: result: $CAIRO_GLITZ_CFLAGS" >&5
+echo "${ECHO_T}$CAIRO_GLITZ_CFLAGS" >&6; }
+
+            { echo "$as_me:$LINENO: checking CAIRO_GLITZ_LIBS" >&5
+echo $ECHO_N "checking CAIRO_GLITZ_LIBS... $ECHO_C" >&6; }
+            CAIRO_GLITZ_LIBS=`$PKG_CONFIG --libs "cairo-glitz"`
+            { echo "$as_me:$LINENO: result: $CAIRO_GLITZ_LIBS" >&5
+echo "${ECHO_T}$CAIRO_GLITZ_LIBS" >&6; }
+        else
+            CAIRO_GLITZ_CFLAGS=""
+            CAIRO_GLITZ_LIBS=""
+            ## If we have a custom action on failure, don't print errors, but
+            ## do set a variable so people can do so.
+            CAIRO_GLITZ_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "cairo-glitz"`
+
+        fi
+
+
+
+     else
+        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
+        echo "*** See http://www.freedesktop.org/software/pkgconfig"
+     fi
+  fi
+
+  if test $succeeded = yes; then
+     have_cairo_glitz=yes
+  else
+     have_cairo_glitz=no
+  fi
+
 
 #--------------------------------------------------------------------
-# Glitz-GLX libraries
+# Glitz libraries
 #--------------------------------------------------------------------
 WITH_GLITZ=no
 # Check whether --enable-glitz was given.
 if test "${enable_glitz+set}" = set; then
   enableval=$enable_glitz;
 else
-  enable_glitz=yes
+  enable_glitz=no
 fi
 
 
 if test "x$enable_glitz" = "xyes"; then
+
+  succeeded=no
+
+  if test -z "$PKG_CONFIG"; then
+    # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_PKG_CONFIG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { echo "$as_me:$LINENO: result: $PKG_CONFIG" >&5
+echo "${ECHO_T}$PKG_CONFIG" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+  fi
+
+  if test "$PKG_CONFIG" = "no" ; then
+     echo "pkg-config script not be found"
+     ## We don't want the user to see this warning
+     ## echo "*** The pkg-config script could not be found. Make sure it is"
+     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
+     ## echo "*** to the full path to pkg-config."
+     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
+  else
+     PKG_CONFIG_MIN_VERSION=0.9.0
+     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
+        { echo "$as_me:$LINENO: checking for glitz" >&5
+echo $ECHO_N "checking for glitz... $ECHO_C" >&6; }
+
+        if $PKG_CONFIG --exists "glitz" ; then
+            { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+            succeeded=yes
+
+            { echo "$as_me:$LINENO: checking GLITZ_CFLAGS" >&5
+echo $ECHO_N "checking GLITZ_CFLAGS... $ECHO_C" >&6; }
+            GLITZ_CFLAGS=`$PKG_CONFIG --cflags "glitz"`
+            { echo "$as_me:$LINENO: result: $GLITZ_CFLAGS" >&5
+echo "${ECHO_T}$GLITZ_CFLAGS" >&6; }
+
+            { echo "$as_me:$LINENO: checking GLITZ_LIBS" >&5
+echo $ECHO_N "checking GLITZ_LIBS... $ECHO_C" >&6; }
+            GLITZ_LIBS=`$PKG_CONFIG --libs "glitz"`
+            { echo "$as_me:$LINENO: result: $GLITZ_LIBS" >&5
+echo "${ECHO_T}$GLITZ_LIBS" >&6; }
+        else
+            GLITZ_CFLAGS=""
+            GLITZ_LIBS=""
+            ## If we have a custom action on failure, don't print errors, but
+            ## do set a variable so people can do so.
+            GLITZ_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "glitz"`
+
+        fi
+
+
+
+     else
+        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
+        echo "*** See http://www.freedesktop.org/software/pkgconfig"
+     fi
+  fi
+
+  if test $succeeded = yes; then
+     have_glitz=yes
+  else
+     have_glitz=no
+  fi
+
+  save_CPPFLAGS=$CPPFLAGS
+    CPPFLAGS="$CPPFLAGS $GLITZ_CFLAGS"
+    if test "${ac_cv_header_glitz_h+set}" = set; then
+  { echo "$as_me:$LINENO: checking for glitz.h" >&5
+echo $ECHO_N "checking for glitz.h... $ECHO_C" >&6; }
+if test "${ac_cv_header_glitz_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_header_glitz_h" >&5
+echo "${ECHO_T}$ac_cv_header_glitz_h" >&6; }
+else
+  # Is the header compilable?
+{ echo "$as_me:$LINENO: checking glitz.h usability" >&5
+echo $ECHO_N "checking glitz.h usability... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <glitz.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ echo "$as_me:$LINENO: checking glitz.h presence" >&5
+echo $ECHO_N "checking glitz.h presence... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <glitz.h>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: glitz.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: glitz.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: glitz.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: glitz.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: glitz.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: glitz.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: glitz.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: glitz.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: glitz.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: glitz.h: in the future, the compiler will take precedence" >&2;}
+
+    ;;
+esac
+{ echo "$as_me:$LINENO: checking for glitz.h" >&5
+echo $ECHO_N "checking for glitz.h... $ECHO_C" >&6; }
+if test "${ac_cv_header_glitz_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_glitz_h=$ac_header_preproc
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_header_glitz_h" >&5
+echo "${ECHO_T}$ac_cv_header_glitz_h" >&6; }
+
+fi
+if test $ac_cv_header_glitz_h = yes; then
+  have_glitz_h=yes
+else
+  have_glitz_h=no
+fi
+
+
+  CPPFLAGS=$save_CPPFLAGS
+  if test "$have_glitz" = yes -a "$have_glitz_h" = yes; then
+
+    if test "x$WITH_GLX" = "xyes"; then
 
   succeeded=no
 
@@ -7134,23 +8053,23 @@ echo $ECHO_N "checking for glitz-glx... $ECHO_C" >&6; }
 echo "${ECHO_T}yes" >&6; }
             succeeded=yes
 
-            { echo "$as_me:$LINENO: checking GLITZ_CFLAGS" >&5
-echo $ECHO_N "checking GLITZ_CFLAGS... $ECHO_C" >&6; }
-            GLITZ_CFLAGS=`$PKG_CONFIG --cflags "glitz-glx"`
-            { echo "$as_me:$LINENO: result: $GLITZ_CFLAGS" >&5
-echo "${ECHO_T}$GLITZ_CFLAGS" >&6; }
+            { echo "$as_me:$LINENO: checking GLITZ_GLX_CFLAGS" >&5
+echo $ECHO_N "checking GLITZ_GLX_CFLAGS... $ECHO_C" >&6; }
+            GLITZ_GLX_CFLAGS=`$PKG_CONFIG --cflags "glitz-glx"`
+            { echo "$as_me:$LINENO: result: $GLITZ_GLX_CFLAGS" >&5
+echo "${ECHO_T}$GLITZ_GLX_CFLAGS" >&6; }
 
-            { echo "$as_me:$LINENO: checking GLITZ_LIBS" >&5
-echo $ECHO_N "checking GLITZ_LIBS... $ECHO_C" >&6; }
-            GLITZ_LIBS=`$PKG_CONFIG --libs "glitz-glx"`
-            { echo "$as_me:$LINENO: result: $GLITZ_LIBS" >&5
-echo "${ECHO_T}$GLITZ_LIBS" >&6; }
+            { echo "$as_me:$LINENO: checking GLITZ_GLX_LIBS" >&5
+echo $ECHO_N "checking GLITZ_GLX_LIBS... $ECHO_C" >&6; }
+            GLITZ_GLX_LIBS=`$PKG_CONFIG --libs "glitz-glx"`
+            { echo "$as_me:$LINENO: result: $GLITZ_GLX_LIBS" >&5
+echo "${ECHO_T}$GLITZ_GLX_LIBS" >&6; }
         else
-            GLITZ_CFLAGS=""
-            GLITZ_LIBS=""
+            GLITZ_GLX_CFLAGS=""
+            GLITZ_GLX_LIBS=""
             ## If we have a custom action on failure, don't print errors, but
             ## do set a variable so people can do so.
-            GLITZ_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "glitz-glx"`
+            GLITZ_GLX_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "glitz-glx"`
 
         fi
 
@@ -7168,7 +8087,9 @@ echo "${ECHO_T}$GLITZ_LIBS" >&6; }
      have_glitz_glx=no
   fi
 
-  if test "${ac_cv_header_glitz_glx_h+set}" = set; then
+      save_CPPFLAGS=$CPPFLAGS
+        CPPFLAGS="$CPPFLAGS $GLITZ_GLX_CFLAGS"
+        if test "${ac_cv_header_glitz_glx_h+set}" = set; then
   { echo "$as_me:$LINENO: checking for glitz-glx.h" >&5
 echo $ECHO_N "checking for glitz-glx.h... $ECHO_C" >&6; }
 if test "${ac_cv_header_glitz_glx_h+set}" = set; then
@@ -7300,15 +8221,273 @@ else
 fi
 
 
-  if test "$have_glitz_glx" = yes -a "$have_glitz_glx_h" = yes; then
-    WITH_GLITZ=yes
-    LIBS="$GLITZ_LIBS $LIBS"
-    GRAPHIC_CFLAGS="$GLITZ_CFLAGS $GRAPHIC_CFLAGS"
+      CPPFLAGS=$save_CPPFLAGS
+      if test "$have_glitz_glx" = yes -a "$have_glitz_glx_h" = yes; then
+        GLITZ_LIBS="$GLITZ_LIBS $GLITZ_GLX_LIBS"
+        GLITZ_CFLAGS="$GLITZ_CFLAGS $GLITZ_GLX_CFLAGS"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_GLITZ_GLX 1
 _ACEOF
 
+        WITH_GLITZ=yes
+      fi
+    fi
+
+    if test "x$WITH_WGL" = "xyes"; then
+
+  succeeded=no
+
+  if test -z "$PKG_CONFIG"; then
+    # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_PKG_CONFIG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { echo "$as_me:$LINENO: result: $PKG_CONFIG" >&5
+echo "${ECHO_T}$PKG_CONFIG" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+  fi
+
+  if test "$PKG_CONFIG" = "no" ; then
+     echo "pkg-config script not be found"
+     ## We don't want the user to see this warning
+     ## echo "*** The pkg-config script could not be found. Make sure it is"
+     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
+     ## echo "*** to the full path to pkg-config."
+     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
+  else
+     PKG_CONFIG_MIN_VERSION=0.9.0
+     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
+        { echo "$as_me:$LINENO: checking for glitz-wgl" >&5
+echo $ECHO_N "checking for glitz-wgl... $ECHO_C" >&6; }
+
+        if $PKG_CONFIG --exists "glitz-wgl" ; then
+            { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+            succeeded=yes
+
+            { echo "$as_me:$LINENO: checking GLITZ_WGL_CFLAGS" >&5
+echo $ECHO_N "checking GLITZ_WGL_CFLAGS... $ECHO_C" >&6; }
+            GLITZ_WGL_CFLAGS=`$PKG_CONFIG --cflags "glitz-wgl"`
+            { echo "$as_me:$LINENO: result: $GLITZ_WGL_CFLAGS" >&5
+echo "${ECHO_T}$GLITZ_WGL_CFLAGS" >&6; }
+
+            { echo "$as_me:$LINENO: checking GLITZ_WGL_LIBS" >&5
+echo $ECHO_N "checking GLITZ_WGL_LIBS... $ECHO_C" >&6; }
+            GLITZ_WGL_LIBS=`$PKG_CONFIG --libs "glitz-wgl"`
+            { echo "$as_me:$LINENO: result: $GLITZ_WGL_LIBS" >&5
+echo "${ECHO_T}$GLITZ_WGL_LIBS" >&6; }
+        else
+            GLITZ_WGL_CFLAGS=""
+            GLITZ_WGL_LIBS=""
+            ## If we have a custom action on failure, don't print errors, but
+            ## do set a variable so people can do so.
+            GLITZ_WGL_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "glitz-wgl"`
+
+        fi
+
+
+
+     else
+        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
+        echo "*** See http://www.freedesktop.org/software/pkgconfig"
+     fi
+  fi
+
+  if test $succeeded = yes; then
+     have_glitz_wgl=yes
+  else
+     have_glitz_wgl=no
+  fi
+
+      save_CPPFLAGS=$CPPFLAGS
+        CPPFLAGS="$CPPFLAGS $GLITZ_WGL_CFLAGS"
+        if test "${ac_cv_header_glitz_wgl_h+set}" = set; then
+  { echo "$as_me:$LINENO: checking for glitz-wgl.h" >&5
+echo $ECHO_N "checking for glitz-wgl.h... $ECHO_C" >&6; }
+if test "${ac_cv_header_glitz_wgl_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_header_glitz_wgl_h" >&5
+echo "${ECHO_T}$ac_cv_header_glitz_wgl_h" >&6; }
+else
+  # Is the header compilable?
+{ echo "$as_me:$LINENO: checking glitz-wgl.h usability" >&5
+echo $ECHO_N "checking glitz-wgl.h usability... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <glitz-wgl.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ echo "$as_me:$LINENO: checking glitz-wgl.h presence" >&5
+echo $ECHO_N "checking glitz-wgl.h presence... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <glitz-wgl.h>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: glitz-wgl.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: glitz-wgl.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz-wgl.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: glitz-wgl.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: glitz-wgl.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: glitz-wgl.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz-wgl.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: glitz-wgl.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz-wgl.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: glitz-wgl.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz-wgl.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: glitz-wgl.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz-wgl.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: glitz-wgl.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: glitz-wgl.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: glitz-wgl.h: in the future, the compiler will take precedence" >&2;}
+
+    ;;
+esac
+{ echo "$as_me:$LINENO: checking for glitz-wgl.h" >&5
+echo $ECHO_N "checking for glitz-wgl.h... $ECHO_C" >&6; }
+if test "${ac_cv_header_glitz_wgl_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_glitz_wgl_h=$ac_header_preproc
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_header_glitz_wgl_h" >&5
+echo "${ECHO_T}$ac_cv_header_glitz_wgl_h" >&6; }
+
+fi
+if test $ac_cv_header_glitz_wgl_h = yes; then
+  have_glitz_wgl_h=yes
+else
+  have_glitz_wgl_h=no
+fi
+
+
+      CPPFLAGS=$save_CPPFLAGS
+      if test "$have_glitz_wgl" = yes -a "$have_glitz_wgl_h" = yes; then
+        GLITZ_LIBS="$GLITZ_LIBS $GLITZ_WGL_LIBS"
+        GLITZ_CFLAGS="$GLITZ_CFLAGS $GLITZ_WGL_CFLAGS"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_GLITZ_WGL 1
+_ACEOF
+
+        WITH_GLITZ=yes
+      fi
+    fi
+
+    if test "$WITH_GLITZ" != "yes" ; then
+      { { echo "$as_me:$LINENO: error: Invalid glitz backend : glitz-glx or glitz-wgl required." >&5
+echo "$as_me: error: Invalid glitz backend : glitz-glx or glitz-wgl required." >&2;}
+   { (exit 1); exit 1; }; }
+      { echo "$as_me:$LINENO: Glitz disable" >&5
+echo "$as_me: Glitz disable" >&6;}
+    fi
 
 cat >>confdefs.h <<\_ACEOF
 #define USE_GLITZ 1
@@ -7333,8 +8512,7 @@ LDFLAGS=${GRAPHIC_LFLAGS}
 BUILD_SERVER=x11
 BUILD_GRAPHICS=art
 case $target_os in
-  *mingw32* ) BUILD_SERVER=win32
-              BUILD_GRAPHICS=winlib;;
+  *mingw32* ) BUILD_SERVER=win32;;
 esac
 
 # Check whether --enable-server was given.
@@ -7389,26 +8567,55 @@ echo "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
     CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xcairo"; then
-  if test "$have_cairo" = no; then
+  if test "$have_cairo" = no -o "$have_cairo-ft" = no ; then
     { { echo "$as_me:$LINENO: error: can't find cairo, required for graphics=cairo!" >&5
 echo "$as_me: error: can't find cairo, required for graphics=cairo!" >&2;}
    { (exit 1); exit 1; }; }
-    BUILD_GRAPHICS=xlib
-  fi
-  if test "$have_freetype" = no; then
-    { echo "$as_me:$LINENO: WARNING: can't find freetype, required for graphics=cairo" >&5
-echo "$as_me: WARNING: can't find freetype, required for graphics=cairo" >&2;}
-    BUILD_GRAPHICS=xlib
-  fi
-  if test $BUILD_GRAPHICS = xlib; then
     if test $BUILD_SERVER = win32; then
       BUILD_GRAPHICS=winlib
+    else
+      BUILD_GRAPHICS=xlib
     fi
     { echo "$as_me:$LINENO: Switching to $BUILD_GRAPHICS" >&5
 echo "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
   else
-    LIBS="$CAIRO_LIBS $FREETYPE_LIBS $LIBS"
-    CPPFLAGS="$CAIRO_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
+    { echo "$as_me:$LINENO: checking Cairo backend" >&5
+echo $ECHO_N "checking Cairo backend... $ECHO_C" >&6; }
+    CAIRO_LIBS="$CAIRO_FT_LIBS"
+    CAIRO_CFLAGS="$CAIRO_FT_CFLAGS"
+    if test "x$WITH_GLITZ" = "xyes" -a "x$have_cairo_glitz" = "xyes"; then
+      if test $BUILD_SERVER = win32 -a "x$have_cairo_win32" = "xyes"; then
+        CAIRO_GLITZ_LIBS="$CAIRO_GLITZ_LIBS $GLITZ_WGL_LIBS"
+        CAIRO_GLITZ_CFLAGS="$CAIRO_GLITZ_CFLAGS $GLITZ_WGL_CFLAGS"
+      elif test $BUILD_SERVER = x11 -a "x$have_cairo_xlib" = "xyes"; then
+        CAIRO_GLITZ_LIBS="$CAIRO_GLITZ_LIBS $GLITZ_GLX_LIBS"
+        CAIRO_GLITZ_CFLAGS="$CAIRO_GLITZ_CFLAGS $GLITZ_GLX_CFLAGS"
+      else
+        { { echo "$as_me:$LINENO: error: Invalid Glitz installation" >&5
+echo "$as_me: error: Invalid Glitz installation" >&2;}
+   { (exit 1); exit 1; }; }
+      fi
+      CAIRO_LIBS="$CAIRO_LIBS $CAIRO_GLITZ_LIBS"
+      CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_GLITZ_CFLAGS"
+      { echo "$as_me:$LINENO: result: glitz" >&5
+echo "${ECHO_T}glitz" >&6; }
+    elif test $BUILD_SERVER = win32 -a "x$have_cairo_win32" = "xyes"; then
+      CAIRO_LIBS="$CAIRO_LIBS $CAIRO_WIN32_LIBS $WIN32_LIBS"
+      CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_WIN32_CFLAGS"
+      { echo "$as_me:$LINENO: result: winlib" >&5
+echo "${ECHO_T}winlib" >&6; }
+    elif test $BUILD_SERVER = x11 -a "x$have_cairo_xlib" = "xyes"; then
+      CAIRO_LIBS="$CAIRO_LIBS $CAIRO_XLIB_LIBS"
+      CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS $XFT_LIBS"
+      { echo "$as_me:$LINENO: result: xlib" >&5
+echo "${ECHO_T}xlib" >&6; }
+    else
+      { { echo "$as_me:$LINENO: error: Invalid Cairo installation" >&5
+echo "$as_me: error: Invalid Cairo installation" >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    LIBS="$CAIRO_LIBS $LIBS"
+    CPPFLAGS="$CAIRO_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xxlib"; then
  : # Nothing to do
@@ -7419,6 +8626,7 @@ else
 echo "$as_me: error: Invalid graphics backend $BUILD_GRAPHICS" >&2;}
    { (exit 1); exit 1; }; }
 fi
+
 if test x"$BUILD_GRAPHICS" = "xwinlib"; then
   LIBS="$WIN32_LIBS $LIBS"
 fi
@@ -7432,6 +8640,23 @@ if test $BUILD_SERVER = x11; then
     { { echo "$as_me:$LINENO: error: No X11 libraries/headers for building x11 server" >&5
 echo "$as_me: error: No X11 libraries/headers for building x11 server" >&2;}
    { (exit 1); exit 1; }; }
+  fi
+  if test "x$WITH_GLX" = "xyes"; then
+    LIBS="$LIBS $GLX_LIBS"
+    CPPFLAGS="$CPPFLAGS $GLX_CFLAGS"
+  else
+    { echo "$as_me:$LINENO: Warning : no OpenGL support for X11 backend" >&5
+echo "$as_me: Warning : no OpenGL support for X11 backend" >&6;}
+  fi
+fi
+
+if test $BUILD_SERVER = win32; then
+  if test "x$WITH_WGL" = "xyes"; then
+    LIBS="$LIBS $WGL_LIBS"
+    CPPFLAGS="$CPPFLAGS $WGL_CFLAGS"
+  else
+    { echo "$as_me:$LINENO: Warning : no OpenGL support for win32 backend" >&5
+echo "$as_me: Warning : no OpenGL support for win32 backend" >&6;}
   fi
 fi
 
@@ -8157,10 +9382,23 @@ XFT_CFLAGS!$XFT_CFLAGS$ac_delim
 XFT_LIBS!$XFT_LIBS$ac_delim
 WITH_XFT!$WITH_XFT$ac_delim
 WITH_GLX!$WITH_GLX$ac_delim
+WITH_WGL!$WITH_WGL$ac_delim
 CAIRO_CFLAGS!$CAIRO_CFLAGS$ac_delim
 CAIRO_LIBS!$CAIRO_LIBS$ac_delim
+CAIRO_FT_CFLAGS!$CAIRO_FT_CFLAGS$ac_delim
+CAIRO_FT_LIBS!$CAIRO_FT_LIBS$ac_delim
+CAIRO_XLIB_CFLAGS!$CAIRO_XLIB_CFLAGS$ac_delim
+CAIRO_XLIB_LIBS!$CAIRO_XLIB_LIBS$ac_delim
+CAIRO_WIN32_CFLAGS!$CAIRO_WIN32_CFLAGS$ac_delim
+CAIRO_WIN32_LIBS!$CAIRO_WIN32_LIBS$ac_delim
+CAIRO_GLITZ_CFLAGS!$CAIRO_GLITZ_CFLAGS$ac_delim
+CAIRO_GLITZ_LIBS!$CAIRO_GLITZ_LIBS$ac_delim
 GLITZ_CFLAGS!$GLITZ_CFLAGS$ac_delim
 GLITZ_LIBS!$GLITZ_LIBS$ac_delim
+GLITZ_GLX_CFLAGS!$GLITZ_GLX_CFLAGS$ac_delim
+GLITZ_GLX_LIBS!$GLITZ_GLX_LIBS$ac_delim
+GLITZ_WGL_CFLAGS!$GLITZ_WGL_CFLAGS$ac_delim
+GLITZ_WGL_LIBS!$GLITZ_WGL_LIBS$ac_delim
 WITH_GLITZ!$WITH_GLITZ$ac_delim
 WITH_WRASTER!$WITH_WRASTER$ac_delim
 BUILD_GRAPHICS!$BUILD_GRAPHICS$ac_delim
@@ -8170,7 +9408,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 80; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 93; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

@@ -228,13 +228,13 @@ if test "x$enable_glx" = "xyes"; then
       ], have_glx_rgba=yes, have_glx_rgba=no)
    AC_MSG_RESULT([$have_glx_rgba])
    if test "$have_glx" = yes -a "$ac_cv_header_GL_glx_h" = yes -a "$have_glx_rgba" = yes; then
-     LIBS="-lGL ${LIBS}"
+     GLX_LIBS="-lGL"
+     GLX_FLAGS=""
      WITH_GLX=yes
      AC_DEFINE(HAVE_GLX,1,[Define if you have the glx library])
    fi
 fi
 AC_SUBST(WITH_GLX)
-
 
 #--------------------------------------------------------------------
 # XIM support
@@ -265,12 +265,42 @@ fi
 #--------------------------------------------------------------------
 AC_CHECK_LIB(gdi32, main, have_gdi32=yes, have_gdi32=no)
 if test "$have_gdi32" = yes; then
-  WIN32_LIBS="-lgdi32"
+  WIN32_LIBS="-lgdi32 -lm"
 fi
 AC_CHECK_LIB(msimg32, main, have_msimg32=yes, have_msimg32=no)
 if test "$have_msimg32" = yes; then
   WIN32_LIBS="${WIN32_LIBS} -lmsimg32"
 fi
+
+#--------------------------------------------------------------------
+# WGL support
+#--------------------------------------------------------------------
+WITH_WGL=no
+AC_ARG_ENABLE(wgl, 
+  [  --disable-wgl           Disable WGL support],,
+  enable_wgl=yes)
+if test "x$enable_wgl" = "xyes"; then
+   AC_CHECK_LIB(opengl32, main, have_wgl=yes, have_wgl=no)
+   save_CPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS"
+   AC_CHECK_HEADER(windows.h)
+   CPPFLAGS="$save_CPPFLAGS"
+   if test "$have_wgl" = yes -a "$ac_cv_header_windows_h" = yes; then
+     AC_MSG_CHECKING([for wgl])
+     WGL_LIBS="-lopengl32 -lgdi32"
+     WGL_CFLAGS=""
+
+     save_libs="$LIBS"
+     LIBS="$WGL_LIBS"
+     AC_TRY_LINK([#include <windows.h>], [int main() { wglCreateContext(0); }],
+	   [use_wgl=yes], [use_wgl=no])
+     LIBS="$save_libs"
+     AC_MSG_RESULT([$use_wgl])
+     WITH_WGL=$use_wgl
+     AC_DEFINE(HAVE_WGL,1,[Define if you have the wgl library])
+   fi
+fi
+AC_SUBST(WITH_WGL)
 
 #--------------------------------------------------------------------
 # libart graphics libraries
@@ -300,24 +330,65 @@ fi
 #--------------------------------------------------------------------
 # Cairo graphics libraries
 #--------------------------------------------------------------------
+PKG_CAIRO=no
 PKG_CHECK_MODULES(CAIRO, cairo, have_cairo=yes, have_cairo=no)
+PKG_CAIRO_FT=no
+PKG_CHECK_MODULES(CAIRO_FT, cairo-ft, have_cairo_ft=yes, have_cairo_ft=no)
+PKG_CAIRO_XLIB=no
+PKG_CHECK_MODULES(CAIRO_XLIB, cairo-xlib, have_cairo_xlib=yes, have_cairo_xlib=no)
+PKG_CAIRO_WIN32=no
+PKG_CHECK_MODULES(CAIRO_WIN32, cairo-win32, have_cairo_win32=yes, have_cairo_win32=no)
+PKG_CAIRO_GLITZ=no
+PKG_CHECK_MODULES(CAIRO_GLITZ, cairo-glitz, have_cairo_glitz=yes, have_cairo_glitz=no)
 
 #--------------------------------------------------------------------
-# Glitz-GLX libraries
+# Glitz libraries
 #--------------------------------------------------------------------
 WITH_GLITZ=no
 AC_ARG_ENABLE(glitz, 
-  [  --disable-glitz         Disable Glitz support],,
-  enable_glitz=yes)
+  [  --enable-glitz          Enable Glitz support],,
+  enable_glitz=no)
 
 if test "x$enable_glitz" = "xyes"; then
-  PKG_CHECK_MODULES(GLITZ, glitz-glx, have_glitz_glx=yes, have_glitz_glx=no)
-  AC_CHECK_HEADER(glitz-glx.h,have_glitz_glx_h=yes, have_glitz_glx_h=no)
-  if test "$have_glitz_glx" = yes -a "$have_glitz_glx_h" = yes; then
-    WITH_GLITZ=yes
-    LIBS="$GLITZ_LIBS $LIBS"
-    GRAPHIC_CFLAGS="$GLITZ_CFLAGS $GRAPHIC_CFLAGS"
-    AC_DEFINE(HAVE_GLITZ_GLX,1,[Define if you have glitz])
+  PKG_CHECK_MODULES(GLITZ, glitz, have_glitz=yes, have_glitz=no)
+  save_CPPFLAGS=$CPPFLAGS
+    CPPFLAGS="$CPPFLAGS $GLITZ_CFLAGS"
+    AC_CHECK_HEADER(glitz.h,have_glitz_h=yes, have_glitz_h=no)
+  CPPFLAGS=$save_CPPFLAGS
+  if test "$have_glitz" = yes -a "$have_glitz_h" = yes; then
+  
+    if test "x$WITH_GLX" = "xyes"; then
+      PKG_CHECK_MODULES(GLITZ_GLX, glitz-glx, have_glitz_glx=yes, have_glitz_glx=no)
+      save_CPPFLAGS=$CPPFLAGS
+        CPPFLAGS="$CPPFLAGS $GLITZ_GLX_CFLAGS"
+        AC_CHECK_HEADER(glitz-glx.h,have_glitz_glx_h=yes, have_glitz_glx_h=no)
+      CPPFLAGS=$save_CPPFLAGS
+      if test "$have_glitz_glx" = yes -a "$have_glitz_glx_h" = yes; then
+        GLITZ_LIBS="$GLITZ_LIBS $GLITZ_GLX_LIBS"
+        GLITZ_CFLAGS="$GLITZ_CFLAGS $GLITZ_GLX_CFLAGS"
+        AC_DEFINE(HAVE_GLITZ_GLX,1,[Define if you have glitz-glx])
+        WITH_GLITZ=yes
+      fi
+    fi
+  
+    if test "x$WITH_WGL" = "xyes"; then
+      PKG_CHECK_MODULES(GLITZ_WGL, glitz-wgl, have_glitz_wgl=yes, have_glitz_wgl=no)
+      save_CPPFLAGS=$CPPFLAGS
+        CPPFLAGS="$CPPFLAGS $GLITZ_WGL_CFLAGS"
+        AC_CHECK_HEADER(glitz-wgl.h,have_glitz_wgl_h=yes, have_glitz_wgl_h=no)
+      CPPFLAGS=$save_CPPFLAGS
+      if test "$have_glitz_wgl" = yes -a "$have_glitz_wgl_h" = yes; then
+        GLITZ_LIBS="$GLITZ_LIBS $GLITZ_WGL_LIBS"
+        GLITZ_CFLAGS="$GLITZ_CFLAGS $GLITZ_WGL_CFLAGS"
+        AC_DEFINE(HAVE_GLITZ_WGL,1,[Define if you have glitz-wgl])
+        WITH_GLITZ=yes
+      fi
+    fi
+
+    if test "$WITH_GLITZ" != "yes" ; then
+      AC_MSG_ERROR([Invalid glitz backend : glitz-glx or glitz-wgl required.])
+      AC_MSG_NOTICE([Glitz disable])
+    fi
     AC_DEFINE(USE_GLITZ,1,[Define to enable glitz support])
   fi
   AC_SUBST(WITH_GLITZ)
@@ -338,8 +409,7 @@ LDFLAGS=${GRAPHIC_LFLAGS}
 BUILD_SERVER=x11
 BUILD_GRAPHICS=art
 case $target_os in
-  *mingw32* ) BUILD_SERVER=win32
-              BUILD_GRAPHICS=winlib;;
+  *mingw32* ) BUILD_SERVER=win32;;
 esac
 
 AC_ARG_ENABLE(server, 
@@ -379,22 +449,44 @@ elif test x"$BUILD_GRAPHICS" = "xart"; then
     CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xcairo"; then
-  if test "$have_cairo" = no; then
+  if test "$have_cairo" = no -o "$have_cairo-ft" = no ; then
     AC_MSG_ERROR([can't find cairo, required for graphics=cairo!])
-    BUILD_GRAPHICS=xlib
-  fi
-  if test "$have_freetype" = no; then
-    AC_MSG_WARN([can't find freetype, required for graphics=cairo])
-    BUILD_GRAPHICS=xlib
-  fi
-  if test $BUILD_GRAPHICS = xlib; then
     if test $BUILD_SERVER = win32; then
       BUILD_GRAPHICS=winlib
+    else
+      BUILD_GRAPHICS=xlib
     fi
     AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
   else
-    LIBS="$CAIRO_LIBS $FREETYPE_LIBS $LIBS"
-    CPPFLAGS="$CAIRO_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
+    AC_MSG_CHECKING(Cairo backend)
+    CAIRO_LIBS="$CAIRO_FT_LIBS"
+    CAIRO_CFLAGS="$CAIRO_FT_CFLAGS"
+    if test "x$WITH_GLITZ" = "xyes" -a "x$have_cairo_glitz" = "xyes"; then
+      if test $BUILD_SERVER = win32 -a "x$have_cairo_win32" = "xyes"; then
+        CAIRO_GLITZ_LIBS="$CAIRO_GLITZ_LIBS $GLITZ_WGL_LIBS"
+        CAIRO_GLITZ_CFLAGS="$CAIRO_GLITZ_CFLAGS $GLITZ_WGL_CFLAGS"
+      elif test $BUILD_SERVER = x11 -a "x$have_cairo_xlib" = "xyes"; then
+        CAIRO_GLITZ_LIBS="$CAIRO_GLITZ_LIBS $GLITZ_GLX_LIBS"
+        CAIRO_GLITZ_CFLAGS="$CAIRO_GLITZ_CFLAGS $GLITZ_GLX_CFLAGS"
+      else
+        AC_MSG_ERROR([Invalid Glitz installation])
+      fi
+      CAIRO_LIBS="$CAIRO_LIBS $CAIRO_GLITZ_LIBS"
+      CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_GLITZ_CFLAGS"
+      AC_MSG_RESULT(glitz)
+    elif test $BUILD_SERVER = win32 -a "x$have_cairo_win32" = "xyes"; then
+      CAIRO_LIBS="$CAIRO_LIBS $CAIRO_WIN32_LIBS $WIN32_LIBS"
+      CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_WIN32_CFLAGS"
+      AC_MSG_RESULT(winlib)
+    elif test $BUILD_SERVER = x11 -a "x$have_cairo_xlib" = "xyes"; then
+      CAIRO_LIBS="$CAIRO_LIBS $CAIRO_XLIB_LIBS"
+      CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS $XFT_LIBS"
+      AC_MSG_RESULT(xlib)
+    else
+      AC_MSG_ERROR([Invalid Cairo installation])
+    fi
+    LIBS="$CAIRO_LIBS $LIBS"
+    CPPFLAGS="$CAIRO_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xxlib"; then
  : # Nothing to do
@@ -403,6 +495,7 @@ elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
 else
   AC_MSG_ERROR([Invalid graphics backend $BUILD_GRAPHICS])
 fi
+
 if test x"$BUILD_GRAPHICS" = "xwinlib"; then
   LIBS="$WIN32_LIBS $LIBS"
 fi
@@ -414,6 +507,21 @@ fi
 if test $BUILD_SERVER = x11; then
   if test $set_x_paths = no; then
     AC_MSG_ERROR([No X11 libraries/headers for building x11 server])
+  fi
+  if test "x$WITH_GLX" = "xyes"; then
+    LIBS="$LIBS $GLX_LIBS"
+    CPPFLAGS="$CPPFLAGS $GLX_CFLAGS"
+  else
+    AC_MSG_NOTICE([Warning : no OpenGL support for X11 backend])
+  fi
+fi
+
+if test $BUILD_SERVER = win32; then
+  if test "x$WITH_WGL" = "xyes"; then
+    LIBS="$LIBS $WGL_LIBS"
+    CPPFLAGS="$CPPFLAGS $WGL_CFLAGS"
+  else
+    AC_MSG_NOTICE([Warning : no OpenGL support for win32 backend])
   fi
 fi
 
