@@ -27,7 +27,7 @@ GNUSTEP_LOCAL_ADDITIONAL_MAKEFILES=../back.make
 include $(GNUSTEP_MAKEFILES)/common.make
 
 #RESOURCE_SET_NAME = back-resources
-back-resources_RESOURCE_FILES_INSTALL_DIR = Library/Fonts
+back-resources_INSTALL_DIR = $(GNUSTEP_LIBRARY)/Fonts
 back-resources_RESOURCE_FILES = $(FONT_INSTALL_FILES)
 
 FONT_INSTALL_FILES = Helvetica.nfont
