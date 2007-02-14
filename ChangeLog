@@ -1,3 +1,9 @@
+2007-02-14  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Fonts/GNUmakefile (back-resources_INSTALL_DIR): New variable.
+	* Fonts/GNUmakefile.postamble (before-uninstall): Updated the
+	install rules to not use GNUSTEP_INSTALLATION_DIR.
+
 2007-02-13 Xavier Glattard <xavier.glattard@free.fr>
 
 	configure.ac: opengl fixups for win32
