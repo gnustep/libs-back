@@ -63,7 +63,7 @@ after-distclean::
 back.make: back.make.in
 	./configure
 
-confige.mak: confige.mak.in
+config.mak: config.mak.in
 	./configure
 
 # Things to do before checking

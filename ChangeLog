@@ -1,3 +1,7 @@
+2007-02-17 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* GNUmakefile.postamble: fix typo
+
 2007-02-15  Nicola Pero  <nicola.pero@meta-innovation.com>
 
 	* configure.ac: Source GNUstep.sh then use GNUSTEP_SYSTEM_HEADERS
