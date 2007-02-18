@@ -1,3 +1,12 @@
+2007-02-18 Fred Kiefer <FredKiefer@gmx.de>
+	
+	* Source/cairo/CairoGState.m (_set_op): Change cairo operators for
+	NSCompositeHighlight and NSCompositePlusDarker.
+	* Source/cairo/CairoGState.m (DPSrectstroke::::, DPSrectfill::::,
+	DPSrectclip::::): Use cairo_rectangle.
+	* Source/cairo/CairoGState.m (-compositeGState:...fraction:):
+	Changed to work like the other backends for the Gorm palette images.
+
 2007-02-17 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* GNUmakefile.postamble: fix typo

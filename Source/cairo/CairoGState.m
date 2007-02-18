@@ -81,7 +81,7 @@
       cairo_set_line_cap(copy->_ct, cairo_get_line_cap(_ct));
       cairo_set_line_join(copy->_ct, cairo_get_line_join(_ct));
       cairo_set_miter_limit(copy->_ct, cairo_get_miter_limit(_ct));
-      //NSLog(@"copy gstate old %d new %d", _ct, copy->_ct);
+      // FIXME: In cairo 1.2.4 there is no way get the dash or copy it.
  
       status = cairo_status(copy->_ct);
       if (status != CAIRO_STATUS_SUCCESS)
@@ -172,16 +172,19 @@
 
 - (NSPoint) pointInMatrixSpace: (NSPoint)aPoint
 {
+  // FIXME: Use  cairo_user_to_device
   return [[self GSCurrentCTM] pointInMatrixSpace: aPoint];
 }
 
 - (NSPoint) deltaPointInMatrixSpace: (NSPoint)aPoint
 {
+  // FIXME: Use cairo_user_to_device_distance
   return [[self GSCurrentCTM] deltaPointInMatrixSpace: aPoint];
 }
 
 - (NSRect) rectInMatrixSpace: (NSRect)rect
 {
+  // FIXME: Use the two above methods
   return [[self GSCurrentCTM] rectInMatrixSpace: rect];
 }
 
@@ -379,6 +382,7 @@
       i--;
       dpat[i] = pat[i];
     }
+  // FIXME: There may be a difference in concept as some dashes look wrong
   cairo_set_dash(_ct, dpat, size, doffset);
   free(dpat);
 }
@@ -553,6 +557,7 @@
 {
   // FIXME: Still missing in cairo
   //cairo_arc_to(_ct, x1, y1, x2, y2, r);
+  FIXME();
 }
 
 - (void) DPSclip
@@ -665,11 +670,7 @@
 - (void) DPSrectclip: (float)x : (float)y : (float)w : (float)h
 {
   cairo_new_path(_ct);
-  cairo_move_to(_ct, x, y);
-  cairo_rel_line_to(_ct, w, 0);
-  cairo_rel_line_to(_ct, 0, h);
-  cairo_rel_line_to(_ct, -w, 0);
-  cairo_close_path(_ct);
+  cairo_rectangle(_ct, x, y, w, h);
   cairo_clip(_ct);
   cairo_new_path(_ct);
 }
@@ -678,11 +679,7 @@
 {
   cairo_save(_ct);
   cairo_new_path(_ct);
-  cairo_move_to(_ct, x, y);
-  cairo_rel_line_to(_ct, w, 0);
-  cairo_rel_line_to(_ct, 0, h);
-  cairo_rel_line_to(_ct, -w, 0);
-  cairo_close_path(_ct);
+  cairo_rectangle(_ct, x, y, w, h);
   cairo_fill(_ct);
   cairo_restore(_ct);
 }
@@ -691,11 +688,7 @@
 {
   cairo_save(_ct);
   cairo_new_path(_ct);
-  cairo_move_to(_ct, x, y);
-  cairo_rel_line_to(_ct, w, 0);
-  cairo_rel_line_to(_ct, 0, h);
-  cairo_rel_line_to(_ct, -w, 0);
-  cairo_close_path(_ct);
+  cairo_rectangle(_ct, x, y, w, h);
   cairo_stroke(_ct);
   cairo_restore(_ct);
 }
@@ -895,9 +888,11 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       break;
     case NSCompositePlusDarker:
       // FIXME
+      cairo_set_operator(ct, CAIRO_OPERATOR_SATURATE);
       break;
     case NSCompositeHighlight:
-      cairo_set_operator(ct, CAIRO_OPERATOR_SATURATE);
+      // MacOSX 10.4 documentation maps this value onto NSCompositeSourceOver
+      cairo_set_operator(ct, CAIRO_OPERATOR_OVER);
       break;
     case NSCompositePlusLighter:
       cairo_set_operator(ct, CAIRO_OPERATOR_ADD);
@@ -1138,7 +1133,21 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
     {
       if (!source->viewIsFlipped)
         {
-	  cairo_set_source_surface(_ct, src, x - minx, y + miny);
+/*
+  FIXME: My findings with a test applications would suggest that the following 
+  commented out code it the correct implementation for this case, but the palette 
+  images in Gorm look up side down with it.
+ */
+//	  cairo_set_source_surface(_ct, src, x - minx, y + miny - height);
+	  cairo_pattern_t *cpattern;
+	  cairo_matrix_t local_matrix;
+	  
+	  cpattern = cairo_pattern_create_for_surface(src);
+	  cairo_matrix_init_scale(&local_matrix, 1, -1);
+	  cairo_matrix_translate(&local_matrix, -x + minx, -y - miny);
+	  cairo_pattern_set_matrix(cpattern, &local_matrix);
+	  cairo_set_source(_ct, cpattern);
+	  cairo_pattern_destroy(cpattern);
 	}
       else 
         {
@@ -1149,7 +1158,6 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 	  cpattern = cairo_pattern_create_for_surface(src);
 	  cairo_matrix_init_scale(&local_matrix, 1, -1);
 	  cairo_matrix_translate(&local_matrix, -x + minx, -y - miny);
-//	  NSLog(@"y %g, miny %g, dh %g, height %g = res %g", y, miny, dh, height, -y - miny);
 	  cairo_pattern_set_matrix(cpattern, &local_matrix);
 	  cairo_set_source(_ct, cpattern);
 	  cairo_pattern_destroy(cpattern);
