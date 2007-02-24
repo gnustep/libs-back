@@ -612,17 +612,26 @@
 
 - (void) DPSlineto: (float)x : (float)y
 {
-  cairo_line_to(_ct, x, y);
+  if (_ct)
+    {
+      cairo_line_to(_ct, x, y);
+    }
 }
 
 - (void) DPSmoveto: (float)x : (float)y
 {
-  cairo_move_to(_ct, x, y);
+  if (_ct)
+    {
+      cairo_move_to(_ct, x, y);
+    }
 }
 
 - (void) DPSnewpath
 {
-  cairo_new_path(_ct);
+  if (_ct)
+    {
+      cairo_new_path(_ct);
+    }
 }
 
 - (NSBezierPath *) bezierPath
