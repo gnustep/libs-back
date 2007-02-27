@@ -34,11 +34,11 @@ include ../Version
 
 # The library to be compiled, as a library or as a bundle
 ifeq ($(BACKEND_BUNDLE),)
-BACKEND_FULL=$(BACKEND_NAME)
-LIBRARY_NAME=libgnustep-$(BACKEND_FULL)
+  BACKEND_FULL=$(BACKEND_NAME)
+  LIBRARY_NAME=libgnustep-$(BACKEND_FULL)
 else
-BACKEND_FULL=$(BACKEND_NAME)-$(INTERFACE_VERSION_NUMBER)
-BUNDLE_NAME=libgnustep-$(BACKEND_FULL)
+  BACKEND_FULL=$(BACKEND_NAME)-$(INTERFACE_VERSION_NUMBER)
+  BUNDLE_NAME=libgnustep-$(BACKEND_FULL)
 endif
 
 #
@@ -59,9 +59,9 @@ libgnustep-$(BACKEND_FULL)_LANGUAGES=English Swedish
 -include GNUmakefile.preamble
 
 ifeq ($(BACKEND_BUNDLE),)
-include $(GNUSTEP_MAKEFILES)/library.make
+  include $(GNUSTEP_MAKEFILES)/library.make
 else
-include $(GNUSTEP_MAKEFILES)/bundle.make
+  include $(GNUSTEP_MAKEFILES)/bundle.make
 endif
 
 -include GNUmakefile.postamble
