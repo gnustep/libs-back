@@ -64,7 +64,7 @@ after-distclean::
 # The config.h file is specific to a target
 #
 $(GNUSTEP_TARGET_DIR)/config.h: ../config.status
-	$(GNUSTEP_MAKEFILES)/mkinstalldirs $(GNUSTEP_TARGET_DIR)
+	$(MKDIRS) $(GNUSTEP_TARGET_DIR)
 	-cp ../config.h $(GNUSTEP_TARGET_DIR)
 
 
