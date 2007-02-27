@@ -498,8 +498,8 @@ elif test x"$BUILD_GRAPHICS" = "xcairo"; then
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_WIN32_CFLAGS"
       AC_MSG_RESULT(winlib)
     elif test $BUILD_SERVER = x11 -a "x$have_cairo_xlib" = "xyes"; then
-      CAIRO_LIBS="$CAIRO_LIBS $CAIRO_XLIB_LIBS"
-      CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS $XFT_LIBS"
+      CAIRO_LIBS="$CAIRO_LIBS $CAIRO_XLIB_LIBS $XFT_LIBS"
+      CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS"
       AC_MSG_RESULT(xlib)
     else
       AC_MSG_ERROR([Invalid Cairo installation])
