@@ -331,14 +331,14 @@ NSLog(@"No glyph for U%d", c);
   ascender = metric.tmAscent;
   //NSLog(@"Resulted in height %d and ascent %d", metric.tmHeight, metric.tmAscent);
   descender = -metric.tmDescent;
+  /* TODO */
+  xHeight = ascender * 0.5;
+  maximumAdvancement = NSMakeSize((float)metric.tmMaxCharWidth, 0.0);
 
   fontBBox = NSMakeRect((float)(0),
 			(float)(0 - metric.tmAscent),
 			(float)metric.tmMaxCharWidth,
 			(float)metric.tmHeight);
-
-  maximumAdvancement = NSMakeSize((float)metric.tmMaxCharWidth,
-    (float)metric.tmHeight);
 
   weight = win32_font_weight(metric.tmWeight);
 
