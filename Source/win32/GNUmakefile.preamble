@@ -27,7 +27,6 @@
 #
 
 # Additional flags to pass to the preprocessor
-GNUSTEP_INSTALL_LIBDIR=$(GNUSTEP_LIBRARIES_ROOT)
 ADDITIONAL_CPPFLAGS += -Wall $(CONFIG_SYSTEM_DEFS)
 
 # Additional flags to pass to the Objective-C compiler
