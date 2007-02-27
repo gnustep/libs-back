@@ -307,8 +307,7 @@ static BOOL XGInitAtoms(Display *dpy)
     (float)(0 - font_info->max_bounds.ascent),
     (float)(font_info->max_bounds.rbearing - font_info->min_bounds.lbearing),
     (float)(font_info->max_bounds.ascent + font_info->max_bounds.descent));
-  maximumAdvancement = NSMakeSize(font_info->max_bounds.width,
-    (font_info->max_bounds.ascent +font_info->max_bounds.descent));
+  maximumAdvancement = NSMakeSize(font_info->max_bounds.width, 0.0);
   minimumAdvancement = NSMakeSize(0,0);
   weight = XGWeightOfFont(xdpy, font_info);
   traits = XGTraitsOfFont(xdpy, font_info);

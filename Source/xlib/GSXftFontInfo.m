@@ -706,8 +706,7 @@ static NSArray *faFromFc(FcPattern *pat)
     (float)(0 - font_info->ascent),
     (float)(font_info->max_advance_width),
     (float)(font_info->ascent + font_info->descent));
-  maximumAdvancement = NSMakeSize(font_info->max_advance_width,
-    (font_info->ascent + font_info->descent));
+  maximumAdvancement = NSMakeSize(font_info->max_advance_width, 0.0);
   minimumAdvancement = NSMakeSize(0,0);
 //   printf("h=%g  a=%g d=%g  max=(%g %g)  (%g %g)+(%g %g)\n",
 //          xHeight, ascender, descender,

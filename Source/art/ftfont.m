@@ -764,15 +764,13 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
       return self;
     }
 
-//	xHeight = ft_size->metrics.height / 64.0;
-/* TODO: these are _really_ messed up when fonts are flipped */
-  /* TODO: need to look acrefully at these and make sure they are correct */
+  /* TODO: these are _really_ messed up when fonts are flipped */
+  /* TODO: need to look carefully at these and make sure they are correct */
   ascender = fabs(((int)ft_size->metrics.ascender) / 64.0);
   descender = fabs(((int)ft_size->metrics.descender) / 64.0);
   lineHeight = (int)ft_size->metrics.height / 64.0;
-  xHeight = ascender * 0.5; /* TODO */
-  maximumAdvancement
-    = NSMakeSize((ft_size->metrics.max_advance / 64.0), ascender + descender);
+  xHeight = (int)ft_size->metrics.y_ppem / 64.0;
+  maximumAdvancement = NSMakeSize((ft_size->metrics.max_advance / 64.0), 0.0);
 
   fontBBox
     = NSMakeRect(0, descender, maximumAdvancement.width, ascender + descender);

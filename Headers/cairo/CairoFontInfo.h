@@ -31,15 +31,9 @@
 {
 @public
 	cairo_scaled_font_t *_scaled;
-
 	CairoFaceInfo *_faceInfo;
-
 	BOOL _screenFont;
-
-	/* will be used in GSNFont subclass
-	NSMapTable *_ligatureMap;
-	NSMapTable *_kerningMap;
-	*/
+	float lineHeight;
 
 	unsigned int _cacheSize;
 	unsigned int *_cachedGlyphs;

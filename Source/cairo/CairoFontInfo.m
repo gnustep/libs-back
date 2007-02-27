@@ -99,14 +99,15 @@
       return NO;
     }
   cairo_scaled_font_extents(_scaled, &font_extents);
-  // FIXME: Need some adjustment here
-  ascender = font_extents.ascent + 3;
-  descender = font_extents.descent;
-  xHeight = font_extents.height;
+  ascender = font_extents.ascent;
+  // The FreeType documentation claims this value is already negative, but it isn't.
+  descender = -font_extents.descent;
+  xHeight = ascender * 0.6;
+  lineHeight = font_extents.height;
   maximumAdvancement = NSMakeSize(font_extents.max_x_advance, 
 				  font_extents.max_y_advance);
   fontBBox = NSMakeRect(0, descender, 
-			maximumAdvancement.width, ascender + descender);
+			maximumAdvancement.width, ascender - descender);
 
   return YES;
 }
@@ -151,6 +152,11 @@
   free(_cachedSizes);
   free(_cachedGlyphs);
   [super dealloc];
+}
+
+- (float) defaultLineHeightForFont
+{
+  return lineHeight;
 }
 
 - (BOOL) glyphIsEncoded: (NSGlyph)glyph
@@ -305,8 +311,6 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
 	return;
     }
 
-  // FIXME: Need some adjustment here
-  cairo_rel_move_to(ct, 0.0, -5.0);
   cairo_show_text(ct, str);
   if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
     {

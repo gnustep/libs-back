@@ -294,15 +294,21 @@
 
 - (void) DPScurrentflat: (float *)flatness
 {
-  *flatness = cairo_get_tolerance(_ct);
+  if (_ct)
+    {
+      *flatness = cairo_get_tolerance(_ct);
+    }
 }
 
 - (void) DPScurrentlinecap: (int *)linecap
 {
   cairo_line_cap_t lc;
 
-  lc = cairo_get_line_cap(_ct);
-  *linecap = lc;
+  if (_ct)
+    {
+      lc = cairo_get_line_cap(_ct);
+      *linecap = lc;
+    }
   /*
      switch (lc)
      {
@@ -326,8 +332,11 @@
 {
   cairo_line_join_t lj;
 
-  lj = cairo_get_line_join(_ct);
-  *linejoin = lj;
+  if (_ct)
+    {
+      lj = cairo_get_line_join(_ct);
+      *linejoin = lj;
+    }
   /*
      switch (lj)
      {
@@ -349,19 +358,33 @@
 
 - (void) DPScurrentlinewidth: (float *)width
 {
-  *width = cairo_get_line_width(_ct);
+  if (_ct)
+    {
+      *width = cairo_get_line_width(_ct);
+    }
 }
 
 - (void) DPScurrentmiterlimit: (float *)limit
 {
-  *limit = cairo_get_miter_limit(_ct);
+  if (_ct)
+    {
+      *limit = cairo_get_miter_limit(_ct);
+    }
 }
 
 - (NSPoint) currentPoint
 {
   double dx, dy;
 
-  cairo_get_current_point(_ct, &dx, &dy);
+  if (_ct)
+    {
+      cairo_get_current_point(_ct, &dx, &dy);
+    }
+  else
+    {
+      dx = 0.0;
+      dy = 0.0;
+    }
   return NSMakePoint(dx, dy);
 }
 
@@ -375,41 +398,59 @@
   double *dpat;
   int i;
 
-  i = size;
-  dpat = malloc(sizeof(double) * size);
-  while (i)
+  if (_ct)
     {
-      i--;
-      dpat[i] = pat[i];
+      i = size;
+      dpat = malloc(sizeof(double) * size);
+      while (i)
+        {
+	  i--;
+	  dpat[i] = pat[i];
+	}
+      // FIXME: There may be a difference in concept as some dashes look wrong
+      cairo_set_dash(_ct, dpat, size, doffset);
+      free(dpat);
     }
-  // FIXME: There may be a difference in concept as some dashes look wrong
-  cairo_set_dash(_ct, dpat, size, doffset);
-  free(dpat);
 }
 
 - (void) DPSsetflat: (float)flatness
 {
-  cairo_set_tolerance(_ct, flatness);
+  if (_ct)
+    {
+      cairo_set_tolerance(_ct, flatness);
+    }
 }
 
 - (void) DPSsetlinecap: (int)linecap
 {
-  cairo_set_line_cap(_ct, (cairo_line_cap_t)linecap);
+  if (_ct)
+    {
+      cairo_set_line_cap(_ct, (cairo_line_cap_t)linecap);
+    }
 }
 
 - (void) DPSsetlinejoin: (int)linejoin
 {
-  cairo_set_line_join(_ct, (cairo_line_join_t)linejoin);
+  if (_ct)
+    {
+      cairo_set_line_join(_ct, (cairo_line_join_t)linejoin);
+    }
 }
 
 - (void) DPSsetlinewidth: (float)width
 {
-  cairo_set_line_width(_ct, width);
+  if (_ct)
+    {
+      cairo_set_line_width(_ct, width);
+    }
 }
 
 - (void) DPSsetmiterlimit: (float)limit
 {
-  cairo_set_miter_limit(_ct, limit);
+  if (_ct)
+    {
+      cairo_set_miter_limit(_ct, limit);
+    }
 }
 
 - (void) DPSsetstrokeadjust: (int)b
@@ -545,12 +586,18 @@
 
 - (void) DPSarc: (float)x : (float)y : (float)r : (float)angle1 : (float)angle2
 {
-  cairo_arc(_ct, x, y, r, angle1 * M_PI / 180, angle2 * M_PI / 180);
+  if (_ct)
+    {
+      cairo_arc(_ct, x, y, r, angle1 * M_PI / 180, angle2 * M_PI / 180);
+    }
 }
 
 - (void) DPSarcn: (float)x : (float)y : (float)r : (float)angle1 : (float)angle2
 {
-  cairo_arc_negative(_ct, x, y, r, angle1 * M_PI / 180, angle2 * M_PI / 180);
+  if (_ct)
+    {
+      cairo_arc_negative(_ct, x, y, r, angle1 * M_PI / 180, angle2 * M_PI / 180);
+    }
 }
 
 - (void)DPSarct: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)r 
@@ -562,52 +609,76 @@
 
 - (void) DPSclip
 {
-  cairo_clip(_ct);
+  if (_ct)
+    {
+      cairo_clip(_ct);
+    }
 }
 
 - (void) DPSclosepath
 {
-  cairo_close_path(_ct);
+  if (_ct)
+    {
+      cairo_close_path(_ct);
+    }
 }
 
 - (void) DPScurveto: (float)x1 : (float)y1 : (float)x2 
 		   : (float)y2 : (float)x3 : (float)y3
 {
-  cairo_curve_to(_ct, x1, y1, x2, y2, x3, y3);
+  if (_ct)
+    {
+      cairo_curve_to(_ct, x1, y1, x2, y2, x3, y3);
+    }
 }
 
 - (void) DPSeoclip
 {
-  cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_EVEN_ODD);
-  cairo_clip(_ct);
-  cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_WINDING);
+  if (_ct)
+    {
+      cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_EVEN_ODD);
+      cairo_clip(_ct);
+      cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_WINDING);
+    }
 }
 
 - (void) DPSeofill
 {
-  cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_EVEN_ODD);
-  cairo_fill(_ct);
-  cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_WINDING);
+  if (_ct)
+    {
+      cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_EVEN_ODD);
+      cairo_fill(_ct);
+      cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_WINDING);
+    }
 }
 
 - (void) DPSfill
 {
-  cairo_fill(_ct);
+  if (_ct)
+    {
+      cairo_fill(_ct);
+    }
 }
 
 - (void) DPSflattenpath
 {
   cairo_path_t *cpath;
 
-  cpath = cairo_copy_path_flat(_ct);
-  cairo_new_path(_ct);
-  cairo_append_path(_ct, cpath);
-  cairo_path_destroy(cpath);
+  if (_ct)
+    {
+      cpath = cairo_copy_path_flat(_ct);
+      cairo_new_path(_ct);
+      cairo_append_path(_ct, cpath);
+      cairo_path_destroy(cpath);
+    }
 }
 
 - (void) DPSinitclip
 {
-  cairo_reset_clip(_ct);
+  if (_ct)
+    {
+      cairo_reset_clip(_ct);
+    }
 }
 
 - (void) DPSlineto: (float)x : (float)y
@@ -641,6 +712,11 @@
   cairo_path_data_t *data;
   NSBezierPath *bpath =[NSBezierPath bezierPath];
 
+  if (!_ct)
+    {
+	return bpath;
+    }
+
   cpath = cairo_copy_path(_ct);
 
   for (i=0; i < cpath->num_data; i += cpath->data[i].header.length) 
@@ -673,33 +749,45 @@
 - (void) DPSrcurveto: (float)x1 : (float)y1 : (float)x2 
 		    : (float)y2 : (float)x3 : (float)y3
 {
-  cairo_rel_curve_to(_ct, x1, y1, x2, y2, x3, y3);
+  if (_ct)
+    {
+      cairo_rel_curve_to(_ct, x1, y1, x2, y2, x3, y3);
+    }
 }
 
 - (void) DPSrectclip: (float)x : (float)y : (float)w : (float)h
 {
-  cairo_new_path(_ct);
-  cairo_rectangle(_ct, x, y, w, h);
-  cairo_clip(_ct);
-  cairo_new_path(_ct);
+  if (_ct)
+    {
+      cairo_new_path(_ct);
+      cairo_rectangle(_ct, x, y, w, h);
+      cairo_clip(_ct);
+      cairo_new_path(_ct);
+    }
 }
 
 - (void) DPSrectfill: (float)x : (float)y : (float)w : (float)h
 {
-  cairo_save(_ct);
-  cairo_new_path(_ct);
-  cairo_rectangle(_ct, x, y, w, h);
-  cairo_fill(_ct);
-  cairo_restore(_ct);
+  if (_ct)
+    {
+      cairo_save(_ct);
+      cairo_new_path(_ct);
+      cairo_rectangle(_ct, x, y, w, h);
+      cairo_fill(_ct);
+      cairo_restore(_ct);
+    }
 }
 
 - (void) DPSrectstroke: (float)x : (float)y : (float)w : (float)h
 {
-  cairo_save(_ct);
-  cairo_new_path(_ct);
-  cairo_rectangle(_ct, x, y, w, h);
-  cairo_stroke(_ct);
-  cairo_restore(_ct);
+  if (_ct)
+    {
+      cairo_save(_ct);
+      cairo_new_path(_ct);
+      cairo_rectangle(_ct, x, y, w, h);
+      cairo_stroke(_ct);
+      cairo_restore(_ct);
+    }
 }
 
 - (void) DPSreversepath
@@ -712,17 +800,26 @@
 
 - (void) DPSrlineto: (float)x : (float)y
 {
-  cairo_rel_line_to(_ct, x, y);
+  if (_ct)
+    {
+      cairo_rel_line_to(_ct, x, y);
+    }
 }
 
 - (void) DPSrmoveto: (float)x : (float)y
 {
-  cairo_rel_move_to(_ct, x, y);
+  if (_ct)
+    {
+      cairo_rel_move_to(_ct, x, y);
+    }
 }
 
 - (void) DPSstroke
 {
-  cairo_stroke(_ct);
+  if (_ct)
+    {
+      cairo_stroke(_ct);
+    }
 }
 
 - (void) GSSendBezierPath: (NSBezierPath *)bpath
@@ -735,6 +832,11 @@
   NSBezierPathElement e;
   SEL elmsel = @selector(elementAtIndex: associatedPoints:);
   IMP elmidx = [bpath methodForSelector: elmsel];
+
+  if (!_ct)
+    {
+      return;
+    }
 
   cairo_new_path(_ct);
 
@@ -785,6 +887,11 @@
   int i;
   NSMutableData *data;
   unsigned char *cdata;
+
+  if (!_ct)
+    {
+      return nil;
+    }
 
   x = NSWidth(r);
   y = NSHeight(r);
@@ -934,6 +1041,11 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   NSLog(@"%@ DPSimage %dx%d (%p)", self, pixelsWide, pixelsHigh,
         cairo_get_target(_ct));
 */
+  if (!_ct)
+    {
+	return;
+    }
+
   if (isPlanar || !([colorSpaceName isEqualToString: NSDeviceRGBColorSpace] ||
 		    [colorSpaceName isEqualToString: NSCalibratedRGBColorSpace]))
     {
@@ -1088,12 +1200,15 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 
 - (void) compositerect: (NSRect)aRect op: (NSCompositingOperation)op
 {
-  cairo_save(_ct);
-  _set_op(_ct, op);
-  cairo_rectangle(_ct, NSMinX(aRect), NSMinY(aRect), NSWidth(aRect),
-		  NSHeight(aRect));
-  cairo_fill(_ct);
-  cairo_restore(_ct);
+  if (_ct)
+    {
+      cairo_save(_ct);
+      _set_op(_ct, op);
+      cairo_rectangle(_ct, NSMinX(aRect), NSMinY(aRect), NSWidth(aRect),
+		      NSHeight(aRect));
+      cairo_fill(_ct);
+      cairo_restore(_ct);
+    }
 }
 
 - (void) compositeGState: (CairoGState *)source 
@@ -1108,6 +1223,11 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   double dh;
   NSSize size;
   double x, y;
+
+  if (!_ct || !source->_ct)
+    {
+      return;
+    }
 
   size = [source->_surface size];
   dh = size.height;

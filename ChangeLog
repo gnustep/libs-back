@@ -1,3 +1,19 @@
+2007-02-27 Fred Kiefer <FredKiefer@gmx.de>
+	
+	* Source/winlib/Win32FontInfo.m (-setupAttributes:):
+	Correct setting of maximumAdvancement and add xHeight.
+	* Source/art/ftfont.m (-initWithFontName:matrix:screenFont:):
+	Correct setting of maximumAdvancement and xHeight.
+	* Source/xlib/GSXftFontInfo.m (-setupAttributes:):
+	Correct setting of maximumAdvancement.
+	* Source/xlib/XGFont.m(-setupAttributes:): Correct setting of
+	maximumAdvancement. 
+	* Headers/cairo/CairoFontInfo.h: Add new ivar lineHeight.
+	* Source/cairo/CairoFontInfo.m (-setupAttributes:):
+	Correct setting of descender and add lineHeight and xHeight.
+	* Source/cairo/CairoFontInfo.m (-drawGlyphs:length:on:): Remove adjustment.
+	* Source/cairo/CairoGState.m: Better protection against _ct being null.
+	
 2007-02-27  Nicola Pero  <nicola.pero@meta-innovation.com>
 
 	* Source/GNUmakefile.postamble (config.h): Use MKDIRS, not
