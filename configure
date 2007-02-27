@@ -8252,8 +8252,8 @@ echo "${ECHO_T}glitz" >&6
       echo "$as_me:$LINENO: result: winlib" >&5
 echo "${ECHO_T}winlib" >&6
     elif test $BUILD_SERVER = x11 -a "x$have_cairo_xlib" = "xyes"; then
-      CAIRO_LIBS="$CAIRO_LIBS $CAIRO_XLIB_LIBS"
-      CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS $XFT_LIBS"
+      CAIRO_LIBS="$CAIRO_LIBS $CAIRO_XLIB_LIBS $XFT_LIBS"
+      CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS"
       echo "$as_me:$LINENO: result: xlib" >&5
 echo "${ECHO_T}xlib" >&6
     else
