@@ -6,6 +6,8 @@
 	* Source/xlib/GNUmakefile.preamble: Same change.
 	* Source/win32/GNUmakefile.preamble: Same change.
 	* Source/winlib/GNUmakefile.preamble: Same change.
+	* gnustep-back-debug.spec.in: Obsolete file removed.
+	* GNUmakefile (CVS_MODULE_NAME): Obsolete variable removed.
 	
 2007-02-27  Nicola Pero  <nicola.pero@meta-innovation.com>
 
