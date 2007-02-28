@@ -1,5 +1,12 @@
 2007-02-28  Nicola Pero  <nicola.pero@meta-innovation.com>
 
+	* configure.ac: Use gnustep-config to set GNUSTEP_MAKEFILES
+	if not set.
+	* GNUmakefile: Same change.
+	* configure: Regenerated.
+
+2007-02-28  Nicola Pero  <nicola.pero@meta-innovation.com>
+
 	* Tools/win32pbs.m (WINVER): Define to make it compile with new
 	releases where HWND_MESSAGE is not defined unless you explicitly
 	request recent Microsoft Windows APIs by setting WINVER.
