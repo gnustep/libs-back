@@ -150,7 +150,7 @@
       /* Window device isn't set yet */
       return;
     }
-  c = *color;
+  c = fillColor;
   gsColorToRGB(&c);
   // FIXME: The underlying concept does not allow to determine if alpha is set or not.
   if (c.field[AINDEX] > 0.0)

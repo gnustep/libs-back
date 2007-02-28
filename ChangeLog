@@ -1,3 +1,9 @@
+2007-03-01 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-setColor:state:): Use fillColor
+	instead of parameter. Only in the former is the alpha field
+	set. Bug found by using valgrind.
+	
 2007-02-28 Fred Kiefer <FredKiefer@gmx.de>
 	
 	* Source/cairo/CairoContext.m (-initWithContextInfo:): Set self
