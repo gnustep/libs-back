@@ -59,10 +59,9 @@
 {
   NSString *contextType;
 
-  [super initWithContextInfo:info];
-
   contextType = [info objectForKey:
 			 NSGraphicsContextRepresentationFormatAttributeName];
+  self = [super initWithContextInfo: info];
   if (contextType)
     {
       /* Most likely this is a PS or PDF context, so just return what
