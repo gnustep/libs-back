@@ -1,3 +1,9 @@
+2007-02-28  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Tools/win32pbs.m (WINVER): Define to make it compile with new
+	releases where HWND_MESSAGE is not defined unless you explicitly
+	request recent Microsoft Windows APIs by setting WINVER.
+
 2007-02-27 Fred Kiefer <FredKiefer@gmx.de>
 	
 	* Source/winlib/Win32FontInfo.m (-setupAttributes:):

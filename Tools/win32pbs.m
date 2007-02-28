@@ -22,6 +22,9 @@
 
 */
 
+/* Access Windows 2000 (and later) API.  Required for HWND_MESSAGE.  */
+#define WINVER 0x500
+
 #include <Foundation/Foundation.h>
 #include <Foundation/NSUserDefaults.h>
 #include <AppKit/NSPasteboard.h>
