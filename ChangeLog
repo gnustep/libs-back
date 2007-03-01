@@ -1,5 +1,11 @@
 2007-03-01 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/cairo/CairoGState.m (-DPSinitgraphics): Set more cairo state.
+	* Source/cairo/CairoGState.m (-compositeGState:...fraction:): Use
+	either mask or fill, but not both.
+
+2007-03-01 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/cairo/CairoGState.m (-setColor:state:): Use fillColor
 	instead of parameter. Only in the former is the alpha field
 	set. Bug found by using valgrind.

@@ -82,6 +82,7 @@
       cairo_set_line_join(copy->_ct, cairo_get_line_join(_ct));
       cairo_set_miter_limit(copy->_ct, cairo_get_miter_limit(_ct));
       // FIXME: In cairo 1.2.4 there is no way get the dash or copy it.
+      // There also is no way to get the current clipping
  
       status = cairo_status(copy->_ct);
       if (status != CAIRO_STATUS_SUCCESS)
@@ -286,10 +287,13 @@
       NSLog(@"Cairo status %s in DPSinitgraphics", cairo_status_to_string(status));
     }
   [self DPSinitmatrix];
+  // Changes from super call go to the old _ct
+  [self setColor: &fillColor state: COLOR_BOTH];
 
   /* Cairo's default line width is 2.0 */
   cairo_set_line_width(_ct, 1.0);
   cairo_set_operator(_ct, CAIRO_OPERATOR_OVER);
+  cairo_new_path(_ct);
 }
 
 - (void) DPScurrentflat: (float *)flatness
@@ -1316,14 +1320,17 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
     }
 
   if (delta < 1.0)
-  {
+    {
       cairo_pattern_t *cpattern;
 
       cpattern = cairo_pattern_create_rgba(1.0, 1.0, 1.0, delta);
       cairo_mask(_ct, cpattern);
       cairo_pattern_destroy(cpattern);
-  }
-  cairo_fill(_ct);
+    }
+  else
+    {
+      cairo_fill(_ct);
+    }
   cairo_restore(_ct);
 }
 
