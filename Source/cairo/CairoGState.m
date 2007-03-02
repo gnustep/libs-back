@@ -285,6 +285,7 @@
   if (status != CAIRO_STATUS_SUCCESS)
     {
       NSLog(@"Cairo status %s in DPSinitgraphics", cairo_status_to_string(status));
+      return;
     }
   [self DPSinitmatrix];
   // Changes from super call go to the old _ct
@@ -466,7 +467,7 @@
  * Matrix operations
  */
 
-// FIXME: All matrix and path operations need to call the super implemantion
+// FIXME: All matrix and path operations need to call the super implementation
 // to get the complex methods of the super class to work correctly.
 
 - (void) DPSconcat: (const float *)m
@@ -482,22 +483,18 @@
 
 - (void) DPSinitmatrix
 {
-  if (_ct)
+  // This safety check is not really needed, when _ct is set, there is a surface.
+  if (_ct && _surface)
     {
-      cairo_identity_matrix(_ct);
-      if (!viewIsFlipped)
-        {
-	  cairo_matrix_t local_matrix;
+      cairo_matrix_t local_matrix;
 	  
-	  // cairo draws the other way around.
-	  cairo_matrix_init_scale(&local_matrix, 1, -1);
-	  
-	  if (_surface != nil)
-	    {
-	      cairo_matrix_translate(&local_matrix, 0,  -[_surface size].height);
-	    }
-	  cairo_set_matrix(_ct, &local_matrix);
-	}
+      // cairo draws the other way around.
+      // At this point in time viewIsFlipped has not been set, but it is
+      // OK to ignore this here, as in that case the matrix will later 
+      // get flipped by GUI,
+      cairo_matrix_init_scale(&local_matrix, 1, -1);
+      cairo_matrix_translate(&local_matrix, 0,  -[_surface size].height);
+      cairo_set_matrix(_ct, &local_matrix);
     }
 }
 
@@ -528,27 +525,21 @@
 - (NSAffineTransform *) GSCurrentCTM
 {
   NSAffineTransform *transform;
-  NSAffineTransformStruct tstruct;
-  cairo_matrix_t flip_matrix;
-  cairo_matrix_t local_matrix;
 
   transform = [NSAffineTransform transform];
-  if (_ct)
+  if (_ct && _surface)
     {
+      NSAffineTransformStruct tstruct;
+      cairo_matrix_t flip_matrix;
+      cairo_matrix_t local_matrix;
+	
       cairo_get_matrix(_ct, &local_matrix);
 
       // Undo changes in DPSinitmatrix
-      if (!viewIsFlipped)
-        {
-	  cairo_matrix_init_scale(&flip_matrix, 1, -1);
-	  cairo_matrix_multiply(&local_matrix, &local_matrix, &flip_matrix);
-	  
-	  if (_surface)
-	    {
-	      cairo_matrix_init_translate(&flip_matrix, 0, [_surface size].height);
-	      cairo_matrix_multiply(&local_matrix, &local_matrix, &flip_matrix);
-	    }
-	}
+      cairo_matrix_init_scale(&flip_matrix, 1, -1);
+      cairo_matrix_multiply(&local_matrix, &local_matrix, &flip_matrix);
+      cairo_matrix_init_translate(&flip_matrix, 0, [_surface size].height);
+      cairo_matrix_multiply(&local_matrix, &local_matrix, &flip_matrix);
       
       tstruct.m11 = local_matrix.xx;
       tstruct.m12 = local_matrix.yx;
@@ -1164,12 +1155,13 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 		    tstruct.m21, tstruct.m22, 
 		    tstruct.tX, tstruct.tY);
   cairo_transform(_ct, &local_matrix);
+
   if (viewIsFlipped)
     {
       cairo_pattern_t *cpattern;
       cairo_matrix_t local_matrix;
       
-      cpattern = cairo_pattern_create_for_surface (surface);
+      cpattern = cairo_pattern_create_for_surface(surface);
       cairo_matrix_init_scale(&local_matrix, 1, -1);
       cairo_matrix_translate(&local_matrix, 0, -2*pixelsHigh);
       cairo_pattern_set_matrix(cpattern, &local_matrix);
@@ -1183,7 +1175,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       cairo_pattern_t *cpattern;
       cairo_matrix_t local_matrix;
       
-      cpattern = cairo_pattern_create_for_surface (surface);
+      cpattern = cairo_pattern_create_for_surface(surface);
       cairo_matrix_init_scale(&local_matrix, 1, -1);
       cairo_matrix_translate(&local_matrix, 0, -pixelsHigh);
       cairo_pattern_set_matrix(cpattern, &local_matrix);
@@ -1224,8 +1216,6 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   cairo_surface_t *src;
   double minx, miny;
   double width, height;
-  double dh;
-  NSSize size;
   double x, y;
 
   if (!_ct || !source->_ct)
@@ -1233,25 +1223,22 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       return;
     }
 
-  size = [source->_surface size];
-  dh = size.height;
-
   cairo_save(_ct);
   cairo_new_path(_ct);
   _set_op(_ct, op);
 
   src = cairo_get_target(source->_ct);
-  if (src == cairo_get_target(_ct))
-    {
  /*
-      NSLog(@"Copy onto self");
+ if (src == cairo_get_target(_ct))
+    {
+       NSLog(@"Copy onto self");
       NSLog(NSStringFromRect(aRect));
       NSLog(NSStringFromPoint(aPoint));
       NSLog(@"src %p(%p,%@) des %p(%p,%@)", 
 	    source,cairo_get_target(source->_ct),NSStringFromSize([source->_surface size]),
 	    self,cairo_get_target(_ct),NSStringFromSize([_surface size]));
-  */
     }
+  */
   x = aPoint.x;
   y = aPoint.y;
   minx = NSMinX(aRect);
@@ -1264,72 +1251,31 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 
   if (viewIsFlipped)
     {
-      if (!source->viewIsFlipped)
-        {
-/*
-  FIXME: My findings with a test applications would suggest that the following 
-  commented out code it the correct implementation for this case, but the palette 
-  images in Gorm look up side down with it.
- */
-//	  cairo_set_source_surface(_ct, src, x - minx, y + miny - height);
-	  cairo_pattern_t *cpattern;
-	  cairo_matrix_t local_matrix;
-	  
-	  cpattern = cairo_pattern_create_for_surface(src);
-	  cairo_matrix_init_scale(&local_matrix, 1, -1);
-	  cairo_matrix_translate(&local_matrix, -x + minx, -y - miny);
-	  cairo_pattern_set_matrix(cpattern, &local_matrix);
-	  cairo_set_source(_ct, cpattern);
-	  cairo_pattern_destroy(cpattern);
-	}
-      else 
-        {
-	  // Both flipped
-	  cairo_pattern_t *cpattern;
-	  cairo_matrix_t local_matrix;
-	  
-	  cpattern = cairo_pattern_create_for_surface(src);
-	  cairo_matrix_init_scale(&local_matrix, 1, -1);
-	  cairo_matrix_translate(&local_matrix, -x + minx, -y - miny);
-	  cairo_pattern_set_matrix(cpattern, &local_matrix);
-	  cairo_set_source(_ct, cpattern);
-	  cairo_pattern_destroy(cpattern);
-	}
+      cairo_set_source_surface(_ct, src, x - minx, y + miny - 2*height);
       cairo_rectangle(_ct, x, y - height, width, height);
     }
   else 
     {
-      if (!source->viewIsFlipped)
-        {
-	  // Both non-flipped. 
-	  cairo_pattern_t *cpattern;
-	  cairo_matrix_t local_matrix;
-
-	  cpattern = cairo_pattern_create_for_surface(src);
-	  cairo_matrix_init_scale(&local_matrix, 1, -1);
-	  cairo_matrix_translate(&local_matrix, -x + minx, -y - miny);
-	  cairo_pattern_set_matrix(cpattern, &local_matrix);
-	  cairo_set_source(_ct, cpattern);
-	  cairo_pattern_destroy(cpattern);
-	}
-      else
-        {
-	  cairo_set_source_surface(_ct, src, x - minx, y + miny);
-	}
+      cairo_pattern_t *cpattern;
+      cairo_matrix_t local_matrix;
+      
+      cpattern = cairo_pattern_create_for_surface(src);
+      cairo_matrix_init_scale(&local_matrix, 1, -1);
+      cairo_matrix_translate(&local_matrix, -x + minx, -y - miny);
+      cairo_pattern_set_matrix(cpattern, &local_matrix);
+      cairo_set_source(_ct, cpattern);
+      cairo_pattern_destroy(cpattern);
       cairo_rectangle(_ct, x, y, width, height);
     }
 
+  cairo_clip(_ct);
   if (delta < 1.0)
     {
-      cairo_pattern_t *cpattern;
-
-      cpattern = cairo_pattern_create_rgba(1.0, 1.0, 1.0, delta);
-      cairo_mask(_ct, cpattern);
-      cairo_pattern_destroy(cpattern);
+      cairo_paint_with_alpha(_ct, delta);
     }
   else
     {
-      cairo_fill(_ct);
+      cairo_paint(_ct);
     }
   cairo_restore(_ct);
 }
