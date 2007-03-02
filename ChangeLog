@@ -1,3 +1,10 @@
+2007-03-02 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-DPSinitmatrix, -GSCurrentCTM):
+	Don't consider flipped state.
+	* Source/cairo/CairoGState.m (-compositeGState:...fraction:):
+	Simplified the code and now use cairo_paint and cairo_paint_with_alpha.
+
 2007-03-01 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-DPSinitgraphics): Set more cairo state.
