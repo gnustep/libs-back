@@ -23,8 +23,11 @@
 /* Define if you have FcPatternCreate */
 #undef HAVE_FC
 
-/* Define if you have glitz */
+/* Define if you have glitz-glx */
 #undef HAVE_GLITZ_GLX
+
+/* Define if you have glitz-wgl */
+#undef HAVE_GLITZ_WGL
 
 /* Define if you have the glx library */
 #undef HAVE_GLX
@@ -59,6 +62,12 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
+/* Define to 1 if you have the `syslog' function. */
+#undef HAVE_SYSLOG
+
+/* Define to 1 if you have the <syslog.h> header file. */
+#undef HAVE_SYSLOG_H
+
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
 
@@ -73,6 +82,9 @@
 
 /* Define if you have XftDrawStringUtf8 */
 #undef HAVE_UTF8
+
+/* Define if you have the wgl library */
+#undef HAVE_WGL
 
 /* Define to 1 if you have the <X11/extensions/XShm.h> header file. */
 #undef HAVE_X11_EXTENSIONS_XSHM_H
