@@ -25,6 +25,7 @@
 #include <Foundation/Foundation.h>
 #include <AppKit/NSPasteboard.h>
 #include <GNUstepGUI/GSPasteboardServer.h>
+#include "config.h"
 
 #include <fcntl.h>
 #ifdef	HAVE_SYSLOG_H
@@ -44,11 +45,14 @@
 #endif
 
 static BOOL	is_daemon = NO;		/* Currently running as daemon.	 */
+static BOOL	auto_stop = NO;		/* Stop when all connections closed. */
 static char	ebuf[2048];
+
+static NSMutableArray	*connections = nil;
 
 #ifdef HAVE_SYSLOG
 
-static int	log_priority;
+static int	log_priority = LOG_DEBUG;
 
 static void
 gpbs_log (int prio)
@@ -779,9 +783,19 @@ NSMutableDictionary	*pasteboards = nil;
 
   if ([owner isProxy] == YES)
     {
-      Protocol	*p = @protocol(GSPasteboardCallback);
+      Protocol		*p = @protocol(GSPasteboardCallback);
+      NSConnection	*c = [owner connectionForProxy];
 
       [owner setProtocolForProxy: p];
+
+      /* If this is on a connection we don't know about, add it to our
+       * list of pasteboard connections so that we can track its removal
+       * in order to auto_stop if necessary.
+       */
+      if ([connections indexOfObjectIdenticalTo: c] == NSNotFound)
+        {
+	  [connections addObject: c];
+	}
     }
   /*
    * If neither the new nor the old owner of the pasteboard is the X
@@ -1002,13 +1016,18 @@ NSMutableDictionary	*pasteboards = nil;
     }
   if ([connection isKindOfClass: [NSConnection class]])
     {
-      NSEnumerator    *e = [pasteboards objectEnumerator];
-      PasteboardObject	  *o;
+      NSEnumerator	*e = [pasteboards objectEnumerator];
+      PasteboardObject	*o;
 
       while ((o = [e nextObject]) != nil)
 	{
 	  [o checkConnection: connection];
 	}
+    }
+  [connections removeObjectIdenticalTo: connection];
+  if (auto_stop == YES && [connections count] == 0)
+    {
+      exit(EXIT_SUCCESS);
     }
   return self;
 }
@@ -1079,11 +1098,11 @@ ihandler(int sig)
   const char	*e;
 
   /*
-   * Prevent recursion.
-   */
-  if (beenHere == YES)
-    {
-      abort();
+ * Prevent recursion.
+ */
+if (beenHere == YES)
+  {
+    abort();
     }
   beenHere = YES;
 
@@ -1147,6 +1166,10 @@ init(int argc, char** argv, char **env)
 	  printf("--no-fork\tavoid fork() to make debugging easy\n");
 	  printf("--verbose\tMore verbose debug output\n");
 	  exit(EXIT_SUCCESS);
+	}
+      else if ([a isEqualToString: @"--auto"] == YES)
+	{
+	  auto_stop = YES;
 	}
       else if ([a isEqualToString: @"--daemon"] == YES)
 	{
@@ -1264,6 +1287,8 @@ main(int argc, char** argv, char **env)
        selector: @selector(connectionBecameInvalid:)
 	   name: NSConnectionDidDieNotification
 	 object: (id)conn];
+
+  connections = [NSMutableArray new];
 
   hostname = [[NSUserDefaults standardUserDefaults] stringForKey: @"NSHost"];
   if ([hostname length] == 0

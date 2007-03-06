@@ -101,6 +101,12 @@ case "$target_os" in
 esac
 
 #--------------------------------------------------------------------
+# These headers/functions needed by gpbs.m
+#--------------------------------------------------------------------
+AC_CHECK_HEADERS(syslog.h)
+AC_CHECK_FUNCS(syslog)
+
+#--------------------------------------------------------------------
 # Find TIFF (Solaris requires this to find the correct library, even though
 # it does not link directly to it)
 #--------------------------------------------------------------------
