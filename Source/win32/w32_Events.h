@@ -47,7 +47,6 @@
 
 #include "win32/WIN32Server.h"
 #include "win32/WIN32Geometry.h"
-#include "w32_config.h"
 
 @interface WIN32Server (w32_notifications)
   
@@ -125,30 +124,5 @@
 
 @end 
 
-
-@interface WIN32Server (w32_debug)
-
-- (BOOL) displayEvent: (unsigned int)uMsg;   // diagnotic filter
-- (void) test_Geomemetry: (HWND)hwnd;
-- (void) print_result: (RECT)msrect and: (NSRect)gsrect and: (RECT)control;
-- (NSMutableString *) w32_createDetails: (LPCREATESTRUCT)details;
-- (NSMutableString *) createWindowDetail: (NSArray *)anArray;
-- (NSMutableString *) WindowDetail: (NSWindow *) theWindow;
-- (NSMutableString *) MSRectDetails: (RECT)aRect;
-- (NSMutableString *) NSRectDetails: (NSRect)aRect;
-- (NSMutableString *) gswindowstate: (NSWindow *)theWindow;
-- (NSMutableString *) MINMAXDetails: (MINMAXINFO *) mm;
-- (NSMutableString *) subViewDetails: (NSWindow *)theWindow;
-- (void) handleNotification: (NSNotification*)aNotification;
-
-@end
-
-// debug hooks into the GSDisplayServer class
-@interface GSDisplayServer (GSDisplayServer_details)
-- (int) eventQueCount;
-- (NSMutableString *) dumpQue:(int)acount;
-- (void) clearEventQue;
-
-@end
 
 #endif //_W32_EVENTS_h_INCLUDE

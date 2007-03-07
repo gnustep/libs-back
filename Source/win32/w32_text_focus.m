@@ -79,13 +79,6 @@
 	}
     }
     
-#ifdef  __SETFOCUS__
-  NSDebugLLog(@"Focus", @"Got focus:%d (current = %d, key = %d)", 
-	      win_num, currentFocus, key_num);
-  NSDebugLLog(@"Focus", @"  result of focus request");
-  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  fflush(stdout);
-#endif   
   return 0;
 }
 
@@ -107,21 +100,11 @@
 		      
   [EVENT_WINDOW(hwnd) sendEvent:ev];
   flags._eventHandled=YES;
-		     
-#ifdef __KILLFOCUS__
-  NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KILLFOCUS", hwnd);
-  NSDebugLLog(@"Focus", @"Got KILLFOCUS (focus out) for %d", hwnd);
-  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  fflush(stdout);
-#endif
 }
 
 - (void) decodeWM_GETTEXTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   // stub for future dev
-#ifdef __TESTEVENT__
-  printf("WM_GETTEXT\n");
-#endif
 }
 
 @end

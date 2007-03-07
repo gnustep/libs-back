@@ -49,21 +49,10 @@
   
   ev=nil;
   flags._eventHandled=YES;
-       
-#ifdef __CLOSE__
-  NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "CLOSE", hwnd);
-  printf("CLOSING\n");
-  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  printf("sending event %s \n", [[ev eventNameWithSubtype:YES] cString]);
-  fflush(stdout);
-#endif      	    
 }
       
 - (void) decodeWM_NCDESTROYParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-#ifdef __TESTEVENT__
-printf("WM_NCDESTROY\n");
-#endif
 }
 
 - (void) decodeWM_DESTROYParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
@@ -83,17 +72,10 @@ printf("WM_NCDESTROY\n");
   objc_free(win);
   flags._eventHandled=YES;
 
-#ifdef __DESTROY__
-  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  fflush(stdout);
-#endif
 }
 
 - (void) decodeWM_QUERYOPENParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-#ifdef __TESTEVENT__
-  printf("WM_QUERYOPEN\n");
-#endif
 }
 
 - (void) decodeWM_SYSCOMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
@@ -142,15 +124,10 @@ printf("WM_NCDESTROY\n");
       default:
       break;
    }
-   #ifdef __SYSCOMMAND__
-   printf("SYSTEM MENU REQUESTED 0x%X\n", wParam);
-   //printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-#endif
 }
 
 - (void) decodeWM_COMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-   printf("WM_COMMAND\n");
 } 
 
 - (void) resetForGSWindowStyle:(HWND)hwnd w32Style:(DWORD)aStyle

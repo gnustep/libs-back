@@ -54,8 +54,6 @@
 
 #include <GNUstepGUI/GSDisplayServer.h>
 
-
-
 #include <windows.h>
 
 /*
@@ -69,18 +67,12 @@
 #define GET_Y_LPARAM(p) ((int)(short)HIWORD(p))
 #endif
 
-//#define __debugServer__ // main server debug (from WIN32Server)
-//#define __W32_debug__  // event frame debugging/logging
-
 #define EVENT_WINDOW(lp) (GSWindowWithNumber((int)lp)) 
 
 DWORD windowStyleForGSStyle(unsigned int style);
    
 typedef struct w32serverFlags {
     
-    BOOL useWMTaskBar;
-    BOOL useWMStyles;
-    BOOL HAVE_SERVER_PREFS;
     int _last_WM_ACTIVATE;
     int  eventQueCount;
     int  menuRef;                   // reference to menu window
@@ -103,6 +95,9 @@ typedef struct w32serverFlags {
 
 @interface WIN32Server : GSDisplayServer
 {
+  BOOL handlesWindowDecorations;
+  BOOL usesNativeTaskbar;
+
   serverFlags flags;
   HINSTANCE hinstance;
 
@@ -117,17 +112,18 @@ typedef struct w32serverFlags {
   NSButton * saveButton;
 }
 
+- (BOOL) handlesWindowDecorations;
+- (void) setHandlesWindowDecorations: (BOOL) b;
+
+- (BOOL) usesNativeTaskbar;
+- (void) setUsesNativeTaskbar: (BOOL) b;
+
++ (void) initializeBackend;
+
 - (LRESULT) windowEventProc: (HWND)hwnd : (UINT)uMsg 
 		       : (WPARAM)wParam : (LPARAM)lParam;
 			
-- (void) initConfigWindow;
-- (void) setStyle:(id)sender;
-- (void) setTaskBar:(id)sender;
-- (void) setSave:(id)sender;
-
 - (void) setFlagsforEventLoop: (HWND)hwnd;
-- (NSString *) getNativeClassName: (HWND)hwnd;
-- (NSString *) getWindowtext: (HWND)hwnd;
 
 // declared but should be implimented in a subclass window server (subclass resposibility)
 - (LRESULT) decodeWM_ACTIVEParams: (WPARAM)wParam : (LPARAM)lParam 
@@ -136,17 +132,6 @@ typedef struct w32serverFlags {
 				    : (LPARAM)lParam;
 - (void) decodeWM_NCACTIVATEParams: (WPARAM)wParam : (LPARAM)lParam 
 				  : (HWND)hwnd;
-/*
-    hooks for the subclass to process notifications and syncronize the win32 env
-    with the application
-*/
-- (void) ApplicationDidFinishLaunching: (NSNotification*)aNotification;
-- (void) ApplicationWillFinishLaunching: (NSNotification*)aNotification;
-- (void) WindowWillMiniaturizeNotification: (NSNotification*)aNotification;
-- (void) MenuWillTearOff: (NSNotification*)aNotification;
-- (void) MenuwillPopUP: (NSNotification*)aNotification;
-
-
 - (LRESULT) decodeWM_SIZEParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam;
 - (LRESULT) decodeWM_MOVEParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam;
 - (void) decodeWM_NCCALCSIZEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
@@ -182,10 +167,6 @@ typedef struct w32serverFlags {
 - (void) decodeWM_SYSCOMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_COMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 
-// diagnotic and debugging
-- (BOOL) displayEvent:(unsigned int)uMsg;   
-- (void) registerForWindowEvents;
-- (void) registerForViewEvents;
 @end
 
 typedef struct _win_intern {
