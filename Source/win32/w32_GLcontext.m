@@ -146,7 +146,7 @@ LRESULT CALLBACK win32SubwindowProc(
     NSAssert(atom, @"MS window class not found !");
 
     RECT parent_rect;
-    GetWindowRect((HWND)[win windowNumber], &parent_rect);
+    GetClientRect((HWND)[win windowNumber], &parent_rect);
 
     x = NSMinX(rect);
     y = (parent_rect.bottom - parent_rect.top) - NSMaxY(rect);
@@ -221,7 +221,7 @@ LRESULT CALLBACK win32SubwindowProc(
     }
 
   RECT parent_rect;
-  GetWindowRect((HWND)[win windowNumber], &parent_rect);
+  GetClientRect((HWND)[win windowNumber], &parent_rect);
 
   x = NSMinX(rect);
   y = (parent_rect.bottom - parent_rect.top) - NSMaxY(rect);
