@@ -34,16 +34,6 @@
 
 - (LRESULT) decodeWM_NCCREATEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-    // stubbed for future development
-  #ifdef __WM_NCCREATE__
-        printf("WM_NCCREATE\n");
-  #ifdef __W32_debug__
-  printf("%s", [[self w32_createDetails:(LPCREATESTRUCT)lParam] cString]);
-  #endif
-  printf("\nRequested GS Window Style is %u\n", flags.currentGS_Style);
-  fflush(stdout);
- #endif
-
   return TRUE;
 }
 
@@ -83,23 +73,6 @@
     {
       win->useHDC = NO;
     }
-
-#ifdef __WM_CREATE__
-  printf("WM_CREATE: *********************\n");
-#ifdef __W32_debug__
-  printf("%s", [[self w32_createDetails:(LPCREATESTRUCT)lParam] cString]);
-  fflush(stdout);
-#endif
-  
-
-  printf("Parent isa %s\n", [[self getNativeClassName:GetParent(hwnd)] cString]);
-  printf("[hwnd]Native WindowType %s\n", [[self getNativeClassName:(HWND)hwnd] cString]);
-  printf("[hwnd]GS WindowType %s:\n", [[EVENT_WINDOW(hwnd) className] cString]);
-  printf("HAVE_MAIN_MENU = %s\n", flags.HAVE_MAIN_MENU ? "YES": "NO");
-  printf("Main Menu Window Num: %d    Currrent window Num:  %d\n", 
-	 [[[NSApp mainMenu] window] windowNumber], (int)hwnd);
-  printf("Window Task bar flag %s\n", flags.useWMTaskBar ? "YES" : "NO");
-#endif
 
   return 0;
 }

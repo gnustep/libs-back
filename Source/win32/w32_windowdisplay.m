@@ -87,7 +87,7 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 
    DWORD wstyle = 0;
         
-   if (flags.useWMStyles==NO)
+   if ([self handlesWindowDecorations] == NO)
       return WS_POPUP;
         
    switch (style)
@@ -140,12 +140,6 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
    }
 
    //NSLog(@"Window wstyle %d for style %d", wstyle, style);
-   #ifdef __W32_debug__
-   printf("\n\n##############################################################\n");
-   printf("GS Window Style %u\n", style);     
-   printf("Win32 Style picked %ld [hex] %X\n", wstyle, (unsigned int)wstyle); 
-   printf("\n\n##############################################################\n");   
-   #endif
    return wstyle;
 }
 
@@ -194,30 +188,15 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
     default:
       break;
     }
-
-#ifdef __SHOWWINDOW__
-  printf("[wParam] show window %s\n", wParam ? "TRUE" : "FALSE");
-  printf("[lParam] requested SW_FLAG %d\n", wParam);
-  //printf("is Main Menu %d\n", _is_menu);
-  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  fflush(stdout);
-#endif    
 }
 
 - (void) decodeWM_NCPAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-#ifdef __TESTEVENT__
-  printf("WM_NCPAINT\n");
-#endif
 }
 
 - (LRESULT) decodeWM_ERASEBKGNDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   // GS handles this for now...
-#ifdef __ERASEBKGND__
-  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  fflush(stdout);
-#endif
   return (LRESULT)1;
 }
 
@@ -251,42 +230,27 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
    //flags.HOLD_PAINT_FOR_SIZING=FALSE;
 
    //printf("WM_PAINT\n");
-#ifdef __PAINT__
-  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  printf("%s", [[self MSRectDetails:rect] cString]);
-  fflush(stdout);
-#endif
 }
 
 - (void) decodeWM_SYNCPAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   // stub for future dev
-   //#ifdef __TESTEVENT__
-   //printf("WM_SYNCPAINT\n");
-   //#endif
 }
 
 
 - (void) decodeWM_CAPTURECHANGEDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   // stub for future dev
-#ifdef  __TESTEVENT__
-  printf("WM_CAPTURECHANGED\n");
-#endif
 }
 
 - (HICON) decodeWM_GETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   // stub for future dev
-
-  printf("WM_GETICON\n");
-   
    return currentAppIcon;
 }
 
 - (HICON) decodeWM_SETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-   printf("WM_SETICON\n");
     return currentAppIcon;
 }
 
@@ -318,14 +282,6 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
       
       ReleaseDC((HWND)hwnd, hdc);
     }
-    
-#ifdef __BACKING__
-  NSDebugLLog(@"NSEvent", @"Change backing store to %d %d", r.right - r.left, r.bottom - r.top);
-  printf("RESIZING BACKING Store\n");
-  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  printf("New Rect: %s", [[self MSRectDetails:r] cString]);
-  fflush(stdout);
-#endif
 }
 
 @end

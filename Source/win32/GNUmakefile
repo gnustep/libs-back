@@ -44,8 +44,6 @@ win32_C_FILES = \
 # The Objective-C source files to be compiled
 win32_OBJC_FILES = \
 WIN32Server.m  \
-w32_debug.m \
-w32_notifications.m \
 w32_activate.m \
 w32_create.m \
 w32_general.m \
@@ -54,7 +52,6 @@ w32_text_focus.m \
 w32_windowdisplay.m \
 w32_GLformat.m \
 w32_GLcontext.m \
-GSDisplayServer_details.m \
 
 -include GNUmakefile.preamble
 

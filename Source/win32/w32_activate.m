@@ -37,9 +37,6 @@
   flags._last_WM_ACTIVATE = LOWORD(wParam);
   //int minimized = HIWORD(wParam);
 
-	    
-	    
-	
   switch (flags._last_WM_ACTIVATE)
     {
     case WA_ACTIVE:  //deactivate
@@ -62,21 +59,6 @@
     default:
       break;
     }
-#ifdef __WM_ACTIVE__
-  BOOL target=NO;
-
-  if ((int)lParam == flags.menuRef)
-    target=YES;
-
-  printf("RECEIVER [hwnd]%s\n", [[EVENT_WINDOW(hwnd) className] cString]);
-  printf("ON [lParam]%s\n", [[EVENT_WINDOW(lParam) className] cString]);
-
-  printf("[lParam] %s", [[self gswindowstate:EVENT_WINDOW(lParam)] cString]);
-   printf("ACTIVATE_FLAG STATE %d \n", flags._last_WM_ACTIVATE);
-
-  printf("[hwnd] %s", [[self gswindowstate:EVENT_WINDOW(hwnd)] cString]);
-  fflush(stdout);
-#endif
 
   return 0;
 }
@@ -132,30 +114,12 @@
       break;            
     }
             
-#ifdef __WM_ACTIVATEAPP__
-
-  printf("NSApp is:[%s]\n", active ? "active" : "inactive");
-  printf("lParam is [%s]\n thread = [%u]\n  w32_Class[%s] \n", 
-	 (int)wParam ? "TRUE": "FALSE", 
-        (unsigned int)lParam, 
-	 [[self getNativeClassName:hwnd] cString]);
-  // debug GS_state details       
-  printf("%s", [[self gswindowstate:EVENT_WINDOW(hwnd)] cString]);
-  printf("%s", [[self gswindowstate:EVENT_WINDOW(wParam)] cString]);
-   printf("eventHandled=[%s]\n", flags._eventHandled ? "YES" : "NO");
-            
-  printf("REQUESTED STATE %d\n", flags._last_WM_ACTIVATE);
-  fflush(stdout);
-#endif 
-
   return 0;
 }
 
 - (void) decodeWM_NCACTIVATEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-#ifdef __TESTEVENT__
-  printf("WM_NCACTIVATE\n");
-#endif
+
 }
 
 @end

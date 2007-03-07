@@ -64,17 +64,6 @@
 	[EVENT_WINDOW(hwnd) sendEvent:ev];
     }   
 		  
-#ifdef __WM_MOVE__
-  printf("sending GS_EVENT %d  GS_SUBTYPE %d\n", [ev type], [ev subtype]);
-  printf("HOLD_MENU_FOR_MOVE is %s\n", flags.HOLD_MENU_FOR_MOVE ? "TRUE" : "FALSE");
-  printf("HOLD_MENU_FOR_SIZE is %s\n", flags.HOLD_MENU_FOR_SIZE ? "TRUE" : "FALSE");
-  
-  printf("%s\n", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  printf("EVENTLOCATION %s", [[self NSRectDetails:rect] cString]);
-  printf("[hwnd rect] is %s", [[self NSRectDetails:[EVENT_WINDOW(hwnd) frame]] cString]);
-  fflush(stdout);
-#endif
-  
   ev=nil;
   flags.HOLD_MENU_FOR_MOVE=FALSE;
   flags.HOLD_MINI_FOR_MOVE=FALSE;
@@ -100,25 +89,16 @@
     case SIZE_MAXHIDE:
       {
 	// stubbed for future development
-#ifdef __WM_SIZE__
-        printf("got SIZE_MAXHIDE message\n");
-#endif
       }
       break;
     case SIZE_MAXIMIZED:
       {
 	// stubbed for future development
-#ifdef __WM_SIZE__
-	printf("got SIZE_MAXIMIZED message\n");
-#endif
       }
       break;
     case SIZE_MAXSHOW:
       {
 	// stubbed for future development
-#ifdef __WM_SIZE__
-	printf("got SIZE_MAXSHOW message\n");
-#endif
       }
       break;
     case SIZE_MINIMIZED:
@@ -155,8 +135,8 @@
 	      {
 		[EVENT_WINDOW(hwnd) sendEvent:ev];
 		[self resizeBackingStoreFor:hwnd];
-		            if (flags.useWMTaskBar==YES)
-		[EVENT_WINDOW(hwnd) miniaturize:self]; 
+		if ([self usesNativeTaskbar])
+	  	[EVENT_WINDOW(hwnd) miniaturize:self]; 
 	      } 
 	  }  
       }
@@ -193,8 +173,8 @@
 		[EVENT_WINDOW(hwnd) sendEvent:ev];
 		[self resizeBackingStoreFor:hwnd];
 		// fixes part one of bug [5, 25] see notes
-		         if (flags.useWMTaskBar==YES)
-		[EVENT_WINDOW(hwnd) deminiaturize:self];
+		if ([self usesNativeTaskbar])
+		  [EVENT_WINDOW(hwnd) deminiaturize:self];
 	      } 
 	  } 
       }
@@ -204,17 +184,6 @@
       break;
     }
                       
-#ifdef __WM_SIZE__
-  printf("sending GS_EVENT %d  GS_SUBTYPE %d\n", [ev type], [ev subtype]);
-  printf("[wParam] SIZE_FLAG is %d\n", (int)wParam);
-  printf("HOLD_MENU_FOR_MOVE is %s\n", flags.HOLD_MENU_FOR_MOVE ? "TRUE" : "FALSE");
-  printf("HOLD_MENU_FOR_SIZE is %s\n", flags.HOLD_MENU_FOR_SIZE ? "TRUE" : "FALSE");
-  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  printf("size to:%s", [[self NSRectDetails:rect] cString]);
-  printf("[hwnd rect] is %s", [[self NSRectDetails:[EVENT_WINDOW(hwnd) frame]] cString]);
-  fflush(stdout);
-#endif 		  		  
-
   ev=nil;
   flags.HOLD_MENU_FOR_SIZE=FALSE;
   flags.HOLD_MINI_FOR_SIZE=FALSE;
@@ -283,17 +252,11 @@
 - (void) decodeWM_WINDOWPOSCHANGEDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   // stub for future dev
-#ifdef __TESTEVENT__
-  printf("WM_WINDOWPOSCHANGED\n");
-#endif
 }
 
 - (void) decodeWM_WINDOWPOSCHANGINGParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   // stub for future dev
-#ifdef __TESTEVENT__
-  printf("WM_WINDOWPOSCHANGING\n");
-#endif
 }
 
 - (LRESULT) decodeWM_GETMINMAXINFOParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
@@ -310,11 +273,6 @@
       return 0;
     }
 	  
-#ifdef __GETMINMAXINFO__
-  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  printf("%s", [[self MINMAXDetails:mm] cString]);
-  fflush(stdout);
-#endif
   return 0; 
 }
 
@@ -330,13 +288,6 @@
   [self decodeWM_SIZEParams:hwnd :wParam :lParam];
       
   //Make sure DefWindowProc gets called
-	
-#ifdef __EXITSIZEMOVE__
-  NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "EXITSIZEMOVE", hwnd);
-  printf("%s", [[self WindowDetail:EVENT_WINDOW(hwnd)] cString]);
-  fflush(stdout);
-#endif
-	
   return 0;
 }
 

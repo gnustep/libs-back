@@ -52,24 +52,16 @@
 #ifdef HAVE_WGL
 #include "win32/WIN32OpenGL.h"
 #endif 
-#include "w32_config.h"
 
 #ifdef __CYGWIN__
 #include <sys/file.h>
 #endif
-static NSString * Version =@"(C) 2005 FSF gnustep-back 0.10.1";
-// custom event notifications
-static NSString *NSMenuWillTearOff = @"MenuWillTearOff";
-static NSString *NSMenuwillPopUP =@"MenuwillPopUP";
-static NSString *NSWindowDidCreateWindow =@"WindowDidCreateWindow";
 
 static NSEvent *process_key_event(WIN32Server *svr, 
   HWND hwnd, WPARAM wParam, LPARAM lParam, NSEventType eventType);
 static NSEvent *process_mouse_event(WIN32Server *svr, 
   HWND hwnd, WPARAM wParam, LPARAM lParam, NSEventType eventType);
 
-//static BOOL HAVE_MAIN_MENU = NO;
-static BOOL handlesWindowDecorations = NO;
 
 static void 
 validateWindow(WIN32Server *svr, HWND hwnd, RECT rect);
@@ -78,7 +70,25 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
 @implementation WIN32Server
 
-// server opts
+- (BOOL) handlesWindowDecorations
+{
+  return handlesWindowDecorations;
+}
+
+- (void) setHandlesWindowDecorations: (BOOL) b
+{
+  handlesWindowDecorations = b;
+}
+
+- (BOOL) usesNativeTaskbar
+{
+  return usesNativeTaskbar;
+}
+
+- (void) setUsesNativeTaskbar: (BOOL) b
+{
+  usesNativeTaskbar = b;
+}
 
 - (void) callback: (id) sender
 
@@ -142,21 +152,10 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 			  dequeue: (BOOL)flag
 {
   [self callback: nil];
-#ifdef __W32_debug_Event_loop 
-  NSEvent * theEvent = [super getEventMatchingMask: mask
-		beforeDate: limit
-		inMode: mode
-		dequeue: flag];
-		
-	printf("Got EventType %d\n", [theEvent type]);
-    return theEvent;	
-#else
-
   return [super getEventMatchingMask: mask
 		beforeDate: limit
 		inMode: mode
 		dequeue: flag];
-#endif
 }
 
 - (void) discardEventsMatchingMask: (unsigned)mask
@@ -173,42 +172,13 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 /* Initialize AppKit backend */
 + (void) initializeBackend
 {
-
-#ifdef __debugServer__
-printf("\n\n##############################################################\n");  
-printf("##############  + (void)initializeBackend ##########################\n");
-printf("\n\n##############################################################\n");
-#endif 
-
-  NSUserDefaults	*defs;
-
   NSDebugLog(@"Initializing GNUstep win32 backend.\n");
-  defs = [NSUserDefaults standardUserDefaults];
-  if ([defs objectForKey: @"GSBackHandlesWindowDecorations"])
-    {
-      handlesWindowDecorations =
-	[defs boolForKey: @"GSBackHandlesWindowDecorations"];
-    }
-  else
-    {
-      if ([defs objectForKey: @"GSWIN32HandlesWindowDecorations"])
-	{
-	  handlesWindowDecorations =
-	    [defs boolForKey: @"GSWINHandlesWindowDecorations"];
-	}
-    }
+
   [GSDisplayServer setDefaultServerClass: [WIN32Server class]];
-  //Flag to handle main menu window type -- parent of other menu windows 
 }
 
 - (void) _initWin32Context
 {
-
-#ifdef __debugServer__
-printf("\n\n##############################################################\n");  
-printf("############## - (void) _initWin32Context ##########################\n");
-printf("\n\n##############################################################\n");
-#endif
   WNDCLASSEX wc; 
   hinstance = (HINSTANCE)GetModuleHandle(NULL);
 
@@ -243,12 +213,6 @@ printf("\n\n##############################################################\n");
 {
   NSRunLoop *currentRunLoop = [NSRunLoop currentRunLoop];
 
-#ifdef __debugServer__
-printf("\n\n##############################################################\n");  
-printf("##- (void) setupRunLoopInputSourcesForMode: (NSString*)mode #######\n");
-printf("\n\n##############################################################\n");
-#endif
-
 #ifdef    __CYGWIN__
   int fdMessageQueue;
 #define WIN_MSG_QUEUE_FNAME    "/dev/windows"
@@ -277,584 +241,71 @@ printf("\n\n##############################################################\n");
 */
 - (id) initWithAttributes: (NSDictionary *)info
 {
-#ifdef __debugServer__
-printf("\n\n##############################################################\n");  
-printf("##initWithAttributes: (NSDictionary *)info #######\n");
-printf("\n\n##############################################################\n");
-#endif
-  NSNotificationCenter	*nc = [NSNotificationCenter defaultCenter];      
-  
-  [self _initWin32Context];
-  [super initWithAttributes: info];
+//  NSNotificationCenter	*nc = [NSNotificationCenter defaultCenter];
 
-  [self setupRunLoopInputSourcesForMode: NSDefaultRunLoopMode]; 
-  [self setupRunLoopInputSourcesForMode: NSConnectionReplyMode]; 
-  [self setupRunLoopInputSourcesForMode: NSModalPanelRunLoopMode]; 
-  [self setupRunLoopInputSourcesForMode: NSEventTrackingRunLoopMode]; 
+  self = [super initWithAttributes: info];
 
-  //flags.useWMTaskBar = YES;
-  //flags.useWMStyles = YES;
-  
-  if ([[NSUserDefaults standardUserDefaults] stringForKey: @"GSUseWMTaskbar"]
-    != nil)
-    {
-      flags.useWMTaskBar = [[NSUserDefaults standardUserDefaults] 
-                                boolForKey: @"GSUseWMTaskbar"];
-      flags.HAVE_SERVER_PREFS = YES; 
-    }
-  else
-    {
-       flags.HAVE_SERVER_PREFS = NO;
-    }
-    
-  if ([[NSUserDefaults standardUserDefaults] stringForKey: @"GSUseWMStyles"]
-    != nil)
-    {
-      flags.useWMStyles = [[NSUserDefaults standardUserDefaults] 
-                                boolForKey: @"GSUseWMStyles"];
-      flags.HAVE_SERVER_PREFS = YES;  
-    }
-  else
-    {
-      flags.HAVE_SERVER_PREFS = NO;
-    }
-    
-  if (flags.useWMStyles == YES)
-    {
-      handlesWindowDecorations = YES;
-    }
-   
-   /* the backend needs to be able to keep tabs on events that
-    * are only produced by GNUstep so that it can make changes
-    * or override behavior in favor of the real platform window server
-    */ 
-  [nc addObserver: self
-	  selector: @selector(ApplicationDidFinishLaunching:)
-	  name: NSApplicationDidFinishLaunchingNotification
-	  object: nil];
+  if(self)
+  {
+    [self _initWin32Context];
+    [super initWithAttributes: info];
+
+    [self setupRunLoopInputSourcesForMode: NSDefaultRunLoopMode]; 
+    [self setupRunLoopInputSourcesForMode: NSConnectionReplyMode]; 
+    [self setupRunLoopInputSourcesForMode: NSModalPanelRunLoopMode]; 
+    [self setupRunLoopInputSourcesForMode: NSEventTrackingRunLoopMode]; 
+
+    flags.eventQueCount =0;
 	  
-  [nc addObserver: self
-	  selector: @selector(ApplicationWillFinishLaunching:)
-	  name: NSApplicationWillFinishLaunchingNotification
-	  object: nil];
-	
-  [nc addObserver: self
-	  selector: @selector(ApplicationWillHideNotification:)
-	  name: NSApplicationWillHideNotification
-	  object: nil];
-	  
-  [nc addObserver: self
-	  selector: @selector(WindowWillMiniaturizeNotification:)
-	  name: NSWindowWillMiniaturizeNotification
-	  object: nil];
-	 
-  // register for custom notifications
-  [nc addObserver: self
-	  selector: @selector(MenuWillTearOff:)
-	  name: NSMenuWillTearOff
-	  object: nil];
-      
-  [nc addObserver: self
-	  selector: @selector(MenuwillPopUP:)
-	  name: NSMenuwillPopUP
-	  object: nil];
-	  
-  [nc addObserver: self
-	 selector: @selector(WindowDidCreateWindow:)
-	 name: NSWindowDidCreateWindow
-	 object: nil];
-	  
-#ifdef __APPNOTIFICATIONS__
-  [self registerForWindowEvents];
-  [self registerForViewEvents];
-#endif
-  flags.eventQueCount =0;
-	  
+    [self setHandlesWindowDecorations: NO];
+    [self setUsesNativeTaskbar: YES];
+
+    { // Check user defaults
+      NSUserDefaults	*defs;
+      defs = [NSUserDefaults standardUserDefaults];
+ 
+      if ([defs objectForKey: @"GSUseWMStyles"])
+      {
+  NSWarnLog(@"Usage of 'GSUseWMStyles' as user default option is deprecated. "
+            @"This option will be ignored in future versions. "
+            @"You should use 'GSBackHandlesWindowDecorations' option.");
+	[self setHandlesWindowDecorations: ![defs boolForKey: @"GSUseWMStyles"]];
+      }
+      if ([defs objectForKey: @"GSUsesWMTaskbar"])
+      {
+  NSWarnLog(@"Usage of 'GSUseWMTaskbar' as user default option is deprecated. "
+            @"This option will be ignored in future versions. "
+            @"You should use 'GSBackUsesNativeTaskbar' option.");
+	[self setUsesNativeTaskbar: [defs boolForKey: @"GSUseWMTaskbar"]];
+      }
+
+      if ([defs objectForKey: @"GSBackHandlesWindowDecorations"])
+      {
+	[self setHandlesWindowDecorations: [defs boolForKey: @"GSBackHandlesWindowDecorations"]];
+      } 
+      if ([defs objectForKey: @"GSBackUsesNativeTaskbar"])
+      {
+	[self setUsesNativeTaskbar: [defs boolForKey: @"GSUseNativeTaskbar"]];
+      }
+    }
+  }
   return self;
 }
 
-//  required Notification hooks back to the application
-
-- (void) ApplicationDidFinishLaunching: (NSNotification*)aNotification
-{
-  [self subclassResponsibility: _cmd];
-}
-
-- (void) ApplicationWillFinishLaunching: (NSNotification*)aNotification
-{
-  [self subclassResponsibility: _cmd];
-}
-
-- (void) ApplicationWillHideNotification: (NSNotification*)aNotification
-{
-  [self subclassResponsibility: _cmd];
-}
-
--(void) WindowWillMiniaturizeNotification: (NSNotification*)aNotification
-{
-  [self subclassResponsibility: _cmd];
-}
-
--(void) MenuWillTearOff: (NSNotification*)aNotification
-{
-  [self subclassResponsibility: _cmd];
-}
-
--(void) MenuwillPopUP: (NSNotification*)aNotification
-{
-  [self subclassResponsibility: _cmd];
-}
-
-// make a configure window for the backend
-/* win32 is unique in that it can support both the win32 look and feel or
-a openstep look and feel.
-
-To make it easier to switch between the 2 I have added a small server inspector 
-panel that will provide access to settings without recompile.
-
-If main debug feature is on then I can also add access to some of the switches
-to control debug output... or log specific event to a log panel.
-*/
-- (void) initConfigWindow
-{
-  unsigned int style = NSTitledWindowMask | NSClosableWindowMask;
-  NSRect       rect;
-  NSView      *content;
-  NSTextField *theText;
-  NSTextField *theText2;
-
-  rect = NSMakeRect (715, 800, 236, 182);
-  configWindow = RETAIN([[NSWindow alloc] initWithContentRect: rect
-                                              styleMask: style
-                                                backing: NSBackingStoreBuffered
-                                                  defer: YES]);
-  [configWindow setTitle: @"server Preferences"];
-  [configWindow setReleasedWhenClosed: NO];
-
-  content = [configWindow contentView];
-  theText = [[NSTextField alloc] initWithFrame: NSMakeRect (27, 155, 190, 22)];
-  [theText setStringValue: @"Win32 GNUStep Display Server"];
-  [theText setEditable: NO];
-  [theText setEnabled: NO];
-  [theText setSelectable: NO];
-  [[theText cell] setBackgroundColor: [NSColor lightGrayColor]];
-  [[theText cell] setBordered: NO];
-  [[theText cell] setBezeled: NO];
-  [content addSubview: theText];
-   
-  /*
-  NSTextField *theText1;
-
-  theText1 = [[NSTextField alloc] initWithFrame: NSMakeRect (27, 135, 190, 22)];
-  [theText1 setStringValue: @"Revitalized By Tom MacSween"];
-  [theText1 setEditable: NO];
-  [theText1 setEnabled: NO];
-  [theText1 setSelectable: NO];
-  [[theText1 cell] setBackgroundColor: [NSColor lightGrayColor]];
-  [[theText1 cell] setBordered: NO];
-  [[theText1 cell] setBezeled: NO];
-  [content addSubview: theText1];*/
-   
-  theText2 = [[NSTextField alloc] initWithFrame: NSMakeRect (17, 115, 200, 22)];
-  [theText2 setStringValue: Version];
-  [theText2 setEditable: NO];
-  [theText2 setEnabled: NO];
-  [theText2 setSelectable: NO];
-  [[theText2 cell] setBackgroundColor: [NSColor lightGrayColor]];
-  [[theText2 cell] setBordered: NO];
-  [[theText2 cell] setBezeled: NO];
-  [content addSubview: theText2];
-   
-   // popup for style
-  styleButton
-    = [[NSPopUpButton  alloc] initWithFrame: NSMakeRect (30, 80, 171, 22)];
-  [styleButton setAutoenablesItems: YES];
-  [styleButton setTarget: self];
-  [styleButton setAction: @selector(setStyle:)];
-  [styleButton setTitle: @"Select window Style"];
-  [styleButton addItemWithTitle: @"GNUStep window Style"];
-  [styleButton addItemWithTitle: @"MicroSoft window Style"];
-  [content addSubview: styleButton];
-   
-  // set the tags on the items
-  [[styleButton itemAtIndex: 0] setTag: 0];
-  [[styleButton itemAtIndex: 1] setTag: 1];
-  [[styleButton itemAtIndex: 2] setTag: 2];
-  
-  
-  // check box for using taskbar
-  taskbarButton = [[NSButton  alloc] initWithFrame: NSMakeRect (30, 55, 171, 22)];
-  [taskbarButton setButtonType: NSSwitchButton];
-  [taskbarButton setTitle: @"Use Win Taskbar"];
-  [taskbarButton setTarget: self];
-  [taskbarButton setAction: @selector(setTaskBar:)];
-  [content addSubview: taskbarButton];
-  // save to defaults
-  saveButton = [[NSButton  alloc] initWithFrame: NSMakeRect (30, 25, 171, 22)];
-  [saveButton setButtonType: NSMomentaryPushInButton];
-  [saveButton setTitle: @"Save to defaults"];
-  [saveButton setTarget: self];
-  [saveButton setAction: @selector(setSave:)];
-  [content addSubview: saveButton];
-  [saveButton setEnabled: NO];
-
-
-   // set the buttons to match the current state
-  if (flags.useWMStyles == YES)
-    [styleButton selectItemAtIndex: 2];
-  else
-    [styleButton selectItemAtIndex: 1];
-    
-  if (flags.useWMTaskBar == YES)
-    [taskbarButton setState: NSOnState];
-  else
-    [taskbarButton setState: NSOffState]; 
-}
-   
- // config window actions
-      
-- (void) setStyle: (id)sender
-{
-  //defaults key: GSUseWMStyles
-  // code flag: flags.useWMStyles
-  [saveButton setEnabled: YES];
-    
-  if ([[sender selectedItem] tag] > 1)
-    {
-      flags.useWMStyles = YES;
-      flags.useWMTaskBar = YES;
-      [taskbarButton setState: NSOnState];
-    }
-  else
-    {
-      flags.useWMStyles = NO;
-      flags.useWMTaskBar = NO;
-      [taskbarButton setState: NSOffState];
-    }
-}
-
-- (void) setTaskBar: (id)sender
-{
-  //defaults key: GSUseWMTaskbar
-  // code flag: flags.useWMTaskBar
-  [saveButton setEnabled: YES];
-  flags.useWMTaskBar = [sender state];
-}
-
-- (void) setSave: (id)sender
-{
-  NSString *theValue = @"NO";
-   //NSUserDefaults	*defs = [NSUserDefaults standardUserDefaults];
-   //printf("Save to defaults\n");
-  if (flags.useWMTaskBar == YES)
-    theValue = @"YES";
-        
-  [[NSUserDefaults standardUserDefaults] 
-    setObject: theValue forKey: @"GSUseWMTaskbar"];
-        
-  theValue = @"NO";
-  if (flags.useWMStyles == YES)
-    theValue = @"YES";
-        
-  [[NSUserDefaults standardUserDefaults] 
-     setObject: theValue forKey: @"GSUseWMStyles"];
-    
-    // user must restart application for changes
-    
-  NSRunInformationalAlertPanel(@"Server Preferences Changed", 
-                     @"Changes will take affect on the next restart", 
-                      @"OK", nil, nil);
-  flags.HAVE_SERVER_PREFS = YES;
-  [configWindow close];
-  [saveButton setEnabled: NO];
-  [[NSUserDefaults standardUserDefaults] synchronize]; 
-}
-
-- (void) showServerPrefs: (id)sender
-{
-  [configWindow makeKeyAndOrderFront: self];
-}
-
-/* 
-
- when debug is active (#define __W32_debug__) the following
- additional notifications are registered for in the backend server.
- Helps to show where appevents and server
- events are happening relitive to each other
-
-
-NSWindowDidBecomeKeyNotification
-    Posted whenever an NSWindow becomes the key window.
-    The notification object is the NSWindow that has become key.
-    This notification does not contain a userInfo dictionary.
-
-NSWindowDidBecomeMainNotification
-    Posted whenever an NSWindow becomes the main window.
-    The notification object is the NSWindow that has become main.
-    This notification does not contain a userInfo dictionary.
-    
-NSWindowDidChangeScreenNotification
-    Posted whenever a portion of an NSWindow’s frame moves onto
-    or off of a screen.
-    The notification object is the NSWindow that has changed screens.
-    This notification does not contain a userInfo dictionary.
-    This notification is not sent in Mac OS X versions earlier than 10.4.
-
-NSWindowDidChangeScreenProfileNotification
-    Posted whenever the display profile for the screen containing the window 
-    changes.
-    This notification is sent only if the window returns YES from
-    displaysWhenScreenProfileChanges. This notification may be sent
-    when a majority of the window is moved to a different screen
-    (whose profile is also different from the previous screen) or when
-    the ColorSync profile for the current screen changes.  The
-    notification object is the NSWindow whose profile changed. This
-    notification does not contain a userInfo dictionary.
-
-
-NSWindowDidDeminiaturizeNotification
-    Posted whenever an NSWindow is deminiaturized.
-    The notification object is the NSWindow that has been deminiaturized. This 
-    notification does not contain a userInfo dictionary.
-
-NSWindowDidEndSheetNotification
-    Posted whenever an NSWindow closes an attached sheet.
-    The notification object is the NSWindow that contained the sheet. This 
-    notification does not contain a userInfo dictionary.
-
-NSWindowDidExposeNotification
-    Posted whenever a portion of a nonretained NSWindow is exposed, 
-    whether by being ordered in front of other windows or by other
-    windows being removed from in front of it.  The notification
-    object is the NSWindow that has been exposed. The userInfo
-    dictionary contains the following information: Key
-    @"NSExposedRect" Value The rectangle that has been exposed
-    (NSValue containing an NSRect).
-
-NSWindowDidMiniaturizeNotification
-    Posted whenever an NSWindow is miniaturized.
-    The notification object is the NSWindow that has been miniaturized. This 
-    notification does not contain a userInfo dictionary.
-    
-NSWindowDidMoveNotification
-    Posted whenever an NSWindow is moved.
-    The notification object is the NSWindow that has moved. This
-    notification does not contain a userInfo dictionary.
-
-NSWindowDidResignKeyNotification
-    Posted whenever an NSWindow resigns its status as key window.
-    The notification object is the NSWindow that has resigned its key window 
-    status. This notification does not contain a userInfo dictionary.
-    
-NSWindowDidResignMainNotification
-    Posted whenever an NSWindow resigns its status as main window.
-    The notification object is the NSWindow that has resigned its main window 
-    status. This notification does not contain a userInfo dictionary.
-
-NSWindowDidResizeNotification
-    Posted whenever an NSWindow’s size changes.
-    The notification object is the NSWindow whose size has changed. This 
-    notification does not contain a userInfo dictionary.
-
-NSWindowDidUpdateNotification
-    Posted whenever an NSWindow receives an update message.
-    The notification object is the NSWindow that received the update
-    message. This notification does not contain a userInfo dictionary.
-
-NSWindowWillBeginSheetNotification
-    Posted whenever an NSWindow is about to open a sheet.
-    The notification object is the NSWindow that is about to open the
-    sheet. This notification does not contain a userInfo dictionary.
-
-NSWindowWillCloseNotification
-    Posted whenever an NSWindow is about to close.
-    The notification object is the NSWindow that is about to close. This 
-    notification does not contain a userInfo dictionary.
-
-NSWindowWillMiniaturizeNotification
-    Posted whenever an NSWindow is about to be miniaturized.
-    The notification object is the NSWindow that is about to be
-    miniaturized. This notification does not contain a userInfo
-    dictionary.
-
-NSWindowWillMoveNotification
-    Posted whenever an NSWindow is about to move.
-    The notification object is the NSWindow that is about to move. This 
-    notification does not contain a userInfo dictionary.  
-*/
-
-- (void) registerForWindowEvents
-{
-  NSNotificationCenter	*nc = [NSNotificationCenter defaultCenter];
-        
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSWindowDidDeminiaturizeNotification
-	   object: nil];
-	  
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSWindowDidMiniaturizeNotification
-	   object: nil];
-	  
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSWindowDidBecomeKeyNotification
-	   object: nil];
-	  
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSWindowDidBecomeMainNotification
-	   object: nil]; 
-
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSWindowDidChangeScreenNotification
-	   object: nil];
-    
-  /*
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSWindowDidChangeScreenProfileNotification
-	   object: nil];
-  */
-
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSWindowDidExposeNotification
-	   object: nil];
-
-  /*
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSWindowDidEndSheetNotification
-	   object: nil];
-  */
-	  
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSWindowDidMoveNotification
-	   object: nil];
-
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSWindowDidResignKeyNotification
-	   object: nil];
-	  
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSWindowDidResignMainNotification
-	   object: nil];
-	  
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSWindowDidResizeNotification
-	   object: nil];
-	  
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSWindowDidUpdateNotification
-	   object: nil];
-
-  /*
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSWindowWillBeginSheetNotification
-	   object: nil];
-  */
-    
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSWindowWillCloseNotification
-	   object: nil];
-
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSWindowWillMoveNotification
-	   object: nil];    
-}
-
-/*
-NSViewBoundsDidChangeNotification
-    Posted whenever the NSView’s bounds rectangle changes
-    independently of the frame rectangle, if the NSView is configured
-    using setPostsBoundsChangedNotifications: to post such
-    notifications.  The notification object is the NSView whose bounds
-    rectangle has changed. This notification does not contain a
-    userInfo dictionary.  The following methods can result in
-    notification posting: 
-
-        setBounds: 
-        setBoundsOrigin: 
-        setBoundsRotation: 
-        setBoundsSize: 
-        translateOriginToPoint: 
-        scaleUnitSquareToSize: 
-        rotateByAngle: 
-
-    Note that the bounds rectangle resizes automatically to track the
-    frame rectangle. Because the primary change is that of the frame
-    rectangle, however, setFrame: and setFrameSize: don’t result in
-    a bounds-changed notification.
-
-    
-NSViewFocusDidChangeNotification
-    Deprecated notification that was posted for an NSView and each of
-    its descendents (recursively) whenever the frame or bounds
-    geometry of the view changed.  
-*/
-- (void) registerForViewEvents
-{
-  NSNotificationCenter	*nc = [NSNotificationCenter defaultCenter];
-        
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSViewBoundsDidChangeNotification
-	   object: nil];
-
-  [nc addObserver: self
-	 selector: @selector(handleNotification:)
-	     name: NSViewFocusDidChangeNotification
-	   object: nil];
-}
-
-
 - (void) _destroyWin32Context
 {
-
-#ifdef __debugServer__
-printf("\n\n##############################################################\n");  
-printf("- (void) _destroyWin32Context\n");
-printf("\n\n##############################################################\n");
-#endif
-
   UnregisterClass("GNUstepWindowClass", hinstance);
 }
 
-/**
-
-*/
 - (void) dealloc
 {
-
-#ifdef __debugServer__
-printf("\n\n##############################################################\n");  
-printf("- (void) dealloc\n");
-printf("\n\n##############################################################\n");
-#endif
   [self _destroyWin32Context];
   [super dealloc];
 }
 
 - (void) restrictWindow: (int)win toImage: (NSImage*)image
 {
-    #ifdef __debugServer__
-printf("\n\n##############################################################\n");  
-printf("restrictWindow\n");
-printf("\n\n##############################################################\n");
-#endif
-
-  //[self subclassResponsibility: _cmd];
+  //TODO [self subclassResponsibility: _cmd];
 }
 
 - (int) findWindowAt: (NSPoint)screenLocation 
@@ -1180,36 +631,6 @@ printf("\n\n##############################################################\n");
 
 // main event loop
 
-
-- (NSString *) getNativeClassName: (HWND)hwnd
-{
-  UINT wsize = 80;
-  unichar windowType[wsize + 1];
-  
-  if (RealGetWindowClassW(hwnd, windowType, wsize) > 0)
-    {
-      return [NSString stringWithCharacters: windowType
-				     length: wcslen(windowType)];
-    }
-  
-  return nil;
-}
-
-- (NSString *) getWindowtext: (HWND)hwnd
-{
-  int wsize = 80;
-  unichar windowText[wsize + 1];
-  
-  if (GetWindowTextW(hwnd, windowText, wsize) > 0)
-    {
-      return [NSString stringWithCharacters: windowText
-				     length: wcslen(windowText)];
-    }
-  
-  return nil;
-}
-
-
 /*
  * Reset all of our flags before the next run through the event switch
  *
@@ -1239,20 +660,6 @@ printf("\n\n##############################################################\n");
 
   [self setFlagsforEventLoop: hwnd];
  
-#ifdef __W32_debug__        
-  if ([self displayEvent: uMsg]== YES)
-    {     
-      printf("\n\n\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-      printf("+++                NEW EVENT CYCLE %u                        +++\n", uMsg);
-      printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-#ifdef __W32_debug_Event_loop 
-      printf("Events Posted = %d\n", flags.eventQueCount);
-      printf("EVENT Que Count = %d\n", (int)[GSCurrentServer() eventQueCount]);
-      printf("%s", [[GSCurrentServer() dumpQue: 10] cString]);
-#endif   
-    }
-#endif
-
   switch (uMsg) 
     { 
       case WM_SIZING: 
@@ -1267,7 +674,7 @@ printf("\n\n##############################################################\n");
 	[self decodeWM_NCACTIVATEParams: wParam : lParam : hwnd]; 
 	break;
       case WM_NCPAINT: 
-	if (flags.useWMStyles == NO)
+	if ([self handlesWindowDecorations])
 	[self decodeWM_NCPAINTParams: wParam : lParam : hwnd]; 
 	break;
      //case WM_SHOWWINDOW: 
@@ -1341,7 +748,7 @@ printf("\n\n##############################################################\n");
       case WM_PAINT: 
 	[self decodeWM_PAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd]; 
       case WM_SYNCPAINT: 
-	if (flags.useWMStyles == NO)
+	if ([self handlesWindowDecorations])
 	[self decodeWM_SYNCPAINTParams: wParam : lParam : hwnd]; 
 	break;
       case WM_CLOSE: 
@@ -1476,9 +883,6 @@ printf("\n\n##############################################################\n");
 	
       default: 
 	// Process all other messages.
-  #ifdef __W32_debug__      
-	printf("Uhandled message: %d on window %s\n", uMsg, [[GSWindowWithNumber((int)hwnd) className] cString]);
-  #endif      
 	NSDebugLLog(@"NSEvent", @"Got unhandled Message %d for %d", uMsg, hwnd);
 	break;
     } 
@@ -1495,14 +899,6 @@ printf("\n\n##############################################################\n");
     {		
       [GSCurrentServer() postEvent: ev atStart: NO];
       flags.eventQueCount++;
-#ifdef __W32_debug__      
-      if ([ev type]== NSAppKitDefined)
-	{
-	  printf("uMsg %d ", uMsg);
-	  printf("Post event %s ", [[ev eventNameWithSubtype: YES] cString]);
-	  printf("on window %s\n", [[[ev window] className] cString]);
-	}
-#endif	    
       return 0;
     }
   /*
@@ -1536,12 +932,6 @@ printf("\n\n##############################################################\n");
 
 
 @implementation WIN32Server (WindowOps)
-
--(BOOL) handlesWindowDecorations
-{
-  return handlesWindowDecorations;
-}
-
 
 /*
   styleMask specifies the receiver's style. It can either be
@@ -1601,7 +991,7 @@ printf("\n\n##############################################################\n");
 
   if ((style & NSMiniaturizableWindowMask) == NSMiniaturizableWindowMask)
     {
-      if (flags.useWMTaskBar == YES)
+      if ([self usesNativeTaskbar])
 	estyle = WS_EX_APPWINDOW;
       else
 	estyle = WS_EX_TOOLWINDOW;
@@ -1612,16 +1002,6 @@ printf("\n\n##############################################################\n");
     } 
 
   r = GSScreenRectToMS(frame, style, self);
-
-#ifdef __debugServer__  
-  printf("\n\n##############################################################\n"); 
-  printf("handlesWindowDecorations %s\n", handlesWindowDecorations ? "YES" : "NO");
-  printf("checking for NSMiniaturizableWindowMask %u\n", (style & NSMiniaturizableWindowMask));
-  printf("GS Window Style %u\n", style);
-  printf("Extended Style %d  [hex] %X\n", (int)estyle, (UINT)estyle);     
-   printf("Win32 Style picked %ld [hex] %X\n", wstyle, (unsigned int)wstyle); 
-  printf("\n##############################################################\n");    
-#endif
 
   /* 
    * from here down is reused and unmodified from WIN32EventServer.m 
@@ -1659,8 +1039,8 @@ printf("\n\n##############################################################\n");
 {
   DWORD wstyle = [self windowStyleForGSStyle: style];
 
-  NSAssert(handlesWindowDecorations, 
-	   @"-stylewindow: : called when handlesWindowDecorations == NO");
+  NSAssert([self handlesWindowDecorations], 
+	   @"-stylewindow: : called when [self handlesWindowDecorations] == NO");
 
   NSDebugLLog(@"WTrace", @"stylewindow: %d : %d", style, winNum);
   SetWindowLong((HWND)winNum, GWL_STYLE, wstyle);
@@ -1747,7 +1127,7 @@ printf("\n\n##############################################################\n");
 {
   NSDebugLLog(@"WTrace", @"orderwindow: %d : %d : %d", op, otherWin, winNum);
 
-  if (flags.useWMTaskBar)
+  if ([self usesNativeTaskbar])
     {
       /* When using this policy, we make these changes: 
          - don't show the application icon window
@@ -1959,7 +1339,7 @@ printf("\n\n##############################################################\n");
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
 		     : (unsigned int) style 
 {
-  if (handlesWindowDecorations)
+  if ([self handlesWindowDecorations])
     {
       DWORD wstyle = [self windowStyleForGSStyle: style];
       RECT rect = {100, 100, 200, 200};
@@ -1989,7 +1369,7 @@ printf("\n\n##############################################################\n");
 
 - (void) setinputstate: (int)state : (int)winNum
 {
-  if (handlesWindowDecorations == NO)
+  if ([self handlesWindowDecorations] == NO)
     {
       return;
     }
