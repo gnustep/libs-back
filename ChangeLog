@@ -1,3 +1,21 @@
+2007-03-07 Xavier Glattard <xavier.glattard@online.fr>
+
+	* Source/win32/WIN32Server.m (and other files):
+	Deletion of all non-GNUstep debug stuff (printf...)
+	Deletion of all Notification hooks (used for a debugging purpose)
+	Deletion of the Application preference Panel that pops up the 1st
+	time you run _any_ application. 
+	Deletion of the check of GSWINHandlesWindowDecorations and 
+	GSWIN32HandlesWindowDecorations options (none worked because of a
+	typo and are now deprecated). Use of GSBackHandlesWindowDecorations 
+	option like X11 backend instead of GSUseWMStyles (marked as deprecated).
+	Use of GSBackUsesNativeTaskbar option instead of GSUseWMTaskbar
+	(marked as deprecated)
+	All these options are read in -initWithAttribute: (no more in
+	+inializeBackend) and set an instance (not class) variable. 
+	Add methods -handlesWindowDecorations/-setHandlesWindowDecorations
+	Add methods -usesNativeTaskbar/-setUsesNativeTaskbar
+	
 2007-03-06 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* configure.ac: Add check for syslog
