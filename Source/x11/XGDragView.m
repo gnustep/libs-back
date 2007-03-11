@@ -92,7 +92,7 @@ GSActionForDragOperation(unsigned int op)
 {
   Atom xaction;
   if (op == NSDragOperationAll)
-    xaction = dnd.XdndActionPrivate;
+    xaction = dnd.XdndActionAsk;
   else if (op & NSDragOperationCopy)
     xaction = dnd.XdndActionCopy;
   else if (op & NSDragOperationLink)
@@ -101,6 +101,8 @@ GSActionForDragOperation(unsigned int op)
     xaction = dnd.XdndActionCopy;
   else if (op & NSDragOperationPrivate)
     xaction = dnd.XdndActionPrivate;
+  else if (op & NSDragOperationMove)
+    xaction = dnd.XdndActionMove;
   else 
     xaction = None;
   return xaction;
@@ -114,11 +116,11 @@ GSDragOperationForAction(Atom xaction)
   if (xaction == dnd.XdndActionCopy)
     action = NSDragOperationCopy;
   else if (xaction == dnd.XdndActionMove)
-    action = NSDragOperationCopy;
+    action = NSDragOperationMove;
   else if (xaction == dnd.XdndActionLink) 
     action = NSDragOperationLink;
   else if (xaction == dnd.XdndActionAsk) 
-    action = NSDragOperationGeneric;
+    action = NSDragOperationAll;
   else if (xaction == dnd.XdndActionPrivate) 
     action = NSDragOperationPrivate;
   else

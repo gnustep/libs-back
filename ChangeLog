@@ -1,5 +1,18 @@
+2007-03-11 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGDragView.m (GSActionForDragOperation,
+	GSDragOperationForAction): Completed and corrected drag type
+	mapping between xdnd and OpenStep. NSDragOperationAll should now
+	be map back correctly when converted to xdnd and back again.
+
 2007-03-07 Xavier Glattard <xavier.glattard@online.fr>
 
+	* Source/win32/Event_format.sed,
+	* Source/win32/GSDisplayServer_details.m,
+	* Source/win32/RELEASE_NOTES,
+	* Source/win32/w32_config.h,
+	* Source/win32/w32_debug.m,
+	* Source/win32/w32_notifications.m: Delete files.
 	* Source/win32/WIN32Server.m (and other files):
 	Deletion of all non-GNUstep debug stuff (printf...)
 	Deletion of all Notification hooks (used for a debugging purpose)
@@ -15,6 +28,8 @@
 	+inializeBackend) and set an instance (not class) variable. 
 	Add methods -handlesWindowDecorations/-setHandlesWindowDecorations
 	Add methods -usesNativeTaskbar/-setUsesNativeTaskbar
+	* Source/win32/w32_GLcontext.m:
+	Fix a bug in OpenGL sub-window placement when handlesWindowDecorations == YES
 	
 2007-03-06 Richard Frith-Macdonald <rfm@gnu.org>
 
