@@ -83,7 +83,7 @@
    * xHeight, pix_width, pix_height
    */
   cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
-		    -matrix[3], matrix[4], matrix[5]);
+		    matrix[3], matrix[4], matrix[5]);
   cairo_matrix_init_identity(&ctm);
   // FIXME: Should get default font options from somewhere
   options = cairo_font_options_create();
@@ -295,7 +295,7 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
     }
 
   cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
-		    -matrix[3], matrix[4], matrix[5]);
+		    matrix[3], matrix[4], matrix[5]);
   cairo_set_font_matrix(ct, &font_matrix);
   if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
     {

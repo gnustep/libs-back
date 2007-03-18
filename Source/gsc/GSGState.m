@@ -931,10 +931,10 @@ typedef enum {
 
 - (void) DPSrectclip: (float)x : (float)y : (float)w : (float)h
 {
-  NSRect rect = [ctm rectInMatrixSpace: NSMakeRect(x, y, w, h)]; 
   NSBezierPath *oldPath = path;
 
-  path = [NSBezierPath bezierPathWithRect: rect];
+  path = [NSBezierPath bezierPathWithRect: NSMakeRect(x, y, w, h)];
+  [path transformUsingAffineTransform: ctm];
   [self DPSclip];
   path = oldPath;
   if (path)
@@ -943,20 +943,20 @@ typedef enum {
 
 - (void) DPSrectfill: (float)x : (float)y : (float)w : (float)h
 {
-  NSRect rect = [ctm rectInMatrixSpace: NSMakeRect(x, y, w, h)]; 
   NSBezierPath *oldPath = path;
 
-  path = [NSBezierPath bezierPathWithRect: rect];
+  path = [NSBezierPath bezierPathWithRect: NSMakeRect(x, y, w, h)];
+  [path transformUsingAffineTransform: ctm];
   [self DPSfill];
   path = oldPath;
 }
 
 - (void) DPSrectstroke: (float)x : (float)y : (float)w : (float)h
 {
-  NSRect rect = [ctm rectInMatrixSpace: NSMakeRect(x, y, w, h)]; 
   NSBezierPath *oldPath = path;
 
-  path = [NSBezierPath bezierPathWithRect: rect];
+  path = [NSBezierPath bezierPathWithRect: NSMakeRect(x, y, w, h)];
+  [path transformUsingAffineTransform: ctm];
   [self DPSstroke];
   path = oldPath;
 }
