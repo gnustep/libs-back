@@ -1,3 +1,12 @@
+2007-03-18 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m: A complete rewrite, now path and
+	transformation handling from the super class get used.
+	* Source/cairo/CairoFontInfo.m (-setupAttributes:,
+	-drawGlyphs:length:on:): Don't invert the font matrix.
+	* Source/gsc/GSGState.m (-DPSrectclip::::, -DPSrectfill::::,
+	-DPSrectstroke::::): Use NSBezierPath to get correct results when rotated.
+
 2007-03-11 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGDragView.m (GSActionForDragOperation,
