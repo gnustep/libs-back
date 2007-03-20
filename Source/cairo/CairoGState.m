@@ -154,15 +154,8 @@
   c = fillColor;
   gsColorToRGB(&c);
   // FIXME: The underlying concept does not allow to determine if alpha is set or not.
-  if (c.field[AINDEX] > 0.0)
-    {
-      cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], 
-			    c.field[AINDEX]);
-    }
-  else 
-    {
-      cairo_set_source_rgb(_ct, c.field[0], c.field[1], c.field[2]);
-    }
+  cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], 
+			c.field[AINDEX]);
 }
 
 - (void) GSSetPatterColor: (NSImage*)image 
@@ -581,7 +574,6 @@
   r = [ctm rectInMatrixSpace: r];
   x = NSWidth(r);
   y = NSHeight(r);
-//  cairo_user_to_device_distance(_ct, &x, &y);
   ix = abs(floor(x));
   iy = abs(floor(y));
   ssize = NSMakeSize(ix, iy);
@@ -613,6 +605,7 @@
   isurface = cairo_image_surface_create_for_data(cdata, format, ix, iy, 4*ix);
   ct = cairo_create(isurface);
 
+/*
   if (viewIsFlipped)
     {
       cairo_matrix_t local_matrix;
@@ -621,10 +614,19 @@
       cairo_matrix_translate(&local_matrix, 0, -iy);
       cairo_set_matrix(ct, &local_matrix);
     }
+*/
 
-  cairo_set_source_surface(ct, surface, -r.origin.x, -r.origin.y);
+  if (_surface != nil)
+    {
+      ssize = [_surface size];
+    }
+  else 
+    {
+      ssize = NSMakeSize(0, 0);
+    }
+  cairo_set_source_surface(ct, surface, -r.origin.x, -ssize.height + r.size.height + r.origin.y);
   cairo_rectangle(ct, 0, 0, ix, iy);
-  cairo_fill(ct);
+  cairo_paint(ct);
   cairo_destroy(ct);
   cairo_surface_destroy(isurface);
 
@@ -884,7 +886,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 
       cairo_rectangle(_ct, 0, 0, pixelsWide, pixelsHigh);
     }
-  cairo_fill(_ct);
+  cairo_paint(_ct);
   cairo_surface_destroy(surface);
   cairo_restore(_ct);
 
@@ -902,11 +904,15 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 
       cairo_save(_ct);
       _set_op(_ct, op);
+
+      // This is almost a rectclip::::, but the path stay unchanged.
       path = [NSBezierPath bezierPathWithRect: aRect];
       [path transformUsingAffineTransform: ctm];
       [self _setPath];
       path = oldPath;
-      cairo_fill(_ct);
+      cairo_clip(_ct);
+
+      cairo_paint(_ct);
       cairo_restore(_ct);
     }
 }
