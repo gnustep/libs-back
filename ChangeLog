@@ -1,3 +1,10 @@
+2007-03-21 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-setColor:state): Always call cairo_set_source_rgba().
+	* Source/cairo/CairoGState.m (-GSReadRect:): Correct placement of rectangle.
+	* Source/cairo/CairoGState.m (-compositerect:op:): Use
+	cairo_paint() instead of cairo_fill().
+
 2007-03-18 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m: A complete rewrite, now path and
