@@ -1,5 +1,15 @@
 2007-03-22 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/art/ARTGState.h: Declare internal methods.
+	* Source/art/ARTGState.m: New file split out from ARTContext.m.
+	* Source/art/ARTConext.m: Removed ARTContext bits.
+	* Source/art/blit-main.m: New file split out from blit.m.
+	* Source/art/blit.m: Removed self include stuff.
+	* Source/GNUmakefile: Add new source files.
+	* Source/art/composite.m: Adopt to GNUstep coding style.
+
+2007-03-22 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/cairo/CairoGState.m (-compositeGState:...fraction:):
 	Correct computation of source rectangle and add flip correction.
 	The later is currently commented out. 

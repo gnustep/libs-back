@@ -35,7 +35,8 @@ SUBPROJECT_NAME=art
 # The Objective-C source files to be compiled
 art_OBJC_FILES = \
   ARTContext.m \
-  blit.m \
+  ARTGState.m \
+  blit-main.m \
   ftfont.m \
   image.m \
   composite.m \

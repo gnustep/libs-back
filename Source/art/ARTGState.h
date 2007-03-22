@@ -91,13 +91,16 @@
 @end
 
 
+@interface ARTGState (internal_stuff)
+-(void) GSSetDevice: (gswindow_device_t *)win : (int)x : (int)y;
+-(void) GSCurrentDevice: (void **)device : (int *)x : (int *)y;
+@end
+
 #define UPDATE_UNBUFFERED \
   if (wi->window->type==NSBackingStoreNonretained) \
     { \
       [wi _exposeRect: NSMakeRect(clip_x0,clip_y0,clip_sx,clip_sy)]; \
     }
-
-
 
 extern struct draw_info_s ART_DI;
 #define DI ART_DI
