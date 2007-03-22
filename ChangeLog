@@ -1,3 +1,9 @@
+2007-03-22 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-compositeGState:...fraction:):
+	Correct computation of source rectangle and add flip correction.
+	The later is currently commented out. 
+
 2007-03-21 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m: General clean-up and optimisation of

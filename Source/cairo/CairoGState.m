@@ -949,6 +949,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   src = cairo_get_target(source->_ct);
   if (src == cairo_get_target(_ct))
     {
+/*
       NSRect targetRect;
 
       targetRect.origin = aPoint;
@@ -956,18 +957,24 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 
       if (!NSIsEmptyRect(NSIntersectionRect(aRect, targetRect)))
 	{
-/*
 	  NSLog(@"Copy onto self");
 	  NSLog(NSStringFromRect(aRect));
 	  NSLog(NSStringFromPoint(aPoint));
 	  NSLog(@"src %p(%p,%@) des %p(%p,%@)", 
 		source,cairo_get_target(source->_ct),NSStringFromSize([source->_surface size]),
 		self,cairo_get_target(_ct),NSStringFromSize([_surface size]));
-*/
 	}
+*/
     }
 
-  aRect = [source->ctm rectInMatrixSpace: aRect];
+/*
+  With this bit of code enable scrolling works correctly, but images in cells get displayed wrongly.
+  if (viewIsFlipped)
+    {
+      aPoint.y += NSHeight(aRect);
+    }
+*/
+  [source->ctm boundingRectFor: aRect result: &aRect];
   aPoint = [ctm pointInMatrixSpace: aPoint];
 
   x = aPoint.x;
@@ -976,6 +983,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   miny = NSMinY(aRect);
   width = NSWidth(aRect);
   height = NSHeight(aRect);
+
   if (source->_surface != nil)
     {
       ssize = [source->_surface size];
