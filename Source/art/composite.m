@@ -39,7 +39,7 @@
 windows are known to be totally opaque, we can optimize in many ways
 (see big table at the end of blit.m). Will set dst_need_alpha and blit_func
 if necessary. Returns new operation, or -1 it it's a noop. */
--(int) _composite_func: (BOOL)src_opaque : (BOOL)src_transparent
+- (int) _composite_func: (BOOL)src_opaque : (BOOL)src_transparent
 	: (BOOL)dst_opaque : (BOOL *)dst_needs_alpha
 	: (int)op : (void (**)(composite_run_t *c, int num))blit_func_r
 {
@@ -217,27 +217,28 @@ if necessary. Returns new operation, or -1 it it's a noop. */
 
 static void copy_oo(composite_run_t *c, int num)
 {
-	memcpy(c->dst,c->src,num*DI.bytes_per_pixel);
+  memcpy(c->dst, c->src, num * DI.bytes_per_pixel);
 }
 
 static void copy_oa(composite_run_t *c, int num)
 {
-	memcpy(c->dst,c->src,num*DI.bytes_per_pixel);
-	if (DI.inline_alpha)
-	{
-		unsigned char *dsta=c->dst+DI.inline_alpha_ofs;
-		for (;num;num--,dsta+=4)
-			*dsta=0xff;
-	}
-	else
-		memset(c->dsta,0xff,num);
+  memcpy(c->dst, c->src, num * DI.bytes_per_pixel);
+  if (DI.inline_alpha)
+    {
+      unsigned char *dsta = c->dst + DI.inline_alpha_ofs;
+
+      for (; num; num--, dsta += 4)
+	*dsta = 0xff;
+    }
+  else
+    memset(c->dsta, 0xff, num);
 }
 
 static void copy_aa(composite_run_t *c, int num)
 {
-	memcpy(c->dst,c->src,num*DI.bytes_per_pixel);
-	if (!DI.inline_alpha)
-		memcpy(c->dsta,c->srca,num);
+  memcpy(c->dst,c->src,num*DI.bytes_per_pixel);
+  if (!DI.inline_alpha)
+    memcpy(c->dsta, c->srca, num);
 }
 
 
@@ -452,7 +453,6 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
 
   if (!wi || !wi->data || !ags->wi || !ags->wi->data) return;
   if (all_clipped) return;
-
 
   {
     BOOL dst_needs_alpha;
