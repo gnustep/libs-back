@@ -1290,7 +1290,7 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
   /* Note we update the current point according to the current 
      transformation scaling, although the text isn't currently
      scaled (FIXME). */
-  scale = [ctm sizeInMatrixSpace: NSMakeSize(1, 1)];
+  scale = [ctm transformSize: NSMakeSize(1, 1)];
   //scale = NSMakeSize(1, 1);
   [path relativeMoveToPoint: NSMakePoint(width * scale.width, 0)];
 }
@@ -1337,7 +1337,7 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
   /* Note we update the current point according to the current 
      transformation scaling, although the text isn't currently
      scaled (FIXME). */
-  scale = [ctm sizeInMatrixSpace: NSMakeSize(1, 1)];
+  scale = [ctm transformSize: NSMakeSize(1, 1)];
   //scale = NSMakeSize(1, 1);
   [path relativeMoveToPoint: NSMakePoint(width * scale.width, 0)];
 }
@@ -1427,7 +1427,7 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
   int	w;
   NSSize	ws;
 
-  ws = [ctm sizeInMatrixSpace: NSMakeSize(width,width)];
+  ws = [ctm transformSize: NSMakeSize(width,width)];
   width = (ws.width + ws.height) / 2;
 
   /*
@@ -1806,7 +1806,7 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
 
   // --- determine region to read --------------------------------------
 
-  rect.origin = [ctm pointInMatrixSpace: rect.origin];
+  rect.origin = [ctm transformPoint: rect.origin];
   srect = XGWindowRectToX(self, rect);
   srect = XGIntersectionRect (srect, accessibleRectForWindow (source_win));
   ssize.width = srect.width;

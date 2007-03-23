@@ -1,3 +1,14 @@
+2007-03-23 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/ReadRect.m,
+	* Source/art/composite.m,
+	* Source/art/shfill.m,
+	* Source/cairo/CairoGState.m,
+	* Source/gsc/GSGState.m,
+	* Source/winlib/WIN32GState.m,
+	* Source/xlib/XGGState.m: Replace calls to the now deprecated
+	methods on NSAffineTransform with correct ones.
+
 2007-03-22 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/art/ARTGState.h: Declare internal methods.

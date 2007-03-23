@@ -269,16 +269,16 @@ static void _rect_setup(rect_trace_t *t, NSRect r, int cx0, int cx1,
   t->cx1 = cx1;
 
   p = r.origin;
-  p = [ctm pointInMatrixSpace: p];
+  p = [ctm transformPoint: p];
   fx[0] = p.x; fy[0] = p.y;
   p = r.origin; p.x += r.size.width;
-  p = [ctm pointInMatrixSpace: p];
+  p = [ctm transformPoint: p];
   fx[1] = p.x; fy[1] = p.y;
   p = r.origin; p.x += r.size.width; p.y += r.size.height;
-  p = [ctm pointInMatrixSpace: p];
+  p = [ctm transformPoint: p];
   fx[2] = p.x; fy[2] = p.y;
   p = r.origin; p.y += r.size.height;
-  p = [ctm pointInMatrixSpace: p];
+  p = [ctm transformPoint: p];
   fx[3] = p.x; fy[3] = p.y;
 
   if (fabs(fx[0] - floor(fx[0] + .5)) < 0.001) fx[0] = floor(fx[0] + .5);
@@ -492,10 +492,10 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
   cx1 = clip_x1;
   cy1 = clip_y1;
 
-  sp = [ags->ctm pointInMatrixSpace: aRect.origin];
+  sp = [ags->ctm transformPoint: aRect.origin];
   sp.x = floor(sp.x - ags->offset.x);
   sp.y = floor(ags->offset.y - sp.y);
-  dp = [ctm pointInMatrixSpace: aPoint];
+  dp = [ctm transformPoint: aPoint];
   dp.x = floor(dp.x - offset.x);
   dp.y = floor(offset.y - dp.y);
 
@@ -874,10 +874,10 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
   cx1 = clip_x1;
   cy1 = clip_y1;
 
-  sp = [ags->ctm pointInMatrixSpace: aRect.origin];
+  sp = [ags->ctm transformPoint: aRect.origin];
   sp.x = floor(sp.x - ags->offset.x);
   sp.y = floor(ags->offset.y - sp.y);
-  dp = [ctm pointInMatrixSpace: aPoint];
+  dp = [ctm transformPoint: aPoint];
   dp.x = floor(dp.x - offset.x);
   dp.y = floor(offset.y - dp.y);
 

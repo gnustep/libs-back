@@ -975,7 +975,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
     }
 */
   [source->ctm boundingRectFor: aRect result: &aRect];
-  aPoint = [ctm pointInMatrixSpace: aPoint];
+  aPoint = [ctm transformPoint: aPoint];
 
   x = aPoint.x;
   y = aPoint.y;

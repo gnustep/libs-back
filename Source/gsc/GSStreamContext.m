@@ -478,29 +478,29 @@ fpfloat(FILE *stream, float f)
 
 - (void) GSSetCTM: (NSAffineTransform *)ctm
 {
-  float m[6];
-  [ctm getMatrix: m];
+  NSAffineTransformStruct matrix = [ctm transformStruct];
+
   fprintf(gstream, "[");
-  fpfloat(gstream, m[0]);
-  fpfloat(gstream, m[1]);
-  fpfloat(gstream, m[2]);
-  fpfloat(gstream, m[3]);
-  fpfloat(gstream, m[4]);
-  fpfloat(gstream, m[5]);
+  fpfloat(gstream, matrix.m11);
+  fpfloat(gstream, matrix.m12);
+  fpfloat(gstream, matrix.m21);
+  fpfloat(gstream, matrix.m22);
+  fpfloat(gstream, matrix.tX);
+  fpfloat(gstream, matrix.tY);
   fprintf(gstream, "] setmatrix\n");
 }
 
 - (void) GSConcatCTM: (NSAffineTransform *)ctm
 {
-  float m[6];
-  [ctm getMatrix: m];
+  NSAffineTransformStruct matrix = [ctm transformStruct];
+
   fprintf(gstream, "[");
-  fpfloat(gstream, m[0]);
-  fpfloat(gstream, m[1]);
-  fpfloat(gstream, m[2]);
-  fpfloat(gstream, m[3]);
-  fpfloat(gstream, m[4]);
-  fpfloat(gstream, m[5]);
+  fpfloat(gstream, matrix.m11);
+  fpfloat(gstream, matrix.m12);
+  fpfloat(gstream, matrix.m21);
+  fpfloat(gstream, matrix.m22);
+  fpfloat(gstream, matrix.tX);
+  fpfloat(gstream, matrix.tY);
   fprintf(gstream, "] concat\n");
 }
 
