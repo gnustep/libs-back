@@ -105,7 +105,7 @@ RECT GSWindowRectToMS(WIN32GState *s, NSRect r)
 static inline
 POINT GSViewPointToWin(WIN32GState *s, NSPoint p)
 {
-  p = [s->ctm pointInMatrixSpace: p];
+  p = [s->ctm transformPoint: p];
   return GSWindowPointToMS(s, p);
 }
 

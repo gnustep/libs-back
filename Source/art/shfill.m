@@ -70,16 +70,16 @@ static void _rect_setup(rect_trace_t * t, NSRect r, int cx0, int cx1,
   t->cx1 = cx1;
 
   p = r.origin;
-  p = [ctm pointInMatrixSpace: p];
+  p = [ctm transformPoint: p];
   fx[0] = p.x; fy[0] = p.y;
   p = r.origin; p.x +=  r.size.width;
-  p = [ctm pointInMatrixSpace: p];
+  p = [ctm transformPoint: p];
   fx[1] = p.x; fy[1] = p.y;
   p = r.origin; p.x +=  r.size.width; p.y +=  r.size.height;
-  p = [ctm pointInMatrixSpace: p];
+  p = [ctm transformPoint: p];
   fx[2] = p.x; fy[2] = p.y;
   p = r.origin; p.y +=  r.size.height;
-  p = [ctm pointInMatrixSpace: p];
+  p = [ctm transformPoint: p];
   fx[3] = p.x; fy[3] = p.y;
 
   if (fabs(fx[0] - floor(fx[0] + .5)) < 0.001) fx[0] = floor(fx[0] + .5);

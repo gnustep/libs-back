@@ -205,7 +205,7 @@
 
 - (NSPoint) pointInMatrixSpace: (NSPoint)aPoint
 {
-  return [ctm pointInMatrixSpace: aPoint];
+  return [ctm transformPoint: aPoint];
 }
 
 - (NSPoint) deltaPointInMatrixSpace: (NSPoint)aPoint
@@ -453,8 +453,8 @@ typedef enum {
 
 	  advancement = [font advancementForGlyph: glyph];
 	  /* Use only delta transformations (no offset). Is this conversion needed?*/
-	  advancement = [ctm sizeInMatrixSpace: NSMakeSize(advancement.width, 
-							   [font ascender])];
+	  advancement = [ctm transformSize: NSMakeSize(advancement.width, 
+						       [font ascender])];
 	  delta.x += advancement.width;
 	  delta.y += advancement.height;
 	}
@@ -561,7 +561,7 @@ typedef enum {
 
 - (NSPoint) GSGetTextPosition
 {
-  return [textCtm pointInMatrixSpace: NSMakePoint(0,0)];
+  return [textCtm transformPoint: NSMakePoint(0,0)];
 }
 
 - (void) GSSetTextCTM: (NSAffineTransform *)newCtm
@@ -720,7 +720,19 @@ typedef enum {
 /* ----------------------------------------------------------------------- */
 - (void)DPSconcat: (const float *)m
 {
-  [ctm concatenateWithMatrix: m];
+  NSAffineTransformStruct matrix;
+  NSAffineTransform *new_ctm = [NSAffineTransform new];
+
+  matrix.m11 = m[0];
+  matrix.m12 = m[1];
+  matrix.m21 = m[2];
+  matrix.m22 = m[3];
+  matrix.tX  = m[4];
+  matrix.tY  = m[5];
+  [new_ctm setTransformStruct: matrix];
+
+  [ctm prependTransform: new_ctm];
+  RELEASE(new_ctm);
 }
 
 - (void)DPSinitmatrix 
@@ -755,7 +767,7 @@ typedef enum {
 
 - (void) GSConcatCTM: (NSAffineTransform *)newctm
 {
-  [ctm concatenateWith: newctm];
+  [ctm prependTransform: newctm];
 }
 
 /* ----------------------------------------------------------------------- */
@@ -833,9 +845,9 @@ typedef enum {
 - (void)DPScurveto: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)x3 
 		  : (float)y3 
 {
-  NSPoint p1 = [ctm pointInMatrixSpace: NSMakePoint(x1, y1)];
-  NSPoint p2 = [ctm pointInMatrixSpace: NSMakePoint(x2, y2)];
-  NSPoint p3 = [ctm pointInMatrixSpace: NSMakePoint(x3, y3)];
+  NSPoint p1 = [ctm transformPoint: NSMakePoint(x1, y1)];
+  NSPoint p2 = [ctm transformPoint: NSMakePoint(x2, y2)];
+  NSPoint p3 = [ctm transformPoint: NSMakePoint(x3, y3)];
 
   CHECK_PATH;
   [path curveToPoint: p3 controlPoint1: p1 controlPoint2: p2];
@@ -869,7 +881,7 @@ typedef enum {
 
 - (void)DPSlineto: (float)x : (float)y 
 {
-  NSPoint p = [ctm pointInMatrixSpace: NSMakePoint(x, y)];
+  NSPoint p = [ctm transformPoint: NSMakePoint(x, y)];
 
   CHECK_PATH;
   [path lineToPoint: p];
@@ -877,7 +889,7 @@ typedef enum {
 
 - (void)DPSmoveto: (float)x : (float)y 
 {
-  NSPoint p = [ctm pointInMatrixSpace: NSMakePoint(x, y)];
+  NSPoint p = [ctm transformPoint: NSMakePoint(x, y)];
 
   CHECK_PATH;
   [path moveToPoint: p];
