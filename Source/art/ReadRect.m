@@ -47,7 +47,7 @@
 
   /* Get the bounding rect in pixel coordinates. */
   p = r.origin;
-  p = [ctm pointInMatrixSpace: p];
+  p = [ctm transformPoint: p];
   x0 = floor(p.x);  x1 = ceil(p.x);
   y0 = floor(p.y);  y1 = ceil(p.y);
 
@@ -58,15 +58,15 @@
   if (ceil(p.y)>y1) y1=ceil(p.y); } while (0)
 
   p = r.origin; p.x += r.size.width;
-  p = [ctm pointInMatrixSpace: p];
+  p = [ctm transformPoint: p];
   CHECK;
 
   p = r.origin; p.x += r.size.width; p.y += r.size.height;
-  p = [ctm pointInMatrixSpace: p];
+  p = [ctm transformPoint: p];
   CHECK;
 
   p = r.origin; p.y += r.size.height;
-  p = [ctm pointInMatrixSpace: p];
+  p = [ctm transformPoint: p];
   CHECK;
 #undef CHECK
 

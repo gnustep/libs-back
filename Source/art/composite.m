@@ -39,7 +39,7 @@
 windows are known to be totally opaque, we can optimize in many ways
 (see big table at the end of blit.m). Will set dst_need_alpha and blit_func
 if necessary. Returns new operation, or -1 it it's a noop. */
--(int) _composite_func: (BOOL)src_opaque : (BOOL)src_transparent
+- (int) _composite_func: (BOOL)src_opaque : (BOOL)src_transparent
 	: (BOOL)dst_opaque : (BOOL *)dst_needs_alpha
 	: (int)op : (void (**)(composite_run_t *c, int num))blit_func_r
 {
@@ -217,27 +217,28 @@ if necessary. Returns new operation, or -1 it it's a noop. */
 
 static void copy_oo(composite_run_t *c, int num)
 {
-	memcpy(c->dst,c->src,num*DI.bytes_per_pixel);
+  memcpy(c->dst, c->src, num * DI.bytes_per_pixel);
 }
 
 static void copy_oa(composite_run_t *c, int num)
 {
-	memcpy(c->dst,c->src,num*DI.bytes_per_pixel);
-	if (DI.inline_alpha)
-	{
-		unsigned char *dsta=c->dst+DI.inline_alpha_ofs;
-		for (;num;num--,dsta+=4)
-			*dsta=0xff;
-	}
-	else
-		memset(c->dsta,0xff,num);
+  memcpy(c->dst, c->src, num * DI.bytes_per_pixel);
+  if (DI.inline_alpha)
+    {
+      unsigned char *dsta = c->dst + DI.inline_alpha_ofs;
+
+      for (; num; num--, dsta += 4)
+	*dsta = 0xff;
+    }
+  else
+    memset(c->dsta, 0xff, num);
 }
 
 static void copy_aa(composite_run_t *c, int num)
 {
-	memcpy(c->dst,c->src,num*DI.bytes_per_pixel);
-	if (!DI.inline_alpha)
-		memcpy(c->dsta,c->srca,num);
+  memcpy(c->dst,c->src,num*DI.bytes_per_pixel);
+  if (!DI.inline_alpha)
+    memcpy(c->dsta, c->srca, num);
 }
 
 
@@ -268,16 +269,16 @@ static void _rect_setup(rect_trace_t *t, NSRect r, int cx0, int cx1,
   t->cx1 = cx1;
 
   p = r.origin;
-  p = [ctm pointInMatrixSpace: p];
+  p = [ctm transformPoint: p];
   fx[0] = p.x; fy[0] = p.y;
   p = r.origin; p.x += r.size.width;
-  p = [ctm pointInMatrixSpace: p];
+  p = [ctm transformPoint: p];
   fx[1] = p.x; fy[1] = p.y;
   p = r.origin; p.x += r.size.width; p.y += r.size.height;
-  p = [ctm pointInMatrixSpace: p];
+  p = [ctm transformPoint: p];
   fx[2] = p.x; fy[2] = p.y;
   p = r.origin; p.y += r.size.height;
-  p = [ctm pointInMatrixSpace: p];
+  p = [ctm transformPoint: p];
   fx[3] = p.x; fy[3] = p.y;
 
   if (fabs(fx[0] - floor(fx[0] + .5)) < 0.001) fx[0] = floor(fx[0] + .5);
@@ -453,7 +454,6 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
   if (!wi || !wi->data || !ags->wi || !ags->wi->data) return;
   if (all_clipped) return;
 
-
   {
     BOOL dst_needs_alpha;
     op = [self _composite_func: !ags->wi->has_alpha : NO
@@ -492,10 +492,10 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
   cx1 = clip_x1;
   cy1 = clip_y1;
 
-  sp = [ags->ctm pointInMatrixSpace: aRect.origin];
+  sp = [ags->ctm transformPoint: aRect.origin];
   sp.x = floor(sp.x - ags->offset.x);
   sp.y = floor(ags->offset.y - sp.y);
-  dp = [ctm pointInMatrixSpace: aPoint];
+  dp = [ctm transformPoint: aPoint];
   dp.x = floor(dp.x - offset.x);
   dp.y = floor(offset.y - dp.y);
 
@@ -874,10 +874,10 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
   cx1 = clip_x1;
   cy1 = clip_y1;
 
-  sp = [ags->ctm pointInMatrixSpace: aRect.origin];
+  sp = [ags->ctm transformPoint: aRect.origin];
   sp.x = floor(sp.x - ags->offset.x);
   sp.y = floor(ags->offset.y - sp.y);
-  dp = [ctm pointInMatrixSpace: aPoint];
+  dp = [ctm transformPoint: aPoint];
   dp.x = floor(dp.x - offset.x);
   dp.y = floor(offset.y - dp.y);
 
