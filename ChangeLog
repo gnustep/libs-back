@@ -1,3 +1,8 @@
+2007-03-30 Fred Kiefer <FredKiefer@gmx.de>
+
+	* header/xlib/XGGeometry.h: Replace calls to the now deprecated
+	methods on NSAffineTransform with correct ones.
+
 2007-03-23 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/art/ReadRect.m,
