@@ -40,7 +40,6 @@
   void			*opstack;
   void			*gstack;
   GSGState		*gstate;
-  NSMapTable            *gtable;
 }
 
 - (GSGState *) currentGState;

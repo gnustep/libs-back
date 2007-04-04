@@ -120,8 +120,8 @@
       status = cairo_status(copy->_ct);
       if (status != CAIRO_STATUS_SUCCESS)
         {
-	  NSLog(@"Cairo status %s in copy", cairo_status_to_string(status));
-	}
+          NSLog(@"Cairo status %s in copy", cairo_status_to_string(status));
+        }
     }
 
   RETAIN(_surface);
@@ -138,13 +138,13 @@
   if (device)
     {
       if (_surface)
-	{
-	  *device = _surface->gsDevice;
-	}
+        {
+          *device = _surface->gsDevice;
+        }
       else
-	{
-	  *device = NULL;
-	}
+        {
+          *device = NULL;
+        }
     }
 }
 
@@ -167,6 +167,22 @@
   [super setOffset: theOffset];
   cairo_surface_set_device_offset([_surface surface], -theOffset.x, 
 				  theOffset.y - size.height);
+}
+
+- (void) DPSgrestore
+{
+  if (_ct)
+    {
+      cairo_restore(_ct);
+    }
+}
+
+- (void) DPSgsave
+{
+  if (_ct)
+    {
+      cairo_save(_ct);
+    }
 }
 
 /*
@@ -420,9 +436,9 @@
       i = size;
       while (i)
         {
-	  i--;
-	  dpat[i] = pat[i];
-	}
+          i--;
+          dpat[i] = pat[i];
+        }
       // FIXME: There may be a difference in concept as some dashes look wrong
       cairo_set_dash(_ct, dpat, size, doffset);
       GS_ENDITEMBUF();
@@ -494,23 +510,23 @@
       type = (NSBezierPathElement)(*elmidx)(path, elmsel, i, points);
       switch(type) 
         {
-	  case NSMoveToBezierPathElement:
-	    cairo_move_to(_ct, points[0].x, points[0].y);
-	    break;
-	  case NSLineToBezierPathElement:
-	    cairo_line_to(_ct, points[0].x, points[0].y);
-	    break;
-	  case NSCurveToBezierPathElement:
-	    cairo_curve_to(_ct, points[0].x, points[0].y, 
-			   points[1].x, points[1].y, 
-			   points[2].x, points[2].y);
-	    break;
-	  case NSClosePathBezierPathElement:
-	    cairo_close_path(_ct);
-	    break;
-	  default:
-	    break;
-	}
+          case NSMoveToBezierPathElement:
+            cairo_move_to(_ct, points[0].x, points[0].y);
+            break;
+          case NSLineToBezierPathElement:
+            cairo_line_to(_ct, points[0].x, points[0].y);
+            break;
+          case NSCurveToBezierPathElement:
+            cairo_curve_to(_ct, points[0].x, points[0].y, 
+                           points[1].x, points[1].y, 
+                           points[2].x, points[2].y);
+            break;
+          case NSClosePathBezierPathElement:
+            cairo_close_path(_ct);
+            break;
+          default:
+            break;
+        }
     }
 }
 
@@ -772,25 +788,25 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 
       for (i = 0; i < pixelsHigh; i++)
         {
-	  unsigned char *d = rowData;
+          unsigned char *d = rowData;
 
-	  for (j = 0; j < pixelsWide; j++)
-	  {
+          for (j = 0; j < pixelsWide; j++)
+            {
 #if GS_WORDS_BIGENDIAN
-	      tmp[index++] = d[3];
-	      tmp[index++] = d[0];
-	      tmp[index++] = d[1];
-	      tmp[index++] = d[2];
+              tmp[index++] = d[3];
+              tmp[index++] = d[0];
+              tmp[index++] = d[1];
+              tmp[index++] = d[2];
 #else
-	      tmp[index++] = d[2];
-	      tmp[index++] = d[1];
-	      tmp[index++] = d[0];
-	      tmp[index++] = d[3];
+              tmp[index++] = d[2];
+              tmp[index++] = d[1];
+              tmp[index++] = d[0];
+              tmp[index++] = d[3];
 #endif 
-	      d += 4;
-	    }
-	  rowData += bytesPerRow;
-	}
+              d += 4;
+            }
+          rowData += bytesPerRow;
+        }
       format = CAIRO_FORMAT_ARGB32;
       break;
     case 24:
@@ -800,25 +816,25 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 
       for (i = 0; i < pixelsHigh; i++)
         {
-	  unsigned char *d = rowData;
+          unsigned char *d = rowData;
 
-	  for (j = 0; j < pixelsWide; j++)
-	    {
+          for (j = 0; j < pixelsWide; j++)
+            {
 #if GS_WORDS_BIGENDIAN
-	      tmp[index++] = 0;
-	      tmp[index++] = d[0];
-	      tmp[index++] = d[1];
-	      tmp[index++] = d[2];
+              tmp[index++] = 0;
+              tmp[index++] = d[0];
+              tmp[index++] = d[1];
+              tmp[index++] = d[2];
 #else
-	      tmp[index++] = d[2];
-	      tmp[index++] = d[1];
-	      tmp[index++] = d[0];
-	      tmp[index++] = 0;
+              tmp[index++] = d[2];
+              tmp[index++] = d[1];
+              tmp[index++] = d[0];
+              tmp[index++] = 0;
 #endif
-	      d += 3;
-	    }
-	  rowData += bytesPerRow;
-	}
+              d += 3;
+            }
+          rowData += bytesPerRow;
+        }
       format = CAIRO_FORMAT_RGB24;
       break;
     default:
@@ -837,8 +853,8 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       NSLog(@"Image surface could not be created");
       if (tmp)
         {
-	  objc_free(tmp);
-	}
+          objc_free(tmp);
+        }
 
       return;
     }
@@ -924,10 +940,10 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 }
 
 - (void) compositeGState: (CairoGState *)source 
-		fromRect: (NSRect)aRect 
-		 toPoint: (NSPoint)aPoint 
-		      op: (NSCompositingOperation)op
-		fraction: (float)delta
+                fromRect: (NSRect)aRect 
+                 toPoint: (NSPoint)aPoint 
+                      op: (NSCompositingOperation)op
+                fraction: (float)delta
 {
   cairo_surface_t *src;
   double minx, miny;
@@ -956,26 +972,32 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       targetRect.size = aRect.size;
 
       if (!NSIsEmptyRect(NSIntersectionRect(aRect, targetRect)))
-	{
-	  NSLog(@"Copy onto self");
-	  NSLog(NSStringFromRect(aRect));
-	  NSLog(NSStringFromPoint(aPoint));
-	  NSLog(@"src %p(%p,%@) des %p(%p,%@)", 
-		source,cairo_get_target(source->_ct),NSStringFromSize([source->_surface size]),
-		self,cairo_get_target(_ct),NSStringFromSize([_surface size]));
-	}
+        {
+          NSLog(@"Copy onto self");
+          NSLog(NSStringFromRect(aRect));
+          NSLog(NSStringFromPoint(aPoint));
+          NSLog(@"src %p(%p,%@) des %p(%p,%@)", 
+                source,cairo_get_target(source->_ct),NSStringFromSize([source->_surface size]),
+                self,cairo_get_target(_ct),NSStringFromSize([_surface size]));
+        }
 */
     }
 
-/*
-  With this bit of code enable scrolling works correctly, but images in cells get displayed wrongly.
+  // Undo flipping in gui
   if (viewIsFlipped)
     {
-      aPoint.y += NSHeight(aRect);
+      aPoint.y -= NSHeight(aRect);
     }
-*/
+  {
+      NSRect newRect;
+      
+      newRect.origin = aPoint;
+      newRect.size = aRect.size;
+      [ctm boundingRectFor: newRect result: &newRect];
+      aPoint = newRect.origin;
+  }
+  //aPoint = [ctm transformPoint: aPoint];
   [source->ctm boundingRectFor: aRect result: &aRect];
-  aPoint = [ctm transformPoint: aPoint];
 
   x = aPoint.x;
   y = aPoint.y;

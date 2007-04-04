@@ -113,4 +113,14 @@
   [CGSTATE GSSetDevice: device : x : y];
 }
 
+- (void) DPSgrestore
+{
+  [CGSTATE DPSgrestore];
+}
+
+- (void) DPSgsave
+{
+  [CGSTATE DPSgsave];
+}
+
 @end
