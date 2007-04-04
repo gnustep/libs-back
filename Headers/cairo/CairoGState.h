@@ -38,6 +38,8 @@
 
 - (void) GSCurrentDevice: (void **)device: (int *)x : (int *)y;
 - (void) GSSetDevice: (void *)device : (int)x : (int)y;
+- (void) DPSgsave;
+- (void) DPSgrestore;
 
 @end
 

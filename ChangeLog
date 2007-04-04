@@ -1,3 +1,16 @@
+2007-04-04 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/gsc/GSContext.h: Remove ivar gtable.
+	* Source/gsc/GSContext.m: Changed to use a gtable object
+	shared between all contexts.
+	* Headers/cairo/CairoGState.h:
+	Declare new methods for save and restore.
+	* Source/cairo/CairoContext.m (-DPSgrestore, -DPSgsave): Use these methods.
+	* Source/cairo/CairoGState.m (-DPSgrestore, -DPSgsave): Implement
+	these methods.
+	* Source/cairo/CairoGState.m (-compositeGState:...fraction:):
+	Another try on conversion of the coordinates.
+	
 2007-03-30 Fred Kiefer <FredKiefer@gmx.de>
 
 	* header/xlib/XGGeometry.h: Replace calls to the now deprecated
