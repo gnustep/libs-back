@@ -1,3 +1,7 @@
+2007-04-14  Adam Fedor  <fedor@gnu.org>
+
+	* Version: Bump version
+
 2007-04-04 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/gsc/GSContext.h: Remove ivar gtable.
