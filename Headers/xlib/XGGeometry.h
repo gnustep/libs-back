@@ -239,7 +239,7 @@ XGWindowRectToX (XGGState *s, NSRect r)
 static inline XPoint
 XGViewPointToX(XGGState *s, NSPoint p)
 {
-  p = [s->ctm pointInMatrixSpace: p];
+  p = [s->ctm transformPoint: p];
   return XGWindowPointToX(s, p);
 }
 
