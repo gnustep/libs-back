@@ -6,15 +6,21 @@
 @ifset TEXT-ONLY
 @include version.texi
 @end ifset
+
+@section Noteworthy changes in version @samp{0.12.0}
+
+Big improvements to the cairo graphics and Window backend. Also better
+support for OpenGL.
+
+@c ====================================================================
+@c Keep the next line just below the list of changes in most recent version.
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.11.0}
 
 Bugfixes to art and xlib.
 
 There was some work on the Windows backend for the GDI interface by Christopher Armstrong.
-
-@c ====================================================================
-@c Keep the next line just below the list of changes in most recent version.
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.10.3}
 

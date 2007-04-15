@@ -11,6 +11,10 @@
 	* Source/cairo/CairoGState.m (-compositeGState:...fraction:):
 	Another try on conversion of the coordinates.
 	
+2007-04-14  Adam Fedor  <fedor@gnu.org>
+
+	* Version 0.12.0 (From gnustep-stable branch)
+
 2007-03-30 Fred Kiefer <FredKiefer@gmx.de>
 
 	* header/xlib/XGGeometry.h: Replace calls to the now deprecated
