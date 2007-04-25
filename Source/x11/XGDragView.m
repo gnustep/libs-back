@@ -256,40 +256,45 @@ static	XGDragView	*sharedDragView = nil;
 }
 
 - (void) sendExternalEvent: (GSAppKitSubtype)subtype
-		    action: (NSDragOperation)action
-		  position: (NSPoint)eventLocation
-		 timestamp: (NSTimeInterval)time
-		  toWindow: (int)dWindowNumber
+                    action: (NSDragOperation)action
+                  position: (NSPoint)eventLocation
+                 timestamp: (NSTimeInterval)time
+                  toWindow: (int)dWindowNumber
 {
   switch (subtype)
     {
       case GSAppKitDraggingDrop:
-	if (targetWindowRef == dragWindev->root)
-	  {
-	    // FIXME There is an xdnd extension for root drop
-	  }
-	xdnd_send_drop(&dnd, dWindowNumber, dragWindev->ident, CurrentTime);
-	break;
+        if (targetWindowRef == dragWindev->root)
+          {
+            // FIXME There is an xdnd extension for root drop
+          }
+        xdnd_send_drop(&dnd, dWindowNumber, dragWindev->ident, CurrentTime);
+        break;
 
       case GSAppKitDraggingUpdate:
-	xdnd_send_position(&dnd, dWindowNumber, dragWindev->ident,
-	  GSActionForDragOperation(dragMask & operationMask),
-	  XX(newPosition), XY(newPosition), CurrentTime);
-	break;
-
+        xdnd_send_position(&dnd, dWindowNumber, dragWindev->ident,
+                           GSActionForDragOperation(dragMask & operationMask),
+                           XX(newPosition), XY(newPosition), CurrentTime);
+        break;
+        
       case GSAppKitDraggingEnter:
-	xdnd_send_enter(&dnd, dWindowNumber, dragWindev->ident, typelist);
-	xdnd_send_position(&dnd, dWindowNumber, dragWindev->ident,
-	  GSActionForDragOperation (dragMask & operationMask),
-	  XX(dragPosition), XY(dragPosition), CurrentTime);
-	break;
+        // FIXME: The first two lines need only be called once for every drag operation.
+        // They should be moved to a different method.
+        xdnd_set_selection_owner(&dnd, dragWindev->ident, typelist[0]);
+        xdnd_set_type_list(&dnd, dragWindev->ident, typelist);
+
+        xdnd_send_enter(&dnd, dWindowNumber, dragWindev->ident, typelist);
+        xdnd_send_position(&dnd, dWindowNumber, dragWindev->ident,
+                           GSActionForDragOperation (dragMask & operationMask),
+                           XX(dragPosition), XY(dragPosition), CurrentTime);
+        break;
 
       case GSAppKitDraggingExit:
-	xdnd_send_leave(&dnd, dWindowNumber, dragWindev->ident);
-	break;
-
+        xdnd_send_leave(&dnd, dWindowNumber, dragWindev->ident);
+        break;
+  
       default:
-	break;
+        break;
     }
 }
 
