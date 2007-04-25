@@ -29,6 +29,7 @@
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSGraphics.h>
 #include <AppKit/NSMenu.h>
+#include <AppKit/NSPasteboard.h>
 #include <AppKit/NSWindow.h>
 #include <Foundation/NSException.h>
 #include <Foundation/NSArray.h>
@@ -1466,25 +1467,66 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 
 	    // another client attempts to change the size of a window
       case ResizeRequest:
-	NSDebugLLog(@"NSEvent", @"%d ResizeRequest\n",
-	  xEvent.xresizerequest.window);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d ResizeRequest\n",
+                    xEvent.xresizerequest.window);
+        break;
 
 	    // events dealing with the selection
       case SelectionClear:
-	NSDebugLLog(@"NSEvent", @"%d SelectionClear\n",
-	  xEvent.xselectionclear.window);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d SelectionClear\n",
+                    xEvent.xselectionclear.window);
+        break;
 
       case SelectionNotify:
-	NSDebugLLog(@"NSEvent", @"%d SelectionNotify\n",
-	  xEvent.xselection.requestor);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d SelectionNotify\n",
+                    xEvent.xselection.requestor);
+        break;
 
       case SelectionRequest:
-	NSDebugLLog(@"NSEvent", @"%d SelectionRequest\n",
-	  xEvent.xselectionrequest.requestor);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d SelectionRequest\n",
+                    xEvent.xselectionrequest.requestor);
+        {
+          NSPasteboard *pb = [NSPasteboard pasteboardWithName: NSDragPboard];
+          NSArray *types = [pb types];
+          NSData *data = nil;
+          Atom xType = xEvent.xselectionrequest.target;
+          static Atom XG_UTF8_STRING = None;
+          static Atom XG_TEXT = None;
+
+          if (XG_UTF8_STRING == None)
+            {
+              XG_UTF8_STRING = XInternAtom(dpy, "UTF8_STRING", False);
+              XG_TEXT = XInternAtom(dpy, "TEXT", False);
+            }
+
+          if (((xType == XG_UTF8_STRING) || 
+               (xType == XA_STRING) || 
+               (xType == XG_TEXT)) &&
+              [types containsObject: NSStringPboardType])
+            {
+              NSString *s = [pb stringForType: NSStringPboardType];
+
+              if (xType == XG_UTF8_STRING)
+                {
+                  data = [s dataUsingEncoding: NSUTF8StringEncoding];
+                }
+              else if ((xType == XA_STRING) || (xType == XG_TEXT))
+                {
+                  data = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+                }
+            }
+          // FIXME: Add support for more types. See: xpbs.m
+
+          if (data != nil)
+            {
+              DndClass dnd = xdnd();
+
+              // Send the data to the other process
+              xdnd_selection_send(&dnd, &xEvent.xselectionrequest, 
+                                  (unsigned char *)[data bytes], [data length]);	
+            }
+        }
+        break;
 
 	    // We shouldn't get here unless we forgot to trap an event above
       default:

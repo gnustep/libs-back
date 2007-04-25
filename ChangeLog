@@ -1,3 +1,11 @@
+2007-04-24 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGDragView.m (-sendExternalEvent:... toWindow:) Tell
+	xdnd about available types and selection owner.
+	* Source/x11/XGServerEvent.m (processEvent:): Handle case
+	SelectionRequest to get some simple xdnd support.
+	Based on a patch by Matt Rice <ratmice@yahoo.com>.
+
 2007-04-14  Adam Fedor  <fedor@gnu.org>
 
 	* Version: Bump version
