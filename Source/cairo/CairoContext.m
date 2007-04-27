@@ -22,6 +22,7 @@
 #include "cairo/CairoContext.h"
 #include "cairo/CairoGState.h"
 #include "cairo/CairoSurface.h"
+#include "cairo/CairoPSSurface.h"
 #include "cairo/CairoFontInfo.h"
 #include "cairo/CairoFontEnumerator.h"
 #include "x11/XGServer.h"
@@ -32,6 +33,8 @@
 #else
 #include "cairo/XGCairoSurface.h"
 #include "cairo/XGCairoXImageSurface.h"
+#include "x11/XGServerWindow.h"
+#include "x11/XWindowBuffer.h"
 #endif
 
 #define CGSTATE ((CairoGState *)gstate)
@@ -42,15 +45,8 @@
 
 + (void) initializeBackend
 {
-  //NSLog (@"CairoContext : Initializing cairo backend");
   [NSGraphicsContext setDefaultContextClass: self];
 
-#ifdef USE_GLITZ
-  [CairoSurface setDefaultSurfaceClass: [XGCairoGlitzSurface class]];
-#else
-//  [CairoSurface setDefaultSurfaceClass: [XGCairoSurface class]];
-  [CairoSurface setDefaultSurfaceClass: [XGCairoXImageSurface class]];
-#endif
   [GSFontEnumerator setDefaultClass: [CairoFontEnumerator class]];
   [GSFontInfo setDefaultClass: [CairoFontInfo class]];
 }
@@ -61,15 +57,24 @@
 
   contextType = [info objectForKey:
 			 NSGraphicsContextRepresentationFormatAttributeName];
-  self = [super initWithContextInfo: info];
-  if (contextType)
-    {
-      /* Most likely this is a PS or PDF context, so just return what
-	 super gave us */
-      return self;
-    }
+  // Don't allow super to handle PS case.
+  self = [super initWithContextInfo: nil];
+  if (!self)
+    return self;
 
   gstate = [[CairoGState allocWithZone: [self zone]] initWithDrawContext: self];
+
+  if (contextType)
+    {
+      CairoSurface *surface;
+      NSSize size;
+
+      surface = [[CairoPSSurface alloc] initWithDevice: info];
+      // This strange setting is needed because of the way GUI handles offset.
+      size = [surface size];
+      [CGSTATE GSSetSurface: surface : 0.0 : size.height];
+      RELEASE(surface);
+    }
 
   return self;
 }
@@ -105,22 +110,27 @@
 
 - (void) GSCurrentDevice: (void **)device : (int *)x : (int *)y
 {
-  [CGSTATE GSCurrentDevice: device : x : y];
+  CairoSurface *surface;
+
+  [CGSTATE GSCurrentSurface: &surface : x : y];
+  if (device)
+    {
+      *device = surface->gsDevice;
+    }
 }
 
 - (void) GSSetDevice: (void *)device : (int)x : (int)y
 {
-  [CGSTATE GSSetDevice: device : x : y];
-}
+  CairoSurface *surface;
 
-- (void) DPSgrestore
-{
-  [CGSTATE DPSgrestore];
-}
+#ifdef USE_GLITZ
+  surface = [[XGCairoGlitzSurface alloc] initWithDevice: device];
+#else
+  //surface = [[XGCairoSurface alloc] initWithDevice: device];
+  surface = [[XGCairoXImageSurface alloc] initWithDevice: device];
+#endif
 
-- (void) DPSgsave
-{
-  [CGSTATE DPSgsave];
+  [CGSTATE GSSetSurface: surface : x : y];
 }
 
 @end
