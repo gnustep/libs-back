@@ -35,6 +35,7 @@ cairo_OBJC_FILES = CairoSurface.m \
   CairoContext.m \
   CairoFontEnumerator.m \
   CairoFaceInfo.m \
+  CairoPSSurface.m \
   XGCairoSurface.m \
   XGCairoXImageSurface.m 
 

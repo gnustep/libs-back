@@ -33,8 +33,6 @@
   cairo_surface_t *_surface;
 }
 
-+ (void) setDefaultSurfaceClass: (Class)aClass;
-
 - (id) initWithDevice: (void *)device;
 
 - (NSSize) size;

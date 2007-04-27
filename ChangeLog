@@ -1,3 +1,28 @@
+2007-04-27 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/cairo/CairoSurface.h,
+	* Source/cairo/CairoSurface.m: Remove default surface type setting.
+	* Headers/cairo/XGCairoSurface.h: Remove includes.
+	* Source/cairo/XGCairoSurface.m: Add includes.
+	* Headers/cairo/XGCairoXImageSurface.h: Remove includes.
+	* Source/cairo/XGCairoXImageSurface.m: Add includes, add  missing
+	dealloc method.
+	* Headers/cairo/CairoPSSurface.h,
+	* Source/cairo/CairoPSSurface.m: New files.
+	* Source/cairo/GNUmakefile: Add CairoPSSurface.
+	* Headers/cairo/CairoGState.h,
+	* Source/cairo/CairoGState.m: Replace method -GSSetDevice::: with
+	-GSSetDevice::: and GSCurrentDevice::: with GSCurrentSurface:::.
+	* Source/cairo/CairoGState.m (-DPSshowpage): Implement this method.
+	* Source/cairo/CairoContext.m (-DPSgrestore, -DPSgsave): Remove
+	these newly added methods.
+	* Source/cairo/CairoContext.m (-initializeBackend): No longer set
+	default surface type.
+	* Source/cairo/CairoContext.m (-GSSetDevice:::): Create the
+	surface here.
+	* Source/cairo/CairoContext.m (-initWithContextInfo:): For PS
+	output set the surface here.
+
 2007-04-24 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGDragView.m (-sendExternalEvent:... toWindow:) Tell
@@ -50,7 +75,7 @@
 	* Source/art/ARTConext.m: Removed ARTContext bits.
 	* Source/art/blit-main.m: New file split out from blit.m.
 	* Source/art/blit.m: Removed self include stuff.
-	* Source/GNUmakefile: Add new source files.
+	* Source/art/GNUmakefile: Add new source files.
 	* Source/art/composite.m: Adopt to GNUstep coding style.
 
 2007-03-22 Fred Kiefer <FredKiefer@gmx.de>

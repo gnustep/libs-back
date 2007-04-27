@@ -22,19 +22,7 @@
 
 #include "cairo/CairoSurface.h"
 
-static Class __defaultSurfaceClass;
-
 @implementation CairoSurface 
-
-+ (void) setDefaultSurfaceClass: (Class)aClass
-{
-  __defaultSurfaceClass = aClass;
-}
-
-+ (id) allocWithZone: (NSZone*)zone
-{
-  return NSAllocateObject(__defaultSurfaceClass, 0, zone);
-}
 
 - (id) initWithDevice: (void *) device
 {

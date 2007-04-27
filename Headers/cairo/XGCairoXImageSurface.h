@@ -23,14 +23,13 @@
 #ifndef XGCairoXImageSurface_h
 #define XGCairoXImageSurface_h
 
-#include "x11/XGServer.h"
-#include "x11/XGServerWindow.h"
-#include "x11/XWindowBuffer.h"
 #include "cairo/CairoSurface.h"
+
+@class XWindowBuffer;
 
 @interface XGCairoXImageSurface : CairoSurface
 {
-  @public
+  @private
 	XWindowBuffer *wi;
 }
 @end

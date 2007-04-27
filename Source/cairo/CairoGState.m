@@ -129,44 +129,35 @@
   return copy;
 }
 
-- (void) GSCurrentDevice: (void **)device: (int *)x : (int *)y
+- (void) GSCurrentSurface: (CairoSurface **)surface: (int *)x : (int *)y
 {
   if (x)
     *x = offset.x;
   if (y)
     *y = offset.y;
-  if (device)
+  if (surface)
     {
-      if (_surface)
-        {
-          *device = _surface->gsDevice;
-        }
-      else
-        {
-          *device = NULL;
-        }
+      *surface = _surface;
     }
 }
 
-- (void) GSSetDevice: (void *)device : (int)x : (int)y
+- (void) GSSetSurface: (CairoSurface *)surface : (int)x : (int)y
 {
-  DESTROY(_surface);
-  _surface = [[CairoSurface alloc] initWithDevice: device];
+  ASSIGN(_surface, surface);
   [self setOffset: NSMakePoint(x, y)];
   [self DPSinitgraphics];
 }
 
 - (void) setOffset: (NSPoint)theOffset
 {
-  NSSize size = {0, 0};
-
   if (_surface != nil)
     {
-      size = [_surface size];
+      NSSize size = [_surface size];
+
+      cairo_surface_set_device_offset([_surface surface], -theOffset.x, 
+                                      theOffset.y - size.height);
     }
   [super setOffset: theOffset];
-  cairo_surface_set_device_offset([_surface surface], -theOffset.x, 
-				  theOffset.y - size.height);
 }
 
 - (void) DPSgrestore
@@ -174,6 +165,10 @@
   if (_ct)
     {
       cairo_restore(_ct);
+      if (cairo_status(_ct) == CAIRO_STATUS_INVALID_RESTORE)
+        {
+        // Restore failed because there was no more state on the stack
+        }
     }
 }
 
@@ -182,6 +177,14 @@
   if (_ct)
     {
       cairo_save(_ct);
+    }
+}
+
+- (void) DPSshowpage
+{
+  if (_ct)
+    {
+      cairo_show_page(_ct);
     }
 }
 
@@ -931,11 +934,10 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       path = [NSBezierPath bezierPathWithRect: aRect];
       [path transformUsingAffineTransform: ctm];
       [self _setPath];
-      path = oldPath;
       cairo_clip(_ct);
-
       cairo_paint(_ct);
       cairo_restore(_ct);
+      path = oldPath;
     }
 }
 

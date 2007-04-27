@@ -20,6 +20,9 @@
    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+#include "x11/XGServer.h"
+#include "x11/XGServerWindow.h"
+#include "x11/XWindowBuffer.h"
 #include "cairo/XGCairoXImageSurface.h"
 
 #define GSWINDEVICE ((gswindow_device_t *)gsDevice)
@@ -29,7 +32,6 @@
 - (id) initWithDevice: (void *)device
 {
   struct XWindowBuffer_depth_info_s di;
-  XWindowBuffer *new_wi;
 
   gsDevice = device;
 
@@ -37,23 +39,21 @@
   di.bytes_per_pixel = 4;
   di.inline_alpha = YES;
   di.inline_alpha_ofs = 0;
-  new_wi = [XWindowBuffer windowBufferForWindow: GSWINDEVICE depthInfo: &di];
-  if (new_wi != wi)
-    {
-      DESTROY(wi);
-      wi = new_wi;
-    }
-  else
-    {
-      DESTROY(new_wi);
-    }
+  // This method is somewhat special as it does not return an autoreleased object
+  wi = [XWindowBuffer windowBufferForWindow: GSWINDEVICE depthInfo: &di];
 
   _surface = cairo_image_surface_create_for_data((unsigned char*)wi->data, 
                                                  CAIRO_FORMAT_ARGB32, 
-						 wi->sx, wi->sy, 
+                                                 wi->sx, wi->sy, 
                                                  wi->bytes_per_line);
   
   return self;
+}
+
+- (void) dealloc
+{
+  DESTROY(wi);
+  [super dealloc];
 }
 
 - (NSSize) size

@@ -20,6 +20,8 @@
    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+#include "x11/XGServer.h"
+#include "x11/XGServerWindow.h"
 #include "cairo/XGCairoSurface.h"
 #include <cairo-xlib.h>
 

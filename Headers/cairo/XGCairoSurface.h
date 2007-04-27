@@ -23,9 +23,6 @@
 #ifndef XGCairoSurface_h
 #define XGCairoSurface_h
 
-#include "x11/XGServer.h"
-#include "x11/XGServerWindow.h"
-
 #include "cairo/CairoSurface.h"
 
 @interface XGCairoSurface : CairoSurface
