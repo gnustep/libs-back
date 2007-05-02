@@ -44,7 +44,8 @@ before-all:: $(GNUSTEP_TARGET_DIR)/config.h $(BUNDLE_NAME)Info.plist
 # before-clean::
 
 # Things to do after cleaning
-# after-clean::
+after-clean::
+	rm -f $(BUNDLE_NAME)Info.plist:
 
 # Things to do before distcleaning
 # before-distclean::
