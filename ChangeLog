@@ -1,3 +1,8 @@
+2007-05-02  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Source/GNUmakefile.postamble (after-clean): Remove
+	$(BUNDLE_NAME)Info.plist on clean.
+
 2007-04-27 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/cairo/CairoSurface.h,
