@@ -53,6 +53,11 @@
   return NSMakeSize(0, 0);
 }
 
+- (void) setSize: (NSSize)newSize
+{
+  [self subclassResponsibility:_cmd];
+}
+
 - (cairo_surface_t *) surface
 {
   return _surface;

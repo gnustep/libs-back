@@ -1,3 +1,14 @@
+2007-06-29 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/cairo/CairoSurface.h,
+	* Source/cairo/CairoSurface.m (-setSize:): Add method.
+	* Headers/cairo/CairoGState.h,
+	* Source/cairo/CairoGState.m (-setSize:, -showPage): Add methods.
+	* Source/cairo/CairoContext.m (-beginPrologueBBox:...title:,
+	-showPage): New methods.
+	* Source/cairo/CairoGState.m (-GSShowGlyphs::): Handle rotated
+	text correctly.
+
 2007-06-05 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/art/image.m (-DPSimage:): Replaced appendTransform: with
