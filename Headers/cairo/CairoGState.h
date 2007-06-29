@@ -41,7 +41,8 @@
 - (void) DPSgsave;
 - (void) DPSgrestore;
 
+- (void) setSize: (NSSize)size;
+- (void) showPage;
 @end
 
 #endif
-

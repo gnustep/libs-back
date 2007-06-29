@@ -133,4 +133,20 @@
   [CGSTATE GSSetSurface: surface : x : y];
 }
 
+- (void) beginPrologueBBox: (NSRect)boundingBox
+              creationDate: (NSString*)dateCreated
+                 createdBy: (NSString*)anApplication
+                     fonts: (NSString*)fontNames
+                   forWhom: (NSString*)user
+                     pages: (int)numPages
+                     title: (NSString*)aTitle
+{
+  [CGSTATE setSize: boundingBox.size];
+}
+
+- (void) showPage
+{
+  [CGSTATE showPage];
+}
+
 @end

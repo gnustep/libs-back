@@ -32,17 +32,12 @@
 
   info = (NSDictionary*)device;
   path = [info objectForKey: @"NSOutputFile"];
-  //NSLog(@"Write to file %@", path);
-  // This gets only set later on:
-  // @"NSPrintSheetBounds"
-  
 
   // FIXME: Hard coded size in points
   size = NSMakeSize(400, 400);
   _surface = cairo_ps_surface_create([path fileSystemRepresentation], size.width, size.height);
   if (cairo_surface_status(_surface))
     {
-      NSLog(@"Could not create surface");
       DESTROY(self);
     }
 
@@ -59,7 +54,6 @@
   size = newSize;
   cairo_ps_surface_set_size(_surface, size.width, size.height);
 }
-
 
 - (void) writeComment: (NSString *)comment
 {

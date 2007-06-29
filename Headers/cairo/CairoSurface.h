@@ -36,6 +36,7 @@
 - (id) initWithDevice: (void *)device;
 
 - (NSSize) size;
+- (void) setSize: (NSSize)newSize;
 
 - (cairo_surface_t *) surface;
 

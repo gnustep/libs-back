@@ -180,11 +180,19 @@
     }
 }
 
-- (void) DPSshowpage
+- (void) showPage
 {
   if (_ct)
     {
       cairo_show_page(_ct);
+    }
+}
+
+- (void) setSize: (NSSize)size
+{
+   if (_surface)
+    {
+      [_surface setSize: size];
     }
 }
 
@@ -291,10 +299,24 @@
 {
   if (_ct)
     {
+      cairo_matrix_t local_matrix;
+      NSAffineTransformStruct	matrix = [ctm transformStruct];
+
       [self _setPoint];
+      // FIXME: Hack to get font in rotated view working
+      cairo_save(_ct);
+      cairo_matrix_init(&local_matrix, matrix.m11, matrix.m12, matrix.m21,
+                        matrix.m22, 0, 0);
+      cairo_transform(_ct, &local_matrix);
+      // Undo the 
+      cairo_matrix_init_scale(&local_matrix, 1, -1);
+      cairo_matrix_translate(&local_matrix, 0,  -[_surface size].height);
+      cairo_transform(_ct, &local_matrix);
+
       [(CairoFontInfo *)font drawGlyphs: glyphs
 			length: length
 			on: _ct];
+      cairo_restore(_ct);
     }
 }
 
