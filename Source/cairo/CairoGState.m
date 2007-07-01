@@ -375,6 +375,8 @@
   cairo_set_line_width(_ct, 1.0);
   cairo_set_operator(_ct, CAIRO_OPERATOR_OVER);
   cairo_new_path(_ct);
+
+  _strokeadjust = 1;
 }
 
 - (void) DPScurrentflat: (float *)flatness
@@ -525,19 +527,98 @@
 
 - (void) DPSsetstrokeadjust: (int)b
 {
-    // FIXME
+  _strokeadjust = b;
 }
 
 /*
  * Path operations
  */
 
-- (void) _setPath
+- (void) _adjustPath: (float)offs
+{
+  unsigned            count = [path elementCount];
+  NSBezierPathElement type, last_type = NSNotFound;
+  NSPoint             points[3], last_points[3];
+  unsigned            i;
+
+  last_points[0].x = 0.0;
+  last_points[0].y = 0.0;
+  for (i = 0; i < count; i++)
+    {
+      type = [path elementAtIndex:i associatedPoints:points];
+
+      if (type == NSCurveToBezierPathElement) break;
+
+      if (type == NSClosePathBezierPathElement)
+	{
+	  [path elementAtIndex:0 associatedPoints:points];
+	  if (fabs(last_points[0].x - points[0].x) < 1.0)
+	    {
+	      last_points[0].x = floorf(last_points[0].x) + offs;
+	      points[0].x = last_points[0].x;
+	    }
+	  else if (fabs(last_points[0].y - points[0].y) < 1.0)
+	    {
+	      last_points[0].y = floorf(last_points[0].y) + offs;
+	      points[0].y = last_points[0].y;
+	    }
+	  [path setAssociatedPoints:points atIndex:0];
+	  [path setAssociatedPoints:last_points atIndex:i-1];
+	}
+      else if (fabs(last_points[0].x - points[0].x) < 1.0)
+	{ // vertical
+	  points[0].x = floorf(points[0].x) + offs;
+	  points[0].y = floorf(points[0].y) + 0.0;
+	  [path setAssociatedPoints:points atIndex:i];
+	  if (type == NSLineToBezierPathElement)
+	    {
+	      last_points[0].x = points[0].x;
+	      [path setAssociatedPoints:last_points atIndex:i-1];
+	    }
+	}
+      else if (fabs(last_points[0].y - points[0].y) < 1.0)
+	{ // horizontal
+	  points[0].x = floorf(points[0].x) + 0.0;
+	  points[0].y = floorf(points[0].y) + offs;
+	  [path setAssociatedPoints:points atIndex:i];
+	  if (type == NSLineToBezierPathElement)
+	    {
+	      last_points[0].y = points[0].y;
+	      [path setAssociatedPoints:last_points atIndex:i-1];
+	    }
+	}
+      else
+	{
+	  points[0].x = floorf(points[0].x);
+	  points[0].y = floorf(points[0].y);
+	  [path setAssociatedPoints:points atIndex:i];
+	}
+
+      last_type = type;
+      last_points[0].x = points[0].x;
+      last_points[0].y = points[0].y;
+    }
+}
+
+- (void) _setPath: (BOOL)fillOrClip
 {
   unsigned count = [path elementCount];
   unsigned i;
   SEL elmsel = @selector(elementAtIndex:associatedPoints:);
   IMP elmidx = [path methodForSelector: elmsel];
+
+  if (_strokeadjust)
+    {
+      float offs;
+
+      if ((remainderf(cairo_get_line_width(_ct), 2.0) == 0.0)
+	  || fillOrClip == YES)
+	offs = 0.0;
+      else
+	offs = 0.5;
+
+      [self _adjustPath:offs];
+    }
 
   for (i = 0; i < count; i++) 
     {
@@ -571,7 +652,7 @@
 {
   if (_ct)
     {
-      [self _setPath];
+      [self _setPath:YES];
       cairo_clip(_ct);
     }
 }
@@ -580,7 +661,7 @@
 {
   if (_ct)
     {
-      [self _setPath];
+      [self _setPath:YES];
       cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_EVEN_ODD);
       cairo_clip(_ct);
       cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_WINDING);
@@ -591,7 +672,7 @@
 {
   if (_ct)
     {
-      [self _setPath];
+      [self _setPath:YES];
       cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_EVEN_ODD);
       cairo_fill(_ct);
       cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_WINDING);
@@ -602,7 +683,7 @@
 {
   if (_ct)
     {
-      [self _setPath];
+      [self _setPath:YES];
       cairo_fill(_ct);
     }
 }
@@ -619,7 +700,7 @@
 {
   if (_ct)
     {
-      [self _setPath];
+      [self _setPath:NO];
       cairo_stroke(_ct);
     }
 }
@@ -967,7 +1048,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       // This is almost a rectclip::::, but the path stays unchanged.
       path = [NSBezierPath bezierPathWithRect: aRect];
       [path transformUsingAffineTransform: ctm];
-      [self _setPath];
+      [self _setPath:YES];
       cairo_clip(_ct);
       cairo_paint(_ct);
       cairo_restore(_ct);
