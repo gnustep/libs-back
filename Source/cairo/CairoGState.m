@@ -251,8 +251,20 @@
 {
   if (_ct)
     {
-      [self _setPoint];
+      cairo_matrix_t saved_matrix;
+      cairo_matrix_t local_matrix;
+      NSPoint        p = [path currentPoint];
+
+      cairo_get_matrix(_ct, &saved_matrix);
+
+      cairo_matrix_init_scale(&local_matrix, 1, 1);
+      cairo_matrix_translate(&local_matrix, 0, [_surface size].height-(p.y*2));
+      cairo_set_matrix(_ct, &local_matrix);
+
+      cairo_move_to(_ct, p.x, p.y);
       cairo_show_text(_ct, s);
+
+      cairo_set_matrix(_ct, &saved_matrix);
     }
 }
 
