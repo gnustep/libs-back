@@ -1,8 +1,20 @@
 2007-07-02 Sergii Stoian <soyan255@gmail.com>
 
-	* Source/cairo/CairoGState.m: (-DPSshow:): Apply correct scale
-	and translate transformation matrix.
-
+	* Source/cairo/CairoGState.m
+	  (-DPSshow:): Apply correct scale and translate transformation matrix.
+	  (-DPSsetstrokeadjust:): Implement.
+	  (-DPSinitgraphics): Set _strokeadjust to 1 by default.
+	  (-_adjustPath:): Implement new method that place the path to pixel
+	  boundaries.
+	  (-_setPath:): Change method definition adding fillOrClip argument.
+	  Use _adjustPath: method.
+	  (-DPSclip): Change call of _setPath: to new format.
+	  (-DPSeoclip): Ditto.
+	  (-DPSeofill): Ditto.
+	  (-DPSfill): Ditto.
+	  (-DPSstroke): Ditto.
+	  (-compositerect:op:): Ditto.
+	* Headers/cairo/CairoGState.h: Define _strokeadjust variable.
 	* Source/cairo/CairoFontInfo.m: (-widthOfString:): Add sanity check.
 
 2007-06-29 Fred Kiefer <FredKiefer@gmx.de>
