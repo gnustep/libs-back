@@ -1,3 +1,10 @@
+2007-07-03 Sergii Stoian <soyan255@gmail.com>
+
+	* Source/cairo/CairoGState.m
+	  (-_setPoint): Adjust point.
+	  (-_adjustPath:): Optimize and cleanup.
+	  (-compositeGState:fromRect:toPoint:op:fraction:): Adjust toPoint.
+
 2007-07-02 Sergii Stoian <soyan255@gmail.com>
 
 	* Source/cairo/CairoGState.m

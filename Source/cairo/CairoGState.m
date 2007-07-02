@@ -230,7 +230,7 @@
   NSPoint p;
 
   p = [path currentPoint];
-  cairo_move_to(_ct, p.x, p.y);
+  cairo_move_to(_ct, floorf(p.x), floorf(p.y));
 }
 
 - (void) DPScharpath: (const char *)s : (int)b
@@ -537,20 +537,27 @@
 - (void) _adjustPath: (float)offs
 {
   unsigned            count = [path elementCount];
-  NSBezierPathElement type, last_type = NSNotFound;
-  NSPoint             points[3], last_points[3];
+  NSBezierPathElement type;
+  NSPoint             points[3] = {{0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}};
+  NSPoint             last_points[3] = {{0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}};
   unsigned            i;
+  int                 index, last_index;
 
-  last_points[0].x = 0.0;
-  last_points[0].y = 0.0;
   for (i = 0; i < count; i++)
     {
       type = [path elementAtIndex:i associatedPoints:points];
 
       if (type == NSCurveToBezierPathElement) break;
 
+      points[0].x = floorf(points[0].x) + offs;
+      points[0].y = floorf(points[0].y) + offs;
+
+      index = i;
+      last_index = i - 1;
+
       if (type == NSClosePathBezierPathElement)
 	{
+	  index = 0;
 	  [path elementAtIndex:0 associatedPoints:points];
 	  if (fabs(last_points[0].x - points[0].x) < 1.0)
 	    {
@@ -562,39 +569,36 @@
 	      last_points[0].y = floorf(last_points[0].y) + offs;
 	      points[0].y = last_points[0].y;
 	    }
-	  [path setAssociatedPoints:points atIndex:0];
-	  [path setAssociatedPoints:last_points atIndex:i-1];
+	  else
+	    {
+	      index = -1;
+	    }
 	}
       else if (fabs(last_points[0].x - points[0].x) < 1.0)
-	{ // vertical
+	{ // Vertical path
 	  points[0].x = floorf(points[0].x) + offs;
-	  points[0].y = floorf(points[0].y) + 0.0;
-	  [path setAssociatedPoints:points atIndex:i];
+	  points[0].y = floorf(points[0].y);
 	  if (type == NSLineToBezierPathElement)
 	    {
 	      last_points[0].x = points[0].x;
-	      [path setAssociatedPoints:last_points atIndex:i-1];
 	    }
 	}
       else if (fabs(last_points[0].y - points[0].y) < 1.0)
-	{ // horizontal
-	  points[0].x = floorf(points[0].x) + 0.0;
+	{ // Horizontal path
+	  points[0].x = floorf(points[0].x);
 	  points[0].y = floorf(points[0].y) + offs;
-	  [path setAssociatedPoints:points atIndex:i];
 	  if (type == NSLineToBezierPathElement)
 	    {
 	      last_points[0].y = points[0].y;
-	      [path setAssociatedPoints:last_points atIndex:i-1];
 	    }
 	}
-      else
-	{
-	  points[0].x = floorf(points[0].x);
-	  points[0].y = floorf(points[0].y);
-	  [path setAssociatedPoints:points atIndex:i];
-	}
 
-      last_type = type;
+      // Save adjusted values into NSBezierPath
+      if (index >= 0)
+	[path setAssociatedPoints:points atIndex:index];
+      if (last_index >= 0)
+	[path setAssociatedPoints:last_points atIndex:last_index];
+
       last_points[0].x = points[0].x;
       last_points[0].y = points[0].y;
     }
@@ -1116,8 +1120,8 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   //aPoint = [ctm transformPoint: aPoint];
   [source->ctm boundingRectFor: aRect result: &aRect];
 
-  x = aPoint.x;
-  y = aPoint.y;
+  x = floorf(aPoint.x);
+  y = floorf(aPoint.y);
   minx = NSMinX(aRect);
   miny = NSMinY(aRect);
   width = NSWidth(aRect);
