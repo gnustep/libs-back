@@ -356,6 +356,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   NSDebugLog(@"Initializing GNUstep x11 backend.\n");
   [GSDisplayServer setDefaultServerClass: [XGServer class]];
   signal(SIGTERM, terminate);
+  signal(SIGINT, terminate);
 }
 
 /**

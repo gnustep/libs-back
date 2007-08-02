@@ -1,3 +1,8 @@
+2007-08-02 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServer.m (+initializeBackend): Handle SIGINT by
+	calling ([NSApp terminate: NSApp]) to shut down cleanly.
+
 2007-07-03 Sergii Stoian <soyan255@gmail.com>
 
 	* Source/cairo/CairoGState.m
