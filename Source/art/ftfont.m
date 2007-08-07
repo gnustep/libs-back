@@ -876,11 +876,16 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
     {
       NSMutableCharacterSet	*m = [NSMutableCharacterSet new];
       unsigned			count = 0;
-      FT_Face			face = ft_size->face;
+      FT_Face			face;
       FT_ULong			charcode;
       FT_UInt			glyphindex;
+      FT_Size size;
 
-      charcode = FT_Get_First_Char(face, &glyphindex);
+      if (FTC_Manager_LookupSize(ftc_manager, &scaler, &size))
+          return nil;
+      face = size->face;
+
+     charcode = FT_Get_First_Char(face, &glyphindex);
       if (glyphindex != 0)
         {
           NSRange	range;
@@ -2409,7 +2414,7 @@ p(t)=q(t)
 
 /* TODO: try to combine charpath and NSBezierPath handling? */
 
-static int charpath_move_to(FT_Vector *to, void *user)
+static int charpath_move_to(const FT_Vector *to, void *user)
 {
   GSGState *self = (GSGState *)user;
   NSPoint d;
@@ -2420,7 +2425,7 @@ static int charpath_move_to(FT_Vector *to, void *user)
   return 0;
 }
 
-static int charpath_line_to(FT_Vector *to, void *user)
+static int charpath_line_to(const FT_Vector *to, void *user)
 {
   GSGState *self = (GSGState *)user;
   NSPoint d;
@@ -2430,7 +2435,7 @@ static int charpath_line_to(FT_Vector *to, void *user)
   return 0;
 }
 
-static int charpath_conic_to(FT_Vector *c1, FT_Vector *to, void *user)
+static int charpath_conic_to(const FT_Vector *c1, const FT_Vector *to, void *user)
 {
   GSGState *self = (GSGState *)user;
   NSPoint a, b, c, d;
@@ -2447,7 +2452,8 @@ static int charpath_conic_to(FT_Vector *c1, FT_Vector *to, void *user)
   return 0;
 }
 
-static int charpath_cubic_to(FT_Vector *c1, FT_Vector *c2, FT_Vector *to, void *user)
+static int charpath_cubic_to(const FT_Vector *c1, const FT_Vector *c2, 
+                             const FT_Vector *to, void *user)
 {
   GSGState *self = (GSGState *)user;
   NSPoint b, c, d;
@@ -2471,7 +2477,7 @@ static FT_Outline_Funcs charpath_funcs = {
 };
 
 
-static int bezierpath_move_to(FT_Vector *to, void *user)
+static int bezierpath_move_to(const FT_Vector *to, void *user)
 {
   NSBezierPath *path = (NSBezierPath *)user;
   NSPoint d;
@@ -2482,7 +2488,7 @@ static int bezierpath_move_to(FT_Vector *to, void *user)
   return 0;
 }
 
-static int bezierpath_line_to(FT_Vector *to, void *user)
+static int bezierpath_line_to(const FT_Vector *to, void *user)
 {
   NSBezierPath *path = (NSBezierPath *)user;
   NSPoint d;
@@ -2492,7 +2498,7 @@ static int bezierpath_line_to(FT_Vector *to, void *user)
   return 0;
 }
 
-static int bezierpath_conic_to(FT_Vector *c1, FT_Vector *to, void *user)
+static int bezierpath_conic_to(const FT_Vector *c1, const FT_Vector *to, void *user)
 {
   NSBezierPath *path = (NSBezierPath *)user;
   NSPoint a, b, c, d;
@@ -2509,7 +2515,8 @@ static int bezierpath_conic_to(FT_Vector *c1, FT_Vector *to, void *user)
   return 0;
 }
 
-static int bezierpath_cubic_to(FT_Vector *c1, FT_Vector *c2, FT_Vector *to, void *user)
+static int bezierpath_cubic_to(const FT_Vector *c1, const FT_Vector *c2, 
+                               const FT_Vector *to, void *user)
 {
   NSBezierPath *path = (NSBezierPath *)user;
   NSPoint b, c, d;
@@ -3224,7 +3231,7 @@ fb04 'ffl'
   unsigned int i,j;
   unsigned int ch,ch2,ch3;
 
-  FTFontInfo *fi = [run->font fontInfo];
+  FTFontInfo *fi = (FTFontInfo *)[run->font fontInfo];
 
   NSCharacterSet *cs = [NSCharacterSet controlCharacterSet];
   IMP characterIsMember = [cs methodForSelector: @selector(characterIsMember:)];

@@ -1,3 +1,9 @@
+2007-08-07 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/ftfont.m (-coveredCharacterSet): Use local FT_Size
+	variable instead of ivar. The ivar is sometimes invalid.
+	Cleaned up compiler warnings.
+
 2007-08-02 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServer.m (+initializeBackend): Handle SIGINT by
