@@ -1,3 +1,8 @@
+2007-08-13 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/ftfont.m (-coveredCharacterSet): Correct code.
+	Patch by Yen-Ju Chen <yjchenx@gmail.com>.
+
 2007-08-07 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/art/ftfont.m (-coveredCharacterSet): Use local FT_Size

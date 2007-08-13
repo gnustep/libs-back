@@ -890,29 +890,29 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
         {
           NSRange	range;
 	  
-	  range.location = charcode;
-	  range.length = 0;
-
-	  while (glyphindex != 0)
-	    {
-	      count++;
-	      if (charcode == NSMaxRange(range))
-	        {
-		  range.length++;
-		}
-	      else
-	        {
-	          [m addCharactersInRange: range];
-		  range.location = charcode;
-		  range.length = 0;
-		}
-	      charcode = FT_Get_Next_Char(face, charcode, &glyphindex);
-	    }
-	  if (range.length > 0)
-	    {
-	      [m addCharactersInRange: range];
-	    }
-	}
+          range.location = charcode;
+          range.length = 1;
+          
+          while (glyphindex != 0)
+            {
+              count++;
+              if (charcode == NSMaxRange(range))
+                {
+                  range.length++;
+                }
+              else
+                {
+                  [m addCharactersInRange: range];
+                  range.location = charcode;
+                  range.length = 1;
+                }
+              charcode = FT_Get_Next_Char(face, charcode, &glyphindex);
+            }
+          if (range.length > 0)
+          {
+              [m addCharactersInRange: range];
+          }
+        }
       coveredCharacterSet = [m copy];
       numberOfGlyphs = count;
       RELEASE(m);
