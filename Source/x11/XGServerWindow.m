@@ -533,6 +533,138 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   return x;
 }
 
+- (void)_sendRoot: (Window)root
+             type: (Atom)type 
+           window: (Window)window
+            data0: (long)data0
+            data1: (long)data1
+            data2: (long)data2
+            data3: (long)data3
+{
+  XEvent event;
+
+  memset(&event, 0, sizeof(event));
+	event.xclient.type = ClientMessage;
+	event.xclient.message_type = type;
+	event.xclient.format = 32;
+	event.xclient.display = dpy;
+	event.xclient.window = window;
+	event.xclient.data.l[0] = data0;
+	event.xclient.data.l[1] = data1;
+	event.xclient.data.l[2] = data2;
+	event.xclient.data.l[3] = data3;
+	XSendEvent(dpy, root, False,
+             (SubstructureNotifyMask|SubstructureRedirectMask), &event);
+  XFlush(dpy);
+}
+
+/*
+ * Check if the window manager supports a feature.
+ */
+- (BOOL) _checkWMSupports: (Atom)feature
+{
+  Window root;
+  int	count;
+  Atom *data;
+  Atom supported;
+
+  if ((generic.wm & XGWM_EWMH) != 0)
+    {
+      return NO;
+    }
+
+  supported = XInternAtom(dpy, "_NET_SUPPORTED", False);
+  root = DefaultRootWindow(dpy);
+  data = (Atom*)PropGetCheckProperty(dpy, root, supported, XA_ATOM, 32, -1, &count);
+  if (data != 0)
+    {
+      int	i = 0;
+
+      while (i < count && data[i] != feature)
+        {
+          i++;
+        }
+      XFree(data);
+
+      if (i < count)
+        {
+            return YES;
+        }
+    }
+  return NO;
+}
+
+Bool
+_get_next_prop_new_event(Display *display, XEvent *event, char *arg)
+{
+	XID *data = (XID*)arg;
+
+	if (event->type == PropertyNotify &&
+      event->xproperty.window == data[0] &&
+      event->xproperty.atom == data[1] &&
+      event->xproperty.state == PropertyNewValue)
+		{
+      return True;
+		}
+	else
+		{
+      return False;
+		}
+}
+
+- (BOOL) _tryRequestFrameExtents: (gswindow_device_t *)window
+{
+  static Atom _net_request_frame_extents = None;
+	XEvent xEvent;
+	XID event_data[2];
+  NSDate *limit;
+
+  if (_net_request_frame_extents == None)
+    {
+      _net_request_frame_extents = XInternAtom(dpy, "_NET_REQUEST_FRAME_EXTENTS", 
+                                               False);
+    }
+  
+  if (![self _checkWMSupports: _net_request_frame_extents])
+    {
+      return NO;
+    }
+
+  event_data[0] = window->ident;
+  event_data[1] = _net_request_frame_extents;
+ 
+  [self _sendRoot: window->root 
+        type: _net_request_frame_extents
+        window: window->ident
+        data0: 0
+        data1: 0
+        data2: 0
+        data3: 0];
+  
+  limit = [NSDate dateWithTimeIntervalSinceNow: 1.0];
+	while ([limit timeIntervalSinceNow] > 0.0)
+		{
+      if (XCheckTypedWindowEvent(dpy, window->ident, DestroyNotify, &xEvent))
+			  {
+          return NO;
+        }
+      else if (XCheckIfEvent(dpy, &xEvent, _get_next_prop_new_event,
+                             (char*)(&event_data)))
+			  {
+          return YES; 
+        }
+      else
+        {
+          CREATE_AUTORELEASE_POOL(pool);
+                  
+          [NSThread sleepUntilDate:
+                        [NSDate dateWithTimeIntervalSinceNow: 0.01]];
+          DESTROY(pool);
+        }
+     }
+
+  return NO;
+}
 
 - (BOOL) _checkStyle: (unsigned)style
 {
@@ -668,12 +800,14 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   window->numProtocols = 0;
   window->protocols[window->numProtocols++] = generic.take_focus_atom;
   window->protocols[window->numProtocols++] = generic.delete_win_atom;
-  window->protocols[window->numProtocols++] = generic.net_wm_ping_atom;
+  if ((generic.wm & XGWM_EWMH) != 0)
+    {
+      window->protocols[window->numProtocols++] = generic.net_wm_ping_atom;
+    }
   if ((generic.wm & XGWM_WINDOWMAKER) != 0)
     {
       window->protocols[window->numProtocols++] = generic.miniaturize_atom;
     }
-  // FIXME Add ping protocol for EWMH 
   XSetWMProtocols(dpy, window->ident, window->protocols, window->numProtocols);
 
   window->exposedRects = [NSMutableArray new];
@@ -700,60 +834,66 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   NSMapInsert(windowmaps, (void*)(uintptr_t)window->ident, window);
   NSMapInsert(windowtags, (void*)(uintptr_t)window->number, window);
   [self _setWindowOwnedByServer: window->number];
-  [self orderwindow: NSWindowAbove : 0 : window->number];
 
-  XSync(dpy, False);
-  while (XPending(dpy) > 0 || window->visibility > 1)
+  if (![self _tryRequestFrameExtents: window])
     {
-      if (XPending(dpy) == 0)
+      // Only display the window, if the window manager does not support 
+      // _NET_REQUEST_FRAME_EXTENTS
+      [self orderwindow: NSWindowAbove : 0 : window->number];
+
+      XSync(dpy, False);
+      while (XPending(dpy) > 0 || window->visibility > 1)
         {
-	  NSDate	*until;
-
-	  /* In theory, after executing XSync() all events resulting from
-	   * our window creation and ordering front should be available in
-	   * the X event queue.  However, it's possible that a window manager
-	   * could send soime events after the XSync() has been satisfied,
-	   * so if we have not received a visibility notification we can wait
-	   * for up to a second for more events.
-	   */
-	  until = [NSDate dateWithTimeIntervalSinceNow: 1.0];
-	  while (XPending(dpy) == 0 && [until timeIntervalSinceNow] > 0.0)
-	    {
-	      CREATE_AUTORELEASE_POOL(pool);
-
-	      [NSThread sleepUntilDate:
-	        [NSDate dateWithTimeIntervalSinceNow: 0.01]];
-	      DESTROY(pool);
-	    }
-	  if (XPending(dpy) == 0)
-	    {
-	      NSLog(@"Waited for a second, but the X system never"
-	        @" made the window visible");
-	      break;
-	    }
-	}
-      XNextEvent(dpy, &xEvent);
-      NSDebugLLog(@"Offset", @"Testing ... event %d window %d\n",
-	xEvent.type, xEvent.xany.window);
-      if (xEvent.xany.window != window->ident)
-        {
-	  continue;
-	}
-      switch (xEvent.type)
-	{
-	  case VisibilityNotify:
-	    window->visibility = xEvent.xvisibility.state;
-	    break;
-
-	  case ReparentNotify:
-	    NSDebugLLog(@"Offset", @"%d ReparentNotify - offset %d %d\n",
-			xEvent.xreparent.window, xEvent.xreparent.x,
-			xEvent.xreparent.y);
-	    repp = xEvent.xreparent.parent;
-	    repx = xEvent.xreparent.x;
-	    repy = xEvent.xreparent.y;
-	    break;
-	}
+          if (XPending(dpy) == 0)
+            {
+              NSDate	*until;
+              
+              /* In theory, after executing XSync() all events resulting from
+               * our window creation and ordering front should be available in
+               * the X event queue.  However, it's possible that a window manager
+               * could send some events after the XSync() has been satisfied,
+               * so if we have not received a visibility notification we can wait
+               * for up to a second for more events.
+               */
+              until = [NSDate dateWithTimeIntervalSinceNow: 1.0];
+              while (XPending(dpy) == 0 && [until timeIntervalSinceNow] > 0.0)
+                {
+                  CREATE_AUTORELEASE_POOL(pool);
+                  
+                  [NSThread sleepUntilDate:
+                                [NSDate dateWithTimeIntervalSinceNow: 0.01]];
+                  DESTROY(pool);
+                }
+              if (XPending(dpy) == 0)
+                {
+                  NSLog(@"Waited for a second, but the X system never"
+                        @" made the window visible");
+                  break;
+                }
+            }
+          XNextEvent(dpy, &xEvent);
+          NSDebugLLog(@"Offset", @"Testing ... event %d window %d\n",
+                      xEvent.type, xEvent.xany.window);
+          if (xEvent.xany.window != window->ident)
+            {
+              continue;
+            }
+          switch (xEvent.type)
+            { 
+              case VisibilityNotify:
+                window->visibility = xEvent.xvisibility.state;
+                break;
+              
+              case ReparentNotify:
+                NSDebugLLog(@"Offset", @"%d ReparentNotify - offset %d %d\n",
+                            xEvent.xreparent.window, xEvent.xreparent.x,
+                            xEvent.xreparent.y);
+                repp = xEvent.xreparent.parent;
+                repx = xEvent.xreparent.x;
+                repy = xEvent.xreparent.y;
+                break;
+            }
+        }
     }
 
   /* If our window manager supports _NET_FRAME_EXTENTS we trust that as
@@ -761,15 +901,13 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
    */
   if (_net_frame_extents == None)
     {
-      _net_frame_extents = XInternAtom(dpy,
-	"_NET_FRAME_EXTENTS", False);
+      _net_frame_extents = XInternAtom(dpy, "_NET_FRAME_EXTENTS", False);
     }
   extents = (unsigned long *)PropGetCheckProperty(dpy,
     window->ident, _net_frame_extents, XA_CARDINAL, 32, 4, &count);
   if (extents != 0)
     {
-      NSDebugLLog(@"Offset",
-	@"Offsets retrieved from _NET_FRAME_EXTENTS");
+      NSDebugLLog(@"Offset", @"Offsets retrieved from _NET_FRAME_EXTENTS");
     }
   if (extents == 0)
     {
@@ -777,17 +915,17 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
        * its as reliable as _NET_FRAME_EXTENTS
        */
       if (_kde_frame_strut == None)
-	{
-	  _kde_frame_strut = XInternAtom(dpy,
-	    "_KDE_NET_WM_FRAME_STRUT", False);
-	}
+        {
+          _kde_frame_strut = XInternAtom(dpy,
+            "_KDE_NET_WM_FRAME_STRUT", False);
+        }
       extents = (unsigned long *)PropGetCheckProperty(dpy,
-	window->ident, _kde_frame_strut, XA_CARDINAL, 32, 4, &count);
+        window->ident, _kde_frame_strut, XA_CARDINAL, 32, 4, &count);
       if (extents!= 0)
         {
-	  NSDebugLLog(@"Offset",
-	    @"Offsets retrieved from _KDE_NET_WM_FRAME_STRUT");
-	}
+          NSDebugLLog(@"Offset",
+                      @"Offsets retrieved from _KDE_NET_WM_FRAME_STRUT");
+        }
     }
 
   if (extents != 0) 
@@ -798,106 +936,105 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
       o->b = extents[3];
       o->known = YES;
       NSDebugLLog(@"Offset", @"Extents left %d, right %d, top %d, bottom %d", 
-	extents[0], extents[1], extents[2], extents[3]);
+                  extents[0], extents[1], extents[2], extents[3]);
       XFree(extents);
     }
   else if (repp != 0)
     {
-      NSDebugLLog(@"Offset",
-	@"Offsets retrieved from ReparentNotify");
+      NSDebugLLog(@"Offset", @"Offsets retrieved from ReparentNotify");
       window->parent = repp;
       if (repp != window->root)
-	{
-	  Window		parent = repp;
-	  XWindowAttributes	wattr;
-	  float			l;
-	  float			r;
-	  float			t;
-	  float			b;
+        {
+          Window parent = repp;
+          XWindowAttributes	wattr;
+          float			l;
+          float			r;
+          float			t;
+          float			b;
 
-	  /* Get the WM offset info which we hope is the same
-	   * for all parented windows with the same style.
-	   * The coordinates in the event are insufficient to determine
-	   * the offsets as the new parent window may have a border,
-	   * so we must get the attributes of that window and use them
-	   * to determine our offsets.
-	   */
-	  XGetWindowAttributes(dpy, parent, &wattr);
-	  NSDebugLLog(@"Offset", @"Parent border,width,height %d,%d,%d\n",
-	    wattr.border_width, wattr.width, wattr.height);
-	  l = repx + wattr.border_width;
-	  t = repy + wattr.border_width;
+          /* Get the WM offset info which we hope is the same
+           * for all parented windows with the same style.
+           * The coordinates in the event are insufficient to determine
+           * the offsets as the new parent window may have a border,
+           * so we must get the attributes of that window and use them
+           * to determine our offsets.
+           */
+          XGetWindowAttributes(dpy, parent, &wattr);
+          NSDebugLLog(@"Offset", @"Parent border,width,height %d,%d,%d\n",
+                      wattr.border_width, wattr.width, wattr.height);
+          l = repx + wattr.border_width;
+          t = repy + wattr.border_width;
+          
+          /* Find total parent size and subtract window size and
+           * top-left-corner offset to determine bottom-right-corner
+           * offset.
+           */
+          r = wattr.width + wattr.border_width * 2;
+          r -= (window->xframe.size.width + l);
+          b = wattr.height + wattr.border_width * 2;
+          b -= (window->xframe.size.height + t);
+          
+          // Some window manager e.g. KDE2 put in multiple windows,
+          // so we have to find the right parent, closest to root
+          /* FIXME: This section of code has caused problems with
+             certain users. An X error occurs in XQueryTree and
+             later a seg fault in XFree. It's 'commented' out for
+             now unless you set the default 'GSDoubleParentWindows'
+             or we are reparented to 0,0 (which presumably must mean
+             that we have a double parent).
+          */
+          if (generic.flags.doubleParentWindow == YES
+              || (repx == 0 && repy == 0))
+            {
+              Window new_parent = parent;
 
-	  /* Find total parent size and subtract window size and
-	   * top-left-corner offset to determine bottom-right-corner
-	   * offset.
-	   */
-	  r = wattr.width + wattr.border_width * 2;
-	  r -= (window->xframe.size.width + l);
-	  b = wattr.height + wattr.border_width * 2;
-	  b -= (window->xframe.size.height + t);
-
-	  // Some window manager e.g. KDE2 put in multiple windows,
-	  // so we have to find the right parent, closest to root
-	  /* FIXME: This section of code has caused problems with
-	     certain users. An X error occurs in XQueryTree and
-	     later a seg fault in XFree. It's 'commented' out for
-	     now unless you set the default 'GSDoubleParentWindows'
-	     or we are reparented to 0,0 (which presumably must mean
-	     that we have a double parent).
-	  */
-	  if (generic.flags.doubleParentWindow == YES
-	    || (repx == 0 && repy == 0))
-	    {
-	      Window	new_parent = parent;
-
-	      r = wattr.width + wattr.border_width * 2;
-	      b = wattr.height + wattr.border_width * 2;
-	      while (new_parent && (new_parent != window->root))
-		{
-		  Window root;
-		  Window *children = 0;
-		  unsigned int nchildren;
-
-		  parent = new_parent;
-		  NSLog(@"QueryTree window is %d (root %d cwin root %d)", 
-			parent, root, window->root);
-		  if (!XQueryTree(dpy, parent, &root, &new_parent, 
-		    &children, &nchildren))
-		    {
-		      new_parent = None;
-		      if (children)
-			{
-			  NSLog(@"Bad pointer from failed X call?");
-			  children = 0;
-			}
-		    }
-		  if (children)
-		    {
-		      XFree(children);
-		    }
-		  if (new_parent && new_parent != window->root)
-		    {
-		      XGetWindowAttributes(dpy, parent, &wattr);
-		      l += wattr.x + wattr.border_width;
-		      t += wattr.y + wattr.border_width;
-		      r = wattr.width + wattr.border_width * 2;
-		      b = wattr.height + wattr.border_width * 2;
-		    }
-		} /* while */
-	      r -= (window->xframe.size.width + l);
-	      b -= (window->xframe.size.height + t);
-	    } /* generic.flags.doubleParentWindow */
-
-	  o->l = l;
-	  o->r = r;
-	  o->t = t;
-	  o->b = b;
-	  o->known = YES;
-	  NSDebugLLog(@"Offset",
-	    @"Style %d lrtb set to %d,%d,%d,%d\n",
-	    style, (int)o->l, (int)o->r, (int)o->t, (int)o->b);
-	}
+              r = wattr.width + wattr.border_width * 2;
+              b = wattr.height + wattr.border_width * 2;
+              while (new_parent && (new_parent != window->root))
+                {
+                  Window root;
+                  Window *children = 0;
+                  unsigned int nchildren;
+                  
+                  parent = new_parent;
+                  NSLog(@"QueryTree window is %d (root %d cwin root %d)", 
+                        parent, root, window->root);
+                  if (!XQueryTree(dpy, parent, &root, &new_parent, 
+                                  &children, &nchildren))
+                    {
+                      new_parent = None;
+                      if (children)
+                        {
+                          NSLog(@"Bad pointer from failed X call?");
+                          children = 0;
+                        }
+                    }
+                  if (children)
+                    {
+                      XFree(children);
+                    }
+                  if (new_parent && new_parent != window->root)
+                    {
+                      XGetWindowAttributes(dpy, parent, &wattr);
+                      l += wattr.x + wattr.border_width;
+                      t += wattr.y + wattr.border_width;
+                      r = wattr.width + wattr.border_width * 2;
+                      b = wattr.height + wattr.border_width * 2;
+                    }
+                } /* while */
+              r -= (window->xframe.size.width + l);
+              b -= (window->xframe.size.height + t);
+            } /* generic.flags.doubleParentWindow */
+          
+          o->l = l;
+          o->r = r;
+          o->t = t;
+          o->b = b;
+          o->known = YES;
+          NSDebugLLog(@"Offset",
+                      @"Style %d lrtb set to %d,%d,%d,%d\n",
+                      style, (int)o->l, (int)o->r, (int)o->t, (int)o->b);
+        }
     }
 
   [self termwindow: window->number];
@@ -906,11 +1043,11 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
     {
       XNextEvent(dpy, &xEvent);
       NSDebugLLog(@"Offset", @"Destroying ... event %d window %d\n",
-	xEvent.type, xEvent.xany.window);
+                  xEvent.type, xEvent.xany.window);
       if (xEvent.xany.window != window->ident)
         {
-	  continue;
-	}
+            continue;
+        }
     }
   if (o->known == NO)
     {
@@ -942,35 +1079,35 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 
       noticeboard = XInternAtom(dpy, "_WINDOWMAKER_NOTICEBOARD", False);
       while (i < count && data[i] != noticeboard)
-	{
-	  i++;
-	}
+        {
+          i++;
+        }
       XFree(data);
 
       if (i < count)
-	{
-	  Window	*win;
-	  void		*d;
-
-	  win = (Window*)PropGetCheckProperty(dpy, root, 
-	    noticeboard, XA_WINDOW, 32, -1, &count);
-
-	  if (win != 0)
-	    {
-	      d = PropGetCheckProperty(dpy, *win, noticeboard,
-		XA_WINDOW, 32, 1, NULL);
-	      if (d != 0)
-		{
-		  XFree(d);
-		  wmflags |= XGWM_WINDOWMAKER;
-		}
-	      XFree(win);
-	    }
-	}
+        {
+          Window	*win;
+          void		*d;
+          
+          win = (Window*)PropGetCheckProperty(dpy, root, 
+            noticeboard, XA_WINDOW, 32, -1, &count);
+          
+          if (win != 0)
+            {
+              d = PropGetCheckProperty(dpy, *win, noticeboard,
+                                       XA_WINDOW, 32, 1, NULL);
+              if (d != 0)
+                {
+                  XFree(d);
+                  wmflags |= XGWM_WINDOWMAKER;
+                }
+              XFree(win);
+            }
+        }
       else
-	{
-	  wmflags |= XGWM_WINDOWMAKER;
-	}
+        {
+          wmflags |= XGWM_WINDOWMAKER;
+        }
     }
 
   /* Now check for Gnome */
@@ -987,15 +1124,15 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
       // a left over from an old window manager.
       if (win1 && *win1 == *win)
         {
-	  wmflags |= XGWM_GNOME;
+          wmflags |= XGWM_GNOME;
 
-	  generic.wintypes.win_type_atom = 
-	      XInternAtom(dpy, "_WIN_LAYER", False);
-	}
+          generic.wintypes.win_type_atom = 
+              XInternAtom(dpy, "_WIN_LAYER", False);
+        }
       if (win1)
         {
-	  XFree(win1);
-	}
+          XFree(win1);
+        }
       XFree(win);
     }
 
@@ -1014,44 +1151,44 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
       // a left over from an old window manager.
       if (win1 && *win1 == *win)
         {
-	  wmflags |= XGWM_EWMH;
-
-	  // Store window type Atoms for this WM
-	  generic.wintypes.win_type_atom = 
-	      XInternAtom(dpy, "_NET_WM_WINDOW_TYPE", False);
-	  generic.wintypes.win_desktop_atom = 
-	      XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DESKTOP", False);
-	  generic.wintypes.win_dock_atom = 
-	      XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DOCK", False);
-	  generic.wintypes.win_floating_atom = 
-	      XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_TOOLBAR", False);
-	  generic.wintypes.win_menu_atom = 
-	      XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_MENU", False);
-	  generic.wintypes.win_modal_atom = 
-	      XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DIALOG", False);
-	  generic.wintypes.win_normal_atom = 
-	      XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_NORMAL", False);
-	  // New in wmspec 1.2
-	  generic.wintypes.win_utility_atom = 
-	      XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_UTILITY", False);
-	  generic.wintypes.win_splash_atom = 
-	      XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_SPLASH", False);
-	  //KDE extensions
-	  generic.wintypes.win_override_atom = 
-	      XInternAtom(dpy, "_KDE_NET_WM_WINDOW_TYPE_OVERRIDE", False);
-	  generic.wintypes.win_topmenu_atom = 
-	      XInternAtom(dpy, "_KDE_NET_WM_WINDOW_TYPE_TOPMENU", False);
-
-	  // Window state
-	  generic.netstates.net_wm_state_atom = 
- 	      XInternAtom(dpy, "_NET_WM_STATE", False);
-	  generic.netstates.net_wm_state_skip_taskbar_atom = 
- 	      XInternAtom(dpy, "_NET_WM_STATE_SKIP_TASKBAR", False);
-	}
+          wmflags |= XGWM_EWMH;
+          
+          // Store window type Atoms for this WM
+          generic.wintypes.win_type_atom = 
+              XInternAtom(dpy, "_NET_WM_WINDOW_TYPE", False);
+          generic.wintypes.win_desktop_atom = 
+              XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DESKTOP", False);
+          generic.wintypes.win_dock_atom = 
+              XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DOCK", False);
+          generic.wintypes.win_floating_atom = 
+              XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_TOOLBAR", False);
+          generic.wintypes.win_menu_atom = 
+              XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_MENU", False);
+          generic.wintypes.win_modal_atom = 
+              XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DIALOG", False);
+          generic.wintypes.win_normal_atom = 
+              XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_NORMAL", False);
+          // New in wmspec 1.2
+          generic.wintypes.win_utility_atom = 
+              XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_UTILITY", False);
+          generic.wintypes.win_splash_atom = 
+              XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_SPLASH", False);
+          //KDE extensions
+          generic.wintypes.win_override_atom = 
+              XInternAtom(dpy, "_KDE_NET_WM_WINDOW_TYPE_OVERRIDE", False);
+          generic.wintypes.win_topmenu_atom = 
+              XInternAtom(dpy, "_KDE_NET_WM_WINDOW_TYPE_TOPMENU", False);
+          
+          // Window state
+          generic.netstates.net_wm_state_atom = 
+              XInternAtom(dpy, "_NET_WM_STATE", False);
+          generic.netstates.net_wm_state_skip_taskbar_atom = 
+              XInternAtom(dpy, "_NET_WM_STATE_SKIP_TASKBAR", False);
+        }
       if (win1)
         {
-	  XFree(win1);
-	}
+          XFree(win1);
+        }
       XFree(win);
     }
 
@@ -1352,9 +1489,9 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
  * hold 64bit values.
  */
     XChangeProperty(dpy, ROOT,
-	generic.win_decor_atom, generic.win_decor_atom,
-	32, PropModeReplace, (unsigned char *)&win_attrs,
-	sizeof(GNUstepWMAttributes)/sizeof(CARD32));
+                    generic.win_decor_atom, generic.win_decor_atom,
+                    32, PropModeReplace, (unsigned char *)&win_attrs,
+                    sizeof(GNUstepWMAttributes)/sizeof(CARD32));
   }
 
   if ((generic.wm & XGWM_EWMH) != 0)
@@ -1400,70 +1537,70 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
        */
       if (_offsets_name == None)
         {
-	  _offsets_name = XInternAtom(dpy, "_GNUSTEP_FRAME_OFFSETS", False);
-	}
+          _offsets_name = XInternAtom(dpy, "_GNUSTEP_FRAME_OFFSETS", False);
+        }
       if ([defs boolForKey: @"GSIgnoreRootOffsets"] == YES)
         {
-	  offsets = 0;
-	}
+          offsets = 0;
+        }
       else
         {
-	  offsets = (uint16_t *)PropGetCheckProperty(dpy,
-	    DefaultRootWindow(dpy), _offsets_name, XA_CARDINAL, 16, 60, &count);
-	}
+          offsets = (uint16_t *)PropGetCheckProperty(dpy,
+            DefaultRootWindow(dpy), _offsets_name, XA_CARDINAL, 16, 60, &count);
+        }
 
       if (offsets == 0)
         {
-	  BOOL	ok = YES;
+          BOOL	ok = YES;
 
-	  /* No offsets available on the root window ... so we test each
-	   * style of window to determine its offsets.
-	   */
-	  for (i = 1; i < 16; i++)
-	    {
-	      if ([self _checkStyle: i] == NO)
-	        {
-		  ok = NO;	// test failed for this style
-		}
-	    }
+          /* No offsets available on the root window ... so we test each
+           * style of window to determine its offsets.
+           */
+          for (i = 1; i < 16; i++)
+            {
+              if ([self _checkStyle: i] == NO)
+                {
+                  ok = NO;	// test failed for this style
+                }
+            }
 
-	  if (ok == YES)
-	    {
-	      uint16_t	off[60];
+          if (ok == YES)
+            {
+              uint16_t	off[60];
 
-	      /* We have obtained all the offsets, so we store them to
-	       * the root window so that other GNUstep applications don't
-	       * need to test to determine offsets.
-	       */
-	      count = 0;
-	      for (i = 1; i < 16; i++)
-		{
-		  off[count++] = (uint16_t)generic.offsets[i].l;
-		  off[count++] = (uint16_t)generic.offsets[i].r;
-		  off[count++] = (uint16_t)generic.offsets[i].t;
-		  off[count++] = (uint16_t)generic.offsets[i].b;
-		}
-	      XChangeProperty(dpy, DefaultRootWindow(dpy),
-		_offsets_name, XA_CARDINAL, 16, PropModeReplace,
-		(unsigned char *)off, 60);
-	    }
-	}
+              /* We have obtained all the offsets, so we store them to
+               * the root window so that other GNUstep applications don't
+               * need to test to determine offsets.
+               */
+              count = 0;
+              for (i = 1; i < 16; i++)
+                {
+                  off[count++] = (uint16_t)generic.offsets[i].l;
+                  off[count++] = (uint16_t)generic.offsets[i].r;
+                  off[count++] = (uint16_t)generic.offsets[i].t;
+                  off[count++] = (uint16_t)generic.offsets[i].b;
+                }
+              XChangeProperty(dpy, DefaultRootWindow(dpy),
+                              _offsets_name, XA_CARDINAL, 16, PropModeReplace,
+                              (unsigned char *)off, 60);
+            }
+        }
       else
         {
-	  /* Got offsets from the root window.
-	   * Let's copy them into our local table.
-	   */
-	  count = 0;
-	  for (i = 1; i < 16; i++)
-	    {
-	      generic.offsets[i].l = (float)(offsets[count++]);
-	      generic.offsets[i].r = (float)(offsets[count++]);
-	      generic.offsets[i].t = (float)(offsets[count++]);
-	      generic.offsets[i].b = (float)(offsets[count++]);
-	      generic.offsets[i].known = YES;
-	    }
-	  XFree(offsets);
-	}
+          /* Got offsets from the root window.
+           * Let's copy them into our local table.
+           */
+          count = 0;
+          for (i = 1; i < 16; i++)
+            {
+              generic.offsets[i].l = (float)(offsets[count++]);
+              generic.offsets[i].r = (float)(offsets[count++]);
+              generic.offsets[i].t = (float)(offsets[count++]);
+              generic.offsets[i].b = (float)(offsets[count++]);
+              generic.offsets[i].known = YES;
+            }
+          XFree(offsets);
+        }
     }
 }
 
@@ -1692,7 +1829,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   else
     {
       window->win_attrs.window_style
-	= style & (NSIconWindowMask | NSMiniWindowMask);
+        = style & (NSIconWindowMask | NSMiniWindowMask);
     }
 
   frame = [self _OSFrameToXFrame: frame for: window];
@@ -2045,37 +2182,36 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 
       if (_net_frame_extents == None)
         {
-	  _net_frame_extents = XInternAtom(dpy,
-	    "_NET_FRAME_EXTENTS", False);
-	}
+          _net_frame_extents = XInternAtom(dpy,
+            "_NET_FRAME_EXTENTS", False);
+        }
 
       extents = (unsigned long *)PropGetCheckProperty(dpy,
-	win, _net_frame_extents, XA_CARDINAL, 32, 4, &count);
-
+        win, _net_frame_extents, XA_CARDINAL, 32, 4, &count);
 
       if (!extents) // && (generic.wm & XGWM_KDE)) 
         {
-	  if (_kde_frame_strut == None)
-	    {
-	      _kde_frame_strut = XInternAtom(dpy,
-		"_KDE_NET_WM_FRAME_STRUT", False);
-	    }
-	  extents = (unsigned long *)PropGetCheckProperty(dpy,
-	    win, _kde_frame_strut, XA_CARDINAL, 32, 4, &count);
-	}
+          if (_kde_frame_strut == None)
+            {
+              _kde_frame_strut = XInternAtom(dpy,
+                "_KDE_NET_WM_FRAME_STRUT", False);
+            }
+          extents = (unsigned long *)PropGetCheckProperty(dpy,
+            win, _kde_frame_strut, XA_CARDINAL, 32, 4, &count);
+        }
 
       if (extents) 
         {
-	  NSDebugLLog(@"Frame",
-	    @"Window %d, left %d, right %d, top %d, bottom %d", 
-	    win, extents[0], extents[1], extents[2], extents[3]);
-	  *l = extents[0];
-	  *r = extents[1];
-	  *t = extents[2];
-	  *b = extents[3];
-	  XFree(extents);
-	  return;
-	}
+          NSDebugLLog(@"Frame",
+                      @"Window %d, left %d, right %d, top %d, bottom %d", 
+                      win, extents[0], extents[1], extents[2], extents[3]);
+          *l = extents[0];
+          *r = extents[1];
+          *t = extents[2];
+          *b = extents[3];
+          XFree(extents);
+          return;
+        }
     }
 
   if ((style & NSIconWindowMask) || (style & NSMiniWindowMask))
@@ -2096,8 +2232,8 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
       *b = o->b;
       *t = o->t;
       NSDebugLLog(@"Frame",
-	@"Window %d, offsets %f, %f, %f, %f", 
-	win, *l, *r, *t, *b);
+                  @"Window %d, offsets %f, %f, %f, %f", 
+                  win, *l, *r, *t, *b);
       return;
     }
 
@@ -2107,33 +2243,33 @@ NSLog(@"styleoffsets ... guessing offsets\n");
     {
       *l = *r = *t = *b = 1.0;
       if (NSResizableWindowMask & style)
-	{
-	  *b = 9.0;
-	}
+        {
+          *b = 9.0;
+        }
       if ((style & NSTitledWindowMask) || (style & NSClosableWindowMask)
-	|| (style & NSMiniaturizableWindowMask))
-	{
-	  *t = 25.0;
-	}
+          || (style & NSMiniaturizableWindowMask))
+        {
+          *t = 25.0;
+        }
       NSDebugLLog(@"Frame",
-	@"Window %d, windowmaker %f, %f, %f, %f", 
-	win, *l, *r, *t, *b);
+                  @"Window %d, windowmaker %f, %f, %f, %f", 
+                  win, *l, *r, *t, *b);
     }
   else if ((generic.wm & XGWM_EWMH) != 0)
     {
       *l = *r = *t = *b = 4;
       if (NSResizableWindowMask & style)
-	{
-	  *b = 7;
-	}
+        {
+          *b = 7;
+        }
       if ((style & NSTitledWindowMask) || (style & NSClosableWindowMask)
-	|| (style & NSMiniaturizableWindowMask))
-	{
-	  *t = 20;
-	}
+          || (style & NSMiniaturizableWindowMask))
+        {
+          *t = 20;
+        }
       NSDebugLLog(@"Frame",
-	@"Window %d, EWMH %f, %f, %f, %f", 
-	win, *l, *r, *t, *b);
+                  @"Window %d, EWMH %f, %f, %f, %f", 
+                  win, *l, *r, *t, *b);
     }
   else
     {
@@ -2144,8 +2280,8 @@ NSLog(@"styleoffsets ... guessing offsets\n");
        */
       *l = *r = *t = *b = 0.0;
       NSDebugLLog(@"Frame",
-	@"Window %d, unknown %f, %f, %f, %f", 
-	win, *l, *r, *t, *b);
+                  @"Window %d, unknown %f, %f, %f, %f", 
+                  win, *l, *r, *t, *b);
     }
 }
 
@@ -2878,6 +3014,7 @@ static BOOL didCreatePixmaps;
 
 - (void) setwindowlevel: (int)level : (int)win
 {
+  static Atom net_wm_state_skip_pager = None;
   gswindow_device_t *window;
 
   window = WINDOW_WITH_TAG(win);
@@ -2893,166 +3030,177 @@ static BOOL didCreatePixmaps;
 
       // send WindowMaker WM window style hints
       // Always send GNUstepWMAttributes
-      {
-        XEvent	event;
-
-        /*
-	 * First change the window properties so that, if the window
-	 * is not mapped, we have stored the required info for when
-	 * the WM maps it.
-	 */
+      /*
+       * First change the window properties so that, if the window
+       * is not mapped, we have stored the required info for when
+       * the WM maps it.
+       */
 /* Warning ... X-bug .. when we specify 32bit data X actually expects data
  * of type 'long' or 'unsigned long' even on machines where those types
  * hold 64bit values.
  */
-        XChangeProperty(dpy, window->ident,
-	    generic.win_decor_atom, generic.win_decor_atom,
-	    32, PropModeReplace, (unsigned char *)&window->win_attrs,
-	    sizeof(GNUstepWMAttributes)/sizeof(CARD32));
-	/*
-	 * Now send a message for rapid handling.
-	 */
-	event.xclient.type = ClientMessage;
-	event.xclient.message_type = generic.win_decor_atom;
-	event.xclient.format = 32;
-	event.xclient.display = dpy;
-	event.xclient.window = window->ident;
-	event.xclient.data.l[0] = GSWindowLevelAttr;
-	event.xclient.data.l[1] = window->win_attrs.window_level;
-	event.xclient.data.l[2] = 0;
-	event.xclient.data.l[3] = 0;
-	XSendEvent(dpy, DefaultRootWindow(dpy), False,
-	    SubstructureRedirectMask, &event);
-      }
+      XChangeProperty(dpy, window->ident,
+                      generic.win_decor_atom, generic.win_decor_atom,
+                      32, PropModeReplace, (unsigned char *)&window->win_attrs,
+                      sizeof(GNUstepWMAttributes)/sizeof(CARD32));
+      /*
+       * Now send a message for rapid handling.
+       */
+      [self _sendRoot: window->root 
+            type: generic.win_decor_atom
+            window: window->ident
+            data0: GSWindowLevelAttr
+            data1: window->win_attrs.window_level
+            data2: 0
+            data3: 0];
 
       if ((generic.wm & XGWM_EWMH) != 0)
-	{
-	  int len;
-	  long data[2];
-	  BOOL skipTaskbar = NO;
+        {
+          int len;
+          long data[2];
+          BOOL skipTaskbar = NO;
+          
+          data[0] = generic.wintypes.win_normal_atom;
+          data[1] = None;
+          len = 1;
 
-	  data[0] = generic.wintypes.win_normal_atom;
-	  data[1] = None;
-	  len = 1;
-
-	  if (level == NSModalPanelWindowLevel)
-	    {
-	      data[0] = generic.wintypes.win_modal_atom;
-	      skipTaskbar = YES;
-	    }
-	  else if (level == NSMainMenuWindowLevel)
-	    {
-	      // For strange reasons menu level does not
-	      // work out for the main menu
-	      //data[0] = generic.wintypes.win_topmenu_atom;
-	      data[0] = generic.wintypes.win_dock_atom;
-	      //len = 2;
-	      skipTaskbar = YES;
-	    }
-	  else if (level == NSSubmenuWindowLevel
-	    || level == NSFloatingWindowLevel
-	    || level == NSTornOffMenuWindowLevel)
-	    {
+          if (level == NSModalPanelWindowLevel)
+            {
+              data[0] = generic.wintypes.win_modal_atom;
+              skipTaskbar = YES;
+            }
+          else if (level == NSMainMenuWindowLevel)
+            {
+              // For strange reasons menu level does not
+              // work out for the main menu
+              //data[0] = generic.wintypes.win_topmenu_atom;
+              data[0] = generic.wintypes.win_dock_atom;
+              //len = 2;
+              skipTaskbar = YES;
+            }
+          else if (level == NSSubmenuWindowLevel
+                   || level == NSFloatingWindowLevel
+                   || level == NSTornOffMenuWindowLevel)
+            {
 #ifdef USE_KDE_OVERRIDE
-	      data[0] = generic.wintypes.win_override_atom;
-	      //data[0] = generic.wintypes.win_utility_atom;
-	      data[1] = generic.wintypes.win_menu_atom;
-	      len = 2;
+              data[0] = generic.wintypes.win_override_atom;
+              //data[0] = generic.wintypes.win_utility_atom;
+              data[1] = generic.wintypes.win_menu_atom;
+              len = 2;
 #else
-	      data[0] = generic.wintypes.win_menu_atom;
-	      len = 1;
+              data[0] = generic.wintypes.win_menu_atom;
+              len = 1;
 #endif
-	      skipTaskbar = YES;
-	    }
-	  else if (level == NSDockWindowLevel
-	    || level == NSStatusWindowLevel)
-	    {
-	      data[0] =generic.wintypes.win_dock_atom;
-	      skipTaskbar = YES;
-	    }
-	  // Does this belong into a different category?
-	  else if (level == NSPopUpMenuWindowLevel)
-	    {
+              skipTaskbar = YES;
+            }
+          else if (level == NSDockWindowLevel
+                   || level == NSStatusWindowLevel)
+            {
+              data[0] =generic.wintypes.win_dock_atom;
+              skipTaskbar = YES;
+            }
+          // Does this belong into a different category?
+          else if (level == NSPopUpMenuWindowLevel)
+            {
 #ifdef USE_KDE_OVERRIDE
-	      data[0] = generic.wintypes.win_override_atom;
-	      data[1] = generic.wintypes.win_floating_atom;
-	      len = 2;
+              data[0] = generic.wintypes.win_override_atom;
+              data[1] = generic.wintypes.win_floating_atom;
+              len = 2;
 #else
-	      data[0] = generic.wintypes.win_modal_atom;
-	      len = 1;
+              data[0] = generic.wintypes.win_modal_atom;
+              len = 1;
 #endif
-	      skipTaskbar = YES;
-	    }
-	  else if (level == NSDesktopWindowLevel)
-	    {
-	      data[0] = generic.wintypes.win_desktop_atom;
-	      skipTaskbar = YES;
-	    }
+              skipTaskbar = YES;
+            }
+          else if (level == NSDesktopWindowLevel)
+            {
+              data[0] = generic.wintypes.win_desktop_atom;
+              skipTaskbar = YES;
+            }
 
 /* Warning ... X-bug .. when we specify 32bit data X actually expects data
  * of type 'long' or 'unsigned long' even on machines where those types
  * hold 64bit values.
  */
-	  XChangeProperty(dpy, window->ident, generic.wintypes.win_type_atom,
-			  XA_ATOM, 32, PropModeReplace, 
-			  (unsigned char *)&data, len);
-
+          XChangeProperty(dpy, window->ident, generic.wintypes.win_type_atom,
+                          XA_ATOM, 32, PropModeReplace, 
+                          (unsigned char *)&data, len);
+          
 /* 
  * Change _NET_WM_STATE based on window level.
  * This should be based on real window type (NSMenu, NSPanel, etc).
  * This feature is only needed for window managers that cannot properly 
  * handle the window type set above.
  */
-	  if (skipTaskbar) 
-	    {
-	      len = 1;
-	      data[0] = generic.netstates.net_wm_state_skip_taskbar_atom;
-	      XChangeProperty(dpy, window->ident, 
-			      generic.netstates.net_wm_state_atom,
-			      XA_ATOM, 32, PropModeReplace, 
-			      (unsigned char *)&data, len);
-	    } 
-	  else 
-	    {
-	      XDeleteProperty(dpy, window->ident,
-			      generic.netstates.net_wm_state_atom);
-	    }
-	}
+          if (skipTaskbar)
+            {
+              static Atom net_wm_state_add = None;
+
+              if (net_wm_state_add == None)
+                net_wm_state_add = XInternAtom(dpy, "_NET_WM_STATE_ADD", False);
+              if (net_wm_state_skip_pager == None)
+                net_wm_state_skip_pager = XInternAtom(dpy, "_NET_WM_STATE_SKIP_PAGER",
+                                                      False);
+              [self _sendRoot: window->root 
+                    type: generic.netstates.net_wm_state_atom
+                    window: window->ident
+                    data0: net_wm_state_add
+                    data1: generic.netstates.net_wm_state_skip_taskbar_atom
+                    data2: net_wm_state_skip_pager
+                    data3: 1];
+            } 
+          else 
+            {
+              static Atom net_wm_state_remove = None;
+              
+              if (net_wm_state_remove == None)
+                net_wm_state_remove = XInternAtom(dpy, "_NET_WM_STATE_REMOVE", False);
+              if (net_wm_state_skip_pager == None)
+                net_wm_state_skip_pager = XInternAtom(dpy, "_NET_WM_STATE_SKIP_PAGER",
+                                                      False);
+              
+              [self _sendRoot: window->root 
+                    type: generic.netstates.net_wm_state_atom
+                    window: window->ident
+                    data0: net_wm_state_remove
+                    data1: generic.netstates.net_wm_state_skip_taskbar_atom
+                    data2: net_wm_state_skip_pager
+                    data3: 1];
+            }
+        }
       else if ((generic.wm & XGWM_GNOME) != 0)
-	{
-	  XEvent event;
-	  long    flag = WIN_LAYER_NORMAL;
+        {
+          long flag = WIN_LAYER_NORMAL;
 
-	  if (level == NSDesktopWindowLevel)
-	    flag = WIN_LAYER_DESKTOP;
-	  else if (level == NSSubmenuWindowLevel 
-	    || level == NSFloatingWindowLevel 
-	    || level == NSTornOffMenuWindowLevel)
-	    flag = WIN_LAYER_ONTOP;
-	  else if (level == NSMainMenuWindowLevel)
-	    flag = WIN_LAYER_MENU;
-	  else if (level == NSDockWindowLevel
-	    || level == NSStatusWindowLevel)
-	    flag = WIN_LAYER_DOCK;
-	  else if (level == NSModalPanelWindowLevel
-	    || level == NSPopUpMenuWindowLevel)
-	    flag = WIN_LAYER_ONTOP;
-	  else if (level == NSScreenSaverWindowLevel)
-	    flag = WIN_LAYER_ABOVE_DOCK;
-
-	  XChangeProperty(dpy, window->ident, generic.wintypes.win_type_atom,
-			  XA_CARDINAL, 32, PropModeReplace, 
-			  (unsigned char *)&flag, 1);
-
-	  event.xclient.type = ClientMessage;
-	  event.xclient.window = window->ident;
-	  event.xclient.display = dpy;
-	  event.xclient.message_type = generic.wintypes.win_type_atom;
-	  event.xclient.format = 32;
-	  event.xclient.data.l[0] = flag;
-	  XSendEvent(dpy, window->root, False, 
-		     SubstructureNotifyMask, &event);
-	}
+          if (level == NSDesktopWindowLevel)
+            flag = WIN_LAYER_DESKTOP;
+          else if (level == NSSubmenuWindowLevel 
+                   || level == NSFloatingWindowLevel 
+                   || level == NSTornOffMenuWindowLevel)
+            flag = WIN_LAYER_ONTOP;
+          else if (level == NSMainMenuWindowLevel)
+            flag = WIN_LAYER_MENU;
+          else if (level == NSDockWindowLevel
+                   || level == NSStatusWindowLevel)
+            flag = WIN_LAYER_DOCK;
+          else if (level == NSModalPanelWindowLevel
+                   || level == NSPopUpMenuWindowLevel)
+            flag = WIN_LAYER_ONTOP;
+          else if (level == NSScreenSaverWindowLevel)
+            flag = WIN_LAYER_ABOVE_DOCK;
+          
+          XChangeProperty(dpy, window->ident, generic.wintypes.win_type_atom,
+                          XA_CARDINAL, 32, PropModeReplace, 
+                          (unsigned char *)&flag, 1);
+          
+          [self _sendRoot: window->root 
+                type: generic.wintypes.win_type_atom
+                window: window->ident
+                data0: flag
+                data1: 0
+                data2: 0
+                data3: 0];
+        }
     }
 }
 
@@ -3100,7 +3248,7 @@ static BOOL didCreatePixmaps;
        * interested in the ones which are ours. */
       if (tmp)
         {
-	  [ret addObject:[NSNumber numberWithInt:tmp->number]];
+          [ret addObject:[NSNumber numberWithInt:tmp->number]];
         }
     }
   
@@ -3415,24 +3563,19 @@ static BOOL didCreatePixmaps;
   if ((generic.wm & XGWM_WINDOWMAKER) != 0)
     {
       gswindow_device_t *window = WINDOW_WITH_TAG(win);
-      XEvent		event;
 
       if (win == 0 || window == 0)
-	{
-	  return;
-	}
+        {
+          return;
+        }
 
-      event.xclient.type = ClientMessage;
-      event.xclient.message_type = generic.titlebar_state_atom;
-      event.xclient.format = 32;
-      event.xclient.display = dpy;
-      event.xclient.window = window->ident;
-      event.xclient.data.l[0] = st;
-      event.xclient.data.l[1] = 0;
-      event.xclient.data.l[2] = 0;
-      event.xclient.data.l[3] = 0;
-      XSendEvent(dpy, DefaultRootWindow(dpy), False,
-		 SubstructureRedirectMask, &event);
+      [self _sendRoot: window->root 
+            type: generic.titlebar_state_atom
+            window: window->ident
+            data0: st
+            data1: 0
+            data2: 0
+            data3: 0];
     }
 }
 
@@ -3460,21 +3603,55 @@ static BOOL didCreatePixmaps;
     }
   else
     {
-      unsigned long opacity;
+      unsigned int opacity;
 
-      opacity = (unsigned int)(alpha * 0xffffffff);
+      opacity = (unsigned int)(alpha * 0xffffffffU);
       XChangeProperty(window->display, window->ident, opacity_atom,
 		      XA_CARDINAL, 32, PropModeReplace,
 		      (unsigned char*)&opacity, 1L);
       if (window->parent != window->root)
         {
-	  XChangeProperty(window->display, window->parent, opacity_atom,
-			  XA_CARDINAL, 32, PropModeReplace,
-			  (unsigned char*)&opacity, 1);
-	}
+          XChangeProperty(window->display, window->parent, opacity_atom,
+                          XA_CARDINAL, 32, PropModeReplace,
+                          (unsigned char*)&opacity, 1);
+        }
+
+      // GDK uses an event to set opacity, but most window manager still wait
+      // for property changes. What is the official stanard?
     }
 }
 
+- (float) getAlpha: (int)win
+{
+  gswindow_device_t *window = WINDOW_WITH_TAG(win);
+  static Atom opacity_atom = None;
+  int c;
+  unsigned int *num;
+  float alpha = 0.0;
+
+  if (win == 0 || window == 0)
+    {
+      NSDebugLLog(@"XGTrace", @"Setting alpha to unknown win %d", win);
+      return alpha;
+    }
+
+  /* Initialize the atom if needed */
+  if (opacity_atom == None)
+    opacity_atom = XInternAtom (window->display, "_NET_WM_WINDOW_OPACITY", False);
+
+  num = (unsigned int*)PropGetCheckProperty(dpy, window->ident,
+                                            opacity_atom, XA_CARDINAL, 
+                                            32, 1, &c);
+
+  if (num)
+    {
+      if (*num)
+        alpha = (float)*num / 0xffffffffU;
+      XFree(num);
+    }
+
+  return alpha;
+}
 
 - (void *) serverDevice
 {
@@ -4067,5 +4244,212 @@ _computeDepth(int class, int bpp)
   return [super iconSize];
 }
 
-@end
+- (unsigned int) numberOfDesktops: (int)screen
+{
+  static Atom number_of_desktops = None;
+  int c;
+  unsigned int *num;
+  unsigned int number = 0;
 
+  if (number_of_desktops == None)
+    number_of_desktops = XInternAtom(dpy, "_NET_NUMBER_OF_DESKTOPS", False);
+
+  num = (unsigned int*)PropGetCheckProperty(dpy, RootWindow(dpy, screen),
+                                            number_of_desktops, XA_CARDINAL, 
+                                            32, 1, &c);
+
+  if (num)
+    {
+      number = *num;
+      XFree(num);
+    }
+  return number;
+}
+
+- (NSArray *) namesOfDesktops: (int)screen
+{
+  static Atom utf8_string = None;
+  static Atom desktop_names = None;
+  int c;
+  char *names;
+
+  if (utf8_string == None)
+    {
+      utf8_string = XInternAtom(dpy, "UTF8_STRING", False);
+      desktop_names = XInternAtom(dpy, "_NET_DESKTOP_NAMES", False);
+    }
+
+  names = (char *)PropGetCheckProperty(dpy, RootWindow(dpy, screen),
+                                       desktop_names, utf8_string, 
+                                       0, 0, &c);
+  if (names)
+  {
+    NSMutableArray *array = [[NSMutableArray alloc] init];
+    char *p = names;
+
+    while (p < names + c - 1) 
+      {
+        [array addObject: [NSString stringWithUTF8String: p]];
+        p += strlen(p) + 1;
+      }
+    XFree(names);
+    return AUTORELEASE(array);      
+  }
+
+  return nil;
+}
+
+- (unsigned int) desktopNumberForScreen: (int)screen
+{
+  static Atom current_desktop = None;
+  int c;
+  unsigned int *num;
+  unsigned int number = 0;
+
+  if (current_desktop == None)
+    current_desktop = XInternAtom(dpy, "_NET_CURRENT_DESKTOP", False);
+
+  num = (unsigned int*)PropGetCheckProperty(dpy, RootWindow(dpy, screen),
+                                            current_desktop, XA_CARDINAL, 
+                                            32, 1, &c);
+
+  if (num)
+    {
+      number = *num;
+      XFree(num);
+    }
+  return number;
+}
+
+- (void) setDesktopNumber: (unsigned int)workspace forScreen: (int)screen
+{
+  static Atom current_desktop = None;
+  Window root = RootWindow(dpy, screen);
+
+  if (current_desktop == None)
+    current_desktop = XInternAtom(dpy, "_NET_CURRENT_DESKTOP", False);
+
+  [self _sendRoot: root 
+        type: current_desktop
+        window: root
+        data0: workspace
+        data1: generic.lastTime
+        data2: 0
+        data3: 0];
+}
+
+- (unsigned int) desktopNumberForWindow: (int)win
+{
+  gswindow_device_t	*window;
+  static Atom wm_desktop = None;
+  int c;
+  unsigned int *num;
+  unsigned int number = 0;
+
+  window = WINDOW_WITH_TAG(win);
+  if (!window)
+    return 0;
+
+  if (wm_desktop == None)
+    wm_desktop = XInternAtom(dpy, "_NET_WM_DESKTOP", False);
+
+  num = (unsigned int*)PropGetCheckProperty(dpy, window->ident,
+                                            wm_desktop, XA_CARDINAL, 
+                                            32, 1, &c);
+
+  if (num)
+    {
+      number = *num;
+      XFree(num);
+    }
+  return number;
+}
+
+- (void) setDesktopNumber: (unsigned int)workspace forWindow: (int)win
+{
+  gswindow_device_t	*window;
+  static Atom wm_desktop = None;
+
+  window = WINDOW_WITH_TAG(win);
+  if (!window)
+    return;
+
+  if (wm_desktop == None)
+    wm_desktop = XInternAtom(dpy, "_NET_WM_DESKTOP", False);
+
+  [self _sendRoot: window->root 
+        type: wm_desktop
+        window: window->ident
+        data0: workspace
+        data1: 1
+        data2: 0
+        data3: 0];
+}
+
+- (void) setShadow: (BOOL)hasShadow : (int)win
+{
+  gswindow_device_t	*window;
+  static Atom wm_window_shadow = None;
+  unsigned long shadow;
+
+  window = WINDOW_WITH_TAG(win);
+  if (!window)
+    return;
+
+  if (wm_window_shadow == None)
+    wm_window_shadow = XInternAtom(dpy, "_NET_WM_WINDOW_SHADOW", False);
+
+  if (hasShadow)
+    {
+      // FIXME: What size?
+      shadow = (unsigned int)(0.1 * 0xffffffff);
+
+      XChangeProperty(window->display, window->ident, wm_window_shadow,
+                      XA_CARDINAL, 32, PropModeReplace,
+                      (unsigned char*)&shadow, 1L);
+      if (window->parent != window->root)
+        {
+          XChangeProperty(window->display, window->parent, wm_window_shadow,
+                          XA_CARDINAL, 32, PropModeReplace,
+                          (unsigned char*)&shadow, 1);
+        }
+    }
+  else
+    {
+      XDeleteProperty(window->display, window->ident, wm_window_shadow);
+      if (window->parent != window->root)
+        {
+          XDeleteProperty(window->display, window->parent, wm_window_shadow);
+        }
+    }
+}
+
+- (BOOL) hasShadow: (int)win
+{
+  gswindow_device_t	*window;
+  static Atom wm_window_shadow = None;
+  int c;
+  unsigned int *num;
+  BOOL hasShadow = NO;
+
+  window = WINDOW_WITH_TAG(win);
+  if (!window)
+    return hasShadow;
+
+  if (wm_window_shadow == None)
+    wm_window_shadow = XInternAtom(dpy, "_NET_WM_WINDOW_SHADOW", False);
+
+  num = (unsigned int*)PropGetCheckProperty(dpy, window->ident,
+                                            wm_window_shadow, XA_CARDINAL, 
+                                            32, 1, &c);
+
+  if (num)
+    {
+      if (*num)
+        hasShadow = YES;
+      XFree(num);
+    }
+  return hasShadow;
+}
+
+@end

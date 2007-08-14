@@ -1,3 +1,9 @@
+2007-08-15 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m: Add more EWMH methods and helper
+	methods for them.
+	* Tools/xpbs.m: Simplify dragging support code.
+
 2007-08-13 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/art/ftfont.m (-coveredCharacterSet): Correct code.
