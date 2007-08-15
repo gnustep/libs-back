@@ -568,7 +568,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   Atom *data;
   Atom supported;
 
-  if ((generic.wm & XGWM_EWMH) != 0)
+  if ((generic.wm & XGWM_EWMH) == 0)
     {
       return NO;
     }
@@ -599,6 +599,13 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 {
 	XID *data = (XID*)arg;
 
+/*
+  NSLog(@"Got Xevent type %d expected %d \n window %d expected %d \n atom %d expected %d \n state %d expected %d", 
+        event->type, PropertyNotify, 
+        event->xproperty.window, data[0],
+        event->xproperty.atom, data[1],
+        event->xproperty.state, PropertyNewValue);
+*/
 	if (event->type == PropertyNotify &&
       event->xproperty.window == data[0] &&
       event->xproperty.atom == data[1] &&
@@ -619,6 +626,14 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 	XID event_data[2];
   NSDate *limit;
 
+  if (_net_frame_extents == None)
+    {
+      _net_frame_extents = XInternAtom(dpy, "_NET_FRAME_EXTENTS", False);
+    }
+
+  event_data[0] = window->ident;
+  event_data[1] = _net_frame_extents;
+
   if (_net_request_frame_extents == None)
     {
       _net_request_frame_extents = XInternAtom(dpy, "_NET_REQUEST_FRAME_EXTENTS", 
@@ -627,12 +642,10 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   
   if (![self _checkWMSupports: _net_request_frame_extents])
     {
+        NSLog(@"_NET_REQUEST_FRAME_EXTENTS not supported");
       return NO;
     }
 
-  event_data[0] = window->ident;
-  event_data[1] = _net_request_frame_extents;
- 
   [self _sendRoot: window->root 
         type: _net_request_frame_extents
         window: window->ident
@@ -663,6 +676,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
         }
      }
 
+
+  NSLog(@"_NET_REQUEST_FRAME_EXTENTS no reply");
   return NO;
 }
 
@@ -747,7 +762,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     | EnterWindowMask
     | LeaveWindowMask
     | FocusChangeMask
-//    | PropertyChangeMask
+    | PropertyChangeMask
 //    | ColormapChangeMask
     | KeymapStateMask
     | VisibilityChangeMask
