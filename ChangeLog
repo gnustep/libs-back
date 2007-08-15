@@ -1,5 +1,12 @@
 2007-08-15 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/x11/XGServerWindow.m (-_checkWMSupports:,
+	-_tryRequestFrameExtents:): Correct minor errors.
+	* Source/art/ftfont.m (-coveredCharacterSet): Protect against
+	illegal characters.
+
+2007-08-15 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/x11/XGServerWindow.m: Add more EWMH methods and helper
 	methods for them.
 	* Tools/xpbs.m: Simplify dragging support code.

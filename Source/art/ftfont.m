@@ -896,6 +896,10 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
           while (glyphindex != 0)
             {
               count++;
+              if (charcode >= 1114112)
+                {
+                  break;
+                }
               if (charcode == NSMaxRange(range))
                 {
                   range.length++;
