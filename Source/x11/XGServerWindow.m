@@ -599,13 +599,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 {
 	XID *data = (XID*)arg;
 
-/*
-  NSLog(@"Got Xevent type %d expected %d \n window %d expected %d \n atom %d expected %d \n state %d expected %d", 
-        event->type, PropertyNotify, 
-        event->xproperty.window, data[0],
-        event->xproperty.atom, data[1],
-        event->xproperty.state, PropertyNewValue);
-*/
 	if (event->type == PropertyNotify &&
       event->xproperty.window == data[0] &&
       event->xproperty.atom == data[1] &&
@@ -642,7 +635,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   
   if (![self _checkWMSupports: _net_request_frame_extents])
     {
-        NSLog(@"_NET_REQUEST_FRAME_EXTENTS not supported");
       return NO;
     }
 
@@ -677,7 +669,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
      }
 
 
-  NSLog(@"_NET_REQUEST_FRAME_EXTENTS no reply");
   return NO;
 }
 
