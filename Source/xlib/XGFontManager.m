@@ -149,7 +149,7 @@ load_cache(NSString *cacheName, BOOL async)
 
   if ((o == nil)
     || ((v = [o objectForKey: @"Version"]) == nil)
-    || ([v intValue] != 2))
+    || ([v intValue] != 3))
     {
       NSString *file_name = [cacheName lastPathComponent];
       NSString *path;

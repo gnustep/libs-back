@@ -472,7 +472,7 @@ static NSComparisonResult fontDefSorter(id e1, id e2, void *context)
   NSData		*data;
   NSMutableDictionary   *cache = [NSMutableDictionary dictionaryWithCapacity: 4];
 
-  [cache setObject: [NSNumber numberWithInt: 2] forKey: @"Version"];
+  [cache setObject: [NSNumber numberWithInt: 3] forKey: @"Version"];
   [cache setObject: allFontNames forKey: @"AllFontNames"];
   [cache setObject: allFontFamilies forKey: @"AllFontFamilies"];
   [cache setObject: creationDictionary forKey: @"CreationDictionary"];

@@ -1,5 +1,11 @@
 2007-08-16 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/xlib/XGFontManager.m (load_cache),
+	* Tools/font_cacher.m (-writeCacheTo): Increase version number of
+	font format, as font mask values have changed.
+
+2007-08-16 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/x11/XGServerWindow.m (-_setupRootWindow): Set lastTime to
 	CurrentTime not 1 to get setinputfocus working for the first
 	activation of the application.
