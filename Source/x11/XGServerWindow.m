@@ -1350,8 +1350,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     {
       generic.lastClick = 1;
       generic.lastMotion = 1;
-      generic.lastTime = 1;
     }
+  generic.lastTime = CurrentTime;
 
   /*
    * Set up standard atoms.
