@@ -1,3 +1,9 @@
+2007-08-16 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_setupRootWindow): Set lastTime to
+	CurrentTime not 1 to get setinputfocus working for the first
+	activation of the application.
+
 2007-08-15 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-_checkWMSupports:,
@@ -737,7 +743,7 @@
 	* Header/x11/XGGeneric.h,
 	* Source/x11/XGServerWindow.m (-_setupRootWindow, -window::::),
 	* Source/x11/XGServerEvent.m (-processEvent:):
-	Impelemented hanlding for _NET_WM_PING.
+	Impelemented handling for _NET_WM_PING.
 
 2006-07-07 Richard Frith-Macdonald <rfm@gnu.org>
 
