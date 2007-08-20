@@ -1,3 +1,8 @@
+2007-08-21 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerEvent.m (-processEvent:): Made handling of
+	focus in and out more explicit.
+
 2007-08-16 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/XGFontManager.m (load_cache),
