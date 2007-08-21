@@ -1346,12 +1346,9 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
    * Initialize time of last events to be the start of time - not
    * the current time!
    */
-  if (CurrentTime == 0)
-    {
-      generic.lastClick = 1;
-      generic.lastMotion = 1;
-    }
-  generic.lastTime = CurrentTime;
+  generic.lastClick = 1;
+  generic.lastMotion = 1;
+  generic.lastTime = 1;
 
   /*
    * Set up standard atoms.
@@ -3552,7 +3549,9 @@ static BOOL didCreatePixmaps;
   NSDebugLLog(@"Focus", @"Setting focus to %d", window->number);
   generic.desiredFocusWindow = win;
   generic.focusRequestNumber = XNextRequest(dpy);
-  XSetInputFocus(dpy, window->ident, RevertToParent, generic.lastTime);
+  // In the case of activation via DO the lastTime is outdated and cannot be used.
+//  XSetInputFocus(dpy, window->ident, RevertToParent, generic.lastTime);
+  XSetInputFocus(dpy, window->ident, RevertToParent, CurrentTime);
   [inputServer ximFocusICWindow: window];
 }
 

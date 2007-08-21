@@ -1,5 +1,12 @@
 2007-08-21 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/x11/XGServerWindow.m (-_setupRootWindow): Revert last
+	change.
+	* Source/x11/XGServerWindow.m (-setinputfocus:): Use CurrentTime
+	instead of generic.lastTime.
+	
+2007-08-21 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/x11/XGServerEvent.m (-processEvent:): Made handling of
 	focus in and out more explicit.
 
