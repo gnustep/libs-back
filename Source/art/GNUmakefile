@@ -38,6 +38,8 @@ art_OBJC_FILES = \
   ARTGState.m \
   blit-main.m \
   ftfont.m \
+	FTFontEnumerator.m \
+	FTFaceInfo.m \
   image.m \
   composite.m \
   path.m \

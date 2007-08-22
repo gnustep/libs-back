@@ -1,5 +1,16 @@
 2007-08-21 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/art/ftfont.m,
+	* Source/art/ftfont-old.m: Extracted code shared between these two
+	files into new files.
+	* Source/art/FTFaceInfo.h,
+	* Source/art/FTFaceInfo.m,
+	* Source/art/FTFontEnumerator.h,
+	* Source/art/FTFontEnumerator.m: New files with extracted code.
+	* Source/art/GNUmakefile: Add new source files.
+
+2007-08-21 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/x11/XGServerWindow.m (-_setupRootWindow): Revert last
 	change.
 	* Source/x11/XGServerWindow.m (-setinputfocus:): Use CurrentTime
