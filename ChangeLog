@@ -1,3 +1,14 @@
+2007-09-02 Nicolas Roard <nicolas@roard.com>
+
+	* configure:
+	* configure.ac:
+	* config.h.in: added checking for Xrender extension
+	* Source/x11/context.c: Now check for 32 bit surface + alpha channel
+	* Source/cairo/XGCairoSurface.m: Modified to get the correct visual,
+	not the default one
+	* Source/cairo/CairoGState.m: Use cairo groups to allow recopy on the
+	same surface
+
 2007-08-21 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/art/ftfont.m,
