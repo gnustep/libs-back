@@ -1080,13 +1080,14 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
     }
 
   cairo_save(_ct);
+
+  cairo_push_group (_ct);
   cairo_new_path(_ct);
   _set_op(_ct, op);
 
   src = cairo_get_target(source->_ct);
   if (src == cairo_get_target(_ct))
     {
-/*
       NSRect targetRect;
 
       targetRect.origin = aPoint;
@@ -1094,14 +1095,15 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 
       if (!NSIsEmptyRect(NSIntersectionRect(aRect, targetRect)))
         {
-          NSLog(@"Copy onto self");
+  //        NSLog(@"Copy onto self");
+/*
           NSLog(NSStringFromRect(aRect));
           NSLog(NSStringFromPoint(aPoint));
           NSLog(@"src %p(%p,%@) des %p(%p,%@)", 
                 source,cairo_get_target(source->_ct),NSStringFromSize([source->_surface size]),
                 self,cairo_get_target(_ct),NSStringFromSize([_surface size]));
-        }
 */
+        }
     }
 
   // Undo flipping in gui
@@ -1109,13 +1111,17 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
     {
       aPoint.y -= NSHeight(aRect);
     }
+
   {
+
+
       NSRect newRect;
       
       newRect.origin = aPoint;
       newRect.size = aRect.size;
       [ctm boundingRectFor: newRect result: &newRect];
       aPoint = newRect.origin;
+
   }
   //aPoint = [ctm transformPoint: aPoint];
   [source->ctm boundingRectFor: aRect result: &aRect];
@@ -1153,6 +1159,11 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
     {
       cairo_paint(_ct);
     }
+
+  cairo_pop_group_to_source (_ct);
+  cairo_paint(_ct);
+
+
   cairo_restore(_ct);
 }
 

@@ -33,6 +33,8 @@
 {
   Display *dpy;
   Drawable drawable;
+  Visual* visual;
+  XWindowAttributes attributes;
 
   gsDevice = device;
 
@@ -55,12 +57,22 @@
     GSWINDEVICE->buffer);
     }
   */
-  
+
+  if (!XGetWindowAttributes (dpy, GSWINDEVICE->ident, &attributes))
+    {
+      visual = DefaultVisual (dpy, DefaultScreen (dpy));
+    }
+  else
+    {
+      visual = attributes.visual;
+    }
+
   _surface = cairo_xlib_surface_create(dpy,
-				       drawable,
-				       DefaultVisual(dpy, DefaultScreen(dpy)),
-				       GSWINDEVICE->xframe.size.width,
-				       GSWINDEVICE->xframe.size.height);
+			       drawable,
+			       visual,
+			       GSWINDEVICE->xframe.size.width,
+			       GSWINDEVICE->xframe.size.height);
+  
   return self;
 }
 

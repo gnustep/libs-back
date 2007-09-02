@@ -42,6 +42,9 @@
 
 #include "x11/wraster.h"
 
+#ifdef XRENDER
+#include <X11/extensions/Xrender.h>
+#endif
 
 extern void _wraster_change_filter(int type);
 
@@ -822,15 +825,42 @@ bestContext(Display *dpy, int screen_number, RContext *context)
     
     rvinfo.class  = TrueColor;
     rvinfo.screen = screen_number;
-    flags = VisualClassMask | VisualScreenMask;
-    
+
+    #ifdef XRENDER
+
+    rvinfo.depth = 32;
+    flags = VisualClassMask | VisualScreenMask | VisualDepthMask;
+
     vinfo = XGetVisualInfo(dpy, flags, &rvinfo, &numvis);
-    if (vinfo) {     /* look for a TrueColor, 24-bit or more (pref 24) */
-	for (i=numvis-1, best = -1; i>=0; i--) {
-	    if (vinfo[i].depth == 24) best = i;
-	    else if (vinfo[i].depth>24 && best<0) best = i;
-	}
-    }
+    if (vinfo)
+      {
+        for (i=numvis-1, best = -1; i>=0; i--)
+          {
+	    XRenderPictFormat* pictFormat = 
+		XRenderFindVisualFormat (dpy, vinfo[i].visual);
+	    if ((pictFormat->type == PictTypeDirect)
+		&& (pictFormat->direct.alphaMask))
+	      {
+		best = i;	
+	      }
+          }
+      }
+
+    #endif
+
+    if (best == -1)
+      { 
+        flags = VisualClassMask | VisualScreenMask;
+        vinfo = XGetVisualInfo(dpy, flags, &rvinfo, &numvis);
+        if (vinfo) 
+          {     /* look for a TrueColor, 24-bit or more (pref 24) */
+            for (i=numvis-1, best = -1; i>=0; i--) 
+              {
+	        if (vinfo[i].depth == 24) best = i;
+	        else if (vinfo[i].depth>24 && best<0) best = i;
+              }
+          }
+      }
 
 #if 0
     if (best == -1) {   /* look for a DirectColor, 24-bit or more (pref 24) */
