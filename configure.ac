@@ -294,11 +294,10 @@ fi
 # XRender support
 #--------------------------------------------------------------------
 have_xrender=no
-AC_CHECK_HEADERS(X11/extensions/Xrender.h,
-	have_xrender=yes,,
-	[#include <X11/Xlib.h>])
-if test "$ac_cv_header_X11_extensions_Xrender_h" = yes; then
+AC_CHECK_LIB(Xrender, XRenderFindVisualFormat, have_xrender=yes)
+if test "$have_xrender" = yes; then
   AC_DEFINE(XRENDER,1,[Define if you have X11 XRender extension])
+  LIBS="$LIBS -lXrender"
 fi
 
 #--------------------------------------------------------------------

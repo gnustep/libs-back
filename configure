@@ -6883,33 +6883,43 @@ fi
 # XRender support
 #--------------------------------------------------------------------
 have_xrender=no
-
-for ac_header in X11/extensions/Xrender.h
-do
-as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
-{ echo "$as_me:$LINENO: checking for $ac_header" >&5
-echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+{ echo "$as_me:$LINENO: checking for XRenderFindVisualFormat in -lXrender" >&5
+echo $ECHO_N "checking for XRenderFindVisualFormat in -lXrender... $ECHO_C" >&6; }
+if test "${ac_cv_lib_Xrender_XRenderFindVisualFormat+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  cat >conftest.$ac_ext <<_ACEOF
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lXrender  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <X11/Xlib.h>
 
-#include <$ac_header>
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char XRenderFindVisualFormat ();
+int
+main ()
+{
+return XRenderFindVisualFormat ();
+  ;
+  return 0;
+}
 _ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
 case "(($ac_try" in
   *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
   *) ac_try_echo=$ac_try;;
 esac
 eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
+  (eval "$ac_link") 2>conftest.er1
   ac_status=$?
   grep -v '^ *+' conftest.er1 >conftest.err
   rm -f conftest.er1
@@ -6918,35 +6928,33 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
   (exit $ac_status); } && {
 	 test -z "$ac_c_werror_flag" ||
 	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  eval "$as_ac_Header=yes"
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_Xrender_XRenderFindVisualFormat=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-	eval "$as_ac_Header=no"
+	ac_cv_lib_Xrender_XRenderFindVisualFormat=no
 fi
 
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
 fi
-ac_res=`eval echo '${'$as_ac_Header'}'`
-	       { echo "$as_me:$LINENO: result: $ac_res" >&5
-echo "${ECHO_T}$ac_res" >&6; }
-if test `eval echo '${'$as_ac_Header'}'` = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
- have_xrender=yes
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_Xrender_XRenderFindVisualFormat" >&5
+echo "${ECHO_T}$ac_cv_lib_Xrender_XRenderFindVisualFormat" >&6; }
+if test $ac_cv_lib_Xrender_XRenderFindVisualFormat = yes; then
+  have_xrender=yes
 fi
 
-done
-
-if test "$ac_cv_header_X11_extensions_Xrender_h" = yes; then
+if test "$have_xrender" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define XRENDER 1
 _ACEOF
 
+  LIBS="$LIBS -lXrender"
 fi
 
 #--------------------------------------------------------------------
