@@ -1073,18 +1073,19 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   NSSize ssize;
   cairo_pattern_t *cpattern;
   cairo_matrix_t local_matrix;
+  BOOL copyOnSelf = NO;
 
   if (!_ct || !source->_ct)
     {
       return;
     }
 
-  cairo_save(_ct);
 
-  cairo_push_group (_ct);
-  cairo_new_path(_ct);
-  _set_op(_ct, op);
-
+  /* 
+   * we check if we copy on ourself, if that's the case
+   * we'll use the groups trick...
+   */
+ 
   src = cairo_get_target(source->_ct);
   if (src == cairo_get_target(_ct))
     {
@@ -1095,35 +1096,26 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 
       if (!NSIsEmptyRect(NSIntersectionRect(aRect, targetRect)))
         {
-  //        NSLog(@"Copy onto self");
-/*
-          NSLog(NSStringFromRect(aRect));
-          NSLog(NSStringFromPoint(aPoint));
-          NSLog(@"src %p(%p,%@) des %p(%p,%@)", 
-                source,cairo_get_target(source->_ct),NSStringFromSize([source->_surface size]),
-                self,cairo_get_target(_ct),NSStringFromSize([_surface size]));
-*/
+	  copyOnSelf = YES;
         }
     }
 
-  // Undo flipping in gui
-  if (viewIsFlipped)
-    {
-      aPoint.y -= NSHeight(aRect);
-    }
+  cairo_save(_ct);
+
+  if (copyOnSelf) cairo_push_group (_ct);
+
+  cairo_new_path(_ct);
+  _set_op(_ct, op);
 
   {
-
-
       NSRect newRect;
       
       newRect.origin = aPoint;
       newRect.size = aRect.size;
       [ctm boundingRectFor: newRect result: &newRect];
       aPoint = newRect.origin;
-
   }
-  //aPoint = [ctm transformPoint: aPoint];
+
   [source->ctm boundingRectFor: aRect result: &aRect];
 
   x = floorf(aPoint.x);
@@ -1160,9 +1152,11 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       cairo_paint(_ct);
     }
 
-  cairo_pop_group_to_source (_ct);
-  cairo_paint(_ct);
-
+  if (copyOnSelf)
+    {
+      cairo_pop_group_to_source (_ct);
+      cairo_paint(_ct);
+    }
 
   cairo_restore(_ct);
 }
