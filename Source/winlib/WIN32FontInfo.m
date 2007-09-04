@@ -182,45 +182,47 @@ NSLog(@"No glyph for U%d", c);
       HDC hdc;
       HFONT old;
 
+      ms = [NSMutableCharacterSet new];
       hdc = GetDC(NULL);
       old = SelectObject(hdc, hFont);
       count = (unsigned)GetFontUnicodeRanges(hdc, 0);
       if (count > 0)
-	{
+        {
           gs = (GLYPHSET*)objc_malloc(count);
           if ((unsigned)GetFontUnicodeRanges(hdc, gs) == count)
-	    {
-	      numberOfGlyphs = gs->cGlyphsSupported;
-	      if (gs->flAccel == 1 /* GS_8BIT_INDICES */)
-		{
-		  for (count = 0; count < gs->cRanges; count++)
-		    {
-		      NSRange	range;
-
-		      range.location = gs->ranges[count].wcLow & 0xff;
-		      range.length = gs->ranges[count].cGlyphs;
-		      [ms addCharactersInRange: range];
-		    }
-		}
-	      else
-		{
-		  for (count = 0; count < gs->cRanges; count++)
-		    {
-		      NSRange	range;
-
-		      range.location = gs->ranges[count].wcLow;
-		      range.length = gs->ranges[count].cGlyphs;
-		      [ms addCharactersInRange: range];
-		    }
-		}
-	    }
+            {
+              numberOfGlyphs = gs->cGlyphsSupported;
+              if (gs->flAccel == 1 /* GS_8BIT_INDICES */)
+                {
+                  for (count = 0; count < gs->cRanges; count++)
+                    {
+                      NSRange	range;
+                      
+                      range.location = gs->ranges[count].wcLow & 0xff;
+                      range.length = gs->ranges[count].cGlyphs;
+                      [ms addCharactersInRange: range];
+                    }
+                }
+              else
+                {
+                  for (count = 0; count < gs->cRanges; count++)
+                    {
+                      NSRange	range;
+                      
+                      range.location = gs->ranges[count].wcLow;
+                      range.length = gs->ranges[count].cGlyphs;
+                      [ms addCharactersInRange: range];
+                    }
+                }
+            }
           objc_free(gs);
-	}
+        }
       SelectObject(hdc, old);
       ReleaseDC(NULL, hdc);
       coveredCharacterSet = [ms copy];
       RELEASE(ms);
     }
+
   return coveredCharacterSet;
 }
 
