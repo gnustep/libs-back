@@ -1,3 +1,13 @@
+2007-09-03 Nicolas Roard <nicolas@roard.com>
+
+	* configure:
+	* configure.ac: check that Xrender lib is present and add it to the
+	link process. Only use Xrender for Cairo.
+	* Source/cairo/XGCairoXImageSurface.m: use 32 bits surfaces when
+	available, else stay with 24bits surface.
+	* Source/cairo/CairoGState.m: some cleaning, and fixed the scrolling
+	bug. 
+
 2007-09-02 Nicolas Roard <nicolas@roard.com>
 
 	* configure:
