@@ -1,3 +1,10 @@
+2007-09-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* configure.ac,
+	* configure: Move checking for Xrender extension.
+	* Source/cairo/XGCairoXImageSurface.m: Add includefor config.h.
+	Patch by Yen-Ju Chen <yjchenx@gmail.com>.
+	
 2007-09-04 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source\winlib\WIN32FontInfo.m (-coveredCharacterSet): Create the

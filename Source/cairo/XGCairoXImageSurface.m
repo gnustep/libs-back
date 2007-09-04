@@ -20,6 +20,7 @@
    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+#include "config.h"
 #include "x11/XGServer.h"
 #include "x11/XGServerWindow.h"
 #include "x11/XWindowBuffer.h"
