@@ -691,13 +691,13 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 
   NSDebugLLog(@"Offset", @"Checking offsets for style %d\n", style);
 
-  root = [self _rootWindowForScreen: 0];
-  context = [self xrContextForScreen: 0];
+  root = [self _rootWindowForScreen: defScreen];
+  context = [self xrContextForScreen: defScreen];
 
   window = objc_malloc(sizeof(gswindow_device_t));
   memset(window, '\0', sizeof(gswindow_device_t));
   window->display = dpy;
-  window->screen = 0;
+  window->screen = defScreen;
 
   window->win_attrs.flags |= GSWindowStyleAttr;
   window->win_attrs.window_style = style;
@@ -3232,7 +3232,7 @@ static BOOL didCreatePixmaps;
   if (!client_stack_atom)
     client_stack_atom = XInternAtom(dpy, "_NET_CLIENT_LIST_STACKING", False);
 
-  rootWindow = [self _rootWindowForScreen:0];
+  rootWindow = [self _rootWindowForScreen: defScreen];
   
   windowOrder = (Window *)PropGetCheckProperty(dpy, rootWindow->ident,
 		  			       client_stack_atom,
