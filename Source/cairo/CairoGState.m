@@ -1106,6 +1106,11 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 
   cairo_new_path(_ct);
   _set_op(_ct, op);
+  
+  if (viewIsFlipped && !copyOnSelf)
+    {
+      aPoint.y -= aRect.size.height;
+    }
 
   {
       NSRect newRect;
