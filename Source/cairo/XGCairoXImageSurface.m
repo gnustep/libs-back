@@ -35,7 +35,11 @@
 
   gsDevice = device;
 
+  #ifdef XRENDER
+  di.drawing_depth = 32;
+  #else
   di.drawing_depth = 24;
+  #endif
   di.bytes_per_pixel = 4;
   di.inline_alpha = YES;
   di.inline_alpha_ofs = 0;
