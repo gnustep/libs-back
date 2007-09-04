@@ -291,16 +291,6 @@ if test "$ac_cv_header_X11_extensions_XShm_h" = yes -a "$ac_cv_func_shmctl" = ye
 fi
 
 #--------------------------------------------------------------------
-# XRender support
-#--------------------------------------------------------------------
-have_xrender=no
-AC_CHECK_LIB(Xrender, XRenderFindVisualFormat, have_xrender=yes)
-if test "$have_xrender" = yes; then
-  AC_DEFINE(XRENDER,1,[Define if you have X11 XRender extension])
-  LIBS="$LIBS -lXrender"
-fi
-
-#--------------------------------------------------------------------
 # Window's graphics library
 #--------------------------------------------------------------------
 AC_CHECK_LIB(gdi32, main, have_gdi32=yes, have_gdi32=no)
@@ -381,6 +371,19 @@ PKG_CHECK_MODULES(CAIRO_WIN32, cairo-win32, have_cairo_win32=yes, have_cairo_win
 PKG_CAIRO_GLITZ=no
 PKG_CHECK_MODULES(CAIRO_GLITZ, cairo-glitz, have_cairo_glitz=yes, have_cairo_glitz=no)
 
+#--------------------------------------------------------------------
+# XRender support
+#--------------------------------------------------------------------
+
+have_xrender=no
+AC_CHECK_LIB(Xrender, XRenderFindVisualFormat, have_xrender=yes)
+if test "$have_xrender" = yes; then
+  # we'll use it only if we want cairo
+  if test x"$BUILD_GRAPHICS" = "xcairo"; then
+    AC_DEFINE(XRENDER,1,[Define if you have X11 XRender extension])
+    LIBS="$LIBS -lXrender"
+  fi
+fi
 
 #--------------------------------------------------------------------
 # Glitz libraries
