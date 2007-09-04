@@ -377,13 +377,6 @@ PKG_CHECK_MODULES(CAIRO_GLITZ, cairo-glitz, have_cairo_glitz=yes, have_cairo_gli
 
 have_xrender=no
 AC_CHECK_LIB(Xrender, XRenderFindVisualFormat, have_xrender=yes)
-if test "$have_xrender" = yes; then
-  # we'll use it only if we want cairo
-  if test x"$BUILD_GRAPHICS" = "xcairo"; then
-    AC_DEFINE(XRENDER,1,[Define if you have X11 XRender extension])
-    LIBS="$LIBS -lXrender"
-  fi
-fi
 
 #--------------------------------------------------------------------
 # Glitz libraries
@@ -505,6 +498,13 @@ elif test x"$BUILD_GRAPHICS" = "xcairo"; then
     AC_MSG_CHECKING(Cairo backend)
     CAIRO_LIBS="$CAIRO_FT_LIBS"
     CAIRO_CFLAGS="$CAIRO_FT_CFLAGS"
+
+    if test "$have_xrender" = yes; then
+      if test $BUILD_SERVER = x11 -a "x$have_cairo_xlib" = "xyes"; then
+        AC_DEFINE(XRENDER,1,[Define if you have X11 XRender extension])
+        CAIRO_LIBS="$CAIRO_LIBS -lXrender"
+      fi
+    fi
     if test "x$WITH_GLITZ" = "xyes" -a "x$have_cairo_glitz" = "xyes"; then
       if test $BUILD_SERVER = win32 -a "x$have_cairo_win32" = "xyes"; then
         CAIRO_GLITZ_LIBS="$CAIRO_GLITZ_LIBS $GLITZ_WGL_LIBS"
