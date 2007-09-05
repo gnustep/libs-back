@@ -77,7 +77,14 @@ struct XGGeneric {
     unsigned    appOwnsMiniwindow:1;
     unsigned    doubleParentWindow:1;
   } flags;
+  // Time of last X event
   Time			lastTime;
+  // Approximate local time for last X event, used to decide 
+  // if the last X event time is still valid.
+  NSTimeInterval lastTimeStamp;
+  // last reference time on X server, used to prevent time drift between
+  // local machine and X server.
+  Time baseXServerTime;
   Time			lastClick;
   Window		lastClickWindow;
   int			lastClickX;

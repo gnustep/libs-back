@@ -3506,7 +3506,7 @@ static BOOL didCreatePixmaps;
 
   ret = XGrabPointer(dpy, window->ident, False,
 		     PointerMotionMask | ButtonReleaseMask | ButtonPressMask,
-		     GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
+		     GrabModeAsync, GrabModeAsync, None, None, [self lastTime]);
 
   if (ret != GrabSuccess)
     NSDebugLLog(@"XGTrace", @"Failed to grab pointer %d\n", win);
@@ -3521,7 +3521,7 @@ static BOOL didCreatePixmaps;
 - (void) releasemouse
 {
   NSDebugLLog(@"XGTrace", @"Released pointer\n");
-  XUngrabPointer(dpy, CurrentTime);
+  XUngrabPointer(dpy, [self lastTime]);
   grab_window = NULL;
 }
 
@@ -3549,9 +3549,7 @@ static BOOL didCreatePixmaps;
   NSDebugLLog(@"Focus", @"Setting focus to %d", window->number);
   generic.desiredFocusWindow = win;
   generic.focusRequestNumber = XNextRequest(dpy);
-  // In the case of activation via DO the lastTime is outdated and cannot be used.
-//  XSetInputFocus(dpy, window->ident, RevertToParent, generic.lastTime);
-  XSetInputFocus(dpy, window->ident, RevertToParent, CurrentTime);
+  XSetInputFocus(dpy, window->ident, RevertToParent, [self lastTime]);
   [inputServer ximFocusICWindow: window];
 }
 
@@ -4338,7 +4336,7 @@ _computeDepth(int class, int bpp)
         type: current_desktop
         window: root
         data0: workspace
-        data1: generic.lastTime
+        data1: [self lastTime]
         data2: 0
         data3: 0];
 }
