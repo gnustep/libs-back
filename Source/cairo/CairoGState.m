@@ -93,37 +93,41 @@
 
   if (_ct)
     {
-      cairo_path_t *cpath;
       cairo_status_t status;
-      cairo_matrix_t local_matrix;
  
       // FIXME: Need some way to do a copy
-      //cairo_copy(copy->_ct, _ct);
+      // but there isnt anything like copy->_ct = cairo_copy(_ct);
       copy->_ct = cairo_create(cairo_get_target(_ct));
-      cairo_get_matrix(_ct, &local_matrix);
-      cairo_set_matrix(copy->_ct, &local_matrix);
-      cpath = cairo_copy_path(_ct);
-      cairo_append_path(copy->_ct, cpath);
-      cairo_path_destroy(cpath);
-      
-      cairo_set_operator(copy->_ct, cairo_get_operator(_ct));
-      cairo_set_source(copy->_ct, cairo_get_source(_ct));
-      cairo_set_tolerance(copy->_ct, cairo_get_tolerance(_ct));
-      cairo_set_antialias(copy->_ct, cairo_get_antialias(_ct));
-      cairo_set_line_width(copy->_ct, cairo_get_line_width(_ct));
-      cairo_set_line_cap(copy->_ct, cairo_get_line_cap(_ct));
-      cairo_set_line_join(copy->_ct, cairo_get_line_join(_ct));
-      cairo_set_miter_limit(copy->_ct, cairo_get_miter_limit(_ct));
-      // FIXME: In cairo 1.2.4 there is no way get the dash or copy it.
-      // There also is no way to get the current clipping path
- 
       status = cairo_status(copy->_ct);
       if (status != CAIRO_STATUS_SUCCESS)
         {
           NSLog(@"Cairo status %s in copy", cairo_status_to_string(status));
+          _ct = NULL;
+        }
+      else
+        {
+          cairo_path_t *cpath;
+          cairo_matrix_t local_matrix;
+
+          cairo_get_matrix(_ct, &local_matrix);
+          cairo_set_matrix(copy->_ct, &local_matrix);
+          cpath = cairo_copy_path(_ct);
+          cairo_append_path(copy->_ct, cpath);
+          cairo_path_destroy(cpath);
+          
+          cairo_set_operator(copy->_ct, cairo_get_operator(_ct));
+          cairo_set_source(copy->_ct, cairo_get_source(_ct));
+          cairo_set_tolerance(copy->_ct, cairo_get_tolerance(_ct));
+          cairo_set_antialias(copy->_ct, cairo_get_antialias(_ct));
+          cairo_set_line_width(copy->_ct, cairo_get_line_width(_ct));
+          cairo_set_line_cap(copy->_ct, cairo_get_line_cap(_ct));
+          cairo_set_line_join(copy->_ct, cairo_get_line_join(_ct));
+          cairo_set_miter_limit(copy->_ct, cairo_get_miter_limit(_ct));
+
+          // FIXME: In cairo 1.2.4 there is no way get the dash or copy it.
+          // There also is no way to get the current clipping path
         }
     }
-
   RETAIN(_surface);
 
   return copy;
@@ -720,6 +724,7 @@
   cairo_surface_t *surface;
   cairo_surface_t *isurface;
   cairo_t *ct;
+  cairo_status_t status;
   int size;
   int i;
   NSMutableData *data;
@@ -762,7 +767,21 @@
 
   surface = cairo_get_target(_ct);
   isurface = cairo_image_surface_create_for_data(cdata, format, ix, iy, 4*ix);
+  status = cairo_surface_status(isurface);
+  if (status != CAIRO_STATUS_SUCCESS)
+    {
+      NSLog(@"Cairo status %s in GSReadRect", cairo_status_to_string(status));
+      return nil;
+    }
+
   ct = cairo_create(isurface);
+  status = cairo_status(ct);
+  if (status != CAIRO_STATUS_SUCCESS)
+    {
+      NSLog(@"Cairo status %s in GSReadRect", cairo_status_to_string(status));
+      cairo_surface_destroy(isurface);
+      return nil;
+    }
 
   if (_surface != nil)
     {
@@ -772,7 +791,8 @@
     {
       ssize = NSMakeSize(0, 0);
     }
-  cairo_set_source_surface(ct, surface, -r.origin.x, -ssize.height + r.size.height + r.origin.y);
+  cairo_set_source_surface(ct, surface, -r.origin.x, 
+                           -ssize.height + r.size.height + r.origin.y);
   cairo_rectangle(ct, 0, 0, ix, iy);
   cairo_paint(ct);
   cairo_destroy(ct);
@@ -871,10 +891,11 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   unsigned int pixels = pixelsHigh * pixelsWide;
   unsigned char *rowData;
   cairo_matrix_t local_matrix;
+  cairo_status_t status;
 
   if (!_ct)
     {
-	return;
+      return;
     }
 
   if (isPlanar || !([colorSpaceName isEqualToString: NSDeviceRGBColorSpace] ||
@@ -969,10 +990,10 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 						pixelsWide,
 						pixelsHigh,
 						pixelsWide * 4);
-
-  if (cairo_surface_status(surface))
+  status = cairo_surface_status(surface);
+  if (status != CAIRO_STATUS_SUCCESS)
     {
-      NSLog(@"Image surface could not be created");
+      NSLog(@"Cairo status %s in DPSimage", cairo_status_to_string(status));
       if (tmp)
         {
           objc_free(tmp);
