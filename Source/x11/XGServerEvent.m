@@ -395,7 +395,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	    }
 	}
 	generic.lastClick = xEvent.xbutton.time;
-	generic.lastTime = generic.lastClick;
+	[self setLastTime: generic.lastClick];
 	deltaY = 0.0;
 
 	if (xEvent.xbutton.button == generic.lMouse)
@@ -445,14 +445,14 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	      & (NSMiniWindowMask | NSIconWindowMask)) != 0
 	      && eventType == NSLeftMouseDown && clickCount == 1)
 	      {
-		if (cWin->parent == None)
-		  break;
-		xEvent.xbutton.window = cWin->parent;
-		XUngrabPointer(dpy, CurrentTime);
-		XSendEvent(dpy, cWin->parent, True,
-			   ButtonPressMask, &xEvent);
-		XFlush(dpy);
-		break;
+          if (cWin->parent == None)
+            break;
+          xEvent.xbutton.window = cWin->parent;
+          XUngrabPointer(dpy, CurrentTime);
+          XSendEvent(dpy, cWin->parent, True,
+                     ButtonPressMask, &xEvent);
+          XFlush(dpy);
+          break;
 	      }
 	  }
 
@@ -475,7 +475,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
       case ButtonRelease:
 	NSDebugLLog(@"NSEvent", @"%d ButtonRelease\n",
 		    xEvent.xbutton.window);
-	generic.lastTime = xEvent.xbutton.time;
+	[self setLastTime: xEvent.xbutton.time];
 	if (xEvent.xbutton.button == generic.lMouse)
 	  eventType = NSLeftMouseUp;
 	else if (xEvent.xbutton.button == generic.rMouse
@@ -543,7 +543,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	    break;
 	  if (xEvent.xclient.message_type == generic.protocols_atom)
 	    {
-	      generic.lastTime = (Time)xEvent.xclient.data.l[1];
+	      [self setLastTime: (Time)xEvent.xclient.data.l[1]];
 	      NSDebugLLog(@"NSEvent", @"WM Protocol - %s\n",
 			  XGetAtomName(dpy, xEvent.xclient.data.l[0]));
 
@@ -1086,7 +1086,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
       case KeyPress:
         NSDebugLLog(@"NSEvent", @"%d KeyPress\n",
                     xEvent.xkey.window);
-        generic.lastTime = xEvent.xkey.time;
+        [self setLastTime: xEvent.xkey.time];
         e = process_key_event (&xEvent, self, NSKeyDown, event_queue);
         break;
 
@@ -1094,7 +1094,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
       case KeyRelease:
         NSDebugLLog(@"NSEvent", @"%d KeyRelease\n",
                     xEvent.xkey.window);
-        generic.lastTime = xEvent.xkey.time;
+        [self setLastTime: xEvent.xkey.time];
         e = process_key_event (&xEvent, self, NSKeyUp, event_queue);
         break;
 
@@ -1259,7 +1259,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	    }
 
 	  generic.lastMotion = xEvent.xmotion.time;
-	  generic.lastTime = generic.lastMotion;
+	  [self setLastTime: generic.lastMotion];
 	  state = xEvent.xmotion.state;
 	  if (state & generic.lMouseMask)
 	    {
@@ -2325,4 +2325,45 @@ process_modifier_flags(unsigned int state)
 
 @end
 
+@implementation XGServer (TimeKeeping)
+// Sync time with X server every 10 seconds
+#define MAX_TIME_DIFF 10
+// Regard an X time stamp as valid for half a second
+#define OUT_DATE_TIME_DIFF 0.5
+
+- (void) setLastTime: (Time)last
+{
+  if (generic.lastTimeStamp == 0 
+      || generic.baseXServerTime + MAX_TIME_DIFF * 1000 < last)
+    {
+      // We have not sync'ed with the clock for at least
+      // MAX_TIME_DIFF seconds ... so we do it now.
+      generic.lastTimeStamp = [NSDate timeIntervalSinceReferenceDate];
+      generic.baseXServerTime = last;
+    }
+  else
+    {
+      // Optimisation to compute the new time stamp instead.
+      generic.lastTimeStamp += (last - generic.lastTime) / 1000.0;
+    }
+
+  generic.lastTime = last;
+}
+
+- (Time) lastTime
+{
+  // In the case of activation via DO the lastTime is outdated and cannot be used.
+  if (generic.lastTimeStamp == 0 
+      || ((generic.lastTimeStamp + OUT_DATE_TIME_DIFF)
+          < [NSDate timeIntervalSinceReferenceDate]))
+    {
+      return CurrentTime;
+    }
+  else
+    {
+      return generic.lastTime;
+    }
+}
+
+@end
 

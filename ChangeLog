@@ -1,4 +1,12 @@
-2007-09-06 Fred Kiefer <FredKiefer@gmx.de>
+2007-09-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/x11/XGGeneric.h: Add ivars for event time keeping.
+	* Headers/x11/XGServer.h: Declare new event time keeping methods.
+	* Source/x11/XGServerEvent.m (-setLastTime:, -lastTime): Implement
+	new methods and use them to store event time.
+	* Source/x11/XGServerWindow.m: Use these methods to get event time.
+	
+2007-09-05 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m: Add more checks for cairo status.
 

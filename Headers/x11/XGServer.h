@@ -98,4 +98,9 @@ typedef enum {
 - (BOOL) setPreeditSpot: (NSPoint *)p;
 @end
 
+@interface XGServer (TimeKeeping)
+- (void) setLastTime: (Time)last;
+- (Time) lastTime;
+@end
+
 #endif /* _XGServer_h_INCLUDE */
