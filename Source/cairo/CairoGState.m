@@ -91,6 +91,8 @@
 {
   CairoGState *copy = (CairoGState *)[super copyWithZone: zone];
 
+  RETAIN(_surface);
+
   if (_ct)
     {
       cairo_status_t status;
@@ -108,11 +110,22 @@
         {
           cairo_path_t *cpath;
           cairo_matrix_t local_matrix;
+          cairo_rectangle_list_t *clip_rects;
+          int	num_dashes;
 
           cairo_get_matrix(_ct, &local_matrix);
           cairo_set_matrix(copy->_ct, &local_matrix);
+
           cpath = cairo_copy_path(_ct);
-          cairo_append_path(copy->_ct, cpath);
+          status = cpath->status;
+          if (status != CAIRO_STATUS_SUCCESS)
+            {
+              NSLog(@"Cairo status %s in copy path", cairo_status_to_string(status));
+            }
+          else
+            {
+              cairo_append_path(copy->_ct, cpath);
+            }
           cairo_path_destroy(cpath);
           
           cairo_set_operator(copy->_ct, cairo_get_operator(_ct));
@@ -124,11 +137,45 @@
           cairo_set_line_join(copy->_ct, cairo_get_line_join(_ct));
           cairo_set_miter_limit(copy->_ct, cairo_get_miter_limit(_ct));
 
-          // FIXME: In cairo 1.2.4 there is no way get the dash or copy it.
-          // There also is no way to get the current clipping path
+          // In cairo 1.4 there is a way get the dash.
+          num_dashes = cairo_get_dash_count(_ct);
+          if (num_dashes != 0)
+            {
+              double dash_offset;
+              GS_BEGINITEMBUF(dashes, num_dashes, double);
+
+              dashes = (double *)malloc(sizeof(double) * num_dashes);
+              cairo_get_dash(_ct, dashes, &dash_offset);
+              cairo_set_dash (copy->_ct, dashes, num_dashes, dash_offset);
+              GS_ENDITEMBUF();
+            }
+
+          // In cairo 1.4 there also is a way to get the current clipping path
+          clip_rects = cairo_copy_clip_rectangle_list(_ct);
+          status = clip_rects->status;
+          if (status != CAIRO_STATUS_SUCCESS)
+            {
+              NSLog(@"Cairo status %s in copy clip", cairo_status_to_string(status));
+            }
+          else
+            {
+              int i;
+
+              for (i = 0; i < clip_rects->num_rectangles; i++)
+                {
+                  cairo_rectangle_t rect = clip_rects->rectangles[i];
+                  NSSize size = [_surface size];
+
+                  // This strange computation is due to the device offset. 
+                  cairo_rectangle(copy->_ct, rect.x, 
+                                  rect.y + 2*(offset.y - size.height), 
+                                  rect.width, rect.height);
+                  cairo_clip(copy->_ct);
+                }
+            }
+          cairo_rectangle_list_destroy(clip_rects);
         }
     }
-  RETAIN(_surface);
 
   return copy;
 }
@@ -560,48 +607,48 @@
       last_index = i - 1;
 
       if (type == NSClosePathBezierPathElement)
-	{
-	  index = 0;
-	  [path elementAtIndex:0 associatedPoints:points];
-	  if (fabs(last_points[0].x - points[0].x) < 1.0)
-	    {
-	      last_points[0].x = floorf(last_points[0].x) + offs;
-	      points[0].x = last_points[0].x;
-	    }
-	  else if (fabs(last_points[0].y - points[0].y) < 1.0)
-	    {
-	      last_points[0].y = floorf(last_points[0].y) + offs;
-	      points[0].y = last_points[0].y;
-	    }
-	  else
-	    {
-	      index = -1;
-	    }
-	}
+        {
+          index = 0;
+          [path elementAtIndex:0 associatedPoints:points];
+          if (fabs(last_points[0].x - points[0].x) < 1.0)
+            {
+              last_points[0].x = floorf(last_points[0].x) + offs;
+              points[0].x = last_points[0].x;
+            }
+          else if (fabs(last_points[0].y - points[0].y) < 1.0)
+            {
+              last_points[0].y = floorf(last_points[0].y) + offs;
+              points[0].y = last_points[0].y;
+            }
+          else
+            {
+              index = -1;
+            }
+        }
       else if (fabs(last_points[0].x - points[0].x) < 1.0)
-	{ // Vertical path
-	  points[0].x = floorf(points[0].x) + offs;
-	  points[0].y = floorf(points[0].y);
-	  if (type == NSLineToBezierPathElement)
-	    {
-	      last_points[0].x = points[0].x;
-	    }
-	}
+        { // Vertical path
+          points[0].x = floorf(points[0].x) + offs;
+          points[0].y = floorf(points[0].y);
+          if (type == NSLineToBezierPathElement)
+            {
+              last_points[0].x = points[0].x;
+            }
+        }
       else if (fabs(last_points[0].y - points[0].y) < 1.0)
-	{ // Horizontal path
-	  points[0].x = floorf(points[0].x);
-	  points[0].y = floorf(points[0].y) + offs;
-	  if (type == NSLineToBezierPathElement)
-	    {
-	      last_points[0].y = points[0].y;
-	    }
-	}
+        { // Horizontal path
+          points[0].x = floorf(points[0].x);
+          points[0].y = floorf(points[0].y) + offs;
+          if (type == NSLineToBezierPathElement)
+            {
+              last_points[0].y = points[0].y;
+            }
+        }
 
       // Save adjusted values into NSBezierPath
       if (index >= 0)
-	[path setAssociatedPoints:points atIndex:index];
+        [path setAssociatedPoints:points atIndex:index];
       if (last_index >= 0)
-	[path setAssociatedPoints:last_points atIndex:last_index];
+        [path setAssociatedPoints:last_points atIndex:last_index];
 
       last_points[0].x = points[0].x;
       last_points[0].y = points[0].y;
@@ -620,14 +667,16 @@
       float offs;
 
       if ((remainderf(cairo_get_line_width(_ct), 2.0) == 0.0)
-	  || fillOrClip == YES)
-	offs = 0.0;
+          || fillOrClip == YES)
+        offs = 0.0;
       else
-	offs = 0.5;
+        offs = 0.5;
 
       [self _adjustPath:offs];
     }
 
+  // reset current cairo path
+  cairo_new_path(_ct);
   for (i = 0; i < count; i++) 
     {
       NSBezierPathElement type;
