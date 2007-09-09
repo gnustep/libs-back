@@ -1,3 +1,8 @@
+2007-09-09 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-DPSeofill, -DPSfill, -DPSstroke):
+	Clear the GNUstep path after operation.
+
 2007-09-06 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-copyWithZone:): Copy dash and clipping.
