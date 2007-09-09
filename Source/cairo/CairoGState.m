@@ -734,6 +734,7 @@
       cairo_fill(_ct);
       cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_WINDING);
     }
+  [self DPSnewpath];
 }
 
 - (void) DPSfill
@@ -743,6 +744,7 @@
       [self _setPath:YES];
       cairo_fill(_ct);
     }
+  [self DPSnewpath];
 }
 
 - (void) DPSinitclip
@@ -760,6 +762,7 @@
       [self _setPath:NO];
       cairo_stroke(_ct);
     }
+  [self DPSnewpath];
 }
 
 - (NSDictionary *) GSReadRect: (NSRect)r
