@@ -1,3 +1,14 @@
+2007-09-12 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/cairo/CairoGState.h,
+	* Source/cairo/CairoGState.m (-setSize, -DPSgsave, -DPSgrestore):
+	Remove unused methods.
+	* Headers/cairo/CairoPDFSurface.h,
+	* Source/cairo/CairoPDFSurface.m: New files.
+	* Source/cairo/GNUmakefile: Add new source file.
+	* Source/cairo/CairoContext.m (-initWithContextInfo:,
+	-beginPrologueBBox:...title:) Rewrite to support PDF output.
+	
 2007-09-09 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-DPSeofill, -DPSfill, -DPSstroke):
