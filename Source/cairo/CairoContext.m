@@ -23,6 +23,7 @@
 #include "cairo/CairoGState.h"
 #include "cairo/CairoSurface.h"
 #include "cairo/CairoPSSurface.h"
+#include "cairo/CairoPDFSurface.h"
 #include "cairo/CairoFontInfo.h"
 #include "cairo/CairoFontEnumerator.h"
 #include "x11/XGServer.h"
@@ -53,28 +54,15 @@
 
 - (id) initWithContextInfo: (NSDictionary *)info
 {
-  NSString *contextType;
-
-  contextType = [info objectForKey:
-			 NSGraphicsContextRepresentationFormatAttributeName];
   // Don't allow super to handle PS case.
   self = [super initWithContextInfo: nil];
   if (!self)
     return self;
 
+  // Now save the info
+  ASSIGN(context_info, info);
+
   gstate = [[CairoGState allocWithZone: [self zone]] initWithDrawContext: self];
-
-  if (contextType)
-    {
-      CairoSurface *surface;
-      NSSize size;
-
-      surface = [[CairoPSSurface alloc] initWithDevice: info];
-      // This strange setting is needed because of the way GUI handles offset.
-      size = [surface size];
-      [CGSTATE GSSetSurface: surface : 0.0 : size.height];
-      RELEASE(surface);
-    }
 
   return self;
 }
@@ -141,7 +129,34 @@
                      pages: (int)numPages
                      title: (NSString*)aTitle
 {
-  [CGSTATE setSize: boundingBox.size];
+  CairoSurface *surface;
+  NSSize size;
+  NSString *contextType;
+
+  contextType = [context_info objectForKey:
+			 NSGraphicsContextRepresentationFormatAttributeName];
+
+  if (contextType)
+    {
+      if ([contextType isEqual: NSGraphicsContextPSFormat])
+        {
+          size = boundingBox.size;
+          surface = [[CairoPSSurface alloc] initWithDevice: context_info];
+          [surface setSize: size];
+          // This strange setting is needed because of the way GUI handles offset.
+          [CGSTATE GSSetSurface: surface : 0.0 : size.height];
+          RELEASE(surface);
+        }
+      else if ([contextType isEqual: NSGraphicsContextPDFFormat])
+        {
+          size = boundingBox.size;
+          surface = [[CairoPDFSurface alloc] initWithDevice: context_info];
+          [surface setSize: size];
+          // This strange setting is needed because of the way GUI handles offset.
+          [CGSTATE GSSetSurface: surface : 0.0 : size.height];
+          RELEASE(surface);
+        }
+    }
 }
 
 - (void) showPage

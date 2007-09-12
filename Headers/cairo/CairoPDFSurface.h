@@ -1,7 +1,7 @@
 /*
-   Copyright (C) 2004 Free Software Foundation, Inc.
+   Copyright (C) 2007 Free Software Foundation, Inc.
 
-   Author:  Banlu Kemiyatorn <object at gmail dot com>
+   Author: Fred Kiefer <fredkiefer@gmx.de>
 
    This file is part of GNUstep.
 
@@ -20,28 +20,19 @@
    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#ifndef CairoGState_h
-#define CairoGState_h
+#ifndef XGCairoPDFSurface_h
+#define XGCairoPDFSurface_h
 
-#include <cairo.h>
-#include "gsc/GSGState.h"
+#include "cairo/CairoSurface.h"
 
-
-@class CairoSurface;
-
-@interface CairoGState : GSGState
+@interface CairoPDFSurface : CairoSurface
 {
-  @public
-    cairo_t *_ct;
-    CairoSurface *_surface;
-
-    int _strokeadjust;
+  NSSize size;
 }
 
-- (void) GSCurrentSurface: (CairoSurface **)surface: (int *)x : (int *)y;
-- (void) GSSetSurface: (CairoSurface *)surface : (int)x : (int)y;
+- (void)setSize: (NSSize)newSize;
+- (void)writeComment: (NSString *)comment;
 
-- (void) showPage;
 @end
 
 #endif

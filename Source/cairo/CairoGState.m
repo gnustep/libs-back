@@ -211,39 +211,11 @@
   [super setOffset: theOffset];
 }
 
-- (void) DPSgrestore
-{
-  if (_ct)
-    {
-      cairo_restore(_ct);
-      if (cairo_status(_ct) == CAIRO_STATUS_INVALID_RESTORE)
-        {
-        // Restore failed because there was no more state on the stack
-        }
-    }
-}
-
-- (void) DPSgsave
-{
-  if (_ct)
-    {
-      cairo_save(_ct);
-    }
-}
-
 - (void) showPage
 {
   if (_ct)
     {
       cairo_show_page(_ct);
-    }
-}
-
-- (void) setSize: (NSSize)size
-{
-   if (_surface)
-    {
-      [_surface setSize: size];
     }
 }
 
