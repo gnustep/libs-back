@@ -115,12 +115,23 @@
 
           cairo_get_matrix(_ct, &local_matrix);
           cairo_set_matrix(copy->_ct, &local_matrix);
+          status = cairo_status(copy->_ct);
+          if (status != CAIRO_STATUS_SUCCESS)
+            {
+              NSLog(@"Cairo status %s in set matrix", cairo_status_to_string(status));
+            }
 
           cpath = cairo_copy_path(_ct);
           status = cpath->status;
           if (status != CAIRO_STATUS_SUCCESS)
             {
-              NSLog(@"Cairo status %s in copy path", cairo_status_to_string(status));
+              /*
+                Due to an interesting programming concept in cairo this does not
+                mean that an error has occured. It may as well just be that the 
+                old path had no elements. 
+                At least in cairo 1.4.10 (See file cairo-path.c, line 379).
+              */
+              // NSLog(@"Cairo status %s in copy path", cairo_status_to_string(status));
             }
           else
             {
