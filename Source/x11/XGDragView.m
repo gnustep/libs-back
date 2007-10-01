@@ -28,6 +28,7 @@
 
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSCursor.h>
+#include <AppKit/NSGraphics.h>
 #include <AppKit/NSImage.h>
 #include <AppKit/NSPasteboard.h>
 #include <AppKit/NSView.h>
