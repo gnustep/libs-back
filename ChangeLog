@@ -1,3 +1,9 @@
+2007-10-01 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-copyWithZone:): No error logging
+	when copy of path fails. This is normal in cairo 1.4.10 for empty
+	paths.
+	
 2007-09-12 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/cairo/CairoGState.h,
