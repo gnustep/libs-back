@@ -148,6 +148,7 @@
           cairo_set_line_join(copy->_ct, cairo_get_line_join(_ct));
           cairo_set_miter_limit(copy->_ct, cairo_get_miter_limit(_ct));
 
+#if CAIRO_VERSION > CAIRO_VERSION_ENCODE(1, 4, 0)
           // In cairo 1.4 there is a way get the dash.
           num_dashes = cairo_get_dash_count(_ct);
           if (num_dashes != 0)
@@ -186,6 +187,7 @@
             }
           cairo_rectangle_list_destroy(clip_rects);
         }
+#endif
     }
 
   return copy;
