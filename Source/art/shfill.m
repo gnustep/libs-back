@@ -215,11 +215,6 @@ static BOOL _rect_advance(rect_trace_t * t, int *x0, int *x1)
 }
 
 
-@interface ARTGState (shfill)
-- (void) DPSshfill: (NSDictionary *)shader;
-@end
-
-
 @implementation ARTGState (shfill)
 
 
@@ -738,7 +733,7 @@ static void function_free(function_t * f)
 		if (state)
 		  {
 		    p = [inverse transformPoint:
-		      NSMakePoint(clip_x0 + x0 - offset.y, offset.y - y)];
+		      NSMakePoint(clip_x0 + x0 - offset.x, offset.y - y)];
 		      
 		    in[0] = p.x;
 		    in[1] = p.y;
@@ -780,14 +775,5 @@ done:
   function_free(&function);
 }
 
-@end
-
-
-@implementation ARTContext (shfill)
-/* TODO: move to gsc? */
-- (void) DPSshfill: (NSDictionary *)shader
-{
-  [(ARTGState *)gstate DPSshfill: shader];
-}
 @end
 

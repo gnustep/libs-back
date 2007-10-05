@@ -865,6 +865,11 @@ static NSMapTable *gtable;
 		  : data];
 }
 
+- (void) DPSshfill: (NSDictionary *)shader
+{
+  [gstate DPSshfill: shader];
+}
+
 - (void) GSWSetViewIsFlipped: (BOOL) flipped
 {
   if (gstate)

@@ -40,6 +40,7 @@ GSContext.m \
 GSGState.m \
 GSStreamContext.m \
 GSStreamGState.m \
+GSFunction.m \
 externs.m
 
 gsc_C_FILES = gscolors.c
