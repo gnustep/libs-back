@@ -1,3 +1,10 @@
+2007-10-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-copyWithZone:): Only use cairo 1.4
+	functions when cairo version fits.
+	* Source/cairo/XGCairoXImageSurface.m (-initWithDevice:): Use
+	depth from window device.
+
 2007-10-01 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGDragView.m: Add missing include.
@@ -50,7 +57,7 @@
 
 	* configure.ac,
 	* configure: Move checking for Xrender extension.
-	* Source/cairo/XGCairoXImageSurface.m: Add includefor config.h.
+	* Source/cairo/XGCairoXImageSurface.m: Add include for config.h.
 	Patch by Yen-Ju Chen <yjchenx@gmail.com>.
 	
 2007-09-04 Fred Kiefer <FredKiefer@gmx.de>

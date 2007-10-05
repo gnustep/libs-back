@@ -36,15 +36,13 @@
 
   gsDevice = device;
 
-  #ifdef XRENDER
-  di.drawing_depth = 32;
-  #else
-  di.drawing_depth = 24;
-  #endif
+  di.drawing_depth = GSWINDEVICE->depth;
+  // FIXME: The next four lines may be wrong for depth <> 32.
+  // But then art uses a depth of 24 for 32 bit modes. Strange!
   di.bytes_per_pixel = 4;
   di.inline_alpha = YES;
   di.inline_alpha_ofs = 0;
-  // This method is somewhat special as it does not return an autoreleased object
+  // FIXME: This method is somewhat special as it does not return an autoreleased object
   wi = [XWindowBuffer windowBufferForWindow: GSWINDEVICE depthInfo: &di];
 
   _surface = cairo_image_surface_create_for_data((unsigned char*)wi->data, 
