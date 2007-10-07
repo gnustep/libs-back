@@ -47,6 +47,7 @@
 }
 
 - (id) initWith: (NSDictionary *)d;
+- (double) getsample: (int)sample : (int) i;
 - (void) eval: (double *)inValues : (double *)outValues;
 
 @end
