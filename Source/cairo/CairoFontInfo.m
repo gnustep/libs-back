@@ -23,6 +23,7 @@
 
 #include "GNUstepBase/Unicode.h"
 #include <AppKit/NSAffineTransform.h>
+#include <AppKit/NSBezierPath.h>
 #include "cairo/CairoFontInfo.h"
 #include "cairo/CairoFontEnumerator.h"
 
@@ -83,7 +84,7 @@
    * xHeight, pix_width, pix_height
    */
   cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
-		    matrix[3], matrix[4], matrix[5]);
+                    matrix[3], matrix[4], matrix[5]);
   cairo_matrix_init_identity(&ctm);
   // FIXME: Should get default font options from somewhere
   options = cairo_font_options_create();
@@ -105,16 +106,16 @@
   xHeight = ascender * 0.6;
   lineHeight = font_extents.height;
   maximumAdvancement = NSMakeSize(font_extents.max_x_advance, 
-				  font_extents.max_y_advance);
+                                  font_extents.max_y_advance);
   fontBBox = NSMakeRect(0, descender, 
-			maximumAdvancement.width, ascender - descender);
+                        maximumAdvancement.width, ascender - descender);
 
   return YES;
 }
 
 - (id) initWithFontName: (NSString *)name 
-		 matrix: (const float *)fmatrix 
-	     screenFont: (BOOL)p_screenFont
+                 matrix: (const float *)fmatrix 
+             screenFont: (BOOL)p_screenFont
 {
   //NSLog(@"initWithFontName %@",name);
   [super init];
@@ -128,9 +129,9 @@
       /* Round up; makes the text more legible. */
       matrix[0] = ceil(matrix[0]);
       if (matrix[3] < 0.0)
-	matrix[3] = floor(matrix[3]);
+        matrix[3] = floor(matrix[3]);
       else
-	matrix[3] = ceil(matrix[3]);
+        matrix[3] = ceil(matrix[3]);
     }
 
   if (![self setupAttributes])
@@ -167,7 +168,7 @@
 
 static
 BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
-				cairo_text_extents_t *ctext)
+                                cairo_text_extents_t *ctext)
 {
   unichar ustr[2];
   char str[4];
@@ -180,10 +181,10 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
 
   b = (unsigned char *)str;
   if (!GSFromUnicode(&b, &size, ustr, length, 
-		     NSUTF8StringEncoding, NULL, GSUniTerminate))
+                     NSUTF8StringEncoding, NULL, GSUniTerminate))
     {
       NSLog(@"Conversion failed for %@", 
-	    [NSString stringWithCharacters: ustr length: length]);
+            [NSString stringWithCharacters: ustr length: length]);
       return NO;
     }
 
@@ -221,7 +222,7 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
   if (_cairo_extents_for_NSGlyph(_scaled, glyph, &ctext))
     {
       return NSMakeRect(ctext.x_bearing, ctext.y_bearing,
-			ctext.width, ctext.height);
+                        ctext.width, ctext.height);
     }
 
   return NSZeroRect;
@@ -254,28 +255,95 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
   return g;
 }
 
-/* need cairo to export its cairo_path_t first */
 - (void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs 
-			      count: (int)count 
-		       toBezierPath: (NSBezierPath *)path
+                              count: (int)length 
+                       toBezierPath: (NSBezierPath *)path
 {
-  /* TODO LATER
-     cairo_t *ct;
-     int i;
-     NSPoint start = [path currentPoint];
-     cairo_glyph_t *cairo_glyphs;
+  cairo_format_t format = CAIRO_FORMAT_ARGB32;
+  cairo_surface_t *isurface;
+  cairo_t *ct;
+  int ix = 400;
+  int iy = 400;
+  unsigned char *cdata;
+  int i;
+  unichar ustr[length+1];
+  char str[3*length+1];
+  unsigned char *b;
+  unsigned int size = 3*length+1;
+  cairo_status_t status;
+  cairo_matrix_t font_matrix;
 
-     cairo_glyphs = malloc(sizeof(cairo_glyph_t) * count);
-     ct = cairo_create();
+  for (i = 0; i < length; i++)
+    {
+      ustr[i] = glyphs[i];
+    }
+  ustr[length] = 0;
 
+  b = (unsigned char *)str;
+  if (!GSFromUnicode(&b, &size, ustr, length, 
+                     NSUTF8StringEncoding, NULL, GSUniTerminate))
+    {
+      NSLog(@"Conversion failed for %@", 
+            [NSString stringWithCharacters: ustr length: length]);
+      return;
+    }
 
-     cairo_destroy(ct);
-   */
+  cdata = objc_malloc(sizeof(char) * 4 * ix * iy);
+  isurface = cairo_image_surface_create_for_data(cdata, format, ix, iy, 4*ix);
+  status = cairo_surface_status(isurface);
+  if (status != CAIRO_STATUS_SUCCESS)
+    {
+      cairo_surface_destroy(isurface);
+      objc_free(cdata);
+      return;
+    }
+ 
+  ct = cairo_create(isurface);
+  
+  cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
+                    matrix[3], matrix[4], matrix[5]);
+  cairo_set_font_matrix(ct, &font_matrix);
+
+  cairo_text_path(ct, str);
+  status = cairo_status(ct);
+  if (status == CAIRO_STATUS_SUCCESS)
+     {
+      cairo_path_t *cpath;
+      cairo_path_data_t *data;
+      
+      cpath = cairo_copy_path(ct);
+      
+      for (i = 0; i < cpath->num_data; i += cpath->data[i].header.length) 
+        {
+          data = &cpath->data[i];
+          switch (data->header.type) 
+            {
+              case CAIRO_PATH_MOVE_TO:
+                [path moveToPoint: NSMakePoint(data[1].point.x, data[1].point.y)];
+                break;
+              case CAIRO_PATH_LINE_TO:
+                [path lineToPoint: NSMakePoint(data[1].point.x, data[1].point.y)];
+                break;
+              case CAIRO_PATH_CURVE_TO:
+                [path curveToPoint: NSMakePoint(data[1].point.x, data[1].point.y) 
+                      controlPoint1: NSMakePoint(data[2].point.x, data[2].point.y)
+                      controlPoint2: NSMakePoint(data[3].point.x, data[3].point.y)];
+                break;
+              case CAIRO_PATH_CLOSE_PATH:
+                [path closePath];
+                break;
+            }
+        }
+      cairo_path_destroy(cpath);
+    }
+  cairo_destroy(ct);
+  cairo_surface_destroy(isurface);
+  objc_free(cdata);
 }
 
 - (void) drawGlyphs: (const NSGlyph*)glyphs
-	     length: (int)length 
-	         on: (cairo_t*)ct
+             length: (int)length 
+                 on: (cairo_t*)ct
 {
   cairo_matrix_t font_matrix;
   unichar ustr[length+1];
@@ -292,35 +360,35 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
 
   b = (unsigned char *)str;
   if (!GSFromUnicode(&b, &size, ustr, length, 
-		     NSUTF8StringEncoding, NULL, GSUniTerminate))
+                     NSUTF8StringEncoding, NULL, GSUniTerminate))
     {
       NSLog(@"Conversion failed for %@", 
-	    [NSString stringWithCharacters: ustr length: length]);
+            [NSString stringWithCharacters: ustr length: length]);
       return;
     }
 
   cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
-		    matrix[3], matrix[4], matrix[5]);
+                    matrix[3], matrix[4], matrix[5]);
   cairo_set_font_matrix(ct, &font_matrix);
   if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
     {
-	NSLog(@"Error while setting font matrix: %s", 
-	      cairo_status_to_string(cairo_status(ct)));
-	return;
+      NSLog(@"Error while setting font matrix: %s", 
+            cairo_status_to_string(cairo_status(ct)));
+      return;
     }
   cairo_set_font_face(ct, [_faceInfo fontFace]);
   if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
     {
-	NSLog(@"Error while setting font face: %s", 
-	      cairo_status_to_string(cairo_status(ct)));
-	return;
+      NSLog(@"Error while setting font face: %s", 
+            cairo_status_to_string(cairo_status(ct)));
+      return;
     }
 
   cairo_show_text(ct, str);
   if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
     {
-	NSLog(@"Error drawing string: '%s' for string %s", 
-	      cairo_status_to_string(cairo_status(ct)), str);
+      NSLog(@"Error drawing string: '%s' for string %s", 
+            cairo_status_to_string(cairo_status(ct)), str);
     }
 }
  
