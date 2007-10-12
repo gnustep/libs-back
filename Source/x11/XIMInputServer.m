@@ -33,7 +33,7 @@
 #include <Foundation/NSException.h>
 #include <GNUstepBase/Unicode.h>
 #include <AppKit/NSWindow.h>
-#include <GNUstepGUI/GSFontInfo.h>
+#include <AppKit/NSView.h>
 
 #include "x11/XGInputServer.h"
 #include <X11/Xlocale.h>
