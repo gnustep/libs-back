@@ -2935,6 +2935,18 @@ static BOOL didCreatePixmaps;
       move = YES;
     }
 
+  /* Temporarily remove minimum and maximum window size hints to make
+   * the window resizable programatically.
+   */
+  if (window->siz_hints.flags & (PMinSize | PMaxSize))
+    {
+      long flags = window->siz_hints.flags;
+
+      window->siz_hints.flags &= ~(PMinSize | PMaxSize);
+      XSetWMNormalHints(dpy, window->ident, &window->siz_hints);
+      window->siz_hints.flags = flags;
+    }
+
   xVal = [self _OSFrameToXFrame: rect for: window];
   xHint = [self _XFrameToXHints: xVal for: window];
   window->siz_hints.width = (int)xHint.size.width;

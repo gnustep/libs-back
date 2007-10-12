@@ -1,3 +1,13 @@
+2007-10-12 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-placewindow:): Change window to be
+	temporary resizable. Patch by Wolfgang Lux <wolfgang.lux@gmail.com>. 
+	* Source/x11/XIMInputServer.m: Clean up includes to avoid compiler warning.
+	* Source/x11/raster.c (calculateCombineArea): Change parameter
+	signedness to avoid compiler warnings.
+	* Source/x11/convert.c (convertTrueColor_generic,
+	convertPseudoColor_to_8): Change parameter signedness to avoid compiler warnings.
+	
 2007-10-08 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoFontInfo.m

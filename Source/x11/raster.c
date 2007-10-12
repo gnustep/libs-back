@@ -299,7 +299,7 @@ RCombineImagesWithOpaqueness(RImage *image, RImage *src, int opaqueness)
 
 int
 calculateCombineArea(RImage *des, RImage *src, int *sx, int *sy,
-                     int *swidth, int *sheight, int *dx, int *dy)
+                     unsigned *swidth, unsigned *sheight, int *dx, int *dy)
 {
     if (*dx < 0) {
         *sx = -*dx;

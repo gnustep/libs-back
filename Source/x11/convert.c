@@ -140,9 +140,9 @@ computeStdTable(unsigned int mult, unsigned int max)
 static void
 convertTrueColor_generic(RXImage *ximg, RImage *image,
 			 signed char *err, signed char *nerr,
-			 const short *rtable, 
-			 const short *gtable,
-			 const short *btable,
+			 const unsigned short *rtable, 
+			 const unsigned short *gtable,
+			 const unsigned short *btable,
 			 const int dr, const int dg, const int db,
 			 const unsigned short roffs,
 			 const unsigned short goffs,
@@ -342,8 +342,8 @@ image2TrueColor(RContext *ctx, RImage *image)
         puts("true color dither");
 #endif	
 	{
-	    char *err;
-	    char *nerr;
+	    signed char *err;
+	    signed char *nerr;
 	    int ch = (image->format == RRGBAFormat ? 4 : 3);
 
 	    err = malloc(ch*(image->width+2));
@@ -381,9 +381,9 @@ image2TrueColor(RContext *ctx, RImage *image)
 static void
 convertPseudoColor_to_8(RXImage *ximg, RImage *image,
 			   signed char *err, signed char *nerr,
-			   const short *rtable, 
-			   const short *gtable,
-			   const short *btable,
+			   const unsigned short *rtable, 
+			   const unsigned short *gtable,
+			   const unsigned short *btable,
 			   const int dr, const int dg, const int db,
 			   unsigned long *pixels,
 			   int cpc)
@@ -393,7 +393,7 @@ convertPseudoColor_to_8(RXImage *ximg, RImage *image,
     int pixel;
     int rer, ger, ber;
     unsigned char *ptr = image->data;
-    unsigned char *optr = ximg->image->data;
+    unsigned char *optr = (unsigned char *)ximg->image->data;
     int channels = (image->format == RRGBAFormat ? 4 : 3);
     int cpcpc = cpc*cpc;
 
@@ -507,8 +507,8 @@ image2PseudoColor(RContext *ctx, RImage *image)
 	}
     } else {
 	/* dither */
-	char *err;
-	char *nerr;
+	signed char *err;
+	signed char *nerr;
 	const int dr=0xff/rmask;
 	const int dg=0xff/gmask;
 	const int db=0xff/bmask;
