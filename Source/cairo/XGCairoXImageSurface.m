@@ -25,6 +25,7 @@
 #include "x11/XGServerWindow.h"
 #include "x11/XWindowBuffer.h"
 #include "cairo/XGCairoXImageSurface.h"
+#include "cairo/XGCairoSurface.h"
 
 #define GSWINDEVICE ((gswindow_device_t *)gsDevice)
 
@@ -35,6 +36,14 @@
   struct XWindowBuffer_depth_info_s di;
 
   gsDevice = device;
+  if (GSWINDEVICE->type == NSBackingStoreNonretained)
+    {
+      // FIXME: This is a hack to get non-reatined backing store working.
+      // I see no reason, why it isn't working, as the code is identical
+      // to the one in the art backend.
+      RELEASE(self);
+      return [[XGCairoSurface alloc] initWithDevice: device];
+    }
 
   di.drawing_depth = GSWINDEVICE->depth;
   // FIXME: The next four lines may be wrong for depth <> 32.
