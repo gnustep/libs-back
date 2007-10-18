@@ -1,3 +1,10 @@
+2007-10-18 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoContext.m,
+	* Source/cairo/CairoGState.m: Format cleanup.
+	* Source/cairo/XGCairoXImageSurface.m (-initWithDevice:): Use
+	XGCairoSurface when a NSBackingStoreNonretained type window is used.
+	
 2007-10-12 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-placewindow:): Change window to be

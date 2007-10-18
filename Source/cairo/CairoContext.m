@@ -73,19 +73,19 @@
 }
 
 /* Private backend methods */
-+(void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
++ (void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
 {
   [(XWindowBuffer *)driver _exposeRect: rect];
 }
 
 #ifdef XSHM
 
-+(void) _gotShmCompletion: (Drawable)d
++ (void) _gotShmCompletion: (Drawable)d
 {
   [XWindowBuffer _gotShmCompletion: d];
 }
 
--(void) gotShmCompletion: (Drawable)d
+- (void) gotShmCompletion: (Drawable)d
 {
   [XWindowBuffer _gotShmCompletion: d];
 }

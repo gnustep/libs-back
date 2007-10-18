@@ -103,7 +103,7 @@
       status = cairo_status(copy->_ct);
       if (status != CAIRO_STATUS_SUCCESS)
         {
-          NSLog(@"Cairo status %s in copy", cairo_status_to_string(status));
+          NSLog(@"Cairo status '%s' in copy", cairo_status_to_string(status));
           _ct = NULL;
         }
       else
@@ -118,7 +118,7 @@
           status = cairo_status(copy->_ct);
           if (status != CAIRO_STATUS_SUCCESS)
             {
-              NSLog(@"Cairo status %s in set matrix", cairo_status_to_string(status));
+              NSLog(@"Cairo status '%s' in set matrix", cairo_status_to_string(status));
             }
 
           cpath = cairo_copy_path(_ct);
@@ -131,7 +131,7 @@
                 old path had no elements. 
                 At least in cairo 1.4.10 (See file cairo-path.c, line 379).
               */
-              // NSLog(@"Cairo status %s in copy path", cairo_status_to_string(status));
+              // NSLog(@"Cairo status '%s' in copy path", cairo_status_to_string(status));
             }
           else
             {
@@ -167,7 +167,7 @@
           status = clip_rects->status;
           if (status != CAIRO_STATUS_SUCCESS)
             {
-              NSLog(@"Cairo status %s in copy clip", cairo_status_to_string(status));
+              NSLog(@"Cairo status '%s' in copy clip", cairo_status_to_string(status));
             }
           else
             {
@@ -362,8 +362,8 @@
       cairo_transform(_ct, &local_matrix);
 
       [(CairoFontInfo *)font drawGlyphs: glyphs
-			length: length
-			on: _ct];
+                        length: length
+                        on: _ct];
       cairo_restore(_ct);
     }
 }
@@ -391,7 +391,7 @@
   status = cairo_status(_ct);
   if (status != CAIRO_STATUS_SUCCESS)
     {
-      NSLog(@"Cairo status %s in DPSinitgraphics", cairo_status_to_string(status));
+      NSLog(@"Cairo status '%s' in DPSinitgraphics", cairo_status_to_string(status));
       _ct = NULL;
       return;
     }
@@ -696,7 +696,7 @@
     {
       [self _setPath:YES];
       cairo_clip(_ct);
-    }
+     }
 }
 
 - (void) DPSeoclip
@@ -807,7 +807,7 @@
   status = cairo_surface_status(isurface);
   if (status != CAIRO_STATUS_SUCCESS)
     {
-      NSLog(@"Cairo status %s in GSReadRect", cairo_status_to_string(status));
+      NSLog(@"Cairo status '%s' in GSReadRect", cairo_status_to_string(status));
       return nil;
     }
 
@@ -815,7 +815,7 @@
   status = cairo_status(ct);
   if (status != CAIRO_STATUS_SUCCESS)
     {
-      NSLog(@"Cairo status %s in GSReadRect", cairo_status_to_string(status));
+      NSLog(@"Cairo status '%s' in GSReadRect", cairo_status_to_string(status));
       cairo_surface_destroy(isurface);
       return nil;
     }
@@ -1030,7 +1030,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   status = cairo_surface_status(surface);
   if (status != CAIRO_STATUS_SUCCESS)
     {
-      NSLog(@"Cairo status %s in DPSimage", cairo_status_to_string(status));
+      NSLog(@"Cairo status '%s' in DPSimage", cairo_status_to_string(status));
       if (tmp)
         {
           objc_free(tmp);
@@ -1154,13 +1154,13 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 
       if (!NSIsEmptyRect(NSIntersectionRect(aRect, targetRect)))
         {
-	  copyOnSelf = YES;
+          copyOnSelf = YES;
         }
     }
 
   cairo_save(_ct);
 
-  if (copyOnSelf) cairo_push_group (_ct);
+  if (copyOnSelf) cairo_push_group(_ct);
 
   cairo_new_path(_ct);
   _set_op(_ct, op);
@@ -1217,7 +1217,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 
   if (copyOnSelf)
     {
-      cairo_pop_group_to_source (_ct);
+      cairo_pop_group_to_source(_ct);
       cairo_paint(_ct);
     }
 
