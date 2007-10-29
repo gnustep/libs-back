@@ -1,7 +1,7 @@
 1 ANNOUNCE
 **********
 
-This is version 0.12.0 of the GNUstep GUI Backend (`gnustep-back').
+This is version 0.13.0 of the GNUstep GUI Backend (`gnustep-back').
 
 1.1 What is the GNUstep GUI Backend?
 ====================================
@@ -20,11 +20,11 @@ easily ported to other display systems.
 Window's Systems. It works via a DPS emulation engine to emulate the
 DPS functions required by the front-end system.
 
-1.2 Noteworthy changes in version `0.12.0'
+1.2 Noteworthy changes in version `0.13.0'
 ==========================================
 
-Big improvements to the cairo graphics and Window backend. Also better
-support for OpenGL.
+Many improvements to the cairo backend. Add DPSshfill for all backends.
+Better handling of X event times.
 
 1.3 Where can you get it?  How can you compile it?
 ==================================================

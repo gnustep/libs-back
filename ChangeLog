@@ -1,3 +1,8 @@
+2007-10-30 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Change files to use GPL 3 and LGPL 3.
+	* Prepare for next release.
+	
 2007-10-18 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoContext.m,

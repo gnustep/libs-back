@@ -78,7 +78,7 @@
       keyboard focus (see below).
       </p>
       <p>
-      The GUI font-end may function differently to accomadate
+      The GUI front-end may function differently to accomadate
       different window manager behavior. Below is a list of the
       changes the front-end makes for different managers and windowing
       systems: 
@@ -145,7 +145,7 @@
       back-end should send a FocusIn event to a window when it
       receives a signal from the window manager or windowing system.
       Sending a FocusIn event to a window that already requested it,
-      msy cause focus confusion in the GUI.
+      may cause focus confusion in the GUI.
       </p>
       <p>
       The front-end does nothing for FocusOut messages.

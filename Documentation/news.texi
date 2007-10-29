@@ -7,14 +7,19 @@
 @include version.texi
 @end ifset
 
-@section Noteworthy changes in version @samp{0.12.0}
+@section Noteworthy changes in version @samp{0.13.0}
 
-Big improvements to the cairo graphics and Window backend. Also better
-support for OpenGL.
+Many improvements to the cairo backend. Add DPSshfill for all backends.
+Better handling of X event times.
 
 @c ====================================================================
 @c Keep the next line just below the list of changes in most recent version.
 @ifclear ANNOUNCE-ONLY
+
+@section Noteworthy changes in version @samp{0.12.0}
+
+Big improvements to the cairo graphics and Window backend. Also better
+support for OpenGL.
 
 @section Noteworthy changes in version @samp{0.11.0}
 
