@@ -13,16 +13,17 @@ EWMH hints
 [-] : not applicable/ignored
 
 Root Window Properties (and Related Messages)
-[-] _NET_SUPPORTED			// WM property
+[+] _NET_SUPPORTED			// WM property
 [-] _NET_CLIENT_LIST			// WM property
-[-] _NET_NUMBER_OF_DESKTOPS		// WM property
+[+] _NET_CLIENT_LIST_STACKING	// WM property
+[+] _NET_NUMBER_OF_DESKTOPS		// WM property
 [ ] _NET_DESKTOP_GEOMETRY		// use this in preference to X calls?
 [-] _NET_DESKTOP_VIEWPORT		// WM property
-[-] _NET_CURRENT_DESKTOP		// WM property
-[-] _NET_DESKTOP_NAMES			// WM property
+[+] _NET_CURRENT_DESKTOP		// WM property
+[+] _NET_DESKTOP_NAMES			// WM property
 [ ] _NET_ACTIVE_WINDOW			// "main" window?
 [-] _NET_WORKAREA			// WM property
-[-] _NET_SUPPORTING_WM_CHECK		// WM property
+[+] _NET_SUPPORTING_WM_CHECK		// WM property
 [-] _NET_VIRTUAL_ROOTS			// WM property
 [-] _NET_DESKTOP_LAYOUT			// Pager property
 [-] _NET_SHOWING_DESKTOP		// WM property
@@ -33,24 +34,29 @@ Other Root Window Messages
 [ ] _NET_WM_MOVERESIZE			// use with in-view mouse control?
     
 Application Window Properties
-[ ] _NET_WM_NAME			// need to implement
-[-] _NET_WM_VISIBLE_NAME		// WM property
-[ ] _NET_WM_ICON_NAME			// need to implement
+[+] _NET_WM_NAME			// need to implement
+[ ] _NET_WM_VISIBLE_NAME		// WM property
+[+] _NET_WM_ICON_NAME			// need to implement
 [-] _NET_WM_VISIBLE_ICON_NAME		// WM property
-[-] _NET_WM_DESKTOP			// GNUstep apps don't need this(?)
+[+] _NET_WM_DESKTOP			// 
 [+] _NET_WM_WINDOW_TYPE			// use with or replace Window Level?
-[-] _NET_WM_STATE			// probably don't need this.
+[*] _NET_WM_STATE			// probably don't need this.
 [-] _NET_WM_ALLOWED_ACTIONS		// WM property
 [-] _NET_WM_STRUT			// GNUstep apps don't need this(?)
 [-] _NET_WM_STRUT_PARTIAL		// GNUstep apps don't need this(?)
 [-] _NET_WM_ICON_GEOMETRY		// GNUstep apps don't need this(?)
-[ ] _NET_WM_ICON			// would be nice to support
+[+] _NET_WM_ICON			// 
 [+] _NET_WM_PID				
 [-] _NET_WM_HANDLED_ICONS		// Pager property
 [ ] _NET_WM_USER_TIME			// need to figure this out...
+[+] _NET_FRAME_EXTENTS             // 
+[+] _NET_REQUEST_FRAME_EXTENTS     //
+[+] _NET_WM_STATE_SKIP_PAGER       //
+[+] _NET_WM__WINDOW_OPACITY        //
+[+] _NET_WM__WINDOW_SHADOW        //
     
 Window Manager Protocols
-[ ] _NET_WM_PING			// need to implement
+[+] _NET_WM_PING			// need to implement
 
 
 
