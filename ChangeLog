@@ -1,3 +1,7 @@
+2007-10-30  Adam Fedor  <fedor@gnu.org>
+
+        * gnustep-back.spec.in: Change Copyright to License.
+
 2007-10-30 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Change files to use GPL 3 and LGPL 3.
