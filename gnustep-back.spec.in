@@ -1,6 +1,6 @@
 Summary: The GNUstep backend library
 Release: 1
-Copyright: LGPL
+License: LGPL
 Group: Development/Libraries
 Source: ftp://ftp.gnustep.org/pub/gnustep/core/%{gs_name}-%{gs_version}.tar.gz
 Requires: gnustep-gui
