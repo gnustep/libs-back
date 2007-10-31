@@ -1,3 +1,9 @@
+2007-10-31 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_setupRootWindow): Use
+	objectForKey: instead of stringForKey:.
+	Patch by Wolfgang Lux <wolfgang.lux@gmail.com>.
+
 2007-10-30  Adam Fedor  <fedor@gnu.org>
 
         * gnustep-back.spec.in: Change Copyright to License.
