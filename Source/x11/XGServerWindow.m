@@ -1396,20 +1396,20 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   if ((generic.wm & XGWM_WINDOWMAKER) != 0)
     {
       generic.flags.useWindowMakerIcons = YES;
-      if ([defs stringForKey: @"UseWindowMakerIcons"] != nil
+      if ([defs objectForKey: @"UseWindowMakerIcons"] != nil
 	&& [defs boolForKey: @"UseWindowMakerIcons"] == NO)
 	{
 	  generic.flags.useWindowMakerIcons = NO;
 	}
     }
   generic.flags.appOwnsMiniwindow = YES;
-  if ([defs stringForKey: @"GSAppOwnsMiniwindow"] != nil
+  if ([defs objectForKey: @"GSAppOwnsMiniwindow"] != nil
     && [defs boolForKey: @"GSAppOwnsMiniwindow"] == NO)
     {
       generic.flags.appOwnsMiniwindow = NO;
     }
   generic.flags.doubleParentWindow = NO;
-  if ([defs stringForKey: @"GSDoubleParentWindows"] != nil
+  if ([defs objectForKey: @"GSDoubleParentWindows"] != nil
     && [defs boolForKey: @"GSDoubleParentWindows"] == YES)
     {
       generic.flags.doubleParentWindow = YES;
