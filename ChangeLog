@@ -1,5 +1,9 @@
 2007-11-05 Fred Kiefer <FredKiefer@gmx.de>
 
+	* COPYING: Add GPL 3 licence file.
+	
+2007-11-05 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/cairo/CairoGState.m (-DPSsetflat:, -DPSsetlinewidth:,
 	-DPSsetmiterlimit, -DPScurrentflat:, -DPScurrentlinewidth:,
 	-DPScurrentmiterlimit:, -DPSsetdash:::): Convert floats from user
