@@ -57,7 +57,7 @@ NSMutableDictionary * __allFonts;
   face = [__allFonts objectForKey: name];
   if (!face)
     {
-      NSLog (@"Font not found %@", name);
+      NSDebugLog(@"Font not found %@", name);
     }
   return face;
 }
