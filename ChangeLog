@@ -1,3 +1,12 @@
+2007-11-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-DPSsetflat:, -DPSsetlinewidth:,
+	-DPSsetmiterlimit, -DPScurrentflat:, -DPScurrentlinewidth:,
+	-DPScurrentmiterlimit:, -DPSsetdash:::): Convert floats from user
+	space to drawing space and visa versa.
+	* Source/cairo/CairoGState.m (-DPSsetdash:::): Adjust dash values slightly.
+	* Source/cairo/CairoFontEnumerator.m: Change NSLog to NSDebugLog.
+
 2007-10-31 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-_setupRootWindow): Use

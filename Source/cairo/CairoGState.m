@@ -72,6 +72,32 @@
     NSZoneFree(NSDefaultMallocZone(), _base); \
   }
 
+static float floatFromUserSpace(NSAffineTransform *ctm, float f)
+{
+  NSSize s = {f, f};
+
+  if (ctm)
+    {
+      s = [ctm transformSize: s];
+      f = (((s.width > 0.0) ? s.width : -s.width) + 
+           ((s.height > 0.0) ? s.height : -s.height)) / 2;
+    }
+  return f;
+}
+
+static float floatToUserSpace(NSAffineTransform *ctm, float f)
+{
+  NSAffineTransform *ictm;
+  
+  ictm = [ctm copyWithZone: GSObjCZone(ctm)];
+  [ictm invert];
+  f = floatFromUserSpace(ictm, f);
+  RELEASE(ictm);
+  return f;
+}
+
+
+
 @implementation CairoGState 
 
 + (void) initialize
@@ -330,6 +356,7 @@
 {
   if (_ct)
     {
+      size = floatFromUserSpace(ctm, size);
       cairo_set_font_size(_ct, size);
     }
 }
@@ -424,7 +451,8 @@
 {
   if (_ct)
     {
-      *flatness = cairo_get_tolerance(_ct);
+      *flatness = (float)cairo_get_tolerance(_ct);
+      *flatness = floatToUserSpace(ctm, *flatness);
     }
 }
 
@@ -488,7 +516,8 @@
 {
   if (_ct)
     {
-      *width = cairo_get_line_width(_ct);
+      *width = (float)cairo_get_line_width(_ct);
+      *width = floatToUserSpace(ctm, *width);
     }
 }
 
@@ -496,7 +525,8 @@
 {
   if (_ct)
     {
-      *limit = cairo_get_miter_limit(_ct);
+      *limit = (float)cairo_get_miter_limit(_ct);
+      *limit = floatToUserSpace(ctm, *limit);
     }
 }
 
@@ -510,16 +540,16 @@
   if (_ct)
     {
       GS_BEGINITEMBUF(dpat, size, double);
-      double doffset = foffset;
+      double doffset = (double)floatFromUserSpace(ctm, foffset);
       int i;
 
       i = size;
       while (i)
         {
           i--;
-          dpat[i] = pat[i];
+          // FIXME: When using the correct values, some dashes look wrong
+          dpat[i] = (double)floatFromUserSpace(ctm, pat[i]) * 1.4;
         }
-      // FIXME: There may be a difference in concept as some dashes look wrong
       cairo_set_dash(_ct, dpat, size, doffset);
       GS_ENDITEMBUF();
     }
@@ -530,7 +560,7 @@
   [super DPSsetflat: flatness];
   if (_ct)
     {
-      cairo_set_tolerance(_ct, flatness);
+      cairo_set_tolerance(_ct, floatFromUserSpace(ctm, flatness));
     }
 }
 
@@ -554,7 +584,7 @@
 {
   if (_ct)
     {
-      cairo_set_line_width(_ct, width);
+      cairo_set_line_width(_ct, floatFromUserSpace(ctm, width));
     }
 }
 
@@ -562,7 +592,7 @@
 {
   if (_ct)
     {
-      cairo_set_miter_limit(_ct, limit);
+      cairo_set_miter_limit(_ct, floatFromUserSpace(ctm, limit));
     }
 }
 
