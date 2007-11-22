@@ -27,6 +27,7 @@
 
 #include <AppKit/AppKitExceptions.h>
 #include <AppKit/NSAffineTransform.h>
+#include <AppKit/NSBitmapImageRep.h>
 #include <AppKit/NSColor.h>
 #include <AppKit/NSView.h>
 #include <AppKit/NSWindow.h>
@@ -809,7 +810,16 @@ static NSMapTable *gtable;
 
 - (void) GSDrawImage: (NSRect) rect: (void *) imageref
 {
-  [self notImplemented: _cmd];
+  NSBitmapImageRep *bitmap;
+  const unsigned char *data[5];
+
+  bitmap = (NSBitmapImageRep*)imageref;
+  [bitmap getBitmapDataPlanes: &data];
+  [self NSDrawBitmap: rect : [bitmap pixelsWide] : [bitmap pixelsHigh]
+        : [bitmap bitsPerSample] : [bitmap samplesPerPixel]
+        : [bitmap bitsPerPixel] : [bitmap bytesPerRow] : [bitmap isPlanar]
+        : [bitmap hasAlpha] :  [bitmap colorSpaceName]
+        : data];
 }
 
 /* ----------------------------------------------------------------------- */
