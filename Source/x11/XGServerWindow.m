@@ -1181,6 +1181,19 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
               XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_UTILITY", False);
           generic.wintypes.win_splash_atom = 
               XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_SPLASH", False);
+          // New in wmspec 1.4
+          generic.wintypes.win_popup_menu_atom = 
+              XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_POPUP_MENU", False);
+          generic.wintypes.win_dropdown_menu_atom = 
+              XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DROPDOWN_MENU", False);
+          generic.wintypes.win_tooltip_atom = 
+              XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_TOOLTIP", False);
+          generic.wintypes.win_notification_atom = 
+              XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_NOTIFICATION", False);
+          generic.wintypes.win_combo_atom = 
+              XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_COMBO", False);
+          generic.wintypes.win_dnd_atom = 
+              XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DND", False);
           //KDE extensions
           generic.wintypes.win_override_atom = 
               XInternAtom(dpy, "_KDE_NET_WM_WINDOW_TYPE_OVERRIDE", False);
@@ -1192,6 +1205,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
               XInternAtom(dpy, "_NET_WM_STATE", False);
           generic.netstates.net_wm_state_skip_taskbar_atom = 
               XInternAtom(dpy, "_NET_WM_STATE_SKIP_TASKBAR", False);
+          generic.netstates.net_wm_state_skip_pager_atom = 
+              XInternAtom(dpy, "_NET_WM_STATE_SKIP_PAGER", False);
         }
       if (win1)
         {
@@ -2835,6 +2850,16 @@ static BOOL didCreatePixmaps;
        *
        * [self _resetDragTypesForWindow: GSWindowWithNumber(window->number)];
        */
+      if (window->win_attrs.window_level != NSNormalWindowLevel)
+        {
+          [self _sendRoot: window->root 
+                type: generic.netstates.net_wm_state_atom
+                window: window->ident
+                data0: _NET_WM_STATE_ADD
+                data1: generic.netstates.net_wm_state_skip_taskbar_atom
+                data2: generic.netstates.net_wm_state_skip_pager_atom
+                data3: 1];
+        } 
     }
   XFlush(dpy);
 }
@@ -3031,7 +3056,6 @@ static BOOL didCreatePixmaps;
 
 - (void) setwindowlevel: (int)level : (int)win
 {
-  static Atom net_wm_state_skip_pager = None;
   gswindow_device_t *window;
 
   window = WINDOW_WITH_TAG(win);
@@ -3124,6 +3148,7 @@ static BOOL didCreatePixmaps;
               data[1] = generic.wintypes.win_floating_atom;
               len = 2;
 #else
+//              data[0] = generic.wintypes.win_popup_menu_atom;
               data[0] = generic.wintypes.win_modal_atom;
               len = 1;
 #endif
@@ -3149,42 +3174,27 @@ static BOOL didCreatePixmaps;
  * This feature is only needed for window managers that cannot properly 
  * handle the window type set above.
  */
-          if (skipTaskbar)
+         if (skipTaskbar)
             {
-              static Atom net_wm_state_add = None;
-
-              if (net_wm_state_add == None)
-                net_wm_state_add = XInternAtom(dpy, "_NET_WM_STATE_ADD", False);
-              if (net_wm_state_skip_pager == None)
-                net_wm_state_skip_pager = XInternAtom(dpy, "_NET_WM_STATE_SKIP_PAGER",
-                                                      False);
               [self _sendRoot: window->root 
                     type: generic.netstates.net_wm_state_atom
                     window: window->ident
-                    data0: net_wm_state_add
+                    data0: _NET_WM_STATE_ADD
                     data1: generic.netstates.net_wm_state_skip_taskbar_atom
-                    data2: net_wm_state_skip_pager
+                    data2: generic.netstates.net_wm_state_skip_pager_atom
                     data3: 1];
             } 
           else 
             {
-              static Atom net_wm_state_remove = None;
-              
-              if (net_wm_state_remove == None)
-                net_wm_state_remove = XInternAtom(dpy, "_NET_WM_STATE_REMOVE", False);
-              if (net_wm_state_skip_pager == None)
-                net_wm_state_skip_pager = XInternAtom(dpy, "_NET_WM_STATE_SKIP_PAGER",
-                                                      False);
-              
               [self _sendRoot: window->root 
                     type: generic.netstates.net_wm_state_atom
                     window: window->ident
-                    data0: net_wm_state_remove
+                    data0: _NET_WM_STATE_REMOVE
                     data1: generic.netstates.net_wm_state_skip_taskbar_atom
-                    data2: net_wm_state_skip_pager
+                    data2: generic.netstates.net_wm_state_skip_pager_atom
                     data3: 1];
             }
-        }
+       }
       else if ((generic.wm & XGWM_GNOME) != 0)
         {
           long flag = WIN_LAYER_NORMAL;

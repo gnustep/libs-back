@@ -50,11 +50,18 @@ typedef struct {
   Atom win_splash_atom;
   Atom win_override_atom;
   Atom win_topmenu_atom;
+  Atom win_popup_menu_atom;
+  Atom win_dropdown_menu_atom;
+  Atom win_tooltip_atom;
+  Atom win_notification_atom;
+  Atom win_combo_atom;
+  Atom win_dnd_atom;
 } XGWMWinTypes;
 
 typedef struct {
   Atom net_wm_state_atom;
   Atom net_wm_state_skip_taskbar_atom;
+  Atom net_wm_state_skip_pager_atom;
 } XGWMNetStates;
 
 /*
@@ -125,6 +132,11 @@ struct XGGeneric {
 #define WIN_LAYER_DOCK                   8
 #define WIN_LAYER_ABOVE_DOCK             10
 #define WIN_LAYER_MENU                   12
+
+/* NET WM State */
+#define _NET_WM_STATE_REMOVE        0    /* remove/unset property */
+#define _NET_WM_STATE_ADD           1    /* add/set property */
+#define _NET_WM_STATE_TOGGLE        2    /* toggle property  */
 
 #endif
 
