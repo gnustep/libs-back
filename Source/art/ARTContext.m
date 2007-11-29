@@ -22,7 +22,9 @@
    Boston, MA 02110-1301, USA.
 */
 
+
 #include <Foundation/NSDebug.h>
+#include <Foundation/NSDictionary.h>
 
 #include "ARTGState.h"
 #include "blit.h"

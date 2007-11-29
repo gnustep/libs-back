@@ -1,5 +1,13 @@
 2007-11-29 Richard Frith-Macdonald <rfm@gnu.org>
 
+        * Source/art/ReadRect.m:
+        * Source/art/ARTContext.m:
+        * Source/art/shfill.m:
+	Explicitly include NSDictionary.h header for better MacOS-X
+	compatibility.
+
+2007-11-29 Richard Frith-Macdonald <rfm@gnu.org>
+
 	* Source/x11/XGServerWindow.m: ([imagecursor::::::]) don't flip the
 	hot point coordinates ... NSCursor coordinates are already supposed
 	to be flipped.
