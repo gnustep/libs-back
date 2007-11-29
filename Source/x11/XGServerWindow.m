@@ -4010,7 +4010,7 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
   fg = [self xColorFromColor: fg forScreen: defScreen];
 
   cursor = XCreatePixmapCursor(dpy, source, mask, &fg, &bg, 
-			       (int)hotp.x, (int)(h - hotp.y));
+			       (int)hotp.x, (int)hotp.y);
   XFreePixmap(dpy, source);
   XFreePixmap(dpy, mask);
   if (cid)

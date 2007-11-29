@@ -1,3 +1,9 @@
+2007-11-29 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/x11/XGServerWindow.m: ([imagecursor::::::]) don't flip the
+	hot point coordinates ... NSCursor coordinates are already supposed
+	to be flipped.
+
 2007-11-29 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/x11/XGGeneric.h: Add atoms for new window types. Add
