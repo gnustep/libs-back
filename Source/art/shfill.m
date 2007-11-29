@@ -37,6 +37,7 @@ this code is rather experimental
 
 #include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>
+#include <Foundation/NSDictionary.h>
 #include <Foundation/NSValue.h>
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSGraphics.h>

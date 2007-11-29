@@ -32,6 +32,7 @@
 #include <math.h>
 
 #include <Foundation/NSData.h>
+#include <Foundation/NSDictionary.h>
 #include <Foundation/NSValue.h>
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSGraphics.h>
