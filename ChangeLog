@@ -1,3 +1,7 @@
+2007-12-03 Riccardo Mottola <riccardo@kaffe.org>
+
+        * Source/winlib/WIN32GState.m: Implement Greyscale image handling
+
 2007-11-29 Richard Frith-Macdonald <rfm@gnu.org>
 
         * Source/art/ReadRect.m:
