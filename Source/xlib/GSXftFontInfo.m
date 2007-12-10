@@ -34,6 +34,7 @@
 #include "x11/XGServer.h"
 #include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>
+#include <Foundation/NSDictionary.h>
 #include <Foundation/NSValue.h>
 // For the encoding functions
 #include <GNUstepBase/Unicode.h>

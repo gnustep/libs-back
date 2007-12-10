@@ -37,6 +37,7 @@
 @class NSAffineTransform;
 @class NSBezierPath;
 @class NSFont;
+@class NSColorSpace;
 @class GSContext;
 
 typedef enum {
@@ -57,8 +58,8 @@ typedef enum {
   NSPoint offset;               /* Offset from Drawable origin */
   NSBezierPath *path;	        /* Current path */
   GSFontInfo *font;             /* Current font reference */
-  NSColor *fillColorS;          /* Color(space) used for fill drawing */
-  NSColor *strokeColorS;        /* Color(space) used for stroke drawing */
+  NSColorSpace *fillColorS;     /* Colorspace used for fill drawing */
+  NSColorSpace *strokeColorS;   /* Colorspace used for stroke drawing */
   device_color_t fillColor;     /* fill color */
   device_color_t strokeColor;   /* stroke color */
   color_state_t  cstate;        /* state last time color was set */

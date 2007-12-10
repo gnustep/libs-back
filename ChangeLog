@@ -1,3 +1,16 @@
+2007-12-10 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m:
+	Explicitly include NSDictionary.h header for better MacOS-X
+	compatibility.
+	* Headers/gsc/GSGState.h: Change fillColorS and strokeColorS to
+	NSColorSpace. 
+	* Source/gsc/GSGState.m (NSColor-colorWithValues:colorSpaceName:):
+	Removed.  
+	* Source/gsc/GSGState.m (-GSSetFillColorspace:,
+	-GSSetStrokeColorspace:, -GSSetFillColor:, -GSSetStrokeColor:): 
+	Changed to use NSColorSpace. 
+
 2007-12-03 Riccardo Mottola <riccardo@kaffe.org>
 
         * Source/winlib/WIN32GState.m: Implement Greyscale image handling
