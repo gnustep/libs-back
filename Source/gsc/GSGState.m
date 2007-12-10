@@ -44,31 +44,6 @@
       path = [NSBezierPath new]; \
     }
 
-/* Just temporary until we improve NSColor */
-@interface NSColor (PrivateColor)
-+ colorWithValues: (const float *)values colorSpaceName: colorSpace;
-@end
-
-@implementation NSColor (PrivateColor)
-+ colorWithValues: (const float *)values colorSpaceName: colorSpace
-{
-  NSColor *color = nil;
-  if ([colorSpace isEqual: NSDeviceWhiteColorSpace])
-    color = [NSColor colorWithDeviceWhite: values[0] alpha: values[1]];
-  else if ([colorSpace isEqual: NSDeviceRGBColorSpace])
-    color = [NSColor colorWithDeviceRed: values[0] green: values[1]
-		     blue: values[2] alpha: values[3]];
-  else if ([colorSpace isEqual: NSDeviceCMYKColorSpace])
-    color = [NSColor colorWithDeviceCyan: values[0] magenta: values[1]
-		     yellow: values[2] black: values[3] alpha: values[4]];
-  else
-    DPS_ERROR(DPSundefined, @"Cannot convert colorspace");
-  return color;
-}
-@end
-
-
-
 @implementation GSGState
 
 /* Designated initializer. */
@@ -318,14 +293,8 @@
 - (void) GSSetFillColorspace: (void *)spaceref
 {
   device_color_t col;
-  float values[6];
-  NSDictionary *dict = (NSDictionary *)spaceref;
-  NSString *colorSpace = [dict objectForKey: GSColorSpaceName];
-  if (fillColorS)
-    RELEASE(fillColorS);
-  memset(values, 0, sizeof(float)*6);
-  fillColorS = [NSColor colorWithValues: values colorSpaceName:colorSpace];
-  RETAIN(fillColorS);
+
+  ASSIGN(fillColorS, spaceref);
   gsMakeColor(&col, rgb_colorspace, 0, 0, 0, 0);
   [self setColor: &col state: COLOR_FILL];
 }
@@ -333,14 +302,8 @@
 - (void) GSSetStrokeColorspace: (void *)spaceref
 {
   device_color_t col;
-  float values[6];
-  NSDictionary *dict = (NSDictionary *)spaceref;
-  NSString *colorSpace = [dict objectForKey: GSColorSpaceName];
-  if (strokeColorS)
-    RELEASE(strokeColorS);
-  memset(values, 0, sizeof(float)*6);
-  strokeColorS = [NSColor colorWithValues: values colorSpaceName:colorSpace];
-  RETAIN(strokeColorS);
+
+  ASSIGN(strokeColorS, spaceref);
   gsMakeColor(&col, rgb_colorspace, 0, 0, 0, 0);
   [self setColor: &col state: COLOR_STROKE];
 }
@@ -349,22 +312,25 @@
 {
   device_color_t dcolor;
   NSColor *color;
-  NSString *colorSpace;
-  if (fillColorS == nil)
+
+  if ((fillColorS == nil) 
+      || ((color = [NSColor colorWithColorSpace: fillColorS
+                            components: values
+                            count: [fillColorS numberOfComponents] + 1]) == nil)
+      || ((color = [color colorUsingColorSpaceName: NSDeviceRGBColorSpace]) == nil))
     {
       DPS_ERROR(DPSundefined, @"No fill colorspace defined, assume DeviceRGB");
-      colorSpace = NSDeviceRGBColorSpace;
+      gsMakeColor(&dcolor, rgb_colorspace, values[0], values[1], 
+                  values[2], values[3]);
     }
-  else
-    colorSpace = [fillColorS colorSpaceName];
-  RELEASE(fillColorS);
-  fillColorS = [NSColor colorWithValues: values colorSpaceName:colorSpace];
-  RETAIN(fillColorS);
-  color = [fillColorS colorUsingColorSpaceName: NSDeviceRGBColorSpace];
-  [color getRed: &dcolor.field[0]
-	  green: &dcolor.field[1]
-	   blue: &dcolor.field[2]
-	  alpha: &dcolor.field[AINDEX]];
+  else 
+    {
+      [color getRed: &dcolor.field[0]
+             green: &dcolor.field[1]
+             blue: &dcolor.field[2]
+             alpha: &dcolor.field[AINDEX]];
+    }
+
   [self setColor: &dcolor state: COLOR_FILL];
 }
 
@@ -372,22 +338,25 @@
 {
   device_color_t dcolor;
   NSColor *color;
-  NSString *colorSpace;
-  if (strokeColorS == nil)
+
+  if ((strokeColorS == nil) 
+      || ((color = [NSColor colorWithColorSpace: strokeColorS
+                            components: values
+                            count: [strokeColorS numberOfComponents] + 1]) == nil)
+      || ((color = [color colorUsingColorSpaceName: NSDeviceRGBColorSpace]) == nil))
     {
       DPS_ERROR(DPSundefined, @"No stroke colorspace defined, assume DeviceRGB");
-      colorSpace = NSDeviceRGBColorSpace;
+      gsMakeColor(&dcolor, rgb_colorspace, values[0], values[1], 
+                  values[2], values[3]);
     }
-  else
-    colorSpace = [strokeColorS colorSpaceName];
-  RELEASE(strokeColorS);
-  strokeColorS = [NSColor colorWithValues: values colorSpaceName:colorSpace];
-  RETAIN(strokeColorS);
-  color = [strokeColorS colorUsingColorSpaceName: NSDeviceRGBColorSpace];
-  [color getRed: &dcolor.field[0]
-	  green: &dcolor.field[1]
-	   blue: &dcolor.field[2]
-	  alpha: &dcolor.field[AINDEX]];
+  else 
+    {
+      [color getRed: &dcolor.field[0]
+             green: &dcolor.field[1]
+             blue: &dcolor.field[2]
+             alpha: &dcolor.field[AINDEX]];
+    }
+
   [self setColor: &dcolor state: COLOR_STROKE];
 }
 
