@@ -316,7 +316,7 @@
   if ((fillColorS == nil) 
       || ((color = [NSColor colorWithColorSpace: fillColorS
                             components: values
-                            count: [fillColorS numberOfComponents] + 1]) == nil)
+                            count: [fillColorS numberOfColorComponents] + 1]) == nil)
       || ((color = [color colorUsingColorSpaceName: NSDeviceRGBColorSpace]) == nil))
     {
       DPS_ERROR(DPSundefined, @"No fill colorspace defined, assume DeviceRGB");
@@ -342,7 +342,7 @@
   if ((strokeColorS == nil) 
       || ((color = [NSColor colorWithColorSpace: strokeColorS
                             components: values
-                            count: [strokeColorS numberOfComponents] + 1]) == nil)
+                            count: [strokeColorS numberOfColorComponents] + 1]) == nil)
       || ((color = [color colorUsingColorSpaceName: NSDeviceRGBColorSpace]) == nil))
     {
       DPS_ERROR(DPSundefined, @"No stroke colorspace defined, assume DeviceRGB");
