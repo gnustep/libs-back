@@ -32,27 +32,21 @@
 #include <cairo-ft.h>
 #include <AppKit/NSFontManager.h>
 
-@implementation CairoFaceInfo
+@ implementation CairoFaceInfo 
 
-- (id) initWithfamilyName: (NSString *)familyName
-                 fullName: (NSString *)fullName
+- (id) initWithfamilyName: (NSString *)familyName 
                    weight: (int)weight 
-              italicAngle: (float)italicAngle
                    traits: (unsigned int)traits 
-										files: (NSArray *)paths
-                    index: (int)index
+                  pattern: (FcPattern *)pattern
 {
-	[super init];
+  _pattern = pattern;
+  FcPatternReference(_pattern);
 
   [self setFamilyName: familyName];
-	[self setFullName: fullName];
   [self setWeight: weight];
-  [self setItalicAngle: italicAngle];
   [self setTraits: traits];
-  [self setFiles: paths];
-  [self setIndex: index];
-	
-	return self;
+
+  return self;
 }
 
 - (void) dealloc
@@ -61,23 +55,10 @@
     {
       cairo_font_face_destroy(_fontFace);
     }
-	if (_ftface)
-		{
-			FT_Done_Face(_ftface);
-		}
-	if (_ftlibrary)
-		{
-			FT_Done_FreeType(_ftlibrary);
-		}
+  FcPatternDestroy(_pattern);
   RELEASE(_familyName);
-	RELEASE(_filePaths);
 
   [super dealloc];
-}
-
-- (NSString *)familyName
-{
-  return _familyName;
 }
 
 - (void) setFamilyName: (NSString *)name
@@ -85,14 +66,9 @@
   ASSIGN(_familyName, name);
 }
 
-- (NSString *)fullName
+- (NSString *)familyName
 {
-  return _fullName;
-}
-
-- (void) setFullName: (NSString *)name
-{
-  ASSIGN(_fullName, name);
+  return _familyName;
 }
 
 - (int) weight
@@ -103,16 +79,6 @@
 - (void) setWeight: (int)weight
 {
   _weight = weight;
-}
-
-- (int) italicAngle
-{
-  return _italicAngle;
-}
-
-- (void) setItalicAngle: (float)italicAngle
-{
-  _italicAngle = italicAngle;
 }
 
 - (unsigned int) traits
@@ -130,79 +96,26 @@
   return 257;
 }
 
-- (void) setFiles: (NSArray *)paths
-{
-  ASSIGN(_filePaths, paths);
-}
-
-- (NSArray *)files
-{
-  return _filePaths;
-}
-
-- (void) setIndex: (int)index
-{
-  _indexInFile = index;
-}
-
-- (int)index
-{
-  return _indexInFile;
-}
-
 - (cairo_font_face_t *)fontFace
 {
   if (!_fontFace)
     {
-			const char *cPath;
-			int i;
-			int count;
-			
-			/* FIXME: There should only be one FT_Library for all faces. */
-			if (!_ftlibrary)
-			{
-				FT_Init_FreeType(&_ftlibrary);
-			}
-			
-			if (! _ftface)
-				{
-					count = [_filePaths count];
-					for (i = 0; i < count; i++)
-						{
-							cPath = [[_filePaths objectAtIndex: i] UTF8String];
-							
-							if (i > 0)
-								{
-									if (FT_Attach_File(_ftface, cPath) != 0)
-										NSLog(@"Could not attach %@ to font face.",
-										      [_filePaths objectAtIndex: i]);
-								}
-							else
-								{
-									if (FT_New_Face(_ftlibrary, cPath, _indexInFile, &_ftface) != 0)
-										{
-											NSLog(@"Creating a font face failed %@", _familyName);
-											_ftface = NULL;
-											return NULL;
-										}
-								}
-						}
-				}
-      _fontFace =
-				cairo_ft_font_face_create_for_ft_face(_ftface, FT_LOAD_DEFAULT);
-			
+      FcResult result;
+      FcPattern *resolved;
+
+      FcConfigSubstitute (NULL, _pattern, FcMatchPattern); 
+      FcDefaultSubstitute(_pattern);
+      resolved = FcFontMatch(NULL, _pattern, &result);
+
+      _fontFace = cairo_ft_font_face_create_for_pattern(resolved);
+      FcPatternDestroy(resolved);
+
       if ((!_fontFace)
 	|| (cairo_font_face_status(_fontFace) != CAIRO_STATUS_SUCCESS))
 	{
 	  NSLog(@"Creating a font face failed %@", _familyName);
 	  cairo_font_face_destroy(_fontFace);
-		
-		FT_Done_Face(_ftface);
-		FT_Done_FreeType(_ftlibrary);
-		
 	  _fontFace = NULL;
-		_ftface = NULL;
-		_ftlibrary = NULL;
 	  return NULL;
 	}
     }

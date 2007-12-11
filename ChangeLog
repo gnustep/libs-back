@@ -1,3 +1,9 @@
+2007-12-11 Isaiah Beerbower <public@ipaqah.com>
+
+	* Source/cairo/*
+	* Headers/cairo/*
+	Reverting back to fontconfig font system.
+
 2007-12-10 Isaiah Beerbower <public@ipaqah.com>
 
 	* Source/cairo/CairoFontEnumerator.m (-enumerateFontsAndFamilies, cacheFolder,
