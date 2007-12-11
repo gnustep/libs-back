@@ -75,13 +75,18 @@
   [self setCacheSize: [_faceInfo cacheSize]];
 
   /* setting GSFontInfo:
-   * weight, traits, familyName,
+   * weight, italicAngle, traits, familyName, fullName
    * mostCompatibleStringEncoding, encodingScheme,
    */
 
   weight = [_faceInfo weight];
+	italicAngle = [_faceInfo italicAngle];
   traits = [_faceInfo traits];
   familyName = [[_faceInfo familyName] copy];
+	/* FIXME: GSFontInfo doesn't have full name yet.
+	 *        NSfont also needs to be changed.
+   * fullName = [[_faceInfo fullName] copy];
+	 */
   mostCompatibleStringEncoding = NSUTF8StringEncoding;
   encodingScheme = @"iso10646-1";
 

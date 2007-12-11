@@ -39,28 +39,47 @@
 @interface CairoFaceInfo : NSObject
 {
 	int _weight;
+	float _italicAngle;
 	unsigned int _traits;
+	
+	FT_Library _ftlibrary;
+	FT_Face _ftface;
 
-	cairo_font_face_t *_fontFace; 
-  FcPattern *_pattern;
+	cairo_font_face_t *_fontFace;
+	
+	NSArray *_filePaths;
+	int _indexInFile;
 
 	NSString *_familyName;
+	NSString *_fullName;
 }
 
-- (id) initWithfamilyName: (NSString *)familyName 
+- (id) initWithfamilyName: (NSString *)familyName
+                 fullName: (NSString *)fullName
                    weight: (int)weight 
+              italicAngle: (float)italicAngle
                    traits: (unsigned int)traits 
-                  pattern: (FcPattern *)pattern;
+										files: (NSArray *)paths
+                    index: (int)index;
 
 - (unsigned int) cacheSize;
 
 - (int) weight;
 - (void) setWeight: (int)weight;
+- (int) italicAngle;
+- (void) setItalicAngle: (float)italicAngle;
 - (unsigned int) traits;
 - (void) setTraits: (unsigned int)traits;
 
 - (NSString *) familyName;
 - (void) setFamilyName: (NSString *)name;
+- (NSString *)fullName;
+- (void) setFullName: (NSString *)name;
+
+- (void) setFiles: (NSArray *)path;
+- (NSArray *)files;
+- (void) setIndex: (int)index;
+- (int)index;
 
 - (cairo_font_face_t *)fontFace;
 
