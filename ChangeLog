@@ -1,3 +1,19 @@
+2007-12-10 Isaiah Beerbower <public@ipaqah.com>
+
+	* Source/cairo/CairoFontEnumerator.m (-enumerateFontsAndFamilies, cacheFolder,
+	bundleModificationDate, cacheFont, cacheNFontBundle, mergeFontInfo):
+	Rewrite to cache fonts in a plist and support nfont bundles.
+	(-defaultSystemFontName, -defaultBoldSystemFontName,
+	-defaultFixedPitchFontName):
+	Added actual PostScript name for Bitstream Vera fonts.
+	* Source/cairo/CairoFaceInfo.m (-fontFace,
+	-initWithfamilyName:fullName:weight:italicAngle:traits:files:index:,
+	-setFullName:, -fullName, -setItalicAngle:, -italicAngle, -setIndex:, -index):
+	Update to reflect changes in CairoFontEnumerator.
+	* Headers/cairo/CairoFaceInfo.m: Same.
+	* Source/cairo/CairoFontInfo.m (-setupAttributes): Take italicAngle & fullName
+	from CairoFaceInfo.
+
 2007-12-10 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/GSXftFontInfo.m:
