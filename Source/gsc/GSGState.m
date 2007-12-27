@@ -8,20 +8,21 @@
    This file is part of the GNU Objective C User Interface Library.
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
-   version 2 of the License, or (at your option) any later version.
-   
+   version 3 of the License, or (at your option) any later version.
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-   
-   You should have received a copy of the GNU Library General Public
-   License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-   Boston, MA 02111 USA.
-   */
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; see the file COPYING.LIB.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
+*/
 
 #include "config.h"
 #include <Foundation/NSObjCRuntime.h>
@@ -33,6 +34,7 @@
 #include <AppKit/NSGraphics.h>
 #include "gsc/GSContext.h"
 #include "gsc/GSGState.h"
+#include "gsc/GSFunction.h"
 #include "math.h"
 #include <GNUstepBase/Unicode.h>
 
@@ -1068,6 +1070,113 @@ typedef enum {
 {
   [self subclassResponsibility: _cmd];
 }
+
+- (void) DPSshfill: (NSDictionary *)shader
+{
+  NSNumber *v;
+  NSDictionary *function_dict;
+  GSFunction2in3out *function;
+  NSAffineTransform *matrix, *inverse;
+  NSAffineTransformStruct	ts;
+  NSRect rect;
+  int iwidth, iheight;
+  double x, y;
+  int i;
+  unsigned char *data;
+
+  v = [shader objectForKey: @"ShadingType"];
+
+  /* only type 1 shaders */
+  if ([v intValue] != 1)
+    {
+      NSLog(@"ShadingType != 1 not supported.");
+      return;
+    }
+
+  /* in device rgb space */
+  if ([shader objectForKey: @"ColorSpace"])
+    if (![[shader objectForKey: @"ColorSpace"] isEqual: NSDeviceRGBColorSpace])
+      {
+        NSLog(@"Only device RGB ColorSpace supported for shading.");
+        return;
+      }
+
+  function_dict = [shader objectForKey: @"Function"];
+  if (!function_dict)
+    {
+      NSLog(@"Shading function not set.");
+      return;
+    }
+
+  function = [[GSFunction2in3out alloc] initWith: function_dict];
+  if (!function)
+    return;
+
+  matrix = [ctm copy];
+  if ([shader objectForKey: @"Matrix"])
+    {
+      [matrix prependTransform: [shader objectForKey: @"Matrix"]];
+    }
+
+  inverse = [matrix copy];
+  [inverse invert];
+
+  rect = [function affectedRect];
+  iwidth = rect.size.width;
+  iheight = rect.size.height;
+  data = objc_malloc(sizeof(char) * iwidth * iheight * 4);
+  i = 0;
+
+  for (y = NSMinY(rect); y < NSMaxY(rect); y++)
+    {
+      double in[2], out[3];
+      NSPoint p;
+
+      p = [inverse transformPoint: NSMakePoint(NSMinX(rect), y)];
+      in[0] = p.x;
+      in[1] = p.y;
+          
+      out[0] = out[1] = out[2] = 0.0;
+      for (x = NSMinX(rect); x < NSMaxX(rect); x++)
+        {
+          char r, g, b, a;
+            
+          [function eval: in : out];
+     
+          // Set data at x - NSMinX(rect), y - NSMinY(rect) to out
+          r = out[0] * 255;
+          g = out[1] * 255;
+          b = out[2] * 255;
+          a = 255;
+          data[i++] = r;
+          data[i++] = g;
+          data[i++] = b;
+          data[i++] = a;
+
+          // This gives the same result as: 
+          // p = [inverse transformPoint: NSMakePoint(x, y)];
+          in[0] += ts.m11;
+          in[1] += ts.m12;
+        }
+    }
+
+  // Copy data to device
+  DESTROY(matrix);
+  matrix = [NSAffineTransform new];
+  [matrix translateXBy: NSMinX(rect) yBy: NSMinY(rect)];
+  [self DPSimage: matrix 
+        : iwidth : iheight
+        : 8 : 4 
+        : 32 : 4 * iwidth  : NO
+        : YES : NSDeviceRGBColorSpace
+        : (const unsigned char **)&data];
+  objc_free(data);
+
+  DESTROY(matrix);
+  DESTROY(inverse);
+  DESTROY(function);
+}
+
 @end
 
 

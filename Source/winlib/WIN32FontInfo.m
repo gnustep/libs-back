@@ -8,21 +8,21 @@
    This file is part of the GNU Objective C User Interface Library.
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
-   version 2 of the License, or (at your option) any later version.
-   
+   version 3 of the License, or (at your option) any later version.
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-   
-   You should have received a copy of the GNU Library General Public
-   License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-   Boston, MA 02111 USA.
-*/
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   Lesser General Public License for more details.
 
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; see the file COPYING.LIB.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
+*/
 
 #include <Foundation/NSCharacterSet.h>
 #include <Foundation/NSDictionary.h>
@@ -182,45 +182,47 @@ NSLog(@"No glyph for U%d", c);
       HDC hdc;
       HFONT old;
 
+      ms = [NSMutableCharacterSet new];
       hdc = GetDC(NULL);
       old = SelectObject(hdc, hFont);
       count = (unsigned)GetFontUnicodeRanges(hdc, 0);
       if (count > 0)
-	{
+        {
           gs = (GLYPHSET*)objc_malloc(count);
           if ((unsigned)GetFontUnicodeRanges(hdc, gs) == count)
-	    {
-	      numberOfGlyphs = gs->cGlyphsSupported;
-	      if (gs->flAccel == 1 /* GS_8BIT_INDICES */)
-		{
-		  for (count = 0; count < gs->cRanges; count++)
-		    {
-		      NSRange	range;
-
-		      range.location = gs->ranges[count].wcLow & 0xff;
-		      range.length = gs->ranges[count].cGlyphs;
-		      [ms addCharactersInRange: range];
-		    }
-		}
-	      else
-		{
-		  for (count = 0; count < gs->cRanges; count++)
-		    {
-		      NSRange	range;
-
-		      range.location = gs->ranges[count].wcLow;
-		      range.length = gs->ranges[count].cGlyphs;
-		      [ms addCharactersInRange: range];
-		    }
-		}
-	    }
+            {
+              numberOfGlyphs = gs->cGlyphsSupported;
+              if (gs->flAccel == 1 /* GS_8BIT_INDICES */)
+                {
+                  for (count = 0; count < gs->cRanges; count++)
+                    {
+                      NSRange	range;
+                      
+                      range.location = gs->ranges[count].wcLow & 0xff;
+                      range.length = gs->ranges[count].cGlyphs;
+                      [ms addCharactersInRange: range];
+                    }
+                }
+              else
+                {
+                  for (count = 0; count < gs->cRanges; count++)
+                    {
+                      NSRange	range;
+                      
+                      range.location = gs->ranges[count].wcLow;
+                      range.length = gs->ranges[count].cGlyphs;
+                      [ms addCharactersInRange: range];
+                    }
+                }
+            }
           objc_free(gs);
-	}
+        }
       SelectObject(hdc, old);
       ReleaseDC(NULL, hdc);
       coveredCharacterSet = [ms copy];
       RELEASE(ms);
     }
+
   return coveredCharacterSet;
 }
 

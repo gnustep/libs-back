@@ -1,7 +1,201 @@
+2007-11-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* COPYING: Add GPL 3 licence file.
+	* Backport from trunk.
+	
+2007-10-31 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_setupRootWindow): Use
+	objectForKey: instead of stringForKey:.
+	Patch by Wolfgang Lux <wolfgang.lux@gmail.com>.
+	* Backport from trunk.
+
+2007-10-30  Adam Fedor  <fedor@gnu.org>
+
+        * gnustep-back.spec.in: Change Copyright to License.
+	* Backport from trunk.
+
+2007-10-30 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Change files to use GPL 3 and LGPL 3.
+	* Prepare for next release.
+	* Backport from trunk.
+	
+2007-10-12 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-placewindow:): Change window to be
+	temporary resizable. Patch by Wolfgang Lux <wolfgang.lux@gmail.com>. 
+	* Source/x11/XIMInputServer.m: Clean up includes to avoid compiler warning.
+	* Source/x11/raster.c (calculateCombineArea): Change parameter
+	signedness to avoid compiler warnings.
+	* Source/x11/convert.c (convertTrueColor_generic,
+	convertPseudoColor_to_8): Change parameter signedness to avoid compiler warnings.
+	* Backport from trunk.
+	
+2007-10-07 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/gsc/GSFunction.h: Declare the -getsample:: method in
+	header.
+	* Backport from trunk.
+	
+2007-10-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/shfill.m (-DPSshfill:): Correct typing error. Remove
+	now obsolete method declaration.
+	* Headers/gsc/GSFunction.h,
+	* Source/gsc/GSFunction.m: New files. Implementation of Postscript
+	function taken from art/shfill.m.
+	* Source/gsc/GNUmakefile: Compile new file.
+	* Source/gsc/GSContext.m (-DPSshfill:), 
+	* Source/gsc/GSGState.m (-DPSshfill:): Implement new method.
+	* Backport from trunk.
+
+2007-10-01 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGDragView.m: Add missing include.
+	* Backport from trunk.
+
+2007-09-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/x11/XGGeneric.h: Add ivars for event time keeping.
+	* Headers/x11/XGServer.h: Declare new event time keeping methods.
+	* Source/x11/XGServerEvent.m (-setLastTime:, -lastTime): Implement
+	new methods and use them to store event time.
+	* Source/x11/XGServerWindow.m: Use these methods to get event time.
+	* Backport from trunk.
+	
+2007-09-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_checkStyle:, -windowlist): Use
+	defScreen instead of 0.
+	* Backport from trunk.
+
+2007-09-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* configure.ac,
+	* configure: Move checking for Xrender extension.
+	* Backport from trunk.
+	
+2007-09-04 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source\winlib\WIN32FontInfo.m (-coveredCharacterSet): Create the
+	NSMutableCharacterSet to store the character ranges in.
+	* Backport from trunk.
+
+2007-09-03 Nicolas Roard <nicolas@roard.com>
+
+	* configure:
+	* configure.ac: check that Xrender lib is present and add it to the
+	link process. Only use Xrender for Cairo.
+	* Backport from trunk.
+
+2007-09-02 Nicolas Roard <nicolas@roard.com>
+
+	* configure:
+	* configure.ac:
+	* config.h.in: added checking for Xrender extension
+	* Source/x11/context.c: Now check for 32 bit surface + alpha channel
+	* Backport from trunk.
+
+2007-08-21 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/ftfont.m,
+	* Source/art/ftfont-old.m: Extracted code shared between these two
+	files into new files.
+	* Source/art/FTFaceInfo.h,
+	* Source/art/FTFaceInfo.m,
+	* Source/art/FTFontEnumerator.h,
+	* Source/art/FTFontEnumerator.m: New files with extracted code.
+	* Source/art/GNUmakefile: Add new source files.
+	* Backport from trunk.
+
+2007-08-21 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_setupRootWindow): Revert last
+	change.
+	* Source/x11/XGServerWindow.m (-setinputfocus:): Use CurrentTime
+	instead of generic.lastTime.
+	* Backport from trunk.
+	
+2007-08-21 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerEvent.m (-processEvent:): Made handling of
+	focus in and out more explicit.
+	* Backport from trunk.
+
+2007-08-16 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/XGFontManager.m (load_cache),
+	* Tools/font_cacher.m (-writeCacheTo): Increase version number of
+	font format, as font mask values have changed.
+	* Backport from trunk.
+
+2007-08-16 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_setupRootWindow): Set lastTime to
+	CurrentTime not 1 to get setinputfocus working for the first
+	activation of the application.
+	* Backport from trunk.
+
+2007-08-15 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_checkWMSupports:,
+	-_tryRequestFrameExtents:): Correct minor errors.
+	* Source/art/ftfont.m (-coveredCharacterSet): Protect against
+	illegal characters.
+	* Backport from trunk.
+
+2007-08-15 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m: Add more EWMH methods and helper
+	methods for them.
+	* Tools/xpbs.m: Simplify dragging support code.
+	* Backport from trunk.
+
+2007-08-13 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/ftfont.m (-coveredCharacterSet): Correct code.
+	Patch by Yen-Ju Chen <yjchenx@gmail.com>.
+	* Backport from trunk.
+
+2007-08-07 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/ftfont.m (-coveredCharacterSet): Use local FT_Size
+	variable instead of ivar. The ivar is sometimes invalid.
+	Cleaned up compiler warnings.
+	* Backport from trunk.
+
+2007-08-02 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServer.m (+initializeBackend): Handle SIGINT by
+	calling ([NSApp terminate: NSApp]) to shut down cleanly.
+	* Backport from trunk.
+
+2007-06-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/image.m (-DPSimage:): Replaced appendTransform: with
+	prependTransform:. Undoes change from 2004-01-25.
+	* Backport from trunk.
+
+2007-05-02  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Source/GNUmakefile.postamble (after-clean): Remove
+	$(BUNDLE_NAME)Info.plist on clean.
+	* Backport from trunk.
+
+2007-04-24 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGDragView.m (-sendExternalEvent:... toWindow:) Tell
+	xdnd about available types and selection owner.
+	* Source/x11/XGServerEvent.m (processEvent:): Handle case
+	SelectionRequest to get some simple xdnd support.
+	Based on a patch by Matt Rice <ratmice@yahoo.com>.
+	* Backport from trunk.
+
 2007-04-14  Adam Fedor  <fedor@gnu.org>
 
-	* Version 0.12.0
-	
+	* Version 0.12.0 (From gnustep-stable branch)
+
 2007-03-30 Fred Kiefer <FredKiefer@gmx.de>
 
 	* header/xlib/XGGeometry.h: Replace calls to the now deprecated
@@ -25,7 +219,7 @@
 	* Source/art/ARTConext.m: Removed ARTContext bits.
 	* Source/art/blit-main.m: New file split out from blit.m.
 	* Source/art/blit.m: Removed self include stuff.
-	* Source/GNUmakefile: Add new source files.
+	* Source/art/GNUmakefile: Add new source files.
 	* Source/art/composite.m: Adopt to GNUstep coding style.
 
 2007-03-22 Fred Kiefer <FredKiefer@gmx.de>
@@ -611,7 +805,7 @@
 	* Header/x11/XGGeneric.h,
 	* Source/x11/XGServerWindow.m (-_setupRootWindow, -window::::),
 	* Source/x11/XGServerEvent.m (-processEvent:):
-	Impelemented hanlding for _NET_WM_PING.
+	Impelemented handling for _NET_WM_PING.
 
 2006-07-07 Richard Frith-Macdonald <rfm@gnu.org>
 

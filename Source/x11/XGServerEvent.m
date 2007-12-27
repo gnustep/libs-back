@@ -9,19 +9,20 @@
    This file is part of the GNU Objective C User Interface Library.
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
-   version 2 of the License, or (at your option) any later version.
-   
+   version 3 of the License, or (at your option) any later version.
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-   
-   You should have received a copy of the GNU Library General Public
-   License along with this library; if not, write to the Free
-   Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-   */
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; see the file COPYING.LIB.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+*/
 
 #include "config.h"
 
@@ -29,6 +30,7 @@
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSGraphics.h>
 #include <AppKit/NSMenu.h>
+#include <AppKit/NSPasteboard.h>
 #include <AppKit/NSWindow.h>
 #include <Foundation/NSException.h>
 #include <Foundation/NSArray.h>
@@ -394,7 +396,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	    }
 	}
 	generic.lastClick = xEvent.xbutton.time;
-	generic.lastTime = generic.lastClick;
+	[self setLastTime: generic.lastClick];
 	deltaY = 0.0;
 
 	if (xEvent.xbutton.button == generic.lMouse)
@@ -444,14 +446,14 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	      & (NSMiniWindowMask | NSIconWindowMask)) != 0
 	      && eventType == NSLeftMouseDown && clickCount == 1)
 	      {
-		if (cWin->parent == None)
-		  break;
-		xEvent.xbutton.window = cWin->parent;
-		XUngrabPointer(dpy, CurrentTime);
-		XSendEvent(dpy, cWin->parent, True,
-			   ButtonPressMask, &xEvent);
-		XFlush(dpy);
-		break;
+          if (cWin->parent == None)
+            break;
+          xEvent.xbutton.window = cWin->parent;
+          XUngrabPointer(dpy, CurrentTime);
+          XSendEvent(dpy, cWin->parent, True,
+                     ButtonPressMask, &xEvent);
+          XFlush(dpy);
+          break;
 	      }
 	  }
 
@@ -474,7 +476,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
       case ButtonRelease:
 	NSDebugLLog(@"NSEvent", @"%d ButtonRelease\n",
 		    xEvent.xbutton.window);
-	generic.lastTime = xEvent.xbutton.time;
+	[self setLastTime: xEvent.xbutton.time];
 	if (xEvent.xbutton.button == generic.lMouse)
 	  eventType = NSLeftMouseUp;
 	else if (xEvent.xbutton.button == generic.rMouse
@@ -542,7 +544,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	    break;
 	  if (xEvent.xclient.message_type == generic.protocols_atom)
 	    {
-	      generic.lastTime = (Time)xEvent.xclient.data.l[1];
+	      [self setLastTime: (Time)xEvent.xclient.data.l[1]];
 	      NSDebugLLog(@"NSEvent", @"WM Protocol - %s\n",
 			  XGetAtomName(dpy, xEvent.xclient.data.l[0]));
 
@@ -981,116 +983,121 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	  break;
 	}
 
-	// keyboard focus entered a window
+      // keyboard focus entered a window
       case FocusIn:
-	NSDebugLLog(@"NSEvent", @"%d FocusIn\n",
-		    xEvent.xfocus.window);
-	if (cWin == 0 || xEvent.xfocus.window != cWin->ident)
-	  {
-	    generic.cachedWindow
-	      = [XGServer _windowForXWindow:xEvent.xfocus.window];
-	  }
-	if (cWin == 0)
-	  break;
-	NSDebugLLog(@"Focus", @"%d got focus on %d\n",
-		    xEvent.xfocus.window, cWin->number);
-	generic.currentFocusWindow = cWin->number;
-	if (xEvent.xfocus.serial == generic.focusRequestNumber)
-	  {
-	    /*
-	     * This is a response to our own request - so we mark the
-	     * request as complete.
-	     */
-	    generic.desiredFocusWindow = 0;
-	    generic.focusRequestNumber = 0;
-	  }
-	break;
-
+        NSDebugLLog(@"NSEvent", @"%d FocusIn\n",
+                    xEvent.xfocus.window);
+        if (cWin == 0 || xEvent.xfocus.window != cWin->ident)
+          {
+            generic.cachedWindow
+                = [XGServer _windowForXWindow:xEvent.xfocus.window];
+          }
+        if (cWin == 0)
+          break;
+        NSDebugLLog(@"Focus", @"%d got focus on %d\n",
+                    xEvent.xfocus.window, cWin->number);
+        // Store this for debugging, may not be the real focus window
+        generic.currentFocusWindow = cWin->number;
+        if (xEvent.xfocus.serial == generic.focusRequestNumber)
+          {
+            /*
+             * This is a response to our own request - so we mark the
+             * request as complete.
+             */
+            generic.desiredFocusWindow = 0;
+            generic.focusRequestNumber = 0;
+          }
+        break;
+        
 	    // keyboard focus left a window
       case FocusOut:
-	{
-	  Window	fw;
-	  int		rev;
+        {
+          Window	fw;
+          int		rev;
+          
+          /*
+           * See where the focus has moved to -
+           * If it has gone to 'none' or 'PointerRoot' then 
+           * it's not one of ours.
+           * If it has gone to our root window - use the icon window.
+           * If it has gone to a window - we see if it is one of ours.
+           */
+          XGetInputFocus(xEvent.xfocus.display, &fw, &rev);
+          NSDebugLLog(@"NSEvent", @"%d FocusOut\n",
+                      xEvent.xfocus.window);
+          if (fw != None && fw != PointerRoot)
+            {
+              generic.cachedWindow = [XGServer _windowForXWindow: fw];
+              if (cWin == 0)
+                {
+                  generic.cachedWindow = [XGServer _windowForXParent: fw];
+                }
+              if (cWin == 0)
+                {
+                  nswin = nil;
+                }
+              else
+                {
+                  nswin = GSWindowWithNumber(cWin->number);
+                }
+            }
+          else
+            {
+              nswin = nil;
+            }
+          NSDebugLLog(@"Focus", @"Focus went to %d (xwin %d)\n", 
+                      (nswin != nil) ? cWin->number : 0, fw);
 
-	  /*
-	   * See where the focus has moved to -
-	   * If it has gone to 'none' or 'PointerRoot' then 
-	   * it's not one of ours.
-	   * If it has gone to our root window - use the icon window.
-	   * If it has gone to a window - we see if it is one of ours.
-	   */
-	  XGetInputFocus(xEvent.xfocus.display, &fw, &rev);
-	  NSDebugLLog(@"NSEvent", @"%d FocusOut\n",
-		      xEvent.xfocus.window);
-	  generic.cachedWindow = [XGServer _windowForXWindow: fw];
-	  if (cWin == 0)
-	    {
-	      generic.cachedWindow = [XGServer _windowForXParent: fw];
-	    }
-	  if (cWin == 0)
-	    {
-	      nswin = nil;
-	    }
-	  else
-	    {
-	      nswin = GSWindowWithNumber(cWin->number);
-	    }
-	  NSDebugLLog(@"Focus", @"Focus went to %d (xwin %d)\n", 
-		      (cWin) ? cWin->number : 0, fw);
-	  if (nswin == nil)
-	    {
-	      if (fw == 0)
-		{
-		  /* What? This is bogus. Focus has to go somewhere. */
-		}
-	      else
-		{
-		  [NSApp deactivate];
-		}
-	    }
-	  generic.cachedWindow
-	    = [XGServer _windowForXWindow: xEvent.xfocus.window];
-	  NSDebugLLog(@"Focus", @"%d lost focus on %d\n",
-		      xEvent.xfocus.window, (cWin) ? cWin->number : 0);
-	  generic.currentFocusWindow = 0;
-	  if (cWin && generic.desiredFocusWindow == cWin->number)
-	    {
-	      /* Request not valid anymore since we lost focus */
-	      generic.focusRequestNumber = 0;
-	    }
-	}
-	break;
+          // Focus went to a window not in this application.
+          if (nswin == nil)
+            {
+              [NSApp deactivate];
+            }
+
+          // Clean up old focus request
+          generic.cachedWindow
+              = [XGServer _windowForXWindow: xEvent.xfocus.window];
+          NSDebugLLog(@"Focus", @"%d lost focus on %d\n",
+                      xEvent.xfocus.window, (cWin) ? cWin->number : 0);
+          generic.currentFocusWindow = 0;
+          if (cWin && generic.desiredFocusWindow == cWin->number)
+            {
+              /* Request not valid anymore since we lost focus */
+              generic.focusRequestNumber = 0;
+            }
+        }
+        break;
 
       case GraphicsExpose:
-	NSDebugLLog(@"NSEvent", @"%d GraphicsExpose\n",
-		    xEvent.xexpose.window);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d GraphicsExpose\n",
+                    xEvent.xexpose.window);
+        break;
 
       case NoExpose:
-	NSDebugLLog(@"NSEvent", @"NoExpose\n");
-	break;
+        NSDebugLLog(@"NSEvent", @"NoExpose\n");
+        break;
 
-	// window is moved because of a change in the size of its parent
+      // window is moved because of a change in the size of its parent
       case GravityNotify:
-	NSDebugLLog(@"NSEvent", @"%d GravityNotify\n",
-		    xEvent.xgravity.window);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d GravityNotify\n",
+                    xEvent.xgravity.window);
+        break;
 
 	    // a key has been pressed
       case KeyPress:
-	NSDebugLLog(@"NSEvent", @"%d KeyPress\n",
-		    xEvent.xkey.window);
-	generic.lastTime = xEvent.xkey.time;
-	e = process_key_event (&xEvent, self, NSKeyDown, event_queue);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d KeyPress\n",
+                    xEvent.xkey.window);
+        [self setLastTime: xEvent.xkey.time];
+        e = process_key_event (&xEvent, self, NSKeyDown, event_queue);
+        break;
 
 	    // a key has been released
       case KeyRelease:
-	NSDebugLLog(@"NSEvent", @"%d KeyRelease\n",
-		    xEvent.xkey.window);
-	generic.lastTime = xEvent.xkey.time;
-	e = process_key_event (&xEvent, self, NSKeyUp, event_queue);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d KeyRelease\n",
+                    xEvent.xkey.window);
+        [self setLastTime: xEvent.xkey.time];
+        e = process_key_event (&xEvent, self, NSKeyUp, event_queue);
+        break;
 
 	    // reports the state of the keyboard when pointer or
 	    // focus enters a window
@@ -1163,34 +1170,34 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	    // when a window changes state from ummapped to
 	    // mapped or vice versa
       case MapNotify:
-	NSDebugLLog(@"NSEvent", @"%d MapNotify\n",
-		    xEvent.xmap.window);
-	if (cWin == 0 || xEvent.xmap.window != cWin->ident)
-	  {
-	    generic.cachedWindow
-	      = [XGServer _windowForXWindow:xEvent.xmap.window];
-	  }
-	if (cWin != 0)
-	  {
-	    cWin->map_state = IsViewable;
-	    /*
-	     * if the window that was just mapped wants the input
-	     * focus, re-do the request.
-	     */
-	    if (generic.desiredFocusWindow == cWin->number
-		&& generic.focusRequestNumber == 0)
-	      {
-		NSDebugLLog(@"Focus", @"Refocusing %d on map notify", 
-			    cWin->number);
-		[self setinputfocus: cWin->number];
-	      }
-	    /*
-	     * Make sure that the newly mapped window displays.
-	     */
-	    nswin = GSWindowWithNumber(cWin->number);
-	    [nswin update];
-	  }
-	break;
+        NSDebugLLog(@"NSEvent", @"%d MapNotify\n",
+                    xEvent.xmap.window);
+        if (cWin == 0 || xEvent.xmap.window != cWin->ident)
+          {
+            generic.cachedWindow
+                = [XGServer _windowForXWindow:xEvent.xmap.window];
+          }
+        if (cWin != 0)
+          {
+            cWin->map_state = IsViewable;
+            /*
+             * if the window that was just mapped wants the input
+             * focus, re-do the request.
+             */
+            if (generic.desiredFocusWindow == cWin->number
+                && generic.focusRequestNumber == 0)
+              {
+                NSDebugLLog(@"Focus", @"Refocusing %d on map notify", 
+                            cWin->number);
+                [self setinputfocus: cWin->number];
+              }
+            /*
+             * Make sure that the newly mapped window displays.
+             */
+            nswin = GSWindowWithNumber(cWin->number);
+            [nswin update];
+          }
+        break;
 
 	    // Window is no longer visible.
       case UnmapNotify:
@@ -1253,7 +1260,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	    }
 
 	  generic.lastMotion = xEvent.xmotion.time;
-	  generic.lastTime = generic.lastMotion;
+	  [self setLastTime: generic.lastMotion];
 	  state = xEvent.xmotion.state;
 	  if (state & generic.lMouseMask)
 	    {
@@ -1466,25 +1473,66 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 
 	    // another client attempts to change the size of a window
       case ResizeRequest:
-	NSDebugLLog(@"NSEvent", @"%d ResizeRequest\n",
-	  xEvent.xresizerequest.window);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d ResizeRequest\n",
+                    xEvent.xresizerequest.window);
+        break;
 
 	    // events dealing with the selection
       case SelectionClear:
-	NSDebugLLog(@"NSEvent", @"%d SelectionClear\n",
-	  xEvent.xselectionclear.window);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d SelectionClear\n",
+                    xEvent.xselectionclear.window);
+        break;
 
       case SelectionNotify:
-	NSDebugLLog(@"NSEvent", @"%d SelectionNotify\n",
-	  xEvent.xselection.requestor);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d SelectionNotify\n",
+                    xEvent.xselection.requestor);
+        break;
 
       case SelectionRequest:
-	NSDebugLLog(@"NSEvent", @"%d SelectionRequest\n",
-	  xEvent.xselectionrequest.requestor);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d SelectionRequest\n",
+                    xEvent.xselectionrequest.requestor);
+        {
+          NSPasteboard *pb = [NSPasteboard pasteboardWithName: NSDragPboard];
+          NSArray *types = [pb types];
+          NSData *data = nil;
+          Atom xType = xEvent.xselectionrequest.target;
+          static Atom XG_UTF8_STRING = None;
+          static Atom XG_TEXT = None;
+
+          if (XG_UTF8_STRING == None)
+            {
+              XG_UTF8_STRING = XInternAtom(dpy, "UTF8_STRING", False);
+              XG_TEXT = XInternAtom(dpy, "TEXT", False);
+            }
+
+          if (((xType == XG_UTF8_STRING) || 
+               (xType == XA_STRING) || 
+               (xType == XG_TEXT)) &&
+              [types containsObject: NSStringPboardType])
+            {
+              NSString *s = [pb stringForType: NSStringPboardType];
+
+              if (xType == XG_UTF8_STRING)
+                {
+                  data = [s dataUsingEncoding: NSUTF8StringEncoding];
+                }
+              else if ((xType == XA_STRING) || (xType == XG_TEXT))
+                {
+                  data = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+                }
+            }
+          // FIXME: Add support for more types. See: xpbs.m
+
+          if (data != nil)
+            {
+              DndClass dnd = xdnd();
+
+              // Send the data to the other process
+              xdnd_selection_send(&dnd, &xEvent.xselectionrequest, 
+                                  (unsigned char *)[data bytes], [data length]);	
+            }
+        }
+        break;
 
 	    // We shouldn't get here unless we forgot to trap an event above
       default:
@@ -1511,7 +1559,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
  * WM is asking us to take the keyboard focus
  */
 - (NSEvent *)_handleTakeFocusAtom: (XEvent)xEvent 
-		       forContext: (NSGraphicsContext *)gcontext
+                       forContext: (NSGraphicsContext *)gcontext
 {
   int key_num;
   NSWindow *key_win;
@@ -1522,7 +1570,8 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	      cWin->number, generic.currentFocusWindow, key_num);
 
   /* Sometimes window managers lose the setinputfocus on the key window
-   * e.g. when ordering out a window with focus then ordering in the key window.   * it might search for a window until one accepts its take focus request.
+   * e.g. when ordering out a window with focus then ordering in the key window.   
+   * it might search for a window until one accepts its take focus request.
    */
   if (key_num == cWin->number)
     cWin->ignore_take_focus = NO;
@@ -2277,4 +2326,45 @@ process_modifier_flags(unsigned int state)
 
 @end
 
+@implementation XGServer (TimeKeeping)
+// Sync time with X server every 10 seconds
+#define MAX_TIME_DIFF 10
+// Regard an X time stamp as valid for half a second
+#define OUT_DATE_TIME_DIFF 0.5
+
+- (void) setLastTime: (Time)last
+{
+  if (generic.lastTimeStamp == 0 
+      || generic.baseXServerTime + MAX_TIME_DIFF * 1000 < last)
+    {
+      // We have not sync'ed with the clock for at least
+      // MAX_TIME_DIFF seconds ... so we do it now.
+      generic.lastTimeStamp = [NSDate timeIntervalSinceReferenceDate];
+      generic.baseXServerTime = last;
+    }
+  else
+    {
+      // Optimisation to compute the new time stamp instead.
+      generic.lastTimeStamp += (last - generic.lastTime) / 1000.0;
+    }
+
+  generic.lastTime = last;
+}
+
+- (Time) lastTime
+{
+  // In the case of activation via DO the lastTime is outdated and cannot be used.
+  if (generic.lastTimeStamp == 0 
+      || ((generic.lastTimeStamp + OUT_DATE_TIME_DIFF)
+          < [NSDate timeIntervalSinceReferenceDate]))
+    {
+      return CurrentTime;
+    }
+  else
+    {
+      return generic.lastTime;
+    }
+}
+
+@end
 

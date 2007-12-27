@@ -8,20 +8,21 @@
    This file is part of the GNUstep project
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
-   version 2 of the License, or (at your option) any later version.
-   
+   version 3 of the License, or (at your option) any later version.
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-   
-   You should have received a copy of the GNU Library General Public
-   License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-   Boston, MA 02111 USA.
-   */
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; see the file COPYING.LIB.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
+*/
 
 #ifndef	INCLUDED_XGGENERIC_H
 #define	INCLUDED_XGGENERIC_H
@@ -77,7 +78,14 @@ struct XGGeneric {
     unsigned    appOwnsMiniwindow:1;
     unsigned    doubleParentWindow:1;
   } flags;
+  // Time of last X event
   Time			lastTime;
+  // Approximate local time for last X event, used to decide 
+  // if the last X event time is still valid.
+  NSTimeInterval lastTimeStamp;
+  // last reference time on X server, used to prevent time drift between
+  // local machine and X server.
+  Time baseXServerTime;
   Time			lastClick;
   Window		lastClickWindow;
   int			lastClickX;

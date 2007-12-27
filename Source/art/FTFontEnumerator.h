@@ -1,12 +1,9 @@
-/* <title>ARTContext</title>
+/*
+   Copyright (C) 2002, 2003, 2004, 2005 Free Software Foundation, Inc.
 
-   <abstract>ART backend drawing context.</abstract>
+   Author:  Alexander Malmberg <alexander@malmberg.org>
 
-   Copyright (C) 2005 Free Software Foundation, Inc.
-
-   Written By: Alexander Malmberg <alexander@malmberg.org> 
-   
-   This file is part of the GNU Objective C User Interface library.
+   This file is part of GNUstep.
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -25,13 +22,17 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef ARTContext_h
-#define ARTContext_h
+#ifndef FTFontEnumerator_h
+#define FTFontEnumerator_h
 
-#include "gsc/GSContext.h"
+#include <GNUstepGUI/GSFontInfo.h>
 
-@interface ARTContext : GSContext
+@class FTFaceInfo;
+
+@interface FTFontEnumerator : GSFontEnumerator
+
++ (FTFaceInfo *) fontWithName: (NSString *)name;
+
 @end
 
 #endif
-
