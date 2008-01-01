@@ -7,14 +7,18 @@
 @include version.texi
 @end ifset
 
-@section Noteworthy changes in version @samp{0.13.0}
+@section Noteworthy changes in version @samp{0.13.1}
 
-Many improvements to the cairo backend. Add DPSshfill for all backends.
-Better handling of X event times.
+Minor improvements.
 
 @c ====================================================================
 @c Keep the next line just below the list of changes in most recent version.
 @ifclear ANNOUNCE-ONLY
+
+@section Noteworthy changes in version @samp{0.13.0}
+
+Many improvements to the cairo backend. Add DPSshfill for all backends.
+Better handling of X event times.
 
 @section Noteworthy changes in version @samp{0.12.0}
 
