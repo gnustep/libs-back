@@ -128,20 +128,24 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
                  extra: (void*)extra
                forMode: (NSString*)mode
 {
+#ifdef    __CYGWIN__
+  if (type == ET_RDESC)
+#else 
   if (type == ET_WINMSG)
+#endif
     {
       MSG	*m = (MSG*)extra;
 
       if (m->message == WM_QUIT)
-	{
-	  [NSApp terminate: nil];
-	  // Exit the program
-	  return;
-	}
+        {
+          [NSApp terminate: nil];
+          // Exit the program
+          return;
+        }
       else
-	{
-	  DispatchMessage(m); 
-	} 
+        {
+          DispatchMessage(m); 
+        } 
     } 
   if (mode != nil)
     [self callback: mode];
