@@ -1,3 +1,8 @@
+2008-01-07 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m (-receivedEvent:...forMode:): Add
+	#ifdef for Cygwin.
+
 2008-01-01  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.13.1
