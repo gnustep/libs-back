@@ -678,7 +678,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 {
   gswindow_device_t	*window;
   gswindow_device_t	*root;
-  NSRect		frame = NSMakeRect(100,100,100,100);
+  NSRect		frame;
   XGCValues		values;
   unsigned long		valuemask;
   XClassHint		classhint;
@@ -690,8 +690,13 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   int			repp = 0;
   int			repx = 0;
   int			repy = 0;
+  BOOL                  onScreen;
+  BOOL                  reparented = NO;
 
   NSDebugLLog(@"Offset", @"Checking offsets for style %d\n", style);
+
+  onScreen = [[NSUserDefaults standardUserDefaults] boolForKey:
+    @"GSBackChecksOffsetsOnScreen"];
 
   root = [self _rootWindowForScreen: defScreen];
   context = [self xrContextForScreen: defScreen];
@@ -703,6 +708,15 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 
   window->win_attrs.flags |= GSWindowStyleAttr;
   window->win_attrs.window_style = style;
+
+  if (onScreen == YES)
+    {
+      frame = NSMakeRect(100,100,100,100);
+    }
+  else
+    {
+      frame = NSMakeRect(-200,100,100,100);
+    }
 
   window->xframe = frame;
   window->type = NSBackingStoreNonretained;
@@ -858,10 +872,11 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
               
               /* In theory, after executing XSync() all events resulting from
                * our window creation and ordering front should be available in
-               * the X event queue.  However, it's possible that a window manager
+               * the X event queue.
+               * However, it's possible that a window manager
                * could send some events after the XSync() has been satisfied,
-               * so if we have not received a visibility notification we can wait
-               * for up to a second for more events.
+               * so if we have not received a visibility notification
+               * we can wait for up to a second for more events.
                */
               until = [NSDate dateWithTimeIntervalSinceNow: 1.0];
               while (XPending(dpy) == 0 && [until timeIntervalSinceNow] > 0.0)
@@ -870,6 +885,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
                   
                   [NSThread sleepUntilDate:
                                 [NSDate dateWithTimeIntervalSinceNow: 0.01]];
+
                   DESTROY(pool);
                 }
               if (XPending(dpy) == 0)
@@ -899,7 +915,17 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
                 repp = xEvent.xreparent.parent;
                 repx = xEvent.xreparent.x;
                 repy = xEvent.xreparent.y;
+                reparented = YES;
                 break;
+            }
+          if (onScreen == NO && reparented == YES)
+            {
+              /* If we are not testing on screen, the window will never
+               * become visible, so we only wait for it to be reparented
+               * and hope that the reparenting indicates completion of
+               * an window decoration.
+               */
+              break;
             }
         }
     }
@@ -1054,7 +1080,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
                   xEvent.type, xEvent.xany.window);
       if (xEvent.xany.window != window->ident)
         {
-            continue;
+          continue;
         }
     }
   if (o->known == NO)
