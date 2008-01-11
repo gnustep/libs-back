@@ -1,3 +1,9 @@
+2008-01-11 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/XGServerWindow.m:
+	Try to find window offsets using off-screen windows unless the
+	GSBackChecksOffsetsOnScreen user default is set to YES.
+
 2008-01-07 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/WIN32Server.m (-receivedEvent:...forMode:): Add
