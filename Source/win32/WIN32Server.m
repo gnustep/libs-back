@@ -1111,15 +1111,13 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   return NO;
 }
 
-- (void) windowdevice: (int) winNum
+- (void) setWindowdevice: (int)win forContext: (NSGraphicsContext *)ctxt
 {
-  NSGraphicsContext *ctxt;
   RECT rect;
   float h, l, r, t, b;
   NSWindow *window;
 
   NSDebugLLog(@"WTrace", @"windowdevice: %d", winNum);
-  ctxt = GSCurrentContext();
   window = GSWindowWithNumber(winNum);
   GetClientRect((HWND)winNum, &rect);
   h = rect.bottom - rect.top;

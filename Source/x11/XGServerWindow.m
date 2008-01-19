@@ -2541,13 +2541,12 @@ NSLog(@"styleoffsets ... guessing offsets\n");
 
 /**
    Make sure we have the most up-to-date window information and then
-   make sure the current context has our new information
+   make sure the context has our new information
 */
-- (void) windowdevice: (int)win
+- (void) setWindowdevice: (int)win forContext: (NSGraphicsContext *)ctxt
 {
   unsigned width, height;
   gswindow_device_t *window;
-  NSGraphicsContext *ctxt;
   float	t, b, l, r;
 
   NSDebugLLog(@"XGTrace", @"DPSwindowdevice: %d ", win);
@@ -2572,7 +2571,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
       XFreePixmap(dpy, window->buffer);
       window->buffer = 0;
       if (window->alpha_buffer)
-	XFreePixmap (dpy, window->alpha_buffer);
+        XFreePixmap (dpy, window->alpha_buffer);
       window->alpha_buffer = 0;
     }
 
@@ -2584,7 +2583,6 @@ NSLog(@"styleoffsets ... guessing offsets\n");
       [self _createBuffer: window];
     }
 
-  ctxt = GSCurrentContext();
   [self styleoffsets: &l : &r : &t : &b
 		    : window->win_attrs.window_style : window->ident];
   GSSetDevice(ctxt, window, l, NSHeight(window->xframe) + b);

@@ -72,6 +72,16 @@ fpfloat(FILE *stream, float f)
 
 @implementation GSStreamContext 
 
++ (Class) GStateClass
+{
+  return [GSStreamGState class];
+}
+
++ (BOOL) handlesPS
+{
+  return YES;
+}
+
 - (void) dealloc
 {
   if (gstream)
@@ -81,7 +91,10 @@ fpfloat(FILE *stream, float f)
 
 - initWithContextInfo: (NSDictionary *)info
 {
-  [super initWithContextInfo: info];
+  self = [super initWithContextInfo: info];
+  if (!self)
+    return nil;
+
   if (info && [info objectForKey: @"NSOutputFile"])
     {
       NSString *path = [info objectForKey: @"NSOutputFile"];
@@ -93,21 +106,18 @@ fpfloat(FILE *stream, float f)
 #endif
       if (!gstream)
         {
-	  NSDebugLLog(@"GSContext", @"%@: Could not open printer file %@",
-		      DPSinvalidfileaccess, path);
-	  return nil;
-	}
+          NSDebugLLog(@"GSContext", @"%@: Could not open printer file %@",
+                      DPSinvalidfileaccess, path);
+          return nil;
+        }
     }
   else
     {
       NSDebugLLog(@"GSContext", @"%@: No stream file specified",
-		  DPSconfigurationerror);
+                  DPSconfigurationerror);
+      DESTROY(self);
       return nil;
     }
-
-  /* Create a default gstate */
-  gstate = [[GSStreamGState allocWithZone: [self zone]] 
-	      initWithDrawContext: self];
 
   return self;
 }

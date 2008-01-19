@@ -64,24 +64,13 @@ static int byte_order(void)
   [FTFontInfo initializeBackend];
 }
 
-- (id) initWithContextInfo: (NSDictionary *)info
++ (Class) GStateClass
 {
-  NSString *contextType;
-  contextType = [info objectForKey:
-    NSGraphicsContextRepresentationFormatAttributeName];
+  return [ARTGState class];
+}
 
-  self = [super initWithContextInfo: info];
-  if (contextType)
-    {
-      /* Most likely this is a PS or PDF context, so just return what
-	 super gave us
-	 */
-      return self;
-    }
-
-  /* Create a default gstate */
-  gstate = [[ARTGState allocWithZone: [self zone]] initWithDrawContext: self];
-
+- (void) setupDrawInfo
+{
 #ifdef RDS
   {
     RDSServer *s = (RDSServer *)server;
@@ -110,21 +99,21 @@ static int byte_order(void)
     visualInfo = XGetVisualInfo(d, VisualClassMask, &template, &numMatches);
     if (!visualInfo)
       {
-	template.class = TrueColor;
-	visualInfo = XGetVisualInfo(d, VisualClassMask, &template, &numMatches);
+        template.class = TrueColor;
+        visualInfo = XGetVisualInfo(d, VisualClassMask, &template, &numMatches);
       }
     if (visualInfo)
       {
-	visual = visualInfo->visual;
-	bpp = visualInfo->depth;
-	XFree(visualInfo);
+        visual = visualInfo->visual;
+        bpp = visualInfo->depth;
+        XFree(visualInfo);
       }
     else
       {
-	visual = DefaultVisual(d, DefaultScreen(d));
-	bpp = DefaultDepth(d, DefaultScreen(d));
+        visual = DefaultVisual(d, DefaultScreen(d));
+        bpp = DefaultDepth(d, DefaultScreen(d));
       }
-
+    
     i = XCreateImage(d, visual, bpp, ZPixmap, 0, NULL, 8, 8, 8, 0);
     bpp = i->bits_per_pixel;
     XDestroyImage(i);
@@ -136,11 +125,11 @@ static int byte_order(void)
       int us = byte_order(); /* True iff we're big-endian.  */
       int them = ImageByteOrder(d); /* True iff the server is big-endian.  */
       if (us != them)
-	{
-	  visual->red_mask = flip_bytes(visual->red_mask);
-	  visual->green_mask = flip_bytes(visual->green_mask);
-	  visual->blue_mask = flip_bytes(visual->blue_mask);
-	}
+        {
+          visual->red_mask = flip_bytes(visual->red_mask);
+          visual->green_mask = flip_bytes(visual->green_mask);
+          visual->blue_mask = flip_bytes(visual->blue_mask);
+        }
     }
 
     /* Only returns if the visual was usable.  */
@@ -148,8 +137,6 @@ static int byte_order(void)
 			       visual->blue_mask, bpp);
   }
 #endif
-
-  return self;
 }
 
 - (void) flushGraphics
@@ -183,6 +170,7 @@ static int byte_order(void)
 @implementation ARTContext (ops)
 - (void) GSSetDevice: (void*)device : (int)x : (int)y
 {
+  [self setupDrawInfo];
   [(ARTGState *)gstate GSSetDevice: device : x : y];
 }
 
