@@ -1111,7 +1111,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   return NO;
 }
 
-- (void) setWindowdevice: (int)win forContext: (NSGraphicsContext *)ctxt
+- (void) setWindowdevice: (int)winNum forContext: (NSGraphicsContext *)ctxt
 {
   RECT rect;
   float h, l, r, t, b;

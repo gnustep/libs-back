@@ -1,5 +1,10 @@
 2008-01-19 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/win32/WIN32Server.m (-setWindowdevice:forContext:):
+	Correct wrong parameter name.
+	
+2008-01-19 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/x11/XGServerWindow.m: (-setWindowdevice:forContext:),
 	* Source/win32/WIN32Server.m (-setWindowdevice:forContext:):
 	Method replaces windowdevice:.
