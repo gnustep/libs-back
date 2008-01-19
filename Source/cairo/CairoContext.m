@@ -58,19 +58,14 @@
   [GSFontInfo setDefaultClass: [CairoFontInfo class]];
 }
 
-- (id) initWithContextInfo: (NSDictionary *)info
++ (Class) GStateClass
 {
-  // Don't allow super to handle PS case.
-  self = [super initWithContextInfo: nil];
-  if (!self)
-    return self;
+  return [CairoGState class];
+}
 
-  // Now save the info
-  ASSIGN(context_info, info);
-
-  gstate = [[CairoGState allocWithZone: [self zone]] initWithDrawContext: self];
-
-  return self;
++ (BOOL) handlesPS
+{
+  return YES;
 }
 
 - (void) flushGraphics

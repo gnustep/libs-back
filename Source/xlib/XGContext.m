@@ -131,24 +131,9 @@
   [GSFontEnumerator setDefaultClass: fontEnumerator];
 }
 
-- (id) initWithContextInfo: (NSDictionary *)info
++ (Class) GStateClass
 {
-  NSString *contextType;
-  contextType = [info objectForKey: 
-		  NSGraphicsContextRepresentationFormatAttributeName];
-
-  self = [super initWithContextInfo: info];
-  if (contextType)
-    {
-      /* Most likely this is a PS or PDF context, so just return what
-	 super gave us */
-      return self;
-    }
-
-  /* Create a default gstate */
-  gstate = [[XGGState allocWithZone: [self zone]] initWithDrawContext: self];
-
-  return self;
+  return [XGGState class];
 }
 
 - (void) flushGraphics

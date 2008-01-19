@@ -155,6 +155,16 @@ static NSMapTable *gtable;
   NSMapRemove(gtable, (void *)(uintptr_t)index);
 }
 
++ (Class) GStateClass
+{
+  return [GSGState class];
+}
+
++ (BOOL) handlesPS
+{
+  return NO;
+}
+
 - (id) initWithContextInfo: (NSDictionary *)info
 {
   NSString *contextType;
@@ -162,24 +172,39 @@ static NSMapTable *gtable;
 
   contextType = [info objectForKey: 
 		  NSGraphicsContextRepresentationFormatAttributeName];
-  if ([self isMemberOfClass: [GSStreamContext class]] == NO
-      && contextType && [contextType isEqual: NSGraphicsContextPSFormat])
+  if (([isa handlesPS] == NO) && contextType 
+      && [contextType isEqual: NSGraphicsContextPSFormat])
     {
       /* Don't call self, since we aren't initialized */
       [super dealloc];
       return [[GSStreamContext allocWithZone: z] initWithContextInfo: info];
     }
 
-  /* A context is only associated with one server. Do not retain
-     the server, however */
-  server = GSCurrentServer();
+  self = [super initWithContextInfo: info];
+  if (self != nil)
+    {
+      id dest;
 
-  /* Initialize lists and stacks */
-  opstack =  NSZoneMalloc(z, sizeof(GSIArray_t));
-  GSIArrayInitWithZoneAndCapacity((GSIArray)opstack, z, 2);
-  gstack =  NSZoneMalloc(z, sizeof(GSIArray_t));
-  GSIArrayInitWithZoneAndCapacity((GSIArray)gstack, z, 2);
-  [super initWithContextInfo: info];
+      /* Initialize lists and stacks */
+      opstack =  NSZoneMalloc(z, sizeof(GSIArray_t));
+      GSIArrayInitWithZoneAndCapacity((GSIArray)opstack, z, 2);
+      gstack =  NSZoneMalloc(z, sizeof(GSIArray_t));
+      GSIArrayInitWithZoneAndCapacity((GSIArray)gstack, z, 2);
+      /* Create a default gstate */
+      gstate = [[[isa GStateClass] allocWithZone: z] 
+                   initWithDrawContext: self];
+
+      // Special handling for window drawing
+      dest = [info objectForKey: NSGraphicsContextDestinationAttributeName];
+      if ((dest != nil) && [dest isKindOfClass: [NSWindow class]])
+        {
+          /* A context is only associated with one server. Do not retain
+             the server, however */
+          server = GSCurrentServer();
+          [server setWindowdevice: [(NSWindow*)dest windowNumber] 
+                  forContext: self];
+        }
+    }
 
   return self;
 }

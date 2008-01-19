@@ -45,14 +45,9 @@
   [GSFontInfo setDefaultClass: [WIN32FontInfo class]];
 }
 
-- (id) initWithContextInfo: (NSDictionary *)info
++ (Class) GStateClass
 {
-  [super initWithContextInfo: info];
-
-  /* Create a default gstate */
-  gstate = [[WIN32GState allocWithZone: [self zone]] initWithDrawContext: self];
-
-  return self;
+  return [WIN32GState class];
 }
 
 - (void)flushGraphics
