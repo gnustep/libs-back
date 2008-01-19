@@ -1,3 +1,20 @@
+2008-01-19 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m: (-setWindowdevice:forContext:),
+	* Source/win32/WIN32Server.m (-setWindowdevice:forContext:):
+	Method replaces windowdevice:.
+	* Source/gsc/GSContext.m,
+	* Source/gsc/GSStreamContext.m,
+        * Source/art/ARTContext.m,
+	* Source/cairo/CairoContext.m,
+	* Source/xlib/XGContext.m,
+	* Source/winlib/WIN32Context.m (+GStateClass, +handlesPS):
+	New methods to simplify the implementation of
+	initWithContextInfo:. In that method call
+	setWindowdevice:forContext: when the destination is a window.
+	* Source/art/ARTContext.m (-setupDrawInfo): New method, code comes
+	from old initWithContextInfo:, now called in GSSetDevice:::.
+		
 2008-01-11 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/XGServerWindow.m:
