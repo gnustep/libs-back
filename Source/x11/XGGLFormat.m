@@ -33,7 +33,6 @@
 #include <GNUstepGUI/GSDisplayServer.h>
 #include "x11/XGServer.h"
 #include "x11/XGOpenGL.h"
-
 #include <X11/Xlib.h>
 
 #define MAKE_DISPLAY(dpy) Display *dpy;\
@@ -42,145 +41,158 @@
 
 
 @implementation XGGLPixelFormat
-- (void)getValues:(long *)vals 
-     forAttribute:(NSOpenGLPixelFormatAttribute)attrib 
- forVirtualScreen:(int)screen
-  /* FIXME:
+
+/* FIXME:
      we assume that the ABI of NSOpenGLPixelFormatAttribute matches the ABI 
-     of glX.
-     Apparently, This is true for the most usefull attributes.
-  */
+     of glX. Apparently, this is true for the most useful attributes.
+*/
+
+- (void) getValues: (GLint *)vals 
+      forAttribute: (NSOpenGLPixelFormatAttribute)attrib 
+  forVirtualScreen: (GLint)screen
 {
   MAKE_DISPLAY(dpy);
-  NSAssert(((GSglxMinorVersion (dpy) >= 3) 
-	    ? (void *)conf.tab : (void *)conf.visual)
-	   != NULL
-	   && n_elem > 0, NSInternalInconsistencyException);
 
-  if (GSglxMinorVersion (dpy) >= 3)
-    glXGetFBConfigAttrib(dpy, conf.tab[0], attrib, (int *)vals);
+  NSAssert(((GSglxMinorVersion (dpy) >= 3) ? (void *)configurations.fbconfig : (void *)configurations.visualinfo) != NULL
+	        && configurationCount > 0,
+            NSInternalInconsistencyException);
+
+  if (GSglxMinorVersion(dpy) >= 3)
+    {
+      glXGetFBConfigAttrib(dpy, configurations.fbconfig[0], attrib, vals);
+    }
   else
-    glXGetConfig(dpy, conf.visual, attrib, (int *)vals);
+    {
+      glXGetConfig(dpy, configurations.visualinfo, attrib, vals);
+    }
 }
 
 - (id)initWithAttributes:(NSOpenGLPixelFormatAttribute *)attribs
 {
-  int v1, v2;
   int AccumSize;
   NSOpenGLPixelFormatAttribute *ptr = attribs;
   NSMutableData *data = [NSMutableData data];
   MAKE_DISPLAY(dpy);
 
-#define append(a, b) do {v1 = a;v2 = b;[data appendBytes: &v1 length: sizeof(v1)];\
+#define append(a, b) do {int v1 = a; int v2 = b; [data appendBytes: &v1 length: sizeof(v1)];\
   [data appendBytes: &v2 length: sizeof(v2)];} while (0)
-#define append1(a) do {v1 = a;[data appendBytes: &v1 length: sizeof(v1)];} while (0)
+
+#define append1(a) do {int v1 = a; [data appendBytes: &v1 length: sizeof(v1)];} while (0)
 
   if (GSglxMinorVersion (dpy) < 3)
     {
       append1 (GLX_RGBA);
     }
+  else
+    {
+      append(GLX_RENDER_TYPE, GLX_RGBA_BIT);
+      append(GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT|GLX_PIXMAP_BIT);
+      //  append(GLX_X_RENDERABLE,YES);
+      //append(GLX_X_VISUAL_TYPE,GLX_TRUE_COLOR);
+    }
 
   while (*ptr)
     {
       switch(*ptr)
-	{
-	// it means all the same on GLX - there is no diffrent here
-	case NSOpenGLPFASingleRenderer:
-	case NSOpenGLPFAAllRenderers:
-	case NSOpenGLPFAAccelerated:
-	  append(GLX_USE_GL,YES);
-	  break;
-	case  NSOpenGLPFADoubleBuffer:
-	  append(GLX_DOUBLEBUFFER, YES);
-	  break;
-	case NSOpenGLPFAStereo:
-	  append(GLX_STEREO, YES);
-	  break;
-	case NSOpenGLPFAAuxBuffers:
-	  ptr++;
-	  append(GLX_AUX_BUFFERS, *ptr);
-	  break;
-	case NSOpenGLPFAColorSize:
-	  ptr++;
-	  append(GLX_RED_SIZE, *ptr);
-	  append(GLX_GREEN_SIZE, *ptr);
-	  append(GLX_BLUE_SIZE, *ptr);
-	  break;
-	case NSOpenGLPFAAlphaSize:
-	  ptr++;
-	  append(GLX_ALPHA_SIZE, *ptr);
-	  break;
-	case NSOpenGLPFADepthSize:
-	  ptr++;
-	  append(GLX_DEPTH_SIZE, *ptr);
-	  break;
-	case NSOpenGLPFAStencilSize:
-	  ptr++;
-	  append(GLX_STENCIL_SIZE, *ptr);
-	  break;
-	case NSOpenGLPFAAccumSize:
-	  ptr++;
-	  //has to been tested - I did it in that way....
-	  //FIXME?  I don't understand...
-	  //append(GLX_ACCUM_RED_SIZE, *ptr/3);
-	  //append(GLX_ACCUM_GREEN_SIZE, *ptr/3);
-	  //append(GLX_ACCUM_BLUE_SIZE, *ptr/3);
-	AccumSize=*ptr;  
-	switch (AccumSize)
-		{
-		case 8:
-		 	append(GLX_ACCUM_RED_SIZE, 3);
-		 	append(GLX_ACCUM_GREEN_SIZE, 3);
-		 	append(GLX_ACCUM_BLUE_SIZE, 2);
-		 	append(GLX_ACCUM_ALPHA_SIZE, 0);
-		 	break;
-		case 15:
-		case 16:
-		 	append(GLX_ACCUM_RED_SIZE, 5);
-		 	append(GLX_ACCUM_GREEN_SIZE, 5);
-		 	append(GLX_ACCUM_BLUE_SIZE, 5);
-		 	append(GLX_ACCUM_ALPHA_SIZE, 0);
-			break;
-		case 24:
-			append(GLX_ACCUM_RED_SIZE, 8);
-			append(GLX_ACCUM_GREEN_SIZE, 8);
-			append(GLX_ACCUM_BLUE_SIZE, 8);
-			append(GLX_ACCUM_ALPHA_SIZE, 0);
-			break;
-		case 32:
-			append(GLX_ACCUM_RED_SIZE, 8);
-			append(GLX_ACCUM_GREEN_SIZE, 8);
-			append(GLX_ACCUM_BLUE_SIZE, 8);
-			append(GLX_ACCUM_ALPHA_SIZE, 8);
-			break;
-		}
-		break;
-	//can not be handle by X11
-	case NSOpenGLPFAMinimumPolicy:
-	  break;
-	// can not be handle by X11
-	case NSOpenGLPFAMaximumPolicy:
-	  break;
+        {
+          // it means all the same on GLX - there is no diffrent here
+          case NSOpenGLPFASingleRenderer:
+          case NSOpenGLPFAAllRenderers:
+          case NSOpenGLPFAAccelerated:
+            if (GSglxMinorVersion(dpy) < 3)
+              append(GLX_USE_GL,YES);
+            break;
+          case  NSOpenGLPFADoubleBuffer:
+            append(GLX_DOUBLEBUFFER, YES);
+            break;
+          case NSOpenGLPFAStereo:
+            append(GLX_STEREO, YES);
+            break;
+          case NSOpenGLPFAAuxBuffers:
+            ptr++;
+            append(GLX_AUX_BUFFERS, *ptr);
+            break;
+          case NSOpenGLPFAColorSize:
+            ptr++;
+            append(GLX_RED_SIZE, *ptr);
+            append(GLX_GREEN_SIZE, *ptr);
+            append(GLX_BLUE_SIZE, *ptr);
+            break;
+          case NSOpenGLPFAAlphaSize:
+            ptr++;
+            append(GLX_ALPHA_SIZE, *ptr);
+            break;
+          case NSOpenGLPFADepthSize:
+            ptr++;
+            append(GLX_DEPTH_SIZE, *ptr);
+            break;
+          case NSOpenGLPFAStencilSize:
+            ptr++;
+            append(GLX_STENCIL_SIZE, *ptr);
+            break;
+          case NSOpenGLPFAAccumSize:
+            ptr++;
+            //has to been tested - I did it in that way....
+            //FIXME?  I don't understand...
+            //append(GLX_ACCUM_RED_SIZE, *ptr/3);
+            //append(GLX_ACCUM_GREEN_SIZE, *ptr/3);
+            //append(GLX_ACCUM_BLUE_SIZE, *ptr/3);
+            AccumSize=*ptr;  
+            switch (AccumSize)
+              {
+                case 8:
+                  append(GLX_ACCUM_RED_SIZE, 3);
+                  append(GLX_ACCUM_GREEN_SIZE, 3);
+                  append(GLX_ACCUM_BLUE_SIZE, 2);
+                  append(GLX_ACCUM_ALPHA_SIZE, 0);
+                  break;
+                case 15:
+                case 16:
+                  append(GLX_ACCUM_RED_SIZE, 5);
+                  append(GLX_ACCUM_GREEN_SIZE, 5);
+                  append(GLX_ACCUM_BLUE_SIZE, 5);
+                  append(GLX_ACCUM_ALPHA_SIZE, 0);
+                  break;
+                case 24:
+                  append(GLX_ACCUM_RED_SIZE, 8);
+                  append(GLX_ACCUM_GREEN_SIZE, 8);
+                  append(GLX_ACCUM_BLUE_SIZE, 8);
+                  append(GLX_ACCUM_ALPHA_SIZE, 0);
+                  break;
+                case 32:
+                  append(GLX_ACCUM_RED_SIZE, 8);
+                  append(GLX_ACCUM_GREEN_SIZE, 8);
+                  append(GLX_ACCUM_BLUE_SIZE, 8);
+                  append(GLX_ACCUM_ALPHA_SIZE, 8);
+                  break;
+              }
+            break;
+          //can not be handle by X11
+          case NSOpenGLPFAMinimumPolicy:
+            break;
+          // can not be handle by X11
+          case NSOpenGLPFAMaximumPolicy:
+            break;
 
-	  //FIXME all of this stuff...
-	case NSOpenGLPFAOffScreen:
-	case NSOpenGLPFAFullScreen:
-	case NSOpenGLPFASampleBuffers:
-	case NSOpenGLPFASamples:
-	case NSOpenGLPFAAuxDepthStencil:
-	case NSOpenGLPFARendererID:
-	case NSOpenGLPFANoRecovery:
-	case NSOpenGLPFAClosestPolicy:
-	case NSOpenGLPFARobust:
-	case NSOpenGLPFABackingStore:
-	case NSOpenGLPFAMPSafe:
-	case NSOpenGLPFAWindow:
-	case NSOpenGLPFAMultiScreen:
-	case NSOpenGLPFACompliant:
-	case NSOpenGLPFAScreenMask:
-	case NSOpenGLPFAVirtualScreenCount:
-	  break;
-	}
+          //FIXME all of this stuff...
+          case NSOpenGLPFAOffScreen:
+          case NSOpenGLPFAFullScreen:
+          case NSOpenGLPFASampleBuffers:
+          case NSOpenGLPFASamples:
+          case NSOpenGLPFAAuxDepthStencil:
+          case NSOpenGLPFARendererID:
+          case NSOpenGLPFANoRecovery:
+          case NSOpenGLPFAClosestPolicy:
+          case NSOpenGLPFARobust:
+          case NSOpenGLPFABackingStore:
+          case NSOpenGLPFAMPSafe:
+          case NSOpenGLPFAWindow:
+          case NSOpenGLPFAMultiScreen:
+          case NSOpenGLPFACompliant:
+          case NSOpenGLPFAScreenMask:
+          case NSOpenGLPFAVirtualScreenCount:
+            break;
+        }
       ptr ++;
     }
 
@@ -188,58 +200,75 @@
 
   //FIXME, what screen number ?
   if (GSglxMinorVersion (dpy) >= 3)
-    conf.tab = glXChooseFBConfig(dpy, DefaultScreen(dpy), [data mutableBytes],
-				 &n_elem);
+    {
+      configurations.fbconfig = glXChooseFBConfig(dpy, DefaultScreen(dpy), 
+                                                  [data mutableBytes], 
+                                                  &configurationCount);
+    }
   else
-    conf.visual = glXChooseVisual(dpy, DefaultScreen(dpy),
-				  [data mutableBytes]);
+    {
+      configurations.visualinfo = glXChooseVisual(dpy, DefaultScreen(dpy), 
+                                                  [data mutableBytes]);
+    }
   
-  if (((GSglxMinorVersion (dpy) >= 3) 
-	? (void *)conf.tab : (void *)conf.visual)
-       == NULL)
+  if (((GSglxMinorVersion (dpy) >= 3) ? (void *)configurations.fbconfig : 
+       (void *)configurations.visualinfo) == NULL)
     {
       NSDebugMLLog(@"GLX", @"no pixel format found matching what is required");
       RELEASE(self);
+
       return nil;
     }
   else
     {
+      NSDebugMLLog(@"GLX", @"We found %d pixel formats", configurationCount);
       
-      NSDebugMLLog(@"GLX", @"We found %d pixel formats", n_elem);
-#if 0
-      if (GSglxMinorVersion (dpy) >= 3)
-	{	
-	  int i;
-	  for (i = 0; i < n_elem; ++i)
-	    {
-	      int val;
-	      NSDebugMLLog(@"GLX", @"inspecting %dth", i+1);
-	      glXGetFBConfigAttrib(dpy, conf.tab[i], GLX_BUFFER_SIZE, &val);
-	      NSDebugMLLog(@"GLX", @"buffer size %d", val);
-	      
-	      
-	      glXGetFBConfigAttrib(dpy, conf.tab[i], GLX_DOUBLEBUFFER, &val);
-	      NSDebugMLLog(@"GLX", @"double buffer %d", val);
-	      
-	      glXGetFBConfigAttrib(dpy, conf.tab[i], GLX_DEPTH_SIZE, &val);
-	      NSDebugMLLog(@"GLX", @"depth size %d", val);
-	      
-	    }
-	}
-      else
-	{
-	  glXGetConfig(dpy, conf.visual, GLX_BUFFER_SIZE, &val);
-	  NSDebugMLLog(@"GLX", @"buffer size %d", val);
-	  
-	  
-	  glXGetConfig(dpy, conf.visual, GLX_DOUBLEBUFFER, &val);
-	  NSDebugMLLog(@"GLX", @"double buffer %d", val);
-	  
-	  glXGetConfig(dpy, conf.visual, GLX_DEPTH_SIZE, &val);
-	  NSDebugMLLog(@"GLX", @"depth size %d", val);
-	}
-#endif      
       return self;
+    }
+}
+
+- (XVisualInfo *)xvinfo
+{
+  MAKE_DISPLAY(dpy);
+
+  if (GSglxMinorVersion(dpy) >= 3)
+    {
+      return glXGetVisualFromFBConfig(dpy, configurations.fbconfig[0]);
+    }
+  else
+    {
+      return configurations.visualinfo;
+    }
+}
+
+- (GLXContext)createGLXContext: (XGGLContext *)share
+{
+  MAKE_DISPLAY(dpy);
+
+  if (GSglxMinorVersion(dpy) >= 3)
+    {
+      return glXCreateNewContext(dpy, configurations.fbconfig[0], 
+                                 GLX_RGBA_TYPE, [share glxcontext], YES);
+    }
+  else
+    {
+      return glXCreateContext(dpy, configurations.visualinfo, 
+                              [share glxcontext], GL_TRUE);
+    }
+}
+
+- (GLXWindow) drawableForWindow: (Window)xwindowid
+{
+  MAKE_DISPLAY(dpy);
+
+  if (GSglxMinorVersion(dpy) >= 3)
+    {
+      return glXCreateWindow(dpy, configurations.fbconfig[0], 
+                             xwindowid, NULL);
+    }
+  else
+    {
+      return xwindowid;
     }
 }
 
@@ -248,17 +277,22 @@
   //FIXME 	
   //are we sure that X Connection is still up here ?
   MAKE_DISPLAY(dpy);
-  if (GSglxMinorVersion (dpy) >= 3)
-    XFree (conf.tab);
+
+  if (GSglxMinorVersion(dpy) >= 3)
+    {
+      XFree(configurations.fbconfig);
+    }
   else
-    XFree (conf.visual);
+    {
+      XFree(configurations.visualinfo);
+    }
+
   NSDebugMLLog(@"GLX", @"deallocation");
   [super dealloc];
 }
 
 - (int)numberOfVirtualScreens
 {
-  //  [self notImplemented: _cmd];
   //FIXME
   //This looks like a reasonable value to return...
   return 1;
