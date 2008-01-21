@@ -42,32 +42,44 @@
 
 @interface XGGLContext : NSOpenGLContext
 {
-  GLXContext		glx_context;
-  GLXWindow		glx_drawable;
-  XGXSubWindow		*xsubwin;
-  XGGLPixelFormat 	*format;
+  GLXContext        glx_context;
+  GLXWindow         glx_drawable;
+  XGXSubWindow     *xSubWindow;
+  XGGLPixelFormat  *pixelFormat;
 }
+
+- (GLXContext)glxcontext;
+
 @end
 
 @interface XGGLPixelFormat : NSOpenGLPixelFormat
 {
-@public
-  union {
-    GLXFBConfig  *tab;
-    XVisualInfo  *visual;
-  } conf;
-  int		n_elem;
+  @public
+  union
+    {
+      GLXFBConfig  *fbconfig;
+      XVisualInfo  *visualinfo;
+    } configurations;
+
+  int configurationCount;
 }
+
+- (XVisualInfo *)xvinfo;
+- (GLXContext)createGLXContext: (XGGLContext *)share;
+- (GLXWindow) drawableForWindow: (Window)xwindowid;
+
 @end
 
 static inline int
 GSglxMinorVersion(Display *dpy)
 {
   int major, minor;
-  Bool result; 
-  result = glXQueryVersion (dpy, &major, &minor);
-  if (result == False)
-    return -1;
+
+  if (False == glXQueryVersion(dpy, &major, &minor))
+    {
+      return -1;
+    }
+
   return minor;
 }
 

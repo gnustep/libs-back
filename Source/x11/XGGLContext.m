@@ -34,7 +34,6 @@
 #include <AppKit/NSWindow.h>
 #include "x11/XGServerWindow.h"
 #include "x11/XGOpenGL.h"
-
 #include <X11/Xlib.h>
 
 //FIXME
@@ -45,40 +44,50 @@
 
 @interface XGXSubWindow : NSObject
 {
-@public
-  Window 	winid;
-  NSView	*attached;
+  @public
+  Window  xwindowid;
+  NSView *attached;
 }
+
++ subwindowOnView:(NSView *)view visualinfo:(XVisualInfo *)xVisualInfo;
+
 - (void) update;
-+ subwindowOnView: (NSView *) view;
+
 @end
 
-@implementation XGXSubWindow 
-/*We assume that the current context is the same and is an XGServer
- */
-- initWithView: (NSView *) view
+@implementation XGXSubWindow
+
+//We assume that the current context is the same and is an XGServer
+- initWithView:(NSView *)view visualinfo:(XVisualInfo *)xVisualInfo
 {
   NSRect rect;
   gswindow_device_t *win_info;
   XGServer *server;
-  NSWindow *win;
+  NSWindow *window;
   int x, y, width, height;
-  [super init];
+  int mask;
+  XSetWindowAttributes window_attributes;
 
-  win = [view window];
-  NSAssert(win, @"request of an X window attachment on a view that is not on a NSWindow");
+  self = [super init];
+  if (!self)
+    return nil;
+
+  window = [view window];
+  NSAssert(window, @"request of an X window attachment on a view that is not on a NSWindow");
 
   if ([view isRotatedOrScaledFromBase])
-    [NSException raise: NSInvalidArgumentException
-		 format: @"Cannot attach an Xwindow to a view that is rotated or scaled"];
+    {
+      [NSException raise: NSInvalidArgumentException
+                   format: @"Cannot attach an Xwindow to a view that is rotated or scaled"];
+    }
   
-  server = (XGServer *)GSServerForWindow(win);
+  server = (XGServer *)GSServerForWindow(window);
   NSAssert(server != nil, NSInternalInconsistencyException);
 
   NSAssert([server isKindOfClass: [XGServer class]], 
-	   NSInternalInconsistencyException);
+           NSInternalInconsistencyException);
 
-  win_info = [XGServer _windowWithTag: [win windowNumber]];
+  win_info = [XGServer _windowWithTag: [window windowNumber]];
   NSAssert(win_info, NSInternalInconsistencyException);
 
   if ([server handlesWindowDecorations] == YES)
@@ -88,7 +97,7 @@
        * we must therefore use content view coordinates.
        */
       rect = [view convertRect: [view bounds]
-		        toView: [[view window] contentView]];
+                   toView: [[view window] contentView]];
     }
   else
     {
@@ -104,32 +113,30 @@
   width = NSWidth(rect);
   height = NSHeight(rect);
 
-  
-//   winid = XCreateWindow(win_info->display, DefaultRootWindow(win_info->display),
-// 			x, y, width, height, 0, 
-// 			CopyFromParent, InputOutput, CopyFromParent, 0, NULL);
+  window_attributes.border_pixel = 255;
+  window_attributes.colormap = XCreateColormap(win_info->display, 
+                                               win_info->ident,
+                                               xVisualInfo->visual, AllocNone);
+  window_attributes.event_mask = StructureNotifyMask;
 
-  winid = XCreateWindow(win_info->display, win_info->ident,
-			x, y, width, height, 0, 
-			CopyFromParent, InputOutput, CopyFromParent, 0, NULL);
+  mask = CWBorderPixel | CWColormap | CWEventMask;
 
+  xwindowid = XCreateWindow(win_info->display, win_info->ident,
+                            x, y, width, height, 0, 
+                            CopyFromParent, InputOutput, xVisualInfo->visual, 
+                            mask, &window_attributes);
 
-//   winid = XCreateSimpleWindow(win_info->display, win_info->ident,
-// 			x, y, width, height, 2, 
-// 			0, 1);
-
-
-  XMapWindow(win_info->display, winid);
-  
+  XMapWindow(win_info->display, xwindowid);
 
   attached = view;
+
   return self;
 }
 
 - (void) map
 {
   MAKE_DISPLAY(dpy);
-  XMapWindow(dpy, winid);
+  XMapWindow(dpy, xwindowid);
 }
 
 - (void) detach
@@ -138,7 +145,7 @@
   //I assume that the current server is correct. 
   MAKE_DISPLAY(dpy);
   attached = nil;
-  XDestroyWindow(dpy, winid);
+  XDestroyWindow(dpy, xwindowid);
 }
 
 - (void) update
@@ -148,6 +155,7 @@
   GSDisplayServer *server;
   NSWindow *win;
   int x, y, width, height;
+
   NSAssert(attached, NSInternalInconsistencyException);
 
   win = [attached window];
@@ -192,7 +200,7 @@
   height = NSHeight(rect);
 
   
-  XMoveResizeWindow(win_info->display, winid,x, y, width, height);
+  XMoveResizeWindow(win_info->display, xwindowid,x, y, width, height);
 }
 
 - (void) dealloc
@@ -202,9 +210,9 @@
   [super dealloc];
 }
 
-+ subwindowOnView: (NSView *) view
++ subwindowOnView:(NSView *)view visualinfo:(XVisualInfo *)xVisualInfo
 {
-  XGXSubWindow *win = [[self alloc] initWithView: view];
+  XGXSubWindow *win = [[self alloc] initWithView: view visualinfo: xVisualInfo];
 
   return AUTORELEASE(win);
 }
@@ -221,10 +229,14 @@ static XGGLContext *currentGLContext;
 {
   MAKE_DISPLAY(dpy);
 
-  if (GSglxMinorVersion (dpy) >= 3)
-    glXMakeContextCurrent(dpy, None, None, NULL);
+  if (GSglxMinorVersion(dpy) >= 3)
+    {
+      glXMakeContextCurrent(dpy, None, None, NULL);
+    }
   else
-    glXMakeCurrent(dpy, None, NULL);
+    {
+      glXMakeCurrent(dpy, None, NULL);
+    }
 
   currentGLContext = nil;
 }
@@ -236,17 +248,24 @@ static XGGLContext *currentGLContext;
 
 - (void) _detach
 {
-  if (xsubwin)
+  if (xSubWindow)
     {
       MAKE_DISPLAY(dpy);
+
       if (currentGLContext == self)
-	{
-	  [XGGLContext clearCurrentContext];
-	}
+	      {
+          [XGGLContext clearCurrentContext];
+        }
+      // FIXME:
       //      glXDestroyWindow(dpy, glx_drawable);
       glx_drawable = None;
-      DESTROY(xsubwin);
+      DESTROY(xSubWindow);
     }
+}
+
+- (GLXContext)glxcontext
+{
+  return glx_context;
 }
 
 - (void)clearDrawable
@@ -257,13 +276,14 @@ static XGGLContext *currentGLContext;
 - (void)copyAttributesFromContext:(NSOpenGLContext *)context 
 			 withMask:(unsigned long)mask
 {
-  GLXContext other;
   MAKE_DISPLAY(dpy);
-  if (context == nil ||  ![context isKindOfClass: [XGGLContext class]])
+
+  if (context == nil || ![context isKindOfClass: [XGGLContext class]])
     [NSException raise: NSInvalidArgumentException
 		 format: @"%@ is an invalid context", context];
-  other = ((XGGLContext *)context)->glx_context;
-  glXCopyContext(dpy, other, glx_context, mask);
+
+  glXCopyContext(dpy, ((XGGLContext *)context)->glx_context, 
+                 glx_context, mask);
 }
 
 - (void)createTexture:(unsigned long)target 
@@ -277,9 +297,9 @@ static XGGLContext *currentGLContext;
 - (int)currentVirtualScreen
 {
   [self notImplemented: _cmd];
+
   return 0;
 }
-
 
 - (void)flushBuffer
 {
@@ -297,32 +317,29 @@ static XGGLContext *currentGLContext;
 }
 
 
-- (id)initWithFormat:(NSOpenGLPixelFormat *)_format 
-	shareContext:(NSOpenGLContext *)share
+- (id)initWithFormat: (NSOpenGLPixelFormat *)_format 
+	    shareContext: (NSOpenGLContext *)share
 {
-  [super init];
+  self = [super init];
+  if (!self)
+    return nil;
+
   glx_context = None;
   
-  if (_format && [_format isKindOfClass: [XGGLPixelFormat class]])
-    {
-      MAKE_DISPLAY(dpy);
-      ASSIGN(format, (XGGLPixelFormat *)_format);
-      //FIXME: allow index mode and sharing
-
-      if (GSglxMinorVersion (dpy) >= 3)
-	glx_context = glXCreateNewContext(dpy, format->conf.tab[0], 
-					  GLX_RGBA_TYPE, NULL, YES);
-      else
-	glx_context = glXCreateContext(dpy, format->conf.visual, 0, GL_TRUE);
-
-      return self;
-    }
-  else
+  if (!_format || ![_format isKindOfClass: [XGGLPixelFormat class]])
     {
       NSDebugMLLog(@"GLX", @"invalid format %@", _format);
       RELEASE(self);
+
       return nil;
     }
+
+  ASSIGN(pixelFormat, (XGGLPixelFormat *)_format);
+  
+  //FIXME: allow index mode and sharing
+  glx_context = [pixelFormat createGLXContext: (XGGLContext *)share];
+  
+  return self;
 }
 
 
@@ -330,26 +347,29 @@ static XGGLContext *currentGLContext;
 {
   NSDebugMLLog(@"GLX", @"deallocating");
   [self _detach];
-  RELEASE(format);
+  RELEASE(pixelFormat);
+
   if (glx_context != None)
     {
       MAKE_DISPLAY(dpy);
       glXDestroyContext(dpy, glx_context);
     }
+
   [super dealloc];
 }
 
 - (void) makeCurrentContext
 {
   MAKE_DISPLAY(dpy);
-  if (xsubwin == nil)
+
+  if (xSubWindow == nil)
     [NSException raise: NSGenericException
 		 format: @"GL Context is not bind, cannot be made current"];
   
   NSAssert(glx_context != None && glx_drawable != None,
 	   NSInternalInconsistencyException);
 
-  if (GSglxMinorVersion (dpy) >= 3)
+  if (GSglxMinorVersion(dpy) >= 3)
     {
       NSDebugMLLog(@"GLX", @"before glXMakeContextCurrent");
       glXMakeContextCurrent(dpy, glx_drawable, glx_drawable, glx_context);
@@ -362,34 +382,26 @@ static XGGLContext *currentGLContext;
       NSDebugMLLog(@"GLX", @"after glXMakeCurrent");
     }
 
-//   NSAssert(glx_context != None,   NSInternalInconsistencyException);
-
-//   glXMakeCurrent(dpy, xsubwin->winid, glx_context);
-
   currentGLContext = self;
 }
-
 
 - (void)setCurrentVirtualScreen:(int)screen
 {
   [self notImplemented: _cmd];
 }
 
-
 - (void)setFullScreen
 {
   [self notImplemented: _cmd];
 }
 
-
 - (void)setOffScreen:(void *)baseaddr 
-	       width:(long)width 
-	      height:(long)height 
-	    rowbytes:(long)rowbytes
+               width:(long)width 
+              height:(long)height 
+            rowbytes:(long)rowbytes
 {
   [self notImplemented: _cmd];
 }
-
 
 - (void)setValues:(const long *)vals 
      forParameter:(NSOpenGLContextParameter)param
@@ -397,68 +409,36 @@ static XGGLContext *currentGLContext;
   [self notImplemented: _cmd];
 }
 
-
 - (void)setView:(NSView *)view
 {
-  XGXSubWindow *win;
-  MAKE_DISPLAY(dpy);
   if (!view)
     [NSException raise: NSInvalidArgumentException
 		 format: @"setView called with a nil value"];
 
-  NSAssert(format, NSInternalInconsistencyException);
-  win = [XGXSubWindow subwindowOnView: view];
-  ASSIGN(xsubwin, win);
-  glx_drawable = xsubwin->winid;
+  NSAssert(pixelFormat, NSInternalInconsistencyException);
 
-//   {
-//     GLXFBConfig  *conf_tab;
-//     int		n_elem;
-//     int attrs[] = { 
-//       GLX_DOUBLEBUFFER, 1,
-//       GLX_DEPTH_SIZE, 16,
-//       GLX_RED_SIZE, 1,
-//       GLX_BLUE_SIZE, 1,
-//       GLX_GREEN_SIZE, 1,
-//       None
-//     };    
-  
-//     conf_tab = glXChooseFBConfig(dpy, DefaultScreen(dpy), attrs,  &n_elem);
-//     if (n_elem > 0)
-//       {
-// 	printf("found %d context\n", n_elem);
-// // 	win = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 10, 10,
-// // 				  800, 600, 1, 0, 1);
-// 	glx_drawable = glXCreateWindow(dpy, *conf_tab, xsubwin->winid,  NULL);
-      
-//       }
-//     else
-//       puts("no context found");
+  ASSIGN(xSubWindow, [XGXSubWindow subwindowOnView: view 
+                                   visualinfo: [pixelFormat xvinfo]]);
+  glx_drawable = [pixelFormat drawableForWindow: xSubWindow->xwindowid];
 
-
-//   }	
-
-//FIXME
-//The following line should be the good one.  But it crashes my X server...
-
-//   glx_drawable = glXCreateWindow(dpy, *format->conf_tab, xsubwin->winid,
-// 				 NULL);
   NSDebugMLLog(@"GLX", @"glx_window : %u", glx_drawable);
 }
 
-
 - (void)update
 {
-  [xsubwin update];
+  [xSubWindow update];
 }
-
 
 - (NSView *)view
 {
-  if (xsubwin)
-    return xsubwin->attached;
+  if (xSubWindow)
+    {
+      return xSubWindow->attached;
+    }
   else
-    return nil;
+    {
+      return nil;
+    }
 }
 
 @end
