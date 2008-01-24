@@ -512,7 +512,10 @@ static NSArray *faFromFc(FcPattern *pat)
   fontPattern = FcPatternDuplicate([realFont font]);
 
   // the only thing needs customization here is the size
-  FcPatternAddDouble(fontPattern, FC_SIZE, (double)(matrix[0]));
+  // FIXME: It would be correcter to use FC_SIZE as GNUstep should be
+  // using point measurements, but as the rest of the library uses pixel,
+  // we need to stick with that here.
+  FcPatternAddDouble(fontPattern, FC_PIXEL_SIZE, (double)(matrix[0]));
   // Should do this only when size > 8
   FcPatternAddBool(fontPattern, FC_AUTOHINT, FcTrue);
   pattern = XftFontMatch(xdpy, defaultScreen, fontPattern, &fc_result);
