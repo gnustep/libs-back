@@ -1,3 +1,8 @@
+2008-01-24 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m (-setupAttributes): Use
+	FC_PIXEL_SIZE instead of FC_SIZE. Fixes #21912.
+
 2008-01-21 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/x11/XGOpenGL.h,
