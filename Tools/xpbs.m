@@ -70,6 +70,12 @@ static char *atom_names[] = {
   "image/tiff",
   "application/octet-stream",
   "application/x-rootwindow-drop"
+  "application/richtext",
+  "text/rtf",
+  "text/html",
+  "application/xhtml+xml",
+  "image/png",
+  "image/svg"
 };
 static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 
@@ -99,6 +105,18 @@ static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 #define XG_INCR         	atoms[19]
 #define XG_MIME_PLAIN    	atoms[20]
 #define XG_MIME_URI      	atoms[21]
+#define XG_MIME_PS      	atoms[22]
+#define XG_MIME_TSV      	atoms[23]
+#define XG_MIME_RICHTEXT  atoms[24]
+#define XG_MIME_TIFF      atoms[25]
+#define XG_MIME_OCTET     atoms[26]
+#define XG_MIME_ROOTWINDOW atoms[27]
+#define XG_MIME_APP_RICHTEXT atoms[28]
+#define XG_MIME_RTF       atoms[29]
+#define XG_MIME_HTML      atoms[30]
+#define XG_MIME_XHTML     atoms[31]
+#define XG_MIME_PNG       atoms[30]
+#define XG_MIME_SVG       atoms[30]
 
 
 
@@ -258,6 +276,10 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
   o = [[XPbOwner alloc] initWithXPb: selectionPb osPb: p];
   [o xSelectionClear];
       
+  p = [NSPasteboard pasteboardWithName: @"Secondary"];
+  o = [[XPbOwner alloc] initWithXPb: XA_SECONDARY osPb: p];
+  [o xSelectionClear];
+
   // Call this to get the class initialisation
   [XDragPbOwner class];
 
@@ -911,6 +933,9 @@ xErrorHandler(Display *d, XErrorEvent *e)
       xTypes[numTypes++] = XG_TARGETS;
       xTypes[numTypes++] = XG_TIMESTAMP;
       xTypes[numTypes++] = XG_MULTIPLE;
+      xTypes[numTypes++] = XG_USER;
+      xTypes[numTypes++] = XG_HOST_NAME;
+      xTypes[numTypes++] = XG_OWNER_OS;
       // FIXME: ICCCM requires even more types from us.
       
       if ([types containsObject: NSStringPboardType])
@@ -939,6 +964,55 @@ xErrorHandler(Display *d, XErrorEvent *e)
       numItems = 1;
       data = malloc(sizeof(int));
       memcpy(data, &_timeOfSetSelectionOwner, sizeof(int));      
+    }
+  else if (xEvent->target == XG_USER)
+    {
+      NSString *s = NSUserName();
+      NSData *d = nil;
+      
+      xType = XG_TEXT;
+      format = 8;
+      d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+      if (d != nil)
+        {
+          numItems = [d length];
+          data = malloc(numItems + 1);
+          if (data)
+            [d getBytes: data];
+        }
+    }
+  else if (xEvent->target == XG_OWNER_OS)
+    {
+      NSString *s = [[NSProcessInfo processInfo] operatingSystemName];
+      NSData *d = nil;
+      
+      xType = XG_TEXT;
+      format = 8;
+      d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+      if (d != nil)
+        {
+          numItems = [d length];
+          data = malloc(numItems + 1);
+          if (data)
+            [d getBytes: data];
+        }
+    }
+  else if ((xEvent->target == XG_HOST_NAME) 
+           || (xEvent->target == XG_HOSTNAME))
+    {
+      NSString *s = [[NSProcessInfo processInfo] hostName];
+      NSData *d = nil;
+      
+      xType = XG_TEXT;
+      format = 8;
+      d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+      if (d != nil)
+        {
+          numItems = [d length];
+          data = malloc(numItems + 1);
+          if (data)
+            [d getBytes: data];
+        }
     }
   else if (xEvent->target == AnyPropertyType)
     {
