@@ -1,3 +1,8 @@
+2008-01-26 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/xpbs.m: Add secondary selection support. Define some more
+	MIME types and add support for more standard targets. 
+
 2008-01-24 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/GSXftFontInfo.m (-setupAttributes): Use
