@@ -1,3 +1,8 @@
+2008-01-29 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/xpbs.m: Add support for variable available clipboard
+	types and minimal support for RTF.
+
 2008-01-26 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Tools/xpbs.m: Add secondary selection support. Define some more
