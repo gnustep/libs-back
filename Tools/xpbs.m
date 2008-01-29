@@ -69,7 +69,7 @@ static char *atom_names[] = {
   "text/richtext",
   "image/tiff",
   "application/octet-stream",
-  "application/x-rootwindow-drop"
+  "application/x-rootwindow-drop",
   "application/richtext",
   "text/rtf",
   "text/html",
@@ -115,8 +115,8 @@ static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 #define XG_MIME_RTF       atoms[29]
 #define XG_MIME_HTML      atoms[30]
 #define XG_MIME_XHTML     atoms[31]
-#define XG_MIME_PNG       atoms[30]
-#define XG_MIME_SVG       atoms[30]
+#define XG_MIME_PNG       atoms[32]
+#define XG_MIME_SVG       atoms[33]
 
 
 
@@ -608,6 +608,10 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
     {
       [self requestData: XG_FILE_NAME];
     }
+  else if ([type isEqual: NSRTFPboardType])
+    {
+      [self requestData: XG_MIME_RTF];
+    }
   // FIXME: Support more types
   else
     {
@@ -659,17 +663,80 @@ xErrorHandler(Display *d, XErrorEvent *e)
   return 0;
 }
 
+/*
+ * Check to see what types of data the selection owner is
+ * making available, and declare them all.
+ * If this fails, declare string data.
+ */
+- (NSArray*) availableTypes
+{
+  NSMutableArray *types;
+  NSData *data;
+  unsigned int count;
+  unsigned int i;
+  Atom *targets;
+
+  [self setData: nil];
+  [self requestData: XG_TARGETS];
+  data = [self data];
+  if (data == nil)
+    return [NSArray arrayWithObject: NSStringPboardType];
+
+  count = [data length] / sizeof(Atom);
+  targets = (Atom*)[data bytes];
+  types = [NSMutableArray arrayWithCapacity: count];
+  for (i = 0; i < count; i++)
+    {
+      Atom type;
+
+      type = targets[i];
+
+      if ((type == XG_UTF8_STRING) 
+          ||(type == XA_STRING))
+        {
+          [types addObject: NSStringPboardType];
+        }
+      else if (type == XG_FILE_NAME)
+        {
+          [types addObject: NSFilenamesPboardType];
+        }
+      else if (type == XG_MIME_RTF)
+        {
+          [types addObject: NSRTFPboardType];
+        }
+      else if ((type == XG_TARGETS)
+               || (type == XG_TIMESTAMP)
+               || (type == XG_OWNER_OS)
+               || (type == XG_USER)
+               || (type == XG_HOST_NAME)
+               || (type == XG_HOSTNAME)
+               || (type == XG_MULTIPLE))
+        {
+            // Standard types
+        }
+      // FIXME: Support more types
+      else
+        {
+          char *name = XGetAtomName(xDisplay, type);
+
+          // FIXME: We should rather add this type to the
+          // pasteboard as a string.
+          NSLog(@"Unsupported selection type '%s'", name);
+          XFree(name);
+        }
+    }
+
+  return types;
+}
+
+/*
+ * Should be called when ever the clipboard contents changes.
+ * Currently it gets called when GNUstep looses the ownership 
+ * of the clipboard.
+ */
 - (void) xSelectionClear
 {
-  NSArray	*types;
-
-  /*
-   * Really we should check to see what types of data the selection owner is
-   * making available, and declare them all - but as a temporary HACK we just
-   * declare string data.
-   */
-  types = [NSArray arrayWithObject: NSStringPboardType];
-  [_pb declareTypes: types owner: self];
+  [_pb declareTypes: [self availableTypes] owner: self];
   [self setOwnedByOpenStep: NO];
 }
 
@@ -863,6 +930,15 @@ xErrorHandler(Display *d, XErrorEvent *e)
             }
           RELEASE(url);
         }
+      else if (actual_type == XG_MIME_RTF)
+        {
+          [self setData: md];
+        }
+      else if (actual_type == XA_ATOM)
+        {
+          // Used when requesting TARGETS to get available types
+          [self setData: md];
+        }
       else
         {
           char *name = XGetAtomName(xDisplay, actual_type);
@@ -951,6 +1027,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
           xTypes[numTypes++] = XG_FILE_NAME;
         }
       
+      if ([types containsObject: NSRTFPboardType])
+        {
+          xTypes[numTypes++] = XG_MIME_RTF;
+        }
+
       xType = XA_ATOM;
       format = 32;
       numItems = numTypes;
@@ -1028,6 +1109,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
       else if ([types containsObject: NSFilenamesPboardType])
         {
           xEvent->target = XG_FILE_NAME;
+          [self xProvideSelection: xEvent];
+        }
+      else if ([types containsObject: NSRTFPboardType])
+        {
+          xEvent->target = XG_MIME_RTF;
           [self xProvideSelection: xEvent];
         }
     }
@@ -1159,6 +1245,21 @@ xErrorHandler(Display *d, XErrorEvent *e)
             [d getBytes: data];
         }
     }
+  else if ((xEvent->target == XG_MIME_RTF) &&
+	   [types containsObject: NSRTFPboardType])
+    {
+      NSData *d = [_pb dataForType: NSRTFPboardType];
+
+      xType = xEvent->target;
+      format = 8;
+      if (d != nil)
+        {
+          numItems = [d length];
+          data = malloc(numItems + 1);
+          if (data)
+            [d getBytes: data];
+        }
+    }
   else
     {
       char *name = XGetAtomName(xDisplay, xEvent->target);
@@ -1264,7 +1365,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
     }
   if ((whenRequested = [self timeOfLastAppend]) == 0)
     {
-      NSLog(@"Timed out waiting for X append");
+        NSLog(@"Timed out waiting for X append for %@", _name);
       whenRequested = CurrentTime;
     }
   return whenRequested;
