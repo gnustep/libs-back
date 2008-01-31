@@ -1,3 +1,7 @@
+2008-01-31 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/xpbs.m: Improve support for RTF and add TIFF support.
+
 2008-01-29 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Tools/xpbs.m: Add support for variable available clipboard

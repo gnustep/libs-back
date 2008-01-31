@@ -61,7 +61,7 @@ static char *atom_names[] = {
   "COMPOUND_TEXT",
   "INCR",
 
-  // MIME types
+  // some MIME types
   "text/plain",
   "text/uri-list",
   "application/postscript",
@@ -76,6 +76,7 @@ static char *atom_names[] = {
   "application/xhtml+xml",
   "image/png",
   "image/svg"
+  "application/rtf",
 };
 static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 
@@ -117,6 +118,7 @@ static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 #define XG_MIME_XHTML     atoms[31]
 #define XG_MIME_PNG       atoms[32]
 #define XG_MIME_SVG       atoms[33]
+#define XG_MIME_APP_RTF   atoms[34]
 
 
 
@@ -606,16 +608,23 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
     }
   else if ([type isEqual: NSFilenamesPboardType])
     {
+
       [self requestData: XG_FILE_NAME];
     }
   else if ([type isEqual: NSRTFPboardType])
     {
       [self requestData: XG_MIME_RTF];
+      if ([self data] == nil)
+        [self requestData: XG_MIME_APP_RTF];
+    }
+  else if ([type isEqual: NSTIFFPboardType])
+    {
+      [self requestData: XG_MIME_TIFF];
     }
   // FIXME: Support more types
   else
     {
-      NSLog(@"Request for non-string info from X pasteboard: %@", type);
+      NSDebugLLog(@"Pbs", @"Request for non-string info from X pasteboard: %@", type);
     }
   [pb setData: [self data] forType: type];
 }
@@ -700,9 +709,14 @@ xErrorHandler(Display *d, XErrorEvent *e)
         {
           [types addObject: NSFilenamesPboardType];
         }
-      else if (type == XG_MIME_RTF)
+      else if ((type == XG_MIME_RTF)
+               || (type == XG_MIME_APP_RTF))
         {
           [types addObject: NSRTFPboardType];
+        }
+      else if (type == XG_MIME_TIFF)
+        {
+          [types addObject: NSTIFFPboardType];
         }
       else if ((type == XG_TARGETS)
                || (type == XG_TIMESTAMP)
@@ -721,7 +735,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
 
           // FIXME: We should rather add this type to the
           // pasteboard as a string.
-          NSLog(@"Unsupported selection type '%s'", name);
+          NSDebugLLog(@"Pbs", @"Unsupported selection type '%s' available", 
+                      name);
           XFree(name);
         }
     }
@@ -930,7 +945,12 @@ xErrorHandler(Display *d, XErrorEvent *e)
             }
           RELEASE(url);
         }
-      else if (actual_type == XG_MIME_RTF)
+      else if ((actual_type == XG_MIME_RTF)
+               || (actual_type == XG_MIME_APP_RTF))
+        {
+          [self setData: md];
+        }
+      else if (actual_type == XG_MIME_TIFF)
         {
           [self setData: md];
         }
@@ -943,7 +963,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
         {
           char *name = XGetAtomName(xDisplay, actual_type);
           
-          NSLog(@"Unsupported data type '%s' from X selection.", name);
+          NSDebugLLog(@"Pbs", @"Unsupported data type '%s' from X selection.", 
+                      name);
           XFree(name);
         }
     }
@@ -1030,6 +1051,12 @@ xErrorHandler(Display *d, XErrorEvent *e)
       if ([types containsObject: NSRTFPboardType])
         {
           xTypes[numTypes++] = XG_MIME_RTF;
+          xTypes[numTypes++] = XG_MIME_APP_RTF;
+        }
+
+      if ([types containsObject: NSTIFFPboardType])
+        {
+          xTypes[numTypes++] = XG_MIME_TIFF;
         }
 
       xType = XA_ATOM;
@@ -1114,6 +1141,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
       else if ([types containsObject: NSRTFPboardType])
         {
           xEvent->target = XG_MIME_RTF;
+          [self xProvideSelection: xEvent];
+        }
+      else if ([types containsObject: NSTIFFPboardType])
+        {
+          xEvent->target = XG_MIME_TIFF;
           [self xProvideSelection: xEvent];
         }
     }
@@ -1233,10 +1265,10 @@ xErrorHandler(Display *d, XErrorEvent *e)
       NSString *s = [url absoluteString];
       NSData *d;
 
-      xType = xEvent->target;
-      format = 8;
       RELEASE(url);
       d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+      xType = xEvent->target;
+      format = 8;
       if (d != nil)
         {
           numItems = [d length];
@@ -1245,8 +1277,9 @@ xErrorHandler(Display *d, XErrorEvent *e)
             [d getBytes: data];
         }
     }
-  else if ((xEvent->target == XG_MIME_RTF) &&
-	   [types containsObject: NSRTFPboardType])
+  else if (((xEvent->target == XG_MIME_RTF) 
+            || (xEvent->target == XG_MIME_APP_RTF))
+           && [types containsObject: NSRTFPboardType])
     {
       NSData *d = [_pb dataForType: NSRTFPboardType];
 
@@ -1260,6 +1293,22 @@ xErrorHandler(Display *d, XErrorEvent *e)
             [d getBytes: data];
         }
     }
+  else if ((xEvent->target == XG_MIME_TIFF) &&
+	   [types containsObject: NSTIFFPboardType])
+    {
+      NSData *d = [_pb dataForType: NSTIFFPboardType];
+
+      xType = xEvent->target;
+      format = 8;
+      if (d != nil)
+        {
+          numItems = [d length];
+          data = malloc(numItems + 1);
+          if (data)
+            [d getBytes: data];
+        }
+    }
+  // FIXME: Support more types
   else
     {
       char *name = XGetAtomName(xDisplay, xEvent->target);
