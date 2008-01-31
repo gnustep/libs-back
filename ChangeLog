@@ -1,5 +1,9 @@
 2008-01-31 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Tools/win32pbs.m: Use event polling code from WIN32Server.m.
+
+2008-01-31 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Tools/xpbs.m: Improve support for RTF and add TIFF support.
 
 2008-01-29 Fred Kiefer <FredKiefer@gmx.de>
