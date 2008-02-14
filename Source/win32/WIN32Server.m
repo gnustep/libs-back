@@ -420,8 +420,6 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 /*
   styles are mapped between the two systems 
 
-    NSUtilityWindowMask         16
-    NSDocModalWindowMask        32
     NSBorderlessWindowMask      0
     NSTitledWindowMask          1
     NSClosableWindowMask        2
@@ -439,59 +437,33 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   if ([self handlesWindowDecorations] == NO)
     return WS_POPUP;
         
-  switch (style)
+  if (style == 0)
+    wstyle = WS_POPUP;
+  else
     {
-      case 0:
-         wstyle = WS_POPUP;
-         break;
-      case NSTitledWindowMask: // 1
-         wstyle = WS_CAPTION;
-         break;
-      case NSClosableWindowMask: // 2
-         wstyle = WS_CAPTION+WS_SYSMENU;
-         break;
-      case NSMiniaturizableWindowMask: //4
-         wstyle = WS_MINIMIZEBOX+WS_SYSMENU;
-         break;
-      case NSResizableWindowMask: // 8
-         wstyle = WS_SIZEBOX;
-      case NSMiniWindowMask: //128
-      case NSIconWindowMask: // 64
-         wstyle = WS_ICONIC; 
-         break;
-      //case NSUtilityWindowMask: //16
-      //case NSDocModalWindowMask: //32
-         break;
-      // combinations
-      case NSTitledWindowMask+NSClosableWindowMask: //3
-         wstyle = WS_CAPTION+WS_SYSMENU;
-         break;
-      case NSTitledWindowMask+NSClosableWindowMask+NSMiniaturizableWindowMask: //7
-         wstyle = WS_CAPTION+WS_MINIMIZEBOX+WS_SYSMENU;
-         break;
-      case NSTitledWindowMask+NSResizableWindowMask: // 9
-         wstyle = WS_CAPTION+WS_SIZEBOX;
-         break;
-      case NSTitledWindowMask+NSClosableWindowMask+NSResizableWindowMask: // 11
-         wstyle = WS_CAPTION+WS_SIZEBOX+WS_SYSMENU;
-         break;
-      case NSTitledWindowMask+NSResizableWindowMask+NSMiniaturizableWindowMask: //13
-         wstyle = WS_SIZEBOX+WS_MINIMIZEBOX+WS_SYSMENU+WS_CAPTION;
-         break;   
-      case NSTitledWindowMask+NSClosableWindowMask+NSResizableWindowMask+
-                                                NSMiniaturizableWindowMask: //15
-         wstyle = WS_CAPTION+WS_SIZEBOX+WS_MINIMIZEBOX+WS_SYSMENU;
-         break;
-        
-      default:
-         wstyle = WS_POPUP; //WS_CAPTION+WS_SYSMENU;
-         break;
+      if ((style & NSTitledWindowMask) == NSTitledWindowMask)
+        wstyle |= WS_CAPTION;
+
+      if ((style & NSClosableWindowMask) == NSClosableWindowMask)
+        wstyle |= WS_CAPTION + WS_SYSMENU;
+      
+      if ((style & NSMiniaturizableWindowMask) == NSMiniaturizableWindowMask)
+        wstyle |= WS_MINIMIZEBOX + WS_SYSMENU;
+
+      if ((style & NSResizableWindowMask) == NSResizableWindowMask)
+        wstyle |= WS_SIZEBOX;
+
+      if (((style & NSMiniWindowMask) == NSMiniWindowMask)
+          || ((style & NSIconWindowMask) == NSIconWindowMask))
+        wstyle |= WS_ICONIC;
+
+      if (wstyle == 0)
+        wstyle = WS_POPUP; //WS_CAPTION+WS_SYSMENU;
    }
 
    //NSLog(@"Window wstyle %d for style %d", wstyle, style);
    return wstyle;
 }
-
 
 - (void) resetForGSWindowStyle:(HWND)hwnd w32Style:(DWORD)aStyle
 {
@@ -853,8 +825,6 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
     NSResizableWindowMask       The NSWindow displays a resize bar or border.
     NSBorderlessWindowMask
     
-    NSUtilityWindowMask         16
-    NSDocModalWindowMask        32
     NSBorderlessWindowMask      0
     NSTitledWindowMask          1
     NSClosableWindowMask        2
@@ -903,7 +873,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
       if ([self usesNativeTaskbar])
         estyle = WS_EX_APPWINDOW;
       else
-          estyle = WS_EX_TOOLWINDOW;
+        estyle = WS_EX_TOOLWINDOW;
     }
   else
     {
