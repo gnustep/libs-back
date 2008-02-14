@@ -312,7 +312,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
       if (m->message == WM_QUIT)
         {
-          [NSApp terminate: nil];
+          //[NSApp terminate: nil];
           // Exit the program
           return;
         }

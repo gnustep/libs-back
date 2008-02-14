@@ -1,3 +1,8 @@
+2008-02-14 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/win32pbs.m (-receivedEvent:...forMode:): Don't call NSApp
+	to terminate the program.
+
 2008-02-08 Fred Kiefer <FredKiefer@gmx.de>
 
         * Source/art/ARTContext.m (-GSDrawImage:): Hack to allow the
