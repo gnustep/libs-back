@@ -27,7 +27,10 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "w32_Events.h"
+#include <AppKit/NSEvent.h>
+#include <AppKit/NSWindow.h>
+#include "win32/WIN32Server.h"
+#include "win32/WIN32Geometry.h"
 
 @implementation WIN32Server (w32_General)
 
@@ -130,18 +133,5 @@
 - (void) decodeWM_COMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
 } 
-
-- (void) resetForGSWindowStyle:(HWND)hwnd w32Style:(DWORD)aStyle
-{
-  // to be completed for styles
-  LONG result;
-
-  ShowWindow(hwnd, SW_HIDE);
-  SetLastError(0);
-   result=SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
-   result=SetWindowLong(hwnd, GWL_STYLE, (LONG)aStyle);
-  // should check error here...
-  ShowWindow(hwnd, SW_SHOWNORMAL);
-}
       
 @end 

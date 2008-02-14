@@ -24,101 +24,102 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include <AppKit/NSImage.h>
-#include <AppKit/NSBitmapImageRep.h>
-#include <Foundation/NSData.h>
-#include "w32_Events.h"
+#include <AppKit/NSEvent.h>
+#include <AppKit/NSWindow.h>
+#include "win32/WIN32Server.h"
+#include "win32/WIN32Geometry.h"
 
 @implementation WIN32Server (w32_activate)
 
 - (LRESULT) decodeWM_ACTIVEParams:(WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   // decode our params
-      
   flags._last_WM_ACTIVATE = LOWORD(wParam);
   //int minimized = HIWORD(wParam);
 
   switch (flags._last_WM_ACTIVATE)
     {
-    case WA_ACTIVE:  //deactivate
-      {
-	// future implimentation if needed
-      }
-      break;
-    case WA_CLICKACTIVE:  //order back the window
-      {
-	// future implimentation if needed
-      }
-      break;
-    case WA_INACTIVE: // set currentactive and display
-      {
-	currentActive=hwnd;
-	[EVENT_WINDOW(lParam) display];
-      }
-      break;
+      case WA_ACTIVE:  //deactivate
+        {
+          // future implimentation if needed
+        }
+        break;
+      case WA_CLICKACTIVE:  //order back the window
+        {
+          // future implimentation if needed
+        }
+        break;
+      case WA_INACTIVE: // set currentactive and display
+        {
+          currentActive = hwnd;
+          [EVENT_WINDOW(lParam) display];
+        }
+        break;
 	
-    default:
-      break;
+      default:
+        break;
     }
-
+  
   return 0;
 }
 
-- (LRESULT) decodeWM_ACTIVEAPPParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
+- (LRESULT) decodeWM_ACTIVEAPPParams: (HWND)hwnd : (WPARAM)wParam 
+                                    : (LPARAM)lParam
 {
-  BOOL active=[NSApp isActive];
+  BOOL active = [NSApp isActive];
           
   switch ((int)wParam)
     {
-    case TRUE:
-      {
-	if (active==YES)
-	  {
-	    if (flags._is_menu==YES) // have menu and app active
-	      {
-		// future implimentation if needed
-	      }
-	    else  // Not a menu and app is active
-	      {
-		// window is Visable
-		if ([EVENT_WINDOW(hwnd) isVisible]==YES) 
-		  {
-		    // future implimentation if needed
-		  }    
-		else
-		  {
-		    // future implimentation if needed
-		  }
-	      }
-	  }
-	else  // app is not active
-	  {
-	    [NSApp activateIgnoringOtherApps:YES];
-	    flags._eventHandled=YES;
-	  }    
-      }
-      break;
-    case FALSE:
-      {
-	if (flags._is_menu==YES)
-	  {
-	    // future implimentation if needed
-	  }
-	else
-	  {
-	    // future implimentation if needed
-	  }             
-      }            
-      break;
+      case TRUE:
+        {
+          if (active==YES)
+            {
+              if (flags._is_menu==YES) // have menu and app active
+                {
+                  // future implimentation if needed
+                }
+              else  // Not a menu and app is active
+                {
+                  // window is Visable
+                  if ([EVENT_WINDOW(hwnd) isVisible]==YES) 
+                    {
+                      // future implimentation if needed
+                    }    
+                  else
+                    {
+                      // future implimentation if needed
+                    }
+                }
+            }
+          else  // app is not active
+            {
+              [NSApp activateIgnoringOtherApps:YES];
+              flags._eventHandled=YES;
+            }    
+        }
+        break;
+      case FALSE:
+        {
+          if (flags._is_menu==YES)
+            {
+              // future implimentation if needed
+            }
+          else
+            {
+              // future implimentation if needed
+            }             
+        }            
+        break;
               
-    default:
-      break;            
+      default:
+        break;            
     }
             
   return 0;
 }
 
-- (void) decodeWM_NCACTIVATEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
+- (void) decodeWM_NCACTIVATEParams: (WPARAM)wParam : (LPARAM)lParam 
+                                  : (HWND)hwnd
 {
 
 }
