@@ -174,6 +174,7 @@ typedef struct _win_intern {
   HDC hdc; 
   HGDIOBJ old;
   MINMAXINFO minmax;
+  BOOL backingStoreEmpty;
 } WIN_INTERN;
 
 #endif /* _WIN32Server_h_INCLUDE */

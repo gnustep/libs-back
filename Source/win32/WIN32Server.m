@@ -1087,8 +1087,14 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
       win->old = SelectObject(hdc2, hbitmap);
       win->hdc = hdc2;
       win->useHDC = YES;
+      win->backingStoreEmpty = YES;
 
       ReleaseDC((HWND)winNum, hdc);
+    }
+  else
+    {
+      win->useHDC = NO;
+      win->hdc = NULL;
     }
 }
 
