@@ -1254,7 +1254,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
       WINBOOL result;
 
       result = BitBlt(hdc, r.left, r.top, 
-                      (r.right - r.left), (r.bottom - rect.top), 
+                      (r.right - r.left), (r.bottom - r.top), 
                       win->hdc, r.left, r.top, SRCCOPY);
       if (!result)
         {
