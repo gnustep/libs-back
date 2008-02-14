@@ -27,10 +27,12 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "w32_Events.h"
+#include <AppKit/NSEvent.h>
+#include <AppKit/NSWindow.h>
+#include "win32/WIN32Server.h"
+#include "win32/WIN32Geometry.h"
 
 @implementation WIN32Server (w32_text_focus)
-
 
 //- (LRESULT) decodeWM_SETTEXTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 //{
@@ -48,7 +50,6 @@
 
 - (LRESULT) decodeWM_SETFOCUSParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-  // reused from original author (added debug output)
   /* This message comes when the window already got focus, so we send a focus
      in event to the front end, but also mark the window as having current focus
      so that the front end doesn't try to focus the window again. */
@@ -69,16 +70,16 @@
   else
     {
       /* We need to do this directly and not send an event to the frontend - 
-	 that's too slow and allows the window state to get out of sync, 
-	 causing bad recursion problems */
+         that's too slow and allows the window state to get out of sync, 
+         causing bad recursion problems */
       NSWindow *window = GSWindowWithNumber((int)hwnd);
       if ([window canBecomeKeyWindow] == YES)
-	{
-	  NSDebugLLog(@"Focus", @"Making %d key", win_num);
-	  [window makeKeyWindow];
-	  [window makeMainWindow];
-	  [NSApp activateIgnoringOtherApps: YES];
-	}
+        {
+          NSDebugLLog(@"Focus", @"Making %d key", win_num);
+          [window makeKeyWindow];
+          [window makeMainWindow];
+          [NSApp activateIgnoringOtherApps: YES];
+        }
     }
     
   return 0;

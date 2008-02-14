@@ -27,10 +27,11 @@
    Boston, MA 02110-1301, USA.
 */
 
-
-#include "w32_Events.h"
-
-static void invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect);
+#include <AppKit/NSEvent.h>
+#include <AppKit/NSView.h>
+#include <AppKit/NSWindow.h>
+#include "win32/WIN32Server.h"
+#include "win32/WIN32Geometry.h"
 
 static void 
 invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
@@ -71,86 +72,6 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 }
 
 @implementation WIN32Server (w32_windowdisplay)
-
-/* styles are mapped between the two systems 
- * I have not changed current inplimentation of mouse or keyboard
- * events. */
-- (DWORD) windowStyleForGSStyle: (unsigned int) style
-{
-
-/*
-    NSUtilityWindowMask         16
-    NSDocModalWindowMask        32
-    NSBorderlessWindowMask      0
-    NSTitledWindowMask          1
-    NSClosableWindowMask        2
-    NSMiniaturizableWindowMask  4
-    NSResizableWindowMask       8
-    NSIconWindowMask            64
-    NSMiniWindowMask            128
-
-  NSMenu(style) =  NSTitledWindowMask | NSClosableWindowMask =3;
-*/
-
-   DWORD wstyle = 0;
-        
-   if ([self handlesWindowDecorations] == NO)
-      return WS_POPUP;
-        
-   switch (style)
-   {
-      case 0:
-         wstyle=WS_POPUP;
-         break;
-      case NSTitledWindowMask: // 1
-         wstyle = WS_CAPTION;
-         break;
-      case NSClosableWindowMask: // 2
-         wstyle =WS_CAPTION+WS_SYSMENU;
-         break;
-      case NSMiniaturizableWindowMask: //4
-         wstyle =WS_MINIMIZEBOX+WS_SYSMENU;
-         break;
-      case NSResizableWindowMask: // 8
-         wstyle=WS_SIZEBOX;
-      case NSMiniWindowMask: //128
-      case NSIconWindowMask: // 64
-         wstyle = WS_ICONIC; 
-         break;
-      //case NSUtilityWindowMask: //16
-      //case NSDocModalWindowMask: //32
-         break;
-      // combinations
-      case NSTitledWindowMask+NSClosableWindowMask: //3
-         wstyle =WS_CAPTION+WS_SYSMENU;
-         break;
-      case NSTitledWindowMask+NSClosableWindowMask+NSMiniaturizableWindowMask: //7
-         wstyle =WS_CAPTION+WS_MINIMIZEBOX+WS_SYSMENU;
-         break;
-      case NSTitledWindowMask+NSResizableWindowMask: // 9
-         wstyle = WS_CAPTION+WS_SIZEBOX;
-         break;
-      case NSTitledWindowMask+NSClosableWindowMask+NSResizableWindowMask: // 11
-         wstyle =WS_CAPTION+WS_SIZEBOX+WS_SYSMENU;
-         break;
-      case NSTitledWindowMask+NSResizableWindowMask+NSMiniaturizableWindowMask: //13
-         wstyle = WS_SIZEBOX+WS_MINIMIZEBOX+WS_SYSMENU+WS_CAPTION;
-         break;   
-      case NSTitledWindowMask+NSClosableWindowMask+NSResizableWindowMask+
-                                                NSMiniaturizableWindowMask: //15
-         wstyle =WS_CAPTION+WS_SIZEBOX+WS_MINIMIZEBOX+WS_SYSMENU;
-         break;
-        
-      default:
-         wstyle =WS_POPUP; //WS_CAPTION+WS_SYSMENU;
-         break;
-   }
-
-   //NSLog(@"Window wstyle %d for style %d", wstyle, style);
-   return wstyle;
-}
-
-/*deprecated remove from code */
 
 - (void) decodeWM_SHOWWINDOWParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
@@ -247,44 +168,12 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 - (HICON) decodeWM_GETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   // stub for future dev
-   return currentAppIcon;
+  return currentAppIcon;
 }
 
 - (HICON) decodeWM_SETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-    return currentAppIcon;
-}
-
-- (void) resizeBackingStoreFor: (HWND)hwnd
-{
-  RECT r;
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
-  
-  // FIXME: We should check if the size really did change.
-  if (win->useHDC)
-    {
-      HDC hdc, hdc2;
-      HBITMAP hbitmap;
-      HGDIOBJ old;
-      
-      old = SelectObject(win->hdc, win->old);
-      DeleteObject(old);
-      DeleteDC(win->hdc);
-      win->hdc = NULL;
-      win->old = NULL;
-      
-      GetClientRect((HWND)hwnd, &r);
-      hdc = GetDC((HWND)hwnd);
-      hdc2 = CreateCompatibleDC(hdc);
-      hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, r.bottom - r.top);
-      win->old = SelectObject(hdc2, hbitmap);
-      win->hdc = hdc2;
-      
-      ReleaseDC((HWND)hwnd, hdc);
-
-      // After resizing the backing store, we need to redraw the window
-      win->backingStoreEmpty = YES;
-    }
+  return currentAppIcon;
 }
 
 @end

@@ -26,20 +26,22 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "w32_Events.h"
-
+#include <AppKit/NSEvent.h>
+#include <AppKit/NSWindow.h>
+#include "win32/WIN32Server.h"
+#include "win32/WIN32Geometry.h"
 
 @implementation WIN32Server (w32_create)
 
-
-- (LRESULT) decodeWM_NCCREATEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
+- (LRESULT) decodeWM_NCCREATEParams: (WPARAM)wParam : (LPARAM)lParam 
+                                   : (HWND)hwnd
 {
   return TRUE;
 }
 
-- (LRESULT) decodeWM_CREATEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
+- (LRESULT) decodeWM_CREATEParams: (WPARAM)wParam : (LPARAM)lParam 
+                                 : (HWND)hwnd
 {
-  //Created by original author
   WIN_INTERN *win;
   NSBackingStoreType type = (NSBackingStoreType)((LPCREATESTRUCT)lParam)->lpCreateParams;
 
@@ -61,7 +63,7 @@
       hdc = GetDC(hwnd);
       hdc2 = CreateCompatibleDC(hdc);
       hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, 
-				       r.bottom - r.top);
+                                       r.bottom - r.top);
       win->old = SelectObject(hdc2, hbitmap);
 
       win->hdc = hdc2;

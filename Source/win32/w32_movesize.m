@@ -24,7 +24,10 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "w32_Events.h"
+#include <AppKit/NSEvent.h>
+#include <AppKit/NSWindow.h>
+#include "win32/WIN32Server.h"
+#include "win32/WIN32Geometry.h"
 
 @implementation WIN32Server (w32_movesize)
 
@@ -34,10 +37,9 @@
   NSRect rect;
   RECT r;
   NSEvent *ev = nil;
+
   GetWindowRect(hwnd, &r);
-    
   rect = MSScreenRectToGS(r, [EVENT_WINDOW(hwnd) styleMask], self);
-    
   eventLocation = rect.origin;
         
   ev = [NSEvent otherEventWithType: NSAppKitDefined
@@ -55,18 +57,16 @@
     {
       //need native code here?
       if (flags.HOLD_MENU_FOR_MOVE==FALSE)
-	{
-	  [EVENT_WINDOW(hwnd) sendEvent:ev];
-	}
-      
+        {
+          [EVENT_WINDOW(hwnd) sendEvent: ev];
+        }
     }
   else
     {
       if (flags.HOLD_TRANSIENT_FOR_MOVE==FALSE)
-	[EVENT_WINDOW(hwnd) sendEvent:ev];
+        [EVENT_WINDOW(hwnd) sendEvent: ev];
     }   
 		  
-  ev=nil;
   flags.HOLD_MENU_FOR_MOVE=FALSE;
   flags.HOLD_MINI_FOR_MOVE=FALSE;
   flags.HOLD_TRANSIENT_FOR_MOVE=FALSE;
@@ -82,10 +82,9 @@
   NSEvent *ev =nil;
   
   GetWindowRect(hwnd, &r);
-  
   rect = MSScreenRectToGS(r, [EVENT_WINDOW(hwnd) styleMask], self);
-  
   eventLocation = rect.origin;
+
   switch ((int)wParam)
     {
     case SIZE_MAXHIDE:
@@ -313,8 +312,8 @@
 
    return TRUE;
 }
-@end
 
+@end
 
 
 
