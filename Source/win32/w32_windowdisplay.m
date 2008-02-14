@@ -37,6 +37,23 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 {
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
 
+  if (!win->useHDC || win->backingStoreEmpty)
+    {
+      NSWindow *window = GSWindowWithNumber((int)hwnd);
+      NSRect r = MSWindowRectToGS(svr, hwnd, rect);
+      
+      /*
+        NSLog(@"Invalidated window %d %@ (%d, %d, %d, %d)", hwnd, 
+        NSStringFromRect(r), rect.left, rect.top, rect.right, rect.bottom);
+      */
+
+      /* Repaint the windows's client area */
+      [[[window contentView] superview] setNeedsDisplayInRect: r];
+      // FIXME: We should never do a direct draw call here!
+      [[[window contentView] superview] displayIfNeeded];
+      win->backingStoreEmpty = NO;
+    }
+
   if (win->useHDC)
     {
       HDC hdc = GetDC((HWND)hwnd);
@@ -47,21 +64,9 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 		      win->hdc, rect.left, rect.top, SRCCOPY);
       if (!result)
         {
-	  NSLog(@"validateWindow failed %d", GetLastError());
-      }
+          NSLog(@"validateWindow failed %d", GetLastError());
+        }
       ReleaseDC((HWND)hwnd, hdc);
-    }
-  else 
-    {
-      NSWindow *window = GSWindowWithNumber((int)hwnd);
-      NSRect r = MSWindowRectToGS(svr, (HWND)hwnd, rect);
-      
-      /*
-	NSLog(@"Invalidated window %d %@ (%d, %d, %d, %d)", hwnd, 
-	NSStringFromRect(r), rect.left, rect.top, rect.right, rect.bottom);
-      */
-      // Repaint the window's client area. 
-      [[[window contentView] superview] setNeedsDisplayInRect: r];
     }
 }
 
@@ -204,34 +209,28 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 
 - (void) decodeWM_PAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-  // reused from original author (added debug code)
   RECT rect;
-   //LPPAINTSTRUCT lpPaint;
-   //HDC theHdc;
+  PAINTSTRUCT pPaint;
 
-   /*BOOL InvalidateRect(
-   HWND hWnd,           // handle to window
-   CONST RECT* lpRect,  // rectangle coordinates
-   BOOL bErase          // erase state
-);*/
-
-   //theHdc=BeginPaint(hwnd, lpPaint);
-   //if (flags.HOLD_PAINT_FOR_SIZING==FALSE)
-   // {
-  if (GetUpdateRect(hwnd, &rect, NO))
-    {
-      //InvalidateRect(hwnd, rect, YES);
+  /* FK:
+     I am not sure if calling BeginPaint/EndPaint here is the best
+     way to handle updates. These functions correspond more closely 
+     to the lockFocus/unlockFocus methods and should rather be used there.
+     //InvalidateRect(hwnd, rect, YES);
 	   
+     // validate the whole window, for in some cases an infinite series
+     // of WM_PAINT is triggered
+     //ValidateRect(hwnd, NULL);
+   */
+  if (GetUpdateRect(hwnd, &rect, TRUE))
+    {
+      BeginPaint(hwnd, &pPaint);
+      // Perform drawing (or blitting into buffer if needed)
       invalidateWindow(self, hwnd, rect);
-      // validate the whole window, for in some cases an infinite series
-      // of WM_PAINT is triggered
-      ValidateRect(hwnd, NULL);
+      EndPaint(hwnd, &pPaint);
     }
-   // } 
-  flags._eventHandled=YES;
-   //flags.HOLD_PAINT_FOR_SIZING=FALSE;
 
-   //printf("WM_PAINT\n");
+  flags._eventHandled = YES;
 }
 
 - (void) decodeWM_SYNCPAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
@@ -258,7 +257,6 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 
 - (void) resizeBackingStoreFor: (HWND)hwnd
 {
-  // reused from original author (added debug code)
   RECT r;
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
   
@@ -283,6 +281,9 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
       win->hdc = hdc2;
       
       ReleaseDC((HWND)hwnd, hdc);
+
+      // After resizing the backing store, we need to redraw the window
+      win->backingStoreEmpty = YES;
     }
 }
 

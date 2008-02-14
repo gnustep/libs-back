@@ -1,5 +1,15 @@
 2008-02-14 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Headers/win32/WIN32Server.h: Extend WIN_INTERN with
+	backingStoreEmpty flag.
+	* Source/win32/WIN32Server.m (-windowbacking::): Set
+	backingStoreEmpty to YES;
+	* Source/win32/w32_windowdisplay.m: Use backingStoreEmpty to
+	determine drawing method.
+	Patch by Christopher Armstrong <carmstrong@fastmail.com.au>.
+	
+2008-02-14 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Tools/win32pbs.m (-receivedEvent:...forMode:): Don't call NSApp
 	to terminate the program.
 
