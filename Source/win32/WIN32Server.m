@@ -417,9 +417,125 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   Beep(400, 500);
 }  
 
+/*
+  styles are mapped between the two systems 
+
+    NSUtilityWindowMask         16
+    NSDocModalWindowMask        32
+    NSBorderlessWindowMask      0
+    NSTitledWindowMask          1
+    NSClosableWindowMask        2
+    NSMiniaturizableWindowMask  4
+    NSResizableWindowMask       8
+    NSIconWindowMask            64
+    NSMiniWindowMask            128
+
+  NSMenu(style) =  NSTitledWindowMask | NSClosableWindowMask =3;
+*/
+- (DWORD) windowStyleForGSStyle: (unsigned int) style
+{
+  DWORD wstyle = 0;
+        
+  if ([self handlesWindowDecorations] == NO)
+    return WS_POPUP;
+        
+  switch (style)
+    {
+      case 0:
+         wstyle = WS_POPUP;
+         break;
+      case NSTitledWindowMask: // 1
+         wstyle = WS_CAPTION;
+         break;
+      case NSClosableWindowMask: // 2
+         wstyle = WS_CAPTION+WS_SYSMENU;
+         break;
+      case NSMiniaturizableWindowMask: //4
+         wstyle = WS_MINIMIZEBOX+WS_SYSMENU;
+         break;
+      case NSResizableWindowMask: // 8
+         wstyle = WS_SIZEBOX;
+      case NSMiniWindowMask: //128
+      case NSIconWindowMask: // 64
+         wstyle = WS_ICONIC; 
+         break;
+      //case NSUtilityWindowMask: //16
+      //case NSDocModalWindowMask: //32
+         break;
+      // combinations
+      case NSTitledWindowMask+NSClosableWindowMask: //3
+         wstyle = WS_CAPTION+WS_SYSMENU;
+         break;
+      case NSTitledWindowMask+NSClosableWindowMask+NSMiniaturizableWindowMask: //7
+         wstyle = WS_CAPTION+WS_MINIMIZEBOX+WS_SYSMENU;
+         break;
+      case NSTitledWindowMask+NSResizableWindowMask: // 9
+         wstyle = WS_CAPTION+WS_SIZEBOX;
+         break;
+      case NSTitledWindowMask+NSClosableWindowMask+NSResizableWindowMask: // 11
+         wstyle = WS_CAPTION+WS_SIZEBOX+WS_SYSMENU;
+         break;
+      case NSTitledWindowMask+NSResizableWindowMask+NSMiniaturizableWindowMask: //13
+         wstyle = WS_SIZEBOX+WS_MINIMIZEBOX+WS_SYSMENU+WS_CAPTION;
+         break;   
+      case NSTitledWindowMask+NSClosableWindowMask+NSResizableWindowMask+
+                                                NSMiniaturizableWindowMask: //15
+         wstyle = WS_CAPTION+WS_SIZEBOX+WS_MINIMIZEBOX+WS_SYSMENU;
+         break;
+        
+      default:
+         wstyle = WS_POPUP; //WS_CAPTION+WS_SYSMENU;
+         break;
+   }
+
+   //NSLog(@"Window wstyle %d for style %d", wstyle, style);
+   return wstyle;
+}
+
+
+- (void) resetForGSWindowStyle:(HWND)hwnd w32Style:(DWORD)aStyle
+{
+  // to be completed for styles
+  LONG result;
+
+  ShowWindow(hwnd, SW_HIDE);
+  SetLastError(0);
+  result = SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
+  result = SetWindowLong(hwnd, GWL_STYLE, (LONG)aStyle);
+  // should check error here...
+  ShowWindow(hwnd, SW_SHOWNORMAL);
+}
+
 - (void) resizeBackingStoreFor: (HWND)hwnd
 {
-  [self subclassResponsibility: _cmd];
+  RECT r;
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
+  
+  // FIXME: We should check if the size really did change.
+  if (win->useHDC)
+    {
+      HDC hdc, hdc2;
+      HBITMAP hbitmap;
+      HGDIOBJ old;
+      
+      old = SelectObject(win->hdc, win->old);
+      DeleteObject(old);
+      DeleteDC(win->hdc);
+      win->hdc = NULL;
+      win->old = NULL;
+      
+      GetClientRect((HWND)hwnd, &r);
+      hdc = GetDC((HWND)hwnd);
+      hdc2 = CreateCompatibleDC(hdc);
+      hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, r.bottom - r.top);
+      win->old = SelectObject(hdc2, hbitmap);
+      win->hdc = hdc2;
+      
+      ReleaseDC((HWND)hwnd, hdc);
+
+      // After resizing the backing store, we need to redraw the window
+      win->backingStoreEmpty = YES;
+    }
 }
 
 - (BOOL) displayEvent: (unsigned int)uMsg;   // diagnotic filter
@@ -727,95 +843,6 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 @implementation WIN32Server (WindowOps)
 
 /*
-  styles are mapped between the two systems 
-
-    NSUtilityWindowMask         16
-    NSDocModalWindowMask        32
-    NSBorderlessWindowMask      0
-    NSTitledWindowMask          1
-    NSClosableWindowMask        2
-    NSMiniaturizableWindowMask  4
-    NSResizableWindowMask       8
-    NSIconWindowMask            64
-    NSMiniWindowMask            128
-
-  NSMenu(style) =  NSTitledWindowMask | NSClosableWindowMask =3;
-*/
-- (DWORD) windowStyleForGSStyle: (unsigned int) style
-{
-  DWORD wstyle = 0;
-        
-  if ([self handlesWindowDecorations] == NO)
-    return WS_POPUP;
-        
-  switch (style)
-    {
-      case 0:
-         wstyle = WS_POPUP;
-         break;
-      case NSTitledWindowMask: // 1
-         wstyle = WS_CAPTION;
-         break;
-      case NSClosableWindowMask: // 2
-         wstyle = WS_CAPTION+WS_SYSMENU;
-         break;
-      case NSMiniaturizableWindowMask: //4
-         wstyle = WS_MINIMIZEBOX+WS_SYSMENU;
-         break;
-      case NSResizableWindowMask: // 8
-         wstyle = WS_SIZEBOX;
-      case NSMiniWindowMask: //128
-      case NSIconWindowMask: // 64
-         wstyle = WS_ICONIC; 
-         break;
-      //case NSUtilityWindowMask: //16
-      //case NSDocModalWindowMask: //32
-         break;
-      // combinations
-      case NSTitledWindowMask+NSClosableWindowMask: //3
-         wstyle = WS_CAPTION+WS_SYSMENU;
-         break;
-      case NSTitledWindowMask+NSClosableWindowMask+NSMiniaturizableWindowMask: //7
-         wstyle = WS_CAPTION+WS_MINIMIZEBOX+WS_SYSMENU;
-         break;
-      case NSTitledWindowMask+NSResizableWindowMask: // 9
-         wstyle = WS_CAPTION+WS_SIZEBOX;
-         break;
-      case NSTitledWindowMask+NSClosableWindowMask+NSResizableWindowMask: // 11
-         wstyle = WS_CAPTION+WS_SIZEBOX+WS_SYSMENU;
-         break;
-      case NSTitledWindowMask+NSResizableWindowMask+NSMiniaturizableWindowMask: //13
-         wstyle = WS_SIZEBOX+WS_MINIMIZEBOX+WS_SYSMENU+WS_CAPTION;
-         break;   
-      case NSTitledWindowMask+NSClosableWindowMask+NSResizableWindowMask+
-                                                NSMiniaturizableWindowMask: //15
-         wstyle = WS_CAPTION+WS_SIZEBOX+WS_MINIMIZEBOX+WS_SYSMENU;
-         break;
-        
-      default:
-         wstyle = WS_POPUP; //WS_CAPTION+WS_SYSMENU;
-         break;
-   }
-
-   //NSLog(@"Window wstyle %d for style %d", wstyle, style);
-   return wstyle;
-}
-
-
-- (void) resetForGSWindowStyle:(HWND)hwnd w32Style:(DWORD)aStyle
-{
-  // to be completed for styles
-  LONG result;
-
-  ShowWindow(hwnd, SW_HIDE);
-  SetLastError(0);
-  result = SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
-  result = SetWindowLong(hwnd, GWL_STYLE, (LONG)aStyle);
-  // should check error here...
-  ShowWindow(hwnd, SW_SHOWNORMAL);
-}
-
-/*
   styleMask specifies the receiver's style. It can either be
   NSBorderlessWindowMask, or it can contain any of the following
   options, combined using the C bitwise OR operator: Option Meaning
@@ -971,38 +998,6 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
     {
       win->useHDC = NO;
       win->hdc = NULL;
-    }
-}
-
-- (void) resizeBackingStoreFor: (HWND)hwnd
-{
-  RECT r;
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
-  
-  // FIXME: We should check if the size really did change.
-  if (win->useHDC)
-    {
-      HDC hdc, hdc2;
-      HBITMAP hbitmap;
-      HGDIOBJ old;
-      
-      old = SelectObject(win->hdc, win->old);
-      DeleteObject(old);
-      DeleteDC(win->hdc);
-      win->hdc = NULL;
-      win->old = NULL;
-      
-      GetClientRect((HWND)hwnd, &r);
-      hdc = GetDC((HWND)hwnd);
-      hdc2 = CreateCompatibleDC(hdc);
-      hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, r.bottom - r.top);
-      win->old = SelectObject(hdc2, hbitmap);
-      win->hdc = hdc2;
-      
-      ReleaseDC((HWND)hwnd, hdc);
-
-      // After resizing the backing store, we need to redraw the window
-      win->backingStoreEmpty = YES;
     }
 }
 
@@ -1246,7 +1241,6 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 - (void) setresizeincrements: (NSSize)size : (int) winNum
 {
 }
-
 /** Causes buffered graphics to be flushed to the screen */
 - (void) flushwindowrect: (NSRect)rect : (int)winNum
 {
@@ -1259,13 +1253,13 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
       HDC hdc = GetDC(hwnd);
       WINBOOL result;
 
-      result = BitBlt(hdc, rect.left, rect.top, 
-                      (rect.right - rect.left), (rect.bottom - rect.top), 
-                      win->hdc, rect.left, rect.top, SRCCOPY);
+      result = BitBlt(hdc, r.left, r.top, 
+                      (r.right - r.left), (r.bottom - rect.top), 
+                      win->hdc, r.left, r.top, SRCCOPY);
       if (!result)
         {
           NSLog(@"Flush window %d %@", hwnd, 
-                NSStringFromRect(MSWindowRectToGS(self, hwnd, rect)));
+                NSStringFromRect(MSWindowRectToGS(self, hwnd, r)));
           NSLog(@"Flush window failed with %d", GetLastError());
         }
       ReleaseDC(hwnd, hdc);
