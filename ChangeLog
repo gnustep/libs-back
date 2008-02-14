@@ -1,5 +1,18 @@
 2008-02-14 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Headers/win32/WIN32Server.h,
+	* Source/win32/WIN32Server.m,
+	* Source/win32/w32_activate.m,
+	* Source/win32/w32_movesize.m,
+	* Source/win32/w32_create.m,
+	* Source/win32/w32_general.m,
+	* Source/win32/w32_text_focus.m,
+	* Source/win32/w32_windowdisplay.m:
+	General cleanup and reformatting.
+	* Source/win32/w32_Events.h: Removed this file.
+	
+2008-02-14 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Headers/win32/WIN32Server.h: Extend WIN_INTERN with
 	backingStoreEmpty flag.
 	* Source/win32/WIN32Server.m (-windowbacking::): Set
