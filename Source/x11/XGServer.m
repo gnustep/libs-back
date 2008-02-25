@@ -15,7 +15,7 @@
 
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
    Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public
@@ -72,7 +72,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 {
   int d, s;
   NSString *host;
-  NSArray  *a;
+  NSArray *a;
 
   host = @"";
   d = s = 0;
@@ -80,21 +80,21 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   if (name == nil)
     {
       NSLog(@"X DISPLAY environment variable not set,"
-	    @" assuming local X server (DISPLAY=:0.0)");
+            @" assuming local X server (DISPLAY=:0.0)");
     }
   else if ([name hasPrefix: @":"] == YES)
     {
       int bnum;
       bnum = sscanf([name cString], ":%d.%d", &d, &s);
       if (bnum == 1)
-	s = 0;
+        s = 0;
       if (bnum < 1)
-	d = 0;
+        d = 0;
     }  
   else if ([a count] != 2)
     {
       NSLog(@"X DISPLAY environment variable has bad format,"
-	    @" assuming local X server (DISPLAY=:0.0)");
+            @" assuming local X server (DISPLAY=:0.0)");
     }
   else
     {
@@ -104,9 +104,9 @@ _parse_display_name(NSString *name, int *dn, int *sn)
       dnum = [a lastObject];
       bnum = sscanf([dnum cString], "%d.%d", &d, &s);
       if (bnum == 1)
-	s = 0;
+        s = 0;
       if (bnum < 1)
-	d = 0;
+        d = 0;
     }
   if (dn)
     *dn = d;
@@ -125,7 +125,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 
 @interface XGScreenContext : NSObject
 {
-  RContext        *rcontext;
+  RContext *rcontext;
   XGDrawMechanism drawMechanism;
 }
 
@@ -163,9 +163,9 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 
 - initForDisplay: (Display *)dpy screen: (int)screen_number
 {
-  RContextAttributes	*attribs;
-  XColor		testColor;
-  unsigned char		r, g, b;
+  RContextAttributes *attribs;
+  XColor testColor;
+  unsigned char r, g, b;
 
    /* Get the visual information */
   attribs = NULL;
@@ -181,8 +181,8 @@ _parse_display_name(NSString *name, int *dn, int *sn)
     rcontext->attribs->use_shared_memory = False;
 
   /*
-   *	Crude tests to see if we can accelerate creation of pixels from
-   *	8-bit red, green and blue color values.
+   *        Crude tests to see if we can accelerate creation of pixels from
+   *        8-bit red, green and blue color values.
    */
   if (rcontext->depth == 12 || rcontext->depth == 16)
     {
@@ -193,15 +193,15 @@ _parse_display_name(NSString *name, int *dn, int *sn)
       testColor.pixel = (((r << 5) + g) << 6) + b;
       XQueryColor(rcontext->dpy, rcontext->cmap, &testColor);
       if (((testColor.red >> 11) != r)
-	|| ((testColor.green >> 11) != g)
-	|| ((testColor.blue >> 11) != b))
-	{
-	  NSLog(@"WARNING - XGServer is unable to use the "
-	    @"fast algorithm for writing to a 16-bit display on "
-	    @"this host - perhaps you'd like to adjust the code "
-	    @"to work ... and submit a patch.");
-	  drawMechanism = XGDM_PORTABLE;
-	}
+        || ((testColor.green >> 11) != g)
+        || ((testColor.blue >> 11) != b))
+        {
+          NSLog(@"WARNING - XGServer is unable to use the "
+            @"fast algorithm for writing to a 16-bit display on "
+            @"this host - perhaps you'd like to adjust the code "
+            @"to work ... and submit a patch.");
+          drawMechanism = XGDM_PORTABLE;
+        }
     }
   else if (rcontext->depth == 15)
     {
@@ -212,15 +212,15 @@ _parse_display_name(NSString *name, int *dn, int *sn)
       testColor.pixel = (((r << 5) + g) << 5) + b;
       XQueryColor(rcontext->dpy, rcontext->cmap, &testColor);
       if (((testColor.red >> 11) != r)
-	|| ((testColor.green >> 11) != g)
-	|| ((testColor.blue >> 11) != b))
-	{
-	  NSLog(@"WARNING - XGServer is unable to use the "
-	    @"fast algorithm for writing to a 15-bit display on "
-	    @"this host - perhaps you'd like to adjust the code "
-	    @"to work ... and submit a patch.");
-	  drawMechanism = XGDM_PORTABLE;
-	}
+        || ((testColor.green >> 11) != g)
+        || ((testColor.blue >> 11) != b))
+        {
+          NSLog(@"WARNING - XGServer is unable to use the "
+            @"fast algorithm for writing to a 15-bit display on "
+            @"this host - perhaps you'd like to adjust the code "
+            @"to work ... and submit a patch.");
+          drawMechanism = XGDM_PORTABLE;
+        }
     }
   else if (rcontext->depth == 24 || rcontext->depth == 32)
     {
@@ -233,23 +233,23 @@ _parse_display_name(NSString *name, int *dn, int *sn)
       if (((testColor.red >> 8) == r)
         && ((testColor.green >> 8) == g)
         && ((testColor.blue >> 8) == b))
-	{
-	  drawMechanism = XGDM_FAST32;
-	}
+        {
+          drawMechanism = XGDM_FAST32;
+        }
       else if (((testColor.red >> 8) == b)
-	&& ((testColor.green >> 8) == g)
-	&& ((testColor.blue >> 8) == r))
-	{
-	  drawMechanism = XGDM_FAST32_BGR;
-	}
+        && ((testColor.green >> 8) == g)
+        && ((testColor.blue >> 8) == r))
+        {
+          drawMechanism = XGDM_FAST32_BGR;
+        }
       else
-	{
-	  NSLog(@"WARNING - XGServer is unable to use the "
-	    @"fast algorithm for writing to a 32-bit display on "
-	    @"this host - perhaps you'd like to adjust the code "
-	    @"to work ... and submit a patch.");
-	  drawMechanism = XGDM_PORTABLE;
-	}
+        {
+          NSLog(@"WARNING - XGServer is unable to use the "
+            @"fast algorithm for writing to a 32-bit display on "
+            @"this host - perhaps you'd like to adjust the code "
+            @"to work ... and submit a patch.");
+          drawMechanism = XGDM_PORTABLE;
+        }
     }
   else if (rcontext->depth == 8)
     {
@@ -260,26 +260,26 @@ _parse_display_name(NSString *name, int *dn, int *sn)
       testColor.pixel = (((r << 3) + g) << 2) + b;
       XQueryColor(rcontext->dpy, rcontext->cmap, &testColor);
       if (((testColor.red >> 13) != r)
-	|| ((testColor.green >> 13) != g)
-	|| ((testColor.blue >> 14) != b))
-	{
-	  NSLog(@"WARNING - XGServer is unable to use the "
-	    @"fast algorithm for writing to an 8-bit display on "
-	    @"this host - the most likely reason being "
-	    @"the StandardColormap RGB_BEST_MAP has not been installed.");
-	  drawMechanism = XGDM_PORTABLE;
-	}
+        || ((testColor.green >> 13) != g)
+        || ((testColor.blue >> 14) != b))
+        {
+          NSLog(@"WARNING - XGServer is unable to use the "
+            @"fast algorithm for writing to an 8-bit display on "
+            @"this host - the most likely reason being "
+            @"the StandardColormap RGB_BEST_MAP has not been installed.");
+          drawMechanism = XGDM_PORTABLE;
+        }
     }
   else
     {
       NSLog(@"WARNING - XGServer is unable to use a "
-	@"fast algorithm for writing to the display on "
-	@"this host - perhaps you'd like to adjust the code "
-	@"to work ... and submit a patch.");
+        @"fast algorithm for writing to the display on "
+        @"this host - perhaps you'd like to adjust the code "
+        @"to work ... and submit a patch.");
       drawMechanism = XGDM_PORTABLE;
     }
   NSDebugLLog(@"XGTrace", @"Draw mech %d for screen %d", drawMechanism,
-	screen_number);
+        screen_number);
   return self;
 }
 
@@ -301,20 +301,20 @@ _parse_display_name(NSString *name, int *dn, int *sn)
       XFreeGC(rcontext->dpy, rcontext->copy_gc);
       if (rcontext->drawable)
         {
-	  XDestroyWindow(rcontext->dpy, rcontext->drawable);
-	}
+          XDestroyWindow(rcontext->dpy, rcontext->drawable);
+        }
       if (rcontext->pixels)
         {
-	  free(rcontext->pixels);
-	}
+          free(rcontext->pixels);
+        }
       if (rcontext->colors)
         {
-	  free(rcontext->colors);
-	}
+          free(rcontext->colors);
+        }
       if (rcontext->hermes_data)
         {
-	  free(rcontext->hermes_data);
-	}
+          free(rcontext->hermes_data);
+        }
       free(rcontext->attribs);
       free(rcontext);
     }
@@ -372,37 +372,36 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 
 - (id) _initXContext
 {
-  int			screen_number, display_number;
-  NSString		*display_name;
-  XGScreenContext       *screen;
+  int screen_number, display_number;
+  NSString *display_name;
 
   display_name = [server_info objectForKey: GSDisplayName];
   if (display_name == nil)
     {
       NSString *host = [[NSUserDefaults standardUserDefaults]
-	stringForKey: @"NSHost"];
+                           stringForKey: @"NSHost"];
       NSString *dn = [server_info objectForKey: GSDisplayNumber];
       NSString *sn = [server_info objectForKey: GSScreenNumber];
 
       if (dn || sn)
-	{
-	  if (dn == NULL)
-	    dn = @"0";
-	  if (sn == NULL)
-	    sn = @"0";
-	  if (host == nil)
-	    host = @"";
-	  display_name = [NSString stringWithFormat: @"%@:%@.%@", host, dn,sn];
-	}
+        {
+          if (dn == NULL)
+            dn = @"0";
+          if (sn == NULL)
+            sn = @"0";
+          if (host == nil)
+            host = @"";
+          display_name = [NSString stringWithFormat: @"%@:%@.%@", host, dn,sn];
+        }
       else if ((host != nil) && ([host isEqual: @""] == NO))
         {
-	  /**
-	   * If the NSHost default told us to display somewhere, we need
-	   * to generate a display name for X from the host name and the
-	   * default display and screen numbers (zero).
-	   */
-	  display_name = [NSString stringWithFormat: @"%@:0.0", host];
-	}
+          /**
+           * If the NSHost default told us to display somewhere, we need
+           * to generate a display name for X from the host name and the
+           * default display and screen numbers (zero).
+           */
+          display_name = [NSString stringWithFormat: @"%@:0.0", host];
+        }
     }
 
   if (display_name)
@@ -419,27 +418,24 @@ _parse_display_name(NSString *name, int *dn, int *sn)
     {
       char *dname = XDisplayName([display_name cString]);
       [NSException raise: NSWindowServerCommunicationException
-		  format: @"Unable to connect to X Server `%s'", dname];
+                  format: @"Unable to connect to X Server `%s'", dname];
     }
 
   /* Parse display information */
   _parse_display_name(display_name, &display_number, &screen_number);
   NSDebugLog(@"Opened display %@, display %d screen %d", 
-	     display_name, display_number, screen_number);
+             display_name, display_number, screen_number);
   [server_info setObject: display_name forKey: GSDisplayName];
   [server_info setObject: [NSNumber numberWithInt: display_number]
-		  forKey: GSDisplayNumber];
+                  forKey: GSDisplayNumber];
   [server_info setObject: [NSNumber numberWithInt: screen_number] 
-	          forKey: GSScreenNumber];
+                  forKey: GSScreenNumber];
 
   /* Setup screen*/
   if (screenList == NULL)
     screenList = NSCreateMapTable(NSIntMapKeyCallBacks,
                                  NSObjectMapValueCallBacks, 20);
 
-  screen = [[XGScreenContext alloc] initForDisplay: dpy screen: screen_number];
-  AUTORELEASE(screen);
-  NSMapInsert(screenList, (void *)(uintptr_t)screen_number, (void *)screen);
   defScreen = screen_number;
 
   XSetErrorHandler(XGErrorHandler);
@@ -449,7 +445,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 
   [self _setupRootWindow];
   inputServer = [[XIMInputServer allocWithZone: [self zone]] 
-		  initWithDelegate: nil display: dpy name: @"XIM"];
+                  initWithDelegate: nil display: dpy name: @"XIM"];
   return self;
 }
 
@@ -498,18 +494,18 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   if (screen_number >= count)
     {
       [NSException raise: NSInvalidArgumentException
-		   format: @"Request for invalid screen"];
+                   format: @"Request for invalid screen"];
     }
 
   screen = NSMapGet(screenList, (void *)(uintptr_t)screen_number);
   if (screen == NULL)
     {
-      XGScreenContext *screen;
       screen = [[XGScreenContext alloc] 
-		 initForDisplay: dpy screen: screen_number];
-      AUTORELEASE(screen);
+                   initForDisplay: dpy screen: screen_number];
       NSMapInsert(screenList, (void *)(uintptr_t)screen_number, (void *)screen);
+      RELEASE(screen);
     }
+
   return screen;
 }
 
@@ -576,7 +572,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 + (void) waitAllContexts
 {
   if ([[GSCurrentContext() class] 
-	respondsToSelector: @selector(waitAllContexts)])
+        respondsToSelector: @selector(waitAllContexts)])
     [[GSCurrentContext() class] waitAllContexts];
 }
 
@@ -682,11 +678,11 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 
 - (void) _updateInputMethodState
 {
-  NSRect    frame;
-  int	    font_size;
-  NSRect    status_area;
-  NSRect    preedit_area;
-  id	    displayServer = (XGServer *)GSCurrentServer();
+  NSRect frame;
+  int font_size;
+  NSRect status_area;
+  NSRect preedit_area;
+  id displayServer = (XGServer *)GSCurrentServer();
 
   if (![displayServer respondsToSelector: @selector(inputMethodStyle)])
     return;
@@ -719,7 +715,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
       preedit_area.origin.x    = status_area.size.width + 2;
       preedit_area.origin.y    = status_area.origin.y;
       preedit_area.size.width  = frame.origin.x + frame.size.width
-	- preedit_area.origin.x;
+        - preedit_area.origin.x;
       preedit_area.size.height = status_area.size.height;
 
       [displayServer setStatusArea: &status_area];
@@ -740,28 +736,28 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 
   if ([[displayServer inputMethodStyle] isEqual: @"OverTheSpot"])
     {
-      id	view;
-      NSRect	frame;
-      NSPoint	p;
-      NSRect	client_win_rect;
-      NSPoint	screenXY_of_frame;
-      double	x_offset;
-      double	y_offset;
-      int	font_size;
-      NSRect	doc_rect;
-      NSRect	doc_visible_rect;
-      BOOL	cond;
-      float	x = insertionPoint.x;
-      float	y = insertionPoint.y;
+      id view;
+      NSRect frame;
+      NSPoint p;
+      NSRect client_win_rect;
+      NSPoint screenXY_of_frame;
+      double x_offset;
+      double y_offset;
+      int font_size;
+      NSRect doc_rect;
+      NSRect doc_visible_rect;
+      BOOL cond;
+      float x = insertionPoint.x;
+      float y = insertionPoint.y;
 
       [displayServer clientWindowRect: &client_win_rect];
       [displayServer fontSize: &font_size];
 
       cond = [[self superview] isKindOfClass: [NSClipView class]];
       if (cond)
-	view = [self superview];
+        view = [self superview];
       else
-	view = self;
+        view = self;
 
       frame = [view frame];
       screenXY_of_frame = [[view window] convertBaseToScreen: frame.origin];
@@ -770,19 +766,19 @@ _parse_display_name(NSString *name, int *dn, int *sn)
       // method's client window.
       x_offset = screenXY_of_frame.x - client_win_rect.origin.x; 
       y_offset = (client_win_rect.origin.y + client_win_rect.size.height)
-	- (screenXY_of_frame.y + frame.size.height) + font_size;
+        - (screenXY_of_frame.y + frame.size.height) + font_size;
 
       x += x_offset;
       y += y_offset;
       if (cond) // If 'view' is of NSClipView, then
-	{
-	  // N.B. Remember, (x, y) are the values with respect to NSTextView.
-	  // We need to know the corresponding insertion position with respect
-	  // to NSClipView.
-	  doc_rect = [(NSClipView *)view documentRect];
-	  doc_visible_rect = [view documentVisibleRect];
-	  y -= doc_visible_rect.origin.y - doc_rect.origin.y;
-	}
+        {
+          // N.B. Remember, (x, y) are the values with respect to NSTextView.
+          // We need to know the corresponding insertion position with respect
+          // to NSClipView.
+          doc_rect = [(NSClipView *)view documentRect];
+          doc_visible_rect = [view documentVisibleRect];
+          y -= doc_visible_rect.origin.y - doc_rect.origin.y;
+        }
 
       p = NSMakePoint(x, y);
       [displayServer setPreeditSpot: &p];
