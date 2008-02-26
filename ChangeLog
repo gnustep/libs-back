@@ -1,3 +1,8 @@
+2008-02-26 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_checkStyle:): Restructure code
+	for double parent handling to avoid wrong computation path. 
+
 2008-02-25 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServer.m (-_screenContextForScreen:): Remove wrong
