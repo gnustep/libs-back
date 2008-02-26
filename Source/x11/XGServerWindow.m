@@ -996,17 +996,15 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
           XGetWindowAttributes(dpy, parent, &wattr);
           NSDebugLLog(@"Offset", @"Parent border,width,height %d,%d,%d\n",
                       wattr.border_width, wattr.width, wattr.height);
-          l = repx + wattr.border_width;
-          t = repy + wattr.border_width;
+          l = wattr.border_width;
+          t = wattr.border_width;
           
           /* Find total parent size and subtract window size and
            * top-left-corner offset to determine bottom-right-corner
            * offset.
            */
           r = wattr.width + wattr.border_width * 2;
-          r -= (window->xframe.size.width + l);
           b = wattr.height + wattr.border_width * 2;
-          b -= (window->xframe.size.height + t);
           
           // Some window manager e.g. KDE2 put in multiple windows,
           // so we have to find the right parent, closest to root
@@ -1022,8 +1020,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
             {
               Window new_parent = parent;
 
-              r = wattr.width + wattr.border_width * 2;
-              b = wattr.height + wattr.border_width * 2;
               while (new_parent && (new_parent != window->root))
                 {
                   Window root;
@@ -1050,16 +1046,20 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
                   if (new_parent && new_parent != window->root)
                     {
                       XGetWindowAttributes(dpy, parent, &wattr);
-                      l += wattr.x + wattr.border_width;
-                      t += wattr.y + wattr.border_width;
+                      l += repx + wattr.border_width;
+                      t += repy + wattr.border_width;
                       r = wattr.width + wattr.border_width * 2;
                       b = wattr.height + wattr.border_width * 2;
+                      repx = wattr.x;
+                      repy = wattr.y;
                     }
                 } /* while */
-              r -= (window->xframe.size.width + l);
-              b -= (window->xframe.size.height + t);
             } /* generic.flags.doubleParentWindow */
-          
+          r -= (window->xframe.size.width + l);
+          b -= (window->xframe.size.height + t);
+          l += repx;
+          t += repy;
+
           o->l = l;
           o->r = r;
           o->t = t;
