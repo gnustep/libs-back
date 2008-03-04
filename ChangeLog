@@ -1,3 +1,15 @@
+2008-03-04 Xavier Glattard <xavier.glattard@online.fr>
+
+	* configure.ac,
+	  configure
+	  : Display warning msgs when cairo backend is selected on win32
+	* Headers/cairo/Win32CairoSurface.h,
+	  Headers/cairo/Win32CairoGlitzSurface.h,
+	  Source/cairo/Win32CairoSurface.m,
+	  Source/cairo/Win32CairoGlitzSurface.m,
+  	  Source/cairo/CairoContext.m,
+  	  : Cairo and Cairo/Glitz experimental backends on win32
+
 2008-02-26 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-_checkStyle:): Restructure code
