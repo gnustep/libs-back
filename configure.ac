@@ -486,14 +486,11 @@ elif test x"$BUILD_GRAPHICS" = "xart"; then
     CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xcairo"; then
+  if test "$have_freetype" = no; then
+    AC_MSG_ERROR([can't find freetype, required for graphics=cairo])
+  fi
   if test "$have_cairo" = no -o "$have_cairo-ft" = no ; then
     AC_MSG_ERROR([can't find cairo, required for graphics=cairo!])
-    if test $BUILD_SERVER = win32; then
-      BUILD_GRAPHICS=winlib
-    else
-      BUILD_GRAPHICS=xlib
-    fi
-    AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
   else
     AC_MSG_CHECKING(Cairo backend)
     CAIRO_LIBS="$CAIRO_FT_LIBS"
@@ -518,10 +515,16 @@ elif test x"$BUILD_GRAPHICS" = "xcairo"; then
       CAIRO_LIBS="$CAIRO_LIBS $CAIRO_GLITZ_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_GLITZ_CFLAGS"
       AC_MSG_RESULT(glitz)
+      AC_MSG_WARN([**** Cairo-over-Glitz backend is highly experimental])
+      AC_MSG_WARN([**** You definitively shouldn't do that.])
+      AC_MSG_WARN([**** It actually does not work !])
+      AC_MSG_WARN([**** Are you a backend developer ?])
     elif test $BUILD_SERVER = win32 -a "x$have_cairo_win32" = "xyes"; then
       CAIRO_LIBS="$CAIRO_LIBS $CAIRO_WIN32_LIBS $WIN32_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_WIN32_CFLAGS"
       AC_MSG_RESULT(winlib)
+      AC_MSG_WARN([**** Cairo backend on win32 is experimental and is not supported.])
+      AC_MSG_WARN([**** Are you a backend developer ?])
     elif test $BUILD_SERVER = x11 -a "x$have_cairo_xlib" = "xyes"; then
       CAIRO_LIBS="$CAIRO_LIBS $CAIRO_XLIB_LIBS $XFT_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS"
