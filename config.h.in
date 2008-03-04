@@ -32,6 +32,9 @@
 /* Define if you have the glx library */
 #undef HAVE_GLX
 
+/* Define if you have the glx library */
+#undef HAVE_WGL
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
