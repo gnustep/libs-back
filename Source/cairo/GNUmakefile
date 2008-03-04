@@ -38,13 +38,25 @@ cairo_OBJC_FILES = CairoSurface.m \
   CairoFaceInfo.m \
   CairoPSSurface.m \
   CairoPDFSurface.m \
-  XGCairoSurface.m \
-  XGCairoXImageSurface.m 
 
-ifeq ($(WITH_GLITZ),yes)
-cairo_OBJC_FILES += XGCairoGlitzSurface.m
+ifeq ($(BUILD_SERVER),x11)
+  ifeq ($(WITH_GLITZ),yes)
+    cairo_OBJC_FILES += XGCairoGlitzSurface.m
+  else
+    cairo_OBJC_FILES += XGCairoSurface.m XGCairoXImageSurface.m
+  endif
+else
+  ifeq ($(BUILD_GRAPHICS),cairo)
+    ifeq ($(WITH_GLITZ),yes)
+      cairo_OBJC_FILES += Win32CairoGlitzSurface.m
+    else
+      cairo_OBJC_FILES += Win32CairoSurface.m
+      # Win32CairoXImageSurface.m 
+    endif
+  endif
 endif
 
+cairo_OBJC_FILES += 
 
 -include GNUmakefile.preamble
 
