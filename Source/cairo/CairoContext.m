@@ -32,21 +32,36 @@
 #include "cairo/CairoPDFSurface.h"
 #include "cairo/CairoFontInfo.h"
 #include "cairo/CairoFontEnumerator.h"
-#include "x11/XGServer.h"
 #include "config.h"
-
-#ifdef USE_GLITZ
-#include "cairo/XGCairoGlitzSurface.h"
-#else
-#include "cairo/XGCairoSurface.h"
-#include "cairo/XGCairoXImageSurface.h"
-#include "x11/XGServerWindow.h"
-#include "x11/XWindowBuffer.h"
-#endif
 
 #define CGSTATE ((CairoGState *)gstate)
 
-@class XWindowBuffer;
+#if BUILD_SERVER == SERVER_x11
+#  include "x11/XGServer.h"
+#  ifdef USE_GLITZ
+#    define _CAIRO_SURFACE_CLASSNAME XGCairoGlitzSurface
+#    include "cairo/XGCairoGlitzSurface.h"
+#  else
+//#    define _CAIRO_SURFACE_CLASSNAME XGCairoSurface
+//#    include "cairo/XGCairoSurface.h"
+#    define _CAIRO_SURFACE_CLASSNAME XGCairoXImageSurface
+#    include "cairo/XGCairoXImageSurface.h"
+#  endif /* USE_GLITZ */
+#  include "x11/XGServerWindow.h"
+#  include "x11/XWindowBuffer.h"
+#elif BUILD_SERVER == SERVER_win32
+#  include <windows.h>
+#  ifdef USE_GLITZ
+#    define _CAIRO_SURFACE_CLASSNAME Win32CairoGlitzSurface
+#    include "cairo/Win32CairoGlitzSurface.h"
+#  else
+#    define _CAIRO_SURFACE_CLASSNAME Win32CairoSurface
+#    include "cairo/Win32CairoSurface.h"
+#  endif /* USE_GLITZ */
+#else
+#  error Invalid server for Cairo backend : non implemented
+#endif /* BUILD_SERVER */
+
 
 @implementation CairoContext
 
@@ -70,8 +85,12 @@
 
 - (void) flushGraphics
 {
+#if BUILD_SERVER == SERVER_x11
   XFlush([(XGServer *)server xDisplay]);
+#endif // BUILD_SERVER = SERVER_x11
 }
+
+#if BUILD_SERVER == SERVER_x11
 
 /* Private backend methods */
 + (void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
@@ -91,7 +110,9 @@
   [XWindowBuffer _gotShmCompletion: d];
 }
 
-#endif
+#endif // XSHM
+
+#endif // BUILD_SERVER = SERVER_x11
 
 @end 
 
@@ -112,12 +133,7 @@
 {
   CairoSurface *surface;
 
-#ifdef USE_GLITZ
-  surface = [[XGCairoGlitzSurface alloc] initWithDevice: device];
-#else
-  //surface = [[XGCairoSurface alloc] initWithDevice: device];
-  surface = [[XGCairoXImageSurface alloc] initWithDevice: device];
-#endif
+  surface = [[_CAIRO_SURFACE_CLASSNAME alloc] initWithDevice: device];
 
   [CGSTATE GSSetSurface: surface : x : y];
 }
@@ -166,3 +182,5 @@
 }
 
 @end
+
+#undef _CAIRO_SURFACE_CLASSNAME
