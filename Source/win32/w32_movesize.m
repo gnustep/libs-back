@@ -252,12 +252,95 @@
 
 - (void) decodeWM_WINDOWPOSCHANGEDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-  // stub for future dev
+#if 0
+/* FIXME we really want to ensure that windows stay in the correct
+ * level order.  When we change ordering programmatically using
+ * orderwindow::: that's OK, but if someone else reorders our
+ * windows, how do we cope?
+ * Perhaps we should veto/adjust ordering before it happens, or
+ * perhaps we should re-order here?
+ */
+  if ((inf->flags & SWP_NOZORDER) == 0)
+    {
+      /* If this window has been moved to the front, we need to move
+       * any other higher level windows to follow it.
+       */
+      win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
+      if (win->level > NSDesktopWindowLevel)
+	{
+	  int	otherWin;
+	  int	levelToMove = NSDesktopWindowlevel;
+
+	  /* Start searching from bottom of window list...
+	   * The last child of the desktop.
+	   */
+	  otherWin = (int)GetDesktopWindow();
+	  otherWin = (int)GetWindow((HWND)otherWin, GW_CHILD);
+	  if (otherWin > 0)
+	    {
+	      otherWin = (int)GetWindow((HWND)otherWin, GW_HWNDLAST);
+	    }
+	  while (otherWin > 0)
+	    {
+	      TCHAR	buf[32];
+
+	      otherWin = (int)GetNextWindow((HWND)otherWin, GW_HWNDPREV);
+	      if (otherWin == 0 || otherWin == (int)hwnd)
+		{
+		  break;	// No higher level windows below this
+		}
+	      if (GetClassName((HWND)otherWin, buf, 32) == 18
+		&& strncmp(buf, "GNUstepWindowClass", 18) == 0)
+		{
+		  other = (WIN_INTERN *)GetWindowLong((HWND)otherWin,
+		    GWL_USERDATA);
+		  if (other->orderedIn == YES)
+		    {
+		      BOOL	moveThisWindow = NO;
+
+		      if (levelToMove > NSDesktopWindowLevel)
+			{
+			  if (other->level == levelToMove)
+			    {
+			      moveThisWindow = YES;
+			    }
+			}
+		      else if (other->level > win->level)
+			{
+			  levelToMove = other->level;
+			  moveThisWindow = YES;
+			}
+		      if (moveThisWidnow == YES)
+			{
+			  SetWindowPos((HWND)otherWin, HWND_TOP, 0, 0, 0, 0, 
+			    SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+			}
+		    }
+		}
+	    }
+	}
+    }
+#endif
 }
 
 - (void) decodeWM_WINDOWPOSCHANGINGParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-  // stub for future dev
+  WIN_INTERN	*win;
+  WINDOWPOS	*inf = (WINDOWPOS*)lParam;
+
+  if ((inf->flags & SWP_NOZORDER) == 0)
+    {
+      /* desktop level windows should stay at the bottom of the
+       * window list, so we can simply override any re-ordering
+       * to ensure that they are at the bottom unless another
+       * desktop level window is inserted below them.
+       */
+      win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
+      if (win->level <= NSDesktopWindowLevel)
+	{
+	  inf->hwndInsertAfter = HWND_BOTTOM;
+	}
+    }
 }
 
 - (LRESULT) decodeWM_GETMINMAXINFOParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
