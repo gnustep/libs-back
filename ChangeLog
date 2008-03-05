@@ -1,3 +1,11 @@
+2008-03-05 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Headers\win32\WIN32Server.h: Add fields to track window level/ordering
+	* Source\win32\WIN32Server.m: add code to implement window levvel/order
+	management. NB. This is incomplete ... it seems that direct user action
+	like clicking on a window will reorder it without going through the
+	orderwindow::; method, so we need to deal with that somehow.
+
 2008-03-04 Xavier Glattard <xavier.glattard@online.fr>
 
 	* configure.ac,
