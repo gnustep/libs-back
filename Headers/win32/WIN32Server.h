@@ -199,10 +199,12 @@ typedef struct w32serverFlags {
 
 typedef struct _win_intern {
   BOOL useHDC;
+  BOOL backingStoreEmpty;
+  BOOL orderedIn;
   HDC hdc; 
   HGDIOBJ old;
   MINMAXINFO minmax;
-  BOOL backingStoreEmpty;
+  int level;
 } WIN_INTERN;
 
 #endif /* _WIN32Server_h_INCLUDE */

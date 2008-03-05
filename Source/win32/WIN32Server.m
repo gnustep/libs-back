@@ -95,7 +95,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 {
   MSG msg;
   WINBOOL bRet; 
-
+NSLog(@"Callback");
   while ((bRet = PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) != 0)
     { 
       if (msg.message == WM_QUIT)
@@ -145,8 +145,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
           DispatchMessage(m); 
         } 
     } 
-  if (mode != nil)
-    [self callback: mode];
+//  if (mode != nil) [self callback: mode];
 }
 
 
@@ -155,7 +154,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
                            inMode: (NSString*)mode
                           dequeue: (BOOL)flag
 {
-  [self callback: nil];
+//  [self callback: nil];
   return [super getEventMatchingMask: mask
                 beforeDate: limit
                 inMode: mode
@@ -165,7 +164,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 - (void) discardEventsMatchingMask: (unsigned)mask
                        beforeEvent: (NSEvent*)limit
 {
-  [self callback: nil];
+//  [self callback: nil];
   [super discardEventsMatchingMask: mask
          beforeEvent: limit];
 }
@@ -1008,6 +1007,11 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
 - (void) orderwindow: (int) op : (int) otherWin : (int) winNum
 {
+  WIN_INTERN	*win;
+  WIN_INTERN	*other;
+  int		flag;
+  BOOL		belowTop = NO;
+
   NSDebugLLog(@"WTrace", @"orderwindow: %d : %d : %d", op, otherWin, winNum);
 
   if ([self usesNativeTaskbar])
@@ -1032,39 +1036,165 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
         }
     }
 
-  if (op != NSWindowOut)
-    {
-      int flag = SW_SHOW;
+  win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
 
-      if (IsIconic((HWND)winNum))
-        flag = SW_RESTORE;
-      ShowWindow((HWND)winNum, flag); 
+  if (op == NSWindowOut)
+    {
+      win->orderedIn = NO;
+      SetWindowPos((HWND)winNum, NULL, 0, 0, 0, 0, 
+        SWP_HIDEWINDOW | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER);
+      return;
+    }
+  win->orderedIn = YES;
+
+  if (otherWin <= 0)
+    {
+      if (otherWin == 0 && op == NSWindowAbove)
+	{
+	  /* This combination means we should move to the top of the current
+	   * window level but stay below the key window.
+	   */
+	  belowTop = YES;
+	}
+      otherWin = 0;
     }
 
-  switch (op)
+  if (otherWin > 0)
     {
-      case NSWindowOut: 
-        SetWindowPos((HWND)winNum, NULL, 0, 0, 0, 0, 
-                     SWP_HIDEWINDOW | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER);
-        break;
-      case NSWindowBelow: 
-        if (otherWin == 0)
-          otherWin = (int)HWND_BOTTOM;
-        SetWindowPos((HWND)winNum, (HWND)otherWin, 0, 0, 0, 0, 
-                     SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
-        break;
-      case NSWindowAbove: 
-        if (otherWin <= 0)
-          {
-            /* FIXME: Need to find the current key window (otherWin == 0
-               means keep the window below the current key.)  */
-            otherWin = winNum;
-            winNum = (int)HWND_TOP;
-          }
-        SetWindowPos((HWND) otherWin, (HWND)winNum, 0, 0, 0, 0, 
-                     SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
-        break;
+      /* Put this on the same window level as the window we are ordering
+       * it against.
+       */
+      other = (WIN_INTERN *)GetWindowLong((HWND)otherWin, GWL_USERDATA);
+      if (win->level != other->level)
+	{
+	  NSDebugLLog(@"WTrace",
+	    @"orderwindow: implicitly set level of %d (%d) to that of %d (%d)",
+	    winNum, win->level, otherWin, other->level);
+          win->level = other->level;
+	}
     }
+
+  flag = SW_SHOW;
+  if (IsIconic((HWND)winNum))
+    flag = SW_RESTORE;
+  ShowWindow((HWND)winNum, flag); 
+
+  if (win->level <= NSDesktopWindowLevel)
+    {
+      // For desktop level, put this at the bottom of the z-order
+      otherWin = (int)HWND_BOTTOM;
+      NSDebugLLog(@"WTrace",
+	@"orderwindow: set %i (%i) to bottom", winNum, win->level);
+    }
+  else if (otherWin == 0 || op == NSWindowAbove)
+    {
+      if (otherWin == 0)
+	{
+	  /* Start searching from bottom of window list...
+	   * The last child of the desktop.
+	   */
+	  otherWin = (int)GetDesktopWindow();
+	  otherWin = (int)GetWindow((HWND)otherWin, GW_CHILD);
+	  if (otherWin > 0)
+	    {
+	      otherWin = (int)GetWindow((HWND)otherWin, GW_HWNDLAST);
+	    }
+	}
+      NSDebugLLog(@"WTrace",
+	@"orderwindow: traverse for %d (%d) starting at %d",
+	winNum, win->level, otherWin);
+      while (otherWin > 0)
+        {
+	  TCHAR	buf[32];
+
+	  otherWin = (int)GetNextWindow((HWND)otherWin, GW_HWNDPREV);
+
+	  /* We only look at gnustep windows (other than the one being
+	   * ordered) to decide where to place our window.
+	   * The assumption is, that if we are ordering a window in,
+	   * we want it to be above any non-gnustep window.
+	   * FIXME ... perhaps we should move all non-gnustep windows
+	   * to be lower than the lowest (excluding gnustep desktop
+	   * level windows I suppose) gnustep window.
+	   */
+	  if (otherWin > 0 && otherWin != winNum
+	    && GetClassName((HWND)otherWin, buf, 32) == 18
+	    && strncmp(buf, "GNUstepWindowClass", 18) == 0)
+	    {
+	      other = (WIN_INTERN *)GetWindowLong((HWND)otherWin, GWL_USERDATA);
+	      if (other->orderedIn == YES)
+		{
+		  NSDebugLLog(@"WTrace",
+		    @"orderwindow: found gnustep window %d (%d)",
+		    otherWin, other->level);
+		  if (other->level >= win->level)
+		    {
+		      if (other->level > win->level || op == NSWindowBelow)
+			{
+			  break;
+			}
+		    }
+		}
+	    }
+	}
+    }
+
+  if (otherWin == 0)
+    {
+      if (belowTop == YES)
+        {
+	  /* FIXME: Need to find the current key window (otherWin == 0
+	     means keep the window below the current key.)  */
+	}
+      otherWin = (int)HWND_TOP;
+      NSDebugLLog(@"WTrace",
+	@"orderwindow: set %i (%i) to top", winNum, win->level);
+    }
+  else if (otherWin == (int)HWND_BOTTOM)
+    {
+      NSDebugLLog(@"WTrace",
+	@"orderwindow: set %i (%i) to bottom", winNum, win->level);
+    }
+  else
+    {
+      NSDebugLLog(@"WTrace",
+	@"orderwindow: set %i (%i) below %d", winNum, win->level, otherWin);
+    }
+
+  SetWindowPos((HWND)winNum, (HWND)otherWin, 0, 0, 0, 0, 
+    SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+
+#if 1
+{
+  NSString	*s = @"Window list:\n";
+
+  otherWin = (int)GetDesktopWindow();
+  otherWin = (int)GetWindow((HWND)otherWin, GW_CHILD);
+  if (otherWin > 0)
+    {
+      otherWin = (int)GetWindow((HWND)otherWin, GW_HWNDLAST);
+    }
+  while (otherWin > 0)
+    {
+      TCHAR	buf[32];
+
+      otherWin = (int)GetNextWindow((HWND)otherWin, GW_HWNDPREV);
+
+      if (otherWin > 0 && otherWin != winNum
+	&& GetClassName((HWND)otherWin, buf, 32) == 18
+	&& strncmp(buf, "GNUstepWindowClass", 18) == 0)
+	{
+	  other = (WIN_INTERN *)GetWindowLong((HWND)otherWin, GWL_USERDATA);
+	  if (other->orderedIn == YES)
+	    {
+	      s = [s stringByAppendingFormat:
+		@"%d (%d)\n", otherWin, other->level];
+	    }
+	}
+    }
+  NSDebugLLog(@"WTrace", @"orderwindow: %@", s);
+}
+#endif
 }
 
 - (void) movewindow: (NSPoint)loc : (int)winNum
@@ -1136,12 +1266,23 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
 - (void) setwindowlevel: (int) level : (int) winNum
 {
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
+
   NSDebugLLog(@"WTrace", @"setwindowlevel: %d : %d", level, winNum);
+  if (win->level != level)
+    {
+      win->level = level;
+      if (win->orderedIn == YES)
+	{
+          [self orderwindow: NSWindowAbove : 0 : winNum];
+	}
+    }
 }
 
 - (int) windowlevel: (int) winNum
 {
-  return 0;
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
+  return win->level;
 }
 
 - (NSArray *) windowlist
@@ -1154,6 +1295,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   if (w == NULL)
     {
       w = GetDesktopWindow();	// This should always succeed.
+      w = GetWindow(w, GW_CHILD);
     }
 
   /* Step up to the frontmost window.
