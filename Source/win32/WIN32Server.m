@@ -1010,7 +1010,7 @@ NSLog(@"Callback");
   WIN_INTERN	*win;
   WIN_INTERN	*other;
   int		flag;
-  BOOL		belowTop = NO;
+  int		foreground = 0;
 
   NSDebugLLog(@"WTrace", @"orderwindow: %d : %d : %d", op, otherWin, winNum);
 
@@ -1052,9 +1052,15 @@ NSLog(@"Callback");
       if (otherWin == 0 && op == NSWindowAbove)
 	{
 	  /* This combination means we should move to the top of the current
-	   * window level but stay below the key window.
+	   * window level but stay below the key window, so if we have a key
+	   * window (other than the current window), we store it's id for
+	   * testing later.
 	   */
-	  belowTop = YES;
+	  foreground = (int)GetForegroundWindow();
+	  if (foreground < 0 || foreground == winNum)
+	    {
+	      foreground = 0;
+	    }
 	}
       otherWin = 0;
     }
@@ -1129,7 +1135,9 @@ NSLog(@"Callback");
 		    otherWin, other->level);
 		  if (other->level >= win->level)
 		    {
-		      if (other->level > win->level || op == NSWindowBelow)
+		      if (other->level > win->level
+			|| op == NSWindowBelow
+			|| foreground == otherWin)
 			{
 			  break;
 			}
@@ -1141,11 +1149,6 @@ NSLog(@"Callback");
 
   if (otherWin == 0)
     {
-      if (belowTop == YES)
-        {
-	  /* FIXME: Need to find the current key window (otherWin == 0
-	     means keep the window below the current key.)  */
-	}
       otherWin = (int)HWND_TOP;
       NSDebugLLog(@"WTrace",
 	@"orderwindow: set %i (%i) to top", winNum, win->level);

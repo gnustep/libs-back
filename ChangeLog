@@ -5,6 +5,8 @@
 	management. NB. This is incomplete ... it seems that direct user action
 	like clicking on a window will reorder it without going through the
 	orderwindow::; method, so we need to deal with that somehow.
+	* Source\win32\w32_movesize.m: Ensure that desktop level windows are
+	pinned to the bottom.
 
 2008-03-04 Xavier Glattard <xavier.glattard@online.fr>
 
