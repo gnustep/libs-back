@@ -1,3 +1,9 @@
+2008-03-06 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source\win32\w32_movesize.m: Bypass all existing code to send a
+	resize when a window is minimised ... just call the miniaturise:
+	method of the gui.  Should fix bug 22274
+
 2008-03-06 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-copyWithZone:): Correct the cairo
