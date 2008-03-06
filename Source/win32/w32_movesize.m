@@ -53,17 +53,17 @@
                    data2: rect.origin.y];                   
          
 
-  if (hwnd==(HWND)flags.menuRef)
+  if (hwnd == (HWND)flags.menuRef)
     {
       //need native code here?
-      if (flags.HOLD_MENU_FOR_MOVE==FALSE)
+      if (flags.HOLD_MENU_FOR_MOVE == FALSE)
         {
           [EVENT_WINDOW(hwnd) sendEvent: ev];
         }
     }
   else
     {
-      if (flags.HOLD_TRANSIENT_FOR_MOVE==FALSE)
+      if (flags.HOLD_TRANSIENT_FOR_MOVE == FALSE)
         [EVENT_WINDOW(hwnd) sendEvent: ev];
     }   
 		  
@@ -87,108 +87,130 @@
 
   switch ((int)wParam)
     {
-    case SIZE_MAXHIDE:
-      {
-	// stubbed for future development
-      }
-      break;
-    case SIZE_MAXIMIZED:
-      {
-	// stubbed for future development
-      }
-      break;
-    case SIZE_MAXSHOW:
-      {
-	// stubbed for future development
-      }
-      break;
-    case SIZE_MINIMIZED:
-      {
-      
-	if  (flags.HOLD_MINI_FOR_SIZE==TRUE) //// this is fix for [5, 25 bug]
-	  break;
-          
-	// make event
-	ev = [NSEvent otherEventWithType: NSAppKitDefined
-				location: eventLocation
-			   modifierFlags: 0
-			       timestamp: 0
-			    windowNumber: (int)hwnd
-				 context: GSCurrentContext()
-				 subtype: GSAppKitWindowResized
-				   data1: rect.size.width
-				   data2: rect.size.height];
-               
-	if (hwnd==(HWND)flags.menuRef)
-	  {
-	    if (flags.HOLD_MENU_FOR_SIZE==FALSE)
-	      {
-                  [[NSApp mainMenu] setMenuChangedMessagesEnabled:YES];
-		[EVENT_WINDOW(hwnd) sendEvent:ev];
-		[self resizeBackingStoreFor:hwnd];
-		            [EVENT_WINDOW(hwnd) miniaturize:self];
-		            [[NSApp mainMenu] setMenuChangedMessagesEnabled:NO];
-	      }
-	  }
-	else 
-	  {   
-	    if (flags.HOLD_TRANSIENT_FOR_SIZE==FALSE)
-	      {
-		[EVENT_WINDOW(hwnd) sendEvent:ev];
-		[self resizeBackingStoreFor:hwnd];
-		if ([self usesNativeTaskbar])
-	  	[EVENT_WINDOW(hwnd) miniaturize:self]; 
-	      } 
-	  }  
-      }
-      break;
-    case SIZE_RESTORED:
-      {
-            
-	// make event
-	ev = [NSEvent otherEventWithType: NSAppKitDefined
-				location: eventLocation
-			   modifierFlags: 0
-			       timestamp: 0
-			    windowNumber: (int)hwnd
-				 context: GSCurrentContext()
-				 subtype: GSAppKitWindowResized
-				   data1: rect.size.width
-				   data2: rect.size.height];
-               
-	if (hwnd==(HWND)flags.menuRef)
-	  {
-	    if (flags.HOLD_MENU_FOR_SIZE==FALSE)
-	      {
-               [EVENT_WINDOW(hwnd) _setVisible:YES];
-		[EVENT_WINDOW(hwnd) sendEvent:ev];
-		[self resizeBackingStoreFor:hwnd];
-		         //[EVENT_WINDOW(hwnd) deminiaturize:self];
-		         
-	      }
-	  }
-	else
-	  { 
-	    if (flags.HOLD_TRANSIENT_FOR_SIZE==FALSE)
-	      {
-		[EVENT_WINDOW(hwnd) sendEvent:ev];
-		[self resizeBackingStoreFor:hwnd];
-		// fixes part one of bug [5, 25] see notes
-		if ([self usesNativeTaskbar])
-		  [EVENT_WINDOW(hwnd) deminiaturize:self];
-	      } 
-	  } 
-      }
-      break;
-      
-    default:
-      break;
+      case SIZE_MAXHIDE:
+	{
+	  // stubbed for future development
+	}
+	break;
+
+      case SIZE_MAXIMIZED:
+	{
+	  // stubbed for future development
+	}
+	break;
+
+      case SIZE_MAXSHOW:
+	{
+	  // stubbed for future development
+	}
+	break;
+
+      case SIZE_MINIMIZED:
+	{
+	  if (flags.HOLD_MINI_FOR_SIZE == TRUE) //// this is fix for [5, 25 bug]
+	    break;
+	    
+	  /* FIXME ... RFM  06-Mr-2008....
+	   * I don't understand the following code sending
+	   * a resize event to the gui when a window is minimised.
+	   * Minimising a GNUstep window does NOT change its size,
+	   * rather it causes it to be hidden and replace by its
+	   * miniwindow counterpart.
+	   * Probably the correct action therefore is to ensure that the
+	   * gui knows the window is miniaturised and do nothing else.
+	   * If we send a resize event telling the gui that its window is
+	   * now tiny, it will most likely mess up most drawing in the
+	   * window.
+	   */
+	  if (1)
+	    {
+	      [EVENT_WINDOW(hwnd) miniaturize: self]; 
+	      break;
+	    }
+	  /* Original unused code follows: */
+
+	  // make event
+	  ev = [NSEvent otherEventWithType: NSAppKitDefined
+				  location: eventLocation
+			     modifierFlags: 0
+				 timestamp: 0
+			      windowNumber: (int)hwnd
+				   context: GSCurrentContext()
+				   subtype: GSAppKitWindowResized
+				     data1: rect.size.width
+				     data2: rect.size.height];
+		 
+	  if (hwnd == (HWND)flags.menuRef)
+	    {
+	      if (flags.HOLD_MENU_FOR_SIZE == FALSE)
+		{
+		  [[NSApp mainMenu] setMenuChangedMessagesEnabled: YES];
+		  [EVENT_WINDOW(hwnd) sendEvent: ev];
+		  [self resizeBackingStoreFor: hwnd];
+		  [EVENT_WINDOW(hwnd) miniaturize: self];
+		  [[NSApp mainMenu] setMenuChangedMessagesEnabled: NO];
+		}
+	    }
+	  else 
+	    {   
+	      if (flags.HOLD_TRANSIENT_FOR_SIZE == FALSE)
+		{
+		  [EVENT_WINDOW(hwnd) sendEvent:ev];
+		  [self resizeBackingStoreFor: hwnd];
+		  if ([self usesNativeTaskbar])
+		    {
+		      [EVENT_WINDOW(hwnd) miniaturize: self]; 
+		    }
+		} 
+	    }  
+	}
+	break;
+
+      case SIZE_RESTORED:
+	{
+	  // make event
+	  ev = [NSEvent otherEventWithType: NSAppKitDefined
+				  location: eventLocation
+			     modifierFlags: 0
+				 timestamp: 0
+			      windowNumber: (int)hwnd
+				   context: GSCurrentContext()
+				   subtype: GSAppKitWindowResized
+				     data1: rect.size.width
+				     data2: rect.size.height];
+		 
+	  if (hwnd == (HWND)flags.menuRef)
+	    {
+	      if (flags.HOLD_MENU_FOR_SIZE == FALSE)
+		{
+		  [EVENT_WINDOW(hwnd) _setVisible: YES];
+		  [EVENT_WINDOW(hwnd) sendEvent: ev];
+		  [self resizeBackingStoreFor: hwnd];
+		  //[EVENT_WINDOW(hwnd) deminiaturize:self];
+		}
+	    }
+	  else
+	    { 
+	      if (flags.HOLD_TRANSIENT_FOR_SIZE == FALSE)
+		{
+		  [EVENT_WINDOW(hwnd) sendEvent: ev];
+		  [self resizeBackingStoreFor: hwnd];
+		  // fixes part one of bug [5, 25] see notes
+		  if ([self usesNativeTaskbar])
+		    [EVENT_WINDOW(hwnd) deminiaturize:self];
+		} 
+	    } 
+	}
+	break;
+	
+      default:
+	break;
     }
                       
-  ev=nil;
-  flags.HOLD_MENU_FOR_SIZE=FALSE;
-  flags.HOLD_MINI_FOR_SIZE=FALSE;
-  flags.HOLD_TRANSIENT_FOR_SIZE=FALSE;
+  ev = nil;
+  flags.HOLD_MENU_FOR_SIZE = FALSE;
+  flags.HOLD_MINI_FOR_SIZE = FALSE;
+  flags.HOLD_TRANSIENT_FOR_SIZE = FALSE;
 
   return 0;
 }
@@ -204,7 +226,7 @@
    RECT drect;
    NSEvent *ev =nil;
 
-   if (wParam==TRUE)
+   if (wParam == TRUE)
    {
       // get first rect from NCCALCSIZE_PARAMS Structure
       newRects=(NCCALCSIZE_PARAMS *)lParam;
