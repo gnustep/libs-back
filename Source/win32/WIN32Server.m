@@ -1007,10 +1007,10 @@ NSLog(@"Callback");
 
 - (void) orderwindow: (int) op : (int) otherWin : (int) winNum
 {
-  WIN_INTERN	*win;
-  WIN_INTERN	*other;
   int		flag;
   int		foreground = 0;
+  int		otherLevel;
+  int		level;
 
   NSDebugLLog(@"WTrace", @"orderwindow: %d : %d : %d", op, otherWin, winNum);
 
@@ -1041,16 +1041,15 @@ NSLog(@"Callback");
     flag = SW_RESTORE;
   ShowWindow((HWND)winNum, flag); 
 
-  win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
-
   if (op == NSWindowOut)
     {
-      win->orderedIn = NO;
+      SetWindowLong((HWND)winNum, OFF_ORDERED, 0);
       SetWindowPos((HWND)winNum, NULL, 0, 0, 0, 0, 
         SWP_HIDEWINDOW | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER);
       return;
     }
-  win->orderedIn = YES;
+  SetWindowLong((HWND)winNum, OFF_ORDERED, 1);
+  level = GetWindowLong((HWND)winNum, OFF_LEVEL);
 
   if (otherWin <= 0)
     {
@@ -1075,22 +1074,23 @@ NSLog(@"Callback");
       /* Put this on the same window level as the window we are ordering
        * it against.
        */
-      other = (WIN_INTERN *)GetWindowLong((HWND)otherWin, GWL_USERDATA);
-      if (win->level != other->level)
+      otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
+      if (level != otherLevel)
 	{
 	  NSDebugLLog(@"WTrace",
 	    @"orderwindow: implicitly set level of %d (%d) to that of %d (%d)",
-	    winNum, win->level, otherWin, other->level);
-          win->level = other->level;
+	    winNum, level, otherWin, otherLevel);
+          level = otherLevel;
+	  SetWindowLong((HWND)winNum, OFF_LEVEL, level);
 	}
     }
 
-  if (win->level <= NSDesktopWindowLevel)
+  if (level <= NSDesktopWindowLevel)
     {
       // For desktop level, put this at the bottom of the z-order
       otherWin = (int)HWND_BOTTOM;
       NSDebugLLog(@"WTrace",
-	@"orderwindow: set %i (%i) to bottom", winNum, win->level);
+	@"orderwindow: set %i (%i) to bottom", winNum, level);
     }
   else if (otherWin == 0 || op == NSWindowAbove)
     {
@@ -1108,7 +1108,7 @@ NSLog(@"Callback");
 	}
       NSDebugLLog(@"WTrace",
 	@"orderwindow: traverse for %d (%d) starting at %d",
-	winNum, win->level, otherWin);
+	winNum, level, otherWin);
       while (otherWin > 0)
         {
 	  TCHAR	buf[32];
@@ -1127,15 +1127,15 @@ NSLog(@"Callback");
 	    && GetClassName((HWND)otherWin, buf, 32) == 18
 	    && strncmp(buf, "GNUstepWindowClass", 18) == 0)
 	    {
-	      other = (WIN_INTERN *)GetWindowLong((HWND)otherWin, GWL_USERDATA);
-	      if (other->orderedIn == YES)
+	      if (GetWindowLong((HWND)otherWin, OFF_ORDERED) == 1)
 		{
+		  otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
 		  NSDebugLLog(@"WTrace",
 		    @"orderwindow: found gnustep window %d (%d)",
-		    otherWin, other->level);
-		  if (other->level >= win->level)
+		    otherWin, otherLevel);
+		  if (otherLevel >= level)
 		    {
-		      if (other->level > win->level)
+		      if (otherLevel > level)
 			{
 			  /* On windows, there is no notion of levels, so
 			   * native apps will automatically move to the
@@ -1169,17 +1169,17 @@ NSLog(@"Callback");
     {
       otherWin = (int)HWND_TOP;
       NSDebugLLog(@"WTrace",
-	@"orderwindow: set %i (%i) to top", winNum, win->level);
+	@"orderwindow: set %i (%i) to top", winNum, level);
     }
   else if (otherWin == (int)HWND_BOTTOM)
     {
       NSDebugLLog(@"WTrace",
-	@"orderwindow: set %i (%i) to bottom", winNum, win->level);
+	@"orderwindow: set %i (%i) to bottom", winNum, level);
     }
   else
     {
       NSDebugLLog(@"WTrace",
-	@"orderwindow: set %i (%i) below %d", winNum, win->level, otherWin);
+	@"orderwindow: set %i (%i) below %d", winNum, level, otherWin);
     }
 
   SetWindowPos((HWND)winNum, (HWND)otherWin, 0, 0, 0, 0, 
@@ -1207,11 +1207,11 @@ NSLog(@"Callback");
 	    && GetClassName((HWND)otherWin, buf, 32) == 18
 	    && strncmp(buf, "GNUstepWindowClass", 18) == 0)
 	    {
-	      other = (WIN_INTERN *)GetWindowLong((HWND)otherWin, GWL_USERDATA);
-	      if (other->orderedIn == YES)
+	      if (GetWindowLong((HWND)otherWin, OFF_ORDERED) == 1)
 		{
+		  otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
 		  s = [s stringByAppendingFormat:
-		    @"%d (%d)\n", otherWin, other->level];
+		    @"%d (%d)\n", otherWin, otherLevel];
 		}
 	    }
 	}
@@ -1288,12 +1288,12 @@ NSLog(@"Callback");
 
 - (void) setwindowlevel: (int) level : (int) winNum
 {
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)winNum, GWLP_USERDATA);
 
   NSDebugLLog(@"WTrace", @"setwindowlevel: %d : %d", level, winNum);
   if (win->level != level)
     {
-      win->level = level;
+      SetWindowLong((HWND)winNum, OFF_LEVEL, level);
       if (win->orderedIn == YES)
 	{
           [self orderwindow: NSWindowAbove : 0 : winNum];
@@ -1303,7 +1303,7 @@ NSLog(@"Callback");
 
 - (int) windowlevel: (int) winNum
 {
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)winNum, GWLP_USERDATA);
   return win->level;
 }
 
