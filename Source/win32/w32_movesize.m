@@ -280,8 +280,8 @@
     {
       HWND		hi;
       HWND		lo;
-      WIN_INTERN	*hInf;
-      WIN_INTERN	*lInf;
+      int		hl;
+      int		ll;
 
       /* For debugging, log current window stack.
        */
@@ -305,11 +305,10 @@
 		&& GetClassName(hi, buf, 32) == 18
 		&& strncmp(buf, "GNUstepWindowClass", 18) == 0)
 		{
-		  hInf = (WIN_INTERN *)GetWindowLong(hi, GWL_USERDATA);
-		  if (hInf->orderedIn == YES)
+		  if (GetWindowLong(hi, OFF_ORDERED) == 1)
 		    {
-		      s = [s stringByAppendingFormat:
-			@"%d (%d)\n", hi, hInf->level];
+		      hl = GetWindowLong(hi, OFF_LEVEL);
+		      s = [s stringByAppendingFormat: @"%d (%d)\n", hi, hl];
 		    }
 		}
 	    }
@@ -336,9 +335,9 @@
 	    {
 	      if (GetClassName(hi, buf, 32) == 18
 		&& strncmp(buf, "GNUstepWindowClass", 18) == 0
-		&& (hInf = (WIN_INTERN *)GetWindowLong(hi, GWL_USERDATA))
-		&& hInf->level > NSDesktopWindowLevel
-		&& hInf->orderedIn  == YES)
+		&& GetWindowLong(hi, OFF_ORDERED) == 1
+		&& (hl = GetWindowLong(hi, OFF_LEVEL))
+		  > NSDesktopWindowLevel)
 		{
 		  break;
 		}
@@ -347,7 +346,7 @@
 	
 	  if (hi > 0)
 	    {
-	      NSDebugLLog(@"WTrace", @"sort hi %d (%d)", hi, hInf->level);
+	      NSDebugLLog(@"WTrace", @"sort hi %d (%d)", hi, hl);
 	      /* Find the next (lower in z-order) GNUstep window which
 	       * is ordered in and above desktop
 	       */
@@ -356,9 +355,9 @@
 		{
 		  if (GetClassName(lo, buf, 32) == 18
 		    && strncmp(buf, "GNUstepWindowClass", 18) == 0
-		    && (lInf = (WIN_INTERN *)GetWindowLong(lo, GWL_USERDATA))
-		    && lInf->level > NSDesktopWindowLevel
-		    && lInf->orderedIn  == YES)
+		    && GetWindowLong(lo, OFF_ORDERED) == 1
+		    && (ll = GetWindowLong(lo, OFF_LEVEL))
+		      > NSDesktopWindowLevel)
 		    {
 		      break;
 		    }
@@ -367,11 +366,11 @@
 
 	      if (lo > 0)
 		{
-		  NSDebugLLog(@"WTrace", @"sort lo %d (%d)", lo, lInf->level);
+		  NSDebugLLog(@"WTrace", @"sort lo %d (%d)", lo, ll);
 		  /* Check to see if the higher of the two windows should
 		   * actually be lower.
 		   */
-		  if (hInf->level < lInf->level)
+		  if (hl < ll)
 		    {
 		      HWND	higher;
 
@@ -383,8 +382,7 @@
 			{
 			  higher = HWND_TOP;
 			}
-NSDebugLLog(@"WTrace", @"swap %d (%d) with %d (%d)",
-  hi, hInf->level, lo, lInf->level);
+NSDebugLLog(@"WTrace", @"swap %d (%d) with %d (%d)", hi, hl, lo, ll);
 		      SetWindowPos(lo, higher, 0, 0, 0, 0, 
 			SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
 

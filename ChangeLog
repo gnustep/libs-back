@@ -1,5 +1,16 @@
 2008-03-06 Richard Frith-Macdonald <rfm@gnu.org>
 
+	* Headers\win32\WIN32Server.h: make 'orderedIn' and 'level' 32bit
+	fields at start of structure so that we can easily use GetWindowLong()
+	and SetWindowLong() with them.
+	* Source\win32\w32_movesize.m:
+	* Source\win32\WIN32Server.m:
+	Change to accessing 'orderedIn' and 'level' directly using 
+	GetWindowLong() and SetWindowLong() so that code weorks when windows
+	are owned by another app.
+
+2008-03-06 Richard Frith-Macdonald <rfm@gnu.org>
+
 	* Source\win32\w32_movesize.m: Bypass all existing code to send a
 	resize when a window is minimised ... just call the miniaturise:
 	method of the gui.  Should fix bug 22274

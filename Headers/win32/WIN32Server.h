@@ -198,13 +198,16 @@ typedef struct w32serverFlags {
 @end
 
 typedef struct _win_intern {
+  int32_t level;
+#define OFF_LEVEL	0
+  int32_t orderedIn;
+#define OFF_ORDERED	sizeof(int32_t)
   BOOL useHDC;
   BOOL backingStoreEmpty;
-  BOOL orderedIn;
   HDC hdc; 
   HGDIOBJ old;
   MINMAXINFO minmax;
-  int level;
 } WIN_INTERN;
+
 
 #endif /* _WIN32Server_h_INCLUDE */
