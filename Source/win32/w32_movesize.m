@@ -252,84 +252,141 @@
 
 - (void) decodeWM_WINDOWPOSCHANGEDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-#if 0
-/* FIXME we really want to ensure that windows stay in the correct
- * level order.  When we change ordering programmatically using
- * orderwindow::: that's OK, but if someone else reorders our
- * windows, how do we cope?
- * Perhaps we should veto/adjust ordering before it happens, or
- * perhaps we should re-order here?
- */
-  if ((inf->flags & SWP_NOZORDER) == 0)
-    {
-      /* If this window has been moved to the front, we need to move
-       * any other higher level windows to follow it.
-       */
-      win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
-      if (win->level > NSDesktopWindowLevel)
-	{
-	  int	otherWin;
-	  int	levelToMove = NSDesktopWindowlevel;
-
-	  /* Start searching from bottom of window list...
-	   * The last child of the desktop.
-	   */
-	  otherWin = (int)GetDesktopWindow();
-	  otherWin = (int)GetWindow((HWND)otherWin, GW_CHILD);
-	  if (otherWin > 0)
-	    {
-	      otherWin = (int)GetWindow((HWND)otherWin, GW_HWNDLAST);
-	    }
-	  while (otherWin > 0)
-	    {
-	      TCHAR	buf[32];
-
-	      otherWin = (int)GetNextWindow((HWND)otherWin, GW_HWNDPREV);
-	      if (otherWin == 0 || otherWin == (int)hwnd)
-		{
-		  break;	// No higher level windows below this
-		}
-	      if (GetClassName((HWND)otherWin, buf, 32) == 18
-		&& strncmp(buf, "GNUstepWindowClass", 18) == 0)
-		{
-		  other = (WIN_INTERN *)GetWindowLong((HWND)otherWin,
-		    GWL_USERDATA);
-		  if (other->orderedIn == YES)
-		    {
-		      BOOL	moveThisWindow = NO;
-
-		      if (levelToMove > NSDesktopWindowLevel)
-			{
-			  if (other->level == levelToMove)
-			    {
-			      moveThisWindow = YES;
-			    }
-			}
-		      else if (other->level > win->level)
-			{
-			  levelToMove = other->level;
-			  moveThisWindow = YES;
-			}
-		      if (moveThisWidnow == YES)
-			{
-			  SetWindowPos((HWND)otherWin, HWND_TOP, 0, 0, 0, 0, 
-			    SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
-			}
-		    }
-		}
-	    }
-	}
-    }
-#endif
-}
-
-- (void) decodeWM_WINDOWPOSCHANGINGParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
-{
-  WIN_INTERN	*win;
   WINDOWPOS	*inf = (WINDOWPOS*)lParam;
 
   if ((inf->flags & SWP_NOZORDER) == 0)
     {
+      HWND		hi;
+      HWND		lo;
+      WIN_INTERN	*hInf;
+      WIN_INTERN	*lInf;
+
+      /* For debugging, log current window stack.
+       */
+      if (GSDebugSet(@"WTrace") == YES)
+	{
+	  NSString	*s = @"Window list:\n";
+
+	  hi = GetDesktopWindow();
+	  hi = GetWindow(hi, GW_CHILD);
+	  if (hi > 0)
+	    {
+	      hi = GetWindow(hi, GW_HWNDLAST);
+	    }
+	  while (hi > 0)
+	    {
+	      TCHAR	buf[32];
+
+	      hi = GetNextWindow(hi, GW_HWNDPREV);
+
+	      if (hi > 0
+		&& GetClassName(hi, buf, 32) == 18
+		&& strncmp(buf, "GNUstepWindowClass", 18) == 0)
+		{
+		  hInf = (WIN_INTERN *)GetWindowLong(hi, GWL_USERDATA);
+		  if (hInf->orderedIn == YES)
+		    {
+		      s = [s stringByAppendingFormat:
+			@"%d (%d)\n", hi, hInf->level];
+		    }
+		}
+	    }
+	  NSLog(@"window pos changed: %@", s);
+	}
+
+      /* This window has changed its z-order, so we take the opportunity
+       * to check that all the GNUstep windows are in the correct order
+       * of their levels.
+       * We do this as a simple bubble sort ...swapping over a pait of
+       * windows if we find any pair in the list which are in the wrong
+       * order.  This sort has the virtue of being simple and of
+       * maintaining window order within a level. ... but may be too slow.
+       */
+      hi = GetDesktopWindow();
+      hi = GetWindow(hi, GW_CHILD);
+      while (hi > 0)
+	{
+	  TCHAR	buf[32];
+
+	  /* Find a GNUstep window which is ordered in and above desktop
+	   */
+	  while (hi > 0)
+	    {
+	      if (GetClassName(hi, buf, 32) == 18
+		&& strncmp(buf, "GNUstepWindowClass", 18) == 0
+		&& (hInf = (WIN_INTERN *)GetWindowLong(hi, GWL_USERDATA))
+		&& hInf->level > NSDesktopWindowLevel
+		&& hInf->orderedIn  == YES)
+		{
+		  break;
+		}
+	      hi = GetNextWindow(hi, GW_HWNDNEXT);
+	    }
+	
+	  if (hi > 0)
+	    {
+	      NSDebugLLog(@"WTrace", @"sort hi %d (%d)", hi, hInf->level);
+	      /* Find the next (lower in z-order) GNUstep window which
+	       * is ordered in and above desktop
+	       */
+	      lo = GetNextWindow(hi, GW_HWNDNEXT);
+	      while (lo > 0)
+		{
+		  if (GetClassName(lo, buf, 32) == 18
+		    && strncmp(buf, "GNUstepWindowClass", 18) == 0
+		    && (lInf = (WIN_INTERN *)GetWindowLong(lo, GWL_USERDATA))
+		    && lInf->level > NSDesktopWindowLevel
+		    && lInf->orderedIn  == YES)
+		    {
+		      break;
+		    }
+		  lo = GetNextWindow(lo, GW_HWNDNEXT);
+		}
+
+	      if (lo > 0)
+		{
+		  NSDebugLLog(@"WTrace", @"sort lo %d (%d)", lo, lInf->level);
+		  /* Check to see if the higher of the two windows should
+		   * actually be lower.
+		   */
+		  if (hInf->level < lInf->level)
+		    {
+		      HWND	higher;
+
+		      /* Insert the low window before the high one.
+		       * ie after the window preceding the high one.
+		       */
+		      higher = GetNextWindow(hi, GW_HWNDPREV);
+		      if (higher == 0)
+			{
+			  higher = HWND_TOP;
+			}
+NSDebugLLog(@"WTrace", @"swap %d (%d) with %d (%d)",
+  hi, hInf->level, lo, lInf->level);
+		      SetWindowPos(lo, higher, 0, 0, 0, 0, 
+			SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+
+		      /* Done  this iteration of the sort ... the next
+		       * iteration takes place when we get notified
+		       * that the swap we have just donew is complete.
+		       */
+		      break;
+		    }
+		}
+	      hi = lo;
+	    }
+	}
+    }
+}
+
+- (void) decodeWM_WINDOWPOSCHANGINGParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
+{
+  WINDOWPOS	*inf = (WINDOWPOS*)lParam;
+
+  if ((inf->flags & SWP_NOZORDER) == 0)
+    {
+      WIN_INTERN	*win;
+
       /* desktop level windows should stay at the bottom of the
        * window list, so we can simply override any re-ordering
        * to ensure that they are at the bottom unless another

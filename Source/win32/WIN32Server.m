@@ -1036,6 +1036,11 @@ NSLog(@"Callback");
         }
     }
 
+  flag = SW_SHOW;
+  if (IsIconic((HWND)winNum))
+    flag = SW_RESTORE;
+  ShowWindow((HWND)winNum, flag); 
+
   win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
 
   if (op == NSWindowOut)
@@ -1079,11 +1084,6 @@ NSLog(@"Callback");
           win->level = other->level;
 	}
     }
-
-  flag = SW_SHOW;
-  if (IsIconic((HWND)winNum))
-    flag = SW_RESTORE;
-  ShowWindow((HWND)winNum, flag); 
 
   if (win->level <= NSDesktopWindowLevel)
     {
@@ -1135,9 +1135,27 @@ NSLog(@"Callback");
 		    otherWin, other->level);
 		  if (other->level >= win->level)
 		    {
-		      if (other->level > win->level
-			|| op == NSWindowBelow
-			|| foreground == otherWin)
+		      if (other->level > win->level)
+			{
+			  /* On windows, there is no notion of levels, so
+			   * native apps will automatically move to the
+		           * very top of the stack (above our alert panels etc)
+			   *
+			   * So to cope with this, when we move to the top
+			   * of a level, we assume there may be native apps
+			   * above us and we set otherWin=0 to move to the
+			   * very top of the stack past them.
+			   * 
+			   * We rely on the fact that we have code in the
+			   * window positioning notification to rearrange
+			   * (sort) all the windows into level order if
+			   * moving this window to the top messes up the
+			   * level ordering.
+			   */
+			  otherWin = 0;
+			  break;
+			}
+		      if (op == NSWindowBelow || foreground == otherWin)
 			{
 			  break;
 			}
@@ -1167,37 +1185,38 @@ NSLog(@"Callback");
   SetWindowPos((HWND)winNum, (HWND)otherWin, 0, 0, 0, 0, 
     SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
 
-#if 1
-{
-  NSString	*s = @"Window list:\n";
-
-  otherWin = (int)GetDesktopWindow();
-  otherWin = (int)GetWindow((HWND)otherWin, GW_CHILD);
-  if (otherWin > 0)
+  /* For debug log window stack.
+   */
+  if (GSDebugSet(@"WTrace") == YES)
     {
-      otherWin = (int)GetWindow((HWND)otherWin, GW_HWNDLAST);
-    }
-  while (otherWin > 0)
-    {
-      TCHAR	buf[32];
+      NSString	*s = @"Window list:\n";
 
-      otherWin = (int)GetNextWindow((HWND)otherWin, GW_HWNDPREV);
-
-      if (otherWin > 0 && otherWin != winNum
-	&& GetClassName((HWND)otherWin, buf, 32) == 18
-	&& strncmp(buf, "GNUstepWindowClass", 18) == 0)
+      otherWin = (int)GetDesktopWindow();
+      otherWin = (int)GetWindow((HWND)otherWin, GW_CHILD);
+      if (otherWin > 0)
 	{
-	  other = (WIN_INTERN *)GetWindowLong((HWND)otherWin, GWL_USERDATA);
-	  if (other->orderedIn == YES)
+	  otherWin = (int)GetWindow((HWND)otherWin, GW_HWNDLAST);
+	}
+      while (otherWin > 0)
+	{
+	  TCHAR	buf[32];
+
+	  otherWin = (int)GetNextWindow((HWND)otherWin, GW_HWNDPREV);
+
+	  if (otherWin > 0
+	    && GetClassName((HWND)otherWin, buf, 32) == 18
+	    && strncmp(buf, "GNUstepWindowClass", 18) == 0)
 	    {
-	      s = [s stringByAppendingFormat:
-		@"%d (%d)\n", otherWin, other->level];
+	      other = (WIN_INTERN *)GetWindowLong((HWND)otherWin, GWL_USERDATA);
+	      if (other->orderedIn == YES)
+		{
+		  s = [s stringByAppendingFormat:
+		    @"%d (%d)\n", otherWin, other->level];
+		}
 	    }
 	}
+      NSDebugLLog(@"WTrace", @"orderwindow: %@", s);
     }
-  NSDebugLLog(@"WTrace", @"orderwindow: %@", s);
-}
-#endif
 }
 
 - (void) movewindow: (NSPoint)loc : (int)winNum
