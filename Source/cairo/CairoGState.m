@@ -141,8 +141,10 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
         {
           cairo_path_t *cpath;
           cairo_matrix_t local_matrix;
+#if CAIRO_VERSION > CAIRO_VERSION_ENCODE(1, 4, 0)
           cairo_rectangle_list_t *clip_rects;
           int	num_dashes;
+#endif
 
           cairo_get_matrix(_ct, &local_matrix);
           cairo_set_matrix(copy->_ct, &local_matrix);
@@ -217,8 +219,8 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
                 }
             }
           cairo_rectangle_list_destroy(clip_rects);
-        }
 #endif
+        }
     }
 
   return copy;
