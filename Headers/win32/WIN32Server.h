@@ -128,8 +128,6 @@ typedef struct w32serverFlags {
 
 - (void) resizeBackingStoreFor: (HWND)hwnd;
 
-- (void) resetForGSWindowStyle: (HWND)hwnd w32Style:(DWORD)aStyle;
-
 @end
 
 @interface WIN32Server (w32_activate)
