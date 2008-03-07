@@ -461,20 +461,26 @@ NSLog(@"Callback");
    }
 
    //NSLog(@"Window wstyle %d for style %d", wstyle, style);
-   return wstyle;
+   return wstyle | WS_CLIPCHILDREN;
 }
 
-- (void) resetForGSWindowStyle:(HWND)hwnd w32Style:(DWORD)aStyle
+- (DWORD) exwindowStyleForGSStyle: (unsigned int) style
 {
-  // to be completed for styles
-  LONG result;
+  DWORD estyle = 0;
 
-  ShowWindow(hwnd, SW_HIDE);
-  SetLastError(0);
-  result = SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
-  result = SetWindowLong(hwnd, GWL_STYLE, (LONG)aStyle);
-  // should check error here...
-  ShowWindow(hwnd, SW_SHOWNORMAL);
+  if ((style & NSMiniaturizableWindowMask) == NSMiniaturizableWindowMask)
+    {
+      if ([self usesNativeTaskbar])
+        estyle = WS_EX_APPWINDOW;
+      else
+        estyle = WS_EX_TOOLWINDOW;
+    }
+  else
+    {
+      estyle = WS_EX_TOOLWINDOW;
+    } 
+
+   return estyle;
 }
 
 - (void) resizeBackingStoreFor: (HWND)hwnd
@@ -865,19 +871,8 @@ NSLog(@"Callback");
 
   flags.currentGS_Style = style;
     
-  wstyle = [self windowStyleForGSStyle: style] | WS_CLIPCHILDREN;
-
-  if ((style & NSMiniaturizableWindowMask) == NSMiniaturizableWindowMask)
-    {
-      if ([self usesNativeTaskbar])
-        estyle = WS_EX_APPWINDOW;
-      else
-        estyle = WS_EX_TOOLWINDOW;
-    }
-  else
-    {
-      estyle = WS_EX_TOOLWINDOW;
-    } 
+  wstyle = [self windowStyleForGSStyle: style];
+  estyle = [self exwindowStyleForGSStyle: style];
 
   r = GSScreenRectToMS(frame, style, self);
 
@@ -916,12 +911,14 @@ NSLog(@"Callback");
 - (void) stylewindow: (unsigned int)style : (int) winNum
 {
   DWORD wstyle = [self windowStyleForGSStyle: style];
+  DWORD estyle = [self exwindowStyleForGSStyle: style];
 
   NSAssert([self handlesWindowDecorations], 
 	   @"-stylewindow: : called when [self handlesWindowDecorations] == NO");
 
   NSDebugLLog(@"WTrace", @"stylewindow: %d : %d", style, winNum);
   SetWindowLong((HWND)winNum, GWL_STYLE, wstyle);
+  SetWindowLong(hwnd, GWL_EXSTYLE, estyle);
 }
 
 - (void) setbackgroundcolor: (NSColor *)color : (int)win
@@ -1406,9 +1403,10 @@ NSLog(@"Callback");
   if ([self handlesWindowDecorations])
     {
       DWORD wstyle = [self windowStyleForGSStyle: style];
+      DWORD estyle = [self exwindowStyleForGSStyle: style];
       RECT rect = {100, 100, 200, 200};
       
-      AdjustWindowRectEx(&rect, wstyle, NO, 0);
+      AdjustWindowRectEx(&rect, wstyle, NO, estyle);
 
       *l = 100 - rect.left;
       *r = rect.right - 200;
