@@ -1,3 +1,8 @@
+2008-03-08 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source\win32\WIN32Server.m (-exwindowStyleForGSStyle:): 
+	New method used in window::::, stylewindow: and styleoffsets:::::.
+
 2008-03-06 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Headers\win32\WIN32Server.h: make 'orderedIn' and 'level' 32bit
@@ -6,7 +11,7 @@
 	* Source\win32\w32_movesize.m:
 	* Source\win32\WIN32Server.m:
 	Change to accessing 'orderedIn' and 'level' directly using 
-	GetWindowLong() and SetWindowLong() so that code weorks when windows
+	GetWindowLong() and SetWindowLong() so that code works when windows
 	are owned by another app.
 
 2008-03-06 Richard Frith-Macdonald <rfm@gnu.org>
