@@ -918,7 +918,7 @@ NSLog(@"Callback");
 
   NSDebugLLog(@"WTrace", @"stylewindow: %d : %d", style, winNum);
   SetWindowLong((HWND)winNum, GWL_STYLE, wstyle);
-  SetWindowLong(hwnd, GWL_EXSTYLE, estyle);
+  SetWindowLong((HWND)winNum, GWL_EXSTYLE, estyle);
 }
 
 - (void) setbackgroundcolor: (NSColor *)color : (int)win
