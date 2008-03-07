@@ -2,7 +2,10 @@
 
 	* Source\win32\WIN32Server.m (-exwindowStyleForGSStyle:): 
 	New method used in window::::, stylewindow: and styleoffsets:::::.
-
+	* Headers\win32\WIN32Server.h,
+	* Source\win32\WIN32Server.m (-resetForGSWindowStyle:w32Style:):
+	Remove method.
+	
 2008-03-06 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Headers\win32\WIN32Server.h: make 'orderedIn' and 'level' 32bit
