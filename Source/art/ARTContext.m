@@ -179,14 +179,3 @@ static int byte_order(void)
   [(ARTGState *)gstate GSCurrentDevice: device : x : y];
 }
 @end
-
-@implementation ARTContext (Ops)
-
-- (void) GSDrawImage: (NSRect) rect: (void *) imageref
-{
-  // Hack until Art is able to handle premultiplied images
-  [imageref _unpremultiply];
-  [super GSDrawImage: rect : imageref];
-}
-
-@end
