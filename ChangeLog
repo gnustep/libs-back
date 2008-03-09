@@ -1,3 +1,10 @@
+2008-03-09 Fred Kiefer <FredKiefer@gmx.de>
+
+        * Source/art/ARTContext.m (-GSDrawImage:): Remove this hack again.
+	* Source/art/image.m (_image_get_color_rgb_cmyk_gray,
+	_image_get_color_rgb_8):  Make sure the image gets unpremultied in
+	all cases.
+
 2008-03-08 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source\win32\WIN32Server.m (-exwindowStyleForGSStyle:): 

@@ -12,7 +12,7 @@
 
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public
@@ -56,13 +56,13 @@ not just discard the extra bits
     {
       v <<= 1;
       if ((*ptr) & (128 >> bit_ofs))
-	v |= 1;
+        v |= 1;
       bit_ofs++;
       if (bit_ofs == 8)
-	{
-	  ptr++;
-	  bit_ofs = 0;
-	}
+        {
+          ptr++;
+          bit_ofs = 0;
+        }
     }
   /* extend what we've got to 8 bits */
   switch (num_bits)
@@ -113,7 +113,7 @@ typedef struct
 
 
 static void _image_get_color_rgb_8(image_info_t *ii, render_run_t *ri,
-	int x, int y)
+        int x, int y)
 {
   int ofs;
 
@@ -129,9 +129,9 @@ static void _image_get_color_rgb_8(image_info_t *ii, render_run_t *ri,
       ri->g = ii->data[1][ofs];
       ri->b = ii->data[2][ofs];
       if (ii->has_alpha)
-	ri->a = ii->data[3][ofs];
+        ri->a = ii->data[3][ofs];
       else
-	ri->a = 255;
+        ri->a = 255;
     }
   else
     {
@@ -139,14 +139,21 @@ static void _image_get_color_rgb_8(image_info_t *ii, render_run_t *ri,
       ri->g = ii->data[0][ofs + 1];
       ri->b = ii->data[0][ofs + 2];
       if (ii->has_alpha)
-	ri->a = ii->data[0][ofs + 3];
+        ri->a = ii->data[0][ofs + 3];
       else
-	ri->a = 255;
+        ri->a = 255;
+    }
+  /* Undo premultiply  */
+  if (ri->a && ri->a != 255)
+    {
+      ri->r = (255 * ri->r) / ri->a;
+      ri->g = (255 * ri->g) / ri->a;
+      ri->b = (255 * ri->b) / ri->a;
     }
 }
 
 static void _image_get_color_rgb_cmyk_gray(image_info_t *ii, render_run_t *ri,
-	int x, int y)
+        int x, int y)
 {
   int ofs, bit_ofs;
   int values[5];
@@ -164,9 +171,9 @@ static void _image_get_color_rgb_cmyk_gray(image_info_t *ii, render_run_t *ri,
     {
       values[i] = _get_8_bits(ii->data[j] + ofs, bit_ofs, ii->bits_per_sample);
       if (ii->is_planar)
-	j++;
+        j++;
       else
-	bit_ofs += ii->bits_per_sample;
+        bit_ofs += ii->bits_per_sample;
     }
   if (ii->has_alpha)
     ri->a = values[i - 1];
@@ -196,14 +203,21 @@ static void _image_get_color_rgb_cmyk_gray(image_info_t *ii, render_run_t *ri,
     {
       ri->r = ri->g = ri->b = 255 - values[0];
     }
+  /* Undo premultiply  */
+  if (ri->a && ri->a != 255)
+    {
+      ri->r = (255 * ri->r) / ri->a;
+      ri->g = (255 * ri->g) / ri->a;
+      ri->b = (255 * ri->b) / ri->a;
+    }
 }
 
 
 @implementation ARTGState (image)
 
 -(void) _image_do_rgb_transform: (image_info_t *)ii
-	: (NSAffineTransform *)matrix
-	: (void (*)(image_info_t *ii, render_run_t *ri, int x, int y))ifunc
+        : (NSAffineTransform *)matrix
+        : (void (*)(image_info_t *ii, render_run_t *ri, int x, int y))ifunc
 {
 /*
 TODO:
@@ -277,15 +291,15 @@ seem to cause edges to be off by a pixel
     left_delta = -1;
 
 /*  printf("x/y (%i %i) (%i %i) (%i %i) (%i %i)  t (%i %i) (%i %i) (%i %i) (%i %i)  le=%i\n",
-	x[0],y[0],
-	x[1],y[1],
-	x[2],y[2],
-	x[3],y[3],
-	tx[0],ty[0],
-	tx[1],ty[1],
-	tx[2],ty[2],
-	tx[3],ty[3],
-	le);*/
+        x[0],y[0],
+        x[1],y[1],
+        x[2],y[2],
+        x[3],y[3],
+        tx[0],ty[0],
+        tx[1],ty[1],
+        tx[2],ty[2],
+        tx[3],ty[3],
+        le);*/
 
   /* silence the compiler */
   lx = lx_frac = ldx = ldx_frac = l_de = 0;
@@ -296,281 +310,281 @@ seem to cause edges to be off by a pixel
   while (cy <= ey && cy < clip_y1)
     {
       if (cy == y[le])
-	{
-	  next = (le + left_delta) & 3;
-	  while (y[le] == y[next])
-	    {
-	      le = next;
-	      next = (le + left_delta) & 3;
-	    }
-	  l_de = y[next] - y[le];
-	  lx = x[le];
-	  lx_frac = 0;
-	  ldx = (x[next] - x[le]) / l_de;
-	  ldx_frac = (x[next] - x[le]) % l_de;
+        {
+          next = (le + left_delta) & 3;
+          while (y[le] == y[next])
+            {
+              le = next;
+              next = (le + left_delta) & 3;
+            }
+          l_de = y[next] - y[le];
+          lx = x[le];
+          lx_frac = 0;
+          ldx = (x[next] - x[le]) / l_de;
+          ldx_frac = (x[next] - x[le]) % l_de;
 
-	  ltx = tx[le];
-	  lty = ty[le];
-	  ltx_frac = 0;
-	  lty_frac = 0;
-	  ldtx = (tx[next] - tx[le]) / l_de;
-	  ldty = (ty[next] - ty[le]) / l_de;
-	  ldtx_frac = (tx[next] - tx[le]) % l_de;
-	  ldty_frac = (ty[next] - ty[le]) % l_de;
+          ltx = tx[le];
+          lty = ty[le];
+          ltx_frac = 0;
+          lty_frac = 0;
+          ldtx = (tx[next] - tx[le]) / l_de;
+          ldty = (ty[next] - ty[le]) / l_de;
+          ldtx_frac = (tx[next] - tx[le]) % l_de;
+          ldty_frac = (ty[next] - ty[le]) % l_de;
 
-	  le = next;
-	}
+          le = next;
+        }
       else
-	{
-	  lx += ldx;
-	  lx_frac += ldx_frac;
-	  if (lx_frac < 0)
-	    lx--, lx_frac += l_de;
-	  if (lx_frac > l_de)
-	    lx++, lx_frac -= l_de;
+        {
+          lx += ldx;
+          lx_frac += ldx_frac;
+          if (lx_frac < 0)
+            lx--, lx_frac += l_de;
+          if (lx_frac > l_de)
+            lx++, lx_frac -= l_de;
 
-	  ltx += ldtx;
-	  ltx_frac += ldtx_frac;
-	  if (ltx_frac < 0)
-	    ltx--, ltx_frac += l_de;
-	  if (ltx_frac > l_de)
-	    ltx++, ltx_frac -= l_de;
+          ltx += ldtx;
+          ltx_frac += ldtx_frac;
+          if (ltx_frac < 0)
+            ltx--, ltx_frac += l_de;
+          if (ltx_frac > l_de)
+            ltx++, ltx_frac -= l_de;
 
-	  lty += ldty;
-	  lty_frac += ldty_frac;
-	  if (lty_frac < 0)
-	    lty--, lty_frac += l_de;
-	  if (lty_frac > l_de)
-	    lty++, lty_frac -= l_de;
-	}
+          lty += ldty;
+          lty_frac += ldty_frac;
+          if (lty_frac < 0)
+            lty--, lty_frac += l_de;
+          if (lty_frac > l_de)
+            lty++, lty_frac -= l_de;
+        }
 
       if (cy == y[re])
-	{
-	  next = (re - left_delta) & 3;
-	  while (y[re] == y[next])
-	    {
-	      re = next;
-	      next = (re - left_delta) & 3;
-	    }
-	  r_de = y[next] - y[re];
-	  rx = x[re];
-	  rx_frac = r_de - 1; /* TODO? */
-	  rdx = (x[next] - x[re]) / r_de;
-	  rdx_frac = (x[next] - x[re]) % r_de;
+        {
+          next = (re - left_delta) & 3;
+          while (y[re] == y[next])
+            {
+              re = next;
+              next = (re - left_delta) & 3;
+            }
+          r_de = y[next] - y[re];
+          rx = x[re];
+          rx_frac = r_de - 1; /* TODO? */
+          rdx = (x[next] - x[re]) / r_de;
+          rdx_frac = (x[next] - x[re]) % r_de;
 
-	  rtx = tx[re];
-	  rty = ty[re];
-	  rtx_frac = 0;
-	  rty_frac = 0;
-	  rdtx = (tx[next] - tx[re]) / r_de;
-	  rdty = (ty[next] - ty[re]) / r_de;
-	  rdtx_frac = (tx[next] - tx[re]) % r_de;
-	  rdty_frac = (ty[next] - ty[re]) % r_de;
+          rtx = tx[re];
+          rty = ty[re];
+          rtx_frac = 0;
+          rty_frac = 0;
+          rdtx = (tx[next] - tx[re]) / r_de;
+          rdty = (ty[next] - ty[re]) / r_de;
+          rdtx_frac = (tx[next] - tx[re]) % r_de;
+          rdty_frac = (ty[next] - ty[re]) % r_de;
 
-	  re = next;
-	}
+          re = next;
+        }
       else
-	{
-	  rx += rdx;
-	  rx_frac += rdx_frac;
-	  if (rx_frac < 0)
-	    rx--, rx_frac += r_de;
-	  if (rx_frac > r_de)
-	    rx++, rx_frac -= r_de;
+        {
+          rx += rdx;
+          rx_frac += rdx_frac;
+          if (rx_frac < 0)
+            rx--, rx_frac += r_de;
+          if (rx_frac > r_de)
+            rx++, rx_frac -= r_de;
 
-	  rtx += rdtx;
-	  rtx_frac += rdtx_frac;
-	  if (rtx_frac < 0)
-	    rtx--, rtx_frac += r_de;
-	  if (rtx_frac > r_de)
-	    rtx++, rtx_frac -= r_de;
+          rtx += rdtx;
+          rtx_frac += rdtx_frac;
+          if (rtx_frac < 0)
+            rtx--, rtx_frac += r_de;
+          if (rtx_frac > r_de)
+            rtx++, rtx_frac -= r_de;
 
-	  rty += rdty;
-	  rty_frac += rdty_frac;
-	  if (rty_frac < 0)
-	    rty--, rty_frac += r_de;
-	  if (rty_frac > r_de)
-	    rty++, rty_frac -= r_de;
-	}
+          rty += rdty;
+          rty_frac += rdty_frac;
+          if (rty_frac < 0)
+            rty--, rty_frac += r_de;
+          if (rty_frac > r_de)
+            rty++, rty_frac -= r_de;
+        }
 
 /*      printf("cy=%i  left(x=%i, tx=%i, ty=%i)  right(x=%i, tx=%i, ty=%i)\n",
-	     cy,
-	     lx,ltx,lty,
-	     rx,rtx,rty);*/
+             cy,
+             lx,ltx,lty,
+             rx,rtx,rty);*/
 
       if (cy >= clip_y0 && rx > lx)
-	{
-	  render_run_t ri;
-	  int x0, x1, de;
-	  int tx, ty, tx_frac, ty_frac, dtx, dty, dtx_frac, dty_frac;
-	  int delta;
-	  int scale_factor;
+        {
+          render_run_t ri;
+          int x0, x1, de;
+          int tx, ty, tx_frac, ty_frac, dtx, dty, dtx_frac, dty_frac;
+          int delta;
+          int scale_factor;
 
-	  x0 = lx;
-	  x1 = rx;
-	  de = x1 - x0;
+          x0 = lx;
+          x1 = rx;
+          de = x1 - x0;
 
-	  tx = ltx;
-	  ty = lty;
-	  if (r_de * l_de > 0x10000)
-	    {
-	      /*
-	      If the numbers involved are really large, scale things down
-	      a bit. This loses some accuracy, but should keep things in
-	      range.
-	      */
-	      scale_factor = 10;
-	      tx_frac = ltx_frac * ((de * r_de) >> scale_factor);
-	      ty_frac = lty_frac * ((de * r_de) >> scale_factor);
-	      de *= (r_de * l_de) >> scale_factor;
-	    }
-	  else
-	    {
-	      tx_frac = ltx_frac * de * r_de;
-	      ty_frac = lty_frac * de * r_de;
-	      scale_factor = 0;
-	      de *= r_de * l_de;
-	    }
+          tx = ltx;
+          ty = lty;
+          if (r_de * l_de > 0x10000)
+            {
+              /*
+              If the numbers involved are really large, scale things down
+              a bit. This loses some accuracy, but should keep things in
+              range.
+              */
+              scale_factor = 10;
+              tx_frac = ltx_frac * ((de * r_de) >> scale_factor);
+              ty_frac = lty_frac * ((de * r_de) >> scale_factor);
+              de *= (r_de * l_de) >> scale_factor;
+            }
+          else
+            {
+              tx_frac = ltx_frac * de * r_de;
+              ty_frac = lty_frac * de * r_de;
+              scale_factor = 0;
+              de *= r_de * l_de;
+            }
 
-	  delta = ((rtx * r_de + rtx_frac) >> scale_factor) * l_de
-		  - ((ltx * l_de + ltx_frac) >> scale_factor) * r_de;
-	  dtx = delta / de;
-	  dtx_frac = delta % de;
+          delta = ((rtx * r_de + rtx_frac) >> scale_factor) * l_de
+                  - ((ltx * l_de + ltx_frac) >> scale_factor) * r_de;
+          dtx = delta / de;
+          dtx_frac = delta % de;
 
-	  delta = ((rty * r_de + rty_frac) >> scale_factor) * l_de
-		  - ((lty * l_de + lty_frac) >> scale_factor) * r_de;
-	  dty = delta / de;
-	  dty_frac = delta % de;
+          delta = ((rty * r_de + rty_frac) >> scale_factor) * l_de
+                  - ((lty * l_de + lty_frac) >> scale_factor) * r_de;
+          dty = delta / de;
+          dty_frac = delta % de;
 
-/*	  printf("r_de=%i l_de=%i de=%i   dtx=%i dtx_frac=%i  dty=%i dty_frac=%i\n",
-		 r_de,l_de,de,dtx,dtx_frac,dty,dty_frac);
-	  printf(" start at x(%i %i) y(%i %i)\n",
-		 tx,tx_frac,ty,ty_frac);*/
+/*          printf("r_de=%i l_de=%i de=%i   dtx=%i dtx_frac=%i  dty=%i dty_frac=%i\n",
+                 r_de,l_de,de,dtx,dtx_frac,dty,dty_frac);
+          printf(" start at x(%i %i) y(%i %i)\n",
+                 tx,tx_frac,ty,ty_frac);*/
 
-	  /*
-	    x0 x1 / x2 -> y0 y1 / y2  z
-	    ((y0 * y2 + y1) * x2 - (x0 * x2 + x1) * y2) / (x2 * y2 * z)
-	  */
+          /*
+            x0 x1 / x2 -> y0 y1 / y2  z
+            ((y0 * y2 + y1) * x2 - (x0 * x2 + x1) * y2) / (x2 * y2 * z)
+          */
 
-	  /*
-	  TODO: Would like to use this code instead for speed, but
-	  the multiplications dtx*(clip_x0-x0) may overflow. Need to figure
-	  out a way of doing this safely, or add checks for 'large numbers'
-	  so we can use this in most cases, at least.
-	  */
-/*	  if (x0 < clip_x0)
-	    {
-	      tx += dtx * (clip_x0 - x0);
-	      ty += dty * (clip_x0 - x0);
-	      tx_frac += dtx_frac * (clip_x0 - x0);
-	      while (tx_frac < 0)
-		tx--, tx_frac += de;
-	      while (tx_frac >= de)
-		tx++, tx_frac -= de;
-	      ty_frac += dty_frac * (clip_x0 - x0);
-	      while (ty_frac < 0)
-		ty--, ty_frac += de;
-	      while (ty_frac >= de)
-		ty++, ty_frac -= de;
-	      x0 = clip_x0;
-	    }*/
-	  if (x0 < clip_x0)
-	    {
-	      tx += dtx * (clip_x0 - x0);
-	      ty += dty * (clip_x0 - x0);
-	      while (x0 < clip_x0)
-		{
-		  tx_frac += dtx_frac;
-		  if (tx_frac < 0)
-		    tx--, tx_frac += de;
-		  if (tx_frac >= de)
-		    tx++, tx_frac -= de;
-		  ty_frac += dty_frac;
-		  if (ty_frac < 0)
-		    ty--, ty_frac += de;
-		  if (ty_frac >= de)
-		    ty++, ty_frac -= de;
-		  x0++;
-		}
-	    }
-	  if (x1 > clip_x1) x1 = clip_x1;
+          /*
+          TODO: Would like to use this code instead for speed, but
+          the multiplications dtx*(clip_x0-x0) may overflow. Need to figure
+          out a way of doing this safely, or add checks for 'large numbers'
+          so we can use this in most cases, at least.
+          */
+/*          if (x0 < clip_x0)
+            {
+              tx += dtx * (clip_x0 - x0);
+              ty += dty * (clip_x0 - x0);
+              tx_frac += dtx_frac * (clip_x0 - x0);
+              while (tx_frac < 0)
+                tx--, tx_frac += de;
+              while (tx_frac >= de)
+                tx++, tx_frac -= de;
+              ty_frac += dty_frac * (clip_x0 - x0);
+              while (ty_frac < 0)
+                ty--, ty_frac += de;
+              while (ty_frac >= de)
+                ty++, ty_frac -= de;
+              x0 = clip_x0;
+            }*/
+          if (x0 < clip_x0)
+            {
+              tx += dtx * (clip_x0 - x0);
+              ty += dty * (clip_x0 - x0);
+              while (x0 < clip_x0)
+                {
+                  tx_frac += dtx_frac;
+                  if (tx_frac < 0)
+                    tx--, tx_frac += de;
+                  if (tx_frac >= de)
+                    tx++, tx_frac -= de;
+                  ty_frac += dty_frac;
+                  if (ty_frac < 0)
+                    ty--, ty_frac += de;
+                  if (ty_frac >= de)
+                    ty++, ty_frac -= de;
+                  x0++;
+                }
+            }
+          if (x1 > clip_x1) x1 = clip_x1;
 
-	  ri.dst = wi->data + x0 * DI.bytes_per_pixel
-		   + cy * wi->bytes_per_line;
-	  ri.dsta = wi->alpha + x0 + cy * wi->sx;
+          ri.dst = wi->data + x0 * DI.bytes_per_pixel
+                   + cy * wi->bytes_per_line;
+          ri.dsta = wi->alpha + x0 + cy * wi->sx;
 
-	  if (!clip_span)
-	    {
-	      for (; x0 < x1; x0++, ri.dst += DI.bytes_per_pixel, ri.dsta++)
-		{
-		  ifunc(ii, &ri, tx, ty);
-		  render_run(&ri, 1);
+          if (!clip_span)
+            {
+              for (; x0 < x1; x0++, ri.dst += DI.bytes_per_pixel, ri.dsta++)
+                {
+                  ifunc(ii, &ri, tx, ty);
+                  render_run(&ri, 1);
 
-		  tx += dtx;
-		  ty += dty;
-		  tx_frac += dtx_frac;
-		  if (tx_frac < 0)
-		    tx--, tx_frac += de;
-		  if (tx_frac >= de)
-		    tx++, tx_frac -= de;
-		  ty_frac += dty_frac;
-		  if (ty_frac < 0)
-		    ty--, ty_frac += de;
-		  if (ty_frac >= de)
-		    ty++, ty_frac -= de;
-		}
-	    }
-	  else
-	    {
-	      unsigned int *span, *end;
-	      BOOL state = NO;
+                  tx += dtx;
+                  ty += dty;
+                  tx_frac += dtx_frac;
+                  if (tx_frac < 0)
+                    tx--, tx_frac += de;
+                  if (tx_frac >= de)
+                    tx++, tx_frac -= de;
+                  ty_frac += dty_frac;
+                  if (ty_frac < 0)
+                    ty--, ty_frac += de;
+                  if (ty_frac >= de)
+                    ty++, ty_frac -= de;
+                }
+            }
+          else
+            {
+              unsigned int *span, *end;
+              BOOL state = NO;
 
-	      span = &clip_span[clip_index[cy - clip_y0]];
-	      end = &clip_span[clip_index[cy - clip_y0 + 1]];
+              span = &clip_span[clip_index[cy - clip_y0]];
+              end = &clip_span[clip_index[cy - clip_y0 + 1]];
 
-	      x0 -= clip_x0;
-	      x1 -= clip_x0;
-	      while (span != end && *span < x0)
-		{
-		  state = !state;
-		  span++;
-		  if (span == end)
-		    break;
-		}
-	      if (span != end)
-		{
-		  for (; x0 < x1; x0++, ri.dst += DI.bytes_per_pixel, ri.dsta++)
-		    {
-		      if (x0 == *span)
-			{
-			  span++;
-			  state = !state;
-			  if (span == end)
-			    break;
-			}
-		    
-		      if (state)
-			{
-			  ifunc(ii, &ri, tx, ty);
-			  render_run(&ri, 1);
-			}
+              x0 -= clip_x0;
+              x1 -= clip_x0;
+              while (span != end && *span < x0)
+                {
+                  state = !state;
+                  span++;
+                  if (span == end)
+                    break;
+                }
+              if (span != end)
+                {
+                  for (; x0 < x1; x0++, ri.dst += DI.bytes_per_pixel, ri.dsta++)
+                    {
+                      if (x0 == *span)
+                        {
+                          span++;
+                          state = !state;
+                          if (span == end)
+                            break;
+                        }
+                    
+                      if (state)
+                        {
+                          ifunc(ii, &ri, tx, ty);
+                          render_run(&ri, 1);
+                        }
 
-		      tx += dtx;
-		      ty += dty;
-		      tx_frac += dtx_frac;
-		      if (tx_frac < 0)
-			tx--, tx_frac += de;
-		      if (tx_frac >= de)
-			tx++, tx_frac -= de;
-		      ty_frac += dty_frac;
-		      if (ty_frac < 0)
-			ty--, ty_frac += de;
-		      if (ty_frac >= de)
-			ty++, ty_frac -= de;
-		    }
-		}
-	    }
-	}
+                      tx += dtx;
+                      ty += dty;
+                      tx_frac += dtx_frac;
+                      if (tx_frac < 0)
+                        tx--, tx_frac += de;
+                      if (tx_frac >= de)
+                        tx++, tx_frac -= de;
+                      ty_frac += dty_frac;
+                      if (ty_frac < 0)
+                        ty--, ty_frac += de;
+                      if (ty_frac >= de)
+                        ty++, ty_frac -= de;
+                    }
+                }
+            }
+        }
 
       cy++;
     }
@@ -578,15 +592,15 @@ seem to cause edges to be off by a pixel
 
 
 - (void)DPSimage: (NSAffineTransform *) matrix
-		: (int) pixelsWide : (int) pixelsHigh
-		: (int) bitsPerSample : (int) samplesPerPixel 
-		: (int) bitsPerPixel : (int) bytesPerRow : (BOOL) isPlanar
-		: (BOOL) hasAlpha : (NSString *) colorSpaceName
-		: (const unsigned char *const [5]) data
+                : (int) pixelsWide : (int) pixelsHigh
+                : (int) bitsPerSample : (int) samplesPerPixel 
+                : (int) bitsPerPixel : (int) bytesPerRow : (BOOL) isPlanar
+                : (BOOL) hasAlpha : (NSString *) colorSpaceName
+                : (const unsigned char *const [5]) data
 {
   BOOL identity_transform, is_rgb;
   image_info_t ii;
-  NSAffineTransformStruct	ts;
+  NSAffineTransformStruct        ts;
 
   if (!wi || !wi->data) return;
   if (all_clipped) return;
@@ -619,74 +633,74 @@ seem to cause edges to be off by a pixel
       render_run_t ri;
 
       if (wi->has_alpha)
-	{
-	  if (DI.inline_alpha)
-	    alpha_dest = wi->data + DI.inline_alpha_ofs;
-	  else
-	    alpha_dest = wi->alpha;
-	}
+        {
+          if (DI.inline_alpha)
+            alpha_dest = wi->data + DI.inline_alpha_ofs;
+          else
+            alpha_dest = wi->alpha;
+        }
       else
-	alpha_dest = NULL;
+        alpha_dest = NULL;
 
       ox = [matrix transformPoint: NSMakePoint(0, 0)].x - offset.x;
       oy = offset.y - [matrix transformPoint: NSMakePoint(0, 0)].y - pixelsHigh;
 
       for (y = 0; y < pixelsHigh; y++)
-	{
-	  for (x = 0; x < pixelsWide; x++)
-	    {
-	      if (x + ox < clip_x0 || x + ox >= clip_x1 ||
-		  y + oy < clip_y0 || y + oy >= clip_y1)
-		{
-		  if (hasAlpha)
-		    src += 4;
-		  else
-		    src += 3;
-		  continue;
-		}
-	      ri.dst = wi->data + (x + ox) * DI.bytes_per_pixel
-		       + (y + oy) * wi->bytes_per_line;
-	      ri.dsta = wi->alpha + (x + ox) + (y + oy) * wi->sx;
-	      ri.r = src[0];
-	      ri.g = src[1];
-	      ri.b = src[2];
-	      if (hasAlpha)
-		{
-		  ri.a = src[3];
-		  /* TODO: find out if input is premultiplied or not */
-		  if (ri.a && ri.a != 255)
-		    {
-		      ri.r = (255 * ri.r) / ri.a;
-		      ri.g = (255 * ri.g) / ri.a;
-		      ri.b = (255 * ri.b) / ri.a;
-		    }
-		  if (alpha_dest)
-		    {
-		      if (src[3] == 255)
-			RENDER_RUN_OPAQUE_A(&ri, 1);
-		      else if (src[3])
-			RENDER_RUN_ALPHA_A(&ri, 1);
-		    }
-		  else
-		    {
-		      if (src[3] == 255)
-			RENDER_RUN_OPAQUE(&ri, 1);
-		      else if (src[3])
-			RENDER_RUN_ALPHA(&ri, 1);
-		    }
-		  src += 4;
-		}
-	      else
-		{
-		  ri.a = 255;
-		  if (alpha_dest)
-		    RENDER_RUN_OPAQUE_A(&ri, 1);
-		  else
-		    RENDER_RUN_OPAQUE(&ri, 1);
-		  src += 3;
-		}
-	    }
-	}
+        {
+          for (x = 0; x < pixelsWide; x++)
+            {
+              if (x + ox < clip_x0 || x + ox >= clip_x1 ||
+                  y + oy < clip_y0 || y + oy >= clip_y1)
+                {
+                  if (hasAlpha)
+                    src += 4;
+                  else
+                    src += 3;
+                  continue;
+                }
+              ri.dst = wi->data + (x + ox) * DI.bytes_per_pixel
+                       + (y + oy) * wi->bytes_per_line;
+              ri.dsta = wi->alpha + (x + ox) + (y + oy) * wi->sx;
+              ri.r = src[0];
+              ri.g = src[1];
+              ri.b = src[2];
+              if (hasAlpha)
+                {
+                  ri.a = src[3];
+                  /* Undo premultiply  */
+                  if (ri.a && ri.a != 255)
+                    {
+                      ri.r = (255 * ri.r) / ri.a;
+                      ri.g = (255 * ri.g) / ri.a;
+                      ri.b = (255 * ri.b) / ri.a;
+                    }
+                  if (alpha_dest)
+                    {
+                      if (src[3] == 255)
+                        RENDER_RUN_OPAQUE_A(&ri, 1);
+                      else if (src[3])
+                        RENDER_RUN_ALPHA_A(&ri, 1);
+                    }
+                  else
+                    {
+                      if (src[3] == 255)
+                        RENDER_RUN_OPAQUE(&ri, 1);
+                      else if (src[3])
+                        RENDER_RUN_ALPHA(&ri, 1);
+                    }
+                  src += 4;
+                }
+              else
+                {
+                  ri.a = 255;
+                  if (alpha_dest)
+                    RENDER_RUN_OPAQUE_A(&ri, 1);
+                  else
+                    RENDER_RUN_OPAQUE(&ri, 1);
+                  src += 3;
+                }
+            }
+        }
       UPDATE_UNBUFFERED
       return;
     }
@@ -715,10 +729,10 @@ seem to cause edges to be off by a pixel
   else if (colorSpaceName == NSDeviceCMYKColorSpace)
     ii.colorspace = 2;
   else if (colorSpaceName == NSDeviceWhiteColorSpace ||
-	   colorSpaceName == NSCalibratedWhiteColorSpace)
+           colorSpaceName == NSCalibratedWhiteColorSpace)
     ii.colorspace = 3;
   else if (colorSpaceName == NSDeviceBlackColorSpace ||
-	   colorSpaceName == NSCalibratedBlackColorSpace)
+           colorSpaceName == NSCalibratedBlackColorSpace)
     ii.colorspace = 4;
   else
     ii.colorspace = 0;
@@ -726,15 +740,15 @@ seem to cause edges to be off by a pixel
   if (ii.colorspace != 0)
     {
       [self _image_do_rgb_transform: &ii : matrix :
-	_image_get_color_rgb_cmyk_gray];
+        _image_get_color_rgb_cmyk_gray];
       UPDATE_UNBUFFERED
       return;
     }
 
   NSLog(@"unimplemented DPSimage  %ix%i  |%@|  bips=%i spp=%i bipp=%i bypr=%i  planar=%i alpha=%i\n",
-	pixelsWide, pixelsHigh, matrix,
-	bitsPerSample, samplesPerPixel, bitsPerPixel, bytesPerRow, isPlanar,
-	hasAlpha);
+        pixelsWide, pixelsHigh, matrix,
+        bitsPerSample, samplesPerPixel, bitsPerPixel, bytesPerRow, isPlanar,
+        hasAlpha);
 }
 
 @end
