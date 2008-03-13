@@ -1,3 +1,9 @@
+2008-03-13 19:37-EST Gregory John Casamento <greg_casamento@yahoo.com>
+
+	* Source/gsc/GSStreamContext.m: Remove implementation of 
+	DPSrectclip:::: since it was causing issues with printing.  Will
+	investigate further to see if this is the correct fix.
+
 2008-03-09 Fred Kiefer <FredKiefer@gmx.de>
 
         * Source/art/ARTContext.m (-GSDrawImage:): Remove this hack again.
