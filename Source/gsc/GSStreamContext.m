@@ -634,11 +634,14 @@ fpfloat(FILE *stream, float f)
 
 - (void) DPSrectclip: (float)x : (float)y : (float)w : (float)h
 {
+  // Do nothing.
+  /*
   fpfloat(gstream, x);
   fpfloat(gstream, y);
   fpfloat(gstream, w);
   fpfloat(gstream, h);
   fprintf(gstream, "rectclip\n");
+  */
 }
 
 - (void) DPSrectfill: (float)x : (float)y : (float)w : (float)h
