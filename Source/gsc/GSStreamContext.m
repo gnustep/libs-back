@@ -33,6 +33,7 @@
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
 #include <AppKit/NSView.h>
+#include <AppKit/NSBitmapImageRep.h>
 #include <Foundation/NSArray.h>
 #include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>
@@ -826,7 +827,24 @@ fpfloat(FILE *stream, float f)
 
 - (void) GSDrawImage: (NSRect)rect : (void *)imageref
 {
-  [self notImplemented: _cmd];
+  id image = (id)imageref;
+  unsigned char *imagePlanes[5];
+
+  if([image isKindOfClass: [NSBitmapImageRep class]])
+    {
+      [image getBitmapDataPlanes: imagePlanes];
+      [self NSDrawBitmap: rect
+            : [image pixelsWide]
+            : [image pixelsHigh]
+            : [image bitsPerSample]
+            : [image samplesPerPixel]
+            : [image bitsPerPixel]
+            : [image bytesPerRow]
+            : [image isPlanar]
+            : [image hasAlpha]
+            : [image colorSpaceName]
+            : (const unsigned char **)imagePlanes];
+    }
 }
 
 
