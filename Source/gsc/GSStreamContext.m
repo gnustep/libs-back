@@ -832,6 +832,7 @@ fpfloat(FILE *stream, float f)
 
   if([image isKindOfClass: [NSBitmapImageRep class]])
     {
+      fprintf(gstream,"%% BeginImage\n");
       [image getBitmapDataPlanes: imagePlanes];
       [self NSDrawBitmap: rect
             : [image pixelsWide]
@@ -844,6 +845,7 @@ fpfloat(FILE *stream, float f)
             : [image hasAlpha]
             : [image colorSpaceName]
             : (const unsigned char **)imagePlanes];
+      fprintf(gstream,"%% EndImage\n");
     }
 }
 
@@ -900,7 +902,7 @@ static const char *hexdigits = "0123456789abcdef";
   fprintf(gstream, "matrix\ncurrentmatrix\n");
   y = NSMinY(rect);
   if (flipped)
-    y += NSWidth(rect);
+    y += NSHeight(rect);
   fpfloat(gstream, NSMinX(rect));
   fpfloat(gstream, y);
   fprintf(gstream, "translate ");
