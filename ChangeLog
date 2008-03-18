@@ -1,3 +1,8 @@
+2008-03-17 21:01-EST Gregory John Casamento <greg_casamento@yahoo.com>
+
+	* Source/gsc/GSStreamContext.m: Add back implementation for
+	DPSrectclip::::.
+
 2008-03-15 19:35-EST Gregory John Casamento <greg_casamento@yahoo.com>
 
 	* Source/gsc/GSStreamContext.m: Correct call in NSDrawBitmap::::...

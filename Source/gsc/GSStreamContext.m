@@ -635,14 +635,11 @@ fpfloat(FILE *stream, float f)
 
 - (void) DPSrectclip: (float)x : (float)y : (float)w : (float)h
 {
-  // Do nothing.
-  /*
   fpfloat(gstream, x);
   fpfloat(gstream, y);
   fpfloat(gstream, w);
   fpfloat(gstream, h);
   fprintf(gstream, "rectclip\n");
-  */
 }
 
 - (void) DPSrectfill: (float)x : (float)y : (float)w : (float)h
@@ -832,7 +829,7 @@ fpfloat(FILE *stream, float f)
 
   if([image isKindOfClass: [NSBitmapImageRep class]])
     {
-      fprintf(gstream,"%% BeginImage\n");
+      fprintf(gstream,"%%%% BeginImage\n");
       [image getBitmapDataPlanes: imagePlanes];
       [self NSDrawBitmap: rect
             : [image pixelsWide]
@@ -845,7 +842,7 @@ fpfloat(FILE *stream, float f)
             : [image hasAlpha]
             : [image colorSpaceName]
             : (const unsigned char **)imagePlanes];
-      fprintf(gstream,"%% EndImage\n");
+      fprintf(gstream,"%%%% EndImage\n");
     }
 }
 
