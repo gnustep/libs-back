@@ -1306,6 +1306,7 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-tiff-library=DIR TIFF library file are in DIR
   --with-x                use the X Window System
+  --without-freetype Do not check for or include freetype
   --with-name=PREFIX      Set the name of the backend (def=back)
 
 Some influential environment variables:
@@ -5437,15 +5438,26 @@ fi
 #--------------------------------------------------------------------
 # freetype libraries
 #--------------------------------------------------------------------
+# Mac OS X with macports has a freetype which includes Apple's Foundation
+# which we do not want
 
-FREETYPE_LIBS="`freetype-config --libs`"
-FREETYPE_CFLAGS="`freetype-config --cflags`"
+# Check whether --with-freetype was given.
+if test "${with_freetype+set}" = set; then
+  withval=$with_freetype;
+else
+  with_freetype=yes
+fi
 
-have_freetype=no
-if test x"$FREETYPE_LIBS" != x; then
-  save_CPPFLAGS=${CPPFLAGS}
-  CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
-  if test "${ac_cv_header_ft2build_h+set}" = set; then
+
+if test $with_freetype = yes; then
+  FREETYPE_LIBS="`freetype-config --libs`"
+  FREETYPE_CFLAGS="`freetype-config --cflags`"
+
+  have_freetype=no
+  if test x"$FREETYPE_LIBS" != x; then
+    save_CPPFLAGS=${CPPFLAGS}
+    CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
+    if test "${ac_cv_header_ft2build_h+set}" = set; then
   { echo "$as_me:$LINENO: checking for ft2build.h" >&5
 echo $ECHO_N "checking for ft2build.h... $ECHO_C" >&6; }
 if test "${ac_cv_header_ft2build_h+set}" = set; then
@@ -5577,7 +5589,8 @@ else
 fi
 
 
-  CPPFLAGS="${save_CPPFLAGS}"
+    CPPFLAGS="${save_CPPFLAGS}"
+  fi
 fi
 
 #--------------------------------------------------------------------

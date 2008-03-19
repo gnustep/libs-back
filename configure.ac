@@ -171,16 +171,23 @@ fi
 #--------------------------------------------------------------------
 # freetype libraries
 #--------------------------------------------------------------------
+# Mac OS X with macports has a freetype which includes Apple's Foundation
+# which we do not want
+AC_ARG_WITH(freetype,
+           [  --without-freetype Do not check for or include freetype], ,
+	   with_freetype=yes)
 
-FREETYPE_LIBS="`freetype-config --libs`"
-FREETYPE_CFLAGS="`freetype-config --cflags`"
+if test $with_freetype = yes; then
+  FREETYPE_LIBS="`freetype-config --libs`"
+  FREETYPE_CFLAGS="`freetype-config --cflags`"
 
-have_freetype=no
-if test x"$FREETYPE_LIBS" != x; then
-  save_CPPFLAGS=${CPPFLAGS}
-  CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
-  AC_CHECK_HEADER(ft2build.h,have_freetype=yes, have_freetype=no)
-  CPPFLAGS="${save_CPPFLAGS}"
+  have_freetype=no
+  if test x"$FREETYPE_LIBS" != x; then
+    save_CPPFLAGS=${CPPFLAGS}
+    CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
+    AC_CHECK_HEADER(ft2build.h,have_freetype=yes, have_freetype=no)
+    CPPFLAGS="${save_CPPFLAGS}"
+  fi
 fi
 
 #--------------------------------------------------------------------
