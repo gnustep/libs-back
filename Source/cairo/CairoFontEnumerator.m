@@ -62,7 +62,7 @@ NSMutableDictionary * __allFonts;
   return face;
 }
 
-// Make a GNUStep style font descriptor from a FcPattern
+// Make a GNUstep style font descriptor from a FcPattern
 static NSArray *faFromFc(FcPattern *pat)
 {
   int weight, slant, spacing, nsweight;
@@ -87,42 +87,42 @@ static NSArray *faFromFc(FcPattern *pat)
   switch (weight) 
     {
       case FC_WEIGHT_LIGHT:
-	[style appendString: @"Light"];
-	nsweight = 3;
-	break;
+        [style appendString: @"Light"];
+        nsweight = 3;
+        break;
       case FC_WEIGHT_MEDIUM:
-	nsweight = 6;
-	break;
+        nsweight = 6;
+        break;
       case FC_WEIGHT_DEMIBOLD:
-	[style appendString: @"Demibold"];
-	nsweight = 7;
-	break;
+        [style appendString: @"Demibold"];
+        nsweight = 7;
+        break;
       case FC_WEIGHT_BOLD:
-	[style appendString: @"Bold"];
-	nsweight = 9;
-	nstraits |= NSBoldFontMask;
-	break;
+        [style appendString: @"Bold"];
+        nsweight = 9;
+        nstraits |= NSBoldFontMask;
+        break;
       case FC_WEIGHT_BLACK:
-	[style appendString: @"Black"];
-	nsweight = 12;
-	nstraits |= NSBoldFontMask;
-	break;
+        [style appendString: @"Black"];
+        nsweight = 12;
+        nstraits |= NSBoldFontMask;
+        break;
       default:
-	nsweight = 6;
+        nsweight = 6;
     }
 
   switch (slant) 
     {
       case FC_SLANT_ROMAN:
-	break;
+        break;
       case FC_SLANT_ITALIC:
-	[style appendString: @"Italic"];
-	nstraits |= NSItalicFontMask;
-	break;
+        [style appendString: @"Italic"];
+        nstraits |= NSItalicFontMask;
+        break;
       case FC_SLANT_OBLIQUE:
-	[style appendString: @"Oblique"];
-	nstraits |= NSItalicFontMask;
-	break;
+        [style appendString: @"Oblique"];
+        nstraits |= NSItalicFontMask;
+        break;
     }
 
   if ([style length] > 0)
@@ -161,7 +161,7 @@ static NSArray *faFromFc(FcPattern *pat)
       char *family;
 
       if (FcPatternGetString(fs->fonts[i], FC_FAMILY, 0, (FcChar8 **)&family)
-	== FcResultMatch)
+          == FcResultMatch)
         {
           NSArray *fontArray;
 
@@ -176,19 +176,19 @@ static NSArray *faFromFc(FcPattern *pat)
               familyArray = [fcxft_allFontFamilies objectForKey: familyString];
               if (familyArray == nil)
                 {
-		  NSDebugLog(@"Found font family %@", familyString);
+                  NSDebugLog(@"Found font family %@", familyString);
                   familyArray = [[NSMutableArray alloc] init];
                   [fcxft_allFontFamilies setObject: familyArray
-					    forKey: familyString];
+                                         forKey: familyString];
                   RELEASE(familyArray);
                 }
               NSDebugLog(@"fc enumerator: adding font: %@", name);
               [familyArray addObject: fontArray];
               [fcxft_allFontNames addObject: name];      
               aFont = [[CairoFaceInfo alloc] initWithfamilyName: familyString
-		weight: [[fontArray objectAtIndex: 2] intValue]
-		traits: [[fontArray objectAtIndex: 3] unsignedIntValue]
-		pattern: fs->fonts[i]];
+                                             weight: [[fontArray objectAtIndex: 2] intValue]
+                                             traits: [[fontArray objectAtIndex: 3] unsignedIntValue]
+                                             pattern: fs->fonts[i]];
               [fcxft_allFonts setObject: aFont forKey: name];
               RELEASE(aFont);
             }

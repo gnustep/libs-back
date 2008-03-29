@@ -1,3 +1,13 @@
+2008-03-29 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoFontEnumerator.m,
+	* Source/cairo/CairoFaceInfo.m,
+	* Source/cairo/Win32CairoSurface.m,
+	* Source/cairo/CairoFontInfo.m,
+	* Source/cairo/Win32CairoGlitzSurface.m,
+	* Source/cairo/CairoGState.m:
+	Clean up and better error check and reporting on cairo and malloc calls.
+
 2008-03-19  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.13.2

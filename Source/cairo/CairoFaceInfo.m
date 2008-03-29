@@ -32,7 +32,7 @@
 #include <cairo-ft.h>
 #include <AppKit/NSFontManager.h>
 
-@ implementation CairoFaceInfo 
+@implementation CairoFaceInfo 
 
 - (id) initWithfamilyName: (NSString *)familyName 
                    weight: (int)weight 
@@ -103,21 +103,20 @@
       FcResult result;
       FcPattern *resolved;
 
-      FcConfigSubstitute (NULL, _pattern, FcMatchPattern); 
+      FcConfigSubstitute(NULL, _pattern, FcMatchPattern); 
       FcDefaultSubstitute(_pattern);
       resolved = FcFontMatch(NULL, _pattern, &result);
 
       _fontFace = cairo_ft_font_face_create_for_pattern(resolved);
       FcPatternDestroy(resolved);
 
-      if ((!_fontFace)
-	|| (cairo_font_face_status(_fontFace) != CAIRO_STATUS_SUCCESS))
-	{
-	  NSLog(@"Creating a font face failed %@", _familyName);
-	  cairo_font_face_destroy(_fontFace);
-	  _fontFace = NULL;
-	  return NULL;
-	}
+      if (cairo_font_face_status(_fontFace) != CAIRO_STATUS_SUCCESS)
+        {
+          NSLog(@"Creating a font face failed %@", _familyName);
+          cairo_font_face_destroy(_fontFace);
+          _fontFace = NULL;
+          return NULL;
+        }
     }
 
   return _fontFace;

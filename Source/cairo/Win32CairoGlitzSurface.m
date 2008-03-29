@@ -35,35 +35,40 @@
 
 @implementation Win32CairoGlitzSurface
 
++ (void) initialize
+{
+  NSLog(@"Win32CairoGlitzSurface : %d : glitz_wgl_init", __LINE__);
+  glitz_wgl_init(NULL);
+}
+
 - (id) initWithDevice: (void *)device
 {
   WIN_INTERN *win;
-
-  static BOOL first_time = YES;
 
   unsigned long mask = 0;
   glitz_drawable_format_t dtempl;
 
   //static
-    glitz_drawable_format_t *dformat = NULL;
-  static unsigned count = 0;
+  glitz_drawable_format_t *dformat = NULL;
   glitz_drawable_t *drawable = NULL;
   glitz_format_t *format = NULL;
   glitz_surface_t *surface = NULL;
   RECT sz;
 
-count++;
-
   gsDevice = device;
-  GetClientRect(GSWINDEVICE,&sz);
+  GetClientRect(GSWINDEVICE, &sz);
   win = (WIN_INTERN *)GetWindowLong(GSWINDEVICE, GWL_USERDATA);
+  if (win && win->useHDC)
+    {
+      HGDIOBJ old;
 
-  if(first_time)
-  {
-    NSLog(@"Win32CairoGlitzSurface : %d (%d) : glitz_wgl_init",__LINE__,count);
-    glitz_wgl_init(NULL);
-    first_time=NO;
-  }
+      old = SelectObject(win->hdc, win->old);
+      DeleteObject(old);
+      DeleteDC(win->hdc);
+      win->hdc = NULL;
+      win->old = NULL;
+      win->useHDC = NO;
+    }
 
   //NSLog(@"Win32CairoGlitzSurface : init window %d (%d,%d-%d,%d)",GSWINDEVICE,sz.left,sz.top,sz.right,sz.bottom);
 
@@ -85,23 +90,10 @@ count++;
   dtempl.doublebuffer = 0;
   mask |= GLITZ_FORMAT_DOUBLEBUFFER_MASK;
 
-  if(win && win->useHDC)
-  {
-    HGDIOBJ old;
-
-    old = SelectObject(win->hdc, win->old);
-    DeleteObject(old);
-    DeleteDC(win->hdc);
-    win->hdc = NULL;
-    win->old = NULL;
-    win->useHDC = NO;
-  }
-
-  dformat = glitz_wgl_find_window_format(mask,&dtempl,0);
-
+  dformat = glitz_wgl_find_window_format(mask, &dtempl, 0);
   if (!dformat)
     {
-      NSLog(@"Win32CairoGlitzSurface : %d (%d) : no format for drawable",__LINE__,count);
+      NSLog(@"Win32CairoGlitzSurface : %d : no format for drawable",__LINE__);
       exit(1);
     }
 
@@ -122,12 +114,11 @@ count++;
   drawable = glitz_wgl_create_drawable_for_window(
 		 dformat,
 		 GSWINDEVICE,
-		 sz.right-sz.left,
-		 sz.bottom-sz.top);
-
+		 sz.right - sz.left,
+		 sz.bottom - sz.top);
   if (!drawable)
     {
-      NSLog(@"Win32CairoGlitzSurface : %d (%d) : no glitz drawable",__LINE__,count);
+      NSLog(@"Win32CairoGlitzSurface : %d : no glitz drawable",__LINE__);
       exit(1);
     }
     
@@ -140,17 +131,21 @@ count++;
 
   surface = glitz_surface_create(
 		drawable, format,
-		sz.right-sz.left,
-		sz.bottom-sz.top,
+		sz.right - sz.left,
+		sz.bottom - sz.top,
 		0, NULL);
-
   if (!surface)
     {
-      NSLog(@"Win32CairoGlitzSurface : %d (%d) : couldn't create glitz surface",__LINE__,count);
+      NSLog(@"Win32CairoGlitzSurface : %d : couldn't create glitz surface",__LINE__);
       exit(1);
     }
+
   glitz_surface_attach(surface, drawable, GLITZ_DRAWABLE_BUFFER_FRONT_COLOR);
   _surface = cairo_glitz_surface_create(surface);
+  if (cairo_surface_status(_surface))
+    {
+      DESTROY(self);
+    }
 
   return self;
 }
@@ -158,8 +153,9 @@ count++;
 - (NSSize) size
 {
   RECT sz;
-  GetClientRect(GSWINDEVICE,&sz);
-  return NSMakeSize(sz.right-sz.left, sz.bottom-sz.top);
+
+  GetClientRect(GSWINDEVICE, &sz);
+  return NSMakeSize(sz.right - sz.left, sz.bottom - sz.top);
 }
 
 @end
