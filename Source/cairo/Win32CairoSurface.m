@@ -40,19 +40,24 @@
   gsDevice = device;
 
   win = (WIN_INTERN *)GetWindowLong(GSWINDEVICE, GWL_USERDATA);
-  if(win && win->useHDC)
+  if (win && win->useHDC)
     hDC = win->hdc;
   else
     hDC = GetDC(GSWINDEVICE);
   
-  if( !hDC )
-  {
-    NSLog(@"Win32CairoSurface : %d : no device context",__LINE__);
-    exit(1);
-  }
+  if (!hDC)
+    {
+      NSLog(@"Win32CairoSurface : %d : no device context",__LINE__);
+      exit(1);
+    }
+
   _surface = cairo_win32_surface_create(hDC);
-  if(!(win && win->useHDC))
-    ReleaseDC(GSWINDEVICE,hDC);
+  if (!(win && win->useHDC))
+    ReleaseDC(GSWINDEVICE, hDC);
+  if (cairo_surface_status(_surface))
+    {
+      DESTROY(self);
+    }
 
   return self;
 }
@@ -60,8 +65,9 @@
 - (NSSize) size
 {
   RECT sz;
-  GetClientRect(GSWINDEVICE,&sz);
-  return NSMakeSize(sz.right-sz.left, sz.top-sz.bottom);
+
+  GetClientRect(GSWINDEVICE, &sz);
+  return NSMakeSize(sz.right - sz.left, sz.top - sz.bottom);
 }
 
 @end

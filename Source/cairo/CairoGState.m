@@ -135,7 +135,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
       if (status != CAIRO_STATUS_SUCCESS)
         {
           NSLog(@"Cairo status '%s' in copy", cairo_status_to_string(status));
-          _ct = NULL;
+          copy->_ct = NULL;
         }
       else
         {
@@ -999,8 +999,14 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   switch (bitsPerPixel)
     {
     case 32:
-      rowData = (unsigned char *)data[0];
       tmp = objc_malloc(pixels * 4);
+      if (!tmp)
+        {
+          NSLog(@"Could not allocate drawing space for image");
+          return;
+        }
+
+      rowData = (unsigned char *)data[0];
       index = 0;
 
       for (i = 0; i < pixelsHigh; i++)
@@ -1027,8 +1033,14 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       format = CAIRO_FORMAT_ARGB32;
       break;
     case 24:
-      rowData = (unsigned char *)data[0];
       tmp = objc_malloc(pixels * 4);
+      if (!tmp)
+        {
+          NSLog(@"Could not allocate drawing space for image");
+          return;
+        }
+
+      rowData = (unsigned char *)data[0];
       index = 0;
 
       for (i = 0; i < pixelsHigh; i++)
