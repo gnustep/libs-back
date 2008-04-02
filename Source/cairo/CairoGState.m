@@ -313,6 +313,37 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
       c[b] = 0;
       cairo_text_path(_ct, c);
       GS_ENDITEMBUF();
+      if (cairo_status(_ct) == CAIRO_STATUS_SUCCESS)
+        {
+          cairo_path_t *cpath;
+          cairo_path_data_t *data;
+          int i;
+         
+          cpath = cairo_copy_path(_ct);
+          
+          for (i = 0; i < cpath->num_data; i += cpath->data[i].header.length) 
+            {
+              data = &cpath->data[i];
+              switch (data->header.type) 
+                {
+                  case CAIRO_PATH_MOVE_TO:
+                    [path moveToPoint: NSMakePoint(data[1].point.x, data[1].point.y)];
+                    break;
+                  case CAIRO_PATH_LINE_TO:
+                    [path lineToPoint: NSMakePoint(data[1].point.x, data[1].point.y)];
+                    break;
+                  case CAIRO_PATH_CURVE_TO:
+                    [path curveToPoint: NSMakePoint(data[3].point.x, data[3].point.y) 
+                          controlPoint1: NSMakePoint(data[1].point.x, data[1].point.y)
+                          controlPoint2: NSMakePoint(data[2].point.x, data[2].point.y)];
+                    break;
+                  case CAIRO_PATH_CLOSE_PATH:
+                    [path closePath];
+                    break;
+                }
+            }
+          cairo_path_destroy(cpath);
+        }
     }
 }
 
