@@ -1,3 +1,9 @@
+2008-04-03 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoFontInfo.m (-appendBezierPathWithGlyphs:...):
+	Correct implementation.
+	* Source/cairo/CairoGState.m (-DPScharpath::): Correct implementation.
+
 2008-03-29 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoFontEnumerator.m,

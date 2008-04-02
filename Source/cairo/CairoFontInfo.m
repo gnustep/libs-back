@@ -338,9 +338,10 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
       objc_free(cdata);
       return;
     }
-  
+
+  // Use flip matrix
   cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
-                    matrix[3], matrix[4], matrix[5]);
+                    -matrix[3], matrix[4], matrix[5]);
   cairo_set_font_matrix(ct, &font_matrix);
   if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
     {
@@ -363,6 +364,14 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
       return;
     }
 
+  if ([path elementCount] > 0)
+    {
+      NSPoint p;
+
+      p = [path currentPoint];
+      cairo_move_to(ct, floorf(p.x), floorf(p.y));
+    }
+
   cairo_text_path(ct, str);
   if (cairo_status(ct) == CAIRO_STATUS_SUCCESS)
      {
@@ -383,9 +392,9 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
                 [path lineToPoint: NSMakePoint(data[1].point.x, data[1].point.y)];
                 break;
               case CAIRO_PATH_CURVE_TO:
-                [path curveToPoint: NSMakePoint(data[1].point.x, data[1].point.y) 
-                      controlPoint1: NSMakePoint(data[2].point.x, data[2].point.y)
-                      controlPoint2: NSMakePoint(data[3].point.x, data[3].point.y)];
+                [path curveToPoint: NSMakePoint(data[3].point.x, data[3].point.y) 
+                      controlPoint1: NSMakePoint(data[1].point.x, data[1].point.y)
+                      controlPoint2: NSMakePoint(data[2].point.x, data[2].point.y)];
                 break;
               case CAIRO_PATH_CLOSE_PATH:
                 [path closePath];
