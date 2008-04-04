@@ -34,6 +34,8 @@
 #include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSBundle.h>
 #include <Foundation/NSDebug.h>
+#include <GNUstepBase/Unicode.h>
+
 #include <GNUstepGUI/GSFontInfo.h>
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
@@ -104,11 +106,6 @@ static int subpixel_text;
   */
   unsigned int cachedGlyph[CACHE_SIZE];
   NSSize cachedSize[CACHE_SIZE];
-
-
-  /* Glyph generation */
-  NSGlyph ligature_ff,ligature_fi,ligature_fl,ligature_ffl,ligature_ffi;
-
 
   float lineHeight;
 }
@@ -258,24 +255,6 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 		fontBBox.origin.x, fontBBox.origin.y,
 		fontBBox.size.width, fontBBox.size.height);*/
 
-  {
-    FTC_CMapDescRec cmap;
-    cmap.face_id = imgd.font.face_id;
-    cmap.u.encoding = ft_encoding_unicode;
-    cmap.type = FTC_CMAP_BY_ENCODING;
-    ligature_ff = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, 0xfb00);
-    ligature_fi = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, 0xfb01);
-    ligature_fl = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, 0xfb02);
-    ligature_ffi = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, 0xfb03);
-    ligature_ffl = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, 0xfb04);
-/*    printf("ligatures %04x %04x %04x %04x %04x | %02x %02x %02x for |%@|\n",
-      ligature_ff,ligature_fi,ligature_fl,ligature_ffi,ligature_ffl,
-      FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, 'f'),
-      FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, 'l'),
-      FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, 'i'),
-      fontName);*/
-  }
-
     {
       float xx, yy;
 #ifdef FT212_STUFF
@@ -361,8 +340,6 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   return lineHeight;
 }
 
-
-#include <GNUstepBase/Unicode.h>
 
 /* TODO: the current point probably needs updating after drawing is done */
 
@@ -2364,6 +2341,22 @@ static int filters[3][7]=
   }
 }
 
+-(NSGlyph) glyphForCharacter: (unichar)ch
+{
+  NSGlyph g;
+
+  FTC_CMapDescRec cmap;
+
+  cmap.face_id = imgd.font.face_id;
+  cmap.u.encoding = ft_encoding_unicode;
+  cmap.type = FTC_CMAP_BY_ENCODING;
+
+  g = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, ch);
+  if (g)
+    return g + 1;
+  else
+    return NSNullGlyph;
+}
 
 @end
 
@@ -2747,242 +2740,6 @@ static int filters[3][7]=
 }
 
 @end
-
-
-@interface NSFont (backend)
--(NSGlyph) glyphForCharacter: (unichar)ch;
--(NSString *) nameOfGlyph: (NSGlyph)glyph;
-@end
-
-@implementation NSFont (backend)
--(NSGlyph) glyphForCharacter: (unichar)ch
-{
-  FTFontInfo *fi=fontInfo;
-  NSGlyph g;
-
-  FTC_CMapDescRec cmap;
-
-  cmap.face_id = fi->imgd.font.face_id;
-  cmap.u.encoding = ft_encoding_unicode;
-  cmap.type = FTC_CMAP_BY_ENCODING;
-
-  g = FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, ch);
-  if (g)
-    return g + 1;
-  else
-    return NSNullGlyph;
-}
-
--(NSString *) nameOfGlyph: (NSGlyph)glyph
-{
-  FTFontInfo *fi=fontInfo;
-  FT_Face face;
-
-  char buf[256];
-
-  glyph--;
-
-  if (FTC_Manager_Lookup_Size(ftc_manager, &fi->imgd.font, &face, 0))
-    return nil;
-
-  if (FT_Get_Glyph_Name(face,glyph,buf,sizeof(buf)))
-    return nil;
-
-  return [NSString stringWithCString: buf]; /* TODO: really cstring? */
-}
-@end
-
-
-/*
-GSLayoutManager glyph generation code.
-
-TODO: clean this up
-*/
-#include <Foundation/NSCharacterSet.h>
-#include <GNUstepGUI/GSLayoutManager_internal.h>
-#include <AppKit/NSTextStorage.h>
-#include <AppKit/NSTextAttachment.h>
-
-@implementation GSLayoutManager (backend)
-
-/*
-This is a fairly simple implementation. It will use "ff", "fl", "fi",
-"ffl", and "ffi" ligatures if available. If a glyph for a character isn't
-available, it will try to decompose it before giving up.
-
-TODO: how should words like "pfffffffffff" be handled?
-
-0066 'f'
-0069 'i'
-006c 'l'
-fb00 'ff'
-fb01 'fi'
-fb02 'fl'
-fb03 'ffi'
-fb04 'ffl'
-*/
-
--(unsigned int) _findSafeBreakMovingBackwardFrom: (unsigned int)ch
-{
-	NSString *str=[_textStorage string];
-	while (ch>0 && [str characterAtIndex: ch-1]=='f')
-		ch--;
-	return ch;
-}
-
--(unsigned int) _findSafeBreakMovingForwardFrom: (unsigned int)ch
-{
-	unsigned int l=[_textStorage length];
-	NSString *str=[_textStorage string];
-	while (ch<l && [str characterAtIndex: ch]=='f')
-		ch++;
-	if (ch<l && ch>0 && [str characterAtIndex: ch-1]=='f')
-		ch++;
-	return ch;
-}
-
--(void) _generateGlyphsForRun: (glyph_run_t *)run  at: (unsigned int)pos
-{
-	glyph_t *g;
-	unsigned int glyph_size;
-	unsigned int i,j;
-	unsigned int ch,ch2,ch3;
-
-	FTFontInfo *fi=[run->font fontInfo];
-	FTC_CMapDescRec cmap;
-
-	NSCharacterSet *cs=[NSCharacterSet controlCharacterSet];
-	IMP characterIsMember=[cs methodForSelector: @selector(characterIsMember:)];
-
-	unsigned int c=run->head.char_length;
-	unichar buf[c];
-
-
-	[[_textStorage string] getCharacters: buf
-		range: NSMakeRange(pos,c)];
-
-	cmap.face_id = fi->imgd.font.face_id;
-	cmap.u.encoding = ft_encoding_unicode;
-	cmap.type = FTC_CMAP_BY_ENCODING;
-
-	/* first guess */
-	glyph_size=c;
-	g=run->glyphs=malloc(sizeof(glyph_t)*glyph_size);
-	memset(g,0,sizeof(glyph_t)*glyph_size);
-
-	for (i=j=0;i<c;i++,g++,j++)
-	{
-		ch=buf[i];
-		ch2=ch3=0;
-		if (i+1<c)
-		{
-			ch2=buf[i+1];
-			if (i+2<c)
-				ch3=buf[i+2];
-		}
-
-		g->char_offset=i;
-		if (characterIsMember(cs,@selector(characterIsMember:),ch))
-		{
-			g->g=NSControlGlyph;
-			continue;
-		}
-
-		if (ch == NSAttachmentCharacter)
-		{
-			g->g=GSAttachmentGlyph;
-			continue;
-		}
-
-		if (run->ligature>=1)
-		{
-			if (ch=='f' && ch2=='f' && ch3=='l' && fi->ligature_ffl)
-			{
-				g->g=fi->ligature_ffl + 1;
-				i+=2;
-				continue;
-			}
-			if (ch=='f' && ch2=='f' && ch3=='i' && fi->ligature_ffi)
-			{
-				g->g=fi->ligature_ffi + 1;
-				i+=2;
-				continue;
-			}
-			if (ch=='f' && ch2=='f' && fi->ligature_ff)
-			{
-				g->g=fi->ligature_ff + 1;
-				i++;
-				continue;
-			}
-			if (ch=='f' && ch2=='i' && fi->ligature_fi)
-			{
-				g->g=fi->ligature_fi + 1;
-				i++;
-				continue;
-			}
-			if (ch=='f' && ch2=='l' && fi->ligature_fl)
-			{
-				g->g=fi->ligature_fl + 1;
-				i++;
-				continue;
-			}
-		}
-
-		if (ch>=0xd800 && ch<=0xdfff)
-		{
-			if (ch >= 0xd800 && ch < 0xdc00 && ch2 >= 0xdc00 && ch2 <= 0xdfff)
-			{
-				ch = ((ch & 0x3ff) << 10) + (ch2 & 0x3ff) + 0x10000;
-				i++;
-			}
-			else
-				ch = 0xfffd;
-		}
-
-		g->g=FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, ch) + 1;
-
-		if (g->g == 1 && ch<0x10000)
-		{
-			unichar *decomp;
-			decomp=uni_is_decomp(ch);
-			if (decomp)
-			{
-				int c=0;
-				for (;*decomp;decomp++)
-				{
-					glyph_size++;
-					run->glyphs=realloc(run->glyphs,sizeof(glyph_t)*glyph_size);
-					g=run->glyphs+j;
-					memset(&run->glyphs[glyph_size-1],0,sizeof(glyph_t));
-
-					g->g=FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, *decomp) + 1;
-					if (g->g == 1)
-						break;
-					c++;
-					g++;
-					j++;
-					g->char_offset=i;
-				}
-				if (*decomp)
-				{
-					g-=c;
-					j-=c;
-					g->g=0;
-				}
-				else
-				{
-					g--;
-					j--;
-				}
-			}
-		}
-	}
-
-	/* TODO: shrink allocated array if possible */
-	run->head.glyph_length=j;
-}
-@end
-
 
 @interface FTFontInfo (experimental_glyph_printing_extension)
 -(const char *) nameOfGlyph: (NSGlyph)g;

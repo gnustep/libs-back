@@ -175,8 +175,15 @@
 
 - (BOOL) glyphIsEncoded: (NSGlyph)glyph
 {
-  /* subclass should override */
-  return YES;
+  /* FIXME: There is no proper way to determine with the toy font API,
+     whether a glyph is supported or not. We will just ignore ligatures 
+     and report all other glyph as existing.
+  return !NSEqualSizes([self advancementForGlyph: glyph], NSZeroSize);
+  */
+  if ((glyph >= 0xFB00) && (glyph <= 0xFB05))
+    return NO;
+  else
+    return YES;
 }
 
 static
@@ -459,5 +466,5 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
             cairo_status_to_string(cairo_status(ct)), str);
     }
 }
- 
+
 @end

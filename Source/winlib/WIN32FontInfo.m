@@ -29,6 +29,7 @@
 #include <Foundation/NSString.h>
 #include <Foundation/NSArray.h>
 #include <Foundation/NSValue.h>
+#include <AppKit/NSBezierPath.h>
 
 #include "winlib/WIN32FontInfo.h"
 
@@ -80,14 +81,14 @@ NSString *win32_font_family(NSString *fontName);
   HDC hdc;
   HFONT old;
 
-  hdc = GetDC(NULL);
+  hdc = CreateCompatibleDC(NULL);
   old = SelectObject(hdc, hFont);
   GetTextExtentPoint32W(hdc,
     (const unichar*)[string cStringUsingEncoding: NSUnicodeStringEncoding],
     [string length],
     &size);
   SelectObject(hdc, old);
-  ReleaseDC(NULL, hdc);
+  DeleteDC(hdc);
 
   return size.cx;
 }
@@ -105,12 +106,12 @@ NSString *win32_font_family(NSString *fontName);
   ABCFLOAT abc;
   HFONT old;
 
-  hdc = GetDC(NULL);
+  hdc = CreateCompatibleDC(NULL);
   old = SelectObject(hdc, hFont);
   // FIXME ... currently a gnustep glyph is a unichar ... what if that changes.
   GetCharABCWidthsFloatW(hdc, u, u, &abc);
   SelectObject(hdc, old);
-  ReleaseDC(NULL, hdc);
+  DeleteDC(hdc);
 
   //NSLog(@"Width for %d is %f or %f", glyph, w, (abc.abcfA + abc.abcfB + abc.abcfC));
   w = abc.abcfA + abc.abcfB + abc.abcfC;
@@ -126,13 +127,13 @@ NSString *win32_font_family(NSString *fontName);
   GLYPHMETRICS gm;
   NSRect rect;
 
-  hdc = GetDC(NULL);
+  hdc = CreateCompatibleDC(NULL);
   old = SelectObject(hdc, hFont);
   // Convert from GNUstep glyph (unichar) to windows glyph.
   if (GetGlyphIndicesW(hdc, &c, 1, &windowsGlyph, 0) == GDI_ERROR)
     {
       SelectObject(hdc, old);
-      ReleaseDC(NULL, hdc);
+      DeleteDC(hdc);
 NSLog(@"No glyph for U%d", c);
       return NSMakeRect(0, 0, 0, 0);	// No such glyph
     }
@@ -150,14 +151,30 @@ NSLog(@"No glyph for U%d", c);
     }
 
   SelectObject(hdc, old);
-  ReleaseDC(NULL, hdc);
+  DeleteDC(hdc);
 
   return rect;
 }
 
 - (BOOL) glyphIsEncoded: (NSGlyph)glyph
 {
-  return YES;
+  WORD c = (WORD)glyph;
+  WORD windowsGlyph;
+  HDC hdc;
+  HFONT old;
+  BOOL result = YES;
+
+  hdc = CreateCompatibleDC(NULL);
+  old = SelectObject(hdc, hFont);
+  // Convert from GNUstep glyph (unichar) to windows glyph.
+  if ((GetGlyphIndicesW(hdc, &c, 1, &windowsGlyph, 0) == GDI_ERROR)
+      || (windowsGlyph == 0xFFFF))
+    {
+      result = NO;
+    }
+  SelectObject(hdc, old);
+  DeleteDC(hdc);
+  return result;
 }
 
 - (NSGlyph) glyphWithName: (NSString*)glyphName
@@ -183,7 +200,7 @@ NSLog(@"No glyph for U%d", c);
       HFONT old;
 
       ms = [NSMutableCharacterSet new];
-      hdc = GetDC(NULL);
+      hdc = CreateCompatibleDC(NULL);
       old = SelectObject(hdc, hFont);
       count = (unsigned)GetFontUnicodeRanges(hdc, 0);
       if (count > 0)
@@ -218,7 +235,7 @@ NSLog(@"No glyph for U%d", c);
           objc_free(gs);
         }
       SelectObject(hdc, old);
-      ReleaseDC(NULL, hdc);
+      DeleteDC(hdc);
       coveredCharacterSet = [ms copy];
       RELEASE(ms);
     }
@@ -227,8 +244,8 @@ NSLog(@"No glyph for U%d", c);
 }
 
 - (void) drawString: (NSString*)string
-	       onDC: (HDC)hdc
-		 at: (POINT)p
+               onDC: (HDC)hdc
+                 at: (POINT)p
 {
   HFONT old;
 
@@ -252,9 +269,9 @@ NSLog(@"No glyph for U%d", c);
 }
 
 - (void) drawGlyphs: (const NSGlyph*)s
-	     length: (int)len 
-	       onDC: (HDC)hdc
-		 at: (POINT)p
+             length: (int)len 
+               onDC: (HDC)hdc
+                 at: (POINT)p
 {
   WORD buf[len];
   HFONT old;
@@ -282,6 +299,117 @@ NSLog(@"No glyph for U%d", c);
   return numberOfGlyphs;
 }
 
+- (void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs
+                              count: (int)length
+                       toBezierPath: (NSBezierPath *)path
+{
+  WORD buf[length];
+  int	i;
+  SIZE sBoundBox;
+  int h;
+  int iPoints;
+  POINT *ptPoints;
+  BYTE *bTypes;
+  NSPoint startPoint;
+  HDC hDC = CreateCompatibleDC(NULL);
+
+  if (!hDC)
+    {
+      NSDebugLLog(@"WIN32FontInfo", 
+                  @"Problem creating HDC for appendBezierPathWithGlyphs:");
+      return;
+    }
+
+  SetGraphicsMode(hDC, GM_ADVANCED);
+  SetMapMode(hDC, MM_ANISOTROPIC);
+  SetWindowExtEx(hDC, 1, 1, NULL);
+  SetViewportExtEx(hDC, 1, -1, NULL);
+  SetViewportOrgEx(hDC, 0, 0, NULL);
+  
+  /*
+   * For now, assume that a glyph is a unicode character and can be
+   * stored in a windows WORD
+   */
+  for (i = 0; i < length; i++)
+    {
+      buf[i] = glyphs[i];
+    }
+  
+  SelectObject(hDC, hFont);
+  GetTextExtentPoint32W(hDC, buf, length, &sBoundBox);
+  h = sBoundBox.cy;
+  
+  if ([path elementCount] > 0)
+    {
+      startPoint = [path currentPoint];
+    }
+  else
+    {
+      startPoint = NSZeroPoint;
+    }
+
+  SetBkMode(hDC, TRANSPARENT);
+  BeginPath(hDC);
+  SetTextAlign(hDC, TA_LEFT | TA_TOP);
+  TextOutW(hDC, startPoint.x, -startPoint.y, buf, length); 
+  EndPath(hDC);
+  
+  iPoints = GetPath(hDC, NULL, NULL, 0);
+  if (iPoints == 0)
+    {
+      DeleteDC(hDC);
+      return;
+    }
+
+  ptPoints = objc_malloc(sizeof(POINT) * iPoints);
+  if (!ptPoints)
+    {
+      DeleteDC(hDC);
+      return;
+    }
+  bTypes = objc_malloc(sizeof(BYTE) * iPoints);
+  if (!bTypes)
+    {
+      objc_free(ptPoints);
+      DeleteDC(hDC);
+      return;
+    }
+  GetPath(hDC, ptPoints, bTypes, iPoints);
+
+  // Now append the glyphs to the path
+  i = 0;
+  while (i < iPoints)
+    {
+      if (bTypes[i] == PT_MOVETO)
+        {
+          [path moveToPoint: NSMakePoint(ptPoints[i].x, h - ptPoints[i].y)];
+          i++;
+        }
+      else if (bTypes[i] & PT_LINETO)
+        {
+          [path lineToPoint: NSMakePoint(ptPoints[i].x, h - ptPoints[i].y)];
+          if (bTypes[i] & PT_CLOSEFIGURE)
+            [path closePath];
+          i++;
+        }
+      else if (bTypes[i] & PT_BEZIERTO)
+        {
+          // FIXME: We assume windows isn't lying here about the bezier points
+          [path curveToPoint: NSMakePoint(ptPoints[i+2].x, h - ptPoints[i+2].y)
+                controlPoint1: NSMakePoint(ptPoints[i].x, h - ptPoints[i].y)
+                controlPoint2: NSMakePoint(ptPoints[i+1].x, h - ptPoints[i+1].y)];
+          if ((bTypes[i] & PT_CLOSEFIGURE) || (bTypes[i+1] & PT_CLOSEFIGURE)
+              || (bTypes[i+2] & PT_CLOSEFIGURE))
+            [path closePath];
+          i += 3;
+        }
+    }
+
+  objc_free(bTypes);
+  objc_free(ptPoints);
+  DeleteDC(hDC);
+}
+
 @end
 
 @implementation WIN32FontInfo (Private)
@@ -297,7 +425,7 @@ NSLog(@"No glyph for U%d", c);
   //NSLog(@"Creating Font %@ of size %f", fontName, matrix[0]);
   ASSIGN(familyName, win32_font_family(fontName));
   memset(&logfont, 0, sizeof(LOGFONT));
-  hdc = GetDC(NULL);
+  hdc = CreateCompatibleDC(NULL);
   // FIXME This hack gets the font size about right, but what is the real solution?
   logfont.lfHeight = (int)(matrix[0] * 4 / 3);
   //logfont.lfHeight = -MulDiv(matrix[0], GetDeviceCaps(hdc, LOGPIXELSY), 72);
@@ -318,14 +446,14 @@ NSLog(@"No glyph for U%d", c);
   if (!hFont)
     {
       NSLog(@"Could not create font %@", fontName);
-      ReleaseDC(NULL, hdc);
+      DeleteDC(hdc);
       return NO;
     }
 
   old = SelectObject(hdc, hFont);
   GetTextMetricsW(hdc, &metric);
   SelectObject(hdc, old);
-  ReleaseDC(NULL, hdc);
+  DeleteDC(hdc);
 
   // Fill the ivars
   isFixedPitch = TMPF_FIXED_PITCH & metric.tmPitchAndFamily;

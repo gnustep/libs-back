@@ -1,3 +1,15 @@
+2008-04-04 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/winlib/WIN32FontInfo.m
+	(-appendBezierPathWithGlyphs:count:toBezierPath:): New method.
+	Patch by Christopher Armstrong <carmstrong@fastmail.com.au>.
+	* Source/art/ftfont.m,
+	* Source/art/ftfont-old.m: Moved ligature handling code from here
+	to gui.
+	* Source/cairo/CairoFontInfo.m (-glyphIsEncoded:): Report all
+	ligatures as not supported, as we have no way to determine if they
+	exist in the font.
+
 2008-04-03 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoFontInfo.m (-appendBezierPathWithGlyphs:...):
