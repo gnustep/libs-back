@@ -41,12 +41,18 @@
 // For the encoding functions
 #include <GNUstepBase/Unicode.h>
 
+#include <AppKit/NSBezierPath.h>
 #include "xlib/GSXftFontInfo.h"
 
 #ifdef HAVE_FC
 #define id _gs_avoid_id_collision
 #include <fontconfig/fontconfig.h>
 #undef id
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_GLYPH_H
+#include FT_OUTLINE_H
 
 /*
  * class global dictionary of existing fonts
@@ -558,6 +564,154 @@ Ones(unsigned int mask)
 
 - (void) setActiveFor: (Display*) xdpy gc: (GC) xgcntxt
 {
+}
+
+static int bezierpath_move_to(const FT_Vector *to, void *user)
+{
+  NSBezierPath *path = (NSBezierPath *)user;
+  NSPoint d;
+
+  d.x = to->x / 65536.0;
+  d.y = to->y / 65536.0;
+/*
+  d.x = to->x;
+  d.y = to->y;
+*/
+  [path closePath];
+  [path moveToPoint: d];
+  return 0;
+}
+
+static int bezierpath_line_to(const FT_Vector *to, void *user)
+{
+  NSBezierPath *path = (NSBezierPath *)user;
+  NSPoint d;
+
+  d.x = to->x / 65536.0;
+  d.y = to->y / 65536.0;
+/*
+  d.x = to->x;
+  d.y = to->y;
+*/
+  [path lineToPoint: d];
+  return 0;
+}
+
+static int bezierpath_conic_to(const FT_Vector *c1, const FT_Vector *to, void *user)
+{
+  NSBezierPath *path = (NSBezierPath *)user;
+  NSPoint a, b, c, d;
+
+  a = [path currentPoint];
+  d.x = to->x / 65536.0;
+  d.y = to->y / 65536.0;
+  b.x = c1->x / 65536.0;
+  b.y = c1->y / 65536.0;
+/*
+  d.x = to->x;
+  d.y = to->y;
+  b.x = c1->x;
+  b.y = c1->y;
+*/
+  c.x = (b.x * 2 + d.x) / 3.0;
+  c.y = (b.y * 2 + d.y) / 3.0;
+  b.x = (b.x * 2 + a.x) / 3.0;
+  b.y = (b.y * 2 + a.y) / 3.0;
+  [path curveToPoint: d controlPoint1: b controlPoint2: c];
+  return 0;
+}
+
+static int bezierpath_cubic_to(const FT_Vector *c1, const FT_Vector *c2, 
+                               const FT_Vector *to, void *user)
+{
+  NSBezierPath *path = (NSBezierPath *)user;
+  NSPoint b, c, d;
+
+  b.x = c1->x / 65536.0;
+  b.y = c1->y / 65536.0;
+  c.x = c2->x / 65536.0;
+  c.y = c2->y / 65536.0;
+  d.x = to->x / 65536.0;
+  d.y = to->y / 65536.0;
+/*
+  b.x = c1->x;
+  b.y = c1->y;
+  c.x = c2->x;
+  c.y = c2->y;
+  d.x = to->x;
+  d.y = to->y;
+*/
+  [path curveToPoint: d controlPoint1: b controlPoint2: c];
+  return 0;
+}
+
+static FT_Outline_Funcs bezierpath_funcs = {
+  move_to: bezierpath_move_to,
+  line_to: bezierpath_line_to,
+  conic_to: bezierpath_conic_to,
+  cubic_to: bezierpath_cubic_to,
+  shift: 10,
+//  delta: 0,
+};
+
+- (void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs
+                              count: (int)count
+                       toBezierPath: (NSBezierPath *)path
+{
+  int i;
+  FT_Matrix ftmatrix;
+  FT_Vector ftdelta;
+  FT_Face face;
+  FT_Int load_flags = FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP;
+  NSPoint p = [path currentPoint];
+
+  ftmatrix.xx = 65536;
+  ftmatrix.xy = 0;
+  ftmatrix.yx = 0;
+  ftmatrix.yy = 65536;
+  ftdelta.x = p.x * 64.0;
+  ftdelta.y = p.y * 64.0;
+
+  face = XftLockFace((XftFont *)font_info);
+  for (i = 0; i < count; i++)
+    {
+      NSGlyph glyph;
+      FT_Glyph gl;
+      FT_OutlineGlyph og;
+
+      glyph = glyphs[i];
+      // FIXME: Should do this conversion in the glyph creation!
+      glyph = XftCharIndex([XGServer currentXDisplay], 
+                           (XftFont *)font_info, glyph);
+     
+      if (FT_Load_Glyph(face, glyph, load_flags))
+        continue;
+
+      if (FT_Get_Glyph(face->glyph, &gl))
+        continue;
+
+      if (FT_Glyph_Transform(gl, &ftmatrix, &ftdelta))
+        {
+          NSLog(@"glyph transformation failed!");
+          continue;
+        }
+
+      og = (FT_OutlineGlyph)gl;
+
+      ftdelta.x += gl->advance.x >> 10;
+      ftdelta.y += gl->advance.y >> 10;
+
+      FT_Outline_Decompose(&og->outline, &bezierpath_funcs, path);
+
+      FT_Done_Glyph(gl);
+    }
+
+  XftUnlockFace((XftFont *)font_info);
+
+  if (count)
+    {
+      [path moveToPoint: NSMakePoint(ftdelta.x / 64.0, ftdelta.y / 64.0)];
+    }
 }
 
 @end
