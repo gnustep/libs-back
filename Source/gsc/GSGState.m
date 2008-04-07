@@ -50,7 +50,9 @@
 /* Designated initializer. */
 - initWithDrawContext: (GSContext *)drawContext
 {
-  [super init];
+  self = [super init];
+  if (!self)
+    return nil;
 
   drawcontext = drawContext;
   offset = NSMakePoint(0, 0);
@@ -469,9 +471,71 @@ typedef enum {
     isRelative: YES];
 }
 
-- (void) DPScharpath: (const char*)s : (int)b
+- (void) DPScharpath: (const char*)s : (int)count
 {
-  [self subclassResponsibility: _cmd];
+  NSGlyph glBuf[count];
+  int i;
+
+  if (!font)
+    return;
+
+  // FIXME
+  for (i = 0; i < count; i++)
+    {
+      glBuf[i] = [font glyphForCharacter: s[i]];  
+    }
+  
+  CHECK_PATH;
+  [font appendBezierPathWithGlyphs: glBuf
+        count: count
+        toBezierPath: path];
+}
+
+- (void) appendBezierPathWithPackedGlyphs: (const char *)packedGlyphs
+                                     path: (NSBezierPath*)aPath
+{
+  unsigned int count = packedGlyphs[0];
+  NSMultibyteGlyphPacking packing;
+  NSGlyph glBuf[count];
+  int i;
+  int j;
+  unsigned char a, b, c, d;
+
+  if (!font)
+    return;
+
+  packing = [font glyphPacking];
+  j = 1;
+  for (i = 0; i < count; i++)
+    {
+      switch (packing)
+        {
+          case NSOneByteGlyphPacking: 
+            glBuf[i] = (NSGlyph)packedGlyphs[j++]; 
+            break;
+          case NSTwoByteGlyphPacking: 
+            a= packedGlyphs[j++];
+            glBuf[i] = (NSGlyph)((a << 8) | packedGlyphs[j++]);
+            break;
+          case NSFourByteGlyphPacking:
+            a = packedGlyphs[j++];
+            b = packedGlyphs[j++];
+            c = packedGlyphs[j++];
+            d = packedGlyphs[j++];
+            glBuf[i] = (NSGlyph)((a << 24) | (b << 16) 
+                                 | (c << 8) | d);
+            break;          
+          case NSJapaneseEUCGlyphPacking:
+          case NSAsciiWithDoubleByteEUCGlyphPacking:
+          default:
+            // FIXME
+            break;
+        }
+    }
+
+  [font appendBezierPathWithGlyphs: glBuf
+        count: count
+        toBezierPath: aPath];
 }
 
 - (void) DPSshow: (const char*)s

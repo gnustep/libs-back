@@ -346,6 +346,12 @@ static NSMapTable *gtable;
   [gstate DPScharpath: s : b];
 }
 
+- (void) appendBezierPathWithPackedGlyphs: (const char *)packedGlyphs
+                                     path: (NSBezierPath*)aPath
+{
+  [gstate appendBezierPathWithPackedGlyphs: packedGlyphs path: aPath];
+}
+
 - (void) DPSshow: (const char *)s 
 {
   [gstate DPSshow: s];

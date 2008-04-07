@@ -2358,6 +2358,11 @@ static int filters[3][7]=
     return NSNullGlyph;
 }
 
+- (NSMultibyteGlyphPacking) glyphPacking
+{
+  return NSFourByteGlyphPacking;
+}
+
 @end
 
 

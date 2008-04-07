@@ -32,6 +32,8 @@
 #include "xlib/XGPrivate.h"
 #include "xlib/XGGState.h"
 #include "x11/XGServer.h"
+#include <Foundation/NSByteOrder.h>
+#include <Foundation/NSCharacterSet.h>
 #include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>
 #include <Foundation/NSDictionary.h>
@@ -282,6 +284,81 @@ static NSArray *faFromFc(FcPattern *pat)
   if (font_info != NULL)
     XftFontClose([XGServer currentXDisplay], (XftFont *)font_info);
   [super dealloc];
+}
+
+#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
+#if __INT_MIN__ == 0x7fffffff
+#define Ones(mask) __builtin_popcount(mask)
+#else
+#define Ones(mask) __builtin_popcountl((mask) & 0xffffffff)
+#endif
+#else
+/* Otherwise fall back on HACKMEM 169.  */
+static int
+Ones(unsigned int mask)
+{
+  register unsigned int tmp;
+    
+  tmp = n - ((n >> 1) & 033333333333)
+      - ((n >> 2) & 011111111111);
+  return ((tmp + (tmp >> 3)) & 030707070707) % 63;
+}
+#endif
+
+- (NSCharacterSet*) coveredCharacterSet
+{
+  if (coveredCharacterSet == nil)
+    {
+      if (!((XftFont *)font_info)->charset)
+        return nil;
+      else
+        {
+          NSMutableData	*d = [NSMutableData new];
+          unsigned count = 0;
+          FcCharSet *charset = ((XftFont *)font_info)->charset;
+          FcChar32 ucs4;
+          FcChar32 map[FC_CHARSET_MAP_SIZE];
+          FcChar32 next;
+      
+          if (!d)
+            return nil;
+
+          for (ucs4 = FcCharSetFirstPage(charset, map, &next);
+               ucs4 != FC_CHARSET_DONE;
+               ucs4 = FcCharSetNextPage(charset, map, &next))
+            {
+              unsigned int i;
+              NSRange aRange;
+              unsigned int max;
+
+              aRange = NSMakeRange(ucs4, FC_CHARSET_MAP_SIZE * sizeof(FcChar32));
+              max = NSMaxRange(aRange);
+              // Round up to a suitable plane size
+              max = ((max + 8191) >> 13) << 13;
+              [d setLength: max];
+              // Do some byte swapping, if needed.
+              if (NSHostByteOrder() == NS_BigEndian)
+                {
+                  map[i] = NSSwapInt(map[i]);
+                }
+
+              for (i = 0; i < FC_CHARSET_MAP_SIZE; i++)
+                if (map[i])
+                  {
+                    count += Ones(map[i]);
+                  }
+            
+              [d replaceBytesInRange: aRange withBytes: map];
+            }
+
+          ASSIGN(coveredCharacterSet, 
+                 [NSCharacterSet characterSetWithBitmapRepresentation: d]);
+          numberOfGlyphs = count;
+          RELEASE(d);
+        }
+    }
+
+  return coveredCharacterSet;
 }
 
 - (float) widthOfString: (NSString*)string
