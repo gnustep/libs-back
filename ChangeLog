@@ -1,5 +1,11 @@
 2008-04-07 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/xlib/GSXftFontInfo.m
+	(-appendBezierPathWithGlyphs:count:toBezierPath:) Implement this
+	method with code copied over from the art backend.
+
+2008-04-07 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/art/ftfont.m,
 	* Source/art/ftfont-old.m (-glyphPacking): Add missing method.
 	* Source/gsc/GSContext.m
