@@ -1,3 +1,16 @@
+2008-04-07 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/ftfont.m,
+	* Source/art/ftfont-old.m (-glyphPacking): Add missing method.
+	* Source/gsc/GSContext.m
+	(-appendBezierPathWithPackedGlyphs:path:): Send on to gstate.
+	* Headers/gsc/GSGStateOps.h
+	(-appendBezierPathWithPackedGlyphs:path:): New method.
+	* Source/gsc/GSGState.m (-DPScharpath:,
+	-appendBezierPathWithPackedGlyphs:path:): Implement these methods.
+	* Source/xlib/GSXftFontInfo.m (-coveredCharacterSet) Add missing
+	method.
+
 2008-04-04 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/winlib/WIN32FontInfo.m

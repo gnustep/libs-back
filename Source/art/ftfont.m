@@ -2095,10 +2095,9 @@ add code to avoid loading bitmaps for glyphs */
 #endif
 }
 
-
 - (void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs
-			     count: (int)count
-		      toBezierPath: (NSBezierPath *)path
+                              count: (int)count
+                       toBezierPath: (NSBezierPath *)path
 {
   int i;
   NSGlyph glyph;
@@ -2240,6 +2239,11 @@ static int filters[3][7]=
     return g + 1;
   else
     return NSNullGlyph;
+}
+
+- (NSMultibyteGlyphPacking) glyphPacking
+{
+  return NSFourByteGlyphPacking;
 }
 
 @end
