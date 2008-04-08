@@ -1,3 +1,9 @@
+2008-04-08 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSGState.m (-_paintPath:, -_doComplexPath:...):
+	Correct the handling of complex path filling. This is needed for
+	the glyph drawing.
+	
 2008-04-07 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/GSXftFontInfo.m
