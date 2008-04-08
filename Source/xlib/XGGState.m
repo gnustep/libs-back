@@ -14,7 +14,7 @@
 
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public
@@ -74,19 +74,19 @@ xrRGBToPixel(RContext* context, device_color_t color)
 
 @implementation XGGState
 
-static	Region	emptyRegion;
+static Region emptyRegion;
 
 + (void) initialize
 {
-  static BOOL	beenHere = NO;
+  static BOOL beenHere = NO;
 
   if (beenHere == NO)
     {
-      XPoint	pts[5];
+      XPoint pts[5];
       id obj = [[NSUserDefaults standardUserDefaults]
-		 stringForKey: @"GraphicCompositing"];
+                 stringForKey: @"GraphicCompositing"];
       if (obj)
-	shouldDrawAlpha = [obj boolValue];
+        shouldDrawAlpha = [obj boolValue];
 
       beenHere = YES;
       pts[0].x = 0; pts[0].y = 0;
@@ -188,7 +188,7 @@ static	Region	emptyRegion;
     {
       alpha_buffer = gs_win->alpha_buffer;
       if (shouldDrawAlpha)
-	drawingAlpha = YES;
+        drawingAlpha = YES;
     }
 }
 
@@ -200,7 +200,7 @@ static	Region	emptyRegion;
 - (void) setGraphicContext: (GC)xGraphicContext
 {
   GC source;
-  unsigned long	mask;
+  unsigned long mask;
   BOOL old_shared;
 
   source = xgcntxt;
@@ -211,7 +211,7 @@ static	Region	emptyRegion;
     return;
   
   xgcntxt = xGraphicContext;
-  sharedGC = YES;		/* Not sure if we really own the GC */
+  sharedGC = YES; /* Not sure if we really own the GC */
   /* Update the GC to reflect our settings */
   if (source == None)
     return;
@@ -246,7 +246,7 @@ static	Region	emptyRegion;
     }
 
   XSetRegion(XDPY, xgcntxt, clipregion);
-NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
+  NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
   self, NSStringFromRect([self clipRect]));
 }
 
@@ -307,7 +307,7 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
 - (void) copyGraphicContext
 {
   GC source;
-  unsigned long	mask;
+  unsigned long mask;
   
   if (draw == 0)
     {
@@ -340,9 +340,9 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
   gcv.fill_style = FillSolid;
   gcv.fill_rule  = WindingRule;
   xgcntxt = XCreateGC(XDPY, draw,
-		      GCFunction | GCForeground | GCBackground | GCPlaneMask 
-		      | GCFillStyle | GCFillRule| GCLineStyle,
-		      &gcv);
+                      GCFunction | GCForeground | GCBackground | GCPlaneMask 
+                      | GCFillStyle | GCFillRule| GCLineStyle,
+                      &gcv);
   [self setClipMask];
   sharedGC = NO;
   return;
@@ -419,14 +419,14 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
 #endif
 
 - (void) copyBits: (XGGState*)source fromRect: (NSRect)aRect 
-				      toPoint: (NSPoint)aPoint
+                                      toPoint: (NSPoint)aPoint
 {
-  NSAffineTransformStruct	sctms;
-  NSAffineTransformStruct	ctms;
-  XRectangle	dst;
-  XRectangle    src;
-  NSRect	flushRect;
-  Drawable	from;
+  NSAffineTransformStruct sctms;
+  NSAffineTransformStruct ctms;
+  XRectangle dst;
+  XRectangle src;
+  NSRect flushRect;
+  Drawable from;
 
   CHECK_GC;
   if (draw == 0)
@@ -461,14 +461,14 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
       && dest_win->type != NSBackingStoreNonretained)    
     {    
       dest_win->alpha_buffer = XCreatePixmap(XDPY, draw, 
-					     NSWidth(dest_win->xframe),
-					     NSHeight(dest_win->xframe), 
-					     dest_win->depth);
+                                             NSWidth(dest_win->xframe),
+                                             NSHeight(dest_win->xframe), 
+                                             dest_win->depth);
       
      /* Fill alpha also (opaque by default) */
       [self setAlphaColor: 1];
       XFillRectangle(XDPY, dest_win->alpha_buffer, agcntxt, 0, 0,
-		     NSWidth(dest_win->xframe), NSHeight(dest_win->xframe));
+                     NSWidth(dest_win->xframe), NSHeight(dest_win->xframe));
     }
   if (shouldDrawAlpha && dest_win->alpha_buffer != 0)
     {
@@ -486,7 +486,7 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
   XRectangle srect;    
   XRectangle drect;    
 
-  XPoint     toXPoint;  
+  XPoint toXPoint;  
   
   RXImage *source_im;
   RXImage *source_alpha;
@@ -500,7 +500,7 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
   
   // --- get source information --------------------------------------------------
   NSDebugLLog(@"XGGraphics", @"Composite from %@ to %@",
-	      NSStringFromRect(fromRect), NSStringFromPoint(toPoint));
+              NSStringFromRect(fromRect), NSStringFromPoint(toPoint));
 
   if (!source)
     source = self;
@@ -555,7 +555,7 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
     {
       /* Non-backingstore window isn't visible, so just make up the image */
       dest_im = RCreateXImage(context, dest_win->depth, 
-			      XGWidth(drect), XGHeight(drect));
+                              XGWidth(drect), XGHeight(drect));
     }
   else
     {
@@ -583,8 +583,8 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
 
   /* Composite it */
   source_alpha = RGetXImage((RContext *)context, source_win->alpha_buffer, 
-  		    XGMinX(srect), XGMinY(srect), 
-  		    XGWidth(srect), XGHeight(srect));
+                      XGMinX(srect), XGMinY(srect), 
+                      XGWidth(srect), XGHeight(srect));
 
   if (alpha_buffer)
     {
@@ -611,14 +611,14 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
   // --- put result back in the drawable -------------------------------
 
   RPutXImage((RContext *)context, draw, xgcntxt, dest_im, 0, 0, 
-	     XGMinX(drect), XGMinY(drect), XGWidth(drect), XGHeight(drect));
+             XGMinX(drect), XGMinY(drect), XGWidth(drect), XGHeight(drect));
   
   if (dest_alpha)
     {
       RPutXImage((RContext *)context, dest_win->alpha_buffer, 
-		 xgcntxt, dest_alpha, 0, 0, 
-		 XGMinX(drect), XGMinY(drect), 
-		 XGWidth(drect), XGHeight(drect));
+                 xgcntxt, dest_alpha, 0, 0, 
+                 XGMinX(drect), XGMinY(drect), 
+                 XGWidth(drect), XGHeight(drect));
       RDestroyXImage((RContext *)context, dest_alpha);
     }
 
@@ -634,7 +634,7 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
                 fromRect: (NSRect)aRect
                  toPoint: (NSPoint)aPoint
                       op: (NSCompositingOperation)op
-		fraction: (float)delta
+                fraction: (float)delta
 {
   BOOL do_copy, source_alpha;
   XGCValues comp_gcv;
@@ -650,93 +650,93 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
     }
 
   /* Check alpha */
-#define CHECK_ALPHA						\
-  do {								\
-    gswindow_device_t *source_win;				\
-    source_win = (gswindow_device_t *)[(XGGState *)source windevice];	\
-    source_alpha = (source_win && source_win->alpha_buffer);	\
+#define CHECK_ALPHA                                                \
+  do {                                                                \
+    gswindow_device_t *source_win;                                \
+    source_win = (gswindow_device_t *)[(XGGState *)source windevice];        \
+    source_alpha = (source_win && source_win->alpha_buffer);        \
   } while (0)
 
   do_copy = NO;
   switch (op)
     {
-    case   NSCompositeClear:
+    case NSCompositeClear:
       do_copy = YES;
       comp_gcv.function = GXclear;
       break;
-    case   NSCompositeCopy:
+    case NSCompositeCopy:
       do_copy = YES;
       comp_gcv.function = GXcopy;
       break;
-    case   NSCompositeSourceOver:
+    case NSCompositeSourceOver:
       CHECK_ALPHA;
       if (source_alpha == NO)
-	do_copy = YES;
+        do_copy = YES;
       else
-	do_copy = NO;
+        do_copy = NO;
       comp_gcv.function = GXcopy;
       break;
-    case   NSCompositeSourceIn:
+    case NSCompositeSourceIn:
       CHECK_ALPHA;
       if (source_alpha == NO && drawingAlpha == NO)
-	do_copy = YES;
+        do_copy = YES;
       else
-	do_copy = NO;
+        do_copy = NO;
       comp_gcv.function = GXcopy;
       break;
-    case   NSCompositeSourceOut:
+    case NSCompositeSourceOut:
       do_copy = NO;
       comp_gcv.function = GXcopy;
       break;
-    case   NSCompositeSourceAtop:
+    case NSCompositeSourceAtop:
       CHECK_ALPHA;
       if (source_alpha == NO && drawingAlpha == NO)
-	do_copy = YES;
+        do_copy = YES;
       else
-	do_copy = NO;
+        do_copy = NO;
       comp_gcv.function = GXcopy;
       break;
-    case   NSCompositeDestinationOver:
+    case NSCompositeDestinationOver:
       CHECK_ALPHA;
       if (drawingAlpha == NO)
-	return;
+        return;
       else
-	do_copy = NO;
+        do_copy = NO;
       comp_gcv.function = GXcopy;
       break;
-    case   NSCompositeDestinationIn:
+    case NSCompositeDestinationIn:
       CHECK_ALPHA;
       if (source_alpha == NO && drawingAlpha == NO)
-	return;
+        return;
       else
-	do_copy = NO;
+        do_copy = NO;
       comp_gcv.function = GXcopy;
       break;
-    case   NSCompositeDestinationOut:
+    case NSCompositeDestinationOut:
       do_copy = NO;
       comp_gcv.function = GXcopy;
       break;
-    case   NSCompositeDestinationAtop:
+    case NSCompositeDestinationAtop:
       CHECK_ALPHA;
       if (source_alpha == NO && drawingAlpha == NO)
-	return;
+        return;
       else
-	do_copy = NO;
+        do_copy = NO;
       comp_gcv.function = GXcopy;
       break;
-    case   NSCompositeXOR:
+    case NSCompositeXOR:
       do_copy = NO;
       comp_gcv.function = GXxor;
       break;
-    case   NSCompositePlusDarker:
+    case NSCompositePlusDarker:
       do_copy = NO;
       comp_gcv.function = GXcopy;
       break;
-    case   NSCompositeHighlight:
+    case NSCompositeHighlight:
       do_copy = NO;
       comp_gcv.function = GXxor;
       break;
-    case   NSCompositePlusLighter:
+    case NSCompositePlusLighter:
       do_copy = NO;
       comp_gcv.function = GXcopy;
       break;
@@ -784,9 +784,9 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
 }
 
 - (void) dissolveGState: (GSGState *)source
-	       fromRect: (NSRect)aRect
-		toPoint: (NSPoint)aPoint 
-		  delta: (float)delta
+               fromRect: (NSRect)aRect
+                toPoint: (NSPoint)aPoint 
+                  delta: (float)delta
 {
   [self compositeGState: source 
                fromRect: aRect
@@ -796,7 +796,7 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
 }
 
 - (void) compositerect: (NSRect)aRect
-		    op: (NSCompositingOperation)op
+                    op: (NSCompositingOperation)op
 {
   float gray;
 
@@ -810,46 +810,46 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
      XGBitmapImageRep code? */
   switch (op)
     {
-    case   NSCompositeClear:
+    case NSCompositeClear:
       gcv.function = GXclear;
       break;
-    case   NSCompositeCopy:
+    case NSCompositeCopy:
       gcv.function = GXcopy;
       break;
-    case   NSCompositeSourceOver:
+    case NSCompositeSourceOver:
       gcv.function = GXcopy;
       break;
-    case   NSCompositeSourceIn:
+    case NSCompositeSourceIn:
       gcv.function = GXcopy;
       break;
-    case   NSCompositeSourceOut:
+    case NSCompositeSourceOut:
       gcv.function = GXcopy;
       break;
-    case   NSCompositeSourceAtop:
+    case NSCompositeSourceAtop:
       gcv.function = GXcopy;
       break;
-    case   NSCompositeDestinationOver:
+    case NSCompositeDestinationOver:
       gcv.function = GXcopy;
       break;
-    case   NSCompositeDestinationIn:
+    case NSCompositeDestinationIn:
       gcv.function = GXcopy;
       break;
-    case   NSCompositeDestinationOut:
+    case NSCompositeDestinationOut:
       gcv.function = GXcopy;
       break;
-    case   NSCompositeDestinationAtop:
+    case NSCompositeDestinationAtop:
       gcv.function = GXcopy;
       break;
-    case   NSCompositeXOR:
+    case NSCompositeXOR:
       gcv.function = GXcopy;
       break;
-    case   NSCompositePlusDarker:
+    case NSCompositePlusDarker:
       gcv.function = GXcopy;
       break;
-    case   NSCompositeHighlight:
+    case NSCompositeHighlight:
       gcv.function = GXxor;
       break;
-    case   NSCompositePlusLighter:
+    case NSCompositePlusLighter:
       gcv.function = GXcopy;
       break;
     default:
@@ -858,7 +858,7 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
     }
   [self setGCValues: gcv withMask: GCFunction];
   [self DPSrectfill: NSMinX(aRect) : NSMinY(aRect) 
-	: NSWidth(aRect) : NSHeight(aRect)];
+        : NSWidth(aRect) : NSHeight(aRect)];
 
   if (gcv.function != GXcopy)
     {
@@ -886,14 +886,14 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
     case path_stroke:
       // Hack: Only draw when alpha is not zero
       if (drawingAlpha == NO || strokeColor.field[AINDEX] != 0.0)
-	XDrawLines(XDPY, draw, xgcntxt, pts, count, CoordModeOrigin);
+        XDrawLines(XDPY, draw, xgcntxt, pts, count, CoordModeOrigin);
       if (drawingAlpha)
-	{
-	  NSAssert(alpha_buffer, NSInternalInconsistencyException);
-	  
-	  [self setAlphaColor: strokeColor.field[AINDEX]];
-	  XDrawLines(XDPY, alpha_buffer, agcntxt, pts, count, CoordModeOrigin);
-	}
+        {
+          NSAssert(alpha_buffer, NSInternalInconsistencyException);
+          
+          [self setAlphaColor: strokeColor.field[AINDEX]];
+          XDrawLines(XDPY, alpha_buffer, agcntxt, pts, count, CoordModeOrigin);
+        }
       break;
     case path_eofill:
       fill_rule = EvenOddRule;
@@ -903,16 +903,16 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
       [self setGCValues: gcv withMask: GCFillRule];
       // Hack: Only draw when alpha is not zero
       if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
-	XFillPolygon(XDPY, draw, xgcntxt, pts, count, Complex, 
-		     CoordModeOrigin);
+        XFillPolygon(XDPY, draw, xgcntxt, pts, count, Complex, 
+                     CoordModeOrigin);
       if (drawingAlpha)
-	{
-	  NSAssert(alpha_buffer, NSInternalInconsistencyException);
-	  
-	  [self setAlphaColor: fillColor.field[AINDEX]];
-	  XFillPolygon(XDPY, alpha_buffer, agcntxt, pts, count, Complex, 
-		       CoordModeOrigin);
-	}
+        {
+          NSAssert(alpha_buffer, NSInternalInconsistencyException);
+          
+          [self setAlphaColor: fillColor.field[AINDEX]];
+          XFillPolygon(XDPY, alpha_buffer, agcntxt, pts, count, Complex, 
+                       CoordModeOrigin);
+        }
 
       break;
     case path_eoclip:
@@ -920,18 +920,18 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
       /* NO BREAK */
     case path_clip:
       {
-	Region region, new_region;
-	region = XPolygonRegion(pts, count, fill_rule);
-	if (clipregion)
-	  {
-	    new_region=XCreateRegion();
-	    XIntersectRegion(clipregion, region, new_region);
-	    XDestroyRegion(region);
-	    XDestroyRegion(clipregion);
-	  } else
-	    new_region = region;
-	clipregion = new_region;
-	[self setClipMask];
+        Region region, new_region;
+        region = XPolygonRegion(pts, count, fill_rule);
+        if (clipregion)
+          {
+            new_region=XCreateRegion();
+            XIntersectRegion(clipregion, region, new_region);
+            XDestroyRegion(region);
+            XDestroyRegion(clipregion);
+          } else
+            new_region = region;
+        clipregion = new_region;
+        [self setClipMask];
       }
       break;
     default:
@@ -942,15 +942,15 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
 /* fill a complex path. All coordinates should already have been
    transformed to device coordinates. */
 - (void) _doComplexPath: (XPoint*)pts 
-		       : (int*)types 
-		       : (int)count
+                       : (int*)types 
+                       : (int)count
                      ll: (XPoint)ll 
-		     ur: (XPoint)ur 
-		   draw: (ctxt_object_t)type
+                     ur: (XPoint)ur 
+                   draw: (ctxt_object_t)type
 {
-  int      x, y, i, j, cnt, nseg = 0;
+  int x, y, i, j, cnt, nseg = 0;
   XSegment segments[count];
-  Window   root_rtn;
+  Window root_rtn;
   unsigned int width, height, b_rtn, d_rtn;
   
   COPY_GC_ON_CHANGE;
@@ -961,7 +961,7 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
     }
 
   XGetGeometry (XDPY, draw, &root_rtn, &x, &y, &width, &height,
-		&b_rtn, &d_rtn);
+                &b_rtn, &d_rtn);
   if (ur.x < x  ||  ll.x > x + (int)width)
     {
       return;
@@ -982,6 +982,7 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
       int    x[count], w[count], y0, y1;
       int    yh = y * 2 + 1;   // shift y of horizontal line
       XPoint lastP, p1;
+      int wi = 0;
 
       // To keep compiler happy
       lastP.x = 0;
@@ -989,89 +990,97 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
 
       /* intersect horizontal line with path */
       for (i = 0, cnt = 0; i < count - 1; i++)
-	{
-	  if (types[i] == 0)    // move (new subpath)
-	    {
-	      lastP = pts[i];
-	    }
-	  if (types[i+1] == 0)  // last line of subpath
-	    {
-	      if (lastP.y == pts[i].y)
-		{
-		  continue;
-		}
-	      p1 = lastP;       // close subpath
-	    }
-	  else
-	    {
-	      p1 = pts[i+1];
-	    }
-	  y0 = pts[i].y * 2;
-	  y1 = p1.y * 2;
-	  if ((y0 < yh  &&  yh < y1) || (y1 < yh  &&  yh < y0))
-	    {
-	      int dy = yh - pts[i].y * 2;
-	      int ldy = y1 - y0;
-	      int ldx = (p1.x - pts[i].x) * 2;
-	      
-	      x[cnt] = pts[i].x + (ldx * dy / ldy) / 2;
-	      /* sum up winding directions */
-	      if (type == path_fill)
-		{
-		  w[cnt] = ((cnt) ? w[cnt-1] : 0) + (y0 < y1) ? -1 : 1;
-		}
-	      cnt++;
-	    }
-	}
+        {
+          if (types[i] == 0)    // move (new subpath)
+            {
+              lastP = pts[i];
+            }
+          if (types[i+1] == 0)  // last line of subpath
+            {
+              if (lastP.y == pts[i].y)
+                {
+                  continue;
+                }
+              p1 = lastP;       // close subpath
+            }
+          else
+            {
+              p1 = pts[i+1];
+            }
+          y0 = pts[i].y * 2;
+          y1 = p1.y * 2;
+          if ((y0 < yh  &&  yh < y1) || (y1 < yh  &&  yh < y0))
+            {
+              int dy = yh - pts[i].y * 2;
+              int ldy = y1 - y0;
+              int ldx = (p1.x - pts[i].x) * 2;
+              
+              x[cnt] = pts[i].x + (ldx * dy / ldy) / 2;
+              // Get winding for segment
+              if (type == path_fill)
+                {
+                  w[cnt] = ((y0 < y1) ? -1 : 1);
+                }
+              cnt++;
+            }
+        }
 
       /* sort intersections */
       for (i = 0; i < cnt-1; i++)
-	{
-	  for (j=i+1; j<cnt; j++)
-	    {
-	      if (x[j] < x[i])
-		{
-		  x[i] ^= x[j]; 
-		  x[j] ^= x[i]; 
-		  x[i] ^= x[j];
-		}
-	    }
-	}
-      
+        {
+          for (j=i+1; j<cnt; j++)
+            {
+              if (x[j] < x[i])
+                {
+                  x[i] ^= x[j]; 
+                  x[j] ^= x[i]; 
+                  x[i] ^= x[j];
+                  if (type == path_fill)
+                    {
+                      w[i] ^= w[j]; 
+                      w[j] ^= w[i]; 
+                      w[i] ^= w[j];
+                    }
+                 }
+            }
+        }
+
       /* draw lines between intersections */
       for (i = 0; i < cnt-1; i++)
-	{
-	  /* eofill -> start line on odd intersection count
-	   * winding fill -> start line on odd winding count
-	   */
-	  if ((type == path_eofill && !(i%2)) || (type == path_fill && w[i]))
-	    {
-	      segments[nseg].x1 = x[i];
-	      segments[nseg].x2 = x[i+1];
-	      segments[nseg].y1 = segments[nseg].y2 = y;
-	      nseg++;
-	    }
-	}
+        {
+          /* sum up winding directions */
+          wi += w[i];
+          /* eofill -> start line on odd intersection count
+           * winding fill -> start line on odd winding count
+           */
+          if ((type == path_eofill && !(i%2)) || (type == path_fill && wi))
+            {
+              segments[nseg].x1 = x[i];
+              segments[nseg].x2 = x[i+1];
+              segments[nseg].y1 = segments[nseg].y2 = y;
+              nseg++;
+            }
+        }
       
       // Hack: Only draw when alpha is not zero
       if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
-	XDrawSegments (XDPY, draw, xgcntxt, segments, nseg);
+        XDrawSegments (XDPY, draw, xgcntxt, segments, nseg);
       if (drawingAlpha)
-	{
-	  NSAssert (alpha_buffer, NSInternalInconsistencyException);
-	  
-	  [self setAlphaColor: fillColor.field[AINDEX]];
-	  XDrawSegments (XDPY, alpha_buffer, agcntxt, segments, nseg);
-	}
+        {
+          NSAssert (alpha_buffer, NSInternalInconsistencyException);
+          
+          [self setAlphaColor: fillColor.field[AINDEX]];
+          XDrawSegments (XDPY, alpha_buffer, agcntxt, segments, nseg);
+        }
       nseg = 0;
     } // for y
 }
 
 - (void) _paintPath: (ctxt_object_t) drawType
 {
-  unsigned	count;
+  unsigned count;
   NSBezierPath *flatPath;
-  XPoint       ll, ur;
+  XPoint ll, ur;
   
   if (!path)
     {
@@ -1084,13 +1093,13 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
   count = [flatPath elementCount];
   if (count)
     {
-      XPoint	pts[count];
-      int       ts[count];
-      unsigned	j, i = 0;
+      XPoint pts[count];
+      int ts[count];
+      unsigned j, i = 0;
       NSBezierPathElement type;
-      NSPoint   points[3];
-      BOOL      first = YES;
-      NSPoint   p, last_p;
+      NSPoint points[3];
+      BOOL first = YES;
+      NSPoint p, last_p;
       BOOL doit;
       BOOL complex = NO;
       
@@ -1102,100 +1111,110 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
 
       for (j = 0; j < count; j++) 
         {
-	  doit = NO;
-	  type = [flatPath elementAtIndex: j associatedPoints: points];
-	  switch(type) 
-	    {
-	    case NSMoveToBezierPathElement:
-	      if (drawType != path_eofill && drawType != path_fill)
-		{
-		  if (i > 1)
-		    {
-		      [self _doPath: pts : i draw: drawType];
-		    }
-		  i = 0;
-		}
-	      else if (i > 1)
-		{
-		  complex = YES;
-		}
-	      last_p = p = points[0];
-	      ts[i] = 0;
-	      first = NO;
-	      break;
-	    case NSLineToBezierPathElement:
-	      p = points[0];
-	      ts[i] = 1;
-	      if (first)
-		{
-		  last_p = points[0];
-		  first = NO;
-		}
-	      break;
-	    case NSCurveToBezierPathElement:
-	      // This should not happen, as we flatten the path
-	      p = points[2];
-	      ts[i] = 1;
-	      if (first)
-		{
-		  last_p = points[2];
-		  first = NO;
-		}
-	      break;
-	    case NSClosePathBezierPathElement:
-	      p = last_p;
-	      ts[i] = 1;
-	      doit = YES;
-	      break;
-	    default:
-	      break;
-	    }
-	  pts[i] = XGWindowPointToX (self, p);
-	  if (pts[i].x < ll.x)
-	    {
-	      ll.x = pts[i].x;
-	    }
-	  if (pts[i].y > ur.x)
-	    {
-	      ur.x = pts[i].x;
-	    }
-	  if (pts[i].y < ll.y)
-	    {
-	      ll.y = pts[i].y;
-	    }
-	  if (pts[i].y > ur.y)
-	    {
-	      ur.y = pts[i].y;
-	    }
-	  i++;
-	  
-	  if (doit && i > 1) 
-	    {
-	      if (complex)
-		{
-		  [self _doComplexPath: pts  : ts  : i
-			ll: ll  ur: ur  draw: drawType];
-		}
-	      else
-		{
-		  [self _doPath: pts : i draw: drawType];
-		}
-	      i = 0;
-	    }
-	} /* for */
+          doit = NO;
+          type = [flatPath elementAtIndex: j associatedPoints: points];
+          switch(type) 
+            {
+            case NSMoveToBezierPathElement:
+              if (drawType != path_eofill && drawType != path_fill)
+                {
+                  if (i > 1)
+                    {
+                      [self _doPath: pts : i draw: drawType];
+                    }
+                  i = 0;
+                }
+              else if (i > 1)
+                {
+                  complex = YES;
+                }
+              last_p = p = points[0];
+              ts[i] = 0;
+              first = NO;
+              break;
+            case NSLineToBezierPathElement:
+              p = points[0];
+              ts[i] = 1;
+              if (first)
+                {
+                  last_p = points[0];
+                  first = NO;
+                }
+              break;
+            case NSCurveToBezierPathElement:
+              // This should not happen, as we flatten the path
+              p = points[2];
+              ts[i] = 1;
+              if (first)
+                {
+                  last_p = points[2];
+                  first = NO;
+                }
+              break;
+            case NSClosePathBezierPathElement:
+              p = last_p;
+              ts[i] = 1;
+//              doit = YES;
+              if (drawType != path_eofill && drawType != path_fill)
+                {
+                  doit = YES;
+                }
+              else
+                {
+                  complex = YES;
+                }
+/*
+*/
+              break;
+            default:
+              break;
+            }
+          pts[i] = XGWindowPointToX (self, p);
+          if (pts[i].x < ll.x)
+            {
+              ll.x = pts[i].x;
+            }
+          if (pts[i].y > ur.x)
+            {
+              ur.x = pts[i].x;
+            }
+          if (pts[i].y < ll.y)
+            {
+              ll.y = pts[i].y;
+            }
+          if (pts[i].y > ur.y)
+            {
+              ur.y = pts[i].y;
+            }
+          i++;
+          
+          if (doit && i > 1) 
+            {
+              if (complex)
+                {
+                  [self _doComplexPath: pts  : ts  : i
+                        ll: ll  ur: ur  draw: drawType];
+                }
+              else
+                {
+                  [self _doPath: pts : i draw: drawType];
+                }
+              i = 0;
+            }
+        } /* for */
 
       if (i > 1) 
-	{
-	  if (complex)
-	    {
-	      [self _doComplexPath: pts  : ts  : i
-		    ll: ll  ur: ur  draw: drawType];
-	    }
-	  else
-	    {
-	      [self _doPath: pts : i draw: drawType];
-	    }
-	}
+        {
+          if (complex)
+            {
+              [self _doComplexPath: pts  : ts  : i
+                    ll: ll  ur: ur  draw: drawType];
+            }
+          else
+            {
+              [self _doPath: pts : i draw: drawType];
+            }
+        }
     }
 
   /*
@@ -1276,8 +1295,8 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
   // Hack: Only draw when alpha is not zero
   if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
     [(XGFontInfo *)font draw: s length: len 
-	       onDisplay: XDPY drawable: draw
-	       with: xgcntxt at: xp];
+               onDisplay: XDPY drawable: draw
+               with: xgcntxt at: xp];
 
   if (drawingAlpha)
     {
@@ -1285,8 +1304,8 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
 
       [self setAlphaColor: fillColor.field[AINDEX]];
       [(XGFontInfo *)font draw: s length: len 
-		 onDisplay: XDPY drawable: alpha_buffer
-		 with: agcntxt at: xp];
+                 onDisplay: XDPY drawable: alpha_buffer
+                 with: agcntxt at: xp];
     }
   /* Note we update the current point according to the current 
      transformation scaling, although the text isn't currently
@@ -1323,8 +1342,8 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
   // Hack: Only draw when alpha is not zero
   if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
     [(XGFontInfo *)font drawGlyphs: glyphs length: length
-	       onDisplay: XDPY drawable: draw
-	       with: xgcntxt at: xp];
+               onDisplay: XDPY drawable: draw
+               with: xgcntxt at: xp];
 
   if (drawingAlpha)
     {
@@ -1332,8 +1351,8 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
 
       [self setAlphaColor: fillColor.field[AINDEX]];
       [(XGFontInfo *)font drawGlyphs: glyphs length: length
-		 onDisplay: XDPY drawable: alpha_buffer
-		 with: agcntxt at: xp];
+                 onDisplay: XDPY drawable: alpha_buffer
+                 with: agcntxt at: xp];
     }
   /* Note we update the current point according to the current 
      transformation scaling, although the text isn't currently
@@ -1425,8 +1444,8 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
 
 - (void)DPSsetlinewidth: (float)width 
 {
-  int	w;
-  NSSize	ws;
+  int w;
+  NSSize ws;
 
   ws = [ctm transformSize: NSMakeSize(width,width)];
   width = (ws.width + ws.height) / 2;
@@ -1491,8 +1510,8 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
 
 - (void)DPSrectclip: (float)x : (float)y : (float)w : (float)h 
 {
-  XRectangle    xrect;
-  NSRect	orect;
+  XRectangle xrect;
+  NSRect orect;
 
   CHECK_GC;
 
@@ -1518,7 +1537,7 @@ NSDebugLLog(@"XGGraphics", @"Clip %@ set to X rect %@",
 
 - (void)DPSrectfill: (float)x : (float)y : (float)w : (float)h 
 {
-  XRectangle	bounds;
+  XRectangle bounds;
   
   CHECK_GC;
   if (draw == 0)
@@ -1537,7 +1556,7 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
 // Hack: Only draw when alpha is not zero
   if (drawingAlpha == NO || fillColor.field[AINDEX] != 0.0)
     XFillRectangle(XDPY, draw, xgcntxt,
-		   bounds.x, bounds.y, bounds.width, bounds.height);
+                   bounds.x, bounds.y, bounds.width, bounds.height);
 
   if (drawingAlpha)
     {
@@ -1546,13 +1565,13 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
       
       [self setAlphaColor: fillColor.field[AINDEX]];
       XFillRectangle(XDPY, alpha_buffer, agcntxt,
-		 bounds.x, bounds.y, bounds.width, bounds.height);
+                 bounds.x, bounds.y, bounds.width, bounds.height);
     }
 }
 
 - (void)DPSrectstroke: (float)x : (float)y : (float)w : (float)h 
 {
-  XRectangle	bounds;
+  XRectangle bounds;
   
   CHECK_GC;
   if (draw == 0)
@@ -1568,7 +1587,7 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
   // Hack: Only draw when alpha is not zero
   if (drawingAlpha == NO || strokeColor.field[AINDEX] != 0.0)
     XDrawRectangle(XDPY, draw, xgcntxt,
-		   bounds.x, bounds.y, bounds.width, bounds.height);
+                   bounds.x, bounds.y, bounds.width, bounds.height);
 
   if (drawingAlpha)
     {
@@ -1577,7 +1596,7 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
 
       [self setAlphaColor: strokeColor.field[AINDEX]];
       XDrawRectangle(XDPY, alpha_buffer, agcntxt,
-		 bounds.x, bounds.y, bounds.width, bounds.height);
+                 bounds.x, bounds.y, bounds.width, bounds.height);
     }
 }
 
@@ -1593,10 +1612,10 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
 /* NSGraphics Ops */
 /* ----------------------------------------------------------------------- */
 - (void)DPSimage: (NSAffineTransform*) matrix : (int) pixelsWide : (int) pixelsHigh
-		: (int) bitsPerSample : (int) samplesPerPixel 
-		: (int) bitsPerPixel : (int) bytesPerRow : (BOOL) isPlanar
-		: (BOOL) hasAlpha : (NSString *) colorSpaceName
-		: (const unsigned char *const [5]) data
+                : (int) bitsPerSample : (int) samplesPerPixel 
+                : (int) bitsPerPixel : (int) bytesPerRow : (BOOL) isPlanar
+                : (BOOL) hasAlpha : (NSString *) colorSpaceName
+                : (const unsigned char *const [5]) data
 {
   BOOL one_is_black, fast_min;
   NSRect rect;
@@ -1635,28 +1654,28 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
   if (colorSpaceName)
     {
       if ([colorSpaceName isEqualToString: NSDeviceRGBColorSpace] ||
-	  [colorSpaceName isEqualToString: NSCalibratedRGBColorSpace])
-	cspace = rgb_colorspace;
+          [colorSpaceName isEqualToString: NSCalibratedRGBColorSpace])
+        cspace = rgb_colorspace;
       else if ([colorSpaceName isEqualToString: NSDeviceCMYKColorSpace])
-	cspace = cmyk_colorspace;
+        cspace = cmyk_colorspace;
       else if ([colorSpaceName isEqualToString: NSDeviceWhiteColorSpace] ||
-	      [colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace])
-	cspace = gray_colorspace;
+              [colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace])
+        cspace = gray_colorspace;
       else if ([colorSpaceName isEqualToString: NSDeviceBlackColorSpace] ||
-	      [colorSpaceName isEqualToString: NSCalibratedBlackColorSpace])
+              [colorSpaceName isEqualToString: NSCalibratedBlackColorSpace])
         {
-	  cspace = gray_colorspace;
-	  one_is_black = YES;
-	} 
+          cspace = gray_colorspace;
+          one_is_black = YES;
+        } 
       else 
         {
-	  // if we dont recognise the name use RGB or greyscale as appropriate
-	  NSLog(@"XGContext (DPSImage): Unknown colour space %@", colorSpaceName);
-	  if (samplesPerPixel > 2)
-	    cspace = rgb_colorspace;
-	  else
-	    cspace = gray_colorspace;
-	}
+          // if we dont recognise the name use RGB or greyscale as appropriate
+          NSLog(@"XGContext (DPSImage): Unknown colour space %@", colorSpaceName);
+          if (samplesPerPixel > 2)
+            cspace = rgb_colorspace;
+          else
+            cspace = gray_colorspace;
+        }
     }
 
   // Apply the additional transformation
@@ -1691,22 +1710,22 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
   if (XGIsEmptyRect (dr))
     {
       if (old_ctm != nil)
-	{
-	  RELEASE(ctm);
-	  // old_ctm is already retained
-	  ctm = old_ctm;
-	}
+        {
+          RELEASE(ctm);
+          // old_ctm is already retained
+          ctm = old_ctm;
+        }
       return;
     }
   
   if (dest_win->buffer == 0 && dest_win->map_state != IsViewable)
     {
       if (old_ctm != nil)
-	{
-	  RELEASE(ctm);
-	  // old_ctm is already retained
-	  ctm = old_ctm;
-	}
+        {
+          RELEASE(ctm);
+          // old_ctm is already retained
+          ctm = old_ctm;
+        }
       return;
     }
 
@@ -1740,30 +1759,30 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
       NSLog(@"XGContext (DPSimage): Cannot create alpha image\n");
       if (old_ctm != nil)
         {
-	  RELEASE(ctm);
-	  // old_ctm is already retained
-	  ctm = old_ctm;
-	}
+          RELEASE(ctm);
+          // old_ctm is already retained
+          ctm = old_ctm;
+        }
       return;
     }
 
   // --- The real work is done HERE ------------------------------------
   _bitmap_combine_alpha((RContext *)context, (unsigned char **)data,
-			pixelsWide, pixelsHigh,
-			bitsPerSample, samplesPerPixel,
-			bitsPerPixel, bytesPerRow,
-			cspace, one_is_black,
-			isPlanar, hasAlpha, fast_min,
-			dest_im, dest_alpha, sr, dr,
-			0, drawMechanism);
+                        pixelsWide, pixelsHigh,
+                        bitsPerSample, samplesPerPixel,
+                        bitsPerPixel, bytesPerRow,
+                        cspace, one_is_black,
+                        isPlanar, hasAlpha, fast_min,
+                        dest_im, dest_alpha, sr, dr,
+                        0, drawMechanism);
 
   /* Draw into the window/buffer */
   RPutXImage((RContext *)context, draw, xgcntxt, dest_im, 0, 0, 
-	     XGMinX (dr), XGMinY (dr), XGWidth (dr), XGHeight (dr));
+             XGMinX (dr), XGMinY (dr), XGWidth (dr), XGHeight (dr));
   if (dest_alpha)
     {
       RPutXImage((RContext *)context, dest_win->alpha_buffer, 
-		 xgcntxt, dest_alpha, 0, 0,
+                 xgcntxt, dest_alpha, 0, 0,
                  XGMinX (dr), XGMinY (dr), XGWidth (dr), XGHeight (dr));
 
       RDestroyXImage((RContext *)context, dest_alpha);
@@ -1817,21 +1836,21 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
   [dict setObject: NSDeviceRGBColorSpace forKey: @"ColorSpace"];
   [dict setObject: [NSNumber numberWithUnsignedInt: 8] forKey: @"BitsPerSample"];
   [dict setObject: [NSNumber numberWithUnsignedInt: source_win->depth]
-	forKey: @"Depth"];
+        forKey: @"Depth"];
   [self _alphaBuffer: source_win];
   if (alpha_buffer)
     {
       [dict setObject: [NSNumber numberWithUnsignedInt: 4] 
-	    forKey: @"SamplesPerPixel"];
+            forKey: @"SamplesPerPixel"];
       [dict setObject: [NSNumber numberWithUnsignedInt: 1]
-	    forKey: @"HasAlpha"];
+            forKey: @"HasAlpha"];
     }
   else
     {
       [dict setObject: [NSNumber numberWithUnsignedInt: 3] 
-	    forKey: @"SamplesPerPixel"];
+            forKey: @"SamplesPerPixel"];
       [dict setObject: [NSNumber numberWithUnsignedInt: 0]
-	    forKey: @"HasAlpha"];
+            forKey: @"HasAlpha"];
     }
   matrix = [ctm copy];
   [matrix translateXBy: -srect.x - offset.x yBy: srect.y + srect.height - offset.y];
@@ -1872,7 +1891,7 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
     }
 
   data = _pixmap_read_alpha(context, source_im, source_alpha, srect,
-			    drawMechanism);
+                            drawMechanism);
   [dict setObject: data forKey: @"Data"];
   /* Pixmap routine always returns image in same format (FIXME?).  */
 
@@ -1884,5 +1903,3 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
 }
 
 @end
-
-
