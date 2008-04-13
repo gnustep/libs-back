@@ -301,7 +301,7 @@ static NSArray *faFromFc(FcPattern *pat)
 #else
 /* Otherwise fall back on HACKMEM 169.  */
 static int
-Ones(unsigned int mask)
+Ones(unsigned int n)
 {
   register unsigned int tmp;
     

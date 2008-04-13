@@ -1,3 +1,9 @@
+2008-04-11 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m (Ones): Correct the parameter name.
+	* Source/winlib/WIN32FontInfo.m (-glyphIsEncoded:): Add parameter
+	to windows call to supress defaults glyphs for missing ones.
+
 2008-04-08 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSGState.m (-_paintPath:, -_doComplexPath:...):
