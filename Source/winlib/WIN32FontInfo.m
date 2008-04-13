@@ -167,7 +167,8 @@ NSLog(@"No glyph for U%d", c);
   hdc = CreateCompatibleDC(NULL);
   old = SelectObject(hdc, hFont);
   // Convert from GNUstep glyph (unichar) to windows glyph.
-  if ((GetGlyphIndicesW(hdc, &c, 1, &windowsGlyph, 0) == GDI_ERROR)
+  if ((GetGlyphIndicesW(hdc, &c, 1, &windowsGlyph, 
+                        GGI_MARK_NONEXISTING_GLYPHS) == GDI_ERROR)
       || (windowsGlyph == 0xFFFF))
     {
       result = NO;
