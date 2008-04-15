@@ -6,7 +6,7 @@
 
 2008-04-08 Fred Kiefer <FredKiefer@gmx.de>
 
-	* Source/gsc/GSGState.m (-_paintPath:, -_doComplexPath:...):
+	* Source/xlib/XGGState.m (-_paintPath:, -_doComplexPath:...):
 	Correct the handling of complex path filling. This is needed for
 	the glyph drawing.
 	
