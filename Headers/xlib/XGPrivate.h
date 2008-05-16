@@ -42,6 +42,7 @@
 extern NSString	*XGXFontName(NSString *fontName, float size);
 
 /* Font functions (defined in XGCommonFont) */
+extern NSString *XGFontCacheName(Display *dpy);
 extern NSString *XGFontName(Display *dpy, XFontStruct *font_struct);
 extern NSString	*XGFontFamily(Display *dpy, XFontStruct *font_struct);
 extern float XGFontPointSize(Display *dpy, XFontStruct *font_struct);

@@ -76,12 +76,11 @@ cache_name()
       NSFileManager *mgr;
       BOOL flag;
       Display *dpy = [XGServer currentXDisplay];
-      char *display_name = DisplayString(dpy);
       NSString *file_name;
       NSArray *paths;
       NSString *path = nil;
 
-      file_name = [NSString stringWithCString: XDisplayName(display_name)];
+      file_name = XGFontCacheName(dpy);
 
       paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
                                                   NSUserDomainMask, YES);

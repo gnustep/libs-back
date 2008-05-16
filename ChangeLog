@@ -1,3 +1,10 @@
+2008-05-16  Adam Fedor  <fedor@gnu.org>
+
+	* Source/XGCommonFont.m (XGFontCacheName): New function to standardize
+	display name (and handle new Mac OS X display names).
+	* Tools/font_cacher.m ([XFontCacher -getPathFor:display]): Use it.
+	* Source/xlib/XGFontManager.m (cache_name):  Use it.
+
 2008-04-11 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/GSXftFontInfo.m (Ones): Correct the parameter name.
