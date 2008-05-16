@@ -94,6 +94,26 @@ static BOOL XGInitAtoms(Display *dpy)
 }
 
 /*
+ * Return the name of the font cache file (used by font_cacher to write
+ * the file and the backend to read the file
+ */
+extern NSString *XGFontCacheName(Display *dpy)
+{
+  NSString *dname;
+  dname = [NSString stringWithCString: XDisplayName(NULL)];
+  if ([dname hasPrefix: @"/tmp"])
+    {
+      /* This is the new Mac OS X display server information, not a real
+         host name.  Use a more file-friendly name for the display */
+      NSString *str = [dname lastPathComponent];
+      dname = [dname stringByDeletingLastPathComponent];
+      dname = [NSString stringWithFormat: @"%@%@", 
+      	[dname lastPathComponent], str];
+    }
+  return dname;
+}
+
+/*
  * Read an X Font property of type unsigned long
  */
 unsigned long XGFontPropULong(Display *dpy, XFontStruct *font_struct, 

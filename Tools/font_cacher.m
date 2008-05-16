@@ -163,23 +163,19 @@
   NSArray		*paths;
   NSFileManager		*mgr;
   NSString		*path;
-  const char            *display_name;
   BOOL			flag;
 
   if (display != nil)
-    display_name = [display cString];
+    dpy = XOpenDisplay([display cString]);
   else
-    {
-      display = [NSString stringWithCString: XDisplayName(0)];
-      display_name = NULL;
-    }
-
-  dpy = XOpenDisplay(display_name);
+    dpy = XOpenDisplay(NULL);
   if (dpy == 0)
     {
       NSLog(@"Unable to open X display - no font information available");
       return nil;
     }
+  /* Standardize the name */
+  display = XGFontCacheName(dpy);
 
   paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
                                               NSUserDomainMask, YES);
