@@ -136,6 +136,7 @@
   surface = [[_CAIRO_SURFACE_CLASSNAME alloc] initWithDevice: device];
 
   [CGSTATE GSSetSurface: surface : x : y];
+  [surface release];
 }
 
 - (void) beginPrologueBBox: (NSRect)boundingBox
