@@ -1,3 +1,7 @@
+2008-05-22  Adam Fedor  <fedor@gnu.org>
+
+	* Source/cairo/CairoContext.m (-GSSetDevice:::): Fix memory leak.
+
 2008-05-16  Adam Fedor  <fedor@gnu.org>
 
 	* Source/XGCommonFont.m (XGFontCacheName): New function to standardize
