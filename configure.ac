@@ -138,6 +138,7 @@ if test $set_x_paths = yes; then
   LIBS="-lX11 $X_EXTRA_LIBS $LIBS"
 
   AC_CHECK_LIB(Xext, main)
+  AC_CHECK_LIB(Xt, main)
   AC_CHECK_LIB(Xmu, main)
   LIBS="$X_LIBS $LIBS"
 fi
@@ -177,11 +178,11 @@ AC_ARG_WITH(freetype,
            [  --without-freetype Do not check for or include freetype], ,
 	   with_freetype=yes)
 
+have_freetype=no
 if test $with_freetype = yes; then
   FREETYPE_LIBS="`freetype-config --libs`"
   FREETYPE_CFLAGS="`freetype-config --cflags`"
 
-  have_freetype=no
   if test x"$FREETYPE_LIBS" != x; then
     save_CPPFLAGS=${CPPFLAGS}
     CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
@@ -561,6 +562,12 @@ fi
 if test $BUILD_SERVER = x11; then
   if test $set_x_paths = no; then
     AC_MSG_ERROR([No X11 libraries/headers for building x11 server])
+  fi
+  if test "$ac_cv_lib_Xt_main" = no; then
+    AC_MSG_ERROR([libXt not found - required for building x11 server])
+  fi
+  if test "$ac_cv_lib_Xext" = no; then
+    AC_MSG_ERROR([libXext not found - required for building x11 server])
   fi
   if test "x$WITH_GLX" = "xyes"; then
     LIBS="$LIBS $GLX_LIBS"

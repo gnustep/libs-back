@@ -1,3 +1,8 @@
+2008-05-25  Adam Fedor  <fedor@gnu.org>
+
+	* configure.ac: Fail if libXext or libXt not found when building
+	x11 server. Set have_freetype variable.
+
 2008-05-25  Nicola Pero  <nicola.pero@meta-innovation.com>
 
 	* Tools/GNUmakefile.postamble: Use GNUSTEP_DOC instead of
