@@ -140,26 +140,16 @@ static void set_up_num_lock (void);
 
 // checks whether a GNUstep modifier (key_sym) is pressed when we're only able
 // to check whether X keycodes are pressed in xEvent->xkeymap;
-static int check_modifier (XEvent *xEvent, KeySym key_sym,
-                           XModifierKeymap *modmap)
+static int check_modifier (XEvent *xEvent, KeySym key_sym)
 {
     char *key_vector;
     int by,bi;
+    int key_code = XKeysymToKeycode(xEvent->xkeymap.display, key_sym);
 
-    // implementation fails if key_sym is only accessible by a multi-key
-    // combination, however this is not expected for GNUstep modifier keys;
-    // to fix implementation, would need to first determine modifier state by
-    // a first-pass scann of the full key vector, then use the state in place
-    // of "0" below in XKeycodeToKeysym
+    by = key_code / 8;
+    bi = key_code % 8;
     key_vector = xEvent->xkeymap.key_vector;
-    for (by=0; by<32; by++) {
-        for (bi=0; bi<8; bi++) {
-            if ((key_vector[by] & (1 << bi)) &&
-                (XKeycodeToKeysym(xEvent->xkeymap.display,by*8+bi,0)==key_sym))
-                return 1;
-        }
-    }
-    return 0;
+    return (key_vector[by] & (1 << bi));
 }
 
 @interface XGServer (WindowOps)
@@ -1103,9 +1093,6 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	    // focus enters a window
       case KeymapNotify:
 	{
-	  XModifierKeymap *modmap =
-	    XGetModifierMapping(xEvent.xkeymap.display);
-
 	  if (_is_keyboard_initialized == NO)
 	    initialize_keyboard ();
 
@@ -1115,12 +1102,12 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	  // Check if control is pressed
 	  _control_pressed = 0;
 	  if ((_control_keysyms[0] != NoSymbol)
-	      && check_modifier (&xEvent, _control_keysyms[0], modmap))
+	      && check_modifier (&xEvent, _control_keysyms[0]))
 	    {
 	      _control_pressed |= 1;
 	    }
 	  if ((_control_keysyms[1] != NoSymbol)
-	      && check_modifier (&xEvent, _control_keysyms[1], modmap))
+	      && check_modifier (&xEvent, _control_keysyms[1]))
 	    {
 	      _control_pressed |= 2;
 	    }
@@ -1128,12 +1115,12 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	  // Check if command is pressed
 	  _command_pressed = 0;
 	  if ((_command_keysyms[0] != NoSymbol)
-	      && check_modifier (&xEvent, _command_keysyms[0], modmap))
+	      && check_modifier (&xEvent, _command_keysyms[0]))
 	    {
 	      _command_pressed |= 1;
 	    }
 	  if ((_command_keysyms[1] != NoSymbol)
-	      && check_modifier (&xEvent, _command_keysyms[1], modmap))
+	      && check_modifier (&xEvent, _command_keysyms[1]))
 	    {
 	      _command_pressed |= 2;
 	    }
@@ -1141,12 +1128,12 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	  // Check if alt is pressed
 	  _alt_pressed = 0;
 	  if ((_alt_keysyms[0] != NoSymbol)
-	      && check_modifier (&xEvent, _alt_keysyms[0], modmap))
+	      && check_modifier (&xEvent, _alt_keysyms[0]))
 	    {
 	      _alt_pressed |= 1;
 	    }
 	  if ((_alt_keysyms[1] != NoSymbol)
-	      && check_modifier (&xEvent, _alt_keysyms[1], modmap))
+	      && check_modifier (&xEvent, _alt_keysyms[1]))
 	    {
 	      _alt_pressed |= 2;
 	    }
@@ -1154,16 +1141,15 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym,
 	  // Check if help is pressed
 	  _help_pressed = 0;
 	  if ((_help_keysyms[0] != NoSymbol)
-	      && check_modifier (&xEvent, _help_keysyms[0], modmap))
+	      && check_modifier (&xEvent, _help_keysyms[0]))
 	    {
 	      _help_pressed |= 1;
 	    }
 	  if ((_help_keysyms[1] != NoSymbol)
-	      && check_modifier (&xEvent, _help_keysyms[1], modmap))
+	      && check_modifier (&xEvent, _help_keysyms[1]))
 	    {
 	      _help_pressed |= 2;
 	    }
-	  XFreeModifiermap(modmap);
 	}
 	break;
 
