@@ -189,7 +189,6 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
               double dash_offset;
               GS_BEGINITEMBUF(dashes, num_dashes, double);
 
-              dashes = (double *)malloc(sizeof(double) * num_dashes);
               cairo_get_dash(_ct, dashes, &dash_offset);
               cairo_set_dash (copy->_ct, dashes, num_dashes, dash_offset);
               GS_ENDITEMBUF();

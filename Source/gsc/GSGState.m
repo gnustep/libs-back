@@ -981,9 +981,11 @@ typedef enum {
 {
   NSBezierPath *oldPath = path;
 
-  path = [NSBezierPath bezierPathWithRect: NSMakeRect(x, y, w, h)];
+  path = [[NSBezierPath alloc] init];
+  [path appendBezierPathWithRect: NSMakeRect(x, y, w, h)];
   [path transformUsingAffineTransform: ctm];
   [self DPSclip];
+  RELEASE(path);
   path = oldPath;
   if (path)
     [path removeAllPoints];
@@ -993,9 +995,11 @@ typedef enum {
 {
   NSBezierPath *oldPath = path;
 
-  path = [NSBezierPath bezierPathWithRect: NSMakeRect(x, y, w, h)];
+  path = [[NSBezierPath alloc] init];
+  [path appendBezierPathWithRect: NSMakeRect(x, y, w, h)];
   [path transformUsingAffineTransform: ctm];
   [self DPSfill];
+  RELEASE(path);
   path = oldPath;
 }
 
@@ -1003,9 +1007,11 @@ typedef enum {
 {
   NSBezierPath *oldPath = path;
 
-  path = [NSBezierPath bezierPathWithRect: NSMakeRect(x, y, w, h)];
+  path = [[NSBezierPath alloc] init];
+  [path appendBezierPathWithRect: NSMakeRect(x, y, w, h)];
   [path transformUsingAffineTransform: ctm];
   [self DPSstroke];
+  RELEASE(path);
   path = oldPath;
 }
 
