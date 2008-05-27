@@ -1,5 +1,10 @@
 2008-05-27 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/x11/XGServerWindow.m (check_modifier,
+	-receivedEvent:...): Faster checking for modifiers.
+
+2008-05-27 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/xlib/GSXftFontInfo.m (-coveredCharacterSet): Moved the
 	swapping into the loop, where the actual data is available.
 	Patch by Sebastian Reitenbach <sebastia@l00-bugdead-prods.de>.
