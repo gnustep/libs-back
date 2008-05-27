@@ -325,7 +325,8 @@ Ones(unsigned int n)
           FcChar32 ucs4;
           FcChar32 map[FC_CHARSET_MAP_SIZE];
           FcChar32 next;
-      
+          BOOL swap = NSHostByteOrder() == NS_BigEndian;
+
           if (!d)
             return nil;
 
@@ -342,15 +343,15 @@ Ones(unsigned int n)
               // Round up to a suitable plane size
               max = ((max + 8191) >> 13) << 13;
               [d setLength: max];
-              // Do some byte swapping, if needed.
-              if (NSHostByteOrder() == NS_BigEndian)
-                {
-                  map[i] = NSSwapInt(map[i]);
-                }
 
               for (i = 0; i < FC_CHARSET_MAP_SIZE; i++)
                 if (map[i])
                   {
+                    // Do some byte swapping, if needed.
+                    if (swap)
+                      {
+                        map[i] = NSSwapInt(map[i]);
+                      }
                     count += Ones(map[i]);
                   }
             

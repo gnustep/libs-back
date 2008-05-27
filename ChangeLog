@@ -1,3 +1,9 @@
+2008-05-27 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m (-coveredCharacterSet): Moved the
+	swapping into the loop, where the actual data is available.
+	Patch by Sebastian Reitenbach <sebastia@l00-bugdead-prods.de>.
+
 2008-05-25  Adam Fedor  <fedor@gnu.org>
 
 	* configure.ac: Fail if libXext or libXt not found when building
