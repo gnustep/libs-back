@@ -1,3 +1,10 @@
+2008-06-01 18:00-EDT Gregory John Casamento <greg_casamento@yahoo.com>
+
+	* Headers/x11/XGGeneric.h:
+	* Source/x11/XGServerWindow.m: Added code to automatically make 
+	any window which uses the NSDesktopWindowLevel also be omnipresent.
+	This capability will be added as a style later.
+
 2008-05-28 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-copyWithZone:): Avoid double
