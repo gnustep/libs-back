@@ -1233,6 +1233,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
               XInternAtom(dpy, "_NET_WM_STATE_SKIP_TASKBAR", False);
           generic.netstates.net_wm_state_skip_pager_atom = 
               XInternAtom(dpy, "_NET_WM_STATE_SKIP_PAGER", False);
+          generic.netstates.net_wm_state_sticky_atom = 
+              XInternAtom(dpy, "_NET_WM_STATE_STICKY", False);
         }
       if (win1)
         {
@@ -2876,14 +2878,30 @@ static BOOL didCreatePixmaps;
        */
       if (window->win_attrs.window_level != NSNormalWindowLevel)
         {
-          [self _sendRoot: window->root 
-                type: generic.netstates.net_wm_state_atom
-                window: window->ident
-                data0: _NET_WM_STATE_ADD
-                data1: generic.netstates.net_wm_state_skip_taskbar_atom
-                data2: generic.netstates.net_wm_state_skip_pager_atom
+	  /*
+	   * Make any window which assumes the desktop level act as the background.
+	   */ 
+	  if(window->win_attrs.window_level == NSDesktopWindowLevel) 
+	    {
+	      [self _sendRoot: window->root 
+		    type: generic.netstates.net_wm_state_atom
+		    window: window->ident
+		    data0: _NET_WM_STATE_ADD
+		    data1: generic.netstates.net_wm_state_skip_taskbar_atom
+		    data2: generic.netstates.net_wm_state_sticky_atom
+		    data3: 1];
+	    }
+	  else
+	    {
+	      [self _sendRoot: window->root 
+		    type: generic.netstates.net_wm_state_atom
+		    window: window->ident
+		    data0: _NET_WM_STATE_ADD
+		    data1: generic.netstates.net_wm_state_skip_taskbar_atom
+		    data2: generic.netstates.net_wm_state_skip_pager_atom
                 data3: 1];
-        } 
+	    } 
+	}
     }
   XFlush(dpy);
 }
@@ -3124,7 +3142,7 @@ static BOOL didCreatePixmaps;
           int len;
           long data[2];
           BOOL skipTaskbar = NO;
-          
+
           data[0] = generic.wintypes.win_normal_atom;
           data[1] = None;
           len = 1;
