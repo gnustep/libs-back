@@ -210,9 +210,13 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
                   cairo_rectangle_t rect = clip_rects->rectangles[i];
                   NSSize size = [_surface size];
 
-                  // This strange computation is due to the device offset. 
                   cairo_rectangle(copy->_ct, rect.x, 
+#if CAIRO_VERSION > CAIRO_VERSION_ENCODE(1, 6, 0)
+                                  rect.y, 
+#else
+                                  // This strange computation is due to the device offset. 
                                   rect.y + 2*(offset.y - size.height), 
+#endif
                                   rect.width, rect.height);
                   cairo_clip(copy->_ct);
                 }
