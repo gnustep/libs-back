@@ -451,7 +451,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 	e = [NSEvent mouseEventWithType: eventType
 		     location: eventLocation
 		     modifierFlags: eventFlags
-		     timestamp: (NSTimeInterval)generic.lastClick
+         timestamp: (NSTimeInterval)generic.lastClick / 1000.0
 		     windowNumber: cWin->number
 		     context: gcontext
 		     eventNumber: xEvent.xbutton.serial
@@ -496,7 +496,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 	e = [NSEvent mouseEventWithType: eventType
 		     location: eventLocation
 		     modifierFlags: eventFlags
-		     timestamp: (NSTimeInterval)generic.lastTime
+		     timestamp: (NSTimeInterval)generic.lastTime / 1000.0
 		     windowNumber: cWin->number
 		     context: gcontext
 		     eventNumber: xEvent.xbutton.serial
@@ -640,7 +640,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 	      e = [NSEvent otherEventWithType: NSAppKitDefined
 			   location: eventLocation
 			   modifierFlags: 0
-			   timestamp: time
+			   timestamp: time / 1000.0
 			   windowNumber: cWin->number
 			   context: gcontext
 			   subtype: GSAppKitDraggingUpdate
@@ -715,7 +715,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 	      e = [NSEvent otherEventWithType: NSAppKitDefined
 			   location: eventLocation
 			   modifierFlags: 0
-			   timestamp: time
+			   timestamp: time / 1000.0
 			   windowNumber: cWin->number
 			   context: gcontext
 			   subtype: GSAppKitDraggingDrop
@@ -835,7 +835,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 		e = [NSEvent otherEventWithType: NSAppKitDefined
 			     location: n.origin
 			     modifierFlags: eventFlags
-			     timestamp: ts
+			     timestamp: ts / 1000.0
 			     windowNumber: cWin->number
 			     context: gcontext
 			     subtype: GSAppKitWindowResized
@@ -851,7 +851,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 		e = [NSEvent otherEventWithType: NSAppKitDefined
 			     location: eventLocation
 			     modifierFlags: eventFlags
-			     timestamp: ts
+			     timestamp: ts / 1000.0
 			     windowNumber: cWin->number
 			     context: gcontext
 			     subtype: GSAppKitWindowMoved
@@ -960,7 +960,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 		e = [NSEvent otherEventWithType: NSAppKitDefined
 		  location: rect.origin
 		  modifierFlags: eventFlags
-		  timestamp: ts
+		  timestamp: ts / 1000.0
 		  windowNumber: cWin->number
 		  context: gcontext
 		  subtype: GSAppKitRegionExposed
@@ -1285,7 +1285,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 	  e = [NSEvent mouseEventWithType: eventType
 		       location: eventLocation
 		       modifierFlags: eventFlags
-		       timestamp: (NSTimeInterval)generic.lastTime
+		       timestamp: (NSTimeInterval)generic.lastTime / 1000.0
 		       windowNumber: cWin->number
 		       context: gcontext
 		       eventNumber: xEvent.xbutton.serial
@@ -1946,7 +1946,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
 	  event = [NSEvent keyEventWithType: NSKeyDown
 		   location: eventLocation
 		   modifierFlags: eventFlags
-		   timestamp: (NSTimeInterval)xEvent->xkey.time
+		   timestamp: (NSTimeInterval)xEvent->xkey.time / 1000.0
 		   windowNumber: window->number
 		   context: GSCurrentContext()
 		   characters: keys
@@ -1957,7 +1957,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
 	  event = [NSEvent keyEventWithType: NSFlagsChanged
 		   location: eventLocation
 		   modifierFlags: eventFlags
-		   timestamp: (NSTimeInterval)xEvent->xkey.time
+		   timestamp: (NSTimeInterval)xEvent->xkey.time / 1000.0
 		   windowNumber: window->number
 		   context: GSCurrentContext()
 		   characters: keys
@@ -1971,7 +1971,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
 	  event = [NSEvent keyEventWithType: NSFlagsChanged
 		   location: eventLocation
 		   modifierFlags: eventFlags
-		   timestamp: (NSTimeInterval)xEvent->xkey.time
+		   timestamp: (NSTimeInterval)xEvent->xkey.time / 1000.0
 		   windowNumber: window->number
 		   context: GSCurrentContext()
 		   characters: keys
@@ -1982,7 +1982,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
 	  event = [NSEvent keyEventWithType: NSKeyUp
 		   location: eventLocation
 		   modifierFlags: eventFlags
-		   timestamp: (NSTimeInterval)xEvent->xkey.time
+		   timestamp: (NSTimeInterval)xEvent->xkey.time / 1000.0
 		   windowNumber: window->number
 		   context: GSCurrentContext()
 		   characters: keys
@@ -2020,7 +2020,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
       event = [NSEvent keyEventWithType: eventType
 		   location: eventLocation
 		   modifierFlags: eventFlags
-		   timestamp: (NSTimeInterval)xEvent->xkey.time
+		   timestamp: (NSTimeInterval)xEvent->xkey.time / 1000.0
 		   windowNumber: window->number
 		   context: GSCurrentContext()
 		   characters: keys

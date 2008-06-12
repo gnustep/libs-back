@@ -1,3 +1,9 @@
+2008-06-12 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerEvent.m,
+	* Source/x11/XGDragView.m: Convert X event millisecond timestamp
+	to NSEvent second timestamp.
+
 2008-05-25  Adam Fedor  <fedor@gnu.org>
 
 	* Revert library license version to 2 until applications
