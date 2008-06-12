@@ -271,13 +271,13 @@ static	XGDragView	*sharedDragView = nil;
           {
             // FIXME There is an xdnd extension for root drop
           }
-        xdnd_send_drop(&dnd, dWindowNumber, dragWindev->ident, CurrentTime);
+        xdnd_send_drop(&dnd, dWindowNumber, dragWindev->ident, time * 1000);
         break;
 
       case GSAppKitDraggingUpdate:
         xdnd_send_position(&dnd, dWindowNumber, dragWindev->ident,
                            GSActionForDragOperation(dragMask & operationMask),
-                           XX(newPosition), XY(newPosition), CurrentTime);
+                           XX(newPosition), XY(newPosition), time * 1000);
         break;
         
       case GSAppKitDraggingEnter:
@@ -289,7 +289,7 @@ static	XGDragView	*sharedDragView = nil;
         xdnd_send_enter(&dnd, dWindowNumber, dragWindev->ident, typelist);
         xdnd_send_position(&dnd, dWindowNumber, dragWindev->ident,
                            GSActionForDragOperation (dragMask & operationMask),
-                           XX(dragPosition), XY(dragPosition), CurrentTime);
+                           XX(dragPosition), XY(dragPosition), time * 1000);
         break;
 
       case GSAppKitDraggingExit:
