@@ -7,6 +7,15 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.14.0}
+
+Added code to automatically make any window which uses the
+ NSDesktopWindowLevel also be omnipresent.
+
+Many glyph drawing improvements.
+
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.13.2}
 
 Added basic implementation of window levels on Windows. In general a bunch of
@@ -18,10 +27,6 @@ More support for RTF, TIFF and selctions in the pasteboard server.
 
 There has been change in the interaction of devices with  the gui frontend. This
 version or greater of the backend needs to be used with gui 0.13.2
-
-@c ====================================================
-@c Keep the next line just below the list of changes in most recent version.
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.13.1}
 

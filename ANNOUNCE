@@ -1,7 +1,7 @@
 1 ANNOUNCE
 **********
 
-This is version 0.13.1 of the GNUstep GUI Backend (`gnustep-back').
+This is version 0.14.0 of the GNUstep GUI Backend (`gnustep-back').
 
 1.1 What is the GNUstep GUI Backend?
 ====================================
@@ -20,15 +20,18 @@ easily ported to other display systems.
 Window's Systems. It works via a DPS emulation engine to emulate the
 DPS functions required by the front-end system.
 
-1.2 Noteworthy changes in version `0.13.1'
+1.2 Noteworthy changes in version `0.14.0'
 ==========================================
 
-Minor improvements.
+Added code to automatically make any window which uses the
+NSDesktopWindowLevel also be omnipresent.
+
+   Many glyph drawing improvements.
 
 1.3 Where can you get it?  How can you compile it?
 ==================================================
 
-The gstep-back-0.13.1.tar.gz distribution file has been placed at
+The gstep-back-0.14.0.tar.gz distribution file has been placed at
 `ftp://ftp.gnustep.org/pub/gnustep/core'.
 
 1.4 Where do I send bug reports?
