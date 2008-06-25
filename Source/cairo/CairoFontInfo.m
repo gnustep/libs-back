@@ -93,25 +93,36 @@
    */
   cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
                     matrix[3], matrix[4], matrix[5]);
+  //cairo_matrix_scale(&font_matrix, 0.9, 0.9);
   cairo_matrix_init_identity(&ctm);
 
-  // FIXME: Should get default font options from somewhere
-  options = cairo_font_options_create();
   face = [_faceInfo fontFace];
   if (!face)
     {
       return NO;
     }
 
-  _scaled = cairo_scaled_font_create(face, &font_matrix, &ctm, options);
-  cairo_font_options_destroy(options);
-  if (!_scaled)
+  // Get default font options
+  options = cairo_font_options_create();
+  if (cairo_font_options_status(options) != CAIRO_STATUS_SUCCESS)
     {
       return NO;
     }
+
+  _scaled = cairo_scaled_font_create(face, &font_matrix, &ctm, options);
+  cairo_font_options_destroy(options);
+  if (cairo_scaled_font_status(_scaled) != CAIRO_STATUS_SUCCESS)
+    {
+      return NO;
+    }
+
   cairo_scaled_font_extents(_scaled, &font_extents);
+  if (cairo_scaled_font_status(_scaled) != CAIRO_STATUS_SUCCESS)
+    {
+      return NO;
+    }
+
   ascender = font_extents.ascent;
-  // The FreeType documentation claims this value is already negative, but it isn't.
   descender = -font_extents.descent;
   xHeight = ascender * 0.6;
   lineHeight = font_extents.height;
@@ -119,6 +130,16 @@
                                   font_extents.max_y_advance);
   fontBBox = NSMakeRect(0, descender, 
                         maximumAdvancement.width, ascender - descender);
+/*
+  NSLog(@"Font matrix (%g, %g, %g, %g, %g, %g) type %d", 
+        matrix[0], matrix[1], matrix[2],
+        matrix[3], matrix[4], matrix[5], cairo_scaled_font_get_type(_scaled));
+	NSLog(@"(%@) h=%g  a=%g d=%g  max=(%g %g)  (%g %g)+(%g %g)\n", fontName,
+		xHeight, ascender, descender,
+		maximumAdvancement.width, maximumAdvancement.height,
+		fontBBox.origin.x, fontBBox.origin.y,
+		fontBBox.size.width, fontBBox.size.height);
+*/
 
   return YES;
 }
