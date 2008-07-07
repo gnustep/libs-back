@@ -1556,6 +1556,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 		      pid_atom, XA_CARDINAL,
 		      32, PropModeReplace, 
 		      (unsigned char*)&pid, 1);
+      // FIXME: Need to set WM_CLIENT_MACHINE as well.
     }
 
   /* We need to determine the offsets between the actual decorated window
@@ -2001,12 +2002,15 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   window->numProtocols = 0;
   window->protocols[window->numProtocols++] = generic.take_focus_atom;
   window->protocols[window->numProtocols++] = generic.delete_win_atom;
-  window->protocols[window->numProtocols++] = generic.net_wm_ping_atom;
+  // Add ping protocol for EWMH 
+  if ((generic.wm & XGWM_EWMH) != 0)
+    {
+      window->protocols[window->numProtocols++] = generic.net_wm_ping_atom;
+    }
   if ((generic.wm & XGWM_WINDOWMAKER) != 0)
     {
       window->protocols[window->numProtocols++] = generic.miniaturize_atom;
     }
-  // FIXME Add ping protocol for EWMH 
   XSetWMProtocols(dpy, window->ident, window->protocols, window->numProtocols);
 
   window->exposedRects = [NSMutableArray new];
@@ -3611,7 +3615,22 @@ static BOOL didCreatePixmaps;
       NSDebugLLog(@"Focus", @"Focus already set on %d", window->number);
       return;
     }
-  
+
+  if ((generic.wm & XGWM_EWMH) != 0)
+    {
+      static Atom user_time_atom = None;
+      Time last = [self lastTime];
+
+      if (user_time_atom == None)
+        {
+          user_time_atom = XInternAtom(dpy, "_NET_WM_USER_TIME", False);
+        }
+
+      NSDebugLLog(@"Focus", @"Setting user time for %d to %ul", window->ident, last);
+      XChangeProperty(dpy, window->ident, user_time_atom, XA_CARDINAL, 32, 
+                      PropModeReplace, (unsigned char *)&last, 1);
+    }
+
   NSDebugLLog(@"Focus", @"Setting focus to %d", window->number);
   generic.desiredFocusWindow = win;
   generic.focusRequestNumber = XNextRequest(dpy);
@@ -3645,6 +3664,37 @@ static BOOL didCreatePixmaps;
             data1: 0
             data2: 0
             data3: 0];
+    }
+  else if ((generic.wm & XGWM_EWMH) != 0)
+    {
+      if ((st == GSTitleBarKey) || (st == GSTitleBarMain))
+        {
+          static Atom active_window_atom = None;
+          gswindow_device_t *window = WINDOW_WITH_TAG(win);
+          
+          if (win == 0 || window == 0)
+            {
+              return;
+            }
+
+          if (active_window_atom == None)
+            {
+              active_window_atom = XInternAtom(window->display, 
+                                               "_NET_ACTIVE_WINDOW", False);
+            }
+          
+          /*
+           * Work around "focus stealing prevention" by first asking for focus
+           * before we try to take it.
+           */
+          [self _sendRoot: window->root
+                type: active_window_atom
+                window: window->ident
+                data0: 1
+                data1: [self lastTime]
+                data2: 0
+                data3: 0];
+        }
     }
 }
 
