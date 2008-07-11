@@ -132,7 +132,7 @@ static BOOL char_struct_for_glyph(NSGlyph glyph, XFontSet font_set,
   mostCompatibleStringEncoding = NSASCIIStringEncoding;
   fontBBox		=
     NSMakeRect(base->min_bounds.lbearing,
-	       -base->max_bounds.ascent,
+	       base->max_bounds.descent,
 	       base->max_bounds.rbearing - base->max_bounds.lbearing,
 	       base->max_bounds.ascent + base->max_bounds.descent);
   isFixedPitch		= XGFontIsFixedPitch(dpy, base);

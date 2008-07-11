@@ -1,3 +1,10 @@
+2008-07-12 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m (-setupAttributes:),
+	* Source/xlib/XGFontSetFontInfo.m(-setupAttributes:),
+	* Source/xlib/XGFont.m(-setupAttributes:): Correct the setting of
+	fontBBox, used for boundingRectForFont.
+
 2008-07-11 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-setinputstate:): Disable new code,
