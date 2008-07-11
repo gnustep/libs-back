@@ -3665,6 +3665,7 @@ static BOOL didCreatePixmaps;
             data2: 0
             data3: 0];
     }
+#if 0
   else if ((generic.wm & XGWM_EWMH) != 0)
     {
       if ((st == GSTitleBarKey) || (st == GSTitleBarMain))
@@ -3696,6 +3697,7 @@ static BOOL didCreatePixmaps;
                 data3: 0];
         }
     }
+#endif
 }
 
 /** Sets the transparancy value for the whole window */

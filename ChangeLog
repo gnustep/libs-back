@@ -1,3 +1,8 @@
+2008-07-11 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-setinputstate:): Disable new code,
+	as it does not work on KDE 4.
+
 2008-07-08 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-setinputfocus:): For EWMH window
