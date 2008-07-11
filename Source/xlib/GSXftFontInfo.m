@@ -940,7 +940,7 @@ static FT_Outline_Funcs bezierpath_funcs = {
   xHeight = capHeight*0.6;   //Errr... TODO
   fontBBox = NSMakeRect(
     (float)(0),
-    (float)(0 - font_info->ascent),
+    (float)(font_info->descent),
     (float)(font_info->max_advance_width),
     (float)(font_info->ascent + font_info->descent));
   maximumAdvancement = NSMakeSize(font_info->max_advance_width, 0.0);

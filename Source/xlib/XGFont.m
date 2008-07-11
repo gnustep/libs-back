@@ -304,8 +304,8 @@ static BOOL XGInitAtoms(Display *dpy)
   ascender = font_info->ascent;
   descender = -(font_info->descent);
   fontBBox = NSMakeRect(
-    (float)(0 + font_info->min_bounds.lbearing),
-    (float)(0 - font_info->max_bounds.ascent),
+    (float)(font_info->min_bounds.lbearing),
+    (float)(font_info->max_bounds.descent),
     (float)(font_info->max_bounds.rbearing - font_info->min_bounds.lbearing),
     (float)(font_info->max_bounds.ascent + font_info->max_bounds.descent));
   maximumAdvancement = NSMakeSize(font_info->max_bounds.width, 0.0);
