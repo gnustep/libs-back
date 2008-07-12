@@ -205,20 +205,32 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
             {
               int i;
 
-              for (i = 0; i < clip_rects->num_rectangles; i++)
+              if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 6, 0))
                 {
-                  cairo_rectangle_t rect = clip_rects->rectangles[i];
-                  NSSize size = [_surface size];
+                  for (i = 0; i < clip_rects->num_rectangles; i++)
+                    {
+                      cairo_rectangle_t rect = clip_rects->rectangles[i];
 
-                  cairo_rectangle(copy->_ct, rect.x, 
-#if CAIRO_VERSION > CAIRO_VERSION_ENCODE(1, 6, 0)
-                                  rect.y, 
-#else
-                                  // This strange computation is due to the device offset. 
-                                  rect.y + 2*(offset.y - size.height), 
-#endif
-                                  rect.width, rect.height);
-                  cairo_clip(copy->_ct);
+                      cairo_rectangle(copy->_ct, rect.x, rect.y, 
+                                      rect.width, rect.height);
+                      cairo_clip(copy->_ct);
+                    }
+                }
+              else
+                {
+                  for (i = 0; i < clip_rects->num_rectangles; i++)
+                    {
+                      cairo_rectangle_t rect = clip_rects->rectangles[i];
+                      NSSize size = [_surface size];
+
+                      cairo_rectangle(copy->_ct, rect.x, 
+                                      /* This strange computation is due 
+                                         to the device offset missing for 
+                                         clip rects in cairo < 1.6.0.  */
+                                      rect.y + 2*(offset.y - size.height), 
+                                      rect.width, rect.height);
+                      cairo_clip(copy->_ct);
+                    }
                 }
             }
           cairo_rectangle_list_destroy(clip_rects);

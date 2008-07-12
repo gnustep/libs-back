@@ -1,3 +1,39 @@
+2008-07-12 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m (-setupAttributes:),
+	* Source/xlib/XGFontSetFontInfo.m (-setupAttributes:),
+	* Source/xlib/XGFont.m (-setupAttributes:),
+	* Source/art/ftfont.m (-setupAttributes:),
+	* Source/art/ftfont-old.m (-setupAttributes): Correct the sign of
+	the descender in the bounding box.
+
+2008-07-12 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m (-setupAttributes:),
+	* Source/xlib/XGFontSetFontInfo.m (-setupAttributes:),
+	* Source/xlib/XGFont.m (-setupAttributes:): Correct the setting of
+	fontBBox, used for boundingRectForFont.
+
+2008-07-11 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-setinputstate:): Disable new code,
+	as it does not work on KDE 4.
+
+2008-07-08 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-setinputfocus:): For EWMH window
+	managers set the user time before requesting focus.
+	* Source/x11/XGServerWindow.m (-setinputstate:): For EWMH window
+	managers set active window status.
+	Based on patch by Hubert Chathi <hubert@uhoreg.ca>.
+
+2008-06-26 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-copyWithZone:): Use a runtime
+	version check and adjust from > to >= 1.6.0.
+	* Source/cairo/CairoFontInfo.m (-setupAttributes): Slightly better
+	error checks. 
+
 2008-06-14  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.14.0
