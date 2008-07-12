@@ -1,27 +1,27 @@
-# configure.in for GNUstep GUI Backend
-# Process this file with autoconf to produce a configure script.
+#  configure.in for GNUstep GUI Backend
+#  Process this file with autoconf to produce a configure script.
 #
-# Copyright (C) 1996-2002 Free Software Foundation, Inc.
+#  Copyright (C) 1996-2002 Free Software Foundation, Inc.
 #
-# Author:  Adam Fedor <fedor@gnu.org>
+#  Author:  Adam Fedor <fedor@gnu.org>
 #
-# This file is part of the GNUstep Backend.
+#  This file is part of the GNUstep Backend.
 #
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Library General Public
-# License as published by the Free Software Foundation; either
-# version 2 of the License, or (at your option) any later version.
-# 
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Library General Public License for more details.
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 3 of the License, or (at your option) any later version.
 #
-# You should have received a copy of the GNU Library General Public
-# License along with this library; see the file COPYING.LIB.
-# If not, write to the Free Software Foundation,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#  This library is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+#  Lesser General Public License for more details.
 #
+#  You should have received a copy of the GNU Lesser General Public
+#  License along with this library; see the file COPYING.LIB.
+#  If not, see <http://www.gnu.org/licenses/> or write to the 
+#  Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+#  Boston, MA 02110-1301, USA.
 
 builtin(include, pkg.m4)dnl
 
@@ -138,6 +138,7 @@ if test $set_x_paths = yes; then
   LIBS="-lX11 $X_EXTRA_LIBS $LIBS"
 
   AC_CHECK_LIB(Xext, main)
+  AC_CHECK_LIB(Xt, main)
   AC_CHECK_LIB(Xmu, main)
   LIBS="$X_LIBS $LIBS"
 fi
@@ -171,16 +172,23 @@ fi
 #--------------------------------------------------------------------
 # freetype libraries
 #--------------------------------------------------------------------
-
-FREETYPE_LIBS="`freetype-config --libs`"
-FREETYPE_CFLAGS="`freetype-config --cflags`"
+# Mac OS X with macports has a freetype which includes Apple's Foundation
+# which we do not want
+AC_ARG_WITH(freetype,
+           [  --without-freetype Do not check for or include freetype], ,
+	   with_freetype=yes)
 
 have_freetype=no
-if test x"$FREETYPE_LIBS" != x; then
-  save_CPPFLAGS=${CPPFLAGS}
-  CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
-  AC_CHECK_HEADER(ft2build.h,have_freetype=yes, have_freetype=no)
-  CPPFLAGS="${save_CPPFLAGS}"
+if test $with_freetype = yes; then
+  FREETYPE_LIBS="`freetype-config --libs`"
+  FREETYPE_CFLAGS="`freetype-config --cflags`"
+
+  if test x"$FREETYPE_LIBS" != x; then
+    save_CPPFLAGS=${CPPFLAGS}
+    CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
+    AC_CHECK_HEADER(ft2build.h,have_freetype=yes, have_freetype=no)
+    CPPFLAGS="${save_CPPFLAGS}"
+  fi
 fi
 
 #--------------------------------------------------------------------
@@ -372,6 +380,13 @@ PKG_CAIRO_GLITZ=no
 PKG_CHECK_MODULES(CAIRO_GLITZ, cairo-glitz, have_cairo_glitz=yes, have_cairo_glitz=no)
 
 #--------------------------------------------------------------------
+# XRender support
+#--------------------------------------------------------------------
+
+have_xrender=no
+AC_CHECK_LIB(Xrender, XRenderFindVisualFormat, have_xrender=yes)
+
+#--------------------------------------------------------------------
 # Glitz libraries
 #--------------------------------------------------------------------
 WITH_GLITZ=no
@@ -479,18 +494,22 @@ elif test x"$BUILD_GRAPHICS" = "xart"; then
     CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xcairo"; then
+  if test "$have_freetype" = no; then
+    AC_MSG_ERROR([can't find freetype, required for graphics=cairo])
+  fi
   if test "$have_cairo" = no -o "$have_cairo-ft" = no ; then
     AC_MSG_ERROR([can't find cairo, required for graphics=cairo!])
-    if test $BUILD_SERVER = win32; then
-      BUILD_GRAPHICS=winlib
-    else
-      BUILD_GRAPHICS=xlib
-    fi
-    AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
   else
     AC_MSG_CHECKING(Cairo backend)
     CAIRO_LIBS="$CAIRO_FT_LIBS"
     CAIRO_CFLAGS="$CAIRO_FT_CFLAGS"
+
+    if test "$have_xrender" = yes; then
+      if test $BUILD_SERVER = x11 -a "x$have_cairo_xlib" = "xyes"; then
+        AC_DEFINE(XRENDER,1,[Define if you have X11 XRender extension])
+        CAIRO_LIBS="$CAIRO_LIBS -lXrender"
+      fi
+    fi
     if test "x$WITH_GLITZ" = "xyes" -a "x$have_cairo_glitz" = "xyes"; then
       if test $BUILD_SERVER = win32 -a "x$have_cairo_win32" = "xyes"; then
         CAIRO_GLITZ_LIBS="$CAIRO_GLITZ_LIBS $GLITZ_WGL_LIBS"
@@ -504,10 +523,16 @@ elif test x"$BUILD_GRAPHICS" = "xcairo"; then
       CAIRO_LIBS="$CAIRO_LIBS $CAIRO_GLITZ_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_GLITZ_CFLAGS"
       AC_MSG_RESULT(glitz)
+      AC_MSG_WARN([**** Cairo-over-Glitz backend is highly experimental])
+      AC_MSG_WARN([**** You definitively shouldn't do that.])
+      AC_MSG_WARN([**** It actually does not work !])
+      AC_MSG_WARN([**** Are you a backend developer ?])
     elif test $BUILD_SERVER = win32 -a "x$have_cairo_win32" = "xyes"; then
       CAIRO_LIBS="$CAIRO_LIBS $CAIRO_WIN32_LIBS $WIN32_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_WIN32_CFLAGS"
       AC_MSG_RESULT(winlib)
+      AC_MSG_WARN([**** Cairo backend on win32 is experimental and is not supported.])
+      AC_MSG_WARN([**** Are you a backend developer ?])
     elif test $BUILD_SERVER = x11 -a "x$have_cairo_xlib" = "xyes"; then
       CAIRO_LIBS="$CAIRO_LIBS $CAIRO_XLIB_LIBS $XFT_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS"
@@ -537,6 +562,12 @@ fi
 if test $BUILD_SERVER = x11; then
   if test $set_x_paths = no; then
     AC_MSG_ERROR([No X11 libraries/headers for building x11 server])
+  fi
+  if test "$ac_cv_lib_Xt_main" = no; then
+    AC_MSG_ERROR([libXt not found - required for building x11 server])
+  fi
+  if test "$ac_cv_lib_Xext" = no; then
+    AC_MSG_ERROR([libXext not found - required for building x11 server])
   fi
   if test "x$WITH_GLX" = "xyes"; then
     LIBS="$LIBS $GLX_LIBS"

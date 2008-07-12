@@ -10,16 +10,21 @@
 
    This file is part of the GNUstep Project
 
-   This library is free software; you can redistribute it and/or
+   This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
-   as published by the Free Software Foundation; either version 2
+   as published by the Free Software Foundation; either version 3
    of the License, or (at your option) any later version.
+    
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public
-   License along with this library; see the file COPYING.LIB.
-   If not, write to the Free Software Foundation,
-   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
+   You should have received a copy of the GNU General Public  
+   License along with this library; see the file COPYING.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
 */
 
 /* Access Windows 2000 (and later) API.  Required for HWND_MESSAGE.  */
@@ -31,7 +36,7 @@
 
 #include <windows.h>
 
-@interface	Win32PbOwner : NSObject
+@interface Win32PbOwner : NSObject
 {
   NSPasteboard	*_pb;
   HINSTANCE _hinstance;
@@ -50,17 +55,17 @@
 static Win32PbOwner *wpb = nil;
 static HWND hwndNextViewer = NULL;
 LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
-			     WPARAM wParam, LPARAM lParam);
+                             WPARAM wParam, LPARAM lParam);
 
 
-@implementation	Win32PbOwner
+@implementation Win32PbOwner
 
 + (BOOL) initializePasteboard
 {
   if (self == [Win32PbOwner class])
     {
       wpb = [[Win32PbOwner alloc] initWithOSPb: 
-				    [NSPasteboard generalPasteboard]];
+                                    [NSPasteboard generalPasteboard]];
       [wpb clipboardHasData];
     }
   return YES;
@@ -103,8 +108,8 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   if (RegisterClassEx(&wc)) 
     {
       _hwnd = CreateWindowEx(0, "GNUstepClipboardClass", "GNUstepClipboard", 
-			     0, 0, 0, 10, 10, 
-			     HWND_MESSAGE, (HMENU)NULL, _hinstance, NULL); 
+                             0, 0, 0, 10, 10, 
+                             HWND_MESSAGE, (HMENU)NULL, _hinstance, NULL); 
     }
 
   ASSIGN(_pb, ospb);
@@ -127,7 +132,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
       IsClipboardFormatAvailable(CF_UNICODETEXT)) 
     {
       [_pb declareTypes: [NSArray arrayWithObject: NSStringPboardType]
-	   owner: self];
+           owner: self];
     }
 }
 
@@ -209,9 +214,9 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 }
 
 /*
- *	If this gets called, a GNUstep object has grabbed the pasteboard
- *	or has changed the types of data available from the pasteboard
- *	so we must tell the Windows system, that we have the current selection.
+ * If this gets called, a GNUstep object has grabbed the pasteboard
+ * or has changed the types of data available from the pasteboard
+ * so we must tell the Windows system, that we have the current selection.
  */
 - (void) pasteboardChangedOwner: (NSPasteboard*)sender
 {
@@ -240,16 +245,16 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
       
       lpwstr = GlobalLock(hglb); 
       if (lpwstr != NULL) 
-	{
-	  unsigned int len;
-	  NSString *s;
-	  
-	  len = lstrlenW(lpwstr);
-	  s = [NSString stringWithCharacters: lpwstr 
-			length: len]; 
-	  [pb setString: s forType: NSStringPboardType];
-	  GlobalUnlock(hglb); 
-	} 
+        {
+          unsigned int len;
+          NSString *s;
+          
+          len = lstrlenW(lpwstr);
+          s = [NSString stringWithCharacters: lpwstr 
+                        length: len]; 
+          [pb setString: s forType: NSStringPboardType];
+          GlobalUnlock(hglb); 
+        } 
     } 
   CloseClipboard(); 
 }
@@ -259,11 +264,11 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   if (!_ignore)
     {
       if ([type isEqual: NSStringPboardType])
-	{
-	  _ignore = YES;  
-	  [self provideStringTo: pb];
-	  _ignore = NO;;  
-	}
+        {
+          _ignore = YES;  
+          [self provideStringTo: pb];
+          _ignore = NO;;  
+        }
     }
 }
 
@@ -276,39 +281,81 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
     { 
 
       if (msg.message == WM_QUIT)
-	{
-	  // Exit the program
-	  return;
-	}
+        {
+          // Exit the program
+          return;
+        }
       if (bRet == -1)
-	{
-	  // handle the error and possibly exit
-	}
+        {
+          // handle the error and possibly exit
+        }
       else
-	{
-	  // Don't translate messages, as this would give extra character messages.
-	  DispatchMessage(&msg); 
-	} 
+        {
+          // Don't translate messages, as this would give extra character messages.
+          DispatchMessage(&msg); 
+        } 
     } 
+}
+
+- (void) receivedEvent: (void*)data
+                  type: (RunLoopEventType)type
+                 extra: (void*)extra
+               forMode: (NSString*)mode
+{
+#ifdef    __CYGWIN__
+  if (type == ET_RDESC)
+#else 
+  if (type == ET_WINMSG)
+#endif
+    {
+      MSG *m = (MSG*)extra;
+
+      if (m->message == WM_QUIT)
+        {
+          //[NSApp terminate: nil];
+          // Exit the program
+          return;
+        }
+      else
+        {
+          DispatchMessage(m); 
+        } 
+    } 
+  if (mode != nil)
+    [self callback: mode];
 }
 
 - (void) setupRunLoopInputSourcesForMode: (NSString*)mode
 {
-  // FIXME
-  NSTimer *timer;
+  NSRunLoop *currentRunLoop = [NSRunLoop currentRunLoop];
 
-  timer = [NSTimer timerWithTimeInterval: 0.1
-		   target: self
-		   selector: @selector(callback:)
-		   userInfo: nil
-		   repeats: YES];
-  [[NSRunLoop currentRunLoop] addTimer: timer forMode: mode];
+#ifdef    __CYGWIN__
+  int fdMessageQueue;
+#define WIN_MSG_QUEUE_FNAME    "/dev/windows"
+
+  // Open a file descriptor for the windows message queue
+  fdMessageQueue = open (WIN_MSG_QUEUE_FNAME, O_RDONLY);
+  if (fdMessageQueue == -1)
+    {
+      NSLog(@"Failed opening %s\n", WIN_MSG_QUEUE_FNAME);
+      exit(1);
+    }
+  [currentRunLoop addEvent: (void*)fdMessageQueue
+                  type: ET_RDESC
+                  watcher: (id<RunLoopEvents>)self
+                  forMode: mode];
+#else 
+  [currentRunLoop addEvent: (void*)0
+                  type: ET_WINMSG
+                  watcher: (id<RunLoopEvents>)self
+                  forMode: mode];
+#endif
 }
 
 @end
 
 LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, 
-			     WPARAM wParam, LPARAM lParam) 
+                             WPARAM wParam, LPARAM lParam) 
 { 
   switch (uMsg) 
     { 
@@ -334,12 +381,12 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
     case WM_DRAWCLIPBOARD:
       // clipboard contents changed. 
       if (wpb != nil)
-	[wpb clipboardHasData];
+        [wpb clipboardHasData];
 
       // Pass the message to the next window in clipboard 
       // viewer chain. 
       if (hwndNextViewer != NULL) 
-	SendMessage(hwndNextViewer, uMsg, wParam, lParam); 
+        SendMessage(hwndNextViewer, uMsg, wParam, lParam); 
       break; 
 
     case WM_RENDERFORMAT: 

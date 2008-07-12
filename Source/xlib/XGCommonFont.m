@@ -18,19 +18,20 @@
    This file is part of the GNUstep GUI X/GPS Backend.
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
 
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Library General Public
+   You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
-   If not, write to the Free Software Foundation,
-   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
 */
 
 #include <config.h>
@@ -90,6 +91,26 @@ static BOOL XGInitAtoms(Display *dpy)
 */
 
   return YES;
+}
+
+/*
+ * Return the name of the font cache file (used by font_cacher to write
+ * the file and the backend to read the file
+ */
+extern NSString *XGFontCacheName(Display *dpy)
+{
+  NSString *dname;
+  dname = [NSString stringWithCString: XDisplayName(NULL)];
+  if ([dname hasPrefix: @"/tmp"])
+    {
+      /* This is the new Mac OS X display server information, not a real
+         host name.  Use a more file-friendly name for the display */
+      NSString *str = [dname lastPathComponent];
+      dname = [dname stringByDeletingLastPathComponent];
+      dname = [NSString stringWithFormat: @"%@%@", 
+      	[dname lastPathComponent], str];
+    }
+  return dname;
 }
 
 /*

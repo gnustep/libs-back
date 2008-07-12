@@ -1,7 +1,731 @@
+2008-06-14  Adam Fedor  <fedor@gnu.org>
+
+	* Version 0.14.0
+
+2008-06-12 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerEvent.m,
+	* Source/x11/XGDragView.m: Convert X event millisecond timestamp
+	to NSEvent second timestamp.
+
+2008-05-25  Adam Fedor  <fedor@gnu.org>
+
+	* Revert library license version to 2 until applications
+	can be converted
+
+2008-06-07 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-copyWithZone:): Don't use special
+	clip adjustment for cairo > 1.6.0, as this got fixed there.
+
+2008-06-01 18:00-EDT Gregory John Casamento <greg_casamento@yahoo.com>
+
+	* Headers/x11/XGGeneric.h:
+	* Source/x11/XGServerWindow.m: Added code to automatically make 
+	any window which uses the NSDesktopWindowLevel also be omnipresent.
+	This capability will be added as a style later.
+
+2008-05-28 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-copyWithZone:): Avoid double
+	allocation of dashes memory.
+	* Source/gsc/GSGState.m (-DPSrectfill::::, -DPSrectstroke::::,
+	-DPSrectclip::::): Don't use autoreleased objects.
+
+2008-05-27 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (check_modifier,
+	-receivedEvent:...): Faster checking for modifiers.
+
+2008-05-27 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m (-coveredCharacterSet): Moved the
+	swapping into the loop, where the actual data is available.
+	Patch by Sebastian Reitenbach <sebastia@l00-bugdead-prods.de>.
+
+2008-05-25  Adam Fedor  <fedor@gnu.org>
+
+	* configure.ac: Fail if libXext or libXt not found when building
+	x11 server. Set have_freetype variable.
+
+2008-05-25  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Tools/GNUmakefile.postamble: Use GNUSTEP_DOC instead of
+	GNUSTEP_DOCUMENTATION, and GNUSTEP_DOC_MAN instead of
+	GNUSTEP_DOCUMENTATION_MAN.
+
+2008-05-22  Adam Fedor  <fedor@gnu.org>
+
+	* Source/cairo/CairoContext.m (-GSSetDevice:::): Fix memory leak.
+
+2008-05-16  Adam Fedor  <fedor@gnu.org>
+
+	* Source/XGCommonFont.m (XGFontCacheName): New function to standardize
+	display name (and handle new Mac OS X display names).
+	* Tools/font_cacher.m ([XFontCacher -getPathFor:display]): Use it.
+	* Source/xlib/XGFontManager.m (cache_name):  Use it.
+
+2008-04-11 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m (Ones): Correct the parameter name.
+	* Source/winlib/WIN32FontInfo.m (-glyphIsEncoded:): Add parameter
+	to windows call to supress defaults glyphs for missing ones.
+
+2008-04-08 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/XGGState.m (-_paintPath:, -_doComplexPath:...):
+	Correct the handling of complex path filling. This is needed for
+	the glyph drawing.
+	
+2008-04-07 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m
+	(-appendBezierPathWithGlyphs:count:toBezierPath:) Implement this
+	method with code copied over from the art backend.
+
+2008-04-07 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/ftfont.m,
+	* Source/art/ftfont-old.m (-glyphPacking): Add missing method.
+	* Source/gsc/GSContext.m
+	(-appendBezierPathWithPackedGlyphs:path:): Send on to gstate.
+	* Headers/gsc/GSGStateOps.h
+	(-appendBezierPathWithPackedGlyphs:path:): New method.
+	* Source/gsc/GSGState.m (-DPScharpath:,
+	-appendBezierPathWithPackedGlyphs:path:): Implement these methods.
+	* Source/xlib/GSXftFontInfo.m (-coveredCharacterSet) Add missing
+	method.
+
+2008-04-04 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/winlib/WIN32FontInfo.m
+	(-appendBezierPathWithGlyphs:count:toBezierPath:): New method.
+	Patch by Christopher Armstrong <carmstrong@fastmail.com.au>.
+	* Source/art/ftfont.m,
+	* Source/art/ftfont-old.m: Moved ligature handling code from here
+	to gui.
+	* Source/cairo/CairoFontInfo.m (-glyphIsEncoded:): Report all
+	ligatures as not supported, as we have no way to determine if they
+	exist in the font.
+
+2008-04-03 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoFontInfo.m (-appendBezierPathWithGlyphs:...):
+	Correct implementation.
+	* Source/cairo/CairoGState.m (-DPScharpath::): Correct implementation.
+
+2008-03-29 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoFontEnumerator.m,
+	* Source/cairo/CairoFaceInfo.m,
+	* Source/cairo/Win32CairoSurface.m,
+	* Source/cairo/CairoFontInfo.m,
+	* Source/cairo/Win32CairoGlitzSurface.m,
+	* Source/cairo/CairoGState.m:
+	Clean up and better error check and reporting on cairo and malloc calls.
+
+2008-03-19  Adam Fedor  <fedor@gnu.org>
+
+	* Version 0.13.2
+
+	* configure.ac: Add --without-freetype option
+
+2008-03-17 21:01-EST Gregory John Casamento <greg_casamento@yahoo.com>
+
+	* Source/gsc/GSStreamContext.m: Add back implementation for
+	DPSrectclip::::.
+
+2008-03-15 19:35-EST Gregory John Casamento <greg_casamento@yahoo.com>
+
+	* Source/gsc/GSStreamContext.m: Correct call in NSDrawBitmap::::...
+	to add NSHeight, not NSWidth to the y coordinate if it's flipped.
+
+2008-03-15 17:48-EST Gregory John Casamento <greg_casamento@yahoo.com>
+
+	* Source/gsc/GSStreamContext.m: Added implementation for GSDrawImage.
+
+2008-03-13 19:37-EST Gregory John Casamento <greg_casamento@yahoo.com>
+
+	* Source/gsc/GSStreamContext.m: Remove implementation of 
+	DPSrectclip:::: since it was causing issues with printing.  Will
+	investigate further to see if this is the correct fix.
+
+2008-03-09 Fred Kiefer <FredKiefer@gmx.de>
+
+        * Source/art/ARTContext.m (-GSDrawImage:): Remove this hack again.
+	* Source/art/image.m (_image_get_color_rgb_cmyk_gray,
+	_image_get_color_rgb_8):  Make sure the image gets unpremultied in
+	all cases.
+
+2008-03-08 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source\win32\WIN32Server.m (-exwindowStyleForGSStyle:): 
+	New method used in window::::, stylewindow: and styleoffsets:::::.
+	* Headers\win32\WIN32Server.h,
+	* Source\win32\WIN32Server.m (-resetForGSWindowStyle:w32Style:):
+	Remove method.
+	
+2008-03-06 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Headers\win32\WIN32Server.h: make 'orderedIn' and 'level' 32bit
+	fields at start of structure so that we can easily use GetWindowLong()
+	and SetWindowLong() with them.
+	* Source\win32\w32_movesize.m:
+	* Source\win32\WIN32Server.m:
+	Change to accessing 'orderedIn' and 'level' directly using 
+	GetWindowLong() and SetWindowLong() so that code works when windows
+	are owned by another app.
+
+2008-03-06 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source\win32\w32_movesize.m: Bypass all existing code to send a
+	resize when a window is minimised ... just call the miniaturise:
+	method of the gui.  Should fix bug 22274
+
+2008-03-06 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-copyWithZone:): Correct the cairo
+	version #ifdef.
+
+2008-03-06 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source\win32\WIN32Server.m: Improve window level code ... when moving
+	a window to the top of a level, jump it right to the top of the window
+	z-order so that it is above any non-gnustep windows.
+	* Source\win32\w32_movesize.m: If a window is jumped to the top of the
+	z-order and hence breaks the level rules, use a bubble sort to get
+	the windows back in level order by raising any windows which are
+	lower than they should be.
+	
+2008-03-05 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Headers\win32\WIN32Server.h: Add fields to track window level/ordering
+	* Source\win32\WIN32Server.m: add code to implement window levvel/order
+	management. NB. This is incomplete ... it seems that direct user action
+	like clicking on a window will reorder it without going through the
+	orderwindow::; method, so we need to deal with that somehow.
+	* Source\win32\w32_movesize.m: Ensure that desktop level windows are
+	pinned to the bottom.
+
+2008-03-04 Xavier Glattard <xavier.glattard@online.fr>
+
+	* configure.ac,
+	  configure
+	  : Display warning msgs when cairo backend is selected on win32
+	* Headers/cairo/Win32CairoSurface.h,
+	  Headers/cairo/Win32CairoGlitzSurface.h,
+	  Source/cairo/Win32CairoSurface.m,
+	  Source/cairo/Win32CairoGlitzSurface.m,
+  	  Source/cairo/CairoContext.m,
+  	  : Cairo and Cairo/Glitz experimental backends on win32
+
+2008-02-26 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_checkStyle:): Restructure code
+	for double parent handling to avoid wrong computation path. 
+
+2008-02-25 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServer.m (-_screenContextForScreen:): Remove wrong
+	local variable declaration and reorder code.
+	* Source/x11/XGServer.m (-_initXContext:): Don't create default screen.
+
+2008-02-15 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m (-windowStyleForGSStyle:): Rewrite to
+	handle all combination of styles.
+
+2008-02-14 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/win32/WIN32Server.h,
+	* Source/win32/WIN32Server.m,
+	* Source/win32/w32_activate.m,
+	* Source/win32/w32_movesize.m,
+	* Source/win32/w32_create.m,
+	* Source/win32/w32_general.m,
+	* Source/win32/w32_text_focus.m,
+	* Source/win32/w32_windowdisplay.m:
+	General cleanup and reformatting.
+	* Source/win32/w32_Events.h: Removed this file.
+	
+2008-02-14 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/win32/WIN32Server.h: Extend WIN_INTERN with
+	backingStoreEmpty flag.
+	* Source/win32/WIN32Server.m (-windowbacking::): Set
+	backingStoreEmpty to YES;
+	* Source/win32/w32_windowdisplay.m: Use backingStoreEmpty to
+	determine drawing method.
+	Patch by Christopher Armstrong <carmstrong@fastmail.com.au>.
+	
+2008-02-14 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/win32pbs.m (-receivedEvent:...forMode:): Don't call NSApp
+	to terminate the program.
+
+2008-02-08 Fred Kiefer <FredKiefer@gmx.de>
+
+        * Source/art/ARTContext.m (-GSDrawImage:): Hack to allow the
+	handling of pre-multiplied bitmaps.
+
+2008-01-31 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/win32pbs.m: Use event polling code from WIN32Server.m.
+
+2008-01-31 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/xpbs.m: Improve support for RTF and add TIFF support.
+
+2008-01-29 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/xpbs.m: Add support for variable available clipboard
+	types and minimal support for RTF.
+
+2008-01-26 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/xpbs.m: Add secondary selection support. Define some more
+	MIME types and add support for more standard targets. 
+
+2008-01-24 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m (-setupAttributes): Use
+	FC_PIXEL_SIZE instead of FC_SIZE. Fixes #21912.
+
+2008-01-21 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/x11/XGOpenGL.h,
+	* Source/x11/XGGLContext.m,
+	* Source/x11/XGGLFormat.m: 
+	Get to work with newer versions of GLX.
+	Patch by Thomas Gamper <icicle@cg.tuwien.ac.at>,
+	slightly reworked.
+	
+2008-01-19 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m (-setWindowdevice:forContext:):
+	Correct wrong parameter name.
+	
+2008-01-19 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m: (-setWindowdevice:forContext:),
+	* Source/win32/WIN32Server.m (-setWindowdevice:forContext:):
+	Method replaces windowdevice:.
+	* Source/gsc/GSContext.m,
+	* Source/gsc/GSStreamContext.m,
+        * Source/art/ARTContext.m,
+	* Source/cairo/CairoContext.m,
+	* Source/xlib/XGContext.m,
+	* Source/winlib/WIN32Context.m (+GStateClass, +handlesPS):
+	New methods to simplify the implementation of
+	initWithContextInfo:. In that method call
+	setWindowdevice:forContext: when the destination is a window.
+	* Source/art/ARTContext.m (-setupDrawInfo): New method, code comes
+	from old initWithContextInfo:, now called in GSSetDevice:::.
+		
+2008-01-11 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/XGServerWindow.m:
+	Try to find window offsets using off-screen windows unless the
+	GSBackChecksOffsetsOnScreen user default is set to YES.
+
+2008-01-07 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m (-receivedEvent:...forMode:): Add
+	#ifdef for Cygwin.
+
+2008-01-01  Adam Fedor  <fedor@gnu.org>
+
+	* Version 0.13.1
+
+2007-12-11 Isaiah Beerbower <public@ipaqah.com>
+
+	* Source/cairo/*
+	* Headers/cairo/*
+	Reverting back to fontconfig font system.
+
+2007-12-10 Isaiah Beerbower <public@ipaqah.com>
+
+	* Source/cairo/CairoFontEnumerator.m (-enumerateFontsAndFamilies, cacheFolder,
+	bundleModificationDate, cacheFont, cacheNFontBundle, mergeFontInfo):
+	Rewrite to cache fonts in a plist and support nfont bundles.
+	(-defaultSystemFontName, -defaultBoldSystemFontName,
+	-defaultFixedPitchFontName):
+	Added actual PostScript name for Bitstream Vera fonts.
+	* Source/cairo/CairoFaceInfo.m (-fontFace,
+	-initWithfamilyName:fullName:weight:italicAngle:traits:files:index:,
+	-setFullName:, -fullName, -setItalicAngle:, -italicAngle, -setIndex:, -index):
+	Update to reflect changes in CairoFontEnumerator.
+	* Headers/cairo/CairoFaceInfo.m: Same.
+	* Source/cairo/CairoFontInfo.m (-setupAttributes): Take italicAngle & fullName
+	from CairoFaceInfo.
+
+2007-12-10 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m:
+	Explicitly include NSDictionary.h header for better MacOS-X
+	compatibility.
+	* Headers/gsc/GSGState.h: Change fillColorS and strokeColorS to
+	NSColorSpace. 
+	* Source/gsc/GSGState.m (NSColor-colorWithValues:colorSpaceName:):
+	Removed.  
+	* Source/gsc/GSGState.m (-GSSetFillColorspace:,
+	-GSSetStrokeColorspace:, -GSSetFillColor:, -GSSetStrokeColor:): 
+	Changed to use NSColorSpace. 
+
+2007-12-03 Riccardo Mottola <riccardo@kaffe.org>
+
+        * Source/winlib/WIN32GState.m: Implement Greyscale image handling
+
+2007-11-29 Richard Frith-Macdonald <rfm@gnu.org>
+
+        * Source/art/ReadRect.m:
+        * Source/art/ARTContext.m:
+        * Source/art/shfill.m:
+	Explicitly include NSDictionary.h header for better MacOS-X
+	compatibility.
+
+2007-11-29 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/x11/XGServerWindow.m: ([imagecursor::::::]) don't flip the
+	hot point coordinates ... NSCursor coordinates are already supposed
+	to be flipped.
+
+2007-11-29 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/x11/XGGeneric.h: Add atoms for new window types. Add
+	definition of _NET_WM_STATE_ADD and _NET_WM_STATE_REMOVE
+	* Source/x11/XGServerWindow.m (-setwindowlevel::): Better setting
+	of skip state for window.
+	* Source/x11/XGServerWindow.m (-orderwindow:::): Use it here as well.
+
+2007-11-22 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSContext.m (-GSDrawImage:):Implement via
+	NSDrawBitmap::::::. 
+
+2007-11-09  Adam Fedor  <fedor@gnu.org>
+
+	* Version 0.13.0
+	
+2007-11-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* COPYING: Add GPL 3 licence file.
+	
+2007-11-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-DPSsetflat:, -DPSsetlinewidth:,
+	-DPSsetmiterlimit, -DPScurrentflat:, -DPScurrentlinewidth:,
+	-DPScurrentmiterlimit:, -DPSsetdash:::): Convert floats from user
+	space to drawing space and visa versa.
+	* Source/cairo/CairoGState.m (-DPSsetdash:::): Adjust dash values slightly.
+	* Source/cairo/CairoFontEnumerator.m: Change NSLog to NSDebugLog.
+
+2007-10-31 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_setupRootWindow): Use
+	objectForKey: instead of stringForKey:.
+	Patch by Wolfgang Lux <wolfgang.lux@gmail.com>.
+
+2007-10-30  Adam Fedor  <fedor@gnu.org>
+
+        * gnustep-back.spec.in: Change Copyright to License.
+
+2007-10-30 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Change files to use GPL 3 and LGPL 3.
+	* Prepare for next release.
+	
+2007-10-18 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoContext.m,
+	* Source/cairo/CairoGState.m: Format cleanup.
+	* Source/cairo/XGCairoXImageSurface.m (-initWithDevice:): Use
+	XGCairoSurface when a NSBackingStoreNonretained type window is used.
+	
+2007-10-12 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-placewindow:): Change window to be
+	temporary resizable. Patch by Wolfgang Lux <wolfgang.lux@gmail.com>. 
+	* Source/x11/XIMInputServer.m: Clean up includes to avoid compiler warning.
+	* Source/x11/raster.c (calculateCombineArea): Change parameter
+	signedness to avoid compiler warnings.
+	* Source/x11/convert.c (convertTrueColor_generic,
+	convertPseudoColor_to_8): Change parameter signedness to avoid compiler warnings.
+	
+2007-10-08 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoFontInfo.m
+	(-appendBezierPathWithGlyphs:count:toBezierPath:):  First implemenation.
+	
+2007-10-07 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/gsc/GSFunction.h: Declare the -getsample:: method in
+	header.
+	
+2007-10-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/shfill.m (-DPSshfill:): Correct typing error. Remove
+	now obsolete method declaration.
+	* Headers/gsc/GSFunction.h,
+	* Source/gsc/GSFunction.m: New files. Implementation of Postscript
+	function taken from art/shfill.m.
+	* Source/gsc/GNUmakefile: Compile new file.
+	* Source/gsc/GSContext.m (-DPSshfill:), 
+	* Source/gsc/GSGState.m (-DPSshfill:): Implement new method.
+
+2007-10-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-copyWithZone:): Only use cairo 1.4
+	functions when cairo version fits.
+	* Source/cairo/XGCairoXImageSurface.m (-initWithDevice:): Use
+	depth from window device.
+
+2007-10-01 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGDragView.m: Add missing include.
+
+2007-10-01 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-copyWithZone:): No error logging
+	when copy of path fails. This is normal in cairo 1.4.10 for empty
+	paths.
+	
+2007-09-12 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/cairo/CairoGState.h,
+	* Source/cairo/CairoGState.m (-setSize, -DPSgsave, -DPSgrestore):
+	Remove unused methods.
+	* Headers/cairo/CairoPDFSurface.h,
+	* Source/cairo/CairoPDFSurface.m: New files.
+	* Source/cairo/GNUmakefile: Add new source file.
+	* Source/cairo/CairoContext.m (-initWithContextInfo:,
+	-beginPrologueBBox:...title:) Rewrite to support PDF output.
+	
+2007-09-09 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-DPSeofill, -DPSfill, -DPSstroke):
+	Clear the GNUstep path after operation.
+
+2007-09-06 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-copyWithZone:): Copy dash and clipping.
+	* Source/cairo/CairoGState.m (-_setPath:): Clear the cairo path.
+
+2007-09-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/x11/XGGeneric.h: Add ivars for event time keeping.
+	* Headers/x11/XGServer.h: Declare new event time keeping methods.
+	* Source/x11/XGServerEvent.m (-setLastTime:, -lastTime): Implement
+	new methods and use them to store event time.
+	* Source/x11/XGServerWindow.m: Use these methods to get event time.
+	
+2007-09-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m: Add more checks for cairo status.
+
+2007-09-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_checkStyle:, -windowlist): Use
+	defScreen instead of 0.
+
+2007-09-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* configure.ac,
+	* configure: Move checking for Xrender extension.
+	* Source/cairo/XGCairoXImageSurface.m: Add include for config.h.
+	Patch by Yen-Ju Chen <yjchenx@gmail.com>.
+	
+2007-09-04 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source\winlib\WIN32FontInfo.m (-coveredCharacterSet): Create the
+	NSMutableCharacterSet to store the character ranges in.
+
+2007-09-03 Nicolas Roard <nicolas@roard.com>
+
+	* configure:
+	* configure.ac: check that Xrender lib is present and add it to the
+	link process. Only use Xrender for Cairo.
+	* Source/cairo/XGCairoXImageSurface.m: use 32 bits surfaces when
+	available, else stay with 24bits surface.
+	* Source/cairo/CairoGState.m: some cleaning, and fixed the scrolling
+	bug. 
+
+2007-09-02 Nicolas Roard <nicolas@roard.com>
+
+	* configure:
+	* configure.ac:
+	* config.h.in: added checking for Xrender extension
+	* Source/x11/context.c: Now check for 32 bit surface + alpha channel
+	* Source/cairo/XGCairoSurface.m: Modified to get the correct visual,
+	not the default one
+	* Source/cairo/CairoGState.m: Use cairo groups to allow recopy on the
+	same surface
+
+2007-08-21 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/ftfont.m,
+	* Source/art/ftfont-old.m: Extracted code shared between these two
+	files into new files.
+	* Source/art/FTFaceInfo.h,
+	* Source/art/FTFaceInfo.m,
+	* Source/art/FTFontEnumerator.h,
+	* Source/art/FTFontEnumerator.m: New files with extracted code.
+	* Source/art/GNUmakefile: Add new source files.
+
+2007-08-21 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_setupRootWindow): Revert last
+	change.
+	* Source/x11/XGServerWindow.m (-setinputfocus:): Use CurrentTime
+	instead of generic.lastTime.
+	
+2007-08-21 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerEvent.m (-processEvent:): Made handling of
+	focus in and out more explicit.
+
+2007-08-16 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/XGFontManager.m (load_cache),
+	* Tools/font_cacher.m (-writeCacheTo): Increase version number of
+	font format, as font mask values have changed.
+
+2007-08-16 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_setupRootWindow): Set lastTime to
+	CurrentTime not 1 to get setinputfocus working for the first
+	activation of the application.
+
+2007-08-15 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_checkWMSupports:,
+	-_tryRequestFrameExtents:): Correct minor errors.
+	* Source/art/ftfont.m (-coveredCharacterSet): Protect against
+	illegal characters.
+
+2007-08-15 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m: Add more EWMH methods and helper
+	methods for them.
+	* Tools/xpbs.m: Simplify dragging support code.
+
+2007-08-13 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/ftfont.m (-coveredCharacterSet): Correct code.
+	Patch by Yen-Ju Chen <yjchenx@gmail.com>.
+
+2007-08-07 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/ftfont.m (-coveredCharacterSet): Use local FT_Size
+	variable instead of ivar. The ivar is sometimes invalid.
+	Cleaned up compiler warnings.
+
+2007-08-02 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServer.m (+initializeBackend): Handle SIGINT by
+	calling ([NSApp terminate: NSApp]) to shut down cleanly.
+
+2007-07-03 Sergii Stoian <soyan255@gmail.com>
+
+	* Source/cairo/CairoGState.m
+	  (-_setPoint): Adjust point.
+	  (-_adjustPath:): Optimize and cleanup.
+	  (-compositeGState:fromRect:toPoint:op:fraction:): Adjust toPoint.
+
+2007-07-02 Sergii Stoian <soyan255@gmail.com>
+
+	* Source/cairo/CairoGState.m
+	  (-DPSshow:): Apply correct scale and translate transformation matrix.
+	  (-DPSsetstrokeadjust:): Implement.
+	  (-DPSinitgraphics): Set _strokeadjust to 1 by default.
+	  (-_adjustPath:): Implement new method that place the path to pixel
+	  boundaries.
+	  (-_setPath:): Change method definition adding fillOrClip argument.
+	  Use _adjustPath: method.
+	  (-DPSclip): Change call of _setPath: to new format.
+	  (-DPSeoclip): Ditto.
+	  (-DPSeofill): Ditto.
+	  (-DPSfill): Ditto.
+	  (-DPSstroke): Ditto.
+	  (-compositerect:op:): Ditto.
+	* Headers/cairo/CairoGState.h: Define _strokeadjust variable.
+	* Source/cairo/CairoFontInfo.m: (-widthOfString:): Add sanity check.
+
+2007-06-29 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/cairo/CairoSurface.h,
+	* Source/cairo/CairoSurface.m (-setSize:): Add method.
+	* Headers/cairo/CairoGState.h,
+	* Source/cairo/CairoGState.m (-setSize:, -showPage): Add methods.
+	* Source/cairo/CairoContext.m (-beginPrologueBBox:...title:,
+	-showPage): New methods.
+	* Source/cairo/CairoGState.m (-GSShowGlyphs::): Handle rotated
+	text correctly.
+
+2007-06-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/image.m (-DPSimage:): Replaced appendTransform: with
+	prependTransform:. Undoes change from 2004-01-25.
+
+2007-05-02  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Source/GNUmakefile.postamble (after-clean): Remove
+	$(BUNDLE_NAME)Info.plist on clean.
+
+2007-04-27 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/cairo/CairoSurface.h,
+	* Source/cairo/CairoSurface.m: Remove default surface type setting.
+	* Headers/cairo/XGCairoSurface.h: Remove includes.
+	* Source/cairo/XGCairoSurface.m: Add includes.
+	* Headers/cairo/XGCairoXImageSurface.h: Remove includes.
+	* Source/cairo/XGCairoXImageSurface.m: Add includes, add  missing
+	dealloc method.
+	* Headers/cairo/CairoPSSurface.h,
+	* Source/cairo/CairoPSSurface.m: New files.
+	* Source/cairo/GNUmakefile: Add CairoPSSurface.
+	* Headers/cairo/CairoGState.h,
+	* Source/cairo/CairoGState.m: Replace method -GSSetDevice::: with
+	-GSSetDevice::: and GSCurrentDevice::: with GSCurrentSurface:::.
+	* Source/cairo/CairoGState.m (-DPSshowpage): Implement this method.
+	* Source/cairo/CairoContext.m (-DPSgrestore, -DPSgsave): Remove
+	these newly added methods.
+	* Source/cairo/CairoContext.m (-initializeBackend): No longer set
+	default surface type.
+	* Source/cairo/CairoContext.m (-GSSetDevice:::): Create the
+	surface here.
+	* Source/cairo/CairoContext.m (-initWithContextInfo:): For PS
+	output set the surface here.
+
+2007-04-24 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGDragView.m (-sendExternalEvent:... toWindow:) Tell
+	xdnd about available types and selection owner.
+	* Source/x11/XGServerEvent.m (processEvent:): Handle case
+	SelectionRequest to get some simple xdnd support.
+	Based on a patch by Matt Rice <ratmice@yahoo.com>.
+
 2007-04-14  Adam Fedor  <fedor@gnu.org>
 
-	* Version 0.12.0
+	* Version: Bump version
+
+2007-04-04 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/gsc/GSContext.h: Remove ivar gtable.
+	* Source/gsc/GSContext.m: Changed to use a gtable object
+	shared between all contexts.
+	* Headers/cairo/CairoGState.h:
+	Declare new methods for save and restore.
+	* Source/cairo/CairoContext.m (-DPSgrestore, -DPSgsave): Use these methods.
+	* Source/cairo/CairoGState.m (-DPSgrestore, -DPSgsave): Implement
+	these methods.
+	* Source/cairo/CairoGState.m (-compositeGState:...fraction:):
+	Another try on conversion of the coordinates.
 	
+2007-04-14  Adam Fedor  <fedor@gnu.org>
+
+	* Version 0.12.0 (From gnustep-stable branch)
+
 2007-03-30 Fred Kiefer <FredKiefer@gmx.de>
 
 	* header/xlib/XGGeometry.h: Replace calls to the now deprecated
@@ -25,7 +749,7 @@
 	* Source/art/ARTConext.m: Removed ARTContext bits.
 	* Source/art/blit-main.m: New file split out from blit.m.
 	* Source/art/blit.m: Removed self include stuff.
-	* Source/GNUmakefile: Add new source files.
+	* Source/art/GNUmakefile: Add new source files.
 	* Source/art/composite.m: Adopt to GNUstep coding style.
 
 2007-03-22 Fred Kiefer <FredKiefer@gmx.de>
@@ -611,7 +1335,7 @@
 	* Header/x11/XGGeneric.h,
 	* Source/x11/XGServerWindow.m (-_setupRootWindow, -window::::),
 	* Source/x11/XGServerEvent.m (-processEvent:):
-	Impelemented hanlding for _NET_WM_PING.
+	Impelemented handling for _NET_WM_PING.
 
 2006-07-07 Richard Frith-Macdonald <rfm@gnu.org>
 

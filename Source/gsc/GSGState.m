@@ -8,31 +8,34 @@
    This file is part of the GNU Objective C User Interface Library.
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-   
-   You should have received a copy of the GNU Library General Public
-   License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-   Boston, MA 02111 USA.
-   */
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; see the file COPYING.LIB.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
+*/
 
 #include "config.h"
 #include <Foundation/NSObjCRuntime.h>
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
 #include <AppKit/NSColor.h>
+#include <AppKit/NSColorSpace.h>
 #include <AppKit/NSImage.h>
 #include <GNUstepGUI/GSFontInfo.h>
 #include <AppKit/NSGraphics.h>
 #include "gsc/GSContext.h"
 #include "gsc/GSGState.h"
+#include "gsc/GSFunction.h"
 #include "math.h"
 #include <GNUstepBase/Unicode.h>
 
@@ -42,37 +45,14 @@
       path = [NSBezierPath new]; \
     }
 
-/* Just temporary until we improve NSColor */
-@interface NSColor (PrivateColor)
-+ colorWithValues: (const float *)values colorSpaceName: colorSpace;
-@end
-
-@implementation NSColor (PrivateColor)
-+ colorWithValues: (const float *)values colorSpaceName: colorSpace
-{
-  NSColor *color = nil;
-  if ([colorSpace isEqual: NSDeviceWhiteColorSpace])
-    color = [NSColor colorWithDeviceWhite: values[0] alpha: values[1]];
-  else if ([colorSpace isEqual: NSDeviceRGBColorSpace])
-    color = [NSColor colorWithDeviceRed: values[0] green: values[1]
-		     blue: values[2] alpha: values[3]];
-  else if ([colorSpace isEqual: NSDeviceCMYKColorSpace])
-    color = [NSColor colorWithDeviceCyan: values[0] magenta: values[1]
-		     yellow: values[2] black: values[3] alpha: values[4]];
-  else
-    DPS_ERROR(DPSundefined, @"Cannot convert colorspace");
-  return color;
-}
-@end
-
-
-
 @implementation GSGState
 
 /* Designated initializer. */
 - initWithDrawContext: (GSContext *)drawContext
 {
-  [super init];
+  self = [super init];
+  if (!self)
+    return nil;
 
   drawcontext = drawContext;
   offset = NSMakePoint(0, 0);
@@ -316,14 +296,8 @@
 - (void) GSSetFillColorspace: (void *)spaceref
 {
   device_color_t col;
-  float values[6];
-  NSDictionary *dict = (NSDictionary *)spaceref;
-  NSString *colorSpace = [dict objectForKey: GSColorSpaceName];
-  if (fillColorS)
-    RELEASE(fillColorS);
-  memset(values, 0, sizeof(float)*6);
-  fillColorS = [NSColor colorWithValues: values colorSpaceName:colorSpace];
-  RETAIN(fillColorS);
+
+  ASSIGN(fillColorS, spaceref);
   gsMakeColor(&col, rgb_colorspace, 0, 0, 0, 0);
   [self setColor: &col state: COLOR_FILL];
 }
@@ -331,14 +305,8 @@
 - (void) GSSetStrokeColorspace: (void *)spaceref
 {
   device_color_t col;
-  float values[6];
-  NSDictionary *dict = (NSDictionary *)spaceref;
-  NSString *colorSpace = [dict objectForKey: GSColorSpaceName];
-  if (strokeColorS)
-    RELEASE(strokeColorS);
-  memset(values, 0, sizeof(float)*6);
-  strokeColorS = [NSColor colorWithValues: values colorSpaceName:colorSpace];
-  RETAIN(strokeColorS);
+
+  ASSIGN(strokeColorS, spaceref);
   gsMakeColor(&col, rgb_colorspace, 0, 0, 0, 0);
   [self setColor: &col state: COLOR_STROKE];
 }
@@ -347,22 +315,25 @@
 {
   device_color_t dcolor;
   NSColor *color;
-  NSString *colorSpace;
-  if (fillColorS == nil)
+
+  if ((fillColorS == nil) 
+      || ((color = [NSColor colorWithColorSpace: fillColorS
+                            components: values
+                            count: [fillColorS numberOfColorComponents] + 1]) == nil)
+      || ((color = [color colorUsingColorSpaceName: NSDeviceRGBColorSpace]) == nil))
     {
       DPS_ERROR(DPSundefined, @"No fill colorspace defined, assume DeviceRGB");
-      colorSpace = NSDeviceRGBColorSpace;
+      gsMakeColor(&dcolor, rgb_colorspace, values[0], values[1], 
+                  values[2], values[3]);
     }
-  else
-    colorSpace = [fillColorS colorSpaceName];
-  RELEASE(fillColorS);
-  fillColorS = [NSColor colorWithValues: values colorSpaceName:colorSpace];
-  RETAIN(fillColorS);
-  color = [fillColorS colorUsingColorSpaceName: NSDeviceRGBColorSpace];
-  [color getRed: &dcolor.field[0]
-	  green: &dcolor.field[1]
-	   blue: &dcolor.field[2]
-	  alpha: &dcolor.field[AINDEX]];
+  else 
+    {
+      [color getRed: &dcolor.field[0]
+             green: &dcolor.field[1]
+             blue: &dcolor.field[2]
+             alpha: &dcolor.field[AINDEX]];
+    }
+
   [self setColor: &dcolor state: COLOR_FILL];
 }
 
@@ -370,22 +341,25 @@
 {
   device_color_t dcolor;
   NSColor *color;
-  NSString *colorSpace;
-  if (strokeColorS == nil)
+
+  if ((strokeColorS == nil) 
+      || ((color = [NSColor colorWithColorSpace: strokeColorS
+                            components: values
+                            count: [strokeColorS numberOfColorComponents] + 1]) == nil)
+      || ((color = [color colorUsingColorSpaceName: NSDeviceRGBColorSpace]) == nil))
     {
       DPS_ERROR(DPSundefined, @"No stroke colorspace defined, assume DeviceRGB");
-      colorSpace = NSDeviceRGBColorSpace;
+      gsMakeColor(&dcolor, rgb_colorspace, values[0], values[1], 
+                  values[2], values[3]);
     }
-  else
-    colorSpace = [strokeColorS colorSpaceName];
-  RELEASE(strokeColorS);
-  strokeColorS = [NSColor colorWithValues: values colorSpaceName:colorSpace];
-  RETAIN(strokeColorS);
-  color = [strokeColorS colorUsingColorSpaceName: NSDeviceRGBColorSpace];
-  [color getRed: &dcolor.field[0]
-	  green: &dcolor.field[1]
-	   blue: &dcolor.field[2]
-	  alpha: &dcolor.field[AINDEX]];
+  else 
+    {
+      [color getRed: &dcolor.field[0]
+             green: &dcolor.field[1]
+             blue: &dcolor.field[2]
+             alpha: &dcolor.field[AINDEX]];
+    }
+
   [self setColor: &dcolor state: COLOR_STROKE];
 }
 
@@ -497,9 +471,71 @@ typedef enum {
     isRelative: YES];
 }
 
-- (void) DPScharpath: (const char*)s : (int)b
+- (void) DPScharpath: (const char*)s : (int)count
 {
-  [self subclassResponsibility: _cmd];
+  NSGlyph glBuf[count];
+  int i;
+
+  if (!font)
+    return;
+
+  // FIXME
+  for (i = 0; i < count; i++)
+    {
+      glBuf[i] = [font glyphForCharacter: s[i]];  
+    }
+  
+  CHECK_PATH;
+  [font appendBezierPathWithGlyphs: glBuf
+        count: count
+        toBezierPath: path];
+}
+
+- (void) appendBezierPathWithPackedGlyphs: (const char *)packedGlyphs
+                                     path: (NSBezierPath*)aPath
+{
+  unsigned int count = packedGlyphs[0];
+  NSMultibyteGlyphPacking packing;
+  NSGlyph glBuf[count];
+  int i;
+  int j;
+  unsigned char a, b, c, d;
+
+  if (!font)
+    return;
+
+  packing = [font glyphPacking];
+  j = 1;
+  for (i = 0; i < count; i++)
+    {
+      switch (packing)
+        {
+          case NSOneByteGlyphPacking: 
+            glBuf[i] = (NSGlyph)packedGlyphs[j++]; 
+            break;
+          case NSTwoByteGlyphPacking: 
+            a= packedGlyphs[j++];
+            glBuf[i] = (NSGlyph)((a << 8) | packedGlyphs[j++]);
+            break;
+          case NSFourByteGlyphPacking:
+            a = packedGlyphs[j++];
+            b = packedGlyphs[j++];
+            c = packedGlyphs[j++];
+            d = packedGlyphs[j++];
+            glBuf[i] = (NSGlyph)((a << 24) | (b << 16) 
+                                 | (c << 8) | d);
+            break;          
+          case NSJapaneseEUCGlyphPacking:
+          case NSAsciiWithDoubleByteEUCGlyphPacking:
+          default:
+            // FIXME
+            break;
+        }
+    }
+
+  [font appendBezierPathWithGlyphs: glBuf
+        count: count
+        toBezierPath: aPath];
 }
 
 - (void) DPSshow: (const char*)s
@@ -945,9 +981,11 @@ typedef enum {
 {
   NSBezierPath *oldPath = path;
 
-  path = [NSBezierPath bezierPathWithRect: NSMakeRect(x, y, w, h)];
+  path = [[NSBezierPath alloc] init];
+  [path appendBezierPathWithRect: NSMakeRect(x, y, w, h)];
   [path transformUsingAffineTransform: ctm];
   [self DPSclip];
+  RELEASE(path);
   path = oldPath;
   if (path)
     [path removeAllPoints];
@@ -957,9 +995,11 @@ typedef enum {
 {
   NSBezierPath *oldPath = path;
 
-  path = [NSBezierPath bezierPathWithRect: NSMakeRect(x, y, w, h)];
+  path = [[NSBezierPath alloc] init];
+  [path appendBezierPathWithRect: NSMakeRect(x, y, w, h)];
   [path transformUsingAffineTransform: ctm];
   [self DPSfill];
+  RELEASE(path);
   path = oldPath;
 }
 
@@ -967,9 +1007,11 @@ typedef enum {
 {
   NSBezierPath *oldPath = path;
 
-  path = [NSBezierPath bezierPathWithRect: NSMakeRect(x, y, w, h)];
+  path = [[NSBezierPath alloc] init];
+  [path appendBezierPathWithRect: NSMakeRect(x, y, w, h)];
   [path transformUsingAffineTransform: ctm];
   [self DPSstroke];
+  RELEASE(path);
   path = oldPath;
 }
 
@@ -1068,6 +1110,113 @@ typedef enum {
 {
   [self subclassResponsibility: _cmd];
 }
+
+- (void) DPSshfill: (NSDictionary *)shader
+{
+  NSNumber *v;
+  NSDictionary *function_dict;
+  GSFunction2in3out *function;
+  NSAffineTransform *matrix, *inverse;
+  NSAffineTransformStruct	ts;
+  NSRect rect;
+  int iwidth, iheight;
+  double x, y;
+  int i;
+  unsigned char *data;
+
+  v = [shader objectForKey: @"ShadingType"];
+
+  /* only type 1 shaders */
+  if ([v intValue] != 1)
+    {
+      NSLog(@"ShadingType != 1 not supported.");
+      return;
+    }
+
+  /* in device rgb space */
+  if ([shader objectForKey: @"ColorSpace"])
+    if (![[shader objectForKey: @"ColorSpace"] isEqual: NSDeviceRGBColorSpace])
+      {
+        NSLog(@"Only device RGB ColorSpace supported for shading.");
+        return;
+      }
+
+  function_dict = [shader objectForKey: @"Function"];
+  if (!function_dict)
+    {
+      NSLog(@"Shading function not set.");
+      return;
+    }
+
+  function = [[GSFunction2in3out alloc] initWith: function_dict];
+  if (!function)
+    return;
+
+  matrix = [ctm copy];
+  if ([shader objectForKey: @"Matrix"])
+    {
+      [matrix prependTransform: [shader objectForKey: @"Matrix"]];
+    }
+
+  inverse = [matrix copy];
+  [inverse invert];
+
+  rect = [function affectedRect];
+  iwidth = rect.size.width;
+  iheight = rect.size.height;
+  data = objc_malloc(sizeof(char) * iwidth * iheight * 4);
+  i = 0;
+
+  for (y = NSMinY(rect); y < NSMaxY(rect); y++)
+    {
+      double in[2], out[3];
+      NSPoint p;
+
+      p = [inverse transformPoint: NSMakePoint(NSMinX(rect), y)];
+      in[0] = p.x;
+      in[1] = p.y;
+          
+      out[0] = out[1] = out[2] = 0.0;
+      for (x = NSMinX(rect); x < NSMaxX(rect); x++)
+        {
+          char r, g, b, a;
+            
+          [function eval: in : out];
+     
+          // Set data at x - NSMinX(rect), y - NSMinY(rect) to out
+          r = out[0] * 255;
+          g = out[1] * 255;
+          b = out[2] * 255;
+          a = 255;
+          data[i++] = r;
+          data[i++] = g;
+          data[i++] = b;
+          data[i++] = a;
+
+          // This gives the same result as: 
+          // p = [inverse transformPoint: NSMakePoint(x, y)];
+          in[0] += ts.m11;
+          in[1] += ts.m12;
+        }
+    }
+
+  // Copy data to device
+  DESTROY(matrix);
+  matrix = [NSAffineTransform new];
+  [matrix translateXBy: NSMinX(rect) yBy: NSMinY(rect)];
+  [self DPSimage: matrix 
+        : iwidth : iheight
+        : 8 : 4 
+        : 32 : 4 * iwidth  : NO
+        : YES : NSDeviceRGBColorSpace
+        : (const unsigned char **)&data];
+  objc_free(data);
+
+  DESTROY(matrix);
+  DESTROY(inverse);
+  DESTROY(function);
+}
+
 @end
 
 

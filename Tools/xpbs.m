@@ -10,16 +10,21 @@
 
    This file is part of the GNUstep Project
 
-   This library is free software; you can redistribute it and/or
+   This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
-   as published by the Free Software Foundation; either version 2
+   as published by the Free Software Foundation; either version 3
    of the License, or (at your option) any later version.
+    
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public
-   License along with this library; see the file COPYING.LIB.
-   If not, write to the Free Software Foundation,
-   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
+   You should have received a copy of the GNU General Public  
+   License along with this library; see the file COPYING.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
 */
 
 #include <Foundation/Foundation.h>
@@ -34,7 +39,7 @@
 /*
  *	Non-predefined atoms that are used in the X selection mechanism
  */
-static char* atom_names[] = {
+static char *atom_names[] = {
   "CHARACTER_POSITION",
   "CLIENT_WINDOW",
   "HOST_NAME",
@@ -54,7 +59,24 @@ static char* atom_names[] = {
   "UTF8_STRING",
   "MULTIPLE",
   "COMPOUND_TEXT",
-  "INCR"
+  "INCR",
+
+  // some MIME types
+  "text/plain",
+  "text/uri-list",
+  "application/postscript",
+  "text/tab-separated-values",
+  "text/richtext",
+  "image/tiff",
+  "application/octet-stream",
+  "application/x-rootwindow-drop",
+  "application/richtext",
+  "text/rtf",
+  "text/html",
+  "application/xhtml+xml",
+  "image/png",
+  "image/svg"
+  "application/rtf",
 };
 static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 
@@ -82,6 +104,21 @@ static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 #define XG_MULTIPLE		atoms[17]
 #define XG_COMPOUND_TEXT	atoms[18]
 #define XG_INCR         	atoms[19]
+#define XG_MIME_PLAIN    	atoms[20]
+#define XG_MIME_URI      	atoms[21]
+#define XG_MIME_PS      	atoms[22]
+#define XG_MIME_TSV      	atoms[23]
+#define XG_MIME_RICHTEXT  atoms[24]
+#define XG_MIME_TIFF      atoms[25]
+#define XG_MIME_OCTET     atoms[26]
+#define XG_MIME_ROOTWINDOW atoms[27]
+#define XG_MIME_APP_RICHTEXT atoms[28]
+#define XG_MIME_RTF       atoms[29]
+#define XG_MIME_HTML      atoms[30]
+#define XG_MIME_XHTML     atoms[31]
+#define XG_MIME_PNG       atoms[32]
+#define XG_MIME_SVG       atoms[33]
+#define XG_MIME_APP_RTF   atoms[34]
 
 
 
@@ -241,6 +278,10 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
   o = [[XPbOwner alloc] initWithXPb: selectionPb osPb: p];
   [o xSelectionClear];
       
+  p = [NSPasteboard pasteboardWithName: @"Secondary"];
+  o = [[XPbOwner alloc] initWithXPb: XA_SECONDARY osPb: p];
+  [o xSelectionClear];
+
   // Call this to get the class initialisation
   [XDragPbOwner class];
 
@@ -274,38 +315,38 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
   while ((count = XPending(xDisplay)) > 0)
     {
       while (count-- > 0)
-	{
-	  XEvent	xEvent;
+        {
+          XEvent	xEvent;
 
-	  XNextEvent(xDisplay, &xEvent);
+          XNextEvent(xDisplay, &xEvent);
+          
+          switch (xEvent.type)
+            {
+              case PropertyNotify:
+                [self xPropertyNotify: (XPropertyEvent*)&xEvent];
+                NSDebugLLog(@"Pbs", @"PropertyNotify.");
+                break;
+                
+              case SelectionNotify:
+                [self xSelectionNotify: (XSelectionEvent*)&xEvent];
+                NSDebugLLog(@"Pbs", @"SelectionNotify.");
+                break;
 
-	  switch (xEvent.type)
-	    {
-	      case PropertyNotify:
-		[self xPropertyNotify: (XPropertyEvent*)&xEvent];
-		NSDebugLLog(@"Pbs", @"PropertyNotify.");
-		break;
+              case SelectionClear:
+                [self xSelectionClear: (XSelectionClearEvent*)&xEvent];
+                NSDebugLLog(@"Pbs", @"SelectionClear.");
+                break;
 
-	      case SelectionNotify:
-		[self xSelectionNotify: (XSelectionEvent*)&xEvent];
-		NSDebugLLog(@"Pbs", @"SelectionNotify.");
-		break;
+              case SelectionRequest:
+                [self xSelectionRequest: (XSelectionRequestEvent*)&xEvent];
+                NSDebugLLog(@"Pbs", @"SelectionRequest.");
+                break;
 
-	      case SelectionClear:
-		[self xSelectionClear: (XSelectionClearEvent*)&xEvent];
-		NSDebugLLog(@"Pbs", @"SelectionClear.");
-		break;
-
-	      case SelectionRequest:
-		[self xSelectionRequest: (XSelectionRequestEvent*)&xEvent];
-		NSDebugLLog(@"Pbs", @"SelectionRequest.");
-		break;
-
-	      default:
-		NSDebugLLog(@"Pbs", @"Unexpected X event.");
-		break;
-	    }
-	}
+              default:
+                NSDebugLLog(@"Pbs", @"Unexpected X event.");
+                break;
+            }
+        }
     }
 }
 
@@ -332,7 +373,7 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
       char *name = XGetAtomName(xDisplay, xEvent->selection);
 
       NSDebugLLog(@"Pbs", @"Selection clear for unknown selection - '%s'.",
-	name);
+                  name);
       XFree(name);
       return;
     }
@@ -355,7 +396,7 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
     {
       char *name = XGetAtomName(xDisplay, xEvent->atom);
       NSDebugLLog(@"Pbs", @"Property notify for unknown property - '%s'.",
-	name);
+                  name);
       XFree(name);
       return;
     }
@@ -374,14 +415,14 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
 
 + (void) xSelectionNotify: (XSelectionEvent*)xEvent
 {
-  XPbOwner	*o;
+  XPbOwner *o;
 
   o = [self ownerByXPb: xEvent->selection];
   if (o == nil)
     {
       char *name = XGetAtomName(xDisplay, xEvent->selection);
       NSDebugLLog(@"Pbs", @"Selection notify for unknown selection - '%s'.",
-	name);
+                  name);
       XFree(name);
       return;
     }
@@ -393,19 +434,19 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
     }
   else
     {
-	char *sel_name = XGetAtomName(xDisplay, xEvent->selection);
-	char *pro_name;
+      char *sel_name = XGetAtomName(xDisplay, xEvent->selection);
+      char *pro_name;
+      
+      if (xEvent->property == None)
+        pro_name = NULL;
+      else
+        pro_name = XGetAtomName(xDisplay, xEvent->property);
 
-	if (xEvent->property == None)
-	  pro_name = NULL;
-	else
-	  pro_name = XGetAtomName(xDisplay, xEvent->property);
-
-	NSDebugLLog(@"Pbs", @"Selection (%s) notify - '%s'.", sel_name, 
-		    pro_name? pro_name : "None");
-	XFree(sel_name);
-	if (pro_name)
-	  XFree(pro_name);
+      NSDebugLLog(@"Pbs", @"Selection (%s) notify - '%s'.", sel_name, 
+                  pro_name? pro_name : "None");
+      XFree(sel_name);
+      if (pro_name)
+        XFree(pro_name);
     }
 
   [o xSelectionNotify: xEvent];
@@ -420,7 +461,7 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
     {
       char *name = XGetAtomName(xDisplay, xEvent->selection);
       NSDebugLLog(@"Pbs", @"Selection request for unknown selection - '%s'.",
-	name);
+                  name);
       XFree(name);
       return;
     }
@@ -505,7 +546,7 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
 
 - (void) requestData: (Atom)xType 
 {
-  Time	whenRequested;
+  Time whenRequested;
 
   /*
    * Do a nul append to a property to get a timestamp, if it returns the
@@ -514,7 +555,7 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
   whenRequested = [self xTimeByAppending];
   if (whenRequested != CurrentTime)
     {
-      NSDate	*limit;
+      NSDate *limit;
       
       /*
        * Ok - we got a timestamp, so we can ask the selection system for
@@ -523,7 +564,7 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
        * appropriate property of our application root window.
        */
       XConvertSelection(xDisplay, [self xPb], xType,
-			[self xPb], xAppWin, whenRequested);
+                        [self xPb], xAppWin, whenRequested);
       XFlush(xDisplay);
       
       /*
@@ -534,19 +575,19 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
       [self setWaitingForSelection: whenRequested];
       while ([self waitingForSelection] == whenRequested)
         {
-	  [[NSRunLoop currentRunLoop] runMode: xWaitMode
-				      beforeDate: limit];
-	  if ([limit timeIntervalSinceNow] <= 0.0)
-	      break;	/* Timeout */
-	}
+          [[NSRunLoop currentRunLoop] runMode: xWaitMode
+                                      beforeDate: limit];
+          if ([limit timeIntervalSinceNow] <= 0.0)
+            break;	/* Timeout */
+        }
       if ([self waitingForSelection] != 0)
         {
-	  char *name = XGetAtomName(xDisplay, xType);
+          char *name = XGetAtomName(xDisplay, xType);
 
-	  [self setWaitingForSelection: 0];
-	  NSLog(@"Timed out waiting for X selection '%s'", name);
-	  XFree(name);
-	}
+          [self setWaitingForSelection: 0];
+          NSLog(@"Timed out waiting for X selection '%s'", name);
+          XFree(name);
+        }
     }
 }
 
@@ -563,11 +604,27 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
     {
       [self requestData: XG_UTF8_STRING];
       if ([self data] == nil)
-	[self requestData: XA_STRING];
+        [self requestData: XA_STRING];
     }
+  else if ([type isEqual: NSFilenamesPboardType])
+    {
+
+      [self requestData: XG_FILE_NAME];
+    }
+  else if ([type isEqual: NSRTFPboardType])
+    {
+      [self requestData: XG_MIME_RTF];
+      if ([self data] == nil)
+        [self requestData: XG_MIME_APP_RTF];
+    }
+  else if ([type isEqual: NSTIFFPboardType])
+    {
+      [self requestData: XG_MIME_TIFF];
+    }
+  // FIXME: Support more types
   else
     {
-      NSLog(@"Request for non-string info from X pasteboard: %@", type);
+      NSDebugLLog(@"Pbs", @"Request for non-string info from X pasteboard: %@", type);
     }
   [pb setData: [self data] forType: type];
 }
@@ -615,22 +672,91 @@ xErrorHandler(Display *d, XErrorEvent *e)
   return 0;
 }
 
+/*
+ * Check to see what types of data the selection owner is
+ * making available, and declare them all.
+ * If this fails, declare string data.
+ */
+- (NSArray*) availableTypes
+{
+  NSMutableArray *types;
+  NSData *data;
+  unsigned int count;
+  unsigned int i;
+  Atom *targets;
+
+  [self setData: nil];
+  [self requestData: XG_TARGETS];
+  data = [self data];
+  if (data == nil)
+    return [NSArray arrayWithObject: NSStringPboardType];
+
+  count = [data length] / sizeof(Atom);
+  targets = (Atom*)[data bytes];
+  types = [NSMutableArray arrayWithCapacity: count];
+  for (i = 0; i < count; i++)
+    {
+      Atom type;
+
+      type = targets[i];
+
+      if ((type == XG_UTF8_STRING) 
+          ||(type == XA_STRING))
+        {
+          [types addObject: NSStringPboardType];
+        }
+      else if (type == XG_FILE_NAME)
+        {
+          [types addObject: NSFilenamesPboardType];
+        }
+      else if ((type == XG_MIME_RTF)
+               || (type == XG_MIME_APP_RTF))
+        {
+          [types addObject: NSRTFPboardType];
+        }
+      else if (type == XG_MIME_TIFF)
+        {
+          [types addObject: NSTIFFPboardType];
+        }
+      else if ((type == XG_TARGETS)
+               || (type == XG_TIMESTAMP)
+               || (type == XG_OWNER_OS)
+               || (type == XG_USER)
+               || (type == XG_HOST_NAME)
+               || (type == XG_HOSTNAME)
+               || (type == XG_MULTIPLE))
+        {
+            // Standard types
+        }
+      // FIXME: Support more types
+      else
+        {
+          char *name = XGetAtomName(xDisplay, type);
+
+          // FIXME: We should rather add this type to the
+          // pasteboard as a string.
+          NSDebugLLog(@"Pbs", @"Unsupported selection type '%s' available", 
+                      name);
+          XFree(name);
+        }
+    }
+
+  return types;
+}
+
+/*
+ * Should be called when ever the clipboard contents changes.
+ * Currently it gets called when GNUstep looses the ownership 
+ * of the clipboard.
+ */
 - (void) xSelectionClear
 {
-  NSArray	*types;
-
-  /*
-   * Really we should check to see what types of data the selection owner is
-   * making available, and declare them all - but as a temporary HACK we just
-   * declare string data.
-   */
-  types = [NSArray arrayWithObject: NSStringPboardType];
-  [_pb declareTypes: types owner: self];
+  [_pb declareTypes: [self availableTypes] owner: self];
   [self setOwnedByOpenStep: NO];
 }
 
 - (NSMutableData*) getSelectionData: (XSelectionEvent*)xEvent
-		      type: (Atom*)type
+                               type: (Atom*)type
 {
   int		status;
   unsigned char	*data;
@@ -649,51 +775,51 @@ xErrorHandler(Display *d, XErrorEvent *e)
   do
     {
       status = XGetWindowProperty(xDisplay,
-				  xEvent->requestor,
-				  xEvent->property,
-				  long_offset,         // offset
-				  long_length,
-				  True,               // Delete prop when read.
-				  req_type,
-				  &actual_type,
-				  &actual_format,
-				  &number_items,
-				  &bytes_remaining,
-				  &data);
+                                  xEvent->requestor,
+                                  xEvent->property,
+                                  long_offset,         // offset
+                                  long_length,
+                                  True,               // Delete prop when read.
+                                  req_type,
+                                  &actual_type,
+                                  &actual_format,
+                                  &number_items,
+                                  &bytes_remaining,
+                                  &data);
       
       if ((status == Success) && (number_items > 0))
         {
-	    long count = number_items * actual_format / 8;
-
-	    if (md == nil)
-	      {
-		md = [[NSMutableData alloc] initWithBytes: (void *)data
-					    length: count];  
-		req_type = actual_type;
-	      }
-	    else
-	      {
-		if (req_type != actual_type)
-		  {
-		    char *req_name = XGetAtomName(xDisplay, req_type);
-		    char *act_name = XGetAtomName(xDisplay, actual_type);
-
-		    NSLog(@"Selection changed type from %s to %s.", 
-			  req_name, act_name);
-		    XFree(req_name);
-		    XFree(act_name);
-		    RELEASE(md);
-		    return nil;
-		  }
-		[md appendBytes: (void *)data length: count];
-	      }
-
-	    long_offset += count / 4;
-	    if (data)
-	      {
-		XFree(data);
-	      }
-	}
+          long count = number_items * actual_format / 8;
+            
+          if (md == nil)
+            {
+              md = [[NSMutableData alloc] initWithBytes: (void *)data
+                                          length: count];  
+              req_type = actual_type;
+            }
+          else
+            {
+              if (req_type != actual_type)
+                {
+                  char *req_name = XGetAtomName(xDisplay, req_type);
+                  char *act_name = XGetAtomName(xDisplay, actual_type);
+                  
+                  NSLog(@"Selection changed type from %s to %s.", 
+                        req_name, act_name);
+                  XFree(req_name);
+                  XFree(act_name);
+                  RELEASE(md);
+                  return nil;
+                }
+              [md appendBytes: (void *)data length: count];
+            }
+          
+          long_offset += count / 4;
+          if (data)
+            {
+              XFree(data);
+            }
+        }
     }
   while ((status == Success) && (bytes_remaining > 0));
 
@@ -733,79 +859,114 @@ xErrorHandler(Display *d, XErrorEvent *e)
   if (md != nil)
     {
       if (actual_type == XG_INCR)
-	{
-	  XEvent event;
-	  NSMutableData	*imd = nil;
-	  BOOL wait = YES;
-
-	  md = nil;
-	  while (wait)
-	    {
-	      XNextEvent(xDisplay, &event);
-
-	      if (event.type == PropertyNotify)
-		{
-		  if (event.xproperty.state != PropertyNewValue) continue;
-		    
-		  imd = [self getSelectionData: xEvent type: &actual_type];
-		  if (imd != nil)
-		    {
-		      if (md == nil)
-		        {
- 			  md = imd;
-			}
-		      else
-		        {
-			  [md appendData: imd];
-			}
-		    }
-		  else
-		    {
-		      wait = NO;
-		    }
-		}
-	    }
-	}
+        {
+          XEvent event;
+          NSMutableData	*imd = nil;
+          BOOL wait = YES;
+          
+          md = nil;
+          while (wait)
+            {
+              XNextEvent(xDisplay, &event);
+              
+              if (event.type == PropertyNotify)
+                {
+                  if (event.xproperty.state != PropertyNewValue) continue;
+                  
+                  imd = [self getSelectionData: xEvent type: &actual_type];
+                  if (imd != nil)
+                    {
+                      if (md == nil)
+                        {
+                          md = imd;
+                        }
+                      else
+                        {
+                          [md appendData: imd];
+                        }
+                    }
+                  else
+                    {
+                      wait = NO;
+                    }
+                }
+            }
+        }
     }
-
+  
   if (md != nil)
     {
       // Convert data to text string.
       if (actual_type == XG_UTF8_STRING)
-	{
-	  NSString	*s;
-	  NSData	*d;
-
-	  s = [[NSString alloc] initWithData: md
-	                            encoding: NSUTF8StringEncoding];
-	  if (s != nil)
-	    {
-	      d = [NSSerializer serializePropertyList: s];
-	      RELEASE(s);
-	      [self setData: d];
-	    }
-	}
+        {
+          NSString	*s;
+          NSData	*d;
+          
+          s = [[NSString alloc] initWithData: md
+                                encoding: NSUTF8StringEncoding];
+          if (s != nil)
+            {
+              d = [NSSerializer serializePropertyList: s];
+              RELEASE(s);
+              [self setData: d];
+            }
+        }
       else if (actual_type == XA_STRING)
-	{
-	  NSString	*s;
-	  NSData	*d;
+        {
+          NSString	*s;
+          NSData	*d;
+          
+          s = [[NSString alloc] initWithData: md
+                                encoding: NSISOLatin1StringEncoding];
+          if (s != nil)
+            {
+              d = [NSSerializer serializePropertyList: s];
+              RELEASE(s);
+              [self setData: d];
+            }
+        }
+      else if (actual_type == XG_FILE_NAME)
+        {
+          NSArray *names;
+          NSData *d;
+          NSString *s;
+          NSURL *url;
 
-	  s = [[NSString alloc] initWithData: md
-				encoding: NSISOLatin1StringEncoding];
-	  if (s != nil)
-	    {
-	      d = [NSSerializer serializePropertyList: s];
-	      RELEASE(s);
-	      [self setData: d];
-	    }
-	}
+          s = [[NSString alloc] initWithData: md
+                                encoding: NSUTF8StringEncoding];
+          url = [[NSURL alloc] initWithString: s];
+          RELEASE(s);
+          if ([url isFileURL])
+            {
+              s = [url path];
+              names = [NSArray arrayWithObject: s];
+              d = [NSSerializer serializePropertyList: names];
+              [self setData: d];
+            }
+          RELEASE(url);
+        }
+      else if ((actual_type == XG_MIME_RTF)
+               || (actual_type == XG_MIME_APP_RTF))
+        {
+          [self setData: md];
+        }
+      else if (actual_type == XG_MIME_TIFF)
+        {
+          [self setData: md];
+        }
+      else if (actual_type == XA_ATOM)
+        {
+          // Used when requesting TARGETS to get available types
+          [self setData: md];
+        }
       else
-	{
-	  char *name = XGetAtomName(xDisplay, actual_type);
-
-	  NSLog(@"Unsupported data type '%s' from X selection.", name);
-	  XFree(name);
-	}
+        {
+          char *name = XGetAtomName(xDisplay, actual_type);
+          
+          NSDebugLLog(@"Pbs", @"Unsupported data type '%s' from X selection.", 
+                      name);
+          XFree(name);
+        }
     }
 }
 
@@ -869,21 +1030,35 @@ xErrorHandler(Display *d, XErrorEvent *e)
       xTypes[numTypes++] = XG_TARGETS;
       xTypes[numTypes++] = XG_TIMESTAMP;
       xTypes[numTypes++] = XG_MULTIPLE;
+      xTypes[numTypes++] = XG_USER;
+      xTypes[numTypes++] = XG_HOST_NAME;
+      xTypes[numTypes++] = XG_OWNER_OS;
       // FIXME: ICCCM requires even more types from us.
       
       if ([types containsObject: NSStringPboardType])
         {
-	  xTypes[numTypes++] = XG_UTF8_STRING;
-	  xTypes[numTypes++] = XG_COMPOUND_TEXT;
-	  xTypes[numTypes++] = XA_STRING;
-	  xTypes[numTypes++] = XG_TEXT;
-	}
+          xTypes[numTypes++] = XG_UTF8_STRING;
+          xTypes[numTypes++] = XG_COMPOUND_TEXT;
+          xTypes[numTypes++] = XA_STRING;
+          xTypes[numTypes++] = XG_TEXT;
+        }
       
       if ([types containsObject: NSFilenamesPboardType])
         {
-	  xTypes[numTypes++] = XG_FILE_NAME;
-	}
+          xTypes[numTypes++] = XG_FILE_NAME;
+        }
       
+      if ([types containsObject: NSRTFPboardType])
+        {
+          xTypes[numTypes++] = XG_MIME_RTF;
+          xTypes[numTypes++] = XG_MIME_APP_RTF;
+        }
+
+      if ([types containsObject: NSTIFFPboardType])
+        {
+          xTypes[numTypes++] = XG_MIME_TIFF;
+        }
+
       xType = XA_ATOM;
       format = 32;
       numItems = numTypes;
@@ -898,6 +1073,55 @@ xErrorHandler(Display *d, XErrorEvent *e)
       data = malloc(sizeof(int));
       memcpy(data, &_timeOfSetSelectionOwner, sizeof(int));      
     }
+  else if (xEvent->target == XG_USER)
+    {
+      NSString *s = NSUserName();
+      NSData *d = nil;
+      
+      xType = XG_TEXT;
+      format = 8;
+      d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+      if (d != nil)
+        {
+          numItems = [d length];
+          data = malloc(numItems + 1);
+          if (data)
+            [d getBytes: data];
+        }
+    }
+  else if (xEvent->target == XG_OWNER_OS)
+    {
+      NSString *s = [[NSProcessInfo processInfo] operatingSystemName];
+      NSData *d = nil;
+      
+      xType = XG_TEXT;
+      format = 8;
+      d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+      if (d != nil)
+        {
+          numItems = [d length];
+          data = malloc(numItems + 1);
+          if (data)
+            [d getBytes: data];
+        }
+    }
+  else if ((xEvent->target == XG_HOST_NAME) 
+           || (xEvent->target == XG_HOSTNAME))
+    {
+      NSString *s = [[NSProcessInfo processInfo] hostName];
+      NSData *d = nil;
+      
+      xType = XG_TEXT;
+      format = 8;
+      d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+      if (d != nil)
+        {
+          numItems = [d length];
+          data = malloc(numItems + 1);
+          if (data)
+            [d getBytes: data];
+        }
+    }
   else if (xEvent->target == AnyPropertyType)
     {
       /*
@@ -906,59 +1130,69 @@ xErrorHandler(Display *d, XErrorEvent *e)
        */
       if ([types containsObject: NSStringPboardType])
         {
-	  xEvent->target = XG_UTF8_STRING;
-	  [self xProvideSelection: xEvent];
-	}
+          xEvent->target = XG_UTF8_STRING;
+          [self xProvideSelection: xEvent];
+        }
       else if ([types containsObject: NSFilenamesPboardType])
         {
-	  xEvent->target = XG_FILE_NAME;
-	  [self xProvideSelection: xEvent];
-	}
+          xEvent->target = XG_FILE_NAME;
+          [self xProvideSelection: xEvent];
+        }
+      else if ([types containsObject: NSRTFPboardType])
+        {
+          xEvent->target = XG_MIME_RTF;
+          [self xProvideSelection: xEvent];
+        }
+      else if ([types containsObject: NSTIFFPboardType])
+        {
+          xEvent->target = XG_MIME_TIFF;
+          [self xProvideSelection: xEvent];
+        }
     }
   else if (xEvent->target == XG_MULTIPLE)
     {
       if (xEvent->property != None)
       {
-	  Atom *multipleAtoms= NULL;
-	  int actual_format;
-	  Atom actual_type;
-	  unsigned long number_items, bytes_remaining;
-	  int status;
+        Atom *multipleAtoms= NULL;
+        int actual_format;
+        Atom actual_type;
+        unsigned long number_items, bytes_remaining;
+        int status;
 
-	  status = XGetWindowProperty(xDisplay,
-				      xEvent->requestor,
-				      xEvent->property,
-				      0, 
-				      100, 
-				      False,
-				      AnyPropertyType,
-				      &actual_type, 
-				      &actual_format,
-				      &number_items,
-				      &bytes_remaining,
-				      (unsigned char **)&multipleAtoms);
-	  if ((status == Success) && (bytes_remaining == 0) && 
-	      (actual_format == 32) && (actual_type == XA_ATOM))
-	  {
-	    int i;
-	    XSelectionRequestEvent requestEvent;
-
-	    memcpy(&requestEvent, xEvent, sizeof(XSelectionRequestEvent));
-	    for (i = 0; i < number_items; i += 2)
-	      {
-		requestEvent.target= multipleAtoms[i];
-		requestEvent.property= multipleAtoms[i+1];
-		if (requestEvent.target != None)
-		  {
-		    // Recursive call to this method for each pair.
-		    if (![self xProvideSelection: &requestEvent])
-		      {
-			multipleAtoms[i+1]= None;
-		      }
-		  }
-	      }
-	    // FIXME: Should we call XChangeProperty to set the invalid types?
-	  }
+        status = XGetWindowProperty(xDisplay,
+                                    xEvent->requestor,
+                                    xEvent->property,
+                                    0, 
+                                    100, 
+                                    False,
+                                    AnyPropertyType,
+                                    &actual_type, 
+                                    &actual_format,
+                                    &number_items,
+                                    &bytes_remaining,
+                                    (unsigned char **)&multipleAtoms);
+        if ((status == Success) && (bytes_remaining == 0) && 
+            (actual_format == 32) && (actual_type == XA_ATOM))
+          {
+            int i;
+            XSelectionRequestEvent requestEvent;
+            
+            memcpy(&requestEvent, xEvent, sizeof(XSelectionRequestEvent));
+            for (i = 0; i < number_items; i += 2)
+              {
+                requestEvent.target= multipleAtoms[i];
+                requestEvent.property= multipleAtoms[i+1];
+                if (requestEvent.target != None)
+                  {
+                    // Recursive call to this method for each pair.
+                    if (![self xProvideSelection: &requestEvent])
+                      {
+                        multipleAtoms[i+1]= None;
+                      }
+                  }
+              }
+            // FIXME: Should we call XChangeProperty to set the invalid types?
+          }
       }
     }
   else if ((xEvent->target == XG_COMPOUND_TEXT) &&
@@ -973,25 +1207,25 @@ xErrorHandler(Display *d, XErrorEvent *e)
       d = [s cString];
       if (d)
         {
-	  char *list[]= {(char *)d, NULL};
-	  XTextProperty textProperty;
-
-	  status = XmbTextListToTextProperty(xEvent->display, list, 1,
-					     XCompoundTextStyle, &textProperty);
-	  if (status == Success)
-	    {
-	      NSAssert(textProperty.format == 8, @"textProperty.format == 8");
-	      numItems = textProperty.nitems;
-	      data = malloc(numItems + 1);
-	      memcpy(data, textProperty.value, numItems + 1);
-	      XFree((void *)textProperty.value);
-	    }
-	}
+          char *list[]= {(char *)d, NULL};
+          XTextProperty textProperty;
+          
+          status = XmbTextListToTextProperty(xEvent->display, list, 1,
+                                             XCompoundTextStyle, &textProperty);
+          if (status == Success)
+            {
+              NSAssert(textProperty.format == 8, @"textProperty.format == 8");
+              numItems = textProperty.nitems;
+              data = malloc(numItems + 1);
+              memcpy(data, textProperty.value, numItems + 1);
+              XFree((void *)textProperty.value);
+            }
+        }
     }
   else if (((xEvent->target == XG_UTF8_STRING) || 
-	    (xEvent->target == XA_STRING) || 
-	    (xEvent->target == XG_TEXT)) &&
-	   [types containsObject: NSStringPboardType])
+            (xEvent->target == XA_STRING) || 
+            (xEvent->target == XG_TEXT)) &&
+           [types containsObject: NSStringPboardType])
     {
       NSString *s = [_pb stringForType: NSStringPboardType];
       NSData *d = nil;
@@ -1005,25 +1239,76 @@ xErrorHandler(Display *d, XErrorEvent *e)
        */
       if (xType == XG_UTF8_STRING)
         {
-	  d = [s dataUsingEncoding: NSUTF8StringEncoding];
-	}
+          d = [s dataUsingEncoding: NSUTF8StringEncoding];
+        }
       else if ((xType == XA_STRING) || (xType == XG_TEXT))
         {
-	  d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
-	}
+          d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+        }
 
       if (d != nil)
         {
-	  numItems = [d length];
-	  data = malloc(numItems + 1);
-	  if (data)
-	    [d getBytes: data];
-	}
+          numItems = [d length];
+          data = malloc(numItems + 1);
+          if (data)
+            [d getBytes: data];
+        }
     }
   else if ((xEvent->target == XG_FILE_NAME) &&
 	   [types containsObject: NSFilenamesPboardType])
     {
+      NSArray	*names = [_pb propertyListForType: NSFilenamesPboardType];
+      NSString *file = [[names lastObject] stringByStandardizingPath];
+      NSURL *url = [[NSURL alloc] initWithScheme: NSURLFileScheme
+                                  host: @"localhost"
+                                  path: file];
+      NSString *s = [url absoluteString];
+      NSData *d;
+
+      RELEASE(url);
+      d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+      xType = xEvent->target;
+      format = 8;
+      if (d != nil)
+        {
+          numItems = [d length];
+          data = malloc(numItems + 1);
+          if (data)
+            [d getBytes: data];
+        }
     }
+  else if (((xEvent->target == XG_MIME_RTF) 
+            || (xEvent->target == XG_MIME_APP_RTF))
+           && [types containsObject: NSRTFPboardType])
+    {
+      NSData *d = [_pb dataForType: NSRTFPboardType];
+
+      xType = xEvent->target;
+      format = 8;
+      if (d != nil)
+        {
+          numItems = [d length];
+          data = malloc(numItems + 1);
+          if (data)
+            [d getBytes: data];
+        }
+    }
+  else if ((xEvent->target == XG_MIME_TIFF) &&
+	   [types containsObject: NSTIFFPboardType])
+    {
+      NSData *d = [_pb dataForType: NSTIFFPboardType];
+
+      xType = xEvent->target;
+      format = 8;
+      if (d != nil)
+        {
+          numItems = [d length];
+          data = malloc(numItems + 1);
+          if (data)
+            [d getBytes: data];
+        }
+    }
+  // FIXME: Support more types
   else
     {
       char *name = XGetAtomName(xDisplay, xEvent->target);
@@ -1034,12 +1319,12 @@ xErrorHandler(Display *d, XErrorEvent *e)
     }
 
   return [self xSendData: data format: format items: numItems type: xType
-    to: xEvent->requestor property: xEvent->property];
+               to: xEvent->requestor property: xEvent->property];
 }
 
 - (BOOL) xSendData: (unsigned char*) data format: (int) format 
-	     items: (int) numItems type: (Atom) xType
-		to: (Window) window property: (Atom) property
+             items: (int) numItems type: (Atom) xType
+                to: (Window) window property: (Atom) property
 {
   BOOL status = NO;
   
@@ -1061,23 +1346,23 @@ xErrorHandler(Display *d, XErrorEvent *e)
       oldHandler = XSetErrorHandler(xErrorHandler);
 
       while (appendFailure == NO && pos < numItems)
-	{
-	  if (pos + maxItems > numItems)
-	    {
-	      maxItems = numItems - pos;
-	    }
-	  XChangeProperty(xDisplay, window, property,
-	    xType, format, mode, &data[pos*format/8], maxItems);
-	  mode = PropModeAppend;
-	  pos += maxItems;
-	  XSync(xDisplay, False);
-	}
+        {
+          if (pos + maxItems > numItems)
+            {
+              maxItems = numItems - pos;
+            }
+          XChangeProperty(xDisplay, window, property,
+                          xType, format, mode, &data[pos*format/8], maxItems);
+          mode = PropModeAppend;
+          pos += maxItems;
+          XSync(xDisplay, False);
+        }
       free(data);
       XSetErrorHandler(oldHandler);
       if (appendFailure == NO)
-	{
-	  status = YES;
-	}
+        {
+          status = YES;
+        }
     }
   return status;
 }
@@ -1125,11 +1410,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
       [[NSRunLoop currentRunLoop] runMode: xWaitMode
 			       beforeDate: limit];
       if ([limit timeIntervalSinceNow] <= 0.0)
-	break;	/* Timeout */
+        break;	/* Timeout */
     }
   if ((whenRequested = [self timeOfLastAppend]) == 0)
     {
-      NSLog(@"Timed out waiting for X append");
+        NSLog(@"Timed out waiting for X append for %@", _name);
       whenRequested = CurrentTime;
     }
   return whenRequested;
@@ -1204,12 +1489,7 @@ static DndClass dnd;
   NSArray *types;
   Atom *typelist;
 
-  // Some GNUstep application did grap the drag pasteboard. Report this to X.
-  if (xdnd_set_selection_owner(&dnd, xAppWin, None))
-    {
-      NSLog(@"Failed to set X drag selection owner to the pasteboard server.");
-    }
-  [self setOwnedByOpenStep: YES];
+  [super pasteboardChangedOwner: sender];
 
   // We also have to set the supported types for our window
   types = [_pb types];
@@ -1237,35 +1517,9 @@ static DndClass dnd;
 {
   NSString *mime = [NSPasteboard mimeTypeForPasteboardType: type];
   Atom mType = XInternAtom(xDisplay, [mime cString], False);
-  Window window;
-  Time	whenRequested = CurrentTime;
-  NSDate	*limit;
 
   [self setData: nil];
-  // How can we get the selection owner?
-  window = XGetSelectionOwner(xDisplay, dnd.XdndSelection);
-
-  xdnd_convert_selection(&dnd, window, xAppWin, mType);
-  XFlush(xDisplay);
-
-  /*
-   * Run an event loop to read X events until we have aquired the
-   * pasteboard data we need.
-   */
-  limit = [NSDate dateWithTimeIntervalSinceNow: 20.0];
-  [self setWaitingForSelection: whenRequested];
-  while ([self waitingForSelection] == whenRequested)
-    {
-      [[NSRunLoop currentRunLoop] runMode: xWaitMode
-				  beforeDate: limit];
-      if ([limit timeIntervalSinceNow] <= 0.0)
-	break;	/* Timeout */
-    }
-  if ([self waitingForSelection] != 0)
-    {
-      [self setWaitingForSelection: 0];
-      NSLog(@"Timed out waiting for X selection");
-    }
+	[self requestData: mType];
   [pb setData: [self data] forType: type];
 }
 

@@ -1,4 +1,4 @@
-/* -*- C++ -*-
+/* -*-objc-*-
    GSStreamContext - Drawing context to a stream.
 
    Copyright (C) 1995, 2002 Free Software Foundation, Inc.
@@ -9,19 +9,21 @@
    This file is part of the GNU Objective C User Interface Library.
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-   
-   You should have received a copy of the GNU Library General Public
-   License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
-   */
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; see the file COPYING.LIB.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
+*/
 
 #include "config.h"
 #include "gsc/GSContext.h"
@@ -31,6 +33,7 @@
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
 #include <AppKit/NSView.h>
+#include <AppKit/NSBitmapImageRep.h>
 #include <Foundation/NSArray.h>
 #include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>
@@ -70,6 +73,16 @@ fpfloat(FILE *stream, float f)
 
 @implementation GSStreamContext 
 
++ (Class) GStateClass
+{
+  return [GSStreamGState class];
+}
+
++ (BOOL) handlesPS
+{
+  return YES;
+}
+
 - (void) dealloc
 {
   if (gstream)
@@ -79,7 +92,10 @@ fpfloat(FILE *stream, float f)
 
 - initWithContextInfo: (NSDictionary *)info
 {
-  [super initWithContextInfo: info];
+  self = [super initWithContextInfo: info];
+  if (!self)
+    return nil;
+
   if (info && [info objectForKey: @"NSOutputFile"])
     {
       NSString *path = [info objectForKey: @"NSOutputFile"];
@@ -91,21 +107,18 @@ fpfloat(FILE *stream, float f)
 #endif
       if (!gstream)
         {
-	  NSDebugLLog(@"GSContext", @"%@: Could not open printer file %@",
-		      DPSinvalidfileaccess, path);
-	  return nil;
-	}
+          NSDebugLLog(@"GSContext", @"%@: Could not open printer file %@",
+                      DPSinvalidfileaccess, path);
+          return nil;
+        }
     }
   else
     {
       NSDebugLLog(@"GSContext", @"%@: No stream file specified",
-		  DPSconfigurationerror);
+                  DPSconfigurationerror);
+      DESTROY(self);
       return nil;
     }
-
-  /* Create a default gstate */
-  gstate = [[GSStreamGState allocWithZone: [self zone]] 
-	      initWithDrawContext: self];
 
   return self;
 }
@@ -811,7 +824,26 @@ fpfloat(FILE *stream, float f)
 
 - (void) GSDrawImage: (NSRect)rect : (void *)imageref
 {
-  [self notImplemented: _cmd];
+  id image = (id)imageref;
+  unsigned char *imagePlanes[5];
+
+  if([image isKindOfClass: [NSBitmapImageRep class]])
+    {
+      fprintf(gstream,"%%%% BeginImage\n");
+      [image getBitmapDataPlanes: imagePlanes];
+      [self NSDrawBitmap: rect
+            : [image pixelsWide]
+            : [image pixelsHigh]
+            : [image bitsPerSample]
+            : [image samplesPerPixel]
+            : [image bitsPerPixel]
+            : [image bytesPerRow]
+            : [image isPlanar]
+            : [image hasAlpha]
+            : [image colorSpaceName]
+            : (const unsigned char **)imagePlanes];
+      fprintf(gstream,"%%%% EndImage\n");
+    }
 }
 
 
@@ -867,7 +899,7 @@ static const char *hexdigits = "0123456789abcdef";
   fprintf(gstream, "matrix\ncurrentmatrix\n");
   y = NSMinY(rect);
   if (flipped)
-    y += NSWidth(rect);
+    y += NSHeight(rect);
   fpfloat(gstream, NSMinX(rect));
   fpfloat(gstream, y);
   fprintf(gstream, "translate ");

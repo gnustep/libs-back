@@ -12,22 +12,25 @@
    This file is part of the GNU Objective C User Interface Library.
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-   
-   You should have received a copy of the GNU Library General Public
-   License along with this library; if not, write to the Free
-   Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-   */
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; see the file COPYING.LIB.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
+*/
 
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSCursor.h>
+#include <AppKit/NSGraphics.h>
 #include <AppKit/NSImage.h>
 #include <AppKit/NSPasteboard.h>
 #include <AppKit/NSView.h>
@@ -256,40 +259,45 @@ static	XGDragView	*sharedDragView = nil;
 }
 
 - (void) sendExternalEvent: (GSAppKitSubtype)subtype
-		    action: (NSDragOperation)action
-		  position: (NSPoint)eventLocation
-		 timestamp: (NSTimeInterval)time
-		  toWindow: (int)dWindowNumber
+                    action: (NSDragOperation)action
+                  position: (NSPoint)eventLocation
+                 timestamp: (NSTimeInterval)time
+                  toWindow: (int)dWindowNumber
 {
   switch (subtype)
     {
       case GSAppKitDraggingDrop:
-	if (targetWindowRef == dragWindev->root)
-	  {
-	    // FIXME There is an xdnd extension for root drop
-	  }
-	xdnd_send_drop(&dnd, dWindowNumber, dragWindev->ident, CurrentTime);
-	break;
+        if (targetWindowRef == dragWindev->root)
+          {
+            // FIXME There is an xdnd extension for root drop
+          }
+        xdnd_send_drop(&dnd, dWindowNumber, dragWindev->ident, time * 1000);
+        break;
 
       case GSAppKitDraggingUpdate:
-	xdnd_send_position(&dnd, dWindowNumber, dragWindev->ident,
-	  GSActionForDragOperation(dragMask & operationMask),
-	  XX(newPosition), XY(newPosition), CurrentTime);
-	break;
-
+        xdnd_send_position(&dnd, dWindowNumber, dragWindev->ident,
+                           GSActionForDragOperation(dragMask & operationMask),
+                           XX(newPosition), XY(newPosition), time * 1000);
+        break;
+        
       case GSAppKitDraggingEnter:
-	xdnd_send_enter(&dnd, dWindowNumber, dragWindev->ident, typelist);
-	xdnd_send_position(&dnd, dWindowNumber, dragWindev->ident,
-	  GSActionForDragOperation (dragMask & operationMask),
-	  XX(dragPosition), XY(dragPosition), CurrentTime);
-	break;
+        // FIXME: The first two lines need only be called once for every drag operation.
+        // They should be moved to a different method.
+        xdnd_set_selection_owner(&dnd, dragWindev->ident, typelist[0]);
+        xdnd_set_type_list(&dnd, dragWindev->ident, typelist);
+
+        xdnd_send_enter(&dnd, dWindowNumber, dragWindev->ident, typelist);
+        xdnd_send_position(&dnd, dWindowNumber, dragWindev->ident,
+                           GSActionForDragOperation (dragMask & operationMask),
+                           XX(dragPosition), XY(dragPosition), time * 1000);
+        break;
 
       case GSAppKitDraggingExit:
-	xdnd_send_leave(&dnd, dWindowNumber, dragWindev->ident);
-	break;
-
+        xdnd_send_leave(&dnd, dWindowNumber, dragWindev->ident);
+        break;
+  
       default:
-	break;
+        break;
     }
 }
 

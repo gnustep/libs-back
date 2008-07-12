@@ -7,21 +7,24 @@
    Part of this code have been re-written by:
    Tom MacSween <macsweent@sympatico.ca>
    Date August 2005
+
    This file is part of the GNU Objective C User Interface Library.
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-   
-   You should have received a copy of the GNU Library General Public
-   License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02111 USA.
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; see the file COPYING.LIB.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
 */
 
 #ifndef _WIN32Server_h_INCLUDE
@@ -49,9 +52,6 @@
 #include <AppKit/DPSOperators.h>
 #include <AppKit/NSImage.h>
 
-
-#include "win32/WIN32Server.h"
-
 #include <GNUstepGUI/GSDisplayServer.h>
 
 #include <windows.h>
@@ -74,7 +74,6 @@ DWORD windowStyleForGSStyle(unsigned int style);
 typedef struct w32serverFlags {
     
     int _last_WM_ACTIVATE;
-    int  eventQueCount;
     int  menuRef;                   // reference to menu window
     unsigned int currentGS_Style;   // what style is current event window
     BOOL HOLD_MENU_FOR_MOVE;        // override GS move event on hide
@@ -125,13 +124,25 @@ typedef struct w32serverFlags {
 			
 - (void) setFlagsforEventLoop: (HWND)hwnd;
 
-// declared but should be implimented in a subclass window server (subclass resposibility)
+- (DWORD) windowStyleForGSStyle: (unsigned int) style;
+
+- (void) resizeBackingStoreFor: (HWND)hwnd;
+
+@end
+
+@interface WIN32Server (w32_activate)
+
 - (LRESULT) decodeWM_ACTIVEParams: (WPARAM)wParam : (LPARAM)lParam 
 				 : (HWND)hwnd;
 - (LRESULT) decodeWM_ACTIVEAPPParams: (HWND)hwnd : (WPARAM)wParam 
 				    : (LPARAM)lParam;
 - (void) decodeWM_NCACTIVATEParams: (WPARAM)wParam : (LPARAM)lParam 
 				  : (HWND)hwnd;
+
+@end
+
+@interface WIN32Server (w32_movesize)
+
 - (LRESULT) decodeWM_SIZEParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam;
 - (LRESULT) decodeWM_MOVEParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam;
 - (void) decodeWM_NCCALCSIZEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
@@ -142,23 +153,38 @@ typedef struct w32serverFlags {
 - (LRESULT) decodeWM_MOVINGParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam;
 - (void) decodeWM_SIZINGParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam;
 
+@end
+
+@interface WIN32Server (w32_create)
+
 - (LRESULT) decodeWM_NCCREATEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (LRESULT) decodeWM_CREATEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 
-- (DWORD) windowStyleForGSStyle: (unsigned int) style;
+@end
+
+@interface WIN32Server (w32_windowdisplay)
+
 - (void) decodeWM_SHOWWINDOWParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_NCPAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (LRESULT) decodeWM_ERASEBKGNDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_PAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_SYNCPAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_CAPTURECHANGEDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
-//- (HICON) decodeWM_GETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
-- (void) resizeBackingStoreFor: (HWND)hwnd;
+- (HICON) decodeWM_GETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
+- (HICON) decodeWM_SETICONParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
+
+@end
+
+@interface WIN32Server (w32_text_focus)
 
 //- (LRESULT) decodeWM_SETTEXTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (LRESULT) decodeWM_SETFOCUSParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_KILLFOCUSParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_GETTEXTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
+
+@end
+
+@interface WIN32Server (w32_General)
 
 - (void) decodeWM_CLOSEParams: (WPARAM)wParam :(LPARAM)lParam :(HWND)hwnd;
 - (void) decodeWM_DESTROYParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
@@ -170,10 +196,16 @@ typedef struct w32serverFlags {
 @end
 
 typedef struct _win_intern {
+  int32_t level;
+#define OFF_LEVEL	0
+  int32_t orderedIn;
+#define OFF_ORDERED	sizeof(int32_t)
   BOOL useHDC;
+  BOOL backingStoreEmpty;
   HDC hdc; 
   HGDIOBJ old;
   MINMAXINFO minmax;
 } WIN_INTERN;
+
 
 #endif /* _WIN32Server_h_INCLUDE */

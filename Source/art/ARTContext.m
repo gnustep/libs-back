@@ -6,21 +6,25 @@
    This file is part of GNUstep.
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-   
-   You should have received a copy of the GNU Library General Public
-   License along with this library; if not, write to the Free
-   Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; see the file COPYING.LIB.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
 */
 
+
 #include <Foundation/NSDebug.h>
+#include <Foundation/NSDictionary.h>
 
 #include "ARTGState.h"
 #include "blit.h"
@@ -60,24 +64,13 @@ static int byte_order(void)
   [FTFontInfo initializeBackend];
 }
 
-- (id) initWithContextInfo: (NSDictionary *)info
++ (Class) GStateClass
 {
-  NSString *contextType;
-  contextType = [info objectForKey:
-    NSGraphicsContextRepresentationFormatAttributeName];
+  return [ARTGState class];
+}
 
-  self = [super initWithContextInfo: info];
-  if (contextType)
-    {
-      /* Most likely this is a PS or PDF context, so just return what
-	 super gave us
-	 */
-      return self;
-    }
-
-  /* Create a default gstate */
-  gstate = [[ARTGState allocWithZone: [self zone]] initWithDrawContext: self];
-
+- (void) setupDrawInfo
+{
 #ifdef RDS
   {
     RDSServer *s = (RDSServer *)server;
@@ -106,21 +99,21 @@ static int byte_order(void)
     visualInfo = XGetVisualInfo(d, VisualClassMask, &template, &numMatches);
     if (!visualInfo)
       {
-	template.class = TrueColor;
-	visualInfo = XGetVisualInfo(d, VisualClassMask, &template, &numMatches);
+        template.class = TrueColor;
+        visualInfo = XGetVisualInfo(d, VisualClassMask, &template, &numMatches);
       }
     if (visualInfo)
       {
-	visual = visualInfo->visual;
-	bpp = visualInfo->depth;
-	XFree(visualInfo);
+        visual = visualInfo->visual;
+        bpp = visualInfo->depth;
+        XFree(visualInfo);
       }
     else
       {
-	visual = DefaultVisual(d, DefaultScreen(d));
-	bpp = DefaultDepth(d, DefaultScreen(d));
+        visual = DefaultVisual(d, DefaultScreen(d));
+        bpp = DefaultDepth(d, DefaultScreen(d));
       }
-
+    
     i = XCreateImage(d, visual, bpp, ZPixmap, 0, NULL, 8, 8, 8, 0);
     bpp = i->bits_per_pixel;
     XDestroyImage(i);
@@ -132,11 +125,11 @@ static int byte_order(void)
       int us = byte_order(); /* True iff we're big-endian.  */
       int them = ImageByteOrder(d); /* True iff the server is big-endian.  */
       if (us != them)
-	{
-	  visual->red_mask = flip_bytes(visual->red_mask);
-	  visual->green_mask = flip_bytes(visual->green_mask);
-	  visual->blue_mask = flip_bytes(visual->blue_mask);
-	}
+        {
+          visual->red_mask = flip_bytes(visual->red_mask);
+          visual->green_mask = flip_bytes(visual->green_mask);
+          visual->blue_mask = flip_bytes(visual->blue_mask);
+        }
     }
 
     /* Only returns if the visual was usable.  */
@@ -144,8 +137,6 @@ static int byte_order(void)
 			       visual->blue_mask, bpp);
   }
 #endif
-
-  return self;
 }
 
 - (void) flushGraphics
@@ -179,6 +170,7 @@ static int byte_order(void)
 @implementation ARTContext (ops)
 - (void) GSSetDevice: (void*)device : (int)x : (int)y
 {
+  [self setupDrawInfo];
   [(ARTGState *)gstate GSSetDevice: device : x : y];
 }
 

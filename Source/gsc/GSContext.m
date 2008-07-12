@@ -9,22 +9,25 @@
    This file is part of the GNU Objective C User Interface Library.
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-   
-   You should have received a copy of the GNU Library General Public
-   License along with this library; if not, write to the Free
-   Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-   */
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; see the file COPYING.LIB.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
+*/
 
 #include <AppKit/AppKitExceptions.h>
 #include <AppKit/NSAffineTransform.h>
+#include <AppKit/NSBitmapImageRep.h>
 #include <AppKit/NSColor.h>
 #include <AppKit/NSView.h>
 #include <AppKit/NSWindow.h>
@@ -98,6 +101,7 @@
 
 /* Globally unique gstate number */
 static unsigned int unique_index = 0;
+static NSMapTable *gtable;
 
 @interface GSContext (PrivateOps)
 - (void)DPSdefineuserobject;
@@ -111,6 +115,7 @@ static unsigned int unique_index = 0;
 - (void)DPSindex: (int)i;
 - (void)DPSpop;
 @end
+
 
 /**
    <unit>
@@ -128,6 +133,38 @@ static unsigned int unique_index = 0;
    </unit> */
 @implementation GSContext 
 
++ (void) initialize
+{
+  gtable = NSCreateMapTable(NSIntMapKeyCallBacks,
+                                 NSObjectMapValueCallBacks, 20);
+}
+
++ (void) insertObject: (id)obj forKey: (int)index
+{
+  NSMapInsert(gtable, (void *)(uintptr_t)index, obj);
+}
+
+
++ (id) getObjectForKey: (int)index
+{
+  return NSMapGet(gtable, (void *)(uintptr_t)index);
+}
+
++ (void) removeObjectForKey: (int)index
+{
+  NSMapRemove(gtable, (void *)(uintptr_t)index);
+}
+
++ (Class) GStateClass
+{
+  return [GSGState class];
+}
+
++ (BOOL) handlesPS
+{
+  return NO;
+}
+
 - (id) initWithContextInfo: (NSDictionary *)info
 {
   NSString *contextType;
@@ -135,27 +172,39 @@ static unsigned int unique_index = 0;
 
   contextType = [info objectForKey: 
 		  NSGraphicsContextRepresentationFormatAttributeName];
-  if ([self isMemberOfClass: [GSStreamContext class]] == NO
-      && contextType && [contextType isEqual: NSGraphicsContextPSFormat])
+  if (([isa handlesPS] == NO) && contextType 
+      && [contextType isEqual: NSGraphicsContextPSFormat])
     {
       /* Don't call self, since we aren't initialized */
       [super dealloc];
       return [[GSStreamContext allocWithZone: z] initWithContextInfo: info];
     }
 
-  /* A context is only associated with one server. Do not retain
-     the server, however */
-  server = GSCurrentServer();
+  self = [super initWithContextInfo: info];
+  if (self != nil)
+    {
+      id dest;
 
-  /* Initialize lists and stacks */
-  opstack =  NSZoneMalloc(z, sizeof(GSIArray_t));
-  GSIArrayInitWithZoneAndCapacity((GSIArray)opstack, z, 2);
-  gstack =  NSZoneMalloc(z, sizeof(GSIArray_t));
-  GSIArrayInitWithZoneAndCapacity((GSIArray)gstack, z, 2);
-  gtable = NSCreateMapTable(NSIntMapKeyCallBacks,
-                                 NSObjectMapValueCallBacks, 20);
+      /* Initialize lists and stacks */
+      opstack =  NSZoneMalloc(z, sizeof(GSIArray_t));
+      GSIArrayInitWithZoneAndCapacity((GSIArray)opstack, z, 2);
+      gstack =  NSZoneMalloc(z, sizeof(GSIArray_t));
+      GSIArrayInitWithZoneAndCapacity((GSIArray)gstack, z, 2);
+      /* Create a default gstate */
+      gstate = [[[isa GStateClass] allocWithZone: z] 
+                   initWithDrawContext: self];
 
-  [super initWithContextInfo: info];
+      // Special handling for window drawing
+      dest = [info objectForKey: NSGraphicsContextDestinationAttributeName];
+      if ((dest != nil) && [dest isKindOfClass: [NSWindow class]])
+        {
+          /* A context is only associated with one server. Do not retain
+             the server, however */
+          server = GSCurrentServer();
+          [server setWindowdevice: [(NSWindow*)dest windowNumber] 
+                  forContext: self];
+        }
+    }
 
   return self;
 }
@@ -170,7 +219,6 @@ static unsigned int unique_index = 0;
   NSZoneFree([self zone], opstack);
   GSIArrayEmpty((GSIArray)gstack);
   NSZoneFree([self zone], gstack);
-  NSFreeMapTable(gtable);
   DESTROY(gstate);
   [super dealloc];
 }
@@ -298,6 +346,12 @@ static unsigned int unique_index = 0;
   [gstate DPScharpath: s : b];
 }
 
+- (void) appendBezierPathWithPackedGlyphs: (const char *)packedGlyphs
+                                     path: (NSBezierPath*)aPath
+{
+  [gstate appendBezierPathWithPackedGlyphs: packedGlyphs path: aPath];
+}
+
 - (void) DPSshow: (const char *)s 
 {
   [gstate DPSshow: s];
@@ -419,8 +473,8 @@ static unsigned int unique_index = 0;
       DPS_ERROR(DPSundefined, @"No gstate");
       return 0;
     }
-  NSMapInsert(gtable,
-    (void *)(uintptr_t)++unique_index, AUTORELEASE([gstate copy]));
+	[isa insertObject: AUTORELEASE([gstate copy]) forKey: ++unique_index];
+
   return unique_index;
 }
 
@@ -433,7 +487,8 @@ static unsigned int unique_index = 0;
 {
   if (gst <= 0)
     return;
-  NSMapInsert(gtable, (void *)(uintptr_t)gst, AUTORELEASE([gstate copy]));
+
+	[isa insertObject: AUTORELEASE([gstate copy]) forKey: gst];
 }
 
 /* ----------------------------------------------------------------------- */
@@ -786,7 +841,16 @@ static unsigned int unique_index = 0;
 
 - (void) GSDrawImage: (NSRect) rect: (void *) imageref
 {
-  [self notImplemented: _cmd];
+  NSBitmapImageRep *bitmap;
+  const unsigned char *data[5];
+
+  bitmap = (NSBitmapImageRep*)imageref;
+  [bitmap getBitmapDataPlanes: &data];
+  [self NSDrawBitmap: rect : [bitmap pixelsWide] : [bitmap pixelsHigh]
+        : [bitmap bitsPerSample] : [bitmap samplesPerPixel]
+        : [bitmap bitsPerPixel] : [bitmap bytesPerRow] : [bitmap isPlanar]
+        : [bitmap hasAlpha] :  [bitmap colorSpaceName]
+        : data];
 }
 
 /* ----------------------------------------------------------------------- */
@@ -844,6 +908,11 @@ static unsigned int unique_index = 0;
 		  : data];
 }
 
+- (void) DPSshfill: (NSDictionary *)shader
+{
+  [gstate DPSshfill: shader];
+}
+
 - (void) GSWSetViewIsFlipped: (BOOL) flipped
 {
   if (gstate)
@@ -865,27 +934,29 @@ static unsigned int unique_index = 0;
   if (n < 0)
     DPS_ERROR(DPSinvalidparam, @"Invalid userobject index");
   else 
-    NSMapInsert(gtable, (void *)(uintptr_t)n, obj);
+		[isa insertObject: obj forKey: n];
 }
 
 - (void)DPSexecuserobject: (int)index
 {
-  if (index < 0 || NSMapGet(gtable, (void *)(uintptr_t)index) == nil)
+  id obj;
+
+  if (index < 0 || (obj = [isa getObjectForKey: index]) == nil)
     {
       DPS_ERROR(DPSinvalidparam, @"Invalid userobject index");
       return;
     }
-  ctxt_push((id)NSMapGet(gtable, (void *)(uintptr_t)index), opstack);
+  ctxt_push(obj, opstack);
 }
 
 - (void)DPSundefineuserobject: (int)index
 {
-  if (index < 0 || NSMapGet(gtable, (void *)(uintptr_t)index) == nil)
+  if (index < 0 || [isa getObjectForKey: index] == nil)
     {
       DPS_ERROR(DPSinvalidparam, @"Invalid gstate index");
       return;
     }
-  NSMapRemove(gtable, (void *)(uintptr_t)index);
+  [isa removeObjectForKey: index];
 }
 
 - (void)DPSclear 

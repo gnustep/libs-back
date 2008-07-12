@@ -1306,6 +1306,7 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-tiff-library=DIR TIFF library file are in DIR
   --with-x                use the X Window System
+  --without-freetype Do not check for or include freetype
   --with-name=PREFIX      Set the name of the backend (def=back)
 
 Some influential environment variables:
@@ -5181,6 +5182,71 @@ _ACEOF
 fi
 
 
+{ echo "$as_me:$LINENO: checking for main in -lXt" >&5
+echo $ECHO_N "checking for main in -lXt... $ECHO_C" >&6; }
+if test "${ac_cv_lib_Xt_main+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lXt  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_Xt_main=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_Xt_main=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_Xt_main" >&5
+echo "${ECHO_T}$ac_cv_lib_Xt_main" >&6; }
+if test $ac_cv_lib_Xt_main = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBXT 1
+_ACEOF
+
+  LIBS="-lXt $LIBS"
+
+fi
+
+
 { echo "$as_me:$LINENO: checking for main in -lXmu" >&5
 echo $ECHO_N "checking for main in -lXmu... $ECHO_C" >&6; }
 if test "${ac_cv_lib_Xmu_main+set}" = set; then
@@ -5437,15 +5503,26 @@ fi
 #--------------------------------------------------------------------
 # freetype libraries
 #--------------------------------------------------------------------
+# Mac OS X with macports has a freetype which includes Apple's Foundation
+# which we do not want
 
-FREETYPE_LIBS="`freetype-config --libs`"
-FREETYPE_CFLAGS="`freetype-config --cflags`"
+# Check whether --with-freetype was given.
+if test "${with_freetype+set}" = set; then
+  withval=$with_freetype;
+else
+  with_freetype=yes
+fi
+
 
 have_freetype=no
-if test x"$FREETYPE_LIBS" != x; then
-  save_CPPFLAGS=${CPPFLAGS}
-  CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
-  if test "${ac_cv_header_ft2build_h+set}" = set; then
+if test $with_freetype = yes; then
+  FREETYPE_LIBS="`freetype-config --libs`"
+  FREETYPE_CFLAGS="`freetype-config --cflags`"
+
+  if test x"$FREETYPE_LIBS" != x; then
+    save_CPPFLAGS=${CPPFLAGS}
+    CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
+    if test "${ac_cv_header_ft2build_h+set}" = set; then
   { echo "$as_me:$LINENO: checking for ft2build.h" >&5
 echo $ECHO_N "checking for ft2build.h... $ECHO_C" >&6; }
 if test "${ac_cv_header_ft2build_h+set}" = set; then
@@ -5577,7 +5654,8 @@ else
 fi
 
 
-  CPPFLAGS="${save_CPPFLAGS}"
+    CPPFLAGS="${save_CPPFLAGS}"
+  fi
 fi
 
 #--------------------------------------------------------------------
@@ -8001,6 +8079,77 @@ echo "${ECHO_T}$CAIRO_GLITZ_LIBS" >&6; }
 
 
 #--------------------------------------------------------------------
+# XRender support
+#--------------------------------------------------------------------
+
+have_xrender=no
+{ echo "$as_me:$LINENO: checking for XRenderFindVisualFormat in -lXrender" >&5
+echo $ECHO_N "checking for XRenderFindVisualFormat in -lXrender... $ECHO_C" >&6; }
+if test "${ac_cv_lib_Xrender_XRenderFindVisualFormat+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lXrender  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char XRenderFindVisualFormat ();
+int
+main ()
+{
+return XRenderFindVisualFormat ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_Xrender_XRenderFindVisualFormat=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_Xrender_XRenderFindVisualFormat=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_Xrender_XRenderFindVisualFormat" >&5
+echo "${ECHO_T}$ac_cv_lib_Xrender_XRenderFindVisualFormat" >&6; }
+if test $ac_cv_lib_Xrender_XRenderFindVisualFormat = yes; then
+  have_xrender=yes
+fi
+
+
+#--------------------------------------------------------------------
 # Glitz libraries
 #--------------------------------------------------------------------
 WITH_GLITZ=no
@@ -8829,22 +8978,31 @@ echo "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
     CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xcairo"; then
+  if test "$have_freetype" = no; then
+    { { echo "$as_me:$LINENO: error: can't find freetype, required for graphics=cairo" >&5
+echo "$as_me: error: can't find freetype, required for graphics=cairo" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
   if test "$have_cairo" = no -o "$have_cairo-ft" = no ; then
     { { echo "$as_me:$LINENO: error: can't find cairo, required for graphics=cairo!" >&5
 echo "$as_me: error: can't find cairo, required for graphics=cairo!" >&2;}
    { (exit 1); exit 1; }; }
-    if test $BUILD_SERVER = win32; then
-      BUILD_GRAPHICS=winlib
-    else
-      BUILD_GRAPHICS=xlib
-    fi
-    { echo "$as_me:$LINENO: Switching to $BUILD_GRAPHICS" >&5
-echo "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
   else
     { echo "$as_me:$LINENO: checking Cairo backend" >&5
 echo $ECHO_N "checking Cairo backend... $ECHO_C" >&6; }
     CAIRO_LIBS="$CAIRO_FT_LIBS"
     CAIRO_CFLAGS="$CAIRO_FT_CFLAGS"
+
+    if test "$have_xrender" = yes; then
+      if test $BUILD_SERVER = x11 -a "x$have_cairo_xlib" = "xyes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define XRENDER 1
+_ACEOF
+
+        CAIRO_LIBS="$CAIRO_LIBS -lXrender"
+      fi
+    fi
     if test "x$WITH_GLITZ" = "xyes" -a "x$have_cairo_glitz" = "xyes"; then
       if test $BUILD_SERVER = win32 -a "x$have_cairo_win32" = "xyes"; then
         CAIRO_GLITZ_LIBS="$CAIRO_GLITZ_LIBS $GLITZ_WGL_LIBS"
@@ -8861,11 +9019,23 @@ echo "$as_me: error: Invalid Glitz installation" >&2;}
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_GLITZ_CFLAGS"
       { echo "$as_me:$LINENO: result: glitz" >&5
 echo "${ECHO_T}glitz" >&6; }
+      { echo "$as_me:$LINENO: WARNING: **** Cairo-over-Glitz backend is highly experimental" >&5
+echo "$as_me: WARNING: **** Cairo-over-Glitz backend is highly experimental" >&2;}
+      { echo "$as_me:$LINENO: WARNING: **** You definitively shouldn't do that." >&5
+echo "$as_me: WARNING: **** You definitively shouldn't do that." >&2;}
+      { echo "$as_me:$LINENO: WARNING: **** It actually does not work !" >&5
+echo "$as_me: WARNING: **** It actually does not work !" >&2;}
+      { echo "$as_me:$LINENO: WARNING: **** Are you a backend developer ?" >&5
+echo "$as_me: WARNING: **** Are you a backend developer ?" >&2;}
     elif test $BUILD_SERVER = win32 -a "x$have_cairo_win32" = "xyes"; then
       CAIRO_LIBS="$CAIRO_LIBS $CAIRO_WIN32_LIBS $WIN32_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_WIN32_CFLAGS"
       { echo "$as_me:$LINENO: result: winlib" >&5
 echo "${ECHO_T}winlib" >&6; }
+      { echo "$as_me:$LINENO: WARNING: **** Cairo backend on win32 is experimental and is not supported." >&5
+echo "$as_me: WARNING: **** Cairo backend on win32 is experimental and is not supported." >&2;}
+      { echo "$as_me:$LINENO: WARNING: **** Are you a backend developer ?" >&5
+echo "$as_me: WARNING: **** Are you a backend developer ?" >&2;}
     elif test $BUILD_SERVER = x11 -a "x$have_cairo_xlib" = "xyes"; then
       CAIRO_LIBS="$CAIRO_LIBS $CAIRO_XLIB_LIBS $XFT_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS"
@@ -8901,6 +9071,16 @@ if test $BUILD_SERVER = x11; then
   if test $set_x_paths = no; then
     { { echo "$as_me:$LINENO: error: No X11 libraries/headers for building x11 server" >&5
 echo "$as_me: error: No X11 libraries/headers for building x11 server" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+  if test "$ac_cv_lib_Xt_main" = no; then
+    { { echo "$as_me:$LINENO: error: libXt not found - required for building x11 server" >&5
+echo "$as_me: error: libXt not found - required for building x11 server" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+  if test "$ac_cv_lib_Xext" = no; then
+    { { echo "$as_me:$LINENO: error: libXext not found - required for building x11 server" >&5
+echo "$as_me: error: libXext not found - required for building x11 server" >&2;}
    { (exit 1); exit 1; }; }
   fi
   if test "x$WITH_GLX" = "xyes"; then

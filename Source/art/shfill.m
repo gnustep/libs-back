@@ -5,19 +5,21 @@
 
    This file is part of GNUstep.
 
-   This library is free software; you can redistribute it and /or
-   modify it under the terms of the GNU Library General Public
+   This library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
-   This library is distributed in the hope that it will be useful, 
+
+   This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-   
-   You should have received a copy of the GNU Library General Public
-   License along with this library; if not, write to the Free
-   Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; see the file COPYING.LIB.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
 */
 
 /*
@@ -35,6 +37,7 @@ this code is rather experimental
 
 #include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>
+#include <Foundation/NSDictionary.h>
 #include <Foundation/NSValue.h>
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSGraphics.h>
@@ -213,11 +216,6 @@ static BOOL _rect_advance(rect_trace_t * t, int *x0, int *x1)
 
   return YES;
 }
-
-
-@interface ARTGState (shfill)
-- (void) DPSshfill: (NSDictionary *)shader;
-@end
 
 
 @implementation ARTGState (shfill)
@@ -738,7 +736,7 @@ static void function_free(function_t * f)
 		if (state)
 		  {
 		    p = [inverse transformPoint:
-		      NSMakePoint(clip_x0 + x0 - offset.y, offset.y - y)];
+		      NSMakePoint(clip_x0 + x0 - offset.x, offset.y - y)];
 		      
 		    in[0] = p.x;
 		    in[1] = p.y;
@@ -780,14 +778,5 @@ done:
   function_free(&function);
 }
 
-@end
-
-
-@implementation ARTContext (shfill)
-/* TODO: move to gsc? */
-- (void) DPSshfill: (NSDictionary *)shader
-{
-  [(ARTGState *)gstate DPSshfill: shader];
-}
 @end
 

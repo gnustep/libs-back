@@ -6,20 +6,21 @@
    This file is part of GNUstep.
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-   
-   You should have received a copy of the GNU Library General Public
-   License along with this library; if not, write to the Free
-   Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-*/
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   Lesser General Public License for more details.
 
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; see the file COPYING.LIB.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
+*/
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -44,6 +45,8 @@
 #include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSBundle.h>
 #include <Foundation/NSDebug.h>
+#include <GNUstepBase/Unicode.h>
+
 #include <GNUstepGUI/GSFontInfo.h>
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
@@ -52,6 +55,8 @@
 #include "gsc/GSGState.h"
 
 #include "ftfont.h"
+#include "FTFontEnumerator.h"
+#include "FTFaceInfo.h"
 
 #include "blit.h"
 
@@ -82,10 +87,6 @@ from the back-art-subpixel-text defaults key
 static int subpixel_text;
 
 
-static BOOL anti_alias_by_default;
-
-
-@class FTFaceInfo;
 
 #define CACHE_SIZE 257
 
@@ -112,525 +113,12 @@ static BOOL anti_alias_by_default;
   unsigned int cachedGlyph[CACHE_SIZE];
   NSSize cachedSize[CACHE_SIZE];
 
-
-  /* Glyph generation */
-  NSGlyph ligature_ff,ligature_fi,ligature_fl,ligature_ffl,ligature_ffi;
-
-
   float lineHeight;
 }
 @end
 
 
 @interface FTFontInfo_subpixel : FTFontInfo
-@end
-
-
-static NSMutableArray *fcfg_allFontNames;
-static NSMutableDictionary *fcfg_allFontFamilies;
-static NSMutableDictionary *fcfg_all_fonts;
-
-
-static NSMutableSet *families_seen, *families_pending;
-
-
-@interface FTFaceInfo : NSObject
-{
-@public
-  NSString *familyName;
-
-  /* the following two are localized */
-  NSString *faceName;
-  NSString *displayName;
-
-  NSArray *files;
-  struct
-  {
-    int pixel_size;
-    NSArray *files;
-  } *sizes;
-  int num_sizes;
-
-  int weight;
-  unsigned int traits;
-
-  /*
-  hinting hints
-    0: 1 to use the auto-hinter
-    1: 1 to use hinting
-  byte 0 and 1 contain hinting hints for un-antialiased and antialiased
-  rendering, respectively.
-
-   16: 0=un-antialiased by default, 1=antialiased by default
-  */
-  unsigned int render_hints_hack;
-}
-@end
-
-@implementation FTFaceInfo
-
-- (NSString *) description
-{
-  return [NSString stringWithFormat: @"<FTFaceInfo %p: '%@' %@ %i %i>",
-    self, displayName, files, weight, traits];
-}
-
-/* FTFaceInfo:s should never be deallocated */
-- (void) dealloc
-{
-  NSLog(@"Warning: -dealloc called on %@",self);
-  GSNOSUPERDEALLOC;
-}
-
-@end
-
-
-#if 0
-
-/*
-This is a list of "standard" face names. It is here so make_strings can pick
-it up and generate .strings files with them.
-*/
-
-NSLocalizedStringFromTable(@"Book", @"nfontFaceNames", @"")
-NSLocalizedStringFromTable(@"Regular", @"nfontFaceNames", @"")
-NSLocalizedStringFromTable(@"Roman", @"nfontFaceNames", @"")
-NSLocalizedStringFromTable(@"Medium", @"nfontFaceNames", @"")
-NSLocalizedStringFromTable(@"Demi", @"nfontFaceNames", @"")
-NSLocalizedStringFromTable(@"Demibold", @"nfontFaceNames", @"")
-NSLocalizedStringFromTable(@"Bold", @"nfontFaceNames", @"")
-NSLocalizedStringFromTable(@"Heavy", @"nfontFaceNames", @"")
-
-NSLocalizedStringFromTable(@"Italic", @"nfontFaceNames", @"")
-NSLocalizedStringFromTable(@"Oblique", @"nfontFaceNames", @"")
-
-NSLocalizedStringFromTable(@"Bold Italic", @"nfontFaceNames", @"")
-NSLocalizedStringFromTable(@"Bold Oblique", @"nfontFaceNames", @"")
-
-#endif
-
-
-static int traits_from_string(NSString *s, unsigned int *traits, unsigned int *weight)
-{
-static struct
-{
-  NSString *str;
-  unsigned int trait;
-  int weight;
-} suffix[] = {
-/* TODO */
-{@"Normal"         ,0                         ,-1},
-
-{@"Ultralight"     ,0                         , 1},
-{@"Thin"           ,0                         , 2},
-{@"Light"          ,0                         , 3},
-{@"Extralight"     ,0                         , 3},
-{@"Book"           ,0                         , 4},
-{@"Regular"        ,0                         , 5},
-{@"Plain"          ,0                         , 5},
-{@"Display"        ,0                         , 5},
-{@"Roman"          ,0                         , 5},
-{@"Semilight"      ,0                         , 5},
-{@"Medium"         ,0                         , 6},
-{@"Demi"           ,0                         , 7},
-{@"Demibold"       ,0                         , 7},
-{@"Semi"           ,0                         , 8},
-{@"Semibold"       ,0                         , 8},
-{@"Bold"           ,NSBoldFontMask            , 9},
-{@"Extra"          ,NSBoldFontMask            ,10},
-{@"Extrabold"      ,NSBoldFontMask            ,10},
-{@"Heavy"          ,NSBoldFontMask            ,11},
-{@"Heavyface"      ,NSBoldFontMask            ,11},
-{@"Ultrabold"      ,NSBoldFontMask            ,12},
-{@"Black"          ,NSBoldFontMask            ,12},
-{@"Ultra"          ,NSBoldFontMask            ,13},
-{@"Ultrablack"     ,NSBoldFontMask            ,13},
-{@"Fat"            ,NSBoldFontMask            ,13},
-{@"Extrablack"     ,NSBoldFontMask            ,14},
-{@"Obese"          ,NSBoldFontMask            ,14},
-{@"Nord"           ,NSBoldFontMask            ,14},
-
-{@"Italic"         ,NSItalicFontMask          ,-1},
-{@"Oblique"        ,NSItalicFontMask          ,-1},
-
-{@"Cond"           ,NSCondensedFontMask       ,-1},
-{@"Condensed"      ,NSCondensedFontMask       ,-1},
-{nil,0,-1}
-};
-  int i;
-
-  *traits = 0;
-//  printf("do '%@'\n", s);
-  while ([s length] > 0)
-    {
-//      printf("  got '%@'\n", s);
-      if ([s hasSuffix: @"-"] || [s hasSuffix: @" "])
-	{
-//	  printf("  do -\n");
-	  s = [s substringToIndex: [s length] - 1];
-	  continue;
-	}
-      for (i = 0; suffix[i].str; i++)
-	{
-	  if (![s hasSuffix: suffix[i].str])
-	    continue;
-//	  printf("  found '%@'\n", suffix[i].str);
-	  if (suffix[i].weight != -1)
-	    *weight = suffix[i].weight;
-	  (*traits) |= suffix[i].trait;
-	  s = [s substringToIndex: [s length] - [suffix[i].str length]];
-	  break;
-	}
-      if (!suffix[i].str)
-	break;
-    }
-//  printf("end up with '%@'\n", s);
-  return [s length];
-}
-
-
-static NSArray *fix_path(NSString *path, NSArray *files)
-{
-  int i, c = [files count];
-  NSMutableArray *nfiles;
-
-  if (!files)
-    return nil;
-
-  nfiles = [[NSMutableArray alloc] init];
-  for (i = 0; i < c; i++)
-    {
-      if ([[files objectAtIndex: i] isAbsolutePath])
-	[nfiles addObject: [files objectAtIndex: i]];
-      else
-	[nfiles addObject: [path stringByAppendingPathComponent:
-	  [files objectAtIndex: i]]];
-    }
-  return nfiles;
-}
-
-/* TODO: handling of .font packages needs to be reworked */
-static void add_face(NSString *family, int family_weight,
-	unsigned int family_traits, NSDictionary *d, NSString *path,
-	BOOL from_nfont)
-{
-  FTFaceInfo *fi;
-  unsigned int weight;
-  unsigned int traits;
-
-  NSString *fontName;
-  NSString *faceName, *rawFaceName;
-
-
-  fontName = [d objectForKey: @"PostScriptName"];
-  if (!fontName)
-    {
-      NSLog(@"Warning: Face in %@ has no PostScriptName!",path);
-      return;
-    }
-
-  if ([fcfg_allFontNames containsObject: fontName])
-    return;
-
-  fi = [[FTFaceInfo alloc] init];
-  fi->familyName = [family copy];
-
-  if ([d objectForKey: @"LocalizedNames"])
-    {
-      NSDictionary *l;
-      NSArray *lang;
-      int i;
-
-      l = [d objectForKey: @"LocalizedNames"];
-      lang = [NSUserDefaults userLanguages];
-      faceName = nil;
-      rawFaceName = [l objectForKey: @"English"];
-      for (i = 0; i < [lang count] && !faceName; i++)
-	{
-	  faceName = [l objectForKey: [lang objectAtIndex: i]];
-	}
-      if (!faceName)
-	faceName = rawFaceName;
-      if (!faceName)
-	{
-	  faceName = @"<unknown face>";
-	  NSLog(@"Warning: couldn't find localized face name or fallback for %@",
-	    fontName);
-	}
-    }
-  else if ((faceName = [d objectForKey: @"Name"]))
-    {
-      rawFaceName = faceName;
-      /* TODO: Smarter localization? Parse space separated parts and
-      translate individually? */
-      /* TODO: Need to define the strings somewhere, and make sure the
-      strings files get created.  */
-      faceName = [NSLocalizedStringFromTableInBundle(faceName,@"nfontFaceNames",
-			[NSBundle bundleForClass: [fi class]],nil) copy];
-      fi->faceName = faceName;
-    }
-  else if (!from_nfont)
-    { /* try to guess something for .font packages */
-      unsigned int dummy;
-      int split = traits_from_string(family,&dummy,&dummy);
-      rawFaceName = faceName = [family substringFromIndex: split];
-      family = [family substringToIndex: split];
-      faceName = [NSLocalizedStringFromTableInBundle(faceName,@"nfontFaceNames",
-			[NSBundle bundleForClass: [fi class]],nil) copy];
-      fi->faceName = faceName;
-    }
-  else
-    {
-      NSLog(@"Warning: Can't find name for face %@ in %@!",fontName,path);
-      return;
-    }
-
-  fi->displayName = [[family stringByAppendingString: @" "]
-			     stringByAppendingString: faceName];
-
-
-  weight = family_weight;
-  if (rawFaceName)
-    traits_from_string(rawFaceName, &traits, &weight);
-
-  {
-    NSDictionary *sizes;
-    NSEnumerator *e;
-    NSString *size;
-    int i;
-
-    sizes = [d objectForKey: @"ScreenFonts"];
-
-    fi->num_sizes = [sizes count];
-    if (fi->num_sizes)
-      {
-	fi->sizes = malloc(sizeof(fi->sizes[0])*[sizes count]);
-	e = [sizes keyEnumerator];
-	i = 0;
-	while ((size = [e nextObject]))
-	  {
-	    fi->sizes[i].pixel_size = [size intValue];
-	    fi->sizes[i].files = fix_path(path,[sizes objectForKey: size]);
-	    NSDebugLLog(@"ftfont",@"%@ size %i files |%@|",
-	      fontName,fi->sizes[i].pixel_size,fi->sizes[i].files);
-	    i++;
-          }
-      }
-  }
-
-  fi->files = fix_path(path,[d objectForKey: @"Files"]);
-
-  if ([d objectForKey: @"Weight"])
-    weight = [[d objectForKey: @"Weight"] intValue];
-  fi->weight = weight;
-
-  if ([d objectForKey: @"Traits"])
-    traits = [[d objectForKey: @"Traits"] intValue];
-  traits |= family_traits;
-  fi->traits = traits;
-
-  if ([d objectForKey: @"RenderHints_hack"])
-    fi->render_hints_hack
-      = strtol([[d objectForKey: @"RenderHints_hack"] cString], NULL, 0);
-  else
-    {
-      if (anti_alias_by_default)
-	fi->render_hints_hack = 0x10202;
-      else
-	fi->render_hints_hack = 0x00202;
-    }
-
-  NSDebugLLog(@"ftfont", @"adding '%@' '%@'", fontName, fi);
-
-  [fcfg_all_fonts setObject: fi forKey: fontName];
-  [fcfg_allFontNames addObject: fontName];
-
-    {
-      NSArray *a;
-      NSMutableArray *ma;
-      a = [NSArray arrayWithObjects:
-	fontName,
-	faceName,
-	[NSNumber numberWithInt: weight],
-	[NSNumber numberWithUnsignedInt: traits],
-	nil];
-      ma = [fcfg_allFontFamilies objectForKey: family];
-      if (!ma)
-	{
-	  ma = [[NSMutableArray alloc] init];
-	  [fcfg_allFontFamilies setObject: ma forKey: family];
-	  [ma release];
-	}
-      [ma addObject: a];
-    }
-
-  DESTROY(fi);
-}
-
-
-static void load_font_configuration(void)
-{
-  int i, j, k, c;
-  NSArray *paths;
-  NSString *path, *font_path;
-  NSFileManager *fm = [NSFileManager defaultManager];
-  NSArray *files;
-  NSDictionary *d;
-  NSArray *faces;
-
-  fcfg_all_fonts = [[NSMutableDictionary alloc] init];
-  fcfg_allFontFamilies = [[NSMutableDictionary alloc] init];
-  fcfg_allFontNames = [[NSMutableArray alloc] init];
-
-  families_seen = [[NSMutableSet alloc] init];
-  families_pending = [[NSMutableSet alloc] init];
-
-  paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSAllDomainsMask, YES);
-  for (i = 0; i < [paths count]; i++)
-    {
-      path = [paths objectAtIndex: i];
-      path = [path stringByAppendingPathComponent: @"Fonts"];
-      files = [fm directoryContentsAtPath: path];
-      c = [files count];
-
-      for (j = 0; j < c; j++)
-	{
-	  NSString *family;
-	  NSDictionary *face_info;
-	  NSString *font_info_path;
-
-	  int weight;
-	  unsigned int traits;
-
-	  font_path = [files objectAtIndex: j];
-	  if (![[font_path pathExtension] isEqual: @"nfont"])
-	    continue;
-
-	  family = [font_path stringByDeletingPathExtension];
-
-	  if ([families_seen member: family])
-	    {
-	      NSDebugLLog(@"ftfont", @"'%@' already seen, skipping", family);
-	      continue;
-	    }
-	  [families_seen addObject: family];
-
-	  font_path = [path stringByAppendingPathComponent: font_path];
-
-	  NSDebugLLog(@"ftfont",@"loading %@",font_path);
-
-	  font_info_path = [font_path stringByAppendingPathComponent: @"FontInfo.plist"];
-	  if (![fm fileExistsAtPath: font_info_path])
-	    continue;
-	  d = [NSDictionary dictionaryWithContentsOfFile: font_info_path];
-	  if (!d)
-	    continue;
-
-	  if ([d objectForKey: @"Family"])
-	    family = [d objectForKey: @"Family"];
-
-	  if ([d objectForKey: @"Weight"])
-	    weight = [[d objectForKey: @"Weight"] intValue];
-	  else
-	    weight = 5;
-
-	  if ([d objectForKey: @"Traits"])
-	    traits = [[d objectForKey: @"Traits"] intValue];
-	  else
-	    traits = 0;
-
-	  faces = [d objectForKey: @"Faces"];
-	  if (![faces isKindOfClass: [NSArray class]])
-	    {
-	      NSLog(@"Warning: %@ isn't a valid .nfont package, ignoring.",
- 	        font_path);
-	      if ([faces isKindOfClass: [NSDictionary class]])
-	        NSLog(@"(it looks like an old-style .nfont package)");
-	      continue;
-	    }
-
-	  for (k = 0; k < [faces count]; k++)
-	    {
-	      face_info = [faces objectAtIndex: k];
-	      add_face(family, weight, traits, face_info, font_path, YES);
-	    }
-	}
-
-      for (j = 0; j < c; j++)
-	{
-	  NSString *family;
-
-	  font_path = [files objectAtIndex: j];
-	  if (![[font_path pathExtension] isEqual: @"font"])
-	    continue;
-
-	  family = [font_path stringByDeletingPathExtension];
-	  font_path = [path stringByAppendingPathComponent: font_path];
-	  d = [NSDictionary dictionaryWithObjectsAndKeys:
-	    [NSArray arrayWithObjects:
-	      family,
-	      [family stringByAppendingPathExtension: @"afm"],
-	      nil],
-	    @"Files",
-	    family,@"PostScriptName",
-	    nil];
-	  add_face(family, 5, 0, d, font_path, NO);
-	}
-      [families_seen unionSet: families_pending];
-      [families_pending removeAllObjects];
-    }
-
-  NSDebugLLog(@"ftfont", @"got %i fonts in %i families",
-    [fcfg_allFontNames count], [fcfg_allFontFamilies count]);
-
-  if (![fcfg_allFontNames count])
-    {
-      NSLog(@"No fonts found!");
-      exit(1);
-    }
-
-  DESTROY(families_seen);
-  DESTROY(families_pending);
-}
-
-
-@interface FTFontEnumerator : GSFontEnumerator
-@end
-
-@implementation FTFontEnumerator
-- (void) enumerateFontsAndFamilies
-{
-  ASSIGN(allFontNames, fcfg_allFontNames);
-  ASSIGN(allFontFamilies, fcfg_allFontFamilies);
-}
-
-- (NSString *) defaultSystemFontName
-{
-  if ([fcfg_allFontNames containsObject: @"BitstreamVeraSans-Roman"])
-    return @"BitstreamVeraSans-Roman";
-  if ([fcfg_allFontNames containsObject: @"FreeSans"])
-    return @"FreeSans";
-  return @"Helvetica";
-}
-
-- (NSString *) defaultBoldSystemFontName
-{
-  if ([fcfg_allFontNames containsObject: @"BitstreamVeraSans-Bold"])
-    return @"BitstreamVeraSans-Bold";
-  if ([fcfg_allFontNames containsObject: @"FreeSansBold"])
-    return @"FreeSansBold";
-  return @"Helvetica-Bold";
-}
-
-- (NSString *) defaultFixedPitchFontName
-{
-  if ([fcfg_allFontNames containsObject: @"BitstreamVeraSansMono-Roman"])
-    return @"BitstreamVeraSansMono-Roman";
-  if ([fcfg_allFontNames containsObject: @"FreeMono"])
-    return @"FreeMono";
-  return @"Courier";
-}
-
 @end
 
 
@@ -671,9 +159,10 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
 
 @implementation FTFontInfo
+
 - (id) initWithFontName: (NSString *)name
-		 matrix: (const float *)fmatrix
-	     screenFont: (BOOL)p_screenFont
+                 matrix: (const float *)fmatrix
+             screenFont: (BOOL)p_screenFont
 {
   NSArray	*rfi;
   FTFaceInfo	*font_entry;
@@ -696,7 +185,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
     fmatrix[3], fmatrix[4], fmatrix[5],
     p_screenFont);
 
-  font_entry = [fcfg_all_fonts objectForKey: name];
+  font_entry = [FTFontEnumerator fontWithName: name];
   if (!font_entry)
     {
       [self release];
@@ -760,7 +249,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   if ((error = FTC_Manager_LookupSize(ftc_manager, &scaler, &ft_size)))
     {
       NSLog(@"FTC_Manager_LookupSize() failed for '%@', error %08x!",
-	name, error);
+            name, error);
       return self;
     }
 
@@ -799,24 +288,6 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	    break;
 	  }
       }
-  }
-  {
-    ligature_ff
-      = FTC_CMapCache_Lookup(ftc_cmapcache, faceId, unicodeCmap, 0xfb00);
-    ligature_fi
-      = FTC_CMapCache_Lookup(ftc_cmapcache, faceId, unicodeCmap,  0xfb01);
-    ligature_fl
-      = FTC_CMapCache_Lookup(ftc_cmapcache, faceId, unicodeCmap, 0xfb02);
-    ligature_ffi
-      = FTC_CMapCache_Lookup(ftc_cmapcache, faceId, unicodeCmap, 0xfb03);
-    ligature_ffl
-      = FTC_CMapCache_Lookup(ftc_cmapcache, faceId, unicodeCmap, 0xfb04);
-/*    printf("ligatures %04x %04x %04x %04x %04x | %02x %02x %02x for |%@|\n",
-      ligature_ff,ligature_fi,ligature_fl,ligature_ffi,ligature_ffl,
-      FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, 'f'),
-      FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, 'l'),
-      FTC_CMapCache_Lookup(ftc_cmapcache, &cmap, 'i'),
-      fontName);*/
   }
 
   if (screenFont)
@@ -876,38 +347,47 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
     {
       NSMutableCharacterSet	*m = [NSMutableCharacterSet new];
       unsigned			count = 0;
-      FT_Face			face = ft_size->face;
+      FT_Face			face;
       FT_ULong			charcode;
       FT_UInt			glyphindex;
+      FT_Size size;
 
-      charcode = FT_Get_First_Char(face, &glyphindex);
+      if (FTC_Manager_LookupSize(ftc_manager, &scaler, &size))
+          return nil;
+      face = size->face;
+
+     charcode = FT_Get_First_Char(face, &glyphindex);
       if (glyphindex != 0)
         {
           NSRange	range;
 	  
-	  range.location = charcode;
-	  range.length = 0;
-
-	  while (glyphindex != 0)
-	    {
-	      count++;
-	      if (charcode == NSMaxRange(range))
-	        {
-		  range.length++;
-		}
-	      else
-	        {
-	          [m addCharactersInRange: range];
-		  range.location = charcode;
-		  range.length = 0;
-		}
-	      charcode = FT_Get_Next_Char(face, charcode, &glyphindex);
-	    }
-	  if (range.length > 0)
-	    {
-	      [m addCharactersInRange: range];
-	    }
-	}
+          range.location = charcode;
+          range.length = 1;
+          
+          while (glyphindex != 0)
+            {
+              count++;
+              if (charcode >= 1114112)
+                {
+                  break;
+                }
+              if (charcode == NSMaxRange(range))
+                {
+                  range.length++;
+                }
+              else
+                {
+                  [m addCharactersInRange: range];
+                  range.location = charcode;
+                  range.length = 1;
+                }
+              charcode = FT_Get_Next_Char(face, charcode, &glyphindex);
+            }
+          if (range.length > 0)
+          {
+              [m addCharactersInRange: range];
+          }
+        }
       coveredCharacterSet = [m copy];
       numberOfGlyphs = count;
       RELEASE(m);
@@ -928,8 +408,6 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
     }
   return numberOfGlyphs;
 }
-
-#include <GNUstepBase/Unicode.h>
 
 /* TODO: the current point probably needs updating after drawing is done */
 
@@ -2409,7 +1887,7 @@ p(t)=q(t)
 
 /* TODO: try to combine charpath and NSBezierPath handling? */
 
-static int charpath_move_to(FT_Vector *to, void *user)
+static int charpath_move_to(const FT_Vector *to, void *user)
 {
   GSGState *self = (GSGState *)user;
   NSPoint d;
@@ -2420,7 +1898,7 @@ static int charpath_move_to(FT_Vector *to, void *user)
   return 0;
 }
 
-static int charpath_line_to(FT_Vector *to, void *user)
+static int charpath_line_to(const FT_Vector *to, void *user)
 {
   GSGState *self = (GSGState *)user;
   NSPoint d;
@@ -2430,7 +1908,7 @@ static int charpath_line_to(FT_Vector *to, void *user)
   return 0;
 }
 
-static int charpath_conic_to(FT_Vector *c1, FT_Vector *to, void *user)
+static int charpath_conic_to(const FT_Vector *c1, const FT_Vector *to, void *user)
 {
   GSGState *self = (GSGState *)user;
   NSPoint a, b, c, d;
@@ -2447,7 +1925,8 @@ static int charpath_conic_to(FT_Vector *c1, FT_Vector *to, void *user)
   return 0;
 }
 
-static int charpath_cubic_to(FT_Vector *c1, FT_Vector *c2, FT_Vector *to, void *user)
+static int charpath_cubic_to(const FT_Vector *c1, const FT_Vector *c2, 
+                             const FT_Vector *to, void *user)
 {
   GSGState *self = (GSGState *)user;
   NSPoint b, c, d;
@@ -2471,7 +1950,7 @@ static FT_Outline_Funcs charpath_funcs = {
 };
 
 
-static int bezierpath_move_to(FT_Vector *to, void *user)
+static int bezierpath_move_to(const FT_Vector *to, void *user)
 {
   NSBezierPath *path = (NSBezierPath *)user;
   NSPoint d;
@@ -2482,7 +1961,7 @@ static int bezierpath_move_to(FT_Vector *to, void *user)
   return 0;
 }
 
-static int bezierpath_line_to(FT_Vector *to, void *user)
+static int bezierpath_line_to(const FT_Vector *to, void *user)
 {
   NSBezierPath *path = (NSBezierPath *)user;
   NSPoint d;
@@ -2492,7 +1971,7 @@ static int bezierpath_line_to(FT_Vector *to, void *user)
   return 0;
 }
 
-static int bezierpath_conic_to(FT_Vector *c1, FT_Vector *to, void *user)
+static int bezierpath_conic_to(const FT_Vector *c1, const FT_Vector *to, void *user)
 {
   NSBezierPath *path = (NSBezierPath *)user;
   NSPoint a, b, c, d;
@@ -2509,7 +1988,8 @@ static int bezierpath_conic_to(FT_Vector *c1, FT_Vector *to, void *user)
   return 0;
 }
 
-static int bezierpath_cubic_to(FT_Vector *c1, FT_Vector *c2, FT_Vector *to, void *user)
+static int bezierpath_cubic_to(const FT_Vector *c1, const FT_Vector *c2, 
+                               const FT_Vector *to, void *user)
 {
   NSBezierPath *path = (NSBezierPath *)user;
   NSPoint b, c, d;
@@ -2615,10 +2095,9 @@ add code to avoid loading bitmaps for glyphs */
 #endif
 }
 
-
 - (void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs
-			     count: (int)count
-		      toBezierPath: (NSBezierPath *)path
+                              count: (int)count
+                       toBezierPath: (NSBezierPath *)path
 {
   int i;
   NSGlyph glyph;
@@ -2709,11 +2188,6 @@ static int filters[3][7]=
 
     subpixel_text = [ud integerForKey: @"back-art-subpixel-text"];
 
-    if ([ud objectForKey: @"GSFontAntiAlias"])
-      anti_alias_by_default = [ud boolForKey: @"GSFontAntiAlias"];
-    else
-      anti_alias_by_default = YES;
-
     /* To make it easier to find an optimal (or at least good) filter,
     the filters are configurable (for now). */
     for (i = 0; i < 3; i++)
@@ -2754,10 +2228,23 @@ static int filters[3][7]=
 	  }
       }
   }
-
-  load_font_configuration();
 }
 
+- (NSGlyph) glyphForCharacter: (unichar)ch
+{
+  NSGlyph g;
+
+  g = FTC_CMapCache_Lookup(ftc_cmapcache, faceId, unicodeCmap, ch);
+  if (g)
+    return g + 1;
+  else
+    return NSNullGlyph;
+}
+
+- (NSMultibyteGlyphPacking) glyphPacking
+{
+  return NSFourByteGlyphPacking;
+}
 
 @end
 
@@ -3127,233 +2614,6 @@ static int filters[3][7]=
 #endif
 
 @end
-
-
-@interface NSFont (backend)
-- (NSGlyph) glyphForCharacter: (unichar)ch;
-- (NSString *) nameOfGlyph: (NSGlyph)glyph;
-@end
-
-@implementation NSFont (backend)
-- (NSGlyph) glyphForCharacter: (unichar)ch
-{
-  FTFontInfo *fi=fontInfo;
-  NSGlyph g;
-
-  g = FTC_CMapCache_Lookup(ftc_cmapcache, fi->faceId, fi->unicodeCmap, ch);
-  if (g)
-    return g + 1;
-  else
-    return NSNullGlyph;
-}
-
-- (NSString *) nameOfGlyph: (NSGlyph)glyph
-{
-  FTFontInfo *fi=fontInfo;
-  FT_Face face;
-  FT_Size size;
-
-  char buf[256];
-
-  glyph--;
-
-  if (FTC_Manager_LookupSize(ftc_manager, &fi->scaler, &size))
-    return nil;
-  face = size->face;
-
-  if (FT_Get_Glyph_Name(face,glyph,buf,sizeof(buf)))
-    return nil;
-
-  return [NSString stringWithCString: buf]; /* TODO: really cstring? */
-}
-@end
-
-
-/*
-GSLayoutManager glyph generation code.
-
-TODO: clean this up
-*/
-#include <Foundation/NSCharacterSet.h>
-#include <GNUstepGUI/GSLayoutManager_internal.h>
-#include <AppKit/NSTextStorage.h>
-#include <AppKit/NSTextAttachment.h>
-
-@implementation GSLayoutManager (backend)
-
-/*
-This is a fairly simple implementation. It will use "ff", "fl", "fi",
-"ffl", and "ffi" ligatures if available. If a glyph for a character isn't
-available, it will try to decompose it before giving up.
-
-TODO: how should words like "pfffffffffff" be handled?
-
-0066 'f'
-0069 'i'
-006c 'l'
-fb00 'ff'
-fb01 'fi'
-fb02 'fl'
-fb03 'ffi'
-fb04 'ffl'
-*/
-
-- (unsigned int) _findSafeBreakMovingBackwardFrom: (unsigned int)ch
-{
-	NSString *str=[_textStorage string];
-	while (ch>0 && [str characterAtIndex: ch-1]=='f')
-		ch--;
-	return ch;
-}
-
-- (unsigned int) _findSafeBreakMovingForwardFrom: (unsigned int)ch
-{
-	unsigned int l=[_textStorage length];
-	NSString *str=[_textStorage string];
-	while (ch<l && [str characterAtIndex: ch]=='f')
-		ch++;
-	if (ch<l && ch>0 && [str characterAtIndex: ch-1]=='f')
-		ch++;
-	return ch;
-}
-
-- (void) _generateGlyphsForRun: (glyph_run_t *)run  at: (unsigned int)pos
-{
-  glyph_t *g;
-  unsigned int glyph_size;
-  unsigned int i,j;
-  unsigned int ch,ch2,ch3;
-
-  FTFontInfo *fi = [run->font fontInfo];
-
-  NSCharacterSet *cs = [NSCharacterSet controlCharacterSet];
-  IMP characterIsMember = [cs methodForSelector: @selector(characterIsMember:)];
-
-  unsigned int c=run->head.char_length;
-  unichar buf[c];
-
-
-  [[_textStorage string] getCharacters: buf
-				 range: NSMakeRange(pos,c)];
-
-  /* first guess */
-  glyph_size=c;
-  g=run->glyphs=malloc(sizeof(glyph_t)*glyph_size);
-  memset(g,0,sizeof(glyph_t)*glyph_size);
-
-  for (i=j=0;i<c;i++,g++,j++)
-    {
-      ch=buf[i];
-      ch2=ch3=0;
-      if (i+1<c)
-      {
-	      ch2=buf[i+1];
-	      if (i+2<c)
-		      ch3=buf[i+2];
-      }
-
-      g->char_offset=i;
-      if (characterIsMember(cs,@selector(characterIsMember:),ch))
-      {
-	      g->g=NSControlGlyph;
-	      continue;
-      }
-
-      if (ch == NSAttachmentCharacter)
-      {
-	      g->g=GSAttachmentGlyph;
-	      continue;
-      }
-
-      if (run->ligature>=1)
-      {
-	      if (ch=='f' && ch2=='f' && ch3=='l' && fi->ligature_ffl)
-	      {
-		      g->g=fi->ligature_ffl + 1;
-		      i+=2;
-		      continue;
-	      }
-	      if (ch=='f' && ch2=='f' && ch3=='i' && fi->ligature_ffi)
-	      {
-		      g->g=fi->ligature_ffi + 1;
-		      i+=2;
-		      continue;
-	      }
-	      if (ch=='f' && ch2=='f' && fi->ligature_ff)
-	      {
-		      g->g=fi->ligature_ff + 1;
-		      i++;
-		      continue;
-	      }
-	      if (ch=='f' && ch2=='i' && fi->ligature_fi)
-	      {
-		      g->g=fi->ligature_fi + 1;
-		      i++;
-		      continue;
-	      }
-	      if (ch=='f' && ch2=='l' && fi->ligature_fl)
-	      {
-		      g->g=fi->ligature_fl + 1;
-		      i++;
-		      continue;
-	      }
-      }
-
-      if (ch>=0xd800 && ch<=0xdfff)
-	{
-	  if (ch >= 0xd800 && ch < 0xdc00 && ch2 >= 0xdc00 && ch2 <= 0xdfff)
-	    {
-	      ch = ((ch & 0x3ff) << 10) + (ch2 & 0x3ff) + 0x10000;
-	      i++;
-	    }
-	  else
-	    ch = 0xfffd;
-      }
-
-      g->g=FTC_CMapCache_Lookup(ftc_cmapcache, fi->faceId, fi->unicodeCmap, ch) + 1;
-
-      if (g->g == 1 && ch<0x10000)
-	{
-	  unichar *decomp;
-	  decomp = uni_is_decomp(ch);
-	  if (decomp)
-	    {
-	      int c=0;
-	      for (;*decomp;decomp++)
-		{
-		  glyph_size++;
-		  run->glyphs=realloc(run->glyphs,sizeof(glyph_t)*glyph_size);
-		  g=run->glyphs+j;
-		  memset(&run->glyphs[glyph_size-1],0,sizeof(glyph_t));
-
-		  g->g = FTC_CMapCache_Lookup(ftc_cmapcache, fi->faceId, fi->unicodeCmap, *decomp) + 1;
-		  if (g->g == 1)
-		    break;
-		  c++;
-		  g++;
-		  j++;
-		  g->char_offset=i;
-		}
-	      if (*decomp)
-		{
-		  g-=c;
-		  j-=c;
-		  g->g=0;
-		}
-	      else
-		{
-		  g--;
-		  j--;
-		}
-	    }
-	}
-    }
-
-  /* TODO: shrink allocated array if possible */
-  run->head.glyph_length=j;
-}
-@end
-
 
 @interface FTFontInfo (experimental_glyph_printing_extension)
 - (const char *) nameOfGlyph: (NSGlyph)g;

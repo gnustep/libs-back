@@ -11,19 +11,20 @@
    This file is part of the GNUstep GUI X/GPS Backend.
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
 
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Library General Public
+   You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
-   If not, write to the Free Software Foundation,
-   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
 */
 
 #include "config.h"
@@ -31,18 +32,27 @@
 #include "xlib/XGPrivate.h"
 #include "xlib/XGGState.h"
 #include "x11/XGServer.h"
+#include <Foundation/NSByteOrder.h>
+#include <Foundation/NSCharacterSet.h>
 #include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>
+#include <Foundation/NSDictionary.h>
 #include <Foundation/NSValue.h>
 // For the encoding functions
 #include <GNUstepBase/Unicode.h>
 
+#include <AppKit/NSBezierPath.h>
 #include "xlib/GSXftFontInfo.h"
 
 #ifdef HAVE_FC
 #define id _gs_avoid_id_collision
 #include <fontconfig/fontconfig.h>
 #undef id
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_GLYPH_H
+#include FT_OUTLINE_H
 
 /*
  * class global dictionary of existing fonts
@@ -282,6 +292,82 @@ static NSArray *faFromFc(FcPattern *pat)
   [super dealloc];
 }
 
+#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
+#if __INT_MIN__ == 0x7fffffff
+#define Ones(mask) __builtin_popcount(mask)
+#else
+#define Ones(mask) __builtin_popcountl((mask) & 0xffffffff)
+#endif
+#else
+/* Otherwise fall back on HACKMEM 169.  */
+static int
+Ones(unsigned int n)
+{
+  register unsigned int tmp;
+    
+  tmp = n - ((n >> 1) & 033333333333)
+      - ((n >> 2) & 011111111111);
+  return ((tmp + (tmp >> 3)) & 030707070707) % 63;
+}
+#endif
+
+- (NSCharacterSet*) coveredCharacterSet
+{
+  if (coveredCharacterSet == nil)
+    {
+      if (!((XftFont *)font_info)->charset)
+        return nil;
+      else
+        {
+          NSMutableData	*d = [NSMutableData new];
+          unsigned count = 0;
+          FcCharSet *charset = ((XftFont *)font_info)->charset;
+          FcChar32 ucs4;
+          FcChar32 map[FC_CHARSET_MAP_SIZE];
+          FcChar32 next;
+          BOOL swap = NSHostByteOrder() == NS_BigEndian;
+
+          if (!d)
+            return nil;
+
+          for (ucs4 = FcCharSetFirstPage(charset, map, &next);
+               ucs4 != FC_CHARSET_DONE;
+               ucs4 = FcCharSetNextPage(charset, map, &next))
+            {
+              unsigned int i;
+              NSRange aRange;
+              unsigned int max;
+
+              aRange = NSMakeRange(ucs4, FC_CHARSET_MAP_SIZE * sizeof(FcChar32));
+              max = NSMaxRange(aRange);
+              // Round up to a suitable plane size
+              max = ((max + 8191) >> 13) << 13;
+              [d setLength: max];
+
+              for (i = 0; i < FC_CHARSET_MAP_SIZE; i++)
+                if (map[i])
+                  {
+                    // Do some byte swapping, if needed.
+                    if (swap)
+                      {
+                        map[i] = NSSwapInt(map[i]);
+                      }
+                    count += Ones(map[i]);
+                  }
+            
+              [d replaceBytesInRange: aRange withBytes: map];
+            }
+
+          ASSIGN(coveredCharacterSet, 
+                 [NSCharacterSet characterSetWithBitmapRepresentation: d]);
+          numberOfGlyphs = count;
+          RELEASE(d);
+        }
+    }
+
+  return coveredCharacterSet;
+}
+
 - (float) widthOfString: (NSString*)string
 {
   XGlyphInfo extents;
@@ -481,6 +567,154 @@ static NSArray *faFromFc(FcPattern *pat)
 {
 }
 
+static int bezierpath_move_to(const FT_Vector *to, void *user)
+{
+  NSBezierPath *path = (NSBezierPath *)user;
+  NSPoint d;
+
+  d.x = to->x / 65536.0;
+  d.y = to->y / 65536.0;
+/*
+  d.x = to->x;
+  d.y = to->y;
+*/
+  [path closePath];
+  [path moveToPoint: d];
+  return 0;
+}
+
+static int bezierpath_line_to(const FT_Vector *to, void *user)
+{
+  NSBezierPath *path = (NSBezierPath *)user;
+  NSPoint d;
+
+  d.x = to->x / 65536.0;
+  d.y = to->y / 65536.0;
+/*
+  d.x = to->x;
+  d.y = to->y;
+*/
+  [path lineToPoint: d];
+  return 0;
+}
+
+static int bezierpath_conic_to(const FT_Vector *c1, const FT_Vector *to, void *user)
+{
+  NSBezierPath *path = (NSBezierPath *)user;
+  NSPoint a, b, c, d;
+
+  a = [path currentPoint];
+  d.x = to->x / 65536.0;
+  d.y = to->y / 65536.0;
+  b.x = c1->x / 65536.0;
+  b.y = c1->y / 65536.0;
+/*
+  d.x = to->x;
+  d.y = to->y;
+  b.x = c1->x;
+  b.y = c1->y;
+*/
+  c.x = (b.x * 2 + d.x) / 3.0;
+  c.y = (b.y * 2 + d.y) / 3.0;
+  b.x = (b.x * 2 + a.x) / 3.0;
+  b.y = (b.y * 2 + a.y) / 3.0;
+  [path curveToPoint: d controlPoint1: b controlPoint2: c];
+  return 0;
+}
+
+static int bezierpath_cubic_to(const FT_Vector *c1, const FT_Vector *c2, 
+                               const FT_Vector *to, void *user)
+{
+  NSBezierPath *path = (NSBezierPath *)user;
+  NSPoint b, c, d;
+
+  b.x = c1->x / 65536.0;
+  b.y = c1->y / 65536.0;
+  c.x = c2->x / 65536.0;
+  c.y = c2->y / 65536.0;
+  d.x = to->x / 65536.0;
+  d.y = to->y / 65536.0;
+/*
+  b.x = c1->x;
+  b.y = c1->y;
+  c.x = c2->x;
+  c.y = c2->y;
+  d.x = to->x;
+  d.y = to->y;
+*/
+  [path curveToPoint: d controlPoint1: b controlPoint2: c];
+  return 0;
+}
+
+static FT_Outline_Funcs bezierpath_funcs = {
+  move_to: bezierpath_move_to,
+  line_to: bezierpath_line_to,
+  conic_to: bezierpath_conic_to,
+  cubic_to: bezierpath_cubic_to,
+  shift: 10,
+//  delta: 0,
+};
+
+- (void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs
+                              count: (int)count
+                       toBezierPath: (NSBezierPath *)path
+{
+  int i;
+  FT_Matrix ftmatrix;
+  FT_Vector ftdelta;
+  FT_Face face;
+  FT_Int load_flags = FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP;
+  NSPoint p = [path currentPoint];
+
+  ftmatrix.xx = 65536;
+  ftmatrix.xy = 0;
+  ftmatrix.yx = 0;
+  ftmatrix.yy = 65536;
+  ftdelta.x = p.x * 64.0;
+  ftdelta.y = p.y * 64.0;
+
+  face = XftLockFace((XftFont *)font_info);
+  for (i = 0; i < count; i++)
+    {
+      NSGlyph glyph;
+      FT_Glyph gl;
+      FT_OutlineGlyph og;
+
+      glyph = glyphs[i];
+      // FIXME: Should do this conversion in the glyph creation!
+      glyph = XftCharIndex([XGServer currentXDisplay], 
+                           (XftFont *)font_info, glyph);
+     
+      if (FT_Load_Glyph(face, glyph, load_flags))
+        continue;
+
+      if (FT_Get_Glyph(face->glyph, &gl))
+        continue;
+
+      if (FT_Glyph_Transform(gl, &ftmatrix, &ftdelta))
+        {
+          NSLog(@"glyph transformation failed!");
+          continue;
+        }
+
+      og = (FT_OutlineGlyph)gl;
+
+      ftdelta.x += gl->advance.x >> 10;
+      ftdelta.y += gl->advance.y >> 10;
+
+      FT_Outline_Decompose(&og->outline, &bezierpath_funcs, path);
+
+      FT_Done_Glyph(gl);
+    }
+
+  XftUnlockFace((XftFont *)font_info);
+
+  if (count)
+    {
+      [path moveToPoint: NSMakePoint(ftdelta.x / 64.0, ftdelta.y / 64.0)];
+    }
+}
+
 @end
 
 @implementation GSXftFontInfo (Private)
@@ -510,7 +744,10 @@ static NSArray *faFromFc(FcPattern *pat)
   fontPattern = FcPatternDuplicate([realFont font]);
 
   // the only thing needs customization here is the size
-  FcPatternAddDouble(fontPattern, FC_SIZE, (double)(matrix[0]));
+  // FIXME: It would be correcter to use FC_SIZE as GNUstep should be
+  // using point measurements, but as the rest of the library uses pixel,
+  // we need to stick with that here.
+  FcPatternAddDouble(fontPattern, FC_PIXEL_SIZE, (double)(matrix[0]));
   // Should do this only when size > 8
   FcPatternAddBool(fontPattern, FC_AUTOHINT, FcTrue);
   pattern = XftFontMatch(xdpy, defaultScreen, fontPattern, &fc_result);

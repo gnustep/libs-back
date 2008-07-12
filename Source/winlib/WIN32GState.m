@@ -10,20 +10,21 @@
    This file is part of the GNU Objective C User Interface Library.
 
    This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
+   modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-   
-   You should have received a copy of the GNU Library General Public
-   License along with this library; if not, write to the Free
-   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-   Boston, MA 02111 USA.
-   */
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; see the file COPYING.LIB.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
+*/
 
 // Currently the use of alpha blending is switched off by default.
 #define USE_ALPHABLEND
@@ -45,6 +46,7 @@
 #include "win32/WIN32Server.h"
 
 #include <math.h>
+#include <limits.h>
 
 #ifndef AC_SRC_ALPHA
 // Missing definitions from wingdi.h
@@ -395,6 +397,8 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
   if (isPlanar
     || !([colorSpaceName isEqualToString: NSDeviceRGBColorSpace]
+    || ![colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace]
+    || ![colorSpaceName isEqualToString: NSCalibratedBlackColorSpace]
     || [colorSpaceName isEqualToString: NSCalibratedRGBColorSpace]))
     {
       NSLog(@"Bitmap type currently not supported %d %@",
@@ -455,12 +459,58 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   bmih->biClrImportant = 0;
   fuColorUse = 0;
 
-  if (bitsPerPixel <= 8)
+  if (bitsPerPixel <= 8 && samplesPerPixel > 1)
     {
       // FIXME How to get a colour palette?
       NSLog(@"Need to define colour map for images with %d bits", bitsPerPixel);
       //bitmap->bmiColors;
       fuColorUse = DIB_RGB_COLORS;
+    }
+  else if (bitsPerPixel == 8)
+    {
+      unsigned char* tmp;
+      unsigned int pixels = pixelsHigh * pixelsWide;
+      unsigned int i = 0;
+      unsigned int j = 0;
+ 
+      bmih->biBitCount = 32;
+
+      NSDebugLLog(@"WIN32GState", @"8bit greyscale picture with pixelsWide:%d "
+	@"pixelsHigh:%d", pixelsWide, pixelsHigh);
+      
+      tmp = objc_malloc(pixels * 4);
+      
+      if ([colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace])
+        {
+          while (i < (pixels*4))
+            {
+	      unsigned char pix;
+	      pix = bits[j];
+              tmp[i+0] = pix;
+              tmp[i+1] = pix;
+              tmp[i+2] = pix;
+              tmp[i+3] = 0xFF;
+	      i+=4;
+              j++;
+            }
+	  }
+      else if ([colorSpaceName isEqualToString: NSCalibratedBlackColorSpace])
+        {
+          while (i < (pixels*4))
+            {
+	      unsigned char pix;
+	      pix = UCHAR_MAX - bits[j];
+              tmp[i+0] = pix;
+              tmp[i+1] = pix;
+              tmp[i+2] = pix;
+              tmp[i+3] = 0xFF;
+	      i+=4;
+              j++;
+            }
+	  }
+      else
+      	NSLog(@"Unexpected condition, greyscale which is neither whte nor black calibrated");
+      bits = tmp;
     }
   else if (bitsPerPixel == 32)
     {

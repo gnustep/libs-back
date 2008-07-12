@@ -32,6 +32,9 @@
 /* Define if you have the glx library */
 #undef HAVE_GLX
 
+/* Define if you have the glx library */
+#undef HAVE_WGL
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -122,6 +125,9 @@
 
 /* Define if you have X11 XShm extensions */
 #undef XSHM
+
+/* Define if you have X11 Xrender extensions */
+#undef XRENDER
 
 /* Define to 1 if the X Window System is missing or not being used. */
 #undef X_DISPLAY_MISSING
