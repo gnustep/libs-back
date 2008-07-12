@@ -1,8 +1,17 @@
 2008-07-12 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/GSXftFontInfo.m (-setupAttributes:),
-	* Source/xlib/XGFontSetFontInfo.m(-setupAttributes:),
-	* Source/xlib/XGFont.m(-setupAttributes:): Correct the setting of
+	* Source/xlib/XGFontSetFontInfo.m (-setupAttributes:),
+	* Source/xlib/XGFont.m (-setupAttributes:),
+	* Source/art/ftfont.m (-setupAttributes:),
+	* Source/art/ftfont-old.m (-setupAttributes): Correct the sign of
+	the descender in the bounding box.
+
+2008-07-12 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m (-setupAttributes:),
+	* Source/xlib/XGFontSetFontInfo.m (-setupAttributes:),
+	* Source/xlib/XGFont.m (-setupAttributes:): Correct the setting of
 	fontBBox, used for boundingRectForFont.
 
 2008-07-11 Fred Kiefer <FredKiefer@gmx.de>
