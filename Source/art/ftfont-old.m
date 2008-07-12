@@ -246,7 +246,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   xHeight = ascender * 0.5; /* TODO */
   maximumAdvancement = NSMakeSize((size->metrics.max_advance / 64.0), ascender + descender);
 
-  fontBBox = NSMakeRect(0, descender, maximumAdvancement.width, ascender + descender);
+  fontBBox = NSMakeRect(0, -descender, maximumAdvancement.width, ascender + descender);
   descender = -descender;
 
 /*	printf("(%@) h=%g  a=%g d=%g  max=(%g %g)  (%g %g)+(%g %g)\n",name,
