@@ -129,6 +129,8 @@ typedef struct _gswindow_device_t {
 
 /* This needs to go in GSDisplayServer */
 - (void) _DPSsetcursor: (Cursor)c : (BOOL)set;
+
+- (BOOL) _ewmh_isMinimized: (Window) win;
 @end
 
 extern Pixmap

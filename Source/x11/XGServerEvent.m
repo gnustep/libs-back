@@ -1298,12 +1298,37 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 	  break;
 	}
 
-	// a window property has changed or been deleted
+      // a window property has changed or been deleted
       case PropertyNotify:
-	NSDebugLLog(@"NSEvent", @"%d PropertyNotify - '%s'\n",
-		    xEvent.xproperty.window,
-		    XGetAtomName(dpy, xEvent.xproperty.atom));
-	break;
+        NSDebugLLog(@"NSEvent", @"%d PropertyNotify - '%s'\n",
+                    xEvent.xproperty.window,
+                    XGetAtomName(dpy, xEvent.xproperty.atom));
+        {
+          if (xEvent.xproperty.atom == generic.netstates.net_wm_state_atom &&
+              xEvent.xproperty.state == PropertyNewValue)
+            {
+              /*
+               * FIXME: we really should detect when the state changes from
+               * unminimized to minimized, or vice versa
+               */
+              if ([self _ewmh_isMinimized: xEvent.xproperty.window])
+                {
+                  // Same event as when we get ClientMessage with the atom
+                  // equal to generic.miniaturize_atom
+                  eventLocation = NSMakePoint(0,0);
+                  e = [NSEvent otherEventWithType: NSAppKitDefined
+                               location: eventLocation
+                               modifierFlags: 0
+                               timestamp: xEvent.xproperty.time / 1000
+                               windowNumber: cWin->number
+                               context: gcontext
+                               subtype: GSAppKitWindowMiniaturize
+                               data1: 0
+                               data2: 0];
+                }
+            }
+        }
+        break;
 
 	    // a client successfully reparents a window
       case ReparentNotify:

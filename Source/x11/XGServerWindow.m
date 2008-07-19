@@ -1235,6 +1235,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
               XInternAtom(dpy, "_NET_WM_STATE_SKIP_PAGER", False);
           generic.netstates.net_wm_state_sticky_atom = 
               XInternAtom(dpy, "_NET_WM_STATE_STICKY", False);
+          generic.netstates.net_wm_state_hidden_atom = 
+              XInternAtom(dpy, "_NET_WM_STATE_HIDDEN", False);
         }
       if (win1)
         {
@@ -1940,7 +1942,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     | EnterWindowMask
     | LeaveWindowMask
     | FocusChangeMask
-//    | PropertyChangeMask
+    // enable property notifications under ewmh to detect window minimizing
+    | (generic.wm & XGWM_EWMH ? PropertyChangeMask : 0)
 //    | ColormapChangeMask
     | KeymapStateMask
     | VisibilityChangeMask
@@ -4571,6 +4574,38 @@ _computeDepth(int class, int bpp)
       XFree(num);
     }
   return hasShadow;
+}
+
+/*
+ * Check whether the window is miniaturized according to the EWMH window state
+ * property.  We map the EWMH _NET_WM_STATE_HIDDEN state to GNUstep's
+ * miniaturized state.
+ */
+- (BOOL) _ewmh_isMinimized: (Window) win
+{
+  Atom *data;
+  int count;
+  int i;
+
+  data = (Atom *)PropGetCheckProperty(dpy, win, 
+                                      generic.netstates.net_wm_state_atom, 
+                                      XA_ATOM, 32, -1, &count);
+
+  if (!data)
+    // if we don't have any information, default to "No"
+    return NO;
+
+  for (i = 0; i < count; i++)
+  {
+    if (data[i] == generic.netstates.net_wm_state_hidden_atom)
+    {
+      XFree(data);
+      return YES;
+    }
+  }
+
+  XFree(data);
+  return NO;
 }
 
 @end
