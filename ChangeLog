@@ -1,3 +1,15 @@
+2008-07-19 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-window::::): For EWMH window
+	enable property change notifications.
+	* Source/x11/XGServerWindow.m (-_ewmh_isMinimized:): Check whether
+	the window is minimized.
+	* Headers/x11/XGServerWindow.h (-_ewmh_isMinimized:): Declare new
+	method. 
+	* Source/x11/XGServerEvent.m: Handle case when window gets minimized.
+	* Headers/x11/XGGeneric.h: Add atom for hidden state.
+	Patch by Hubert Chathi <hubert@uhoreg.ca>.
+
 2008-07-12 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/GSXftFontInfo.m (-setupAttributes:),
