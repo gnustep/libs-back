@@ -4581,7 +4581,7 @@ _computeDepth(int class, int bpp)
  * property.  We map the EWMH _NET_WM_STATE_HIDDEN state to GNUstep's
  * miniaturized state.
  */
-- (BOOL) _ewmh_isMinimized: (Window) win
+- (BOOL) _ewmh_isMinimized: (Window)win
 {
   Atom *data;
   int count;
@@ -4596,13 +4596,13 @@ _computeDepth(int class, int bpp)
     return NO;
 
   for (i = 0; i < count; i++)
-  {
-    if (data[i] == generic.netstates.net_wm_state_hidden_atom)
     {
-      XFree(data);
-      return YES;
+      if (data[i] == generic.netstates.net_wm_state_hidden_atom)
+        {
+          XFree(data);
+          return YES;
+        }
     }
-  }
 
   XFree(data);
   return NO;
