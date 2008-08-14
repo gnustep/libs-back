@@ -1307,24 +1307,32 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
           if (xEvent.xproperty.atom == generic.netstates.net_wm_state_atom &&
               xEvent.xproperty.state == PropertyNewValue)
             {
-              /*
-               * FIXME: we really should detect when the state changes from
-               * unminimized to minimized, or vice versa
-               */
-              if ([self _ewmh_isMinimized: xEvent.xproperty.window])
+              if (cWin == 0 || xEvent.xproperty.window != cWin->ident)
                 {
-                  // Same event as when we get ClientMessage with the atom
-                  // equal to generic.miniaturize_atom
-                  eventLocation = NSMakePoint(0,0);
-                  e = [NSEvent otherEventWithType: NSAppKitDefined
-                               location: eventLocation
-                               modifierFlags: 0
-                               timestamp: xEvent.xproperty.time / 1000
-                               windowNumber: cWin->number
-                               context: gcontext
-                               subtype: GSAppKitWindowMiniaturize
-                               data1: 0
-                               data2: 0];
+                  generic.cachedWindow
+                      = [XGServer _windowForXWindow: xEvent.xproperty.window];
+                }
+              if (cWin != 0)
+                {
+                  /*
+                   * FIXME: we really should detect when the state changes from
+                   * unminimized to minimized, or vice versa
+                   */
+                  if ([self _ewmh_isMinimized: xEvent.xproperty.window])
+                    {
+                      // Same event as when we get ClientMessage with the atom
+                      // equal to generic.miniaturize_atom
+                      eventLocation = NSMakePoint(0,0);
+                      e = [NSEvent otherEventWithType: NSAppKitDefined
+                                   location: eventLocation
+                                   modifierFlags: 0
+                                   timestamp: xEvent.xproperty.time / 1000
+                                   windowNumber: cWin->number
+                                   context: gcontext
+                                   subtype: GSAppKitWindowMiniaturize
+                                   data1: 0
+                                   data2: 0];
+                    }
                 }
             }
         }

@@ -1,3 +1,10 @@
+2008-08-14 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_ewmh_isMinimized:): Correct
+	indentation. 
+	* Source/x11/XGServerEvent.m (-receivedEvent:type:extra:forMode:):
+	For PropertyNotify cache the window first.
+
 2008-07-19 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-window::::): For EWMH window
