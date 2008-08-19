@@ -25,6 +25,7 @@
 
 #include <Foundation/NSDebug.h>
 #include <Foundation/NSDictionary.h>
+#include <Foundation/NSUserDefaults.h>
 
 #include "ARTGState.h"
 #include "blit.h"
@@ -35,12 +36,18 @@
 #endif
 
 // Could use NSSwapInt() instead
-static unsigned int flip_bytes(unsigned int i)
+static unsigned int flip_bytes32(unsigned int i)
 {
   return ((i >> 24) & 0xff)
-	|((i >>  8) & 0xff00)
-	|((i <<  8) & 0xff0000)
-	|((i << 24) & 0xff000000);
+      |((i >>  8) & 0xff00)
+      |((i <<  8) & 0xff0000)
+      |((i << 24) & 0xff000000);
+}
+
+static unsigned int flip_bytes16(unsigned int i)
+{
+  return ((i >> 8) & 0xff)
+      |((i <<  8) & 0xff00);
 }
 
 static int byte_order(void)
@@ -58,10 +65,16 @@ static int byte_order(void)
 
 + (void)initializeBackend
 {
+  float gamma;
+
   NSDebugLLog(@"back-art",@"Initializing libart/freetype backend");
 
   [NSGraphicsContext setDefaultContextClass: [ARTContext class]];
   [FTFontInfo initializeBackend];
+
+  gamma = [[NSUserDefaults standardUserDefaults]
+              floatForKey: @"back-art-text-gamma"];
+  artcontext_setup_gamma(gamma);
 }
 
 + (Class) GStateClass
@@ -126,9 +139,18 @@ static int byte_order(void)
       int them = ImageByteOrder(d); /* True iff the server is big-endian.  */
       if (us != them)
         {
-          visual->red_mask = flip_bytes(visual->red_mask);
-          visual->green_mask = flip_bytes(visual->green_mask);
-          visual->blue_mask = flip_bytes(visual->blue_mask);
+          if ((bpp == 32) || (bpp == 24))
+            {
+              visual->red_mask = flip_bytes32(visual->red_mask);
+              visual->green_mask = flip_bytes32(visual->green_mask);
+              visual->blue_mask = flip_bytes32(visual->blue_mask);
+            }
+          else if (bpp == 16)
+            {
+              visual->red_mask = flip_bytes16(visual->red_mask);
+              visual->green_mask = flip_bytes16(visual->green_mask);
+              visual->blue_mask = flip_bytes16(visual->blue_mask);
+            }
         }
     }
 
@@ -168,9 +190,18 @@ static int byte_order(void)
 @end
 
 @implementation ARTContext (ops)
+
 - (void) GSSetDevice: (void*)device : (int)x : (int)y
 {
-  [self setupDrawInfo];
+  // Currently all windows share the same drawing info.
+  // It is enough to initialize it once.
+  static BOOL serverInitialized = NO;
+
+  if (!serverInitialized)
+    {
+      [self setupDrawInfo];
+      serverInitialized = YES;
+    }
   [(ARTGState *)gstate GSSetDevice: device : x : y];
 }
 

@@ -1,3 +1,15 @@
+2008-08-19 Fred Kiefer <FredKiefer@gmx.de>
+
+        * Source/art/ARTContext.m (-GSSetDevice:::): Only call
+	setupDrawInfo once.
+        * Source/art/ARTContext.m (-setupDrawInfo): Try to handle
+	endianess differance better.
+        * Source/art/ARTContext.m (-initializeBackend): Call
+	artcontext_setup_gamma(). 
+	* Source/art/blit.h,
+	* Source/art/blit-main.m:  New function artcontext_setup_gamma()
+	split off from artcontext_setup_draw_info().
+	
 2008-08-14 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-_ewmh_isMinimized:): Correct
