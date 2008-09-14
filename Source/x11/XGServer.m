@@ -528,6 +528,112 @@ _parse_display_name(NSString *name, int *dn, int *sn)
  return [[self _screenContextForScreen: screen_number] drawMechanism];
 }
 
+// Could use NSSwapInt() instead
+static unsigned int flip_bytes32(unsigned int i)
+{
+  return ((i >> 24) & 0xff)
+      |((i >>  8) & 0xff00)
+      |((i <<  8) & 0xff0000)
+      |((i << 24) & 0xff000000);
+}
+
+static unsigned int flip_bytes16(unsigned int i)
+{
+  return ((i >> 8) & 0xff)
+      |((i <<  8) & 0xff00);
+}
+
+static int byte_order(void)
+{
+  union
+  {
+    unsigned int i;
+    char c;
+  } foo;
+  foo.i = 1;
+  return foo.c != 1;
+}
+
+/**
+ * Used by the art backend to determine the drawing mechanism.
+ */
+- (void) getForScreen: (int)screen_number pixelFormat: (int *)bpp_number 
+                masks: (int *)red_mask : (int *)green_mask : (int *)blue_mask
+{
+  Visual *visual;
+  XImage *i;
+  int bpp;
+#if 0
+  XVisualInfo template;
+  XVisualInfo *visualInfo;
+  int numMatches;
+  
+  /*
+    We need a visual that we can generate pixel values for by ourselves.
+    Thus, we try to find a DirectColor or TrueColor visual. If that fails,
+    we use the default visual and hope that it's usable.
+  */
+  template.class = DirectColor;
+  visualInfo = XGetVisualInfo(dpy, VisualClassMask, &template, &numMatches);
+  if (!visualInfo)
+    {
+      template.class = TrueColor;
+      visualInfo = XGetVisualInfo(dpy, VisualClassMask, &template, &numMatches);
+    }
+  if (visualInfo)
+    {
+      visual = visualInfo->visual;
+      bpp = visualInfo->depth;
+      XFree(visualInfo);
+    }
+  else
+    {
+      visual = DefaultVisual(dpy, DefaultScreen(dpy));
+      bpp = DefaultDepth(dpy, DefaultScreen(dpy));
+    }
+#else
+  RContext *context;
+
+  // Better to get the used visual from the context.
+  context = [self xrContextForScreen: screen_number];
+  visual = context->visual;
+  bpp = context->depth;
+#endif 
+
+  i = XCreateImage(dpy, visual, bpp, ZPixmap, 0, NULL, 8, 8, 8, 0);
+  bpp = i->bits_per_pixel;
+  XDestroyImage(i);
+
+  *red_mask = visual->red_mask;
+  *green_mask = visual->green_mask;
+  *blue_mask = visual->blue_mask;
+  *bpp_number = bpp;
+
+  /* If the server doesn't have the same endianness as we do, we need
+     to flip the masks around (well, at least sometimes; not sure
+     what'll really happen for 15/16bpp modes).  */
+    {
+      int us = byte_order(); /* True iff we're big-endian.  */
+      int them = ImageByteOrder(dpy); /* True iff the server is big-endian.  */
+
+      if (us != them)
+        {
+          if ((bpp == 32) || (bpp == 24))
+            {
+              *red_mask = flip_bytes32(*red_mask);
+              *green_mask = flip_bytes32(*green_mask);
+              *blue_mask = flip_bytes32(*blue_mask);
+            }
+          else if (bpp == 16)
+            {
+              *red_mask = flip_bytes16(*red_mask);
+              *green_mask = flip_bytes16(*green_mask);
+              *blue_mask = flip_bytes16(*blue_mask);
+            }
+        }
+    }
+}
+
 /**
    Returns the root window of the display 
 */
