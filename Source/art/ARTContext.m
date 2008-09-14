@@ -35,32 +35,6 @@
 #include "x11/XWindowBuffer.h"
 #endif
 
-// Could use NSSwapInt() instead
-static unsigned int flip_bytes32(unsigned int i)
-{
-  return ((i >> 24) & 0xff)
-      |((i >>  8) & 0xff00)
-      |((i <<  8) & 0xff0000)
-      |((i << 24) & 0xff000000);
-}
-
-static unsigned int flip_bytes16(unsigned int i)
-{
-  return ((i >> 8) & 0xff)
-      |((i <<  8) & 0xff00);
-}
-
-static int byte_order(void)
-{
-  union
-  {
-    unsigned int i;
-    char c;
-  } foo;
-  foo.i = 1;
-  return foo.c != 1;
-}
-
 @implementation ARTContext
 
 + (void)initializeBackend
@@ -82,83 +56,22 @@ static int byte_order(void)
   return [ARTGState class];
 }
 
-- (void) setupDrawInfo
+- (void) setupDrawInfo: (void*)device
 {
+  int bpp;
+  int red_mask, green_mask, blue_mask;
 #ifdef RDS
-  {
-    RDSServer *s = (RDSServer *)server;
-    int bpp;
-    int red_mask, green_mask, blue_mask;
-
-    [s getPixelFormat: &bpp masks: &red_mask : &green_mask : &blue_mask];
-    artcontext_setup_draw_info(&DI, red_mask, green_mask, blue_mask, bpp);
-  }
+  RDSServer *s = (RDSServer *)server;
+  
+  [s getPixelFormat: &bpp masks: &red_mask : &green_mask : &blue_mask];
 #else
-  {
-    Display *d = [(XGServer *)server xDisplay];
-    int bpp;
-    Visual *visual;
-    XVisualInfo template;
-    XVisualInfo *visualInfo;
-    int numMatches;
-    XImage *i;
+  gswindow_device_t *gs_win;
 
-    /*
-    We need a visual that we can generate pixel values for by ourselves.
-    Thus, we try to find a DirectColor or TrueColor visual. If that fails,
-    we use the default visual and hope that it's usable.
-    */
-    template.class = DirectColor;
-    visualInfo = XGetVisualInfo(d, VisualClassMask, &template, &numMatches);
-    if (!visualInfo)
-      {
-        template.class = TrueColor;
-        visualInfo = XGetVisualInfo(d, VisualClassMask, &template, &numMatches);
-      }
-    if (visualInfo)
-      {
-        visual = visualInfo->visual;
-        bpp = visualInfo->depth;
-        XFree(visualInfo);
-      }
-    else
-      {
-        visual = DefaultVisual(d, DefaultScreen(d));
-        bpp = DefaultDepth(d, DefaultScreen(d));
-      }
-    
-    i = XCreateImage(d, visual, bpp, ZPixmap, 0, NULL, 8, 8, 8, 0);
-    bpp = i->bits_per_pixel;
-    XDestroyImage(i);
-
-    /* If the server doesn't have the same endianness as we do, we need
-       to flip the masks around (well, at least sometimes; not sure
-       what'll really happen for 15/16bpp modes).  */
-    {
-      int us = byte_order(); /* True iff we're big-endian.  */
-      int them = ImageByteOrder(d); /* True iff the server is big-endian.  */
-      if (us != them)
-        {
-          if ((bpp == 32) || (bpp == 24))
-            {
-              visual->red_mask = flip_bytes32(visual->red_mask);
-              visual->green_mask = flip_bytes32(visual->green_mask);
-              visual->blue_mask = flip_bytes32(visual->blue_mask);
-            }
-          else if (bpp == 16)
-            {
-              visual->red_mask = flip_bytes16(visual->red_mask);
-              visual->green_mask = flip_bytes16(visual->green_mask);
-              visual->blue_mask = flip_bytes16(visual->blue_mask);
-            }
-        }
-    }
-
-    /* Only returns if the visual was usable.  */
-    artcontext_setup_draw_info(&DI, visual->red_mask, visual->green_mask,
-			       visual->blue_mask, bpp);
-  }
+  gs_win = device;
+  [(XGServer *)server getForScreen: gs_win->screen pixelFormat: &bpp 
+                masks: &red_mask : &green_mask : &blue_mask];
 #endif
+  artcontext_setup_draw_info(&DI, red_mask, green_mask, blue_mask, bpp);
 }
 
 - (void) flushGraphics
@@ -195,11 +108,12 @@ static int byte_order(void)
 {
   // Currently all windows share the same drawing info.
   // It is enough to initialize it once.
+  // This will fail when different screen use different visuals.
   static BOOL serverInitialized = NO;
 
   if (!serverInitialized)
     {
-      [self setupDrawInfo];
+      [self setupDrawInfo: device];
       serverInitialized = YES;
     }
   [(ARTGState *)gstate GSSetDevice: device : x : y];

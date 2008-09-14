@@ -1,3 +1,12 @@
+2008-09-14 Fred Kiefer <FredKiefer@gmx.de>
+
+        * Source/art/ARTContext.m (-setupDrawInfo): Moved code from here
+	to...
+	* Source/x11/XGServer.m (-getForScreen:pixelFormat:masks:::):
+	... here, including helper functions. Commented out this code and
+	replaced it by a different approach.
+	* Headers/x11/XGServer.h: Declare this new method.
+
 2008-09-14 13:17-EDT Gregory John Casamento <greg_casamento@yahoo.com>
 
 	* install.sh: Adding install script for use by compile-all.
