@@ -160,6 +160,7 @@ typedef struct draw_info_s
 void artcontext_setup_draw_info(draw_info_t *di,
 	unsigned int red_mask, unsigned int green_mask, unsigned int blue_mask,
 	int bpp);
+void artcontext_setup_gamma(float gamma);
 
 #endif
 

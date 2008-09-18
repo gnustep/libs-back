@@ -63,6 +63,7 @@ typedef struct {
   Atom net_wm_state_skip_taskbar_atom;
   Atom net_wm_state_skip_pager_atom;
   Atom net_wm_state_sticky_atom;
+  Atom net_wm_state_hidden_atom;
 } XGWMNetStates;
 
 /*

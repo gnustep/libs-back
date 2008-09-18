@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include <Foundation/NSDebug.h>
+#include <Foundation/NSString.h>
 
 #include "blit.h"
 
@@ -389,9 +390,6 @@ static int byte_ofs_of_mask(unsigned int m)
     return -1;
 }
 
-
-#include <Foundation/NSUserDefaults.h>
-
 void artcontext_setup_draw_info(draw_info_t *di,
 	unsigned int red_mask, unsigned int green_mask, unsigned int blue_mask,
 	int bpp)
@@ -420,23 +418,23 @@ void artcontext_setup_draw_info(draw_info_t *di,
       b = byte_ofs_of_mask(blue_mask);
 
       if (bpp == 24)
-	{
-	  if (r == 0 && g == 1 && b == 2)
-	    t = DI_24_RGB;
-	  else if (r == 2 && g == 1 && b == 0)
-	    t = DI_24_BGR;
-	}
+        {
+          if (r == 0 && g == 1 && b == 2)
+            t = DI_24_RGB;
+          else if (r == 2 && g == 1 && b == 0)
+            t = DI_24_BGR;
+        }
       else if (bpp == 32)
-	{
-	  if (r == 0 && g == 1 && b == 2)
-	    t = DI_32_RGBA;
-	  else if (r == 2 && g == 1 && b == 0)
-	    t = DI_32_BGRA;
-	  else if (r == 1 && g == 2 && b == 3)
-	    t = DI_32_ARGB;
-	  else if (r == 3 && g == 2 && b == 1)
-	    t = DI_32_ABGR;
-	}
+        {
+          if (r == 0 && g == 1 && b == 2)
+            t = DI_32_RGBA;
+          else if (r == 2 && g == 1 && b == 0)
+            t = DI_32_BGRA;
+          else if (r == 1 && g == 2 && b == 3)
+            t = DI_32_ARGB;
+          else if (r == 3 && g == 2 && b == 1)
+            t = DI_32_ABGR;
+        }
     }
 
   NSDebugLLog(@"back-art", @"got t=%i", t);
@@ -453,25 +451,26 @@ void artcontext_setup_draw_info(draw_info_t *di,
 	    @"Better: implement it and send a patch.)");
       exit(1);
     }
-
-  {
-    float gamma = [[NSUserDefaults standardUserDefaults]
-                      floatForKey: @"back-art-text-gamma"];
-    int i;
-    if (!gamma)
-      gamma = 1.4;
-
-    NSDebugLLog(@"back-art",@"gamma=%g",gamma);
-
-    gamma = 1.0 / gamma;
-
-    for (i = 0; i < 256; i++)
-      {
-	gamma_table[i] = pow(i / 255.0, gamma) * 255 + .5;
-	inv_gamma_table[i] = pow(i / 255.0, 1.0 / gamma) * 255 + .5;
-      }
-  }
 }
+
+void artcontext_setup_gamma(float gamma)
+{
+  int i;
+  
+  if (!gamma)
+    gamma = 1.4;
+
+  NSDebugLLog(@"back-art",@"gamma=%g",gamma);
+
+  gamma = 1.0 / gamma;
+  
+  for (i = 0; i < 256; i++)
+    {
+      gamma_table[i] = pow(i / 255.0, gamma) * 255 + .5;
+      inv_gamma_table[i] = pow(i / 255.0, 1.0 / gamma) * 255 + .5;
+    }
+}
+
 
 
 /*
