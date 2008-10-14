@@ -1,3 +1,11 @@
+2008-10-14 Fred Kiefer <FredKiefer@gmx.de>
+
+        * Source/winlib/WIN32GState.m: Removed unneeded code. General cleanup.
+        * Source/winlib/WIN32GState.m (-DPSimage:...:): Scale and rotate
+	images correctly.
+        * Source/winlib/WIN32GState.m (-compositeGState:...fraction:):
+	Position images on scaled views better.
+
 2008-09-14 Fred Kiefer <FredKiefer@gmx.de>
 
         * Source/art/ARTContext.m (-setupDrawInfo): Moved code from here
