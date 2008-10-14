@@ -53,13 +53,6 @@
 #define AC_SRC_ALPHA    0x01
 #endif
 
-// There is a bug in Win32 GDI drawing with lines wider than 0
-// before and after a bezier path forming an oblique
-// angle. The solution is to insert extra MoveToEx()'s
-// before and after the PolyBezierTo().
-// FK: I switched this off, as I think the treatment is worse than the illness.
-#define GDI_WIDELINE_BEZIERPATH_BUG 0
-
 static inline
 int WindowHeight(HWND window)
 {
@@ -175,38 +168,17 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
     wscolor = RGB(color.field[0]*255, color.field[1]*255, color.field[2]*255);
 }
 
-static inline
-RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
-{
-  RECT r1;
-  int h;
-
-  h = WindowHeight([s window]);
-
-//  r.origin.x += s->offset.x;
-//  r.origin.y += s->offset.y;
-
-  r1.left = r.origin.x;
-  r1.right = r.origin.x + r.size.width;
-  r1.bottom = h - r.origin.y;
-  r1.top = h - r.origin.y - r.size.height;
-
-  return r1;
-}
-
-- (void) compositeGState: (WIN32GState *) source
-		fromRect: (NSRect) sourceRect
-		 toPoint: (NSPoint) destPoint
-		      op: (NSCompositingOperation) op
+- (void) compositeGState: (WIN32GState *)source
+		fromRect: (NSRect)sourceRect
+		 toPoint: (NSPoint)destPoint
+		      op: (NSCompositingOperation)op
 		fraction: (float)delta
 {
-  NSAffineTransformStruct	sctms;
-  NSAffineTransformStruct	ctms;
   HDC sourceDC;
   HDC hDC;
   RECT rectFrom;
   RECT rectTo;
-  int h;
+  int h, w;
   int x;
   int y;
   NSRect destRect;
@@ -216,23 +188,28 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
     @"compositeGState: fromRect: %@ toPoint: %@ op: %d",
     NSStringFromRect(sourceRect), NSStringFromPoint(destPoint), op);
 
-  rectFrom = GSViewRectToWin(source, sourceRect);
-  //rectFrom = GSXWindowRectToMS(sourceRect);
-  h = rectFrom.bottom - rectFrom.top;
+  if (viewIsFlipped && (self != source))
+    {
+      destPoint.y -= sourceRect.size.height;
+    }
 
-  destRect.size = sourceRect.size;
   destRect.origin = destPoint;
-  rectTo = GSViewRectToWin(self, destRect);
+  destRect.size = sourceRect.size;
+  [ctm boundingRectFor: destRect result: &destRect];
+  rectTo = GSWindowRectToMS(self, destRect);
   x = rectTo.left;
-  y = rectTo.top;
+  y = rectTo.bottom - sourceRect.size.height;
 
-  sctms = [source->ctm transformStruct];
-  ctms = [ctm transformStruct];
-  if (sctms.m22 < 0 && ctms.m22 > 0) y += h;
-  if (sctms.m22 > 0 && ctms.m22 < 0) y -= h;
+  {
+    NSRect newRect;
+
+    [source->ctm boundingRectFor: sourceRect result: &newRect];
+    rectFrom = GSWindowRectToMS(source, newRect);
+  }
+  h = rectFrom.bottom - rectFrom.top;
+  w = rectFrom.right - rectFrom.left;
 
   sourceDC = [source getHDC];
-  
   if (!sourceDC)
     {
       return;
@@ -262,10 +239,10 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
 	BLENDFUNCTION blendFunc
 	  = {AC_SRC_OVER, 0, SourceConstantAlpha, AC_SRC_ALPHA};
 	success = AlphaBlend(hDC,
-			     x, y, (rectFrom.right - rectFrom.left), h,
+			     x, y, w, h,
 			     sourceDC,
 			     rectFrom.left, rectFrom.top,
-			     (rectFrom.right - rectFrom.left), h, blendFunc);
+			     w, h, blendFunc);
 	/* There is actually a very real chance this could fail, even on 
 	    computers that supposedly support it. It's not known why it
 	    fails though... */
@@ -275,7 +252,7 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
       }
     case NSCompositeCopy:
       {
-	success = BitBlt(hDC, x, y, (rectFrom.right - rectFrom.left), h,
+	success = BitBlt(hDC, x, y, w, h,
 			sourceDC, rectFrom.left, rectFrom.top, SRCCOPY);
 	break;	      
       }
@@ -284,7 +261,7 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
 	break;
       }
     default:
-      success = BitBlt(hDC, x, y, (rectFrom.right - rectFrom.left), h,
+      success = BitBlt(hDC, x, y, w, h,
 			sourceDC, rectFrom.left, rectFrom.top, SRCCOPY);
       break;
     }
@@ -295,7 +272,7 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
       NSLog(@"Orig Copy Bits to %@ from %@", NSStringFromPoint(destPoint),
 	     NSStringFromRect(destRect));
       NSLog(@"Copy bits to {%d, %d} from {%d, %d} size {%d, %d}", x, y,
-	    rectFrom.left, rectFrom.top, (rectFrom.right - rectFrom.left), h);
+	    rectFrom.left, rectFrom.top, w, h);
     }
 
   if (self != source)
@@ -314,7 +291,7 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
 	       fromRect: aRect
 	        toPoint: aPoint
 	             op: op
-	       fraction: 1];
+	       fraction: 1.0];
 }
 
 - (void) dissolveGState: (GSGState *)source
@@ -334,6 +311,7 @@ RECT GSXWindowRectToMS(WIN32GState *s, NSRect r)
 {
   float gray;
 
+  // FIXME: This is taken from the xlib backend
   [self DPScurrentgray: &gray];
   if (fabs(gray - 0.667) < 0.005)
     [self DPSsetgray: 0.333];
@@ -607,9 +585,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   HBITMAP hbitmap;
   HGDIOBJ old;
   HDC hDC2;
-  POINT p;
-  int h;
-  int y1;
+  POINT pa[3];
 
 /*
   NSDebugLLog(@"WIN32GState", @"DPSImage : pixelsWide = %d : pixelsHigh = %d"
@@ -664,31 +640,40 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
   hDC = [self getHDC];
 
-  h = pixelsHigh;
   // Apply the additional transformation
   if (matrix)
     {
       old_ctm = [ctm copy];
       [ctm prependTransform: matrix];
     }
-  p = GSViewPointToWin(self, NSMakePoint(0, 0));
+
+  pa[0] = GSViewPointToWin(self, NSMakePoint(0, pixelsHigh));
+  pa[1] = GSViewPointToWin(self, NSMakePoint(pixelsWide, pixelsHigh));
+  pa[2] = GSViewPointToWin(self, NSMakePoint(0, 0));
+
+  if (viewIsFlipped)
+    {
+      pa[0].y += pixelsHigh;
+      pa[1].y += pixelsHigh;
+      pa[2].y += pixelsHigh;
+    }
+
   if (old_ctm != nil)
     {
       RELEASE(ctm);
       // old_ctm is already retained
       ctm = old_ctm;
     }
-  if (viewIsFlipped)
-    y1 = p.y;
-  else
-    y1 = p.y - h;
 
-  if (!BitBlt(hDC, p.x, y1, pixelsWide, pixelsHigh,
-	      hDC2, 0, 0, SRCCOPY))
+  if ((GetDeviceCaps(hDC, RASTERCAPS) &  RC_BITBLT)) 
     {
-      NSLog(@"Copy bitmap failed %d", GetLastError());
-      NSLog(@"DPSimage with %d %d %d %d to %d, %d", pixelsWide, pixelsHigh, 
-	    bytesPerRow, bitsPerPixel, p.x, y1);
+      // FIXME: Should we call SetStretchBltMode first?
+      if (!PlgBlt(hDC, pa, hDC2, 0, 0, pixelsWide, pixelsHigh, 0, 0, 0))
+        {
+          NSLog(@"Copy bitmap failed %d", GetLastError());
+          NSLog(@"DPSimage with %d %d %d %d to %d, %d", pixelsWide, pixelsHigh, 
+	        bytesPerRow, bitsPerPixel, pa[0].x, pa[0].y);
+        }
     }
   
   [self releaseHDC: hDC];
@@ -741,43 +726,15 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 	      {
 		POINT bp[3];
 		
-#if GDI_WIDELINE_BEZIERPATH_BUG
-		if (drawType == path_stroke && lineWidth > 1)
-		  {
-		    if (j != 0) 
-		      {
-			NSPoint movePoints[3];
-		    
-			[path elementAtIndex: j-1 associatedPoints:
-				movePoints];
-			p = GSWindowPointToMS(self, movePoints[0]);
-			MoveToEx(hDC, p.x, p.y, NULL);
-		      }
-		  }
-#endif
 		for (i = 0; i < 3; i++)
 		  {
 		    bp[i] = GSWindowPointToMS(self, points[i]);
 		  }
 		PolyBezierTo(hDC, bp, 3);
-#if GDI_WIDELINE_BEZIERPATH_BUG
-		if (drawType == path_stroke && lineWidth > 1)
-		  MoveToEx(hDC, bp[2].x, bp[2].y, NULL);
-#endif
 	      }
 	      break;
 	    case NSClosePathBezierPathElement:
-#if GDI_WIDELINE_BEZIERPATH_BUG
-	      // CloseFigure works from the last MoveTo point which is
-	      // a problem when we need to insert gratuitious moves
-	      // before and after bezier curves to fix draw problems.
-	      [path elementAtIndex: 0 associatedPoints: points];
-	      p = GSWindowPointToMS(self, points[0]);
-	      // FIXME This may also give one pixel too few
-	      LineTo(hDC, p.x, p.y);
-#else
 	      CloseFigure(hDC);
-#endif
 	      break;
 	    default:
 	      break;
@@ -874,7 +831,6 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   [self _paintPath: path_stroke];
 }
 
-
 - (void) DPSinitclip;
 {
   if (clipRegion)
@@ -882,58 +838,6 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
       DeleteObject(clipRegion);
       clipRegion = NULL;
     }
-}
-
-- (void)DPSrectfill: (float)x : (float)y : (float)w : (float)h 
-{
-  HDC hDC;
-  HBRUSH brush;
-  RECT rect;
-
-  hDC = [self getHDC];
-  if (!hDC)
-    {
-      return;
-    } 
-
-  brush = GetCurrentObject(hDC, OBJ_BRUSH);
-  rect = GSViewRectToWin(self, NSMakeRect(x, y, w, h));
-  FillRect(hDC, &rect, brush);
-  [self releaseHDC: hDC];
-}
-
-- (void)DPSrectstroke: (float)x : (float)y : (float)w : (float)h 
-{
-  NSRect rect = [ctm rectInMatrixSpace: NSMakeRect(x, y, w, h)]; 
-
-  /* // Samll adjustment so that the line is visible
-  if (rect.size.width > 0)
-    rect.size.width--;
-  if (rect.size.height > 0)
-    rect.size.height--;
-  rect.origin.y += 1; */
-
-  [path appendBezierPathWithRect: rect];
-  [self DPSstroke];
-}
-
-- (void)DPSrectclip: (float)x : (float)y : (float)w : (float)h 
-{
-  RECT rect;
-  HRGN region;
-
-  rect = GSViewRectToWin(self, NSMakeRect(x, y, w, h));
-  region = CreateRectRgnIndirect(&rect);
-  if (clipRegion)
-    {
-      CombineRgn(clipRegion, clipRegion, region, RGN_AND);
-      DeleteObject(region);
-    }
-  else
-    {
-      clipRegion = region;
-    }
-  [self DPSnewpath];
 }
 
 - (void)DPSshow: (const char *)s 
@@ -990,6 +894,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
       path = [NSBezierPath new];
     }
 
+  // FIXME: Convert to ctm first
   [path setLineDash: thePattern count: count phase: phase];
 }
 
@@ -1000,6 +905,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
 - (void)DPSsetmiterlimit: (float)limit 
 {
+  // FIXME: Convert to ctm first
   miterlimit = limit;
 }
 
@@ -1030,6 +936,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
 - (void)DPSsetlinewidth: (float)width 
 {
+  // FIXME: Convert to ctm first
   lineWidth = width;
 }
 
