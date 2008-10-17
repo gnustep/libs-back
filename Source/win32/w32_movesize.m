@@ -371,8 +371,6 @@ NSDebugLLog(@"WTrace", @"swap %d (%d) with %d (%d)", hi, hl, lo, ll);
 {
    // stub for future dev
 
-   flags.HOLD_PAINT_FOR_SIZING=TRUE;
-
    //[EVENT_WINDOW(hwnd) displayIfNeeded];
    //[self decodeWM_SIZEParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam];
    //printf("SIZING called\n");
