@@ -72,24 +72,8 @@
 DWORD windowStyleForGSStyle(unsigned int style);
    
 typedef struct w32serverFlags {
-    
-    int _last_WM_ACTIVATE;
-    int  menuRef;                   // reference to menu window
-    unsigned int currentGS_Style;   // what style is current event window
-    BOOL HOLD_MENU_FOR_MOVE;        // override GS move event on hide
-    BOOL HOLD_MENU_FOR_SIZE;        // override GS size event on hide
     BOOL HOLD_MINI_FOR_SIZE;        // override GS size event on miniturize
-    BOOL HOLD_MINI_FOR_MOVE;        // override GS move event on miniturize
-    BOOL HOLD_TRANSIENT_FOR_SIZE;   // override GS size event on popup context
-    BOOL HOLD_TRANSIENT_FOR_MOVE;   // override GS move event on popup context
-    BOOL HAVE_MAIN_MENU;            // do we have a main menu?
-    BOOL HOLD_PAINT_FOR_SIZING;
-    BOOL _is_menu;                  // is event window the main menu?
     BOOL _eventHandled;             // did we handle the event?
-    BOOL _is_cache;                 // is the event window a cache rep
-    BOOL _hasGSClassName;           // does the event window have a GSclassName
-    int lastEventType;     
-    int hold;
   } serverFlags;
 
 @interface WIN32Server : GSDisplayServer
@@ -104,11 +88,6 @@ typedef struct w32serverFlags {
   HWND desiredFocus;
   HWND currentActive;
   HICON  currentAppIcon;
-  // config window
-  NSWindow *configWindow;
-  NSPopUpButton * styleButton;
-  NSButton * taskbarButton;
-  NSButton * saveButton;
 }
 
 - (BOOL) handlesWindowDecorations;

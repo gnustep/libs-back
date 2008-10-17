@@ -531,18 +531,7 @@ NSLog(@"Callback");
 {
   flags._eventHandled = NO;
 
-  flags._is_menu = NO;
-  if ((HWND)flags.menuRef == hwnd && flags.HAVE_MAIN_MENU == YES)
-    flags._is_menu = YES;
-  // note some cache windows are needed..... just get the zeros 
-  flags._is_cache = [[EVENT_WINDOW(hwnd) className] isEqual: @"GSCacheW"];
-  
-  flags._hasGSClassName = NO;
-  if ([EVENT_WINDOW(hwnd) className] != nil)
-    flags._hasGSClassName = YES;
-    
   // future house keeping can go here
-
 }
 
 - (LRESULT) windowEventProc: (HWND)hwnd : (UINT)uMsg 
@@ -869,17 +858,11 @@ NSLog(@"Callback");
   DWORD wstyle;
   DWORD estyle;
 
-  flags.currentGS_Style = style;
-    
   wstyle = [self windowStyleForGSStyle: style];
   estyle = [self exwindowStyleForGSStyle: style];
 
   r = GSScreenRectToMS(frame, style, self);
 
-  /* 
-   * from here down is reused and unmodified from WIN32EventServer.m 
-   * which has been removed form the subproject 
-   */
   NSDebugLLog(@"WTrace", @"window: %@ : %d : %d : %d", NSStringFromRect(frame), 
               type, style, screen);
   NSDebugLLog(@"WTrace", @"         device frame: %d, %d, %d, %d", 
