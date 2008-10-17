@@ -1259,7 +1259,6 @@ NSLog(@"Callback");
 - (NSRect) windowbounds: (int) winNum
 {
   RECT r;
-  NSWindow *window = GSWindowWithNumber(winNum);
 
   GetWindowRect((HWND)winNum, &r);
   return MSScreenRectToGS(r);
