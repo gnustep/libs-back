@@ -1,3 +1,13 @@
+2008-10-17 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/win32/WIN32Server.h,
+	* Source/win32/WIN32Server.m,
+	* Source/win32/w32_activate.m,
+	* Source/win32/w32_movesize.m,
+	* Source/win32/w32_general.m: Removed unused and unneeded code
+	left over from the last cleanup. This code was mostly setting
+	server flags that never got read or using falgs that never were set.
+	
 2008-10-14 Fred Kiefer <FredKiefer@gmx.de>
 
         * Source/winlib/WIN32GState.m: Removed unneeded code. General cleanup.

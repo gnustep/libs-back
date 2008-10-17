@@ -102,7 +102,6 @@
       break;
       case SC_MINIMIZE:
        flags.HOLD_MINI_FOR_SIZE=TRUE;
-       flags.HOLD_MINI_FOR_MOVE=TRUE;  
       break;
       case SC_MONITORPOWER:
       break;
