@@ -861,7 +861,7 @@ NSLog(@"Callback");
   wstyle = [self windowStyleForGSStyle: style];
   estyle = [self exwindowStyleForGSStyle: style];
 
-  r = GSScreenRectToMS(frame, style, self);
+  r = GSScreenRectToMS(frame);
 
   NSDebugLLog(@"WTrace", @"window: %@ : %d : %d : %d", NSStringFromRect(frame), 
               type, style, screen);
@@ -1216,11 +1216,10 @@ NSLog(@"Callback");
   RECT r;
   RECT r2;
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
-  NSWindow *window = GSWindowWithNumber(winNum);
 
   NSDebugLLog(@"WTrace", @"placewindow: %@ : %d", NSStringFromRect(frame), 
               winNum);
-  r = GSScreenRectToMS(frame, [window styleMask], self);
+  r = GSScreenRectToMS(frame);
   GetWindowRect((HWND)winNum, &r2);
 
   SetWindowPos((HWND)winNum, NULL, 
@@ -1263,7 +1262,7 @@ NSLog(@"Callback");
   NSWindow *window = GSWindowWithNumber(winNum);
 
   GetWindowRect((HWND)winNum, &r);
-  return MSScreenRectToGS(r, [window styleMask], self);
+  return MSScreenRectToGS(r);
 }
 
 - (void) setwindowlevel: (int) level : (int) winNum

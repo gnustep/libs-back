@@ -1,5 +1,12 @@
 2008-10-17 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Headers/win32/WIN32Geometry.h (MSScreenRectToGS, GSScreenRectToMS),
+	* Source/win32/WIN32Server.m,
+	* Source/win32/w32_movesize.m:
+	Remove unused parameters from these functions and adjust callers.
+	
+2008-10-17 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Headers/win32/WIN32Server.h,
 	* Source/win32/WIN32Server.m,
 	* Source/win32/w32_activate.m,
