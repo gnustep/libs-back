@@ -39,7 +39,7 @@
   NSEvent *ev = nil;
 
   GetWindowRect(hwnd, &r);
-  rect = MSScreenRectToGS(r, [EVENT_WINDOW(hwnd) styleMask], self);
+  rect = MSScreenRectToGS(r);
   eventLocation = rect.origin;
         
   ev = [NSEvent otherEventWithType: NSAppKitDefined
@@ -99,7 +99,7 @@
           NSEvent *ev =nil;
   
           GetWindowRect(hwnd, &r);
-          rect = MSScreenRectToGS(r, [EVENT_WINDOW(hwnd) styleMask], self);
+          rect = MSScreenRectToGS(r);
           eventLocation = rect.origin;
 
           // make event
@@ -149,7 +149,7 @@
       drect=newRects->rgrc[1];
 
         //create a size event and send it to the window
-        rect = MSScreenRectToGS(drect, [EVENT_WINDOW(hwnd) styleMask], self);
+        rect = MSScreenRectToGS(drect);
         eventLocation = rect.origin;
 
         // make event
