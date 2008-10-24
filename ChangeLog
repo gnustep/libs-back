@@ -1,5 +1,14 @@
 2008-10-24 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Tools/xpbs.m (+initializePasteboard): Use XInternAtom when
+	XInternAtoms isn't available.
+	Patch by Riccardo Mottola <multix@ngi.it>.
+	* configure.ac: Check for XInternAtoms.
+	* configure,
+	* config.h.in: Regenerate.
+
+2008-10-24 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/x11/XGServer.m (-visualForScreen:, -depthForScreen:):
 	New methods that hide RContext details.
 	* Headers/x11/XGServer.h: Declare these new methods.
