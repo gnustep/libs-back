@@ -32,9 +32,6 @@
 /* Define if you have the glx library */
 #undef HAVE_GLX
 
-/* Define if you have the glx library */
-#undef HAVE_WGL
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -46,6 +43,9 @@
 
 /* Define to 1 if you have the `Xmu' library (-lXmu). */
 #undef HAVE_LIBXMU
+
+/* Define to 1 if you have the `Xt' library (-lXt). */
+#undef HAVE_LIBXT
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -96,6 +96,9 @@
    */
 #undef HAVE_XFT
 
+/* Define to 1 if you have 'XInternAtoms' function. */
+#undef HAVE_XINTERNATOMS
+
 /* Define to 1 if you have the `Xutf8LookupString' function. */
 #undef HAVE_XUTF8LOOKUPSTRING
 
@@ -123,11 +126,11 @@
 /* Define to enable XIM support */
 #undef USE_XIM
 
+/* Define if you have X11 XRender extension */
+#undef XRENDER
+
 /* Define if you have X11 XShm extensions */
 #undef XSHM
-
-/* Define if you have X11 Xrender extensions */
-#undef XRENDER
 
 /* Define to 1 if the X Window System is missing or not being used. */
 #undef X_DISPLAY_MISSING
