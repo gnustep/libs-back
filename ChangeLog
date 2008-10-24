@@ -1,5 +1,12 @@
 2008-10-24 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/win32/WIN32Server.m (-setalpha::): Implement transparent
+	windows.
+        * Source/winlib/WIN32GState.m (-DPSimage:...:): Call
+	SetStretchBltMode() before scaling a bitmap.
+	
+2008-10-24 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Tools/xpbs.m (+initializePasteboard): Use XInternAtom when
 	XInternAtoms isn't available.
 	Patch by Riccardo Mottola <multix@ngi.it>.
