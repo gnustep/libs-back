@@ -1442,6 +1442,23 @@ NSLog(@"Callback");
   SetFocus((HWND)winNum);
 }
 
+- (void) setalpha: (float)alpha: (int) win
+{
+  if (alpha > 0.99)
+    {
+      SetWindowLong((HWND)win, GWL_EXSTYLE,
+                    GetWindowLong((HWND)win, GWL_EXSTYLE) & ~WS_EX_LAYERED);
+      RedrawWindow((HWND)win, NULL, NULL, 
+                   RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
+    }
+  else
+    {
+      SetWindowLong((HWND)win, GWL_EXSTYLE, 
+                    GetWindowLong((HWND)win, GWL_EXSTYLE) | WS_EX_LAYERED);
+      SetLayeredWindowAttributes((HWND)win, 0, 255 * alpha, LWA_ALPHA);
+    }
+}
+
 - (NSPoint) mouselocation
 {
   POINT p;

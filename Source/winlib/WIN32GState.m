@@ -224,8 +224,8 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
       hDC = [self getHDC];
       if (!hDC)
         {
-	  [source releaseHDC: sourceDC];
-	  return;
+          [source releaseHDC: sourceDC];
+          return;
         }
     }
 
@@ -234,35 +234,35 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
     case NSCompositeSourceOver:
       {
 #ifdef USE_ALPHABLEND
-	// Use (0..1) fraction to set a (0..255) alpha constant value
-	BYTE SourceConstantAlpha = (BYTE)(delta * 255);
-	BLENDFUNCTION blendFunc
-	  = {AC_SRC_OVER, 0, SourceConstantAlpha, AC_SRC_ALPHA};
-	success = AlphaBlend(hDC,
-			     x, y, w, h,
-			     sourceDC,
-			     rectFrom.left, rectFrom.top,
-			     w, h, blendFunc);
-	/* There is actually a very real chance this could fail, even on 
-	    computers that supposedly support it. It's not known why it
-	    fails though... */
-	if (success)
-	  break;
+        // Use (0..1) fraction to set a (0..255) alpha constant value
+        BYTE SourceConstantAlpha = (BYTE)(delta * 255);
+        BLENDFUNCTION blendFunc
+            = {AC_SRC_OVER, 0, SourceConstantAlpha, AC_SRC_ALPHA};
+        success = AlphaBlend(hDC,
+                             x, y, w, h,
+                             sourceDC,
+                             rectFrom.left, rectFrom.top,
+                             w, h, blendFunc);
+        /* There is actually a very real chance this could fail, even on 
+           computers that supposedly support it. It's not known why it
+           fails though... */
+        if (success)
+            break;
 #endif
       }
     case NSCompositeCopy:
       {
-	success = BitBlt(hDC, x, y, w, h,
-			sourceDC, rectFrom.left, rectFrom.top, SRCCOPY);
-	break;	      
+        success = BitBlt(hDC, x, y, w, h,
+                         sourceDC, rectFrom.left, rectFrom.top, SRCCOPY);
+        break;	      
       }
     case NSCompositeClear:
       {
-	break;
+        break;
       }
     default:
       success = BitBlt(hDC, x, y, w, h,
-			sourceDC, rectFrom.left, rectFrom.top, SRCCOPY);
+                       sourceDC, rectFrom.left, rectFrom.top, SRCCOPY);
       break;
     }
 
@@ -270,9 +270,9 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
     {
       NSLog(@"Blit operation failed %d", GetLastError());
       NSLog(@"Orig Copy Bits to %@ from %@", NSStringFromPoint(destPoint),
-	     NSStringFromRect(destRect));
+            NSStringFromRect(destRect));
       NSLog(@"Copy bits to {%d, %d} from {%d, %d} size {%d, %d}", x, y,
-	    rectFrom.left, rectFrom.top, w, h);
+            rectFrom.left, rectFrom.top, w, h);
     }
 
   if (self != source)
@@ -667,7 +667,8 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
   if ((GetDeviceCaps(hDC, RASTERCAPS) &  RC_BITBLT)) 
     {
-      // FIXME: Should we call SetStretchBltMode first?
+      SetStretchBltMode(hDC, COLORONCOLOR);
+
       if (!PlgBlt(hDC, pa, hDC2, 0, 0, pixelsWide, pixelsHigh, 0, 0, 0))
         {
           NSLog(@"Copy bitmap failed %d", GetLastError());
