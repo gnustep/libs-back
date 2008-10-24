@@ -518,6 +518,16 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   return [[self _screenContextForScreen: screen_number] context];
 }
 
+- (Visual *) visualForScreen: (int)screen_number
+{
+    return [[self _screenContextForScreen: screen_number] context]->visual;
+}
+
+- (int) depthForScreen: (int)screen_number
+{
+    return [[self _screenContextForScreen: screen_number] context]->depth;
+}
+
 /**
    Returns the XGDrawMechanism, which roughly describes the depth of
    the screen and how pixels should be drawn to the screen for maximum

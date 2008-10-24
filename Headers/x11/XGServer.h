@@ -63,6 +63,9 @@ typedef enum {
 - (Window) xAppRootWindow;
 
 - (void *) xrContextForScreen: (int)screen_number;
+- (Visual *) visualForScreen: (int)screen_number;
+- (int) depthForScreen: (int)screen_number;
+
 - (XGDrawMechanism) drawMechanismForScreen: (int)screen_number;
 - (void) getForScreen: (int)screen_number pixelFormat: (int *)bpp_number 
                 masks: (int *)red_mask : (int *)green_mask : (int *)blue_mask;
