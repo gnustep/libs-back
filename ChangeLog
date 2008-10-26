@@ -1,3 +1,8 @@
+2008-10-26 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XWindowBuffer.m (test_xshm): Check whether the X
+	server supports shm pixmaps.
+
 2008-10-24 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/WIN32Server.m (-setalpha::): Implement transparent
