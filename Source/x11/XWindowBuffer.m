@@ -81,6 +81,19 @@ static void test_xshm(Display *display, Visual *visual, int drawing_depth)
       return;
     }
 
+  {
+  int major, minor;
+  Bool pixmaps;
+
+  if (!XShmQueryVersion(display, &major, &minor, &pixmaps) || !pixmaps)
+    {
+      NSLog(@"XShm pixmaps not supported by X server.");
+      NSLog(xshm_warning);
+      use_xshm = 0;
+      return;
+    }
+  }
+
   /* ... so we check that it actually works here. To do this, we need to
   set up our own error handler (because the xlib calls never fail, they
   just cause error events to be sent to us), explicitly synchronize
