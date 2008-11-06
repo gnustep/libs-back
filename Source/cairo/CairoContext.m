@@ -25,6 +25,9 @@
    Boston, MA 02110-1301, USA.
 */
 
+#include <AppKit/NSBitmapImageRep.h>
+#include <AppKit/NSGraphics.h>
+
 #include "cairo/CairoContext.h"
 #include "cairo/CairoGState.h"
 #include "cairo/CairoSurface.h"
@@ -62,6 +65,16 @@
 #  error Invalid server for Cairo backend : non implemented
 #endif /* BUILD_SERVER */
 
+@interface NSBitmapImageRep (GSPrivate)
+- (NSBitmapImageRep *) _convertToFormatBitsPerSample: (int)bps
+                                     samplesPerPixel: (int)spp
+                                            hasAlpha: (BOOL)alpha
+                                            isPlanar: (BOOL)isPlanar
+                                      colorSpaceName: (NSString*)colorSpaceName
+                                        bitmapFormat: (NSBitmapFormat)bitmapFormat 
+                                         bytesPerRow: (int)rowBytes
+                                        bitsPerPixel: (int)pixelBits;
+@end
 
 @implementation CairoContext
 
@@ -117,6 +130,50 @@
 @end 
 
 @implementation CairoContext (Ops) 
+
+- (void) GSDrawImage: (NSRect)rect: (void *)imageref
+{
+  NSBitmapImageRep *bitmap;
+  const unsigned char *data[5];
+  NSString *colorSpaceName;
+
+  bitmap = (NSBitmapImageRep*)imageref;
+  colorSpaceName = [bitmap colorSpaceName];
+  if ([bitmap isPlanar] || ([bitmap bitmapFormat] != 0) 
+      || ([bitmap bitsPerPixel] != 8) ||
+      (![colorSpaceName isEqualToString: NSDeviceRGBColorSpace] &&
+       ![colorSpaceName isEqualToString: NSCalibratedRGBColorSpace]))
+    {
+      int bitsPerSample = 8;
+      BOOL isPlanar = NO;
+      int samplesPerPixel = [bitmap hasAlpha] ? 4 : 3;
+      NSString *colorSpaceName = NSCalibratedRGBColorSpace;
+      NSBitmapImageRep *new;
+
+      new = [bitmap _convertToFormatBitsPerSample: bitsPerSample
+                    samplesPerPixel: samplesPerPixel
+                    hasAlpha: [bitmap hasAlpha]
+                    isPlanar: isPlanar
+                    colorSpaceName: colorSpaceName
+                    bitmapFormat: 0
+                    bytesPerRow: 0
+                    bitsPerPixel: 0];
+            
+      if (new == nil)
+        {
+          NSLog(@"Could not convert bitmap data");
+          return;
+        }
+      bitmap = new;
+    }
+
+  [bitmap getBitmapDataPlanes: (unsigned char **)&data];
+  [self NSDrawBitmap: rect : [bitmap pixelsWide] : [bitmap pixelsHigh]
+        : [bitmap bitsPerSample] : [bitmap samplesPerPixel]
+        : [bitmap bitsPerPixel] : [bitmap bytesPerRow] : [bitmap isPlanar]
+        : [bitmap hasAlpha] :  [bitmap colorSpaceName]
+        : data];
+}
 
 - (void) GSCurrentDevice: (void **)device : (int *)x : (int *)y
 {

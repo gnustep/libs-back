@@ -1,3 +1,8 @@
+2008-11-06 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoContext.m (-GSDrawImage::): Convert the
+	bitmap, when the format is unsupported.
+
 2008-10-26 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XWindowBuffer.m (test_xshm): Check whether the X
