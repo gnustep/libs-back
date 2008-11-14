@@ -1,3 +1,13 @@
+2008-11-14  Wolfgang Lux  <wlux@uni-muenster.de>
+
+	* Tools/gpbs.m (init): Don't change SIGABRT handler to prevent
+	infinite recursion on abort().
+
+	* Tools/xpbs.m (+receivedEvent:type:extra:forMode:): Don't cache
+	number of pending events. Prevents an issue where gpbs could block
+	in XNextEvent and other applications contacting the pasteboard
+	server become unresponsive.
+
 2008-11-06 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoContext.m (-GSDrawImage::): Convert the
