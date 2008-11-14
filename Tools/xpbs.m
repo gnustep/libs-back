@@ -323,7 +323,14 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
 
   while ((count = XPending(xDisplay)) > 0)
     {
+#if 0
+      /* Don't attempt to be smart here. We may enter this method recursively
+       * when further data is requested while processing this event, which
+       * means that the count will not longer be correct when returning to
+       * the outer invocation.
+       */
       while (count-- > 0)
+#endif
         {
           XEvent	xEvent;
 
