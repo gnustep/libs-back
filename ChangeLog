@@ -8,6 +8,84 @@
 	in XNextEvent and other applications contacting the pasteboard
 	server become unresponsive.
 
+2008-11-06 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoContext.m (-GSDrawImage::): Convert the
+	bitmap, when the format is unsupported.
+
+2008-10-26 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XWindowBuffer.m (test_xshm): Check whether the X
+	server supports shm pixmaps.
+
+2008-10-24 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m (-setalpha::): Implement transparent
+	windows.
+        * Source/winlib/WIN32GState.m (-DPSimage:...:): Call
+	SetStretchBltMode() before scaling a bitmap.
+	
+2008-10-24 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/xpbs.m (+initializePasteboard): Use XInternAtom when
+	XInternAtoms isn't available.
+	Patch by Riccardo Mottola <multix@ngi.it>.
+	* configure.ac: Check for XInternAtoms.
+	* configure,
+	* config.h.in: Regenerate.
+
+2008-10-24 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServer.m (-visualForScreen:, -depthForScreen:):
+	New methods that hide RContext details.
+	* Headers/x11/XGServer.h: Declare these new methods.
+	* Source/x11/XWindowBuffer.m: Get the default visual and depth
+	from the XGServer.
+
+2008-10-22 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_checkStyle:): Correct code
+	for double parent handling.
+	Patch by Wolfgang Lux <wolfgang.lux@gmail.com>.
+
+2008-10-17 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/win32/WIN32Geometry.h (MSScreenRectToGS, GSScreenRectToMS),
+	* Source/win32/WIN32Server.m,
+	* Source/win32/w32_movesize.m:
+	Remove unused parameters from these functions and adjust callers.
+	
+2008-10-17 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/win32/WIN32Server.h,
+	* Source/win32/WIN32Server.m,
+	* Source/win32/w32_activate.m,
+	* Source/win32/w32_movesize.m,
+	* Source/win32/w32_general.m: Removed unused and unneeded code
+	left over from the last cleanup. This code was mostly setting
+	server flags that never got read or using falgs that never were set.
+	
+2008-10-14 Fred Kiefer <FredKiefer@gmx.de>
+
+        * Source/winlib/WIN32GState.m: Removed unneeded code. General cleanup.
+        * Source/winlib/WIN32GState.m (-DPSimage:...:): Scale and rotate
+	images correctly.
+        * Source/winlib/WIN32GState.m (-compositeGState:...fraction:):
+	Position images on scaled views better.
+
+2008-09-14 Fred Kiefer <FredKiefer@gmx.de>
+
+        * Source/art/ARTContext.m (-setupDrawInfo): Moved code from here
+	to...
+	* Source/x11/XGServer.m (-getForScreen:pixelFormat:masks:::):
+	... here, including helper functions. Commented out this code and
+	replaced it by a different approach.
+	* Headers/x11/XGServer.h: Declare this new method.
+
+2008-09-14 13:17-EDT Gregory John Casamento <greg_casamento@yahoo.com>
+
+	* install.sh: Adding install script for use by compile-all.
+
 2008-08-19 Fred Kiefer <FredKiefer@gmx.de>
 
         * Source/art/ARTContext.m (-GSSetDevice:::): Only call

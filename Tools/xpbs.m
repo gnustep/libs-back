@@ -216,8 +216,17 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
   /*
    * Set up atoms for use in X selection mechanism.
    */
-  XInternAtoms(xDisplay, atom_names, sizeof(atom_names)/sizeof(char*),
-    False, atoms);
+#ifdef HAVE_XINTERNATOMS
+   XInternAtoms(xDisplay, atom_names, sizeof(atom_names)/sizeof(char*),
+                False, atoms);
+#else
+   {
+     int atomCount;
+
+     for (atomCount = 0; atomCount < sizeof(atom_names)/sizeof(char*); atomCount++)
+       atoms[atomCount] = XInternAtom(xDisplay, atom_names[atomCount], False);
+   }
+#endif
 
   xRootWin = RootWindow(xDisplay, DefaultScreen(xDisplay));
   xAppWin = XCreateSimpleWindow(xDisplay, xRootWin,

@@ -142,7 +142,7 @@ NSPoint MSScreenPointToGS(int x, int y)
 }
 
 static inline
-NSRect MSScreenRectToGS(RECT r, unsigned int styleMask, WIN32Server *self)
+NSRect MSScreenRectToGS(RECT r)
 {
   NSRect r1;
   int screen_height = GetSystemMetrics(SM_CYSCREEN);
@@ -167,7 +167,7 @@ POINT GSScreenPointToMS(NSPoint p)
 }
 
 static inline
-RECT GSScreenRectToMS(NSRect r, unsigned int styleMask, WIN32Server *self)
+RECT GSScreenRectToMS(NSRect r)
 {
   RECT r1;
   int screen_height = GetSystemMetrics(SM_CYSCREEN);

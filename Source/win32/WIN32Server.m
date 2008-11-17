@@ -531,18 +531,7 @@ NSLog(@"Callback");
 {
   flags._eventHandled = NO;
 
-  flags._is_menu = NO;
-  if ((HWND)flags.menuRef == hwnd && flags.HAVE_MAIN_MENU == YES)
-    flags._is_menu = YES;
-  // note some cache windows are needed..... just get the zeros 
-  flags._is_cache = [[EVENT_WINDOW(hwnd) className] isEqual: @"GSCacheW"];
-  
-  flags._hasGSClassName = NO;
-  if ([EVENT_WINDOW(hwnd) className] != nil)
-    flags._hasGSClassName = YES;
-    
   // future house keeping can go here
-
 }
 
 - (LRESULT) windowEventProc: (HWND)hwnd : (UINT)uMsg 
@@ -869,17 +858,11 @@ NSLog(@"Callback");
   DWORD wstyle;
   DWORD estyle;
 
-  flags.currentGS_Style = style;
-    
   wstyle = [self windowStyleForGSStyle: style];
   estyle = [self exwindowStyleForGSStyle: style];
 
-  r = GSScreenRectToMS(frame, style, self);
+  r = GSScreenRectToMS(frame);
 
-  /* 
-   * from here down is reused and unmodified from WIN32EventServer.m 
-   * which has been removed form the subproject 
-   */
   NSDebugLLog(@"WTrace", @"window: %@ : %d : %d : %d", NSStringFromRect(frame), 
               type, style, screen);
   NSDebugLLog(@"WTrace", @"         device frame: %d, %d, %d, %d", 
@@ -1233,11 +1216,10 @@ NSLog(@"Callback");
   RECT r;
   RECT r2;
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
-  NSWindow *window = GSWindowWithNumber(winNum);
 
   NSDebugLLog(@"WTrace", @"placewindow: %@ : %d", NSStringFromRect(frame), 
               winNum);
-  r = GSScreenRectToMS(frame, [window styleMask], self);
+  r = GSScreenRectToMS(frame);
   GetWindowRect((HWND)winNum, &r2);
 
   SetWindowPos((HWND)winNum, NULL, 
@@ -1277,10 +1259,9 @@ NSLog(@"Callback");
 - (NSRect) windowbounds: (int) winNum
 {
   RECT r;
-  NSWindow *window = GSWindowWithNumber(winNum);
 
   GetWindowRect((HWND)winNum, &r);
-  return MSScreenRectToGS(r, [window styleMask], self);
+  return MSScreenRectToGS(r);
 }
 
 - (void) setwindowlevel: (int) level : (int) winNum
@@ -1459,6 +1440,23 @@ NSLog(@"Callback");
     }
   desiredFocus = (HWND)winNum;
   SetFocus((HWND)winNum);
+}
+
+- (void) setalpha: (float)alpha: (int) win
+{
+  if (alpha > 0.99)
+    {
+      SetWindowLong((HWND)win, GWL_EXSTYLE,
+                    GetWindowLong((HWND)win, GWL_EXSTYLE) & ~WS_EX_LAYERED);
+      RedrawWindow((HWND)win, NULL, NULL, 
+                   RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
+    }
+  else
+    {
+      SetWindowLong((HWND)win, GWL_EXSTYLE, 
+                    GetWindowLong((HWND)win, GWL_EXSTYLE) | WS_EX_LAYERED);
+      SetLayeredWindowAttributes((HWND)win, 0, 255 * alpha, LWA_ALPHA);
+    }
 }
 
 - (NSPoint) mouselocation

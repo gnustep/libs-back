@@ -298,6 +298,12 @@ if test "$ac_cv_header_X11_extensions_XShm_h" = yes -a "$ac_cv_func_shmctl" = ye
   AC_DEFINE(XSHM,1,[Define if you have X11 XShm extensions])
 fi
 
+AC_CHECK_LIB(X11, XInternAtoms,
+  AC_DEFINE([HAVE_XINTERNATOMS], 1, 
+    [Define to 1 if you have 'XInternAtoms' function.]),                  
+  ,
+  $X_LIBS)
+
 #--------------------------------------------------------------------
 # Window's graphics library
 #--------------------------------------------------------------------
