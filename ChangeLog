@@ -1,4 +1,9 @@
-2008-11-14  Wolfgang Lux  <wlux@uni-muenster.de>
+2008-11-20  Wolfgang Lux  <wolfgang.lux@gmail.com>
+
+	* Source/x11/XGServerWindow.m ([XGServer -windowlist]): Implement
+	a fix for bug #24707.
+
+2008-11-14  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Tools/gpbs.m (init): Don't change SIGABRT handler to prevent
 	infinite recursion on abort().
