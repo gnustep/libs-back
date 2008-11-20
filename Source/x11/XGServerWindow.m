@@ -2541,7 +2541,17 @@ NSLog(@"styleoffsets ... guessing offsets\n");
 	    }
 	}
     }
-  XIconifyWindow(dpy, window->ident, window->screen);
+  /*
+   * When the application owns the mini window, we withdraw the window itself
+   * during miniaturization and put up the mini window instead. However, this
+   * does not work for WindowMaker, which unmaps the mini window, too, when
+   * the actual window is withdrawn. Fortunately, miniaturizing the actual
+   * window does already the right thing on WindowMaker.
+   */
+  if (!generic.flags.appOwnsMiniwindow || (generic.wm & XGWM_WINDOWMAKER))
+    XIconifyWindow(dpy, window->ident, window->screen);
+  else
+    XWithdrawWindow(dpy, window->ident, window->screen);
 }
 
 /**
