@@ -130,6 +130,10 @@ NSConnection		*conn = nil;
 NSLock			*dictionary_lock = nil;
 NSMutableDictionary	*pasteboards = nil;
 
+@interface	NSConnection (Private)
+- (void) _enableKeepalive;
+@end
+
 @interface	NSPasteboard (GNULocal)
 + (void) _localServer: (id<GSPasteboardSvr>)s;
 @end
@@ -1007,6 +1011,13 @@ NSMutableDictionary	*pasteboards = nil;
 	   name: NSConnectionDidDieNotification
 	 object: newConn];
   [newConn setDelegate: self];
+  /* For ms-windows we need to enable keepalive on the connection so that
+   * we will find out if the remote end goes away.
+   */
+  if ([newConn respondsToSelector: @selector(_enableKeepalive)])
+    {
+      [newConn _enableKeepalive];
+    }
   return YES;
 }
 
