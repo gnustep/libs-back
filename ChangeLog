@@ -1,3 +1,8 @@
+2008-11-20 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Tools/gpbs.m: Use new private method for connection keepalive as
+	we need it on windows.
+
 2008-11-20  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Source/x11/XGServerWindow.m ([XGServer -windowlist]): Implement
