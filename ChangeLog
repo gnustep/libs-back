@@ -1,3 +1,21 @@
+2008-12-02 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* GNUmakefile:
+	* Fonts/GNUmakefile:
+	* Tools/GNUmakefile:
+	* Source/winlib/GNUmakefile:
+	* Source/art/GNUmakefile:
+	* Source/GNUmakefile:
+	* Source/cairo/GNUmakefile:
+	* Source/xlib/GNUmakefile:
+	* Source/win32/GNUmakefile:
+	* Source/x11/GNUmakefile:
+	* Source/gsc/GNUmakefile:
+	* Source/xdps/GNUmakefile:
+	* Documentation/Back/GNUmakefile:
+	* Documentation/GNUmakefile:
+	Don't override installation domain ... fix for bug #24671
+
 2008-11-30  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* install.sh: Fix header syntax and provide default for make
