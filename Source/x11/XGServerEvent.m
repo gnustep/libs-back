@@ -272,6 +272,16 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 }
 #endif
 
+- (BOOL) runLoopShouldBlock: (BOOL*)trigger
+{
+  *trigger = YES;	//  Should trigger this event
+  if (XPending(dpy) > 0)
+    {
+      return NO;	// Don't block
+    }
+  return YES;
+}
+
 - (void) receivedEvent: (void*)data
                   type: (RunLoopEventType)type
                  extra: (void*)extra
