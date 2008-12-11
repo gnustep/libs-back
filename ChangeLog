@@ -1,3 +1,8 @@
+2008-12-11 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoContext.m (-GSDrawImage::): Correct test
+	whether image conversion is needed.
+
 2008-12-10  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Source/x11/XGServerEvent.m (-runLoopShouldBlock:): Add method to
