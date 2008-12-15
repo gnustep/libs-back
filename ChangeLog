@@ -1,3 +1,11 @@
+2008-12-15  Wolfgang Lux  <wolfgang.lux@gmail.com>
+
+	* Source/x11/XGServerEvent.m (-processEvent:): Ignore
+	_NET_STATE_WM property changes with Window Maker as it causes
+	problems with hidden windows.
+	Add a workaround for Window Maker so that unhidden windows
+	correctly show their document edited status.
+
 2008-12-11 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoContext.m (-GSDrawImage::): Correct test
