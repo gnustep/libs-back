@@ -1,4 +1,9 @@
-2008-11-20 Richard Frith-Macdonald <rfm@gnu.org>
+2008-12-17 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/winlib/WIN32FontInfo.m (-coveredCharacterSet): Set cbThis
+	element of GLYPHSET structure before calling Windows funtion.
+	
+2008-12-17 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Tools/gpbs.m: Remove use of private method for connection keepalive.
 	Keepalive is now enabled in base when necessary.
