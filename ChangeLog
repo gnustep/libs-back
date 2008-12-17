@@ -1,3 +1,8 @@
+2008-11-20 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Tools/gpbs.m: Remove use of private method for connection keepalive.
+	Keepalive is now enabled in base when necessary.
+
 2008-12-15  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Source/x11/XGServerEvent.m (-processEvent:): Ignore
