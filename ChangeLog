@@ -1,3 +1,8 @@
+2008-12-19  Wolfgang Lux  <wolfgang.lux@gmail.com>
+
+	* Source/x11/XGServerEvent.m (check_modifier): Fix an issue where
+	modifier key settings could be set incorrectly.
+
 2008-12-19  Nicola Pero <nicola.pero@meta-innovation.com>
 
 	* All GNUmakefiles: removed GNUSTEP_CORE_SOFTWARE=YES and
@@ -10,13 +15,13 @@
 	* All GNUmakefiles: added GNUSTEP_CORE_SOFTWARE=YES at the
 	beginning.
 	* GNUmakefile: Export GNUSTEP_CORE_SOFTWARE to reduce chances of a
-	problem if a GNUmakefile in a subdirectory is missing it.	
+	problem if a GNUmakefile in a subdirectory is missing it.
 
 2008-12-17 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/winlib/WIN32FontInfo.m (-coveredCharacterSet): Set cbThis
 	element of GLYPHSET structure before calling Windows funtion.
-	
+
 2008-12-17 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Tools/gpbs.m: Remove use of private method for connection keepalive.
