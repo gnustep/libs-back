@@ -146,10 +146,14 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
     int by,bi;
     int key_code = XKeysymToKeycode(xEvent->xkeymap.display, key_sym);
 
-    by = key_code / 8;
-    bi = key_code % 8;
-    key_vector = xEvent->xkeymap.key_vector;
-    return (key_vector[by] & (1 << bi));
+    if (key_code != NoSymbol)
+      {
+	by = key_code / 8;
+	bi = key_code % 8;
+	key_vector = xEvent->xkeymap.key_vector;
+	return (key_vector[by] & (1 << bi));
+      }
+    return 0;
 }
 
 @interface XGServer (WindowOps)
