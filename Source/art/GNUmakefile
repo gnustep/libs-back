@@ -24,8 +24,7 @@
 #  Free Software Foundation, 51 Franklin Street, Fifth Floor, 
 #  Boston, MA 02110-1301, USA.
 
-GNUSTEP_INSTALLATION_DOMAIN = SYSTEM
-
+PACKAGE_NAME = gnustep-back
 GNUSTEP_LOCAL_ADDITIONAL_MAKEFILES=../../back.make
 include $(GNUSTEP_MAKEFILES)/common.make
 

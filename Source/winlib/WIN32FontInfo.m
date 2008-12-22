@@ -201,12 +201,24 @@ NSLog(@"No glyph for U%d", c);
       HFONT old;
 
       ms = [NSMutableCharacterSet new];
+      if (!ms)
+        return nil;
+
       hdc = CreateCompatibleDC(NULL);
       old = SelectObject(hdc, hFont);
       count = (unsigned)GetFontUnicodeRanges(hdc, 0);
       if (count > 0)
         {
           gs = (GLYPHSET*)objc_malloc(count);
+          if (!gs)
+            {
+              SelectObject(hdc, old);
+              DeleteDC(hdc);
+              RELEASE(ms);
+              return nil;
+            }
+
+          gs->cbThis = count;
           if ((unsigned)GetFontUnicodeRanges(hdc, gs) == count)
             {
               numberOfGlyphs = gs->cGlyphsSupported;

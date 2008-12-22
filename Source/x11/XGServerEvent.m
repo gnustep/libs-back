@@ -146,10 +146,14 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
     int by,bi;
     int key_code = XKeysymToKeycode(xEvent->xkeymap.display, key_sym);
 
-    by = key_code / 8;
-    bi = key_code % 8;
-    key_vector = xEvent->xkeymap.key_vector;
-    return (key_vector[by] & (1 << bi));
+    if (key_code != NoSymbol)
+      {
+	by = key_code / 8;
+	bi = key_code % 8;
+	key_vector = xEvent->xkeymap.key_vector;
+	return (key_vector[by] & (1 << bi));
+      }
+    return 0;
 }
 
 @interface XGServer (WindowOps)
@@ -271,6 +275,16 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
   [self receivedEvent: 0 type: 0 extra: 0 forMode: nil];
 }
 #endif
+
+- (BOOL) runLoopShouldBlock: (BOOL*)trigger
+{
+  *trigger = YES;	//  Should trigger this event
+  if (XPending(dpy) > 0)
+    {
+      return NO;	// Don't block
+    }
+  return YES;
+}
 
 - (void) receivedEvent: (void*)data
                   type: (RunLoopEventType)type
@@ -1304,7 +1318,13 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
                     xEvent.xproperty.window,
                     XGetAtomName(dpy, xEvent.xproperty.atom));
         {
-          if (xEvent.xproperty.atom == generic.netstates.net_wm_state_atom &&
+          /* Note: Don't rely on _NET_STATE_WM_HIDDEN with Window Maker,
+           * since it is impossible to distinguish miniaturized and hidden
+           * windows by their window properties.  Fortunately, Window Maker
+           * will send us client message when a window is miniaturized.
+           */
+          if ((generic.wm & XGWM_WINDOWMAKER) == 0 &&
+              xEvent.xproperty.atom == generic.netstates.net_wm_state_atom &&
               xEvent.xproperty.state == PropertyNewValue)
             {
               if (cWin == 0 || xEvent.xproperty.window != cWin->ident)
@@ -1487,6 +1507,21 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 		  }
 	      }
 
+	    /* Work around a bug in Window Maker, which does not preserve
+	     * the document edited status and uses the wrong close button
+	     * when a window is shown again after hiding it
+	     */
+	    if (generic.wm & XGWM_WINDOWMAKER)
+	      {
+/* Warning ... X-bug .. when we specify 32bit data X actually expects data
+ * of type 'long' or 'unsigned long' even on machines where those types
+ * hold 64bit values.
+ */
+		XChangeProperty(dpy, cWin->ident, generic.win_decor_atom, 
+				generic.win_decor_atom, 32, PropModeReplace, 
+				(unsigned char *)&cWin->win_attrs,
+				sizeof(GNUstepWMAttributes)/sizeof(CARD32));
+	      }
 	  }
 	break;
 

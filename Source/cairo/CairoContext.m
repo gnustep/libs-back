@@ -140,7 +140,7 @@
   bitmap = (NSBitmapImageRep*)imageref;
   colorSpaceName = [bitmap colorSpaceName];
   if ([bitmap isPlanar] || ([bitmap bitmapFormat] != 0) 
-      || ([bitmap bitsPerPixel] != 8) ||
+      || ([bitmap bitsPerSample] != 8) ||
       (![colorSpaceName isEqualToString: NSDeviceRGBColorSpace] &&
        ![colorSpaceName isEqualToString: NSCalibratedRGBColorSpace]))
     {
@@ -150,7 +150,7 @@
       NSString *colorSpaceName = NSCalibratedRGBColorSpace;
       NSBitmapImageRep *new;
 
-      new = [bitmap _convertToFormatBitsPerSample: bitsPerSample
+     new = [bitmap _convertToFormatBitsPerSample: bitsPerSample
                     samplesPerPixel: samplesPerPixel
                     hasAlpha: [bitmap hasAlpha]
                     isPlanar: isPlanar

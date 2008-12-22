@@ -22,8 +22,7 @@
 #  If not, see <http://www.gnu.org/licenses/> or write to the 
 #  Free Software Foundation, 51 Franklin Street, Fifth Floor, 
 
-GNUSTEP_INSTALLATION_DOMAIN = SYSTEM
-
+PACKAGE_NAME = gnustep-back
 GNUSTEP_LOCAL_ADDITIONAL_MAKEFILES=../../back.make
 
 include $(GNUSTEP_MAKEFILES)/common.make

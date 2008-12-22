@@ -31,9 +31,8 @@ ifeq ($(GNUSTEP_MAKEFILES),)
   $(error You need to set GNUSTEP_MAKEFILES before compiling!)
 endif
 
-# Install into the system root by default
-GNUSTEP_INSTALLATION_DOMAIN = SYSTEM
-
+PACKAGE_NAME = gnustep-back
+export PACKAGE_NAME
 RPM_DISABLE_RELOCATABLE=YES
 PACKAGE_NEEDS_CONFIGURE = YES
 
@@ -42,8 +41,6 @@ SVN_BASE_URL = svn+ssh://svn.gna.org/svn/gnustep/libs
 
 GNUSTEP_LOCAL_ADDITIONAL_MAKEFILES=back.make
 include $(GNUSTEP_MAKEFILES)/common.make
-
-PACKAGE_NAME = gnustep-back
 
 include ./Version
 
