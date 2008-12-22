@@ -1,3 +1,7 @@
+2008-12-21  Adam Fedor  <fedor@gnu.org>
+
+	* Version 0.16.0
+
 2008-12-19  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Source/x11/XGServerEvent.m (check_modifier): Fix an issue where
