@@ -7,14 +7,19 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.16.0}
+
+Transparent windows implemented in WIN32 backend, better position and
+scaling of images. General cleanup of code.
+
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.14.0}
 
 Added code to automatically make any window which uses the
  NSDesktopWindowLevel also be omnipresent.
 
 Many glyph drawing improvements.
-
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.13.2}
 
