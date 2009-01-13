@@ -128,16 +128,19 @@ static FTC_ImageCache ftc_imagecache;
 static FTC_SBitCache ftc_sbitcache;
 static FTC_CMapCache ftc_cmapcache;
 
-
-static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_Face *pface)
+/*
+ * Helper method used inside of FTC_Manager to create an FT_FACE.
+ */
+static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, 
+                            FT_Pointer data, FT_Face *pface)
 {
   FT_Error err;
   NSArray *rfi = (NSArray *)fid;
   int i, c = [rfi count];
+  const char *face_name = [[rfi objectAtIndex: 0] fileSystemRepresentation];
 
-//  NSLog(@"ft_get_face: %@ '%s'", rfi, [[rfi objectAtIndex: 0] cString]);
-
-  err = FT_New_Face(lib, [[rfi objectAtIndex: 0] cString], 0, pface);
+  NSDebugLLog(@"ftfont", @"ft_get_face: %@ '%s'", rfi, face_name);
+  err = FT_New_Face(lib, face_name, 0, pface);
   if (err)
     {
       NSLog(@"Error when loading '%@' (%08x)", [rfi objectAtIndex: 0], err);
@@ -146,14 +149,17 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
   for (i = 1; i < c; i++)
     {
-//      NSLog(@"   do '%s'", [[rfi objectAtIndex: i] cString]);
-      err = FT_Attach_File(*pface, [[rfi objectAtIndex: i] cString]);
+      face_name = [[rfi objectAtIndex: i] fileSystemRepresentation];
+
+      NSDebugLLog(@"ftfont", @"   do '%s'", face_name);
+      err = FT_Attach_File(*pface, face_name);
       if (err)
         {
           NSLog(@"Error when loading '%@' (%08x)", [rfi objectAtIndex: i], err);
           /* pretend it's alright */
         }
     }
+
   return 0;
 }
 
@@ -175,6 +181,8 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
     }
 
   self = [super init];
+  if (!self)
+    return nil;
 
   screenFont = p_screenFont;
 
@@ -188,7 +196,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
   font_entry = [FTFontEnumerator fontWithName: name];
   if (!font_entry)
     {
-      [self release];
+      RELEASE(self);
       return nil;
     }
 
@@ -250,7 +258,8 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
     {
       NSLog(@"FTC_Manager_LookupSize() failed for '%@', error %08x!",
             name, error);
-      return self;
+      RELEASE(self);
+      return nil;
     }
 
   /* TODO: these are _really_ messed up when fonts are flipped */
@@ -277,6 +286,13 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
     FT_CharMap cmap;
     FT_Encoding e;
     unicodeCmap = 0;
+
+    if (!face)
+      {
+        NSLog(@"Found no face for font '%@'", name);
+        RELEASE(self);
+        return nil;
+      }
 
     for (i = 0; i < face->num_charmaps; i++)
       {
@@ -1886,7 +1902,7 @@ p(t)=q(t)
 */
 
 /* TODO: try to combine charpath and NSBezierPath handling? */
-
+#if 0
 static int charpath_move_to(const FT_Vector *to, void *user)
 {
   GSGState *self = (GSGState *)user;
@@ -1948,7 +1964,7 @@ static FT_Outline_Funcs charpath_funcs = {
   shift:10,
   delta:0,
 };
-
+#endif
 
 static int bezierpath_move_to(const FT_Vector *to, void *user)
 {

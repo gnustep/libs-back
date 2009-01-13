@@ -1,3 +1,7 @@
+2009-01-13 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/ftfont.m: Give more information on failed font face access.
+
 2008-12-21  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.16.0
