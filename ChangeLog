@@ -1,3 +1,9 @@
+2009-01-17  Wolfgang Lux  <wolfgang.lux@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_setSupportedWMProtocols:,
+	_checkStyle:, window::::, orderwindow:::): Set the WM protocols
+	supported by a window according to its style mask.
+
 2009-01-13 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/art/ftfont.m: Give more information on failed font face access.

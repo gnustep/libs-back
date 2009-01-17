@@ -370,6 +370,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 - (gswindow_device_t *) _rootWindowForScreen: (int)screen;
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
                      : (unsigned int) style : (Window) win;
+- (void) _setSupportedWMProtocols: (gswindow_device_t *) window;
 @end
 
 @implementation XGServer (WindowOps)
@@ -819,18 +820,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
    * Prepare the protocols supported by the window.
    * These protocols should be set on the window when it is ordered in.
    */
-  window->numProtocols = 0;
-  window->protocols[window->numProtocols++] = generic.take_focus_atom;
-  window->protocols[window->numProtocols++] = generic.delete_win_atom;
-  if ((generic.wm & XGWM_EWMH) != 0)
-    {
-      window->protocols[window->numProtocols++] = generic.net_wm_ping_atom;
-    }
-  if ((generic.wm & XGWM_WINDOWMAKER) != 0)
-    {
-      window->protocols[window->numProtocols++] = generic.miniaturize_atom;
-    }
-  XSetWMProtocols(dpy, window->ident, window->protocols, window->numProtocols);
+  [self _setSupportedWMProtocols: window];
 
   window->exposedRects = [NSMutableArray new];
   window->region = XCreateRegion();
@@ -1371,6 +1361,30 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     {
       NSLog(@"Warning - mouse/pointer seems to have NO buttons");
     }
+}
+
+- (void) _setSupportedWMProtocols: (gswindow_device_t *) window
+{
+  NSWindow *nswin = GSWindowWithNumber(window->number);
+
+  window->numProtocols = 0;
+  if (!nswin || [nswin canBecomeKeyWindow])
+    {
+      window->protocols[window->numProtocols++] = generic.take_focus_atom;
+    }
+  if ((window->win_attrs.window_style & NSClosableWindowMask) != 0)
+    window->protocols[window->numProtocols++] = generic.delete_win_atom;
+  // Add ping protocol for EWMH 
+  if ((generic.wm & XGWM_EWMH) != 0)
+    {
+      window->protocols[window->numProtocols++] = generic.net_wm_ping_atom;
+    }
+  if ((generic.wm & XGWM_WINDOWMAKER) != 0
+      && (window->win_attrs.window_style & NSMiniaturizableWindowMask) != 0)
+    {
+      window->protocols[window->numProtocols++] = generic.miniaturize_atom;
+    }
+  XSetWMProtocols(dpy, window->ident, window->protocols, window->numProtocols);
 }
 
 - (void) _setupRootWindow
@@ -1998,19 +2012,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
    * Prepare the protocols supported by the window.
    * These protocols should be set on the window when it is ordered in.
    */
-  window->numProtocols = 0;
-  window->protocols[window->numProtocols++] = generic.take_focus_atom;
-  window->protocols[window->numProtocols++] = generic.delete_win_atom;
-  // Add ping protocol for EWMH 
-  if ((generic.wm & XGWM_EWMH) != 0)
-    {
-      window->protocols[window->numProtocols++] = generic.net_wm_ping_atom;
-    }
-  if ((generic.wm & XGWM_WINDOWMAKER) != 0)
-    {
-      window->protocols[window->numProtocols++] = generic.miniaturize_atom;
-    }
-  XSetWMProtocols(dpy, window->ident, window->protocols, window->numProtocols);
+  [self _setSupportedWMProtocols: window];
 
   window->exposedRects = [NSMutableArray new];
   window->region = XCreateRegion();
@@ -2745,8 +2747,7 @@ static BOOL didCreatePixmaps;
       /*
        * Tell the window manager what protocols this window conforms to.
        */
-      XSetWMProtocols(dpy, window->ident, window->protocols,
-	window->numProtocols);
+      [self _setSupportedWMProtocols: window];
     }
 
   if (generic.flags.useWindowMakerIcons == 1)
