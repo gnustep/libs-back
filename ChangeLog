@@ -1,3 +1,7 @@
+2009-01-13 Riccardo Mottola <rmottola@users.sf.net>
+
+	* Source/art/image.m: Optimized and correct handling of 16 bit in _get_8_bits()
+	
 2009-01-17  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Source/x11/XGServerWindow.m (_setSupportedWMProtocols:,

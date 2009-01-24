@@ -52,6 +52,18 @@ not just discard the extra bits
   bit_ofs %= 8;
 
   v = 0;
+
+  /* if we are handling 16 bit values we optimize */
+
+  /* TODO: this code could be little/big-endian unsafe */
+  if (num_bits == 16)
+    {
+      ptr++;
+      v = *ptr;
+      return v;
+    }
+
+  
   for (i = 0; i < 8 && i < num_bits; i++)
     {
       v <<= 1;
