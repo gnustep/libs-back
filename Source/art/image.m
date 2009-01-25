@@ -55,10 +55,12 @@ not just discard the extra bits
 
   /* if we are handling 16 bit values we optimize */
 
-  /* TODO: this code could be little/big-endian unsafe */
+
   if (num_bits == 16)
     {
+#if (GS_WORDS_BIGENDIAN==0)
       ptr++;
+#endif 
       v = *ptr;
       return v;
     }
