@@ -1,4 +1,9 @@
-2009-01-13 Riccardo Mottola <rmottola@users.sf.net>
+2009-01-25 Riccardo Mottola <rmottola@users.sf.net>
+
+	* Source/art/image.m: Fix for big-endiam machines
+	
+
+2009-01-24 Riccardo Mottola <rmottola@users.sf.net>
 
 	* Source/art/image.m: Optimized and correct handling of 16 bit in _get_8_bits()
 	
