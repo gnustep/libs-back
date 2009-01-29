@@ -727,6 +727,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   window->xwn_attrs.border_pixel = context->black;
   window->xwn_attrs.background_pixel = context->white;
   window->xwn_attrs.colormap = context->cmap;
+  window->xwn_attrs.save_under = False;
+  window->xwn_attrs.override_redirect = False;
 
   window->ident = XCreateWindow(dpy, window->root,
 				NSMinX(frame), NSMinY(frame), 
@@ -735,7 +737,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 				context->depth,
 				CopyFromParent,
 				context->visual,
-				(CWColormap | CWBackPixel | CWBorderPixel),
+				(CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect),
 				&window->xwn_attrs);
 
   /*
@@ -745,8 +747,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   classhint.res_class = "GNUstep";
   XSetClassHint(dpy, window->ident, &classhint);
 
-  window->xwn_attrs.save_under = False;
-  window->xwn_attrs.override_redirect = False;
   window->map_state = IsUnmapped;
   window->visibility = 2;
 
@@ -1207,8 +1207,10 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
           generic.wintypes.win_dnd_atom = 
               XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DND", False);
           //KDE extensions
+#ifdef USE_KDE_OVERRIDE
           generic.wintypes.win_override_atom = 
               XInternAtom(dpy, "_KDE_NET_WM_WINDOW_TYPE_OVERRIDE", False);
+#endif
           generic.wintypes.win_topmenu_atom = 
               XInternAtom(dpy, "_KDE_NET_WM_WINDOW_TYPE_TOPMENU", False);
           
@@ -1909,6 +1911,13 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   window->xwn_attrs.border_pixel = context->black;
   window->xwn_attrs.background_pixel = context->white;
   window->xwn_attrs.colormap = context->cmap;
+  window->xwn_attrs.save_under = False;
+  /* 
+   * Setting this to True should only be done, when we also grap the pointer.
+   * It could be done for popup windows, but at this point we don't know
+   * about the usage of the window.
+   */
+  window->xwn_attrs.override_redirect = False;
 
   window->ident = XCreateWindow(dpy, window->root,
 				NSMinX(frame), NSMinY(frame), 
@@ -1917,7 +1926,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 				context->depth,
 				CopyFromParent,
 				context->visual,
-				(CWColormap | CWBackPixel | CWBorderPixel),
+				(CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect),
 				&window->xwn_attrs);
 
   /*
@@ -1927,8 +1936,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   classhint.res_class = "GNUstep";
   XSetClassHint(dpy, window->ident, &classhint);
 
-  window->xwn_attrs.save_under = False;
-  window->xwn_attrs.override_redirect = False;
   window->map_state = IsUnmapped;
   window->visibility = -1;
 
@@ -4613,6 +4620,26 @@ _computeDepth(int class, int bpp)
 
   XFree(data);
   return NO;
+}
+
+- (void) setPartentWindow: (int)partentWin 
+           forChildWindow: (int)childWin
+{
+  gswindow_device_t	*cwindow;
+  gswindow_device_t	*pwindow;
+  Window p;
+
+  cwindow = WINDOW_WITH_TAG(childWin);
+  if (!cwindow)
+    return;
+
+  pwindow = WINDOW_WITH_TAG(partentWin);
+  if (!pwindow)
+    p = None;
+  else
+    p = pwindow->ident;
+
+  XSetTransientForHint(dpy, cwindow->ident, p);
 }
 
 @end

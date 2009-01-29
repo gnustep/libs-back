@@ -1277,7 +1277,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   [source->ctm boundingRectFor: aRect result: &aRect];
 
   x = floorf(aPoint.x);
-  y = floorf(aPoint.y);
+  y = floorf(aPoint.y + 0.5);
   minx = NSMinX(aRect);
   miny = NSMinY(aRect);
   width = NSWidth(aRect);
