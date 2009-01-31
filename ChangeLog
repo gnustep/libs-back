@@ -1,3 +1,8 @@
+2009-01-30 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/win32/WIN32Server.m: fix typo
+	* Source/x11/XGServerWindow.m: ditto
+
 2009-01-29 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/WIN32Server.m (-setPartentWindow:forChildWindow:),
