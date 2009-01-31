@@ -4622,8 +4622,8 @@ _computeDepth(int class, int bpp)
   return NO;
 }
 
-- (void) setPartentWindow: (int)partentWin 
-           forChildWindow: (int)childWin
+- (void) setParentWindow: (int)parentWin 
+          forChildWindow: (int)childWin
 {
   gswindow_device_t	*cwindow;
   gswindow_device_t	*pwindow;
@@ -4633,7 +4633,7 @@ _computeDepth(int class, int bpp)
   if (!cwindow)
     return;
 
-  pwindow = WINDOW_WITH_TAG(partentWin);
+  pwindow = WINDOW_WITH_TAG(parentWin);
   if (!pwindow)
     p = None;
   else

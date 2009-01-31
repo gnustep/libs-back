@@ -1563,10 +1563,10 @@ NSLog(@"Callback");
   SetCursor((HCURSOR)cid);
 }
 
-- (void) setPartentWindow: (int)partentWin 
-           forChildWindow: (int)childWin
+- (void) setParentWindow: (int)parentWin 
+          forChildWindow: (int)childWin
 {
-  SetParent((HWND)childWin, (HWND)partentWin);
+  SetParent((HWND)childWin, (HWND)parentWin);
 }
 
 @end
