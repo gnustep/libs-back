@@ -1,3 +1,9 @@
+2009-02-03 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/win32/WIN32Server.m (-setParentWindow:forChildWindow:),
+	Temporarily comment out method implementation as it was preventing
+	popup menus from working.
+
 2009-01-30 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/win32/WIN32Server.m: fix typo

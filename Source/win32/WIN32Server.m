@@ -1566,7 +1566,7 @@ NSLog(@"Callback");
 - (void) setParentWindow: (int)parentWin 
           forChildWindow: (int)childWin
 {
-  SetParent((HWND)childWin, (HWND)parentWin);
+  //SetParent((HWND)childWin, (HWND)parentWin);
 }
 
 @end
