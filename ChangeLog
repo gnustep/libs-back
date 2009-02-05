@@ -1,3 +1,7 @@
+2009-02-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/XGBitmap.m: Fix some compiler warnings.
+
 2009-02-03 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/win32/WIN32Server.m (-setParentWindow:forChildWindow:),

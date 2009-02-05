@@ -373,7 +373,7 @@ _pixmap_combine_alpha(RContext *context,
 
 struct _bitmap_decompose {
 	unsigned char *plane[5];
-        int bit_off[5];
+  unsigned int bit_off[5];
 	long image_w, image_h, screen_w, screen_h;
 	int bps, spp, bpp, bpr;
 	BOOL has_alpha, is_direct_packed, one_is_black;
@@ -383,8 +383,8 @@ struct _bitmap_decompose {
 	int cur_image_row, cur_screen_row;
 	int first_vis_col, last_vis_col;
 
-	int *row_starts, *row_ends, *col_starts, *col_ends;
-	int *r_sum, *g_sum, *b_sum, *a_sum, *pix_count;
+	unsigned int *row_starts, *row_ends, *col_starts, *col_ends;
+	unsigned int *r_sum, *g_sum, *b_sum, *a_sum, *pix_count;
 };
 
 /*
@@ -407,10 +407,10 @@ _get_bit_value(unsigned char *base, long msb_off, int bit_width)
    * of bit offsets and thus byte offsets. The shift is the number of
    * spare bits left in the byte containing the lsb
    */
-  lsb_off= msb_off+bit_width-1;
-  byte1= msb_off/8;
-  byte2= lsb_off/8;
-  shift= 7-(lsb_off%8);
+  lsb_off = msb_off + bit_width - 1;
+  byte1 = msb_off / 8;
+  byte2 = lsb_off / 8;
+  shift = 7-(lsb_off % 8);
 
   /*
    * We now get the value from the byte array, possibly using two bytes if
@@ -418,17 +418,17 @@ _get_bit_value(unsigned char *base, long msb_off, int bit_width)
    * down to it's correct position and extraneous bits masked off before
    * being returned.
    */
-  value=base[byte2];
-  if (byte1!=byte2)
-    value|= base[byte1]<<8;
+  value = base[byte2];
+  if (byte1 != byte2)
+    value |= base[byte1] << 8;
   value >>= shift;
 
-  return value & ((1<<bit_width)-1);
+  return value & ((1 << bit_width) - 1);
 }
 
 /*
  * Extract a single pixel from a row. We are passed addresses for the red,
- * green, blue and aalpha components, along with the rwnumber and all the
+ * green, blue and alpha components, along with the column number and all the
  * necessary information to access the raw data. This function is responsible
  * for extracting the raw data and converting it to 8 bit RGB for return so
  * as to present a unified interface to the higher functions.
@@ -437,7 +437,7 @@ _get_bit_value(unsigned char *base, long msb_off, int bit_width)
 static void
 _get_image_pixel(int col, unsigned char *r, unsigned char *g,
 	unsigned char *b, unsigned char *a,
-	unsigned char **planes, int *bit_off,
+	unsigned char **planes, unsigned int *bit_off,
 	int spp, int bpp, int bps,
 	int pro_mul, int cspace, BOOL has_alpha, BOOL one_is_black)
 {
@@ -454,21 +454,21 @@ _get_image_pixel(int col, unsigned char *r, unsigned char *g,
   *a = has_alpha ? values[spp-1] : 255;
 
   /* handle the colourspace */
-  switch(cspace)
+  switch (cspace)
     {
       case rgb_colorspace:
-	*r = values[0];
-	*g = values[1];
-	*b = values[2];
-	break;
+        *r = values[0];
+        *g = values[1];
+        *b = values[2];
+        break;
       case cmyk_colorspace:
-	*r = 255 - (values[0] + values[3]);
-	*g = 255 - (values[1] + values[3]);
-	*b = 255 - (values[2] + values[3]);
-	break;
+        *r = MAX(0, 255 - (values[0] + values[3]));
+        *g = MAX(0, 255 - (values[1] + values[3]));
+        *b = MAX(0, 255 - (values[2] + values[3]));
+        break;
       case gray_colorspace:
-	*r = *g = *b = (one_is_black ? (255 - values[0]) : values[0]);
-	break;
+        *r = *g = *b = (one_is_black ? (255 - values[0]) : values[0]);
+        break;
     }
 }
 
@@ -652,11 +652,12 @@ _create_image_row(struct _bitmap_decompose *img)
  */
 
 static void
-_set_ranges(int src_len, int dst_len,
-		int *start_ptr, int *end_ptr, BOOL fast_min)
+_set_ranges(long src_len, long dst_len,
+		unsigned int *start_ptr, unsigned int *end_ptr, BOOL fast_min)
 {
   float dst_f = (float)dst_len;
   int d;
+
   if (fast_min || (src_len <= dst_len))
     /* magnifying */
     {
@@ -666,8 +667,8 @@ _set_ranges(int src_len, int dst_len,
           int middle = (int)((((float)d + 0.5) * src_f) / dst_f);
           *start_ptr++ = middle;
           *end_ptr++ = middle;
-	  if (middle >= src_len)
-	    NSLog(@"Problem with magnification!");
+          if (middle >= src_len)
+            NSLog(@"Problem with magnification!");
         }
     }
   else
@@ -676,8 +677,9 @@ _set_ranges(int src_len, int dst_len,
       for (d = 0; d < dst_len; d++)
         {
           int end_i = (int)(0.5 + (((d+1) * src_len) / dst_f));
-	  if ((end_i > src_len) || (end_i < 1))
-	    NSLog(@"Problem with minification!");
+
+          if ((end_i > src_len) || (end_i < 1))
+            NSLog(@"Problem with minification!");
           *start_ptr++ = start;
           *end_ptr++ = end_i - 1;
           start = end_i;
@@ -719,35 +721,35 @@ _bitmap_combine_alpha(RContext *context,
     switch(colour_space)
       {
         case hsb_colorspace:
-	  NSLog(@"HSB colourspace not supported for images");
-	  return -1;
+          NSLog(@"HSB colourspace not supported for images");
+          return -1;
         case rgb_colorspace:
           if (num_of_colours != 3)
             {
-	      NSLog(@"Bad number of colour planes - %d", num_of_colours);
-	      NSLog(@"RGB colourspace requires three planes excluding alpha");
-	      return -1;
+              NSLog(@"Bad number of colour planes - %d", num_of_colours);
+              NSLog(@"RGB colourspace requires three planes excluding alpha");
+              return -1;
             }
-	  break;
+          break;
         case cmyk_colorspace:
           if (num_of_colours != 4)
             {
-	      NSLog(@"Bad number of colour planes - %d", num_of_colours);
-	      NSLog(@"CMYK colourspace requires four planes excluding alpha");
-	      return -1;
+              NSLog(@"Bad number of colour planes - %d", num_of_colours);
+              NSLog(@"CMYK colourspace requires four planes excluding alpha");
+              return -1;
             }
-	  break;
+          break;
         case gray_colorspace:
           if (num_of_colours != 1)
             {
-	      NSLog(@"Bad number of colour planes - %d", num_of_colours);
-	      NSLog(@"Gray colourspace requires one plane excluding alpha");
-	      return -1;
+              NSLog(@"Bad number of colour planes - %d", num_of_colours);
+              NSLog(@"Gray colourspace requires one plane excluding alpha");
+              return -1;
             }
-	  break;
-	default:
-	  NSLog(@"Unknown colourspace found");
-	  return -1;
+          break;
+        default:
+          NSLog(@"Unknown colourspace found");
+          return -1;
       }
   }
 
@@ -770,39 +772,39 @@ _bitmap_combine_alpha(RContext *context,
    * Promotion value, this is what the samples need to
    * be mutiplied by to get an 8 bit value. This is done
    * rather than shifting to fill in the lower bits properly.
-   * The values for 6, 5 and 3 bits shouldbe floats by rights,
+   * The values for 6, 5 and 3 bits should be floats by rights,
    * but the difference is negligble and for speed we want to use
    * integers.
    */
-   switch(bits_per_sample)
+   switch (bits_per_sample)
      {
         case 8:
-	  img.pro_mul = 1;
-	  break;
+          img.pro_mul = 1;
+          break;
         case 7:
-	  img.pro_mul = 2;
-	  break;
+          img.pro_mul = 2;
+          break;
         case 6:
-	  img.pro_mul = 4;	/* should be 4.05 */
-	  break;
+          img.pro_mul = 4;	/* should be 4.05 */
+          break;
         case 5:
-	  img.pro_mul = 8;	/* should be 8.226 */
-	  break;
+          img.pro_mul = 8;	/* should be 8.226 */
+          break;
         case 4:
-	  img.pro_mul = 17;
-	  break;
+          img.pro_mul = 17;
+          break;
         case 3:
-	  img.pro_mul = 36;	/* should be 36.43 */
-	  break;
+          img.pro_mul = 36;	/* should be 36.43 */
+          break;
         case 2:
-	  img.pro_mul = 85;
-	  break;
+          img.pro_mul = 85;
+          break;
         case 1:
-	  img.pro_mul = 255;
-	  break;
+          img.pro_mul = 255;
+          break;
         default:
-	  NSLog(@"Bizzare number of bits per sample %d", bits_per_sample);
-	  return -1;
+          NSLog(@"Bizzare number of bits per sample %d", bits_per_sample);
+          return -1;
      }
 
   /*
