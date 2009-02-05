@@ -1,5 +1,10 @@
 2009-02-05 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/cairo/CairoGState.m (-copyWithZone:): Better handling of
+	clip copying when the clip is not representable by cairo.
+
+2009-02-05 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/xlib/XGBitmap.m: Fix some compiler warnings.
 
 2009-02-03 Richard Frith-Macdonald <rfm@gnu.org>

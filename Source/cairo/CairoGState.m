@@ -197,11 +197,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
           // In cairo 1.4 there also is a way to get the current clipping path
           clip_rects = cairo_copy_clip_rectangle_list(_ct);
           status = clip_rects->status;
-          if (status != CAIRO_STATUS_SUCCESS)
-            {
-              NSLog(@"Cairo status '%s' in copy clip", cairo_status_to_string(status));
-            }
-          else
+          if (status == CAIRO_STATUS_SUCCESS)
             {
               int i;
 
@@ -232,8 +228,25 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
                       cairo_clip(copy->_ct);
                     }
                 }
+
+              cairo_rectangle_list_destroy(clip_rects);
             }
-          cairo_rectangle_list_destroy(clip_rects);
+          else if (status == CAIRO_STATUS_CLIP_NOT_REPRESENTABLE)
+            {
+              // We cannot get the exact clip, so we do the best we can
+              double x1;
+              double y1;
+              double x2;
+              double y2;
+
+              cairo_clip_extents(_ct, &x1, &y1, &x2, &y2);
+              cairo_rectangle(copy->_ct, x1, y2, x2 - x1, y2 - y1);
+              cairo_clip(copy->_ct);
+            }
+          else
+            {
+              NSLog(@"Cairo status '%s' in copy clip", cairo_status_to_string(status));
+            }
 #endif
         }
     }
