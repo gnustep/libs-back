@@ -240,7 +240,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
               double y2;
 
               cairo_clip_extents(_ct, &x1, &y1, &x2, &y2);
-              cairo_rectangle(copy->_ct, x1, y2, x2 - x1, y2 - y1);
+              cairo_rectangle(copy->_ct, x1, y1, x2 - x1, y2 - y1);
               cairo_clip(copy->_ct);
             }
           else
@@ -1245,7 +1245,6 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
     {
       return;
     }
-
 
   /* 
    * we check if we copy on ourself, if that's the case

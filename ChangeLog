@@ -1,3 +1,8 @@
+2009-02-06 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-copyWithZone:): Correction to last
+	change. 
+
 2009-02-05 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-copyWithZone:): Better handling of
