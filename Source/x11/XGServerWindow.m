@@ -2448,6 +2448,13 @@ NSLog(@"styleoffsets ... guessing offsets\n");
       const char *title;
       int error = XLocaleNotSupported;
 
+      if (handlesWindowDecorations && (generic.wm & XGWM_WINDOWMAKER) == 0 &&
+	  (window->win_attrs.flags & GSExtraFlagsAttr) &&
+	  (window->win_attrs.extra_flags & GSDocumentEditedFlag))
+        {
+	  window_title = [@"*" stringByAppendingString: window_title];
+	}
+
 #ifdef X_HAVE_UTF8_STRING
       title = [window_title UTF8String];
       error = Xutf8TextListToTextProperty(dpy, (char **)&title, 1, 
@@ -2510,6 +2517,16 @@ NSLog(@"styleoffsets ... guessing offsets\n");
 	generic.win_decor_atom, generic.win_decor_atom,
 	32, PropModeReplace, (unsigned char *)&window->win_attrs,
 	sizeof(GNUstepWMAttributes)/sizeof(CARD32));
+
+  /*
+   * Reflect the document's edited status in the window's title when the
+   * backend does not manage the window decorations
+   */
+  if (handlesWindowDecorations && (generic.wm & XGWM_WINDOWMAKER) == 0)
+    {
+      NSWindow *nswin = GSWindowWithNumber(win);
+      [self titlewindow: [nswin title] : win];
+    }
 }
 
 - (BOOL) appOwnsMiniwindow
