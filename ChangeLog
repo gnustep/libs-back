@@ -1,3 +1,10 @@
+2009-02-08  Wolfgang Lux  <wolfgang.lux@gmail.com>
+
+	* Source/x11/XGServerWindow.m (-titlewindow::, -docedited::): Add
+	an asterisk before the window's title if its document is edited
+	and the window manager is not capable of displaying the document's
+	status (i.e., any window manager other than Window Maker for now).
+
 2009-02-08  Matt Rice  <ratmice@gmail.com>
 
 	* Source/x11/XGGLContext.m (-[XGXSubWindow initWithView:visualInfo:]):
