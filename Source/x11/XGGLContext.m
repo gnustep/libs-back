@@ -123,7 +123,7 @@
 
   xwindowid = XCreateWindow(win_info->display, win_info->ident,
                             x, y, width, height, 0, 
-                            CopyFromParent, InputOutput, xVisualInfo->visual, 
+                            xVisualInfo->depth, InputOutput, xVisualInfo->visual, 
                             mask, &window_attributes);
 
   XMapWindow(win_info->display, xwindowid);
