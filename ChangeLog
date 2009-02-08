@@ -1,3 +1,8 @@
+2009-02-08  Matt Rice  <ratmice@gmail.com>
+
+	* Source/x11/XGGLContext.m (-[XGXSubWindow initWithView:visualInfo:]):
+	Use the depth provided by the VisualInfo not the parent window.
+
 2009-02-06 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-copyWithZone:): Correction to last
