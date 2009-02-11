@@ -1,3 +1,7 @@
+2009-02-11 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/x11/XGServerWindow.m: Minor fixes to compile with GC
+
 2009-02-08  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Source/x11/XGServerWindow.m (-titlewindow::, -docedited::): Add

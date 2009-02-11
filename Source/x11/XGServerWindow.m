@@ -667,7 +667,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
                   
           [NSThread sleepUntilDate:
                         [NSDate dateWithTimeIntervalSinceNow: 0.01]];
-          DESTROY(pool);
+          IF_NO_GC([pool release]);
         }
      }
 
@@ -876,7 +876,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
                   [NSThread sleepUntilDate:
                                 [NSDate dateWithTimeIntervalSinceNow: 0.01]];
 
-                  DESTROY(pool);
+                  IF_NO_GC([pool release]);
                 }
               if (XPending(dpy) == 0)
                 {
