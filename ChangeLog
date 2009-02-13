@@ -1,3 +1,7 @@
+2009-02-11 Riccardo Mottola <rmottola@users.sf.net>
+
+	* Source/win32/WIN32Server.m: Handle Alt-Gr (bug #25397)
+	
 2009-02-11 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGServerWindow.m: Minor fixes to compile with GC
