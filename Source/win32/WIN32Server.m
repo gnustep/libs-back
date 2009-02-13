@@ -1668,7 +1668,8 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 
   GetKeyboardState(keyState);
   eventFlags = 0;
-  if (keyState[VK_CONTROL] & 128)
+  /* AltGr is mapped to right alt + left control */ 
+  if ((keyState[VK_CONTROL] & 128) && !((keyState[VK_LCONTROL] & 128) && (keyState[VK_RMENU] & 128))) 
     eventFlags |= NSControlKeyMask;
   if (keyState[VK_SHIFT] & 128)
     eventFlags |= NSShiftKeyMask;
