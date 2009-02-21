@@ -1,5 +1,10 @@
 2009-02-21 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/x11/XGGLContext.m (XGXSubWindow -initWithView:visualInfo:):
+	Set black background pixel.
+
+2009-02-21 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/x11/XGGLContext.m (XGXSubWindow -initWithView:visualInfo:)
 	* Source/win32/w32_GLcontext.m (Win32Subwindow -initWithView:):
 	Remove special code for different window border handling.

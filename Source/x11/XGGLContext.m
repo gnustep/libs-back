@@ -97,12 +97,13 @@
   height = NSHeight(rect);
 
   window_attributes.border_pixel = 255;
+  window_attributes.background_pixel = 0;
   window_attributes.colormap = XCreateColormap(win_info->display, 
                                                win_info->ident,
                                                xVisualInfo->visual, AllocNone);
   window_attributes.event_mask = StructureNotifyMask;
 
-  mask = CWBorderPixel | CWColormap | CWEventMask;
+  mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
 
   xwindowid = XCreateWindow(win_info->display, win_info->ident,
                             x, y, width, height, 0, 
