@@ -93,7 +93,7 @@ LRESULT CALLBACK win32SubwindowProc(
   NSDebugMLLog(@"WGL", @"MS window class initialized (%u)", atom);
 }
 
-- (id) initWithView: (NSOpenGLView *) view
+- (id) initWithView: (NSOpenGLView *)view
 {
   NSRect rect;
   WIN32Server *server;
@@ -102,69 +102,53 @@ LRESULT CALLBACK win32SubwindowProc(
   HINSTANCE hInstance;
   WNDCLASS wclss;
   ATOM atom;
+  RECT parent_rect;
 
   self = [super init];
-  if(self)
-  {
-    attached = (NSOpenGLView*)view;
+  if (!self)
+    return nil;
 
-    win = [view window];
-    NSAssert(win, @"request of a window attachment on a view that is not on a NSWindow");
+  attached = (NSOpenGLView*)view;
 
-    if ([view isRotatedOrScaledFromBase])
-      [NSException raise: NSInvalidArgumentException
-	 	  format: @"Cannot attach an window to a view that is rotated or scaled"];
+  win = [view window];
+  NSAssert(win, @"request of a window attachment on a view that is not on a NSWindow");
   
-    server = (WIN32Server *)GSServerForWindow(win);
-    NSAssert(server != nil, NSInternalInconsistencyException);
-
-    NSAssert([server isKindOfClass: [WIN32Server class]], 
-	NSInternalInconsistencyException);
-
-    if ([server handlesWindowDecorations] == YES)
-    {
-      /* The window manager handles window decorations, so the
-       * the parent X window is equal to the content view and
-       * we must therefore use content view coordinates.
-       */
-      rect = [view convertRect: [view bounds]
-		        toView: [[view window] contentView]];
-    }
-    else
-    {
-      /* The GUI library handles window decorations, so the
-       * the parent X window is equal to the NSWindow frame
-       * and we can use window base coordinates.
-       */
-      rect = [view convertRect: [view bounds] toView: nil];
-    }
-	  
-    hInstance = GetModuleHandle(NULL);
-
-    /* Grab the window class we have registered on [+initialize] */
-    atom = GetClassInfo( hInstance, NSOPENGLSUBWINDOWCLASS, &wclss );
-    NSAssert(atom, @"MS window class not found !");
-
-    RECT parent_rect;
-    GetClientRect((HWND)[win windowNumber], &parent_rect);
-
-    x = NSMinX(rect);
-    y = (parent_rect.bottom - parent_rect.top) - NSMaxY(rect);
-    width = NSWidth(rect);
-    height = NSHeight(rect);
+  if ([view isRotatedOrScaledFromBase])
+    [NSException raise: NSInvalidArgumentException
+                 format: @"Cannot attach an window to a view that is rotated or scaled"];
   
-    NSDebugMLLog(@"WGL", @"MS window creation (%d, %d, %u, %u)", x, y, width, height);
+  server = (WIN32Server *)GSServerForWindow(win);
+  NSAssert(server != nil, NSInternalInconsistencyException);
 
-    winid = CreateWindow(
-	NSOPENGLSUBWINDOWCLASS, NSOPENGLSUBWINDOWNAME, 
-	WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE, 
-	x, y, width, height, 
-	(HWND)[win windowNumber], (HMENU)NULL, hInstance, (LPVOID)self);
+  NSAssert([server isKindOfClass: [WIN32Server class]], 
+           NSInternalInconsistencyException);
 
-    NSAssert(winid, @"Failed to create a MS window");
+  hInstance = GetModuleHandle(NULL);
 
-    ShowCursor( TRUE );
-  }
+  /* Grab the window class we have registered on [+initialize] */
+  atom = GetClassInfo( hInstance, NSOPENGLSUBWINDOWCLASS, &wclss );
+  NSAssert(atom, @"MS window class not found !");
+
+  GetClientRect((HWND)[win windowNumber], &parent_rect);
+
+  rect = [view convertRect: [view bounds] toView: nil];
+  x = NSMinX(rect);
+  y = (parent_rect.bottom - parent_rect.top) - NSMaxY(rect);
+  width = NSWidth(rect);
+  height = NSHeight(rect);
+  
+  NSDebugMLLog(@"WGL", @"MS window creation (%d, %d, %u, %u)", x, y, width, height);
+  
+  winid = CreateWindow(
+      NSOPENGLSUBWINDOWCLASS, NSOPENGLSUBWINDOWNAME, 
+      WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE, 
+      x, y, width, height, 
+      (HWND)[win windowNumber], (HMENU)NULL, hInstance, (LPVOID)self);
+
+  NSAssert(winid, @"Failed to create a MS window");
+  
+  ShowCursor( TRUE );
+
   return self;
 }
 
