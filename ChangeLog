@@ -1,3 +1,9 @@
+2009-02-21 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGGLContext.m (XGXSubWindow -initWithView:visualInfo:)
+	* Source/win32/w32_GLcontext.m (Win32Subwindow -initWithView:):
+	Remove special code for different window border handling.
+
 2009-02-11 Riccardo Mottola <rmottola@users.sf.net>
 
 	* Source/win32/WIN32Server.m: Handle Alt-Gr (bug #25397)
