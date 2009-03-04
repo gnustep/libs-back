@@ -122,7 +122,7 @@ typedef struct _gswindow_device_t {
 + (gswindow_device_t *) _windowForXWindow: (Window)xWindow;
 + (gswindow_device_t *) _windowForXParent: (Window)xWindow;
 + (gswindow_device_t *) _windowWithTag: (int)windowNumber;
-- (void) _addExposedRectangle: (XRectangle)rectangle : (int)win;
+- (void) _addExposedRectangle: (XRectangle)rectangle : (int)win : (BOOL) ignoreBacking;
 - (void) _processExposedRectangles: (int)win;
 - (void) _initializeCursorForXWindow: (Window) win;
 - (void) _destroyServerWindows;

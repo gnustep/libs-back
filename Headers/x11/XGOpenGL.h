@@ -46,6 +46,7 @@
   GLXWindow         glx_drawable;
   XGXSubWindow     *xSubWindow;
   XGGLPixelFormat  *pixelFormat;
+  BOOL              saved_ignores_backing;
 }
 
 - (GLXContext)glxcontext;
