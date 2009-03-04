@@ -67,7 +67,10 @@
     }
   else
     {
-      glXGetConfig(dpy, configurations.visualinfo, attrib, vals);
+      error = glXGetConfig(dpy, configurations.visualinfo, attrib, vals);
+      if ( error != 0 )
+          NSDebugMLLog( @"GLX", @"Can not get FB attribute for pixel format %@ - Errror %u",
+                                self, error );
       if ( error != 0 )
           NSDebugMLLog( @"GLX", @"Can not get FB attribute for pixel format %@ - Errror %u",
                                 self, error );
@@ -175,12 +178,13 @@
                   break;
               }
             break;
+          case NSOpenGLPFAWindow: 
+            drawable_type |= GLX_WINDOW_BIT;
+            break;
           case NSOpenGLPFAPixelBuffer: 
-            ptr++;
             drawable_type |= GLX_PBUFFER_BIT;
             break;
           case NSOpenGLPFAOffScreen:
-            ptr++;
             drawable_type |= GLX_PIXMAP_BIT;
             break;
 
@@ -202,7 +206,6 @@
           case NSOpenGLPFARobust:
           case NSOpenGLPFABackingStore:
           case NSOpenGLPFAMPSafe:
-          case NSOpenGLPFAWindow:
           case NSOpenGLPFAMultiScreen:
           case NSOpenGLPFACompliant:
           case NSOpenGLPFAScreenMask:
@@ -220,8 +223,9 @@
 
   if ( drawable_type )
     {
-      //append(GLX_DRAWABLE_TYPE,drawable_type);
+      append(GLX_DRAWABLE_TYPE,drawable_type);
     }
+
   append1(None);
 
   //FIXME, what screen number ?
