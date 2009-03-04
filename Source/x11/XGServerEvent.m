@@ -979,7 +979,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
                   generic.cachedWindow
                     = [XGServer _windowForXWindow:xw];
                 }
-              if ( xw == xEvent.xexpose.window )
+              if ( xw != xEvent.xexpose.window )
                 {
                   isSubWindow = YES;
                 }
@@ -989,7 +989,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 	    {
 	      XRectangle rectangle;
 
-              if ( isSubWindow )
+              if ( !isSubWindow )
                 {
                   rectangle.x = xEvent.xexpose.x;
                   rectangle.y = xEvent.xexpose.y;
