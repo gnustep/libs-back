@@ -46,6 +46,7 @@
   HGLRC			wgl_context;
   Win32Subwindow	*wsubwin;
   Win32GLPixelFormat 	*format;
+  BOOL              saved_ignores_backing;
 }
 @end
 

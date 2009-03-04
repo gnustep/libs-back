@@ -52,6 +52,7 @@
   forVirtualScreen: (GLint)screen
 {
   MAKE_DISPLAY(dpy);
+  GLint error;
 
   NSAssert(((GSglxMinorVersion (dpy) >= 3) ? (void *)configurations.fbconfig : (void *)configurations.visualinfo) != NULL
 	        && configurationCount > 0,
@@ -59,11 +60,17 @@
 
   if (GSglxMinorVersion(dpy) >= 3)
     {
-      glXGetFBConfigAttrib(dpy, configurations.fbconfig[0], attrib, vals);
+      error = glXGetFBConfigAttrib(dpy, configurations.fbconfig[0], attrib, vals);
+      if ( error != 0 )
+          NSDebugMLLog( @"GLX", @"Can not get FB attribute for pixel format %@ - Errror %u",
+                                self, error );
     }
   else
     {
       glXGetConfig(dpy, configurations.visualinfo, attrib, vals);
+      if ( error != 0 )
+          NSDebugMLLog( @"GLX", @"Can not get FB attribute for pixel format %@ - Errror %u",
+                                self, error );
     }
 }
 
@@ -73,6 +80,7 @@
   NSOpenGLPixelFormatAttribute *ptr = attribs;
   NSMutableData *data = [NSMutableData data];
   MAKE_DISPLAY(dpy);
+  int drawable_type;
 
 #define append(a, b) do {int v1 = a; int v2 = b; [data appendBytes: &v1 length: sizeof(v1)];\
   [data appendBytes: &v2 length: sizeof(v2)];} while (0)
@@ -86,8 +94,8 @@
   else
     {
       append(GLX_RENDER_TYPE, GLX_RGBA_BIT);
-      append(GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT|GLX_PIXMAP_BIT);
-      //  append(GLX_X_RENDERABLE,YES);
+      //append(GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT|GLX_PIXMAP_BIT);
+      //append(GLX_X_RENDERABLE,YES);
       //append(GLX_X_VISUAL_TYPE,GLX_TRUE_COLOR);
     }
 
@@ -167,6 +175,15 @@
                   break;
               }
             break;
+          case NSOpenGLPFAPixelBuffer: 
+            ptr++;
+            drawable_type |= GLX_PBUFFER_BIT;
+            break;
+          case NSOpenGLPFAOffScreen:
+            ptr++;
+            drawable_type |= GLX_PIXMAP_BIT;
+            break;
+
           //can not be handle by X11
           case NSOpenGLPFAMinimumPolicy:
             break;
@@ -175,7 +192,6 @@
             break;
 
           //FIXME all of this stuff...
-          case NSOpenGLPFAOffScreen:
           case NSOpenGLPFAFullScreen:
           case NSOpenGLPFASampleBuffers:
           case NSOpenGLPFASamples:
@@ -191,11 +207,21 @@
           case NSOpenGLPFACompliant:
           case NSOpenGLPFAScreenMask:
           case NSOpenGLPFAVirtualScreenCount:
+
+          case NSOpenGLPFAAllowOfflineRenderers:
+          case NSOpenGLPFAColorFloat:
+          case NSOpenGLPFAMultisample:
+          case NSOpenGLPFASupersample:
+          case NSOpenGLPFASampleAlpha:
             break;
         }
       ptr ++;
     }
 
+  if ( drawable_type )
+    {
+      //append(GLX_DRAWABLE_TYPE,drawable_type);
+    }
   append1(None);
 
   //FIXME, what screen number ?
@@ -204,11 +230,19 @@
       configurations.fbconfig = glXChooseFBConfig(dpy, DefaultScreen(dpy), 
                                                   [data mutableBytes], 
                                                   &configurationCount);
+      if ( configurations.fbconfig == NULL )
+          NSDebugMLLog( @"GLX", @"Can not choose FB config for pixel format %@",
+                                self );
     }
   else
     {
       configurations.visualinfo = glXChooseVisual(dpy, DefaultScreen(dpy), 
                                                   [data mutableBytes]);
+      if((void *)configurations.visualinfo != NULL)
+	configurationCount = 1;
+      else
+          NSDebugMLLog( @"GLX", @"Can not choose FB config for pixel format %@",
+                                self );
     }
   
   if (((GSglxMinorVersion (dpy) >= 3) ? (void *)configurations.fbconfig : 
@@ -243,33 +277,46 @@
 
 - (GLXContext)createGLXContext: (XGGLContext *)share
 {
+  GLXContext context;
   MAKE_DISPLAY(dpy);
 
   if (GSglxMinorVersion(dpy) >= 3)
     {
-      return glXCreateNewContext(dpy, configurations.fbconfig[0], 
+      context = glXCreateNewContext(dpy, configurations.fbconfig[0], 
                                  GLX_RGBA_TYPE, [share glxcontext], YES);
     }
   else
     {
-      return glXCreateContext(dpy, configurations.visualinfo, 
+      context = glXCreateContext(dpy, configurations.visualinfo, 
                               [share glxcontext], GL_TRUE);
     }
+  if ( context == NULL )
+      NSDebugMLLog( @"GLX", @"Can not create GL context for pixel format %@ - Errror %u",
+                            self, glGetError() );
+
+  return context;
 }
 
 - (GLXWindow) drawableForWindow: (Window)xwindowid
 {
+  GLXWindow win;
   MAKE_DISPLAY(dpy);
 
   if (GSglxMinorVersion(dpy) >= 3)
     {
-      return glXCreateWindow(dpy, configurations.fbconfig[0], 
+      win = glXCreateWindow(dpy, configurations.fbconfig[0], 
                              xwindowid, NULL);
     }
   else
     {
-      return xwindowid;
+      win = xwindowid;
     }
+
+  GLint error = glGetError();
+  if ( error != GL_NO_ERROR )
+      NSDebugMLLog( @"GLX", @"Can not create GL window for pixel format %@ - Errror %u",
+                            self, error );
+  return win;
 }
 
 - (void) dealloc

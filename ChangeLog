@@ -1,3 +1,24 @@
+2009-03-04 Xavier Glattard <xavier.glattard@online.fr>
+
+	* Source/x11/XGGLContext.m,
+	* Source/x11/XGServerWindow.m,
+	* Source/x11/XGServerEvent.m,
+	* Source/win32/w32_GLcontext.m,
+	* Source/win32/w32_windowdisplay.m,
+	* Source/win32/WIN32Server.m:
+	Two improvements related to OpenGL.
+	1) prevent the backing store to be flushed after a call to [-drawRect:]
+	(and fix a small bug is win32 window style)
+	2) handle expose/paint events with retained/buffered backing store.
+
+	* Source/x11/XGGLFormat.m,
+	* Source/win32/w32_GLformat.m:
+	Declare some new pixel format attributes.
+
+	* Source/x11/XGGLContext.m,
+	* Source/win32/w32_GLcontext.m:
+	Undo Rev27944 related to NSRECT conversion.
+
 2009-02-21 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGGLContext.m (XGXSubWindow -initWithView:visualInfo:):

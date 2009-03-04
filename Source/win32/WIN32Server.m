@@ -434,7 +434,7 @@ NSLog(@"Callback");
   DWORD wstyle = 0;
         
   if ([self handlesWindowDecorations] == NO)
-    return WS_POPUP;
+    return WS_POPUP | WS_CLIPCHILDREN;
         
   if (style == 0)
     wstyle = WS_POPUP;

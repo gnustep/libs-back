@@ -131,27 +131,14 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 - (void) decodeWM_PAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   RECT rect;
-  PAINTSTRUCT pPaint;
-
-  /* FK:
-     I am not sure if calling BeginPaint/EndPaint here is the best
-     way to handle updates. These functions correspond more closely 
-     to the lockFocus/unlockFocus methods and should rather be used there.
-     //InvalidateRect(hwnd, rect, YES);
-	   
-     // validate the whole window, for in some cases an infinite series
-     // of WM_PAINT is triggered
-     //ValidateRect(hwnd, NULL);
-   */
   if (GetUpdateRect(hwnd, &rect, TRUE))
     {
-      BeginPaint(hwnd, &pPaint);
-      // Perform drawing (or blitting into buffer if needed)
-      invalidateWindow(self, hwnd, rect);
-      EndPaint(hwnd, &pPaint);
+      NSRect r = MSWindowRectToGS(self, hwnd, rect);
+      NSWindow *window = GSWindowWithNumber((int)hwnd);
+      [[[window contentView] superview] setNeedsDisplayInRect: r];
     }
 
-  flags._eventHandled = YES;
+  //flags._eventHandled = YES; -->DefWindowProc validates the event
 }
 
 - (void) decodeWM_SYNCPAINTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd

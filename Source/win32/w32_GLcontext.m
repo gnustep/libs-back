@@ -130,8 +130,22 @@ LRESULT CALLBACK win32SubwindowProc(
   NSAssert(atom, @"MS window class not found !");
 
   GetClientRect((HWND)[win windowNumber], &parent_rect);
-
-  rect = [view convertRect: [view bounds] toView: nil];
+  if ([server handlesWindowDecorations] == YES)
+    {
+      /* The window manager handles window decorations, so the
+       * the parent X window is equal to the content view and
+       * we must therefore use content view coordinates.
+       */
+      rect = [view convertRect: [view bounds] toView: [[attached window] contentView]];
+    }
+  else
+    {
+      /* The GUI library handles window decorations, so the
+       * the parent X window is equal to the NSWindow frame
+       * and we can use window base coordinates.
+       */
+      rect = [view convertRect: [view bounds] toView: nil];
+    }
   x = NSMinX(rect);
   y = (parent_rect.bottom - parent_rect.top) - NSMaxY(rect);
   width = NSWidth(rect);
@@ -392,6 +406,7 @@ static Win32GLContext *currentGLContext;
 - (void)setView:(NSView *)view
 {
   Win32Subwindow *win;
+  NSView *current_view;
   
   if (!view)
     [NSException raise: NSInvalidArgumentException
@@ -399,7 +414,14 @@ static Win32GLContext *currentGLContext;
 
   NSAssert(format, NSInternalInconsistencyException);
   win = [Win32Subwindow subwindowOnView: (NSOpenGLView*) view];
+  current_view = [self view];
+  if ( current_view != nil )
+    {
+      [current_view _setIgnoresBacking: saved_ignores_backing];
+    }
   ASSIGN(wsubwin, win);
+  saved_ignores_backing = [view _ignoresBacking];
+  [view _setIgnoresBacking: YES];
 
 //   {
 //     GLXFBConfig  *conf_tab;
@@ -525,17 +547,20 @@ LRESULT CALLBACK win32SubwindowProc(
         return TRUE;
       }
       break;*/
-/*    case WM_PAINT:
+    case WM_PAINT:
       {
-        PAINTSTRUCT ps;
-        BeginPaint(hWnd, &ps);
-        if ((wsubwin->context->wgl_context) {
-          redraw();
-        }
-        EndPaint(hWnd, &ps);
-        return 0;
+        RECT wr;
+        RECT ir;
+        
+        if ( GetWindowRect(hWnd,&wr) && GetUpdateRect(hWnd, &ir, FALSE) )
+          {
+            ir.top  += wr.top;
+            ir.left += wr.left;
+            InvalidateRect( GetParent(hWnd), &ir,FALSE );
+          }
+        return DefWindowProc(hWnd, message, wParam, lParam);
       }
-      break;*/
+      break;
 /*    case WM_CHAR:
       // handle keyboard input
       switch ((int)wParam) {

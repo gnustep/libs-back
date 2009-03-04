@@ -101,7 +101,9 @@
   window_attributes.colormap = XCreateColormap(win_info->display, 
                                                win_info->ident,
                                                xVisualInfo->visual, AllocNone);
-  window_attributes.event_mask = StructureNotifyMask;
+  window_attributes.event_mask = StructureNotifyMask
+                               | VisibilityChangeMask
+                               | ExposureMask;
 
   mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
 
@@ -215,11 +217,15 @@ static XGGLContext *currentGLContext;
 
   if (GSglxMinorVersion(dpy) >= 3)
     {
-      glXMakeContextCurrent(dpy, None, None, NULL);
+      if ( !glXMakeContextCurrent(dpy, None, None, NULL) )
+        NSDebugMLLog( @"GLX", @"Can not clear current GL context - Errror %u",
+                              glGetError() );
     }
   else
     {
-      glXMakeCurrent(dpy, None, NULL);
+      if ( !glXMakeCurrent(dpy, None, NULL) )
+        NSDebugMLLog( @"GLX", @"Can not clear current GL context - Errror %u",
+                              glGetError() );
     }
 
   currentGLContext = nil;
@@ -268,6 +274,12 @@ static XGGLContext *currentGLContext;
 
   glXCopyContext(dpy, ((XGGLContext *)context)->glx_context, 
                  glx_context, mask);
+
+  GLint error = glGetError();
+  if ( error != GL_NO_ERROR )
+      NSDebugMLLog( @"GLX", @"Can not copy GL context %@ from context %@ - Errror %u",
+                            self, context, error );
+
 }
 
 - (void)createTexture:(unsigned long)target 
@@ -290,6 +302,63 @@ static XGGLContext *currentGLContext;
   MAKE_DISPLAY(dpy);
 
   glXSwapBuffers(dpy, glx_drawable);
+#if 0
+  // FIXME Not with Mesa Xlib sofware driver !
+  // TODO Use EXT_framebuffer_blit if available
+  if ( _doubleBuffer )
+    {
+      if ( _backingStore )
+        {
+          GLint rBuf,dBuf;
+          GLint viewport[4];
+          GLfloat raster_pos[4];
+
+          /* save viewport */
+          glGetIntegerv(GL_VIEWPORT, viewport);
+          /* save old raster position */
+          glGetFloatv(GL_CURRENT_RASTER_POSITION, raster_pos);
+          /* set raster position */
+          glRasterPos4f(0.0, 0.0, 0.0, 1.0);
+          /* save target/source buffers */
+          glGetIntegerv( GL_READ_BUFFER, &rBuf );
+          glGetIntegerv( GL_DRAW_BUFFER, &wBuf );
+
+          /* set projection matrix */
+          glMatrixMode(GL_PROJECTION);
+          glPushMatrix();
+          glLoadIdentity() ;
+          gluOrtho2D(0, viewport[2], 0, viewport[3]);
+          /* set modelview matrix */
+          glMatrixMode(GL_MODELVIEW);
+          glPushMatrix();
+          glLoadIdentity();
+
+          //FIXME copy depth, stencil?
+          glReadBuffer (GL_FRONT_LEFT);
+          glDrawBuffer (GL_BACK_LEFT);
+          glCopyPixels(0, 0, viewport[2], viewport[3], GL_COLOR);
+          if ( _stereo )
+            {
+              glReadBuffer (GL_FRONT_RIGHT);
+              glDrawBuffer (GL_BACK_RIGHT);
+              glCopyPixels(0, 0, viewport[2], viewport[3], GL_COLOR);
+            }
+
+          /* restore target/source buffers */
+          glReadBuffer (rBuf);
+          glDrawBuffer (dBuf);
+          /* restore old raster position */
+          glRasterPos4fv(raster_pos);
+          /* restore old matrices */
+          glPopMatrix();
+          glMatrixMode(GL_PROJECTION);
+          glPopMatrix();
+          glMatrixMode(GL_MODELVIEW);
+          /* restore viewport */
+          glViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
+        }
+    }
+#endif
 }
 
 
@@ -355,15 +424,19 @@ static XGGLContext *currentGLContext;
 
   if (GSglxMinorVersion(dpy) >= 3)
     {
-      NSDebugMLLog(@"GLX", @"before glXMakeContextCurrent");
-      glXMakeContextCurrent(dpy, glx_drawable, glx_drawable, glx_context);
-      NSDebugMLLog(@"GLX", @"after glXMakeContextCurrent");
+      //NSDebugMLLog(@"GLX", @"before glXMakeContextCurrent");
+      if ( !glXMakeContextCurrent(dpy, glx_drawable, glx_drawable, glx_context) )
+        NSDebugMLLog( @"GLX", @"Can not make GL context %@ current - Errror %u",
+                              self, glGetError() );
+      //NSDebugMLLog(@"GLX", @"after glXMakeContextCurrent");
     }
   else
     {
-      NSDebugMLLog(@"GLX", @"before glXMakeCurrent");
-      glXMakeCurrent(dpy, glx_drawable, glx_context);
-      NSDebugMLLog(@"GLX", @"after glXMakeCurrent");
+      //NSDebugMLLog(@"GLX", @"before glXMakeCurrent");
+      if ( !glXMakeCurrent(dpy, glx_drawable, glx_context) )
+        NSDebugMLLog( @"GLX", @"Can not make GL context %@ current - Errror %u",
+                              self, glGetError() );
+      //NSDebugMLLog(@"GLX", @"after glXMakeCurrent");
     }
 
   currentGLContext = self;
@@ -395,15 +468,22 @@ static XGGLContext *currentGLContext;
 
 - (void)setView:(NSView *)view
 {
+  NSView *current_view;
   if (!view)
     [NSException raise: NSInvalidArgumentException
 		 format: @"setView called with a nil value"];
 
   NSAssert(pixelFormat, NSInternalInconsistencyException);
-
+  current_view = [self view];
+  if ( current_view != nil )
+    {
+      [current_view _setIgnoresBacking: saved_ignores_backing];
+    }
   ASSIGN(xSubWindow, [XGXSubWindow subwindowOnView: view 
                                    visualinfo: [pixelFormat xvinfo]]);
   glx_drawable = [pixelFormat drawableForWindow: xSubWindow->xwindowid];
+  saved_ignores_backing = [view _ignoresBacking];
+  [view _setIgnoresBacking: YES];
 
   NSDebugMLLog(@"GLX", @"glx_window : %u", glx_drawable);
 }

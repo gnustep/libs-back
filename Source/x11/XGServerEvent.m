@@ -932,6 +932,22 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 	    generic.cachedWindow
 	      = [XGServer _windowForXWindow:xEvent.xvisibility.window];
 	  }
+        // sub-window ?
+          {
+            Window xw;
+            xw = xEvent.xvisibility.window;
+            while (cWin == 0)
+              {
+                Window rw, *cw; unsigned int nc;
+                if ( !XQueryTree(dpy, xw, &rw, &xw, &cw, &nc) )
+                  continue;
+                if ( cw != NULL )
+                  XFree(cw);
+                generic.cachedWindow
+                  = [XGServer _windowForXWindow:xw];
+              }
+          }
+
 	if (cWin != 0)
 	  cWin->visibility = xEvent.xvisibility.state;
 	break;
@@ -942,24 +958,60 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 	NSDebugLLog(@"NSEvent", @"%d Expose\n",
 		    xEvent.xexpose.window);
 	{
+          BOOL isSubWindow;
+
 	  if (cWin == 0 || xEvent.xexpose.window != cWin->ident)
 	    {
 	      generic.cachedWindow
 		= [XGServer _windowForXWindow:xEvent.xexpose.window];
 	    }
+          // sub-window ?
+            {
+              Window xw;
+              xw = xEvent.xexpose.window;
+              while (cWin == 0)
+                {
+                  Window rw, *cw; unsigned int nc;
+                  if ( !XQueryTree(dpy, xw, &rw, &xw, &cw, &nc) )
+                    continue;
+                  if ( cw != NULL )
+                    XFree(cw);
+                  generic.cachedWindow
+                    = [XGServer _windowForXWindow:xw];
+                }
+              if ( xw == xEvent.xexpose.window )
+                {
+                  isSubWindow = YES;
+                }
+            }
+
 	  if (cWin != 0)
 	    {
 	      XRectangle rectangle;
 
-	      rectangle.x = xEvent.xexpose.x;
-	      rectangle.y = xEvent.xexpose.y;
+              if ( isSubWindow )
+                {
+                  rectangle.x = xEvent.xexpose.x;
+                  rectangle.y = xEvent.xexpose.y;
+                }
+              else
+                {
+                  // assume no border
+                  XWindowAttributes wa;
+                  XGetWindowAttributes(dpy,xEvent.xexpose.window,&wa);
+                  rectangle.x = xEvent.xexpose.x+wa.x;
+                  rectangle.y = xEvent.xexpose.y+wa.y;
+                }
+
 	      rectangle.width = xEvent.xexpose.width;
 	      rectangle.height = xEvent.xexpose.height;
+
 	      NSDebugLLog(@"NSEvent", @"Expose frame %d %d %d %d\n",
 			  rectangle.x, rectangle.y,
 			  rectangle.width, rectangle.height);
 #if 1
-	      [self _addExposedRectangle: rectangle : cWin->number];
+              // ignore backing if sub-window
+              [self _addExposedRectangle: rectangle : cWin->number : isSubWindow];
 
 	      if (xEvent.xexpose.count == 0)
 		[self _processExposedRectangles: cWin->number];

@@ -3426,7 +3426,7 @@ static BOOL didCreatePixmaps;
 }
 
 // process expose event
-- (void) _addExposedRectangle: (XRectangle)rectangle : (int)win
+- (void) _addExposedRectangle: (XRectangle)rectangle : (int)win : (BOOL) ignoreBacking
 {
   gswindow_device_t *window;
 
@@ -3434,7 +3434,7 @@ static BOOL didCreatePixmaps;
   if (!window)
     return;
 
-  if (window->type != NSBackingStoreNonretained)
+  if (!ignoreBacking && window->type != NSBackingStoreNonretained)
     {
       XGCValues values;
       unsigned long valuemask;
@@ -3557,9 +3557,6 @@ static BOOL didCreatePixmaps;
 
   window = WINDOW_WITH_TAG(win);
   if (!window)
-    return;
-
-  if (window->type != NSBackingStoreNonretained)
     return;
 
   // Set the clipping path to the exposed rectangles

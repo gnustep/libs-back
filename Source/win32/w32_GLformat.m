@@ -36,6 +36,7 @@
 
 static void attributesNS2WGL( NSOpenGLPixelFormatAttribute *attribs, LPPIXELFORMATDESCRIPTOR ppfd )
 {
+  // TODO : switch to wglChoosePixelFormatEXT 
   NSOpenGLPixelFormatAttribute *ptr = attribs;
 
   ppfd->nSize = sizeof(PIXELFORMATDESCRIPTOR);
@@ -56,6 +57,9 @@ static void attributesNS2WGL( NSOpenGLPixelFormatAttribute *attribs, LPPIXELFORM
 	case NSOpenGLPFAOffScreen:
 	  ppfd->dwFlags |= PFD_DRAW_TO_BITMAP;
 	  break;
+        case NSOpenGLPFAPixelBuffer: // TODO
+	  //ppfd->dwFlags |= PFD_DRAW_TO_WINDOW;
+	  break;
 	case NSOpenGLPFASingleRenderer:
 	case NSOpenGLPFAAllRenderers:
 	case NSOpenGLPFAAccelerated:
@@ -66,6 +70,9 @@ static void attributesNS2WGL( NSOpenGLPixelFormatAttribute *attribs, LPPIXELFORM
 	  break;
 	case NSOpenGLPFAStereo:
 	  ppfd->dwFlags |= PFD_STEREO;
+	  break;
+	case NSOpenGLPFABackingStore:
+	  ppfd->dwFlags |= PFD_SWAP_COPY;
 	  break;
 	case NSOpenGLPFAAuxBuffers:
 	  ptr++;
@@ -136,12 +143,17 @@ static void attributesNS2WGL( NSOpenGLPixelFormatAttribute *attribs, LPPIXELFORM
 	case NSOpenGLPFANoRecovery:
 	case NSOpenGLPFAClosestPolicy:
 	case NSOpenGLPFARobust:
-	case NSOpenGLPFABackingStore:
 	case NSOpenGLPFAMPSafe:
 	case NSOpenGLPFAMultiScreen:
 	case NSOpenGLPFACompliant:
 	case NSOpenGLPFAScreenMask:
 	case NSOpenGLPFAVirtualScreenCount:
+
+        case NSOpenGLPFAAllowOfflineRenderers:
+        case NSOpenGLPFAColorFloat:
+        case NSOpenGLPFAMultisample:
+        case NSOpenGLPFASupersample:
+        case NSOpenGLPFASampleAlpha:
 	  break;
 	}
       ptr ++;
@@ -239,6 +251,8 @@ static void attributesWGL2NS( LPPIXELFORMATDESCRIPTOR ppfd, NSOpenGLPixelFormatA
 
 - (void) _setDrawable: (HDC) aDrawable
 {
+  // TODO : switch to wglChoosePixelFormatEXT 
+
   NSCAssert(
       wgl_pixelformat = ChoosePixelFormat(aDrawable, &pfd), 
       @"ChoosePixelFormat failed.");
