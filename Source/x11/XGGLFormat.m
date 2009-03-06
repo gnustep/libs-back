@@ -83,7 +83,7 @@
   NSOpenGLPixelFormatAttribute *ptr = attribs;
   NSMutableData *data = [NSMutableData data];
   MAKE_DISPLAY(dpy);
-  int drawable_type;
+  GLint drawable_type = 0;
 
 #define append(a, b) do {int v1 = a; int v2 = b; [data appendBytes: &v1 length: sizeof(v1)];\
   [data appendBytes: &v2 length: sizeof(v2)];} while (0)
