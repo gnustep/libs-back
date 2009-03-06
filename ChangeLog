@@ -1,3 +1,8 @@
+2009-03-06 Xavier Glattard <xavier.glattard@online.fr>
+
+	* Source/x11/XGGLFormat.m:
+	Missing var initialization.
+
 2009-03-04 Xavier Glattard <xavier.glattard@online.fr>
 
 	* Source/x11/XGServerEvent.m,
