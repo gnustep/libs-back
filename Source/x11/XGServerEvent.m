@@ -958,7 +958,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 	NSDebugLLog(@"NSEvent", @"%d Expose\n",
 		    xEvent.xexpose.window);
 	{
-          BOOL isSubWindow;
+          BOOL isSubWindow = NO;
 
 	  if (cWin == 0 || xEvent.xexpose.window != cWin->ident)
 	    {
@@ -969,9 +969,14 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
             {
               Window xw;
               xw = xEvent.xexpose.window;
+              XWindowAttributes wa;
+              // We should not found more than one level, but who knows ?
               while (cWin == 0)
                 {
                   Window rw, *cw; unsigned int nc;
+                  XGetWindowAttributes(dpy,xEvent.xexpose.window,&wa);
+                  xEvent.xexpose.x += wa.x;
+                  xEvent.xexpose.y += wa.y;
                   if ( !XQueryTree(dpy, xw, &rw, &xw, &cw, &nc) )
                     continue;
                   if ( cw != NULL )
@@ -989,20 +994,8 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 	    {
 	      XRectangle rectangle;
 
-              if ( !isSubWindow )
-                {
-                  rectangle.x = xEvent.xexpose.x;
-                  rectangle.y = xEvent.xexpose.y;
-                }
-              else
-                {
-                  // assume no border
-                  XWindowAttributes wa;
-                  XGetWindowAttributes(dpy,xEvent.xexpose.window,&wa);
-                  rectangle.x = xEvent.xexpose.x+wa.x;
-                  rectangle.y = xEvent.xexpose.y+wa.y;
-                }
-
+              rectangle.x = xEvent.xexpose.x;
+              rectangle.y = xEvent.xexpose.y;
 	      rectangle.width = xEvent.xexpose.width;
 	      rectangle.height = xEvent.xexpose.height;
 
