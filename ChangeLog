@@ -1,3 +1,8 @@
+2009-03-12 Thomas Gamper <icicle@cg.tuwien.ac.at>
+
+	* Source/x11/XGServerEvent.m:
+    Implement key repeat support.
+
 2009-03-07 Xavier Glattard <xavier.glattard@online.fr>
 
 	* Source/x11/XGServerEvent.m:

@@ -90,6 +90,8 @@ static KeySym _help_keysyms[2];
 static BOOL _is_keyboard_initialized = NO;
 static BOOL _mod_ignore_shift = NO;
 
+static BOOL next_event_is_a_keyrepeat;
+
 void __objc_xgcontextevent_linking (void)
 {
 }
@@ -342,6 +344,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
   NSGraphicsContext     *gcontext;
   float                 deltaX;
   float                 deltaY;
+  int buttonNumber;
 
   gcontext = GSCurrentContext();
   xEvent = *event;
@@ -404,24 +407,35 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 	deltaY = 0.0;
 
 	if (xEvent.xbutton.button == generic.lMouse)
+    {
 	  eventType = NSLeftMouseDown;
+      buttonNumber = generic.lMouse;
+    }
 	else if (xEvent.xbutton.button == generic.rMouse
 	  && generic.rMouse != 0)
+    {
 	  eventType = NSRightMouseDown;
+      buttonNumber = generic.rMouse;
+    }
 	else if (xEvent.xbutton.button == generic.mMouse
 	  && generic.mMouse != 0)
+    {
 	  eventType = NSOtherMouseDown;
+      buttonNumber = generic.mMouse;
+    }
 	else if (xEvent.xbutton.button == generic.upMouse
 	  && generic.upMouse != 0)
 	  {
 	    deltaY = 1.;
 	    eventType = NSScrollWheel;
+        buttonNumber = generic.upMouse;
 	  }
 	else if (xEvent.xbutton.button == generic.downMouse
 	  && generic.downMouse != 0)
 	  {
 	    deltaY = -1.;
 	    eventType = NSScrollWheel;
+        buttonNumber = generic.downMouse;
 	  }
 	else
 	  {
@@ -471,7 +485,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 		     eventNumber: xEvent.xbutton.serial
 		     clickCount: clickCount
 		     pressure: 1.0
-		     buttonNumber: 0 /* FIXME */
+		     buttonNumber: buttonNumber /* FIXME */
 		     deltaX: 0.
 		     deltaY: deltaY
 		     deltaZ: 0.];
@@ -482,13 +496,22 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 		    xEvent.xbutton.window);
 	[self setLastTime: xEvent.xbutton.time];
 	if (xEvent.xbutton.button == generic.lMouse)
+    {
 	  eventType = NSLeftMouseUp;
+      buttonNumber = generic.lMouse;
+    }
 	else if (xEvent.xbutton.button == generic.rMouse
 	  && generic.rMouse != 0)
+    {
 	  eventType = NSRightMouseUp;
+      buttonNumber = generic.rMouse;
+    }
 	else if (xEvent.xbutton.button == generic.mMouse
 	  && generic.mMouse != 0)
+    {
 	  eventType = NSOtherMouseUp;
+      buttonNumber = generic.mMouse;
+    }
 	else
 	  {
 	    // we ignore release of scrollUp or scrollDown
@@ -516,7 +539,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 		     eventNumber: xEvent.xbutton.serial
 		     clickCount: clickCount
 		     pressure: 1.0
-		     buttonNumber: 0	/* FIXMME */
+		     buttonNumber: buttonNumber	/* FIXMME */
 		     deltaX: 0.0
 		     deltaY: 0.0
 		     deltaZ: 0.0];
@@ -1918,6 +1941,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
   int		alt_key = 0;
   int		help_key = 0;
   KeySym	modKeysym;  // process modifier independently of shift, etc.
+  XEvent next_event;
   
   if (_is_keyboard_initialized == NO)
     initialize_keyboard ();
@@ -2050,6 +2074,37 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
       eventType = NSFlagsChanged;
     }
 
+
+    /*
+    For key repeats X creates two corresponding KeyRelease/KeyPress events.
+    So, first we check for the KeyRelease event, take a look at the next
+    event in the queue and look if they are a matching KeyRelease/KeyPress
+    pair. If so, we mark the current KeyRelease event as a KeyRepeat, and
+    set "next_event_is_a_keyrepeat" to "YES" so that we know that the next
+    event is a repeat too.
+    */
+  BOOL keyRepeat = NO;
+
+  if ( next_event_is_a_keyrepeat == YES )
+    {
+        keyRepeat = YES;
+        next_event_is_a_keyrepeat = NO;
+    }
+  else if( XEventsQueued( [context xDisplay], QueuedAfterReading ) )
+    {
+      XPeekEvent( [context xDisplay], &next_event );
+      if( next_event.type == KeyPress &&
+          next_event.xkey.window == xEvent->xkey.window &&
+          next_event.xkey.keycode == xEvent->xkey.keycode &&
+          next_event.xkey.time == xEvent->xkey.time )
+        {
+          // Do not report anything for this event
+          keyRepeat = YES;
+          next_event_is_a_keyrepeat = YES;
+        }
+    }
+
+
   if (help_key)
     {
       unicode = NSHelpFunctionKey;
@@ -2064,7 +2119,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
 		   context: GSCurrentContext()
 		   characters: keys
 		   charactersIgnoringModifiers: keys
-		   isARepeat: NO
+		   isARepeat: keyRepeat
 		   keyCode: keyCode];
 	  [event_queue addObject: event];
 	  event = [NSEvent keyEventWithType: NSFlagsChanged
@@ -2100,7 +2155,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
 		   context: GSCurrentContext()
 		   characters: keys
 		   charactersIgnoringModifiers: keys
-		   isARepeat: NO
+		   isARepeat: keyRepeat
 		   keyCode: keyCode];
 	  return event;
 	}
@@ -2138,7 +2193,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
 		   context: GSCurrentContext()
 		   characters: keys
 		   charactersIgnoringModifiers: ukeys
-		   isARepeat: NO /* isARepeat can't be supported with X */
+		   isARepeat: keyRepeat
 		   keyCode: keyCode];
 
       return event;
