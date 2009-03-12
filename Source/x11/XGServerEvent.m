@@ -66,9 +66,9 @@
 # include <Foundation/NSNotification.h>
 #endif
 
-#define	cWin	((gswindow_device_t*)generic.cachedWindow)
+#define cWin ((gswindow_device_t*)generic.cachedWindow)
 
-extern Atom     WM_STATE;
+extern Atom WM_STATE;
 
 // NumLock's mask (it depends on the keyboard mapping)
 static unsigned int _num_lock_mask;
@@ -96,7 +96,7 @@ void __objc_xgcontextevent_linking (void)
 {
 }
 
-static SEL    procSel = 0;
+static SEL procSel = 0;
 static void (*procEvent)(id, SEL, XEvent*) = 0;
 
 #ifdef XSHM
@@ -117,14 +117,14 @@ static void (*procEvent)(id, SEL, XEvent*) = 0;
 - (int) XGErrorHandler: (Display*)display : (XErrorEvent*)err;
 - (void) processEvent: (XEvent *) event;
 - (NSEvent *)_handleTakeFocusAtom: (XEvent)xEvent 
-		       forContext: (NSGraphicsContext *)gcontext;
+        	       forContext: (NSGraphicsContext *)gcontext;
 @end
 
 
 int
 XGErrorHandler(Display *display, XErrorEvent *err)
 {
-  XGServer	*ctxt = (XGServer*)GSCurrentServer();
+  XGServer *ctxt = (XGServer*)GSCurrentServer();
 
   return [ctxt XGErrorHandler: display : err];
 }
@@ -144,18 +144,18 @@ static void set_up_num_lock (void);
 // to check whether X keycodes are pressed in xEvent->xkeymap;
 static int check_modifier (XEvent *xEvent, KeySym key_sym)
 {
-    char *key_vector;
-    int by,bi;
-    int key_code = XKeysymToKeycode(xEvent->xkeymap.display, key_sym);
-
-    if (key_code != NoSymbol)
-      {
-	by = key_code / 8;
-	bi = key_code % 8;
-	key_vector = xEvent->xkeymap.key_vector;
-	return (key_vector[by] & (1 << bi));
-      }
-    return 0;
+  char *key_vector;
+  int by,bi;
+  int key_code = XKeysymToKeycode(xEvent->xkeymap.display, key_sym);
+  
+  if (key_code != NoSymbol)
+    {
+      by = key_code / 8;
+      bi = key_code % 8;
+      key_vector = xEvent->xkeymap.key_vector;
+      return (key_vector[by] & (1 << bi));
+    }
+  return 0;
 }
 
 @interface XGServer (WindowOps)
@@ -180,9 +180,9 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
   if (err->error_code == BadMatch && err->request_code == X_SetInputFocus)
     {
       if (err->serial == generic.focusRequestNumber)
-	{
-	  generic.focusRequestNumber = 0;
-	}
+        {
+          generic.focusRequestNumber = 0;
+        }
       return 0;
     }
 
@@ -192,36 +192,36 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
     {
       NSLog(@"X-Windows error - %s\n\
           on display: %s\n\
-    		type: %d\n\
+                    type: %d\n\
        serial number: %d\n\
-	request code: %d\n",
-	buffer,
-    	XDisplayName(DisplayString(display)),
-	err->type, err->serial, err->request_code);
+        request code: %d\n",
+        buffer,
+            XDisplayName(DisplayString(display)),
+        err->type, err->serial, err->request_code);
       return 0;
     }
   [NSException raise: NSWindowServerCommunicationException
     format: @"X-Windows error - %s\n\
           on display: %s\n\
-    		type: %d\n\
+                    type: %d\n\
        serial number: %d\n\
-	request code: %d\n",
-	buffer,
-    	XDisplayName(DisplayString(display)),
-	err->type, err->serial, err->request_code];
+        request code: %d\n",
+        buffer,
+            XDisplayName(DisplayString(display)),
+        err->type, err->serial, err->request_code];
   return 0;
 }
 
 - (void) setupRunLoopInputSourcesForMode: (NSString*)mode
 {
-  int		xEventQueueFd = XConnectionNumber(dpy);
-  NSRunLoop	*currentRunLoop = [NSRunLoop currentRunLoop];
+  int xEventQueueFd = XConnectionNumber(dpy);
+  NSRunLoop *currentRunLoop = [NSRunLoop currentRunLoop];
 
 #if defined(LIB_FOUNDATION_LIBRARY)
   {
     id fileDescriptor = [[[NSPosixFileDescriptor alloc]
-	initWithFileDescriptor: xEventQueueFd]
-	autorelease];
+        initWithFileDescriptor: xEventQueueFd]
+        autorelease];
 
     // Invoke limitDateForMode: to setup the current
     // mode of the run loop (the doc says that this
@@ -236,33 +236,33 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 #elif defined(NeXT_PDO)
   {
     id fileDescriptor = [[[NSFileHandle alloc]
-	initWithFileDescriptor: xEventQueueFd]
-	autorelease];
+        initWithFileDescriptor: xEventQueueFd]
+        autorelease];
 
     [[NSNotificationCenter defaultCenter] addObserver: self
-	selector: @selector(activityOnFileHandle:)
-	name: NSFileHandleDataAvailableNotification
-	object: fileDescriptor];
+        selector: @selector(activityOnFileHandle:)
+        name: NSFileHandleDataAvailableNotification
+        object: fileDescriptor];
     [fileDescriptor waitForDataInBackgroundAndNotifyForModes:
-	[NSArray arrayWithObject: mode]];
+        [NSArray arrayWithObject: mode]];
   }
 #else
   [currentRunLoop addEvent: (void*)(gsaddr)xEventQueueFd
-		      type: ET_RDESC
-		   watcher: (id<RunLoopEvents>)self
-		   forMode: mode];
+                      type: ET_RDESC
+                   watcher: (id<RunLoopEvents>)self
+                   forMode: mode];
 #endif
   if (procSel == 0)
     {
       procSel = @selector(processEvent:);
       procEvent = (void (*)(id, SEL, XEvent*))
-	[self methodForSelector: procSel];
+        [self methodForSelector: procSel];
     }
 }
 
 #if LIB_FOUNDATION_LIBRARY
 - (void) activity: (NSPosixFileActivities)activity
-		posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
+posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 {
   [self receivedEvent: 0 type: 0 extra: 0 forMode: nil];
 }
@@ -273,17 +273,17 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
   id runLoopMode = [[NSRunLoop currentRunLoop] currentMode];
 
   [fileDescriptor waitForDataInBackgroundAndNotifyForModes:
-	[NSArray arrayWithObject: runLoopMode]];
+        [NSArray arrayWithObject: runLoopMode]];
   [self receivedEvent: 0 type: 0 extra: 0 forMode: nil];
 }
 #endif
 
 - (BOOL) runLoopShouldBlock: (BOOL*)trigger
 {
-  *trigger = YES;	//  Should trigger this event
+  *trigger = YES;        //  Should trigger this event
   if (XPending(dpy) > 0)
     {
-      return NO;	// Don't block
+      return NO;        // Don't block
     }
   return YES;
 }
@@ -293,7 +293,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
                  extra: (void*)extra
                forMode: (NSString*)mode
 {
-  XEvent		xEvent;
+  XEvent xEvent;
 
   // loop and grab all of the events from the X queue
   while (XPending(dpy) > 0)
@@ -302,10 +302,10 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 
 #ifdef USE_XIM
       if (XFilterEvent(&xEvent, None)) 
-	{
-	  NSDebugLLog(@"NSKeyEvent", @"Event filtered (by XIM?)\n");
-	  continue;
-	}
+        {
+          NSDebugLLog(@"NSKeyEvent", @"Event filtered (by XIM?)\n");
+          continue;
+        }
 #endif
 
       (*procEvent)(self, procSel, &xEvent);
@@ -316,10 +316,10 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
  */
 - (NSPoint) _XPointToOSPoint: (NSPoint)x for: (void*)window
 {
-  gswindow_device_t	*win = (gswindow_device_t*)window;
-  unsigned int		style = win->win_attrs.window_style;
-  NSPoint	o;
-  float	t, b, l, r;
+  gswindow_device_t *win = (gswindow_device_t*)window;
+  unsigned int style = win->win_attrs.window_style;
+  NSPoint o;
+  float t, b, l, r;
 
   [self styleoffsets: &l : &r : &t : &b : style : win->ident];
   o.x = x.x + l;
@@ -333,17 +333,17 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 
 - (void) processEvent: (XEvent *) event
 {
-  static int		clickCount = 1;
-  static unsigned int	eventFlags;
-  NSEvent		*e = nil;
-  XEvent		xEvent;
-  static NSPoint	eventLocation;
-  NSWindow              *nswin;
-  Window		xWin;
-  NSEventType		eventType;
-  NSGraphicsContext     *gcontext;
-  float                 deltaX;
-  float                 deltaY;
+  static int clickCount = 1;
+  static unsigned int eventFlags;
+  NSEvent *e = nil;
+  XEvent xEvent;
+  static NSPoint eventLocation;
+  NSWindow *nswin;
+  Window xWin;
+  NSEventType eventType;
+  NSGraphicsContext *gcontext;
+  float deltaX;
+  float deltaY;
   int buttonNumber;
 
   gcontext = GSCurrentContext();
@@ -351,610 +351,610 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 
   switch (xEvent.type)
     {
-	// mouse button events
+        // mouse button events
       case ButtonPress:
-	NSDebugLLog(@"NSEvent", @"%d ButtonPress: \
-		xEvent.xbutton.time %u timeOfLastClick %u \n",
-		    xEvent.xbutton.window, xEvent.xbutton.time,
-		    generic.lastClick);
-	/*
-	 * hardwired test for a double click
-	 *
-	 * For multiple clicks, the clicks must remain in the same
-	 * region of the same window and must occur in a limited time.
-	 *
-	 * default time of 300 should be user set;
-	 * perhaps the movement of 3 should also be a preference?
-	 */
-	{
-	  BOOL	incrementCount = YES;
+        NSDebugLLog(@"NSEvent", @"%d ButtonPress: \
+                xEvent.xbutton.time %u timeOfLastClick %u \n",
+                    xEvent.xbutton.window, xEvent.xbutton.time,
+                    generic.lastClick);
+        /*
+         * hardwired test for a double click
+         *
+         * For multiple clicks, the clicks must remain in the same
+         * region of the same window and must occur in a limited time.
+         *
+         * default time of 300 should be user set;
+         * perhaps the movement of 3 should also be a preference?
+         */
+        {
+          BOOL incrementCount = YES;
 
-#define	CLICK_TIME	300
-#define	CLICK_MOVE	3
-	  if (xEvent.xbutton.time
-	    >= (unsigned long)(generic.lastClick + CLICK_TIME))
-	    incrementCount = NO;
-	  else if (generic.lastClickWindow != xEvent.xbutton.window)
-	    incrementCount = NO;
-	  else if ((generic.lastClickX - xEvent.xbutton.x) > CLICK_MOVE)
-	    incrementCount = NO;
-	  else if ((generic.lastClickX - xEvent.xbutton.x) < -CLICK_MOVE)
-	    incrementCount = NO;
-	  else if ((generic.lastClickY - xEvent.xbutton.y) > CLICK_MOVE)
-	    incrementCount = NO;
-	  else if ((generic.lastClickY - xEvent.xbutton.y) < -CLICK_MOVE)
-	    incrementCount = NO;
+#define CLICK_TIME 300
+#define CLICK_MOVE 3
+          if (xEvent.xbutton.time
+            >= (unsigned long)(generic.lastClick + CLICK_TIME))
+            incrementCount = NO;
+          else if (generic.lastClickWindow != xEvent.xbutton.window)
+            incrementCount = NO;
+          else if ((generic.lastClickX - xEvent.xbutton.x) > CLICK_MOVE)
+            incrementCount = NO;
+          else if ((generic.lastClickX - xEvent.xbutton.x) < -CLICK_MOVE)
+            incrementCount = NO;
+          else if ((generic.lastClickY - xEvent.xbutton.y) > CLICK_MOVE)
+            incrementCount = NO;
+          else if ((generic.lastClickY - xEvent.xbutton.y) < -CLICK_MOVE)
+            incrementCount = NO;
 
-	  if (incrementCount == YES)
-	    {
-	      clickCount++;
-	    }
-	  else
-	    {
-	      /*
-	       * Not a multiple-click, so we must set the stored
-	       * location of the click to the new values and
-	       * reset the counter.
-	       */
-	      clickCount = 1;
-	      generic.lastClickWindow = xEvent.xbutton.window;
-	      generic.lastClickX = xEvent.xbutton.x;
-	      generic.lastClickY = xEvent.xbutton.y;
-	    }
-	}
-	generic.lastClick = xEvent.xbutton.time;
-	[self setLastTime: generic.lastClick];
-	deltaY = 0.0;
+          if (incrementCount == YES)
+            {
+              clickCount++;
+            }
+          else
+            {
+              /*
+               * Not a multiple-click, so we must set the stored
+               * location of the click to the new values and
+               * reset the counter.
+               */
+              clickCount = 1;
+              generic.lastClickWindow = xEvent.xbutton.window;
+              generic.lastClickX = xEvent.xbutton.x;
+              generic.lastClickY = xEvent.xbutton.y;
+            }
+        }
+        generic.lastClick = xEvent.xbutton.time;
+        [self setLastTime: generic.lastClick];
+        deltaY = 0.0;
 
-	if (xEvent.xbutton.button == generic.lMouse)
-    {
-	  eventType = NSLeftMouseDown;
-      buttonNumber = generic.lMouse;
-    }
-	else if (xEvent.xbutton.button == generic.rMouse
-	  && generic.rMouse != 0)
-    {
-	  eventType = NSRightMouseDown;
-      buttonNumber = generic.rMouse;
-    }
-	else if (xEvent.xbutton.button == generic.mMouse
-	  && generic.mMouse != 0)
-    {
-	  eventType = NSOtherMouseDown;
-      buttonNumber = generic.mMouse;
-    }
-	else if (xEvent.xbutton.button == generic.upMouse
-	  && generic.upMouse != 0)
-	  {
-	    deltaY = 1.;
-	    eventType = NSScrollWheel;
-        buttonNumber = generic.upMouse;
-	  }
-	else if (xEvent.xbutton.button == generic.downMouse
-	  && generic.downMouse != 0)
-	  {
-	    deltaY = -1.;
-	    eventType = NSScrollWheel;
-        buttonNumber = generic.downMouse;
-	  }
-	else
-	  {
-	    break;		/* Unknown button */
-	  }
+        if (xEvent.xbutton.button == generic.lMouse)
+          {
+            eventType = NSLeftMouseDown;
+            buttonNumber = generic.lMouse;
+          }
+        else if (xEvent.xbutton.button == generic.rMouse
+          && generic.rMouse != 0)
+          {
+            eventType = NSRightMouseDown;
+            buttonNumber = generic.rMouse;
+          }
+        else if (xEvent.xbutton.button == generic.mMouse
+          && generic.mMouse != 0)
+          {
+            eventType = NSOtherMouseDown;
+            buttonNumber = generic.mMouse;
+          }
+        else if (xEvent.xbutton.button == generic.upMouse
+          && generic.upMouse != 0)
+          {
+            deltaY = 1.;
+            eventType = NSScrollWheel;
+            buttonNumber = generic.upMouse;
+          }
+        else if (xEvent.xbutton.button == generic.downMouse
+          && generic.downMouse != 0)
+          {
+            deltaY = -1.;
+            eventType = NSScrollWheel;
+            buttonNumber = generic.downMouse;
+          }
+        else
+          {
+            break;                /* Unknown button */
+          }
 
-	eventFlags = process_modifier_flags(xEvent.xbutton.state);
-	// if pointer is grabbed use grab window
-	xWin = (grabWindow == 0) ? xEvent.xbutton.window : grabWindow;
-	if (cWin == 0 || xWin != cWin->ident)
-	  generic.cachedWindow = [XGServer _windowForXWindow: xWin];
-	if (cWin == 0)
-	  break;
-	eventLocation.x = xEvent.xbutton.x;
-	eventLocation.y = xEvent.xbutton.y;
-	eventLocation = [self _XPointToOSPoint: eventLocation
-					   for: cWin];
-
-	if (generic.flags.useWindowMakerIcons == 1)
-	  {
-	    /*
-	     * We must hand over control of our icon/miniwindow
-	     * to Window Maker.
-		 */
-	    if ((cWin->win_attrs.window_style
-	      & (NSMiniWindowMask | NSIconWindowMask)) != 0
-	      && eventType == NSLeftMouseDown && clickCount == 1)
-	      {
-          if (cWin->parent == None)
-            break;
-          xEvent.xbutton.window = cWin->parent;
-          XUngrabPointer(dpy, CurrentTime);
-          XSendEvent(dpy, cWin->parent, True,
-                     ButtonPressMask, &xEvent);
-          XFlush(dpy);
+        eventFlags = process_modifier_flags(xEvent.xbutton.state);
+        // if pointer is grabbed use grab window
+        xWin = (grabWindow == 0) ? xEvent.xbutton.window : grabWindow;
+        if (cWin == 0 || xWin != cWin->ident)
+          generic.cachedWindow = [XGServer _windowForXWindow: xWin];
+        if (cWin == 0)
           break;
-	      }
-	  }
+        eventLocation.x = xEvent.xbutton.x;
+        eventLocation.y = xEvent.xbutton.y;
+        eventLocation = [self _XPointToOSPoint: eventLocation
+                                           for: cWin];
 
-	// create NSEvent
-	e = [NSEvent mouseEventWithType: eventType
-		     location: eventLocation
-		     modifierFlags: eventFlags
+        if (generic.flags.useWindowMakerIcons == 1)
+          {
+            /*
+             * We must hand over control of our icon/miniwindow
+             * to Window Maker.
+                 */
+            if ((cWin->win_attrs.window_style
+              & (NSMiniWindowMask | NSIconWindowMask)) != 0
+              && eventType == NSLeftMouseDown && clickCount == 1)
+              {
+                if (cWin->parent == None)
+                  break;
+                xEvent.xbutton.window = cWin->parent;
+                XUngrabPointer(dpy, CurrentTime);
+                XSendEvent(dpy, cWin->parent, True,
+                           ButtonPressMask, &xEvent);
+                XFlush(dpy);
+                break;
+              }
+          }
+
+        // create NSEvent
+        e = [NSEvent mouseEventWithType: eventType
+                     location: eventLocation
+                     modifierFlags: eventFlags
          timestamp: (NSTimeInterval)generic.lastClick / 1000.0
-		     windowNumber: cWin->number
-		     context: gcontext
-		     eventNumber: xEvent.xbutton.serial
-		     clickCount: clickCount
-		     pressure: 1.0
-		     buttonNumber: buttonNumber /* FIXME */
-		     deltaX: 0.
-		     deltaY: deltaY
-		     deltaZ: 0.];
-	break;
+                     windowNumber: cWin->number
+                     context: gcontext
+                     eventNumber: xEvent.xbutton.serial
+                     clickCount: clickCount
+                     pressure: 1.0
+                     buttonNumber: buttonNumber /* FIXME */
+                     deltaX: 0.
+                     deltaY: deltaY
+                     deltaZ: 0.];
+        break;
 
       case ButtonRelease:
-	NSDebugLLog(@"NSEvent", @"%d ButtonRelease\n",
-		    xEvent.xbutton.window);
-	[self setLastTime: xEvent.xbutton.time];
-	if (xEvent.xbutton.button == generic.lMouse)
-    {
-	  eventType = NSLeftMouseUp;
-      buttonNumber = generic.lMouse;
-    }
-	else if (xEvent.xbutton.button == generic.rMouse
-	  && generic.rMouse != 0)
-    {
-	  eventType = NSRightMouseUp;
-      buttonNumber = generic.rMouse;
-    }
-	else if (xEvent.xbutton.button == generic.mMouse
-	  && generic.mMouse != 0)
-    {
-	  eventType = NSOtherMouseUp;
-      buttonNumber = generic.mMouse;
-    }
-	else
-	  {
-	    // we ignore release of scrollUp or scrollDown
-	    break;		/* Unknown button */
-	  }
+        NSDebugLLog(@"NSEvent", @"%d ButtonRelease\n",
+                    xEvent.xbutton.window);
+        [self setLastTime: xEvent.xbutton.time];
+        if (xEvent.xbutton.button == generic.lMouse)
+          {
+            eventType = NSLeftMouseUp;
+            buttonNumber = generic.lMouse;
+          }
+        else if (xEvent.xbutton.button == generic.rMouse
+          && generic.rMouse != 0)
+          {
+            eventType = NSRightMouseUp;
+            buttonNumber = generic.rMouse;
+          }
+        else if (xEvent.xbutton.button == generic.mMouse
+          && generic.mMouse != 0)
+          {
+            eventType = NSOtherMouseUp;
+            buttonNumber = generic.mMouse;
+          }
+        else
+          {
+            // we ignore release of scrollUp or scrollDown
+            break;                /* Unknown button */
+          }
 
-	eventFlags = process_modifier_flags(xEvent.xbutton.state);
-	// if pointer is grabbed use grab window
-	xWin = (grabWindow == 0) ? xEvent.xbutton.window : grabWindow;
-	if (cWin == 0 || xWin != cWin->ident)
-	  generic.cachedWindow = [XGServer _windowForXWindow: xWin];
-	if (cWin == 0)
-	  break;
-	eventLocation.x = xEvent.xbutton.x;
-	eventLocation.y = xEvent.xbutton.y;
-	eventLocation = [self _XPointToOSPoint: eventLocation
-					   for: cWin];
+        eventFlags = process_modifier_flags(xEvent.xbutton.state);
+        // if pointer is grabbed use grab window
+        xWin = (grabWindow == 0) ? xEvent.xbutton.window : grabWindow;
+        if (cWin == 0 || xWin != cWin->ident)
+          generic.cachedWindow = [XGServer _windowForXWindow: xWin];
+        if (cWin == 0)
+          break;
+        eventLocation.x = xEvent.xbutton.x;
+        eventLocation.y = xEvent.xbutton.y;
+        eventLocation = [self _XPointToOSPoint: eventLocation
+                                           for: cWin];
 
-	e = [NSEvent mouseEventWithType: eventType
-		     location: eventLocation
-		     modifierFlags: eventFlags
-		     timestamp: (NSTimeInterval)generic.lastTime / 1000.0
-		     windowNumber: cWin->number
-		     context: gcontext
-		     eventNumber: xEvent.xbutton.serial
-		     clickCount: clickCount
-		     pressure: 1.0
-		     buttonNumber: buttonNumber	/* FIXMME */
-		     deltaX: 0.0
-		     deltaY: 0.0
-		     deltaZ: 0.0];
-	break;
+        e = [NSEvent mouseEventWithType: eventType
+                     location: eventLocation
+                     modifierFlags: eventFlags
+                     timestamp: (NSTimeInterval)generic.lastTime / 1000.0
+                     windowNumber: cWin->number
+                     context: gcontext
+                     eventNumber: xEvent.xbutton.serial
+                     clickCount: clickCount
+                     pressure: 1.0
+                     buttonNumber: buttonNumber        /* FIXMME */
+                     deltaX: 0.0
+                     deltaY: 0.0
+                     deltaZ: 0.0];
+        break;
 
       case CirculateNotify:
-	NSDebugLLog(@"NSEvent", @"%d CirculateNotify\n",
-		    xEvent.xcirculate.window);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d CirculateNotify\n",
+                    xEvent.xcirculate.window);
+        break;
 
       case CirculateRequest:
-	NSDebugLLog(@"NSEvent", @"%d CirculateRequest\n",
-		    xEvent.xcirculaterequest.window);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d CirculateRequest\n",
+                    xEvent.xcirculaterequest.window);
+        break;
 
       case ClientMessage:
-	{
-	  NSTimeInterval time;
-	  DndClass dnd = xdnd ();
-	      
-	  NSDebugLLog(@"NSEvent", @"%d ClientMessage\n",
-		      xEvent.xclient.window);
-	  if (cWin == 0 || xEvent.xclient.window != cWin->ident)
-	    {
-	      generic.cachedWindow
-		= [XGServer _windowForXWindow: xEvent.xclient.window];
-	    }
-	  if (cWin == 0)
-	    break;
-	  if (xEvent.xclient.message_type == generic.protocols_atom)
-	    {
-	      [self setLastTime: (Time)xEvent.xclient.data.l[1]];
-	      NSDebugLLog(@"NSEvent", @"WM Protocol - %s\n",
-			  XGetAtomName(dpy, xEvent.xclient.data.l[0]));
+        {
+          NSTimeInterval time;
+          DndClass dnd = xdnd ();
+              
+          NSDebugLLog(@"NSEvent", @"%d ClientMessage\n",
+                      xEvent.xclient.window);
+          if (cWin == 0 || xEvent.xclient.window != cWin->ident)
+            {
+              generic.cachedWindow
+                = [XGServer _windowForXWindow: xEvent.xclient.window];
+            }
+          if (cWin == 0)
+            break;
+          if (xEvent.xclient.message_type == generic.protocols_atom)
+            {
+              [self setLastTime: (Time)xEvent.xclient.data.l[1]];
+              NSDebugLLog(@"NSEvent", @"WM Protocol - %s\n",
+                          XGetAtomName(dpy, xEvent.xclient.data.l[0]));
 
-	      if ((Atom)xEvent.xclient.data.l[0] == generic.delete_win_atom)
-		{
-		  /*
-		   * WM is asking us to close a window
-		   */
-		  eventLocation = NSMakePoint(0,0);
-		  e = [NSEvent otherEventWithType: NSAppKitDefined
-			       location: eventLocation
-			       modifierFlags: 0
-			       timestamp: 0
-			       windowNumber: cWin->number
-			       context: gcontext
-			       subtype: GSAppKitWindowClose
-			       data1: 0
-			       data2: 0];
-		}
-	      else if ((Atom)xEvent.xclient.data.l[0]
-		== generic.miniaturize_atom)
-		{
-		  eventLocation = NSMakePoint(0,0);
-		  e = [NSEvent otherEventWithType: NSAppKitDefined
-			       location: eventLocation
-			       modifierFlags: 0
-			       timestamp: 0
-			       windowNumber: cWin->number
-			       context: gcontext
-			       subtype: GSAppKitWindowMiniaturize
-			       data1: 0
-			       data2: 0];
-		}
-	      else if ((Atom)xEvent.xclient.data.l[0]
-		== generic.take_focus_atom)
-		{
-		  e = [self _handleTakeFocusAtom: xEvent 
-				      forContext: gcontext];
-		}
-	      else if ((Atom)xEvent.xclient.data.l[0]
-		== generic.net_wm_ping_atom)
-		{
-		  xEvent.xclient.window = RootWindow(dpy, cWin->screen);
-		  XSendEvent(dpy, xEvent.xclient.window, False, 
-		    (SubstructureRedirectMask | SubstructureNotifyMask), 
-		    &xEvent);
-		}
-	    }
-	  else if (xEvent.xclient.message_type == dnd.XdndEnter)
-	    {
-	      Window source;
+              if ((Atom)xEvent.xclient.data.l[0] == generic.delete_win_atom)
+                {
+                  /*
+                   * WM is asking us to close a window
+                   */
+                  eventLocation = NSMakePoint(0,0);
+                  e = [NSEvent otherEventWithType: NSAppKitDefined
+                               location: eventLocation
+                               modifierFlags: 0
+                               timestamp: 0
+                               windowNumber: cWin->number
+                               context: gcontext
+                               subtype: GSAppKitWindowClose
+                               data1: 0
+                               data2: 0];
+                }
+              else if ((Atom)xEvent.xclient.data.l[0]
+                == generic.miniaturize_atom)
+                {
+                  eventLocation = NSMakePoint(0,0);
+                  e = [NSEvent otherEventWithType: NSAppKitDefined
+                               location: eventLocation
+                               modifierFlags: 0
+                               timestamp: 0
+                               windowNumber: cWin->number
+                               context: gcontext
+                               subtype: GSAppKitWindowMiniaturize
+                               data1: 0
+                               data2: 0];
+                }
+              else if ((Atom)xEvent.xclient.data.l[0]
+                == generic.take_focus_atom)
+                {
+                  e = [self _handleTakeFocusAtom: xEvent 
+                                      forContext: gcontext];
+                }
+              else if ((Atom)xEvent.xclient.data.l[0]
+                == generic.net_wm_ping_atom)
+                {
+                  xEvent.xclient.window = RootWindow(dpy, cWin->screen);
+                  XSendEvent(dpy, xEvent.xclient.window, False, 
+                    (SubstructureRedirectMask | SubstructureNotifyMask), 
+                    &xEvent);
+                }
+            }
+          else if (xEvent.xclient.message_type == dnd.XdndEnter)
+            {
+              Window source;
 
-	      NSDebugLLog(@"NSDragging", @"  XdndEnter message\n");
-	      source = XDND_ENTER_SOURCE_WIN(&xEvent);
-	      eventLocation = NSMakePoint(0,0);
-	      e = [NSEvent otherEventWithType: NSAppKitDefined
-			   location: eventLocation
-			   modifierFlags: 0
-			   timestamp: 0
-			   windowNumber: cWin->number
-			   context: gcontext
-			   subtype: GSAppKitDraggingEnter
-			   data1: source
-			   data2: 0];
-	      /* If this is a non-local drag, set the dragInfo */
-	      if ([XGServer _windowForXWindow: source] == NULL)
-		{
-		  [[XGDragView sharedDragView] setupDragInfoFromXEvent:
-						 &xEvent];
-		}
-	    }
-	  else if (xEvent.xclient.message_type == dnd.XdndPosition)
-	    {
-	      Window		source;
-	      Atom		action;
-	      NSDragOperation	operation;
-	      int root_x, root_y;
-	      Window root_child;
+              NSDebugLLog(@"NSDragging", @"  XdndEnter message\n");
+              source = XDND_ENTER_SOURCE_WIN(&xEvent);
+              eventLocation = NSMakePoint(0,0);
+              e = [NSEvent otherEventWithType: NSAppKitDefined
+                           location: eventLocation
+                           modifierFlags: 0
+                           timestamp: 0
+                           windowNumber: cWin->number
+                           context: gcontext
+                           subtype: GSAppKitDraggingEnter
+                           data1: source
+                           data2: 0];
+              /* If this is a non-local drag, set the dragInfo */
+              if ([XGServer _windowForXWindow: source] == NULL)
+                {
+                  [[XGDragView sharedDragView] setupDragInfoFromXEvent:
+                                                 &xEvent];
+                }
+            }
+          else if (xEvent.xclient.message_type == dnd.XdndPosition)
+            {
+              Window                source;
+              Atom                action;
+              NSDragOperation        operation;
+              int root_x, root_y;
+              Window root_child;
 
-	      NSDebugLLog(@"NSDragging", @"  XdndPosition message\n");
-	      source = XDND_POSITION_SOURCE_WIN(&xEvent);
-	      /*
-		Work around a bug/feature in WindowMaker that does not
-		send ConfigureNotify events for app icons.
-	      */
-	      XTranslateCoordinates(dpy, xEvent.xclient.window,
-				    RootWindow(dpy, cWin->screen),
-				    0, 0,
-				    &root_x, &root_y,
-				    &root_child);
-	      cWin->xframe.origin.x = root_x;
-	      cWin->xframe.origin.y = root_y;
+              NSDebugLLog(@"NSDragging", @"  XdndPosition message\n");
+              source = XDND_POSITION_SOURCE_WIN(&xEvent);
+              /*
+                Work around a bug/feature in WindowMaker that does not
+                send ConfigureNotify events for app icons.
+              */
+              XTranslateCoordinates(dpy, xEvent.xclient.window,
+                                    RootWindow(dpy, cWin->screen),
+                                    0, 0,
+                                    &root_x, &root_y,
+                                    &root_child);
+              cWin->xframe.origin.x = root_x;
+              cWin->xframe.origin.y = root_y;
 
-	      eventLocation.x = XDND_POSITION_ROOT_X(&xEvent) - 
-		NSMinX(cWin->xframe);
-	      eventLocation.y = XDND_POSITION_ROOT_Y(&xEvent) - 
-		NSMinY(cWin->xframe);
-	      eventLocation = [self _XPointToOSPoint: eventLocation
-						 for: cWin];
-	      time = XDND_POSITION_TIME(&xEvent);
-	      action = XDND_POSITION_ACTION(&xEvent);
-	      operation = GSDragOperationForAction(action);
-	      e = [NSEvent otherEventWithType: NSAppKitDefined
-			   location: eventLocation
-			   modifierFlags: 0
-			   timestamp: time / 1000.0
-			   windowNumber: cWin->number
-			   context: gcontext
-			   subtype: GSAppKitDraggingUpdate
-			   data1: source
-			   data2: operation];
-	      /* If this is a non-local drag, update the dragInfo */
-	      if ([XGServer _windowForXWindow: source] == NULL)
-		{
-		  [[XGDragView sharedDragView] updateDragInfoFromEvent:
-						 e];
-		}
-	    }
-	  else if (xEvent.xclient.message_type == dnd.XdndStatus)
-	    {
-	      Window		target;
-	      Atom		action;
-	      NSDragOperation	operation;
+              eventLocation.x = XDND_POSITION_ROOT_X(&xEvent) - 
+                NSMinX(cWin->xframe);
+              eventLocation.y = XDND_POSITION_ROOT_Y(&xEvent) - 
+                NSMinY(cWin->xframe);
+              eventLocation = [self _XPointToOSPoint: eventLocation
+                                                 for: cWin];
+              time = XDND_POSITION_TIME(&xEvent);
+              action = XDND_POSITION_ACTION(&xEvent);
+              operation = GSDragOperationForAction(action);
+              e = [NSEvent otherEventWithType: NSAppKitDefined
+                           location: eventLocation
+                           modifierFlags: 0
+                           timestamp: time / 1000.0
+                           windowNumber: cWin->number
+                           context: gcontext
+                           subtype: GSAppKitDraggingUpdate
+                           data1: source
+                           data2: operation];
+              /* If this is a non-local drag, update the dragInfo */
+              if ([XGServer _windowForXWindow: source] == NULL)
+                {
+                  [[XGDragView sharedDragView] updateDragInfoFromEvent:
+                                                 e];
+                }
+            }
+          else if (xEvent.xclient.message_type == dnd.XdndStatus)
+            {
+              Window target;
+              Atom action;
+              NSDragOperation operation;
 
-	      NSDebugLLog(@"NSDragging", @"  XdndStatus message\n");
-	      target = XDND_STATUS_TARGET_WIN(&xEvent);
-	      eventLocation = NSMakePoint(0, 0);
-	      if (XDND_STATUS_WILL_ACCEPT (&xEvent))
-		{
-		  action = XDND_STATUS_ACTION(&xEvent);
-		}
-	      else
-		{
-		  action = NSDragOperationNone;
-		}
-		  
-	      operation = GSDragOperationForAction(action);
-	      e = [NSEvent otherEventWithType: NSAppKitDefined
-			   location: eventLocation
-			   modifierFlags: 0
-			   timestamp: 0
-			   windowNumber: cWin->number
-			   context: gcontext
-			   subtype: GSAppKitDraggingStatus
-			   data1: target
-			   data2: operation];
-	    }
-	  else if (xEvent.xclient.message_type == dnd.XdndLeave)
-	    {
-	      Window	source;
+              NSDebugLLog(@"NSDragging", @"  XdndStatus message\n");
+              target = XDND_STATUS_TARGET_WIN(&xEvent);
+              eventLocation = NSMakePoint(0, 0);
+              if (XDND_STATUS_WILL_ACCEPT (&xEvent))
+                {
+                  action = XDND_STATUS_ACTION(&xEvent);
+                }
+              else
+                {
+                  action = NSDragOperationNone;
+                }
+                  
+              operation = GSDragOperationForAction(action);
+              e = [NSEvent otherEventWithType: NSAppKitDefined
+                           location: eventLocation
+                           modifierFlags: 0
+                           timestamp: 0
+                           windowNumber: cWin->number
+                           context: gcontext
+                           subtype: GSAppKitDraggingStatus
+                           data1: target
+                           data2: operation];
+            }
+          else if (xEvent.xclient.message_type == dnd.XdndLeave)
+            {
+              Window source;
 
-	      NSDebugLLog(@"NSDragging", @"  XdndLeave message\n");
-	      source = XDND_LEAVE_SOURCE_WIN(&xEvent);
-	      eventLocation = NSMakePoint(0, 0);
-	      e = [NSEvent otherEventWithType: NSAppKitDefined
-			   location: eventLocation
-			   modifierFlags: 0
-			   timestamp: 0
-			   windowNumber: cWin->number
-			   context: gcontext
-			   subtype: GSAppKitDraggingExit
-			   data1: 0
-			   data2: 0];
-	      /* If this is a non-local drag, reset the dragInfo */
-	      if ([XGServer _windowForXWindow: source] == NULL)
-		{
-		  [[XGDragView sharedDragView] resetDragInfo];
-		}
-	    }
-	  else if (xEvent.xclient.message_type == dnd.XdndDrop)
-	    {
-	      Window	source;
+              NSDebugLLog(@"NSDragging", @"  XdndLeave message\n");
+              source = XDND_LEAVE_SOURCE_WIN(&xEvent);
+              eventLocation = NSMakePoint(0, 0);
+              e = [NSEvent otherEventWithType: NSAppKitDefined
+                           location: eventLocation
+                           modifierFlags: 0
+                           timestamp: 0
+                           windowNumber: cWin->number
+                           context: gcontext
+                           subtype: GSAppKitDraggingExit
+                           data1: 0
+                           data2: 0];
+              /* If this is a non-local drag, reset the dragInfo */
+              if ([XGServer _windowForXWindow: source] == NULL)
+                {
+                  [[XGDragView sharedDragView] resetDragInfo];
+                }
+            }
+          else if (xEvent.xclient.message_type == dnd.XdndDrop)
+            {
+              Window source;
 
-	      NSDebugLLog(@"NSDragging", @"  XdndDrop message\n");
-	      source = XDND_DROP_SOURCE_WIN(&xEvent);
-	      eventLocation = NSMakePoint(0, 0);
-	      time = XDND_DROP_TIME(&xEvent);
-	      e = [NSEvent otherEventWithType: NSAppKitDefined
-			   location: eventLocation
-			   modifierFlags: 0
-			   timestamp: time / 1000.0
-			   windowNumber: cWin->number
-			   context: gcontext
-			   subtype: GSAppKitDraggingDrop
-			   data1: source
-			   data2: 0];
-	    }
-	  else if (xEvent.xclient.message_type == dnd.XdndFinished)
-	    {
-	      Window	target;
+              NSDebugLLog(@"NSDragging", @"  XdndDrop message\n");
+              source = XDND_DROP_SOURCE_WIN(&xEvent);
+              eventLocation = NSMakePoint(0, 0);
+              time = XDND_DROP_TIME(&xEvent);
+              e = [NSEvent otherEventWithType: NSAppKitDefined
+                           location: eventLocation
+                           modifierFlags: 0
+                           timestamp: time / 1000.0
+                           windowNumber: cWin->number
+                           context: gcontext
+                           subtype: GSAppKitDraggingDrop
+                           data1: source
+                           data2: 0];
+            }
+          else if (xEvent.xclient.message_type == dnd.XdndFinished)
+            {
+              Window target;
 
-	      NSDebugLLog(@"NSDragging", @"  XdndFinished message\n");
-	      target = XDND_FINISHED_TARGET_WIN(&xEvent);
-	      eventLocation = NSMakePoint(0, 0);
-	      e = [NSEvent otherEventWithType: NSAppKitDefined
-			   location: eventLocation
-			   modifierFlags: 0
-			   timestamp: 0
-			   windowNumber: cWin->number
-			   context: gcontext
-			   subtype: GSAppKitDraggingFinished
-			   data1: target
-			   data2: 0];
-	    }
-	}
-	break;
+              NSDebugLLog(@"NSDragging", @"  XdndFinished message\n");
+              target = XDND_FINISHED_TARGET_WIN(&xEvent);
+              eventLocation = NSMakePoint(0, 0);
+              e = [NSEvent otherEventWithType: NSAppKitDefined
+                           location: eventLocation
+                           modifierFlags: 0
+                           timestamp: 0
+                           windowNumber: cWin->number
+                           context: gcontext
+                           subtype: GSAppKitDraggingFinished
+                           data1: target
+                           data2: 0];
+            }
+        }
+        break;
 
       case ColormapNotify:
-	// colormap attribute
-	NSDebugLLog(@"NSEvent", @"%d ColormapNotify\n",
-		    xEvent.xcolormap.window);
-	break;
+        // colormap attribute
+        NSDebugLLog(@"NSEvent", @"%d ColormapNotify\n",
+                    xEvent.xcolormap.window);
+        break;
 
-	    // the window has been resized, change the width and height
-	    // and update the window so the changes get displayed
+            // the window has been resized, change the width and height
+            // and update the window so the changes get displayed
       case ConfigureNotify:
-	NSDebugLLog(@"NSEvent", @"%d ConfigureNotify "
-		    @"x:%d y:%d w:%d h:%d b:%d %c", xEvent.xconfigure.window,
-		    xEvent.xconfigure.x, xEvent.xconfigure.y,
-		    xEvent.xconfigure.width, xEvent.xconfigure.height,
-		    xEvent.xconfigure.border_width,
-		    xEvent.xconfigure.send_event ? 'T' : 'F');
-	if (cWin == 0 || xEvent.xconfigure.window != cWin->ident)
-	  {
-	    generic.cachedWindow
-	      = [XGServer _windowForXWindow:xEvent.xconfigure.window];
-	  }
+        NSDebugLLog(@"NSEvent", @"%d ConfigureNotify "
+                    @"x:%d y:%d w:%d h:%d b:%d %c", xEvent.xconfigure.window,
+                    xEvent.xconfigure.x, xEvent.xconfigure.y,
+                    xEvent.xconfigure.width, xEvent.xconfigure.height,
+                    xEvent.xconfigure.border_width,
+                    xEvent.xconfigure.send_event ? 'T' : 'F');
+        if (cWin == 0 || xEvent.xconfigure.window != cWin->ident)
+          {
+            generic.cachedWindow
+              = [XGServer _windowForXWindow:xEvent.xconfigure.window];
+          }
 
-	if (cWin != 0)
-	  {
-	    NSRect	   r, x, n, h;
-	    NSTimeInterval ts = (NSTimeInterval)generic.lastMotion;
+        if (cWin != 0)
+          {
+            NSRect r, x, n, h;
+            NSTimeInterval ts = (NSTimeInterval)generic.lastMotion;
 
-	    r = cWin->xframe;
+            r = cWin->xframe;
 
-	    x = NSMakeRect(xEvent.xconfigure.x,
-			   xEvent.xconfigure.y,
-			   xEvent.xconfigure.width,
-			   xEvent.xconfigure.height);
+            x = NSMakeRect(xEvent.xconfigure.x,
+                           xEvent.xconfigure.y,
+                           xEvent.xconfigure.width,
+                           xEvent.xconfigure.height);
 
-	    /*
-	    According to the ICCCM, coordinates in synthetic events
-	    (ie. non-zero send_event) are in root space, while coordinates
-	    in real events are in the parent window's space. The parent
-	    window might be some window manager window, so we can't
-	    directly use those coordinates.
+            /*
+            According to the ICCCM, coordinates in synthetic events
+            (ie. non-zero send_event) are in root space, while coordinates
+            in real events are in the parent window's space. The parent
+            window might be some window manager window, so we can't
+            directly use those coordinates.
 
-	    Thus, if the event is real, we use XTranslateCoordinates to
-	    get the root space coordinates.
-	    */
-	    if (xEvent.xconfigure.send_event == 0)
-	      {
-		int root_x, root_y;
-		Window root_child;
-		XTranslateCoordinates(dpy, xEvent.xconfigure.window,
-				      RootWindow(dpy, cWin->screen),
-				      0, 0,
-				      &root_x, &root_y,
-				      &root_child);
-		x.origin.x = root_x;
-		x.origin.y = root_y;
-	      }
+            Thus, if the event is real, we use XTranslateCoordinates to
+            get the root space coordinates.
+            */
+            if (xEvent.xconfigure.send_event == 0)
+              {
+                int root_x, root_y;
+                Window root_child;
+                XTranslateCoordinates(dpy, xEvent.xconfigure.window,
+                                      RootWindow(dpy, cWin->screen),
+                                      0, 0,
+                                      &root_x, &root_y,
+                                      &root_child);
+                x.origin.x = root_x;
+                x.origin.y = root_y;
+              }
 
-	    cWin->xframe = x;
-	    n = [self _XFrameToOSFrame: x for: cWin];
-	    NSDebugLLog(@"Moving",
-			@"Update win %d:\n   original:%@\n   new:%@",
-			cWin->number, NSStringFromRect(r), 
-			NSStringFromRect(x));
-	    /*
-	     * Set size hints info to be up to date with new size.
-	     */
-	    h = [self _XFrameToXHints: x for: cWin];
-	    cWin->siz_hints.width = h.size.width;
-	    cWin->siz_hints.height = h.size.height;
+            cWin->xframe = x;
+            n = [self _XFrameToOSFrame: x for: cWin];
+            NSDebugLLog(@"Moving",
+                        @"Update win %d:\n   original:%@\n   new:%@",
+                        cWin->number, NSStringFromRect(r), 
+                        NSStringFromRect(x));
+            /*
+             * Set size hints info to be up to date with new size.
+             */
+            h = [self _XFrameToXHints: x for: cWin];
+            cWin->siz_hints.width = h.size.width;
+            cWin->siz_hints.height = h.size.height;
 
-	    /*
-	    We only update the position hints if we're on the screen.
-	    Otherwise, the window manager might not have added decorations
-	    (if any) to the window yet. Since we compensate for decorations
-	    when we set the position, this will confuse us and we'll end
-	    up compensating twice, which makes windows drift.
-	    */
-	    if (cWin->map_state == IsViewable)
-	      {
-		cWin->siz_hints.x = h.origin.x;
-		cWin->siz_hints.y = h.origin.y;
-	      }
+            /*
+            We only update the position hints if we're on the screen.
+            Otherwise, the window manager might not have added decorations
+            (if any) to the window yet. Since we compensate for decorations
+            when we set the position, this will confuse us and we'll end
+            up compensating twice, which makes windows drift.
+            */
+            if (cWin->map_state == IsViewable)
+              {
+                cWin->siz_hints.x = h.origin.x;
+                cWin->siz_hints.y = h.origin.y;
+              }
 
-	    /*
-	     * create GNUstep event(s)
-	     */
-	    if (!NSEqualSizes(r.size, x.size))
-	      {
-		/* Resize events move the origin. There's no good
-		   place to pass this info back, so we put it in
-		   the event location field */
-		e = [NSEvent otherEventWithType: NSAppKitDefined
-			     location: n.origin
-			     modifierFlags: eventFlags
-			     timestamp: ts / 1000.0
-			     windowNumber: cWin->number
-			     context: gcontext
-			     subtype: GSAppKitWindowResized
-			     data1: n.size.width
-			     data2: n.size.height];
-	      }
-	    if (!NSEqualPoints(r.origin, x.origin))
-	      {
-		if (e != nil)
-		  {
-		    [event_queue addObject: e];
-		  }
-		e = [NSEvent otherEventWithType: NSAppKitDefined
-			     location: eventLocation
-			     modifierFlags: eventFlags
-			     timestamp: ts / 1000.0
-			     windowNumber: cWin->number
-			     context: gcontext
-			     subtype: GSAppKitWindowMoved
-			     data1: n.origin.x
-			     data2: n.origin.y];
-	      }
-	  }
-	break;
+            /*
+             * create GNUstep event(s)
+             */
+            if (!NSEqualSizes(r.size, x.size))
+              {
+                /* Resize events move the origin. There's no good
+                   place to pass this info back, so we put it in
+                   the event location field */
+                e = [NSEvent otherEventWithType: NSAppKitDefined
+                             location: n.origin
+                             modifierFlags: eventFlags
+                             timestamp: ts / 1000.0
+                             windowNumber: cWin->number
+                             context: gcontext
+                             subtype: GSAppKitWindowResized
+                             data1: n.size.width
+                             data2: n.size.height];
+              }
+            if (!NSEqualPoints(r.origin, x.origin))
+              {
+                if (e != nil)
+                  {
+                    [event_queue addObject: e];
+                  }
+                e = [NSEvent otherEventWithType: NSAppKitDefined
+                             location: eventLocation
+                             modifierFlags: eventFlags
+                             timestamp: ts / 1000.0
+                             windowNumber: cWin->number
+                             context: gcontext
+                             subtype: GSAppKitWindowMoved
+                             data1: n.origin.x
+                             data2: n.origin.y];
+              }
+          }
+        break;
 
-	    // same as ConfigureNotify but we get this event
-	    // before the change has actually occurred
+            // same as ConfigureNotify but we get this event
+            // before the change has actually occurred
       case ConfigureRequest:
-	NSDebugLLog(@"NSEvent", @"%d ConfigureRequest\n",
-		    xEvent.xconfigurerequest.window);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d ConfigureRequest\n",
+                    xEvent.xconfigurerequest.window);
+        break;
 
-	    // a window has been created
+            // a window has been created
       case CreateNotify:
-	NSDebugLLog(@"NSEvent", @"%d CreateNotify\n",
-		    xEvent.xcreatewindow.window);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d CreateNotify\n",
+                    xEvent.xcreatewindow.window);
+        break;
 
-	    // a window has been destroyed
+            // a window has been destroyed
       case DestroyNotify:
-	NSDebugLLog(@"NSEvent", @"%d DestroyNotify\n",
-		    xEvent.xdestroywindow.window);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d DestroyNotify\n",
+                    xEvent.xdestroywindow.window);
+        break;
 
-	    // when the pointer enters a window
+            // when the pointer enters a window
       case EnterNotify:
-	NSDebugLLog(@"NSEvent", @"%d EnterNotify\n",
-		    xEvent.xcrossing.window);
-	break;
-	      
-	    // when the pointer leaves a window
+        NSDebugLLog(@"NSEvent", @"%d EnterNotify\n",
+                    xEvent.xcrossing.window);
+        break;
+              
+            // when the pointer leaves a window
       case LeaveNotify:
-	NSDebugLLog(@"NSEvent", @"%d LeaveNotify\n",
-		    xEvent.xcrossing.window);
-	if (cWin == 0 || xEvent.xcrossing.window != cWin->ident)
-	  {
-	    generic.cachedWindow
-	      = [XGServer _windowForXWindow: xEvent.xcrossing.window];
-	  }
-	if (cWin == 0)
-	  break;
-	eventLocation = NSMakePoint(-1,-1);
-	e = [NSEvent otherEventWithType: NSAppKitDefined
-		     location: eventLocation
-		     modifierFlags: 0
-		     timestamp: 0
-		     windowNumber: cWin->number
-		     context: gcontext
-		     subtype: GSAppKitWindowLeave
-		     data1: 0
-		     data2: 0];
-	break;
+        NSDebugLLog(@"NSEvent", @"%d LeaveNotify\n",
+                    xEvent.xcrossing.window);
+        if (cWin == 0 || xEvent.xcrossing.window != cWin->ident)
+          {
+            generic.cachedWindow
+              = [XGServer _windowForXWindow: xEvent.xcrossing.window];
+          }
+        if (cWin == 0)
+          break;
+        eventLocation = NSMakePoint(-1,-1);
+        e = [NSEvent otherEventWithType: NSAppKitDefined
+                     location: eventLocation
+                     modifierFlags: 0
+                     timestamp: 0
+                     windowNumber: cWin->number
+                     context: gcontext
+                     subtype: GSAppKitWindowLeave
+                     data1: 0
+                     data2: 0];
+        break;
 
-	    // the visibility of a window has changed
+            // the visibility of a window has changed
       case VisibilityNotify:
-	NSDebugLLog(@"NSEvent", @"%d VisibilityNotify %d\n", 
-		    xEvent.xvisibility.window, xEvent.xvisibility.state);
-	if (cWin == 0 || xEvent.xvisibility.window != cWin->ident)
-	  {
-	    generic.cachedWindow
-	      = [XGServer _windowForXWindow:xEvent.xvisibility.window];
-	  }
+        NSDebugLLog(@"NSEvent", @"%d VisibilityNotify %d\n", 
+                    xEvent.xvisibility.window, xEvent.xvisibility.state);
+        if (cWin == 0 || xEvent.xvisibility.window != cWin->ident)
+          {
+            generic.cachedWindow
+              = [XGServer _windowForXWindow:xEvent.xvisibility.window];
+          }
         // sub-window ?
           {
             Window xw;
@@ -971,23 +971,23 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
               }
           }
 
-	if (cWin != 0)
-	  cWin->visibility = xEvent.xvisibility.state;
-	break;
+        if (cWin != 0)
+          cWin->visibility = xEvent.xvisibility.state;
+        break;
 
-	// a portion of the window has become visible and
-	// we must redisplay it
+        // a portion of the window has become visible and
+        // we must redisplay it
       case Expose:
-	NSDebugLLog(@"NSEvent", @"%d Expose\n",
-		    xEvent.xexpose.window);
-	{
+        NSDebugLLog(@"NSEvent", @"%d Expose\n",
+                    xEvent.xexpose.window);
+        {
           BOOL isSubWindow = NO;
 
-	  if (cWin == 0 || xEvent.xexpose.window != cWin->ident)
-	    {
-	      generic.cachedWindow
-		= [XGServer _windowForXWindow:xEvent.xexpose.window];
-	    }
+          if (cWin == 0 || xEvent.xexpose.window != cWin->ident)
+            {
+              generic.cachedWindow
+                = [XGServer _windowForXWindow:xEvent.xexpose.window];
+            }
           // sub-window ?
             {
               Window xw;
@@ -1013,47 +1013,47 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
                 }
             }
 
-	  if (cWin != 0)
-	    {
-	      XRectangle rectangle;
+          if (cWin != 0)
+            {
+              XRectangle rectangle;
 
               rectangle.x = xEvent.xexpose.x;
               rectangle.y = xEvent.xexpose.y;
-	      rectangle.width = xEvent.xexpose.width;
-	      rectangle.height = xEvent.xexpose.height;
+              rectangle.width = xEvent.xexpose.width;
+              rectangle.height = xEvent.xexpose.height;
 
-	      NSDebugLLog(@"NSEvent", @"Expose frame %d %d %d %d\n",
-			  rectangle.x, rectangle.y,
-			  rectangle.width, rectangle.height);
+              NSDebugLLog(@"NSEvent", @"Expose frame %d %d %d %d\n",
+                          rectangle.x, rectangle.y,
+                          rectangle.width, rectangle.height);
 #if 1
               // ignore backing if sub-window
               [self _addExposedRectangle: rectangle : cWin->number : isSubWindow];
 
-	      if (xEvent.xexpose.count == 0)
-		[self _processExposedRectangles: cWin->number];
+              if (xEvent.xexpose.count == 0)
+                [self _processExposedRectangles: cWin->number];
 #else
-	      {
-	        NSRect		rect;
-		NSTimeInterval	ts = (NSTimeInterval)generic.lastMotion;
-
-		rect = [self _XWinRectToOSWinRect: NSMakeRect(
-		  rectangle.x, rectangle.y, rectangle.width, rectangle.height)
-		  for: cWin];
-		e = [NSEvent otherEventWithType: NSAppKitDefined
-		  location: rect.origin
-		  modifierFlags: eventFlags
-		  timestamp: ts / 1000.0
-		  windowNumber: cWin->number
-		  context: gcontext
-		  subtype: GSAppKitRegionExposed
-		  data1: rect.size.width
-		  data2: rect.size.height];
-	      }
-
+              {
+                NSRect rect;
+                NSTimeInterval ts = (NSTimeInterval)generic.lastMotion;
+                
+                rect = [self _XWinRectToOSWinRect: NSMakeRect(
+                        rectangle.x, rectangle.y, rectangle.width, rectangle.height)
+                             for: cWin];
+                e = [NSEvent otherEventWithType: NSAppKitDefined
+                             location: rect.origin
+                             modifierFlags: eventFlags
+                             timestamp: ts / 1000.0
+                             windowNumber: cWin->number
+                             context: gcontext
+                             subtype: GSAppKitRegionExposed
+                             data1: rect.size.width
+                             data2: rect.size.height];
+              }
+              
 #endif
-	    }
-	  break;
-	}
+            }
+          break;
+        }
 
       // keyboard focus entered a window
       case FocusIn:
@@ -1081,11 +1081,11 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
           }
         break;
         
-	    // keyboard focus left a window
+            // keyboard focus left a window
       case FocusOut:
         {
-          Window	fw;
-          int		rev;
+          Window fw;
+          int rev;
           
           /*
            * See where the focus has moved to -
@@ -1155,7 +1155,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
                     xEvent.xgravity.window);
         break;
 
-	    // a key has been pressed
+            // a key has been pressed
       case KeyPress:
         NSDebugLLog(@"NSEvent", @"%d KeyPress\n",
                     xEvent.xkey.window);
@@ -1163,7 +1163,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
         e = process_key_event (&xEvent, self, NSKeyDown, event_queue);
         break;
 
-	    // a key has been released
+            // a key has been released
       case KeyRelease:
         NSDebugLLog(@"NSEvent", @"%d KeyRelease\n",
                     xEvent.xkey.window);
@@ -1171,72 +1171,72 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
         e = process_key_event (&xEvent, self, NSKeyUp, event_queue);
         break;
 
-	    // reports the state of the keyboard when pointer or
-	    // focus enters a window
+            // reports the state of the keyboard when pointer or
+            // focus enters a window
       case KeymapNotify:
-	{
-	  if (_is_keyboard_initialized == NO)
-	    initialize_keyboard ();
+        {
+          if (_is_keyboard_initialized == NO)
+            initialize_keyboard ();
 
-	  NSDebugLLog(@"NSEvent", @"%d KeymapNotify\n",
-		      xEvent.xkeymap.window);
+          NSDebugLLog(@"NSEvent", @"%d KeymapNotify\n",
+                      xEvent.xkeymap.window);
 
-	  // Check if control is pressed
-	  _control_pressed = 0;
-	  if ((_control_keysyms[0] != NoSymbol)
-	      && check_modifier (&xEvent, _control_keysyms[0]))
-	    {
-	      _control_pressed |= 1;
-	    }
-	  if ((_control_keysyms[1] != NoSymbol)
-	      && check_modifier (&xEvent, _control_keysyms[1]))
-	    {
-	      _control_pressed |= 2;
-	    }
+          // Check if control is pressed
+          _control_pressed = 0;
+          if ((_control_keysyms[0] != NoSymbol)
+              && check_modifier (&xEvent, _control_keysyms[0]))
+            {
+              _control_pressed |= 1;
+            }
+          if ((_control_keysyms[1] != NoSymbol)
+              && check_modifier (&xEvent, _control_keysyms[1]))
+            {
+              _control_pressed |= 2;
+            }
 
-	  // Check if command is pressed
-	  _command_pressed = 0;
-	  if ((_command_keysyms[0] != NoSymbol)
-	      && check_modifier (&xEvent, _command_keysyms[0]))
-	    {
-	      _command_pressed |= 1;
-	    }
-	  if ((_command_keysyms[1] != NoSymbol)
-	      && check_modifier (&xEvent, _command_keysyms[1]))
-	    {
-	      _command_pressed |= 2;
-	    }
+          // Check if command is pressed
+          _command_pressed = 0;
+          if ((_command_keysyms[0] != NoSymbol)
+              && check_modifier (&xEvent, _command_keysyms[0]))
+            {
+              _command_pressed |= 1;
+            }
+          if ((_command_keysyms[1] != NoSymbol)
+              && check_modifier (&xEvent, _command_keysyms[1]))
+            {
+              _command_pressed |= 2;
+            }
 
-	  // Check if alt is pressed
-	  _alt_pressed = 0;
-	  if ((_alt_keysyms[0] != NoSymbol)
-	      && check_modifier (&xEvent, _alt_keysyms[0]))
-	    {
-	      _alt_pressed |= 1;
-	    }
-	  if ((_alt_keysyms[1] != NoSymbol)
-	      && check_modifier (&xEvent, _alt_keysyms[1]))
-	    {
-	      _alt_pressed |= 2;
-	    }
+          // Check if alt is pressed
+          _alt_pressed = 0;
+          if ((_alt_keysyms[0] != NoSymbol)
+              && check_modifier (&xEvent, _alt_keysyms[0]))
+            {
+              _alt_pressed |= 1;
+            }
+          if ((_alt_keysyms[1] != NoSymbol)
+              && check_modifier (&xEvent, _alt_keysyms[1]))
+            {
+              _alt_pressed |= 2;
+            }
 
-	  // Check if help is pressed
-	  _help_pressed = 0;
-	  if ((_help_keysyms[0] != NoSymbol)
-	      && check_modifier (&xEvent, _help_keysyms[0]))
-	    {
-	      _help_pressed |= 1;
-	    }
-	  if ((_help_keysyms[1] != NoSymbol)
-	      && check_modifier (&xEvent, _help_keysyms[1]))
-	    {
-	      _help_pressed |= 2;
-	    }
-	}
-	break;
+          // Check if help is pressed
+          _help_pressed = 0;
+          if ((_help_keysyms[0] != NoSymbol)
+              && check_modifier (&xEvent, _help_keysyms[0]))
+            {
+              _help_pressed |= 1;
+            }
+          if ((_help_keysyms[1] != NoSymbol)
+              && check_modifier (&xEvent, _help_keysyms[1]))
+            {
+              _help_pressed |= 2;
+            }
+        }
+        break;
 
-	    // when a window changes state from ummapped to
-	    // mapped or vice versa
+            // when a window changes state from ummapped to
+            // mapped or vice versa
       case MapNotify:
         NSDebugLLog(@"NSEvent", @"%d MapNotify\n",
                     xEvent.xmap.window);
@@ -1267,118 +1267,118 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
           }
         break;
 
-	    // Window is no longer visible.
+            // Window is no longer visible.
       case UnmapNotify:
-	NSDebugLLog(@"NSEvent", @"%d UnmapNotify\n",
-		    xEvent.xunmap.window);
-	if (cWin == 0 || xEvent.xunmap.window != cWin->ident)
-	  {
-	    generic.cachedWindow
-	      = [XGServer _windowForXWindow:xEvent.xunmap.window];
-	  }
-	if (cWin != 0)
-	  {
-	    cWin->map_state = IsUnmapped;
-	    cWin->visibility = -1;
-	  }
-	break;
+        NSDebugLLog(@"NSEvent", @"%d UnmapNotify\n",
+                    xEvent.xunmap.window);
+        if (cWin == 0 || xEvent.xunmap.window != cWin->ident)
+          {
+            generic.cachedWindow
+              = [XGServer _windowForXWindow:xEvent.xunmap.window];
+          }
+        if (cWin != 0)
+          {
+            cWin->map_state = IsUnmapped;
+            cWin->visibility = -1;
+          }
+        break;
 
-	    // like MapNotify but occurs before the request is carried out
+            // like MapNotify but occurs before the request is carried out
       case MapRequest:
-	NSDebugLLog(@"NSEvent", @"%d MapRequest\n",
-		    xEvent.xmaprequest.window);
-	break;
+        NSDebugLLog(@"NSEvent", @"%d MapRequest\n",
+                    xEvent.xmaprequest.window);
+        break;
 
-	    // keyboard or mouse mapping has been changed by another client
+            // keyboard or mouse mapping has been changed by another client
       case MappingNotify:
-	NSDebugLLog(@"NSEvent", @"%d MappingNotify\n",
-		    xEvent.xmapping.window);
-	if ((xEvent.xmapping.request == MappingModifier) 
-	    || (xEvent.xmapping.request == MappingKeyboard))
-	  {
-	    XRefreshKeyboardMapping (&xEvent.xmapping);
-	    set_up_num_lock ();
-	  }
-	break;
+        NSDebugLLog(@"NSEvent", @"%d MappingNotify\n",
+                    xEvent.xmapping.window);
+        if ((xEvent.xmapping.request == MappingModifier) 
+            || (xEvent.xmapping.request == MappingKeyboard))
+          {
+            XRefreshKeyboardMapping (&xEvent.xmapping);
+            set_up_num_lock ();
+          }
+        break;
 
       case MotionNotify:
-	NSDebugLLog(@"NSMotionEvent", @"%d MotionNotify - %d %d\n",
-		    xEvent.xmotion.window, xEvent.xmotion.x, xEvent.xmotion.y);
-	{
-	  unsigned int	state;
+        NSDebugLLog(@"NSMotionEvent", @"%d MotionNotify - %d %d\n",
+                    xEvent.xmotion.window, xEvent.xmotion.x, xEvent.xmotion.y);
+        {
+          unsigned int        state;
 
-	  /*
-	   * Compress motion events to avoid flooding.
-	   */
-	  while (XPending(xEvent.xmotion.display))
-	    {
-	      XEvent	peek;
+          /*
+           * Compress motion events to avoid flooding.
+           */
+          while (XPending(xEvent.xmotion.display))
+            {
+              XEvent        peek;
 
-	      XPeekEvent(xEvent.xmotion.display, &peek);
-	      if (peek.type == MotionNotify
-		  && xEvent.xmotion.window == peek.xmotion.window
-		  && xEvent.xmotion.subwindow == peek.xmotion.subwindow)
-		{
-		  XNextEvent(xEvent.xmotion.display, &xEvent);
-		}
-	      else
-		{
-		  break;
-		}
-	    }
+              XPeekEvent(xEvent.xmotion.display, &peek);
+              if (peek.type == MotionNotify
+                  && xEvent.xmotion.window == peek.xmotion.window
+                  && xEvent.xmotion.subwindow == peek.xmotion.subwindow)
+                {
+                  XNextEvent(xEvent.xmotion.display, &xEvent);
+                }
+              else
+                {
+                  break;
+                }
+            }
 
-	  generic.lastMotion = xEvent.xmotion.time;
-	  [self setLastTime: generic.lastMotion];
-	  state = xEvent.xmotion.state;
-	  if (state & generic.lMouseMask)
-	    {
-	      eventType = NSLeftMouseDragged;
-	    }
-	  else if (state & generic.rMouseMask)
-	    {
-	      eventType = NSRightMouseDragged;
-	    }
-	  else if (state & generic.mMouseMask)
-	    {
-	      eventType = NSOtherMouseDragged;
-	    }
-	  else
-	    {
-	      eventType = NSMouseMoved;
-	    }
+          generic.lastMotion = xEvent.xmotion.time;
+          [self setLastTime: generic.lastMotion];
+          state = xEvent.xmotion.state;
+          if (state & generic.lMouseMask)
+            {
+              eventType = NSLeftMouseDragged;
+            }
+          else if (state & generic.rMouseMask)
+            {
+              eventType = NSRightMouseDragged;
+            }
+          else if (state & generic.mMouseMask)
+            {
+              eventType = NSOtherMouseDragged;
+            }
+          else
+            {
+              eventType = NSMouseMoved;
+            }
 
-	  eventFlags = process_modifier_flags(state);
-	  // if pointer is grabbed use grab window instead
-	  xWin = (grabWindow == 0)
-	    ? xEvent.xmotion.window : grabWindow;
-	  if (cWin == 0 || xWin != cWin->ident)
-	    generic.cachedWindow = [XGServer _windowForXWindow: xWin];
-	  if (cWin == 0)
-	    break;
+          eventFlags = process_modifier_flags(state);
+          // if pointer is grabbed use grab window instead
+          xWin = (grabWindow == 0)
+            ? xEvent.xmotion.window : grabWindow;
+          if (cWin == 0 || xWin != cWin->ident)
+            generic.cachedWindow = [XGServer _windowForXWindow: xWin];
+          if (cWin == 0)
+            break;
 
-	  deltaX = - eventLocation.x;
-	  deltaY = - eventLocation.y;
-	  eventLocation = NSMakePoint(xEvent.xmotion.x, xEvent.xmotion.y);
-	  eventLocation = [self _XPointToOSPoint: eventLocation
-					     for: cWin];
-	  deltaX += eventLocation.x;
-	  deltaY += eventLocation.y;
+          deltaX = - eventLocation.x;
+          deltaY = - eventLocation.y;
+          eventLocation = NSMakePoint(xEvent.xmotion.x, xEvent.xmotion.y);
+          eventLocation = [self _XPointToOSPoint: eventLocation
+                                             for: cWin];
+          deltaX += eventLocation.x;
+          deltaY += eventLocation.y;
 
-	  e = [NSEvent mouseEventWithType: eventType
-		       location: eventLocation
-		       modifierFlags: eventFlags
-		       timestamp: (NSTimeInterval)generic.lastTime / 1000.0
-		       windowNumber: cWin->number
-		       context: gcontext
-		       eventNumber: xEvent.xbutton.serial
-		       clickCount: clickCount
-		       pressure: 1.0
-		       buttonNumber: 0 /* FIXME */
-		       deltaX: deltaX
-		       deltaY: deltaY
-		       deltaZ: 0];
-	  break;
-	}
+          e = [NSEvent mouseEventWithType: eventType
+                       location: eventLocation
+                       modifierFlags: eventFlags
+                       timestamp: (NSTimeInterval)generic.lastTime / 1000.0
+                       windowNumber: cWin->number
+                       context: gcontext
+                       eventNumber: xEvent.xbutton.serial
+                       clickCount: clickCount
+                       pressure: 1.0
+                       buttonNumber: 0 /* FIXME */
+                       deltaX: deltaX
+                       deltaY: deltaY
+                       deltaZ: 0];
+          break;
+        }
 
       // a window property has changed or been deleted
       case PropertyNotify:
@@ -1426,180 +1426,180 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
         }
         break;
 
-	    // a client successfully reparents a window
+            // a client successfully reparents a window
       case ReparentNotify:
-	NSDebugLLog(@"NSEvent", @"%d ReparentNotify - offset %d %d\n",
-		    xEvent.xreparent.window, xEvent.xreparent.x,
-		    xEvent.xreparent.y);
-	if (cWin == 0 || xEvent.xreparent.window != cWin->ident)
-	  {
-	    generic.cachedWindow
-	      = [XGServer _windowForXWindow:xEvent.xreparent.window];
-	  }
-	if (cWin != 0)
-	  {
-	    cWin->parent = xEvent.xreparent.parent;
-	  }
+        NSDebugLLog(@"NSEvent", @"%d ReparentNotify - offset %d %d\n",
+                    xEvent.xreparent.window, xEvent.xreparent.x,
+                    xEvent.xreparent.y);
+        if (cWin == 0 || xEvent.xreparent.window != cWin->ident)
+          {
+            generic.cachedWindow
+              = [XGServer _windowForXWindow:xEvent.xreparent.window];
+          }
+        if (cWin != 0)
+          {
+            cWin->parent = xEvent.xreparent.parent;
+          }
 
-	if (cWin != 0 && xEvent.xreparent.parent != cWin->root
-	  && (xEvent.xreparent.x != 0 || xEvent.xreparent.y != 0))
-	  {
-	    Window		parent = xEvent.xreparent.parent;
-	    XWindowAttributes	wattr;
-	    float		l;
-	    float		r;
-	    float		t;
-	    float		b;
-	    Offsets		*o;
+        if (cWin != 0 && xEvent.xreparent.parent != cWin->root
+          && (xEvent.xreparent.x != 0 || xEvent.xreparent.y != 0))
+          {
+            Window parent = xEvent.xreparent.parent;
+            XWindowAttributes wattr;
+            float l;
+            float r;
+            float t;
+            float b;
+            Offsets *o;
 
-	    /* Get the WM offset info which we hope is the same
-	     * for all parented windows with the same style.
-	     * The coordinates in the event are insufficient to determine
-	     * the offsets as the new parent window may have a border,
-	     * so we must get the attributes of that window and use them
-	     * to determine our offsets.
-	     */
-	    XGetWindowAttributes(dpy, parent, &wattr);
-	    NSDebugLLog(@"NSEvent", @"Parent border,width,height %d,%d,%d\n",
-	      wattr.border_width, wattr.width, wattr.height);
-	    l = xEvent.xreparent.x + wattr.border_width;
-	    t = xEvent.xreparent.y + wattr.border_width;
+            /* Get the WM offset info which we hope is the same
+             * for all parented windows with the same style.
+             * The coordinates in the event are insufficient to determine
+             * the offsets as the new parent window may have a border,
+             * so we must get the attributes of that window and use them
+             * to determine our offsets.
+             */
+            XGetWindowAttributes(dpy, parent, &wattr);
+            NSDebugLLog(@"NSEvent", @"Parent border,width,height %d,%d,%d\n",
+              wattr.border_width, wattr.width, wattr.height);
+            l = xEvent.xreparent.x + wattr.border_width;
+            t = xEvent.xreparent.y + wattr.border_width;
 
-	    /* Find total parent size and subtract window size and
-	     * top-left-corner offset to determine bottom-right-corner
-	     * offset.
-	     */
-	    r = wattr.width + wattr.border_width * 2;
-	    r -= (cWin->xframe.size.width + l);
-	    b = wattr.height + wattr.border_width * 2;
-	    b -= (cWin->xframe.size.height + t);
+            /* Find total parent size and subtract window size and
+             * top-left-corner offset to determine bottom-right-corner
+             * offset.
+             */
+            r = wattr.width + wattr.border_width * 2;
+            r -= (cWin->xframe.size.width + l);
+            b = wattr.height + wattr.border_width * 2;
+            b -= (cWin->xframe.size.height + t);
 
-	    // Some window manager e.g. KDE2 put in multiple windows,
-	    // so we have to find the right parent, closest to root
-	    /* FIXME: This section of code has caused problems with
-	       certain users. An X error occurs in XQueryTree and
-	       later a seg fault in XFree. It's 'commented' out for
-	       now unless you set the default 'GSDoubleParentWindows'
-	    */
-	    if (generic.flags.doubleParentWindow)
-	      {
-		Window	new_parent = parent;
+            // Some window manager e.g. KDE2 put in multiple windows,
+            // so we have to find the right parent, closest to root
+            /* FIXME: This section of code has caused problems with
+               certain users. An X error occurs in XQueryTree and
+               later a seg fault in XFree. It's 'commented' out for
+               now unless you set the default 'GSDoubleParentWindows'
+            */
+            if (generic.flags.doubleParentWindow)
+              {
+                Window new_parent = parent;
 
-		r = wattr.width + wattr.border_width * 2;
-		b = wattr.height + wattr.border_width * 2;
-		while (new_parent && (new_parent != cWin->root))
-		  {
-		    Window root;
-		    Window *children;
-		    unsigned int nchildren;
+                r = wattr.width + wattr.border_width * 2;
+                b = wattr.height + wattr.border_width * 2;
+                while (new_parent && (new_parent != cWin->root))
+                  {
+                    Window root;
+                    Window *children;
+                    unsigned int nchildren;
 
-		    parent = new_parent;
-		    NSLog(@"QueryTree window is %d (root %d cwin root %d)", 
-			  parent, root, cWin->root);
-		    if (!XQueryTree(dpy, parent, &root, &new_parent, 
-		      &children, &nchildren))
-		      {
-			new_parent = None;
-			if (children)
-			  {
-			    NSLog(@"Bad pointer from failed X call?");
-			    children = 0;
-			  }
-		      }
-		    if (children)
-		      {
-			XFree(children);
-		      }
-		    if (new_parent && new_parent != cWin->root)
-		      {
-			XWindowAttributes	pattr;
+                    parent = new_parent;
+                    NSLog(@"QueryTree window is %d (root %d cwin root %d)", 
+                          parent, root, cWin->root);
+                    if (!XQueryTree(dpy, parent, &root, &new_parent, 
+                      &children, &nchildren))
+                      {
+                        new_parent = None;
+                        if (children)
+                          {
+                            NSLog(@"Bad pointer from failed X call?");
+                            children = 0;
+                          }
+                      }
+                    if (children)
+                      {
+                        XFree(children);
+                      }
+                    if (new_parent && new_parent != cWin->root)
+                      {
+                        XWindowAttributes pattr;
 
-			XGetWindowAttributes(dpy, parent, &pattr);
-			l += pattr.x + pattr.border_width;
-			t += pattr.y + pattr.border_width;
-			r = pattr.width + pattr.border_width * 2;
-			b = pattr.height + pattr.border_width * 2;
-		      }
-		  } /* while */
-		r -= (cWin->xframe.size.width + l);
-		b -= (cWin->xframe.size.height + t);
-	      } /* generic.flags.doubleParentWindow */
+                        XGetWindowAttributes(dpy, parent, &pattr);
+                        l += pattr.x + pattr.border_width;
+                        t += pattr.y + pattr.border_width;
+                        r = pattr.width + pattr.border_width * 2;
+                        b = pattr.height + pattr.border_width * 2;
+                      }
+                  } /* while */
+                r -= (cWin->xframe.size.width + l);
+                b -= (cWin->xframe.size.height + t);
+              } /* generic.flags.doubleParentWindow */
 
-	    o = generic.offsets + (cWin->win_attrs.window_style & 15);
-	    if (o->known == NO)
-	      {
-	        o->l = l;
-	        o->r = r;
-	        o->t = t;
-	        o->b = b;
-		o->known = YES;
-		/* FIXME: if offsets have changed, from previously guessed
-		 * versions, we should go through window list and fix up
-		 * hints.
-		 */
-	      }
-	    else
-	      {
-	        BOOL	changed = NO;
+            o = generic.offsets + (cWin->win_attrs.window_style & 15);
+            if (o->known == NO)
+              {
+                o->l = l;
+                o->r = r;
+                o->t = t;
+                o->b = b;
+                o->known = YES;
+                /* FIXME: if offsets have changed, from previously guessed
+                 * versions, we should go through window list and fix up
+                 * hints.
+                 */
+              }
+            else
+              {
+                BOOL changed = NO;
 
-	        if (l != o->l)
-		  {
-		    NSLog(@"Ignore left offset change from %d to %d",
-		      (int)o->l, (int)l);
-		    changed = YES;
-		  }
-	        if (r != o->r)
-		  {
-		    NSLog(@"Ignore right offset change from %d to %d",
-		      (int)o->r, (int)r);
-		    changed = YES;
-		  }
-	        if (t != o->t)
-		  {
-		    NSLog(@"Ignore top offset change from %d to %d",
-		      (int)o->t, (int)t);
-		    changed = YES;
-		  }
-	        if (b != o->b)
-		  {
-		    NSLog(@"Ignore bottom offset change from %d to %d",
-		      (int)o->b, (int)b);
-		    changed = YES;
-		  }
-		if (changed == YES)
-		  {
-		    NSLog(@"Reparent was with offset %d %d\n",
-		      xEvent.xreparent.x, xEvent.xreparent.y);
-		    NSLog(@"Parent border,width,height %d,%d,%d\n",
-		      wattr.border_width, wattr.width, wattr.height);
-		  }
-	      }
+                if (l != o->l)
+                  {
+                    NSLog(@"Ignore left offset change from %d to %d",
+                      (int)o->l, (int)l);
+                    changed = YES;
+                  }
+                if (r != o->r)
+                  {
+                    NSLog(@"Ignore right offset change from %d to %d",
+                      (int)o->r, (int)r);
+                    changed = YES;
+                  }
+                if (t != o->t)
+                  {
+                    NSLog(@"Ignore top offset change from %d to %d",
+                      (int)o->t, (int)t);
+                    changed = YES;
+                  }
+                if (b != o->b)
+                  {
+                    NSLog(@"Ignore bottom offset change from %d to %d",
+                      (int)o->b, (int)b);
+                    changed = YES;
+                  }
+                if (changed == YES)
+                  {
+                    NSLog(@"Reparent was with offset %d %d\n",
+                      xEvent.xreparent.x, xEvent.xreparent.y);
+                    NSLog(@"Parent border,width,height %d,%d,%d\n",
+                      wattr.border_width, wattr.width, wattr.height);
+                  }
+              }
 
-	    /* Work around a bug in Window Maker, which does not preserve
-	     * the document edited status and uses the wrong close button
-	     * when a window is shown again after hiding it
-	     */
-	    if (generic.wm & XGWM_WINDOWMAKER)
-	      {
+            /* Work around a bug in Window Maker, which does not preserve
+             * the document edited status and uses the wrong close button
+             * when a window is shown again after hiding it
+             */
+            if (generic.wm & XGWM_WINDOWMAKER)
+              {
 /* Warning ... X-bug .. when we specify 32bit data X actually expects data
  * of type 'long' or 'unsigned long' even on machines where those types
  * hold 64bit values.
  */
-		XChangeProperty(dpy, cWin->ident, generic.win_decor_atom, 
-				generic.win_decor_atom, 32, PropModeReplace, 
-				(unsigned char *)&cWin->win_attrs,
-				sizeof(GNUstepWMAttributes)/sizeof(CARD32));
-	      }
-	  }
-	break;
+                XChangeProperty(dpy, cWin->ident, generic.win_decor_atom, 
+                                generic.win_decor_atom, 32, PropModeReplace, 
+                                (unsigned char *)&cWin->win_attrs,
+                                sizeof(GNUstepWMAttributes)/sizeof(CARD32));
+              }
+          }
+        break;
 
-	    // another client attempts to change the size of a window
+            // another client attempts to change the size of a window
       case ResizeRequest:
         NSDebugLLog(@"NSEvent", @"%d ResizeRequest\n",
                     xEvent.xresizerequest.window);
         break;
 
-	    // events dealing with the selection
+            // events dealing with the selection
       case SelectionClear:
         NSDebugLLog(@"NSEvent", @"%d SelectionClear\n",
                     xEvent.xselectionclear.window);
@@ -1651,24 +1651,24 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 
               // Send the data to the other process
               xdnd_selection_send(&dnd, &xEvent.xselectionrequest, 
-                                  (unsigned char *)[data bytes], [data length]);	
+                                  (unsigned char *)[data bytes], [data length]);        
             }
         }
         break;
 
-	    // We shouldn't get here unless we forgot to trap an event above
+            // We shouldn't get here unless we forgot to trap an event above
       default:
 #ifdef XSHM
-	if (xEvent.type == XShmGetEventBase(dpy)+ShmCompletion
-	    && [gcontext respondsToSelector: @selector(gotShmCompletion:)])
-	  {
-	    [gcontext gotShmCompletion: 
-			((XShmCompletionEvent *)&xEvent)->drawable];
-	    break;
-	  }
+        if (xEvent.type == XShmGetEventBase(dpy)+ShmCompletion
+            && [gcontext respondsToSelector: @selector(gotShmCompletion:)])
+          {
+            [gcontext gotShmCompletion: 
+                        ((XShmCompletionEvent *)&xEvent)->drawable];
+            break;
+          }
 #endif
-	NSLog(@"Received an untrapped event\n");
-	break;
+        NSLog(@"Received an untrapped event\n");
+        break;
     }
   if (e)
     {
@@ -1689,7 +1689,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
   key_win = [NSApp keyWindow];
   key_num = [key_win windowNumber];
   NSDebugLLog(@"Focus", @"take focus:%d (current=%d key=%d)",
-	      cWin->number, generic.currentFocusWindow, key_num);
+              cWin->number, generic.currentFocusWindow, key_num);
 
   /* Sometimes window managers lose the setinputfocus on the key window
    * e.g. when ordering out a window with focus then ordering in the key window.   
@@ -1713,8 +1713,8 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
   if ([NSApp isHidden])
     {
       /* This often occurs when hidding an app, since a bunch of
-	 windows get hidden at once, and the WM is searching for a
-	 window to take focus after each one gets hidden. */
+         windows get hidden at once, and the WM is searching for a
+         window to take focus after each one gets hidden. */
       NSDebugLLog(@"Focus", @"WM take focus while hiding");
     }
   else if (cWin->ignore_take_focus == YES)
@@ -1728,12 +1728,12 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
       [GSServerForWindow(key_win) setinputfocus: key_num];
     }
   else if (key_num 
-	   && cWin->number == [[[NSApp mainMenu] window] windowNumber])
+           && cWin->number == [[[NSApp mainMenu] window] windowNumber])
     {
       /* This might occur when the window manager just wants someone
-	 to become key, so it tells the main menu (typically the first
-	 menu in the list), but since we already have a window that
-	 was key before, use that instead */
+         to become key, so it tells the main menu (typically the first
+         menu in the list), but since we already have a window that
+         was key before, use that instead */
       NSDebugLLog(@"Focus", @"Key window is already %d", key_num);
       [GSServerForWindow(key_win) setinputfocus: key_num];
     }
@@ -1749,14 +1749,14 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
        */
       eventLocation = NSMakePoint(0,0);
       e = [NSEvent otherEventWithType:NSAppKitDefined
-		   location: eventLocation
-		   modifierFlags: 0
-		   timestamp: 0
-		   windowNumber: cWin->number
-		   context: gcontext
-		   subtype: GSAppKitWindowFocusIn
-		   data1: 0
-		   data2: 0];
+                   location: eventLocation
+                   modifierFlags: 0
+                   timestamp: 0
+                   windowNumber: cWin->number
+                   context: gcontext
+                   subtype: GSAppKitWindowFocusIn
+                   data1: 0
+                   data2: 0];
     }
   return e;
 }
@@ -1892,13 +1892,13 @@ set_up_num_lock (void)
   for (j = 0; j < 8; j++)
     for (i = 0; i < (modifier_map->max_keypermod); i++)
       {
-	if ((modifier_map->modifiermap)[i + j*modifier_map->max_keypermod] 
-	  == _num_lock_keycode)
-	  {
-	    _num_lock_mask = modifier_masks[j];
-	    XFreeModifiermap (modifier_map);
-	    return;
-	  }
+        if ((modifier_map->modifiermap)[i + j*modifier_map->max_keypermod] 
+          == _num_lock_keycode)
+          {
+            _num_lock_mask = modifier_masks[j];
+            XFreeModifiermap (modifier_map);
+            return;
+          }
       }
   // Weird.  NumLock is not among the modifiers
   _num_lock_mask = 0;
@@ -1927,21 +1927,22 @@ static NSEvent*
 process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
   NSMutableArray *event_queue)
 {
-  NSString	*keys, *ukeys;
-  KeySym	keysym;
-  NSPoint	eventLocation;
+  NSString *keys, *ukeys;
+  KeySym keysym;
+  NSPoint eventLocation;
   unsigned short keyCode;
-  unsigned int	eventFlags;
-  unichar       unicode;
-  NSEvent	*event = nil;
-  NSEventType   originalType;
+  unsigned int eventFlags;
+  unichar unicode;
+  NSEvent *event = nil;
+  NSEventType originalType;
   gswindow_device_t *window;
-  int		control_key = 0;
-  int		command_key = 0;
-  int		alt_key = 0;
-  int		help_key = 0;
-  KeySym	modKeysym;  // process modifier independently of shift, etc.
+  int control_key = 0;
+  int command_key = 0;
+  int alt_key = 0;
+  int help_key = 0;
+  KeySym modKeysym;  // process modifier independently of shift, etc.
   XEvent next_event;
+  BOOL keyRepeat = NO;
   
   if (_is_keyboard_initialized == NO)
     initialize_keyboard ();
@@ -1953,13 +1954,13 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
       eventLocation.x = xEvent->xbutton.x;
       eventLocation.y = xEvent->xbutton.y;
       eventLocation = [context _XPointToOSPoint: eventLocation
-					    for: window];
+                                            for: window];
     }
     
   /* Process characters */
   keys = [context->inputServer lookupStringForEvent: (XKeyEvent *)xEvent
-		 window: window
-		 keysym: &keysym];
+                 window: window
+                 keysym: &keysym];
 
   /* Process keycode */
   keyCode = ((XKeyEvent *)xEvent)->keycode;
@@ -1976,37 +1977,37 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
   if (modKeysym != NoSymbol)
     {
       if (modKeysym == _control_keysyms[0]) 
-	{
-	  control_key = 1;
-	}
+        {
+          control_key = 1;
+        }
       else if (modKeysym == _control_keysyms[1])
-	{
-	  control_key = 2;
-	}
+        {
+          control_key = 2;
+        }
       else if (modKeysym == _command_keysyms[0]) 
-	{
-	  command_key = 1;
-	}
+        {
+          command_key = 1;
+        }
       else if (modKeysym == _command_keysyms[1]) 
-	{
-	  command_key = 2;
-	}
+        {
+          command_key = 2;
+        }
       else if (modKeysym == _alt_keysyms[0]) 
-	{
-	  alt_key = 1;
-	}
+        {
+          alt_key = 1;
+        }
       else if (modKeysym == _alt_keysyms[1]) 
-	{
-	  alt_key = 2;
-	}
+        {
+          alt_key = 2;
+        }
       else if (modKeysym == _help_keysyms[0]) 
-	{
-	  help_key = 1;
-	}
+        {
+          help_key = 1;
+        }
       else if (modKeysym == _help_keysyms[1]) 
-	{
-	  help_key = 2;
-	}
+        {
+          help_key = 2;
+        }
     }
 
   originalType = eventType;
@@ -2014,27 +2015,27 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
     {
       eventType = NSFlagsChanged;
       if (xEvent->xkey.type == KeyPress)
-	{
-	  if (control_key)
-	    _control_pressed |= control_key;
-	  if (command_key)
-	    _command_pressed |= command_key;
-	  if (alt_key)
-	    _alt_pressed |= alt_key;
-	  if (help_key)
-	    _help_pressed |= help_key;
-	}
+        {
+          if (control_key)
+            _control_pressed |= control_key;
+          if (command_key)
+            _command_pressed |= command_key;
+          if (alt_key)
+            _alt_pressed |= alt_key;
+          if (help_key)
+            _help_pressed |= help_key;
+        }
       else if (xEvent->xkey.type == KeyRelease)
-	{
-	  if (control_key)
-	    _control_pressed &= ~control_key;
-	  if (command_key)
-	    _command_pressed &= ~command_key;
-	  if (alt_key)
-	    _alt_pressed &= ~alt_key;
-	  if (help_key)
-	    _help_pressed &= ~help_key;
-	}
+        {
+          if (control_key)
+            _control_pressed &= ~control_key;
+          if (command_key)
+            _command_pressed &= ~command_key;
+          if (alt_key)
+            _alt_pressed &= ~alt_key;
+          if (help_key)
+            _help_pressed &= ~help_key;
+        }
     }
 
   /* Process modifiers */
@@ -2045,7 +2046,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
     eventFlags = eventFlags | NSNumericPadKeyMask;
 
   NSDebugLLog (@"NSKeyEvent", @"keysym=%d, keyCode=%d flags=%d (state=%d)",
-	      keysym, keyCode, eventFlags, ((XKeyEvent *)xEvent)->state);
+              keysym, keyCode, eventFlags, ((XKeyEvent *)xEvent)->state);
   
   /* Add NSFunctionKeyMask if the key is a function or a misc function key */
   /* We prefer not to do this and do it manually in process_char
@@ -2083,8 +2084,6 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
     set "next_event_is_a_keyrepeat" to "YES" so that we know that the next
     event is a repeat too.
     */
-  BOOL keyRepeat = NO;
-
   if ( next_event_is_a_keyrepeat == YES )
     {
         keyRepeat = YES;
@@ -2111,54 +2110,54 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
       keys = [NSString stringWithCharacters: &unicode  length: 1];
       if (originalType == NSKeyDown)
         {
-	  event = [NSEvent keyEventWithType: NSKeyDown
-		   location: eventLocation
-		   modifierFlags: eventFlags
-		   timestamp: (NSTimeInterval)xEvent->xkey.time / 1000.0
-		   windowNumber: window->number
-		   context: GSCurrentContext()
-		   characters: keys
-		   charactersIgnoringModifiers: keys
-		   isARepeat: keyRepeat
-		   keyCode: keyCode];
-	  [event_queue addObject: event];
-	  event = [NSEvent keyEventWithType: NSFlagsChanged
-		   location: eventLocation
-		   modifierFlags: eventFlags
-		   timestamp: (NSTimeInterval)xEvent->xkey.time / 1000.0
-		   windowNumber: window->number
-		   context: GSCurrentContext()
-		   characters: keys
-		   charactersIgnoringModifiers: keys
-		   isARepeat: NO
-		   keyCode: keyCode];
-	  return event;
-	}
+          event = [NSEvent keyEventWithType: NSKeyDown
+                   location: eventLocation
+                   modifierFlags: eventFlags
+                   timestamp: (NSTimeInterval)xEvent->xkey.time / 1000.0
+                   windowNumber: window->number
+                   context: GSCurrentContext()
+                   characters: keys
+                   charactersIgnoringModifiers: keys
+                   isARepeat: keyRepeat
+                   keyCode: keyCode];
+          [event_queue addObject: event];
+          event = [NSEvent keyEventWithType: NSFlagsChanged
+                   location: eventLocation
+                   modifierFlags: eventFlags
+                   timestamp: (NSTimeInterval)xEvent->xkey.time / 1000.0
+                   windowNumber: window->number
+                   context: GSCurrentContext()
+                   characters: keys
+                   charactersIgnoringModifiers: keys
+                   isARepeat: NO
+                   keyCode: keyCode];
+          return event;
+        }
       else
         {
-	  event = [NSEvent keyEventWithType: NSFlagsChanged
-		   location: eventLocation
-		   modifierFlags: eventFlags
-		   timestamp: (NSTimeInterval)xEvent->xkey.time / 1000.0
-		   windowNumber: window->number
-		   context: GSCurrentContext()
-		   characters: keys
-		   charactersIgnoringModifiers: keys
-		   isARepeat: NO
-		   keyCode: keyCode];
-	  [event_queue addObject: event];
-	  event = [NSEvent keyEventWithType: NSKeyUp
-		   location: eventLocation
-		   modifierFlags: eventFlags
-		   timestamp: (NSTimeInterval)xEvent->xkey.time / 1000.0
-		   windowNumber: window->number
-		   context: GSCurrentContext()
-		   characters: keys
-		   charactersIgnoringModifiers: keys
-		   isARepeat: keyRepeat
-		   keyCode: keyCode];
-	  return event;
-	}
+          event = [NSEvent keyEventWithType: NSFlagsChanged
+                   location: eventLocation
+                   modifierFlags: eventFlags
+                   timestamp: (NSTimeInterval)xEvent->xkey.time / 1000.0
+                   windowNumber: window->number
+                   context: GSCurrentContext()
+                   characters: keys
+                   charactersIgnoringModifiers: keys
+                   isARepeat: NO
+                   keyCode: keyCode];
+          [event_queue addObject: event];
+          event = [NSEvent keyEventWithType: NSKeyUp
+                   location: eventLocation
+                   modifierFlags: eventFlags
+                   timestamp: (NSTimeInterval)xEvent->xkey.time / 1000.0
+                   windowNumber: window->number
+                   context: GSCurrentContext()
+                   characters: keys
+                   charactersIgnoringModifiers: keys
+                   isARepeat: keyRepeat
+                   keyCode: keyCode];
+          return event;
+        }
     }
   else
     {
@@ -2169,32 +2168,32 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
 
       /* If that didn't work, we use what X gave us */
       if (unicode != 0)
-	{
-	  keys = [NSString stringWithCharacters: &unicode  length: 1];
-	}
+        {
+          keys = [NSString stringWithCharacters: &unicode  length: 1];
+        }
 
       // Now the same ignoring modifiers, except Shift, ShiftLock, NumLock.
       xEvent->xkey.state = (xEvent->xkey.state & (ShiftMask | LockMask 
-						  | _num_lock_mask));
+                                                  | _num_lock_mask));
       ukeys = [context->inputServer lookupStringForEvent: (XKeyEvent *)xEvent
-		      window: window
-		      keysym: &keysym];
+                      window: window
+                      keysym: &keysym];
       unicode = process_char (keysym, &eventFlags);
       if (unicode != 0)
-	{
-	  ukeys = [NSString stringWithCharacters: &unicode  length: 1];
-	}
+        {
+          ukeys = [NSString stringWithCharacters: &unicode  length: 1];
+        }
 
       event = [NSEvent keyEventWithType: eventType
-		   location: eventLocation
-		   modifierFlags: eventFlags
-		   timestamp: (NSTimeInterval)xEvent->xkey.time / 1000.0
-		   windowNumber: window->number
-		   context: GSCurrentContext()
-		   characters: keys
-		   charactersIgnoringModifiers: ukeys
-		   isARepeat: keyRepeat
-		   keyCode: keyCode];
+                   location: eventLocation
+                   modifierFlags: eventFlags
+                   timestamp: (NSTimeInterval)xEvent->xkey.time / 1000.0
+                   windowNumber: window->number
+                   context: GSCurrentContext()
+                   characters: keys
+                   charactersIgnoringModifiers: ukeys
+                   isARepeat: keyRepeat
+                   keyCode: keyCode];
 
       return event;
     }
@@ -2206,8 +2205,8 @@ process_char (KeySym keysym, unsigned *eventModifierFlags)
   switch (keysym)
     {
       /* NB: Whatever is explicitly put in this conversion table takes
-	 precedence over what is returned by XLookupString.  Not sure
-	 this is a good idea for latin-1 character input. */
+         precedence over what is returned by XLookupString.  Not sure
+         this is a good idea for latin-1 character input. */
     case XK_Return:       return NSCarriageReturnCharacter;
     case XK_KP_Enter:     return NSEnterCharacter;
     case XK_Linefeed:     return NSFormFeedCharacter;
@@ -2360,7 +2359,7 @@ process_modifier_flags(unsigned int state)
 @implementation XGServer (XSync)
 - (BOOL) xSyncMap: (void*)windowHandle
 {
-  gswindow_device_t	*window = (gswindow_device_t*)windowHandle;
+  gswindow_device_t *window = (gswindow_device_t*)windowHandle;
 
   /*
    * if the window is not mapped, make sure we have sent all requests to the
@@ -2378,14 +2377,14 @@ process_modifier_flags(unsigned int state)
    */
   if (window->map_state != IsViewable)
     {
-      NSDate	*d = [NSDate dateWithTimeIntervalSinceNow: 1.0];
-      NSRunLoop	*l = [NSRunLoop currentRunLoop];
-      NSString	*m = [l currentMode];
+      NSDate *d = [NSDate dateWithTimeIntervalSinceNow: 1.0];
+      NSRunLoop *l = [NSRunLoop currentRunLoop];
+      NSString *m = [l currentMode];
 
       while (window->map_state != IsViewable && [d timeIntervalSinceNow] > 0)
         {
-	  [l runMode: m beforeDate: d];
-	}
+          [l runMode: m beforeDate: d];
+        }
     }
   if (window->map_state != IsViewable)
     {
@@ -2408,17 +2407,17 @@ process_modifier_flags(unsigned int state)
 
 - (NSPoint) mouseLocationOnScreen: (int)screen window: (int *)win
 {
-  Window	rootWin;
-  Window	childWin;
-  int		currentX;
-  int		currentY;
-  int		winX;
-  int		winY;
-  unsigned	mask;
-  BOOL		ok;
-  NSPoint       p;
-  int           height;
-  int           screen_number;
+  Window rootWin;
+  Window childWin;
+  int currentX;
+  int currentY;
+  int winX;
+  int winY;
+  unsigned mask;
+  BOOL ok;
+  NSPoint p;
+  int height;
+  int screen_number;
   
   screen_number = (screen >= 0) ? screen : defScreen;
   ok = XQueryPointer (dpy, [self xDisplayRootWindowForScreen: screen_number],
@@ -2430,15 +2429,15 @@ process_modifier_flags(unsigned int state)
       XWindowAttributes attribs;
       ok = XGetWindowAttributes(dpy, rootWin, &attribs);
       if (ok == False)
-	{
-	  return p;
-	}
+        {
+          return p;
+        }
       screen_number = XScreenNumberOfScreen(attribs.screen);
       if (screen >= 0 && screen != screen_number)
-	{
-	  /* Mouse not on the requred screen, return an invalid point */
-	  return p;
-	}
+        {
+          /* Mouse not on the requred screen, return an invalid point */
+          return p;
+        }
       height = attribs.height;
     }
   else
@@ -2446,36 +2445,36 @@ process_modifier_flags(unsigned int state)
   p = NSMakePoint(currentX, height - currentY);
   if (win)
     {
-      gswindow_device_t *w = 0;
-      w = [XGServer _windowForXWindow: childWin];
+      gswindow_device_t *w = [XGServer _windowForXWindow: childWin];
+
       if (w == NULL)
-	w = [XGServer _windowForXParent: childWin];
+        w = [XGServer _windowForXParent: childWin];
       if (w)
-	*win = w->number;
+        *win = w->number;
       else
-	*win = 0;
+        *win = 0;
     }
   return p;
 }
 
 - (NSEvent*) getEventMatchingMask: (unsigned)mask
-		       beforeDate: (NSDate*)limit
-			   inMode: (NSString*)mode
-			  dequeue: (BOOL)flag
+                       beforeDate: (NSDate*)limit
+                           inMode: (NSString*)mode
+                          dequeue: (BOOL)flag
 {
   [self receivedEvent: 0 type: 0 extra: 0 forMode: nil];
   return [super getEventMatchingMask: mask
-			  beforeDate: limit
-			      inMode: mode
-			     dequeue: flag];
+                          beforeDate: limit
+                              inMode: mode
+                             dequeue: flag];
 }
 
 - (void) discardEventsMatchingMask: (unsigned)mask
-		       beforeEvent: (NSEvent*)limit
+                       beforeEvent: (NSEvent*)limit
 {
   [self receivedEvent: 0 type: 0 extra: 0 forMode: nil];
   [super discardEventsMatchingMask: mask
-		       beforeEvent: limit];
+                       beforeEvent: limit];
 }
 
 @end
