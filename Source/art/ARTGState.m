@@ -618,7 +618,6 @@ draw_info_t ART_DI;
 -(void) GSSetDevice: (gswindow_device_t *)window : (int)x : (int)y
 {
   struct XWindowBuffer_depth_info_s di;
-  XWindowBuffer *new_wi;
 
   [self setOffset: NSMakePoint(x, y)];
 
@@ -628,16 +627,8 @@ draw_info_t ART_DI;
   di.bytes_per_pixel = DI.bytes_per_pixel;
   di.inline_alpha = DI.inline_alpha;
   di.inline_alpha_ofs = DI.inline_alpha_ofs;
-  new_wi = [XWindowBuffer windowBufferForWindow: window  depthInfo: &di];
-  if (new_wi != wi)
-    {
-      DESTROY(wi);
-      wi = new_wi;
-    }
-  else
-    {
-      DESTROY(new_wi);
-    }
+
+  ASSIGN(wi, [XWindowBuffer windowBufferForWindow: window depthInfo: &di]);
 }
 
 -(void) GSCurrentDevice: (void **)device : (int *)x : (int *)y
@@ -652,9 +643,9 @@ draw_info_t ART_DI;
   if (device)
     {
       if (wi)
-	*device = wi->window;
+        *device = wi->window;
       else
-	*device = NULL;
+        *device = NULL;
     }
 }
 
