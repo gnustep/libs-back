@@ -1,3 +1,10 @@
+2009-03-28 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XWindowBuffer.m (+windowBufferForWindow:depthInfo:):
+	Return an autorelease instance.
+	* Source/cairo/XGCairoXImageSurface.m (-initWithDevice:),
+	* Source/art/ARTGState.m (-GSSetDevice:): Adopt callers.
+
 2009-03-12 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerEvent.m: Correct formatting.

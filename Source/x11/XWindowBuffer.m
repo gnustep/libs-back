@@ -412,7 +412,7 @@ no_xshm:
       wi->data = NULL;
     }
 
-  return wi;
+  return AUTORELEASE(wi);
 }
 
 
