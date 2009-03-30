@@ -956,6 +956,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
               = [XGServer _windowForXWindow:xEvent.xvisibility.window];
           }
         // sub-window ?
+	/*
           {
             Window xw;
             xw = xEvent.xvisibility.window;
@@ -970,7 +971,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                   = [XGServer _windowForXWindow:xw];
               }
           }
-
+	*/
         if (cWin != 0)
           cWin->visibility = xEvent.xvisibility.state;
         break;
@@ -989,6 +990,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                 = [XGServer _windowForXWindow:xEvent.xexpose.window];
             }
           // sub-window ?
+	  /*
             {
               Window xw;
               xw = xEvent.xexpose.window;
@@ -1012,7 +1014,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                   isSubWindow = YES;
                 }
             }
-
+	  */
           if (cWin != 0)
             {
               XRectangle rectangle;
