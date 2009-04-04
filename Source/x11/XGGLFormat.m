@@ -51,8 +51,8 @@
       forAttribute: (NSOpenGLPixelFormatAttribute)attrib 
   forVirtualScreen: (GLint)screen
 {
-  MAKE_DISPLAY(dpy);
   GLint error;
+  MAKE_DISPLAY(dpy);
 
   NSAssert(((GSglxMinorVersion (dpy) >= 3) ? (void *)configurations.fbconfig : (void *)configurations.visualinfo) != NULL
 	        && configurationCount > 0,
@@ -82,8 +82,8 @@
   int AccumSize;
   NSOpenGLPixelFormatAttribute *ptr = attribs;
   NSMutableData *data = [NSMutableData data];
-  MAKE_DISPLAY(dpy);
   GLint drawable_type = 0;
+  MAKE_DISPLAY(dpy);
 
 #define append(a, b) do {int v1 = a; int v2 = b; [data appendBytes: &v1 length: sizeof(v1)];\
   [data appendBytes: &v2 length: sizeof(v2)];} while (0)
@@ -303,6 +303,7 @@
 
 - (GLXWindow) drawableForWindow: (Window)xwindowid
 {
+  GLint error;
   GLXWindow win;
   MAKE_DISPLAY(dpy);
 
@@ -316,7 +317,7 @@
       win = xwindowid;
     }
 
-  GLint error = glGetError();
+  error = glGetError();
   if ( error != GL_NO_ERROR )
       NSDebugMLLog( @"GLX", @"Can not create GL window for pixel format %@ - Errror %u",
                             self, error );

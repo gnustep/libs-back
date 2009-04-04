@@ -1,3 +1,8 @@
+2009-04-04 Riccardo Mottola <rmottola@users.sf.net>
+
+	* Source/x11/XGGLFormat.m,
+	Source/x11/XGGLContext.m: reorder instructions for c89 compatibility
+
 2009-03-28 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XWindowBuffer.m (+windowBufferForWindow:depthInfo:):

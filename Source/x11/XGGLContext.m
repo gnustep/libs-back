@@ -283,6 +283,7 @@ static XGGLContext *currentGLContext;
 - (void)copyAttributesFromContext:(NSOpenGLContext *)context 
 			 withMask:(unsigned long)mask
 {
+  GLint error;
   MAKE_DISPLAY(dpy);
 
   if (context == nil || ![context isKindOfClass: [XGGLContext class]])
@@ -292,7 +293,7 @@ static XGGLContext *currentGLContext;
   glXCopyContext(dpy, ((XGGLContext *)context)->glx_context, 
                  glx_context, mask);
 
-  GLint error = glGetError();
+  error = glGetError();
   if ( error != GL_NO_ERROR )
       NSDebugMLLog( @"GLX", @"Can not copy GL context %@ from context %@ - Errror %u",
                             self, context, error );
