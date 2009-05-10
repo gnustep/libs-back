@@ -7,12 +7,18 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.17.0}
+
+Key repeat support implemented in X11.
+
+OpenGL fixes and improvements.
+
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.16.0}
 
 Transparent windows implemented in WIN32 backend, better position and
 scaling of images. General cleanup of code.
-
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.14.0}
 
