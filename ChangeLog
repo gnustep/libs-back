@@ -1,5 +1,10 @@
 2009-05-31 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/x11/XWindowBuffer.m: Protect the XSHM code parts with
+	#ifdef statements.
+
+2009-05-31 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/gsc/GSContext.m (-DPScomposite:...:, -DPSdissolve:...:) Map
 	onto GScomposite:toPoint:fromRect:operation:fraction:.
 	* Source/gsc/GSGState.m (-compositeGState:fromRect:toPoint:op:, 

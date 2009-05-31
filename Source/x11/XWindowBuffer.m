@@ -22,6 +22,8 @@
    Boston, MA 02110-1301, USA.
 */
 
+#include <config.h>
+
 #include <Foundation/NSUserDefaults.h>
 
 #include "x11/XGServer.h"
@@ -43,6 +45,7 @@ static int num_window_buffers;
 
 static int use_shape_hack = 0; /* this is an ugly hack : ) */
 
+#ifdef XSHM
 
 static int did_test_xshm = 0;
 static int use_xshm = 1;
@@ -174,7 +177,7 @@ no_xshm:
     XSetErrorHandler(old_error_handler);
   }
 }
-
+#endif
 
 @implementation XWindowBuffer
 
@@ -296,6 +299,7 @@ no_xshm:
       if (wi->window->xframe.size.width * wi->window->xframe.size.height < 4096)
         goto no_xshm;
 
+#ifdef XSHM
       if (!did_test_xshm)
         test_xshm(wi->display, visual, drawing_depth);
 
@@ -373,6 +377,7 @@ no_xshm:
       actually be destroyed, but if we crashed before doing this, it wouldn't
       be destroyed despite nobody being attached anymore. */
       shmctl(wi->shminfo.shmid, IPC_RMID, 0);
+#endif
 
       if (!wi->ximage)
         {
