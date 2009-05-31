@@ -282,30 +282,6 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   [source releaseHDC: sourceDC];
 }
 
-- (void) compositeGState: (GSGState *)source 
-                fromRect: (NSRect)aRect
-                 toPoint: (NSPoint)aPoint
-                      op: (NSCompositingOperation)op
-{
-  [self compositeGState: (WIN32GState *) source
-	       fromRect: aRect
-	        toPoint: aPoint
-	             op: op
-	       fraction: 1.0];
-}
-
-- (void) dissolveGState: (GSGState *)source
-	       fromRect: (NSRect)aRect
-		toPoint: (NSPoint)aPoint 
-		  delta: (float)delta
-{
-  [self compositeGState: (WIN32GState *) source
-	       fromRect: aRect
-	        toPoint: aPoint
-	             op: NSCompositeSourceOver
-	       fraction: delta];
-}
-
 - (void) compositerect: (NSRect)aRect
                     op: (NSCompositingOperation)op
 {

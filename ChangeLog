@@ -1,3 +1,19 @@
+2009-05-31 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSContext.m (-DPScomposite:...:, -DPSdissolve:...:) Map
+	onto GScomposite:toPoint:fromRect:operation:fraction:.
+	* Source/gsc/GSGState.m (-compositeGState:fromRect:toPoint:op:, 
+	-dissolveGState:fromRect:toPoint:delta:) Map onto
+	compositeGState:fromRect:toPoint:op:fraction:. 
+        * Source/winlib/WIN32GState.m (-compositeGState:fromRect:toPoint:op:, 
+	-dissolveGState:fromRect:toPoint:delta:),
+	* Source/xlib/XGGState.m (-compositeGState:fromRect:toPoint:op:, 
+	-dissolveGState:fromRect:toPoint:delta:),
+        * Source/cairo/CairoGState.m (-compositeGState:fromRect:toPoint:op:, 
+	-dissolveGState:fromRect:toPoint:delta:): Remove these methods.
+	* Source/art/composite.m
+	(-compositeGState:fromRect:toPoint:op:fraction:): Added.
+
 2009-05-10  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.17.0
