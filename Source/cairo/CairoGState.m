@@ -1331,28 +1331,4 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   cairo_restore(_ct);
 }
 
-- (void) compositeGState: (CairoGState *)source 
-		fromRect: (NSRect)aRect 
-		 toPoint: (NSPoint)aPoint 
-		      op: (NSCompositingOperation)op
-{
-  [self compositeGState: source 
-	       fromRect: aRect 
-		toPoint: aPoint 
-		     op: op
-	       fraction: 1.0];
-}
-
-- (void) dissolveGState: (CairoGState *)source
-	       fromRect: (NSRect)aRect
-		toPoint: (NSPoint)aPoint 
-		  delta: (float)delta
-{
-  [self compositeGState: source 
-	       fromRect: aRect 
-		toPoint: aPoint 
-		     op: NSCompositeSourceOver
-	       fraction: delta];
-}
-
 @end

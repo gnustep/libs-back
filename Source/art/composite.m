@@ -1200,6 +1200,27 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
   UPDATE_UNBUFFERED
 }
 
+- (void) compositeGState: (GSGState *)source
+                fromRect: (NSRect)aRect
+                 toPoint: (NSPoint)aPoint
+                      op: (NSCompositingOperation)op
+                fraction: (float)delta
+{
+  if (op == NSCompositeSourceOver)
+    {
+      [self dissolveGState: source
+	          fromRect: aRect
+            toPoint: aPoint
+            delta: delta];
+    }
+  else
+    {
+      [self compositeGState: source
+	          fromRect: aRect
+            toPoint: aPoint
+            op: op];
+    }
+}
 
 - (void) compositerect: (NSRect)aRect
                     op: (NSCompositingOperation)op
