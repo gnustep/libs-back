@@ -723,15 +723,24 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
       switch (drawType)
 	{
 	case path_stroke:
-	  StrokePath(hDC);
+	  if (strokeColor.field[AINDEX] != 0.0)
+	    {
+	      StrokePath(hDC);
+	    }
 	  break;
 	case path_eofill:
-	  SetPolyFillMode(hDC, ALTERNATE);
-	  FillPath(hDC);
+	  if (fillColor.field[AINDEX] != 0.0)
+	    {
+	      SetPolyFillMode(hDC, ALTERNATE);
+	      FillPath(hDC);
+	    }
 	  break;
 	case path_fill:
-	  SetPolyFillMode(hDC, WINDING);
-	  FillPath(hDC);
+	  if (fillColor.field[AINDEX] != 0.0)
+	    {
+	      SetPolyFillMode(hDC, WINDING);
+	      FillPath(hDC);
+	    }
 	  break;
 	case path_eoclip:
 	  {
