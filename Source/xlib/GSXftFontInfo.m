@@ -229,6 +229,8 @@ static NSArray *faFromFc(FcPattern *pat)
     return @"Bitstream Vera Sans";
   if ([allFontNames containsObject: @"FreeSans"])
     return @"FreeSans";
+  if ([allFontNames containsObject: @"DejaVu Sans"])
+    return @"DejaVu Sans";
   return @"Helvetica";
 }
 
@@ -238,6 +240,8 @@ static NSArray *faFromFc(FcPattern *pat)
     return @"Bitstream Vera Sans-Bold";
   if ([allFontNames containsObject: @"FreeSans-Bold"])
     return @"FreeSans-Bold";
+  if ([allFontNames containsObject: @"DejaVu Sans-Bold"])
+    return @"DejaVu Sans-Bold";
   return @"Helvetica-Bold";
 }
 
@@ -247,6 +251,8 @@ static NSArray *faFromFc(FcPattern *pat)
     return @"Bitstream Vera Sans Mono";
   if ([allFontNames containsObject: @"FreeMono"])
     return @"FreeMono";
+  if ([allFontNames containsObject: @"DejaVu Sans Mono"])
+    return @"DejaVu Sans Mono";
   return @"Courier";
 }
 
