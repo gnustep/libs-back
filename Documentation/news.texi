@@ -7,13 +7,17 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.17.1}
+
+Use DejaVu as another fallback font.
+
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.17.0}
 
 Key repeat support implemented in X11.
 
 OpenGL fixes and improvements.
-
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.16.0}
 
