@@ -138,31 +138,20 @@
   ASSIGN(pattern, image);
 }
 
-// This is only a fall back, the method should not be called any more.
 - (void) compositeGState: (GSGState *)source
                 fromRect: (NSRect)aRect
                  toPoint: (NSPoint)aPoint
                       op: (NSCompositingOperation)op
 {
-  [self compositeGState: source 
-        fromRect: aRect 
-        toPoint: aPoint 
-        op: op
-        fraction: 1.0];
-
+  [self subclassResponsibility: _cmd];
 }
 
-// This is only a fall back, the method should not be called any more.
 - (void) dissolveGState: (GSGState *)source
                fromRect: (NSRect)aRect
                 toPoint: (NSPoint)aPoint
                   delta: (float)delta
 {
-  [self compositeGState: source 
-        fromRect: aRect 
-        toPoint: aPoint 
-        op: NSCompositeSourceOver
-        fraction: delta];
+  [self subclassResponsibility: _cmd];
 }
 
 - (void) compositeGState: (GSGState *)source
@@ -171,7 +160,21 @@
                       op: (NSCompositingOperation)op
                 fraction: (float)delta
 {
-  [self subclassResponsibility: _cmd];
+  if (op == NSCompositeSourceOver)
+    {
+      [self dissolveGState: source
+	          fromRect: aRect
+                   toPoint: aPoint
+	             delta: delta];
+    }
+  else
+    {
+      [self compositeGState: source
+	          fromRect: aRect
+                   toPoint: aPoint
+	                op: op];
+    }
+
 }
 
 - (void) compositerect: (NSRect)aRect

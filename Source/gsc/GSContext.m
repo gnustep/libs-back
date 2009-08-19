@@ -778,11 +778,20 @@ static NSMapTable *gtable;
 - (void) DPScomposite: (float)x : (float)y : (float)w : (float)h 
 		     : (int)gstateNum : (float)dx : (float)dy : (int)op
 {
-  [self GScomposite: gstateNum
-        toPoint: NSMakePoint(dx, dy)
-        fromRect: NSMakeRect(x, y, w, h)
-        operation: op
-        fraction: 1.0];
+  NSRect rect;
+  NSPoint p;
+  GSGState *g = gstate;
+
+  if (gstateNum)
+    {
+      [self DPSexecuserobject: gstateNum];
+      ctxt_pop(g, opstack, GSGState);
+    }
+
+  rect = NSMakeRect(x, y, w, h);
+  p    = NSMakePoint(dx, dy);
+
+  [gstate compositeGState: g fromRect: rect toPoint: p op: op];
 }
 
 - (void) DPScompositerect: (float)x : (float)y : (float)w : (float)h : (int)op
@@ -793,11 +802,20 @@ static NSMapTable *gtable;
 - (void) DPSdissolve: (float)x : (float)y : (float)w : (float)h 
 		    : (int)gstateNum : (float)dx : (float)dy : (float)delta
 {
-  [self GScomposite: gstateNum
-        toPoint: NSMakePoint(dx, dy)
-        fromRect: NSMakeRect(x, y, w, h)
-        operation: NSCompositeSourceOver
-        fraction: delta];
+  NSRect rect;
+  NSPoint p;
+  GSGState *g = gstate;
+
+  if (gstateNum)
+    {
+      [self DPSexecuserobject: gstateNum];
+      ctxt_pop(g, opstack, GSGState);
+    }
+
+  rect = NSMakeRect(x, y, w, h);
+  p    = NSMakePoint(dx, dy);
+
+  [gstate dissolveGState: g fromRect: rect toPoint: p delta: delta];
 }
 
 - (void) GScomposite: (int)gstateNum
