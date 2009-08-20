@@ -40,6 +40,7 @@
 #include <Foundation/NSString.h>
 #include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSDebug.h>
+#include <Foundation/NSLock.h>
 
 #include "gsc/GSContext.h"
 #include "gsc/GSStreamContext.h"
@@ -102,6 +103,7 @@
 /* Globally unique gstate number */
 static unsigned int unique_index = 0;
 static NSMapTable *gtable;
+static NSRecursiveLock *gcLock = nil;
 
 @interface GSContext (PrivateOps)
 - (void)DPSdefineuserobject;
@@ -116,6 +118,20 @@ static NSMapTable *gtable;
 - (void)DPSpop;
 @end
 
+/* Manage the graphics context lock */
+static void gc_lock()
+{
+  if(gcLock == nil)
+    {
+      gcLock = [[NSRecursiveLock alloc] init];
+    }
+  [gcLock lock];
+}
+
+static void gc_unlock()
+{
+  [gcLock unlock];
+}
 
 /**
    <unit>
@@ -435,17 +451,21 @@ static NSMapTable *gtable;
 {
   if (GSIArrayCount((GSIArray)gstack) == 0)
     return;
+  gc_lock();
   RELEASE(gstate);
   gstate = (GSIArrayLastItem((GSIArray)gstack)).obj;
   ctxt_pop(gstate, gstack, GSGState);
   RETAIN(gstate);
+  gc_unlock();
 }
 
 - (void) DPSgsave
 {
+  gc_lock();
   ctxt_push(gstate, gstack);
   AUTORELEASE(gstate);
   gstate = [gstate copy];
+  gc_unlock();
 }
 
 - (void) DPSinitgraphics
@@ -457,10 +477,12 @@ static NSMapTable *gtable;
 {
   if (gst)
     {
+      gc_lock();
       [self DPSexecuserobject: gst];
       RELEASE(gstate);
       ctxt_pop(gstate, opstack, GSGState);
       gstate = [gstate copy];
+      gc_unlock();
     }
   else
     DESTROY(gstate);
@@ -473,7 +495,8 @@ static NSMapTable *gtable;
       DPS_ERROR(DPSundefined, @"No gstate");
       return 0;
     }
-	[isa insertObject: AUTORELEASE([gstate copy]) forKey: ++unique_index];
+
+  [isa insertObject: AUTORELEASE([gstate copy]) forKey: ++unique_index];
 
   return unique_index;
 }
@@ -488,7 +511,7 @@ static NSMapTable *gtable;
   if (gst <= 0)
     return;
 
-	[isa insertObject: AUTORELEASE([gstate copy]) forKey: gst];
+  [isa insertObject: AUTORELEASE([gstate copy]) forKey: gst];
 }
 
 /* ----------------------------------------------------------------------- */
@@ -778,20 +801,11 @@ static NSMapTable *gtable;
 - (void) DPScomposite: (float)x : (float)y : (float)w : (float)h 
 		     : (int)gstateNum : (float)dx : (float)dy : (int)op
 {
-  NSRect rect;
-  NSPoint p;
-  GSGState *g = gstate;
-
-  if (gstateNum)
-    {
-      [self DPSexecuserobject: gstateNum];
-      ctxt_pop(g, opstack, GSGState);
-    }
-
-  rect = NSMakeRect(x, y, w, h);
-  p    = NSMakePoint(dx, dy);
-
-  [gstate compositeGState: g fromRect: rect toPoint: p op: op];
+  [self GScomposite: gstateNum
+        toPoint: NSMakePoint(dx, dy)
+        fromRect: NSMakeRect(x, y, w, h)
+        operation: op
+        fraction: 1.0];
 }
 
 - (void) DPScompositerect: (float)x : (float)y : (float)w : (float)h : (int)op
@@ -802,20 +816,11 @@ static NSMapTable *gtable;
 - (void) DPSdissolve: (float)x : (float)y : (float)w : (float)h 
 		    : (int)gstateNum : (float)dx : (float)dy : (float)delta
 {
-  NSRect rect;
-  NSPoint p;
-  GSGState *g = gstate;
-
-  if (gstateNum)
-    {
-      [self DPSexecuserobject: gstateNum];
-      ctxt_pop(g, opstack, GSGState);
-    }
-
-  rect = NSMakeRect(x, y, w, h);
-  p    = NSMakePoint(dx, dy);
-
-  [gstate dissolveGState: g fromRect: rect toPoint: p delta: delta];
+  [self GScomposite: gstateNum
+        toPoint: NSMakePoint(dx, dy)
+        fromRect: NSMakeRect(x, y, w, h)
+        operation: NSCompositeSourceOver
+        fraction: delta];
 }
 
 - (void) GScomposite: (int)gstateNum
