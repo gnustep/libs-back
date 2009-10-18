@@ -28,6 +28,7 @@
 #include <math.h>
 #include <Foundation/NSString.h>
 #include <Foundation/NSArray.h>
+#include <Foundation/NSDebug.h>
 #include <Foundation/NSValue.h>
 #include <Foundation/NSProcessInfo.h>
 #include <Foundation/NSUserDefaults.h>
@@ -326,18 +327,14 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
       if (styleMask & NSIconWindowMask)
 	{
 	  // FIXME
-	  hints->flags |= MWM_HINTS_DECORATIONS;
-	  hints->flags |= MWM_HINTS_FUNCTIONS;
+	  hints->flags &= ~MWM_HINTS_DECORATIONS;
 	  hints->decorations = 0;
-	  hints->functions = 0;
 	}
       if (styleMask & NSMiniWindowMask)
 	{
 	  // FIXME
-	  hints->flags |= MWM_HINTS_DECORATIONS;
-	  hints->flags |= MWM_HINTS_FUNCTIONS;
+	  hints->flags &= ~MWM_HINTS_DECORATIONS;
 	  hints->decorations = 0;
-	  hints->functions = 0;
 	}
     }  
   
@@ -2537,9 +2534,10 @@ NSLog(@"styleoffsets ... guessing offsets\n");
 - (void) miniwindow: (int) win
 {
   gswindow_device_t	*window;
+  XEvent e;
 
   window = WINDOW_WITH_TAG(win);
-  if (window == 0 || (window->win_attrs.window_style & NSIconWindowMask) != 0)
+  if (window == 0)
     {
       return;
     }
@@ -2567,6 +2565,14 @@ NSLog(@"styleoffsets ... guessing offsets\n");
 	    }
 	}
     }
+
+  /* First discard all existing events for thsi window ... we don't need them
+   * because the window is being miniaturised, and they might confuse us when
+   * we try to find the event telling us that the miniaturisation worked.
+   */
+  XSync(dpy, False);
+  while (XCheckWindowEvent(dpy, window->ident, 0xffffffff, &e) == True) ;
+
   /*
    * When the application owns the mini window, we withdraw the window itself
    * during miniaturization and put up the mini window instead. However, this
@@ -2578,6 +2584,27 @@ NSLog(@"styleoffsets ... guessing offsets\n");
     XIconifyWindow(dpy, window->ident, window->screen);
   else
     XWithdrawWindow(dpy, window->ident, window->screen);
+
+  /* Now discard all events for this window up to (and including) the
+   * property notify which tells us it is in a miniaturised state.
+   * This measns we can safely assume that the next event showing the
+   * window in a mapped state will mean it has been deminiaturised.
+   *
+   * FIXME ... what if the window manager doesn't tell us that the window
+   * has gone?  Presumably we shouldn't wait forever?
+   */
+  XSync(dpy, False);
+  for (;;)
+    {
+      XWindowEvent(dpy, window->ident, 0xffffffff, &e);
+      if (e.type == PropertyNotify
+	&& e.xproperty.atom == generic.netstates.net_wm_state_atom
+	&& e.xproperty.state == PropertyNewValue
+	&& [self _ewmh_isMinimized: e.xproperty.window])
+	{
+	  break;
+	}
+    }
 }
 
 /**
@@ -4625,6 +4652,11 @@ _computeDepth(int class, int bpp)
 
   for (i = 0; i < count; i++)
     {
+      if (data[i] != 0)
+	{
+          NSDebugLLog(@"NSEvent", @"%d PropertyNotify detail - '%s'\n",
+	    win, XGetAtomName(dpy, data[i]));
+	}
       if (data[i] == generic.netstates.net_wm_state_hidden_atom)
         {
           XFree(data);

@@ -560,8 +560,9 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
           NSTimeInterval time;
           DndClass dnd = xdnd ();
               
-          NSDebugLLog(@"NSEvent", @"%d ClientMessage\n",
-                      xEvent.xclient.window);
+          NSDebugLLog(@"NSEvent", @"%d ClientMessage - %s\n",
+	    xEvent.xclient.window,
+	    XGetAtomName(dpy, xEvent.xclient.message_type));
           if (cWin == 0 || xEvent.xclient.window != cWin->ident)
             {
               generic.cachedWindow
@@ -1393,9 +1394,9 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
            * windows by their window properties.  Fortunately, Window Maker
            * will send us client message when a window is miniaturized.
            */
-          if ((generic.wm & XGWM_WINDOWMAKER) == 0 &&
-              xEvent.xproperty.atom == generic.netstates.net_wm_state_atom &&
-              xEvent.xproperty.state == PropertyNewValue)
+          if ((generic.wm & XGWM_WINDOWMAKER) == 0
+	    && xEvent.xproperty.atom == generic.netstates.net_wm_state_atom
+	    && xEvent.xproperty.state == PropertyNewValue)
             {
               if (cWin == 0 || xEvent.xproperty.window != cWin->ident)
                 {
@@ -1423,6 +1424,22 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                                    data1: 0
                                    data2: 0];
                     }
+		  else if ([GSWindowWithNumber(cWin->number) isMiniaturized])
+		    {
+		      /* A miniaturised window is now visible ... send event
+		       * to let the gui know it deminiaturised.
+		       */
+                      eventLocation = NSMakePoint(0,0);
+                      e = [NSEvent otherEventWithType: NSAppKitDefined
+                                   location: eventLocation
+                                   modifierFlags: 0
+                                   timestamp: xEvent.xproperty.time / 1000
+                                   windowNumber: cWin->number
+                                   context: gcontext
+                                   subtype: GSAppKitWindowDeminiaturize
+                                   data1: 0
+                                   data2: 0];
+		    }
                 }
             }
         }
