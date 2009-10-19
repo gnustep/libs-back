@@ -650,3 +650,72 @@ draw_info_t ART_DI;
 }
 
 @end
+
+@implementation ARTGState (PatternColor)
+typedef struct _SavedClip {
+  int clip_x0,clip_y0,clip_x1,clip_y1;
+  BOOL all_clipped;
+  int clip_sx,clip_sy;
+  unsigned int *clip_span;
+  unsigned int *clip_index;
+  int clip_num_span;
+} SavedClip;
+
+- (void *) saveClip
+{
+  SavedClip *savedClip = malloc(sizeof(SavedClip));
+  int i;
+
+  savedClip->clip_x0 = clip_x0;
+  savedClip->clip_y0 = clip_y0;
+  savedClip->clip_x1 = clip_x1;
+  savedClip->clip_y1 = clip_y1;
+  savedClip->all_clipped = all_clipped;
+  savedClip->clip_sx = clip_sx;
+  savedClip->clip_sy = clip_sy;
+  if (clip_num_span == 0)
+    {
+      savedClip->clip_span = NULL;
+      savedClip->clip_index = NULL;
+    }
+  else
+    {
+      savedClip->clip_span = malloc(sizeof(int) * clip_num_span);
+      savedClip->clip_index = malloc(sizeof(int) * clip_num_span);
+      for (i = 0; i < clip_num_span; i++)
+        {
+          savedClip->clip_span[i] = clip_span[i];
+        }
+      for (i = 0; i < clip_num_span; i++)
+        {
+          savedClip->clip_index[i] = clip_index[i];
+        }
+    }
+  savedClip->clip_num_span = clip_num_span;
+
+  return savedClip;
+}
+
+- (void) restoreClip: (void *)saved
+{
+  SavedClip *savedClip = (SavedClip *)saved;
+
+  clip_x0 = savedClip->clip_x0;
+  clip_y0 = savedClip->clip_y0;
+  clip_x1 = savedClip->clip_x1;
+  clip_y1 = savedClip->clip_y1;
+  all_clipped = savedClip->all_clipped;
+  clip_sx = savedClip->clip_sx;
+  clip_sy = savedClip->clip_sy;
+  if (clip_span)
+    {
+      free(clip_span);
+      free(clip_index);
+    }
+  clip_span = savedClip->clip_span;
+  clip_index = savedClip->clip_index;
+  clip_num_span = savedClip->clip_num_span;
+  free(savedClip);
+}
+
+@end

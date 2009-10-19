@@ -747,7 +747,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
     {
       float offs;
 
-      if ((remainderf(cairo_get_line_width(_ct), 2.0) == 0.0)
+      if ((remainderf((float)cairo_get_line_width(_ct), 2.0) == 0.0)
           || fillOrClip == YES)
         offs = 0.0;
       else
@@ -810,6 +810,12 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
+      if (pattern != nil)
+        {
+          [self eofillPath: path withPattern: pattern];
+          return;
+        }
+
       [self _setPath:YES];
       cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_EVEN_ODD);
       cairo_fill(_ct);
@@ -822,6 +828,12 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
+      if (pattern != nil)
+        {
+          [self fillPath: path withPattern: pattern];
+          return;
+        }
+
       [self _setPath:YES];
       cairo_fill(_ct);
     }
@@ -1337,6 +1349,67 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
     }
 
   cairo_restore(_ct);
+}
+
+@end
+
+@implementation CairoGState (PatternColor)
+
+- (void *) saveClip
+{
+#if CAIRO_VERSION > CAIRO_VERSION_ENCODE(1, 4, 0)
+  cairo_status_t status;
+  cairo_rectangle_list_t *clip_rects = cairo_copy_clip_rectangle_list(_ct);
+
+  status = cairo_status(_ct);
+  if (status == CAIRO_STATUS_SUCCESS)
+    {
+      return clip_rects;
+    }
+#endif
+
+  return NULL;
+}
+
+- (void) restoreClip: (void *)savedClip
+{
+#if CAIRO_VERSION > CAIRO_VERSION_ENCODE(1, 4, 0)
+  if (savedClip)
+    {
+      int i;
+      cairo_rectangle_list_t *clip_rects = (cairo_rectangle_list_t *)savedClip;
+      
+      cairo_reset_clip(_ct);
+      if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 6, 0))
+        {
+          for (i = 0; i < clip_rects->num_rectangles; i++)
+            {
+              cairo_rectangle_t rect = clip_rects->rectangles[i];
+              
+              cairo_rectangle(_ct, rect.x, rect.y, 
+                              rect.width, rect.height);
+              cairo_clip(_ct);
+            }
+        }
+      else
+        {
+          for (i = 0; i < clip_rects->num_rectangles; i++)
+            {
+              cairo_rectangle_t rect = clip_rects->rectangles[i];
+              NSSize size = [_surface size];
+              
+              cairo_rectangle(_ct, rect.x, 
+                              /* This strange computation is due 
+                                 to the device offset missing for 
+                                 clip rects in cairo < 1.6.0.  */
+                              rect.y + 2*(offset.y - size.height), 
+                              rect.width, rect.height);
+              cairo_clip(_ct);
+            }
+        }
+      cairo_rectangle_list_destroy(clip_rects);
+    }
+#endif
 }
 
 @end

@@ -749,10 +749,10 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 	    SetPolyFillMode(hDC, ALTERNATE);
 	    region = PathToRegion(hDC);
 	    if (clipRegion)
-	    {
-	      CombineRgn(clipRegion, clipRegion, region, RGN_AND);
-	      DeleteObject(region);
-	    }
+              {
+                CombineRgn(clipRegion, clipRegion, region, RGN_AND);
+                DeleteObject(region);
+              }
 	    else
 	      {
 		clipRegion = region;
@@ -766,10 +766,10 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 	    SetPolyFillMode(hDC, WINDING);
 	    region = PathToRegion(hDC);
 	    if (clipRegion)
-	    {
-	      CombineRgn(clipRegion, clipRegion, region, RGN_AND);
-	      DeleteObject(region);
-	    }
+              {
+                CombineRgn(clipRegion, clipRegion, region, RGN_AND);
+                DeleteObject(region);
+              }
 	    else
 	      {
 		clipRegion = region;
@@ -804,11 +804,22 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
 - (void)DPSeofill 
 {
+  if (pattern != nil)
+    {
+      [self eofillPath: path withPattern: pattern];
+      return;
+    }
   [self _paintPath: path_eofill];
 }
 
 - (void)DPSfill 
 {
+  if (pattern != nil)
+    {
+      [self fillPath: path withPattern: pattern];
+      return;
+    }
+
   [self _paintPath: path_fill];
 }
 
@@ -1109,6 +1120,35 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   win = (WIN_INTERN *)GetWindowLong((HWND)window, GWL_USERDATA);
   if (win && !win->useHDC)
     ReleaseDC((HWND)window, hDC);
+}
+
+@end
+
+
+@implementation WIN32GState (PatternColor)
+
+- (void *) saveClip
+{
+  if (clipregion)
+    {
+      HRGN newClipRegion;
+
+      newClipRegion = CreateRectRgn(0, 0, 1, 1);
+      CombineRgn(newClipRegion, clipRegion, NULL, RGN_COPY);
+
+      return newClipRegion;
+    }
+  return clipregion;
+}
+
+- (void) restoreClip: (void *)savedClip
+{
+  if (clipregion)
+    {
+      DeleteObject(clipRegion);
+    }
+  clipregion = savedClip;
+  [self setClipMask];
 }
 
 @end

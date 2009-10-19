@@ -156,4 +156,14 @@
 
 @end
 
+@interface GSGState (PatternColor)
+
+- (void *) saveClip;
+- (void) restoreClip: (void *)savedClip;
+- (void) fillRect: (NSRect)rect withPattern: (NSImage*)pattern;
+- (void) fillPath: (NSBezierPath*)fillPath withPattern: (NSImage*)pattern;
+- (void) eofillPath: (NSBezierPath*)fillPath withPattern: (NSImage*)pattern;
+
+@end
+
 #endif

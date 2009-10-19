@@ -1462,6 +1462,12 @@ static Region emptyRegion;
 
 - (void)DPSeofill 
 {
+  if (pattern != nil)
+    {
+      [self eofillPath: path withPattern: pattern];
+      return;
+    }
+
   if ((cstate & COLOR_FILL) == 0)
     [self setColor: &fillColor state: COLOR_FILL];
 
@@ -1470,6 +1476,12 @@ static Region emptyRegion;
 
 - (void)DPSfill 
 {
+  if (pattern != nil)
+    {
+      [self fillPath: path withPattern: pattern];
+      return;
+    }
+
   if ((cstate & COLOR_FILL) == 0)
     [self setColor: &fillColor state: COLOR_FILL];
 
@@ -1519,6 +1531,12 @@ static Region emptyRegion;
   if (draw == 0)
     {
       DPS_WARN(DPSinvalidid, @"No Drawable defined for drawing");
+      return;
+    }
+
+  if (pattern != nil)
+    {
+      [self fillRect: NSMakeRect(x, y, w, h) withPattern: pattern];
       return;
     }
 
@@ -1876,6 +1894,32 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
   RDestroyXImage((RContext *)context, source_im);
   RDestroyXImage((RContext *)context, source_alpha);
   return dict;
+}
+
+@end
+
+@implementation XGGState (PatternColor)
+
+- (void *) saveClip
+{
+  if (clipregion)
+    {
+      Region region = XCreateRegion();
+
+      XIntersectRegion(clipregion, clipregion, region);
+      return region;
+    }
+  return clipregion;
+}
+
+- (void) restoreClip: (void *)savedClip
+{
+  if (clipregion)
+    {
+      XDestroyRegion(clipregion);
+    }
+  clipregion = savedClip;
+  [self setClipMask];
 }
 
 @end
