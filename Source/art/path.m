@@ -952,11 +952,23 @@ static void clip_svp_callback(void *data, int y, int start,
 
 - (void) DPSeofill
 {
+  if (pattern != nil)
+    {
+      [self eofillPath: path withPattern: pattern];
+      return;
+    }
+
   [self _fill: ART_WIND_RULE_ODDEVEN];
 }
 
 - (void) DPSfill
 {
+  if (pattern != nil)
+    {
+      [self fillPath: path withPattern: pattern];
+      return;
+    }
+
   [self _fill: ART_WIND_RULE_NONZERO];
 }
 
@@ -969,6 +981,13 @@ static void clip_svp_callback(void *data, int y, int start,
 
   if (!wi || !wi->data) return;
   if (all_clipped) return;
+
+  if (pattern != nil)
+    {
+      [self fillRect: NSMakeRect(x, y, w, h) withPattern: pattern];
+      return;
+    }
+
   if (!fill_color[3]) return;
 
   axis_aligned = [self _axis_rectangle: x : y : w : h vpath: vp

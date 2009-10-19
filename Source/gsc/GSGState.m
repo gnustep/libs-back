@@ -1157,6 +1157,7 @@ typedef enum {
 
   inverse = [matrix copy];
   [inverse invert];
+  ts = [inverse transformStruct];
 
   rect = [function affectedRect];
   iwidth = rect.size.width;
@@ -1217,3 +1218,89 @@ typedef enum {
 @end
 
 
+@implementation GSGState (PatternColor)
+
+- (void *) saveClip
+{
+  [self subclassResponsibility: _cmd];
+  return NULL;
+}
+
+- (void) restoreClip: (void *)savedClip
+{
+  [self subclassResponsibility: _cmd];
+}
+
+- (void) _fillRect: (NSRect)rect withPattern: (NSImage*)color_pattern
+{
+  NSSize size;
+  float x;
+  float y;
+
+  size = [pattern size];
+  y = floor(NSMinY(rect) / size.height) * size.height;
+  while (y < NSMaxY(rect))
+    {
+      x = floor(NSMinX(rect) / size.width) * size.width;
+      while (x < NSMaxX(rect))
+      {
+	  [color_pattern compositeToPoint: NSMakePoint(x, y)
+                         operation: NSCompositeSourceOver];
+	  x += size.width;
+      }
+      y += size.height;
+    }
+}
+
+- (void) fillRect: (NSRect)rect withPattern: (NSImage*)color_pattern
+{
+  NSBezierPath *oldPath = path;
+  void *oldClip;
+
+  oldClip = [self saveClip];
+  path = [NSBezierPath bezierPathWithRect: rect];
+  [self DPSclip];
+
+  [self _fillRect: rect withPattern: color_pattern];
+
+  [self restoreClip: oldClip];
+  path = oldPath;
+}
+
+- (void) fillPath: (NSBezierPath*)fillPath withPattern: (NSImage*)color_pattern
+{
+  NSBezierPath *oldPath = path;
+  NSRect rect;
+  void *oldClip;
+
+  oldClip = [self saveClip];
+  rect = [fillPath bounds];
+  path = fillPath;
+  [self DPSclip];
+
+  [self _fillRect: rect withPattern: color_pattern];
+
+  [self restoreClip: oldClip];
+  path = oldPath;
+  [self DPSnewpath];
+}
+
+- (void) eofillPath: (NSBezierPath*)fillPath withPattern: (NSImage*)color_pattern
+{
+  NSBezierPath *oldPath = path;
+  NSRect rect;
+  void *oldClip;
+
+  oldClip = [self saveClip];
+  rect = [fillPath bounds];
+  path = fillPath;
+  [self DPSeoclip];
+
+  [self _fillRect: rect withPattern: color_pattern];
+
+  [self restoreClip: oldClip];
+  path = oldPath;
+  [self DPSnewpath];
+}
+
+@end
