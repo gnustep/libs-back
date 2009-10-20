@@ -1129,7 +1129,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
 - (void *) saveClip
 {
-  if (clipregion)
+  if (clipRegion)
     {
       HRGN newClipRegion;
 
@@ -1138,17 +1138,16 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
       return newClipRegion;
     }
-  return clipregion;
+  return clipRegion;
 }
 
 - (void) restoreClip: (void *)savedClip
 {
-  if (clipregion)
+  if (clipRegion)
     {
       DeleteObject(clipRegion);
     }
-  clipregion = savedClip;
-  [self setClipMask];
+  clipRegion = savedClip;
 }
 
 @end
