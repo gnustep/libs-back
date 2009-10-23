@@ -1001,3 +1001,32 @@ static NSMapTable *gtable;
   ctxt_pop(obj, opstack, NSObject);
 }
 @end
+
+@implementation GSContext (NSGradient)
+- (void) drawGradient: (NSGradient*)gradient
+           fromCenter: (NSPoint)startCenter
+               radius: (CGFloat)startRadius
+             toCenter: (NSPoint)endCenter 
+               radius: (CGFloat)endRadius
+              options: (NSUInteger)options
+{
+  [gstate drawGradient: gradient
+          fromCenter: startCenter
+          radius: startRadius
+          toCenter: endCenter 
+          radius: endRadius
+          options: options];
+}
+
+- (void) drawGradient: (NSGradient*)gradient
+            fromPoint: (NSPoint)startPoint
+              toPoint: (NSPoint)endPoint
+              options: (NSUInteger)options
+{
+  [gstate drawGradient: gradient
+          fromPoint: startPoint
+          toPoint: endPoint
+          options: options];
+}
+
+@end

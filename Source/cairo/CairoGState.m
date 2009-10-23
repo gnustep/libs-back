@@ -30,6 +30,7 @@
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
 #include <AppKit/NSColor.h>
+#include <AppKit/NSGradient.h>
 #include <AppKit/NSGraphics.h>
 #include "cairo/CairoGState.h"
 #include "cairo/CairoFontInfo.h"
@@ -1410,6 +1411,89 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       cairo_rectangle_list_destroy(clip_rects);
     }
 #endif
+}
+
+@end
+
+@implementation CairoGState (NSGradient)
+
+- (void) drawGradient: (NSGradient*)gradient
+           fromCenter: (NSPoint)startCenter
+               radius: (CGFloat)startRadius
+             toCenter: (NSPoint)endCenter 
+               radius: (CGFloat)endRadius
+              options: (NSUInteger)options
+{
+  int i;
+  int stops = [gradient numberOfColorStops];
+  NSPoint startP = [ctm transformPoint: startCenter];
+  NSPoint endP = [ctm transformPoint: endCenter];
+  cairo_pattern_t *cpattern = cairo_pattern_create_radial(startP.x, startP.y, 
+                                                          floatFromUserSpace(ctm, startRadius),
+                                                          endP.x, endP.y, 
+                                                          floatFromUserSpace(ctm, endRadius));
+  for (i = 0; i < stops; i++)
+    {
+      NSColor *color;
+      CGFloat location;
+      double red;
+      double green;
+      double blue;
+      double alpha;
+
+      [gradient getColor: &color
+                location: &location
+                atIndex: i];
+      red = [color redComponent];
+      green = [color greenComponent];
+      blue = [color blueComponent];
+      alpha = [color alphaComponent];
+      cairo_pattern_add_color_stop_rgba(cpattern, location,
+                                        red, green, blue, alpha);
+    }
+  cairo_save(_ct);
+  cairo_set_source(_ct, cpattern);
+  cairo_pattern_destroy(cpattern);
+  cairo_paint(_ct);
+  cairo_restore(_ct);
+}
+
+- (void) drawGradient: (NSGradient*)gradient
+            fromPoint: (NSPoint)startPoint
+              toPoint: (NSPoint)endPoint
+              options: (NSUInteger)options
+{
+  int i;
+  int stops = [gradient numberOfColorStops];
+  NSPoint startP = [ctm transformPoint: startPoint];
+  NSPoint endP = [ctm transformPoint: endPoint];
+  cairo_pattern_t *cpattern = cairo_pattern_create_linear(startP.x, startP.y,
+                                                          endP.x, endP.y);
+
+  for (i = 0; i < stops; i++)
+    {
+      NSColor *color;
+      CGFloat location;
+      double red;
+      double green;
+      double blue;
+      double alpha;
+
+      [gradient getColor: &color
+                location: &location
+                atIndex: i];
+      red = [color redComponent];
+      green = [color greenComponent];
+      blue = [color blueComponent];
+      alpha = [color alphaComponent];
+      cairo_pattern_add_color_stop_rgba(cpattern, location,
+                                        red, green, blue, alpha);
+    }
+  cairo_save(_ct);
+  cairo_set_source(_ct, cpattern);
+  cairo_pattern_destroy(cpattern);
+  cairo_paint(_ct);
+  cairo_restore(_ct);
 }
 
 @end

@@ -1,3 +1,10 @@
+2009-10-23 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSContext.m,
+	* Headers/gsc/GSGStateOps.h,
+	* Source/gsc/GSGState.m: Empty definitions of gradient methods.
+	* Source/cairo/CairoGState.m: Simple cairo gradient implementation.
+
 2009-10-20 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/winlib/WIN32GState.m: Small correction of last change.

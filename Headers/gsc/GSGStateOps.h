@@ -27,6 +27,8 @@
 #ifndef _GSGStateOps_h_INCLUDE
 #define _GSGStateOps_h_INCLUDE
 
+@class NSGradient;
+
 @interface GSGState (Ops)
 /* ----------------------------------------------------------------------- */
 /* Color operations */
@@ -163,6 +165,22 @@
 - (void) fillRect: (NSRect)rect withPattern: (NSImage*)pattern;
 - (void) fillPath: (NSBezierPath*)fillPath withPattern: (NSImage*)pattern;
 - (void) eofillPath: (NSBezierPath*)fillPath withPattern: (NSImage*)pattern;
+
+@end
+
+@interface GSGState (NSGradient)
+
+- (void) drawGradient: (NSGradient*)gradient
+           fromCenter: (NSPoint)startCenter
+               radius: (CGFloat)startRadius
+             toCenter: (NSPoint)endCenter 
+               radius: (CGFloat)endRadius
+              options: (NSUInteger)options;
+
+- (void) drawGradient: (NSGradient*)gradient
+            fromPoint: (NSPoint)startPoint
+              toPoint: (NSPoint)endPoint
+              options: (NSUInteger)options;
 
 @end
 
