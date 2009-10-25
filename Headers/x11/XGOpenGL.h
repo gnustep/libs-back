@@ -25,8 +25,8 @@
    Boston, MA 02110-1301, USA.
 */ 
 
-#ifndef _GNUstep_H_XGOpenGL
-#define _GNUstep_H_XGOpenGL
+#ifndef _GNUstep_H_XGOpenGL_
+#define _GNUstep_H_XGOpenGL_
 
 #include <AppKit/NSOpenGL.h>
 
@@ -42,6 +42,7 @@
 
 @interface XGGLContext : NSOpenGLContext
 {
+  int glxminorversion;
   GLXContext        glx_context;
   GLXWindow         glx_drawable;
   XGXSubWindow     *xSubWindow;
@@ -55,33 +56,19 @@
 
 @interface XGGLPixelFormat : NSOpenGLPixelFormat
 {
-  @public
-  union
-    {
-      GLXFBConfig  *fbconfig;
-      XVisualInfo  *visualinfo;
-    } configurations;
-
+  Display * display;
+  long int glxminorversion;
+  GLXFBConfig  *fbconfig;
+  XVisualInfo  *visualinfo;  
   int configurationCount;
 }
 
-- (XVisualInfo *)xvinfo;
-- (GLXContext)createGLXContext: (XGGLContext *)share;
++ (int) glxMinorVersion;
+- (Display *) display;
+- (XVisualInfo *) visualinfo;
+- (GLXContext) createGLXContext: (XGGLContext *)share;
 - (GLXWindow) drawableForWindow: (Window)xwindowid;
 
 @end
-
-static inline int
-GSglxMinorVersion(Display *dpy)
-{
-  int major, minor;
-
-  if (False == glXQueryVersion(dpy, &major, &minor))
-    {
-      return -1;
-    }
-
-  return minor;
-}
 
 #endif
