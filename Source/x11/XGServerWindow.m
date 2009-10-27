@@ -3653,6 +3653,19 @@ static BOOL didCreatePixmaps;
   grab_window = NULL;
 }
 
+- (void) setMouseLocation: (NSPoint)mouseLocation onScreen: (int)aScreen
+{
+  int height;
+  int destX, destY;
+
+  height = DisplayHeight(dpy, aScreen);
+  destY = height - mouseLocation.y;
+  destX = mouseLocation.x;
+  
+  XWarpPointer(dpy, None, [self xDisplayRootWindowForScreen: aScreen],
+               0, 0, 0, 0, destX, destY);
+}
+
 - (void) setinputfocus: (int)win
 {
   gswindow_device_t *window = WINDOW_WITH_TAG(win);
