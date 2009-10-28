@@ -1,3 +1,7 @@
+2009-10-28 Thomas Gamper <icicle@cg.tuwien.ac.at>
+	* Source/x11/XGGLFormat.m
+    Check for GLX_VERSION_1_4.
+
 2009-10-28 Riccardo Mottola <rmottola@users.sf.net>
 	* Source/x11/XGGLFormat.m
 	cleaned up c99-isms

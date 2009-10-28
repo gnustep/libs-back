@@ -256,21 +256,29 @@ do \
 
           case NSOpenGLPFASampleBuffers:
             {
+              #ifdef GLX_VERSION_1_4
               if ( glxminorversion >= 4 )
                 {
                   ptr++;
                   append(GLX_SAMPLE_BUFFERS, *ptr);
                   break;
                 }
+              #else
+              break;
+              #endif
             }
           case NSOpenGLPFASamples:
             {
+              #ifdef GLX_VERSION_1_4
               if ( glxminorversion >= 4 )
                 {
                   ptr++;
                   append(GLX_SAMPLES, *ptr);
                   break;
                 }
+              #else
+              break;
+              #endif
             }
 
           case NSOpenGLPFAAuxDepthStencil:
