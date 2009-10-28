@@ -403,6 +403,7 @@ do \
 - (GLXWindow) drawableForWindow: (Window)xwindowid
 {
   GLXWindow win;
+  GLint error;
 
   if (glxminorversion >= 3)
     {
@@ -413,7 +414,7 @@ do \
       win = xwindowid;
     }
 
-  GLint error = glGetError();
+  error = glGetError();
   if ( error != GL_NO_ERROR )
     {
       NSDebugMLLog(@"GLX", 
