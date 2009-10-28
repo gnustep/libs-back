@@ -77,10 +77,11 @@
       forAttribute: (NSOpenGLPixelFormatAttribute)attrib 
   forVirtualScreen: (GLint)screen
 {
+  int error;
+
   NSAssert((fbconfig != NULL || visualinfo != NULL) && configurationCount > 0,
             NSInternalInconsistencyException);
 
-  int error;
 
   if (glxminorversion >= 3)
     {
@@ -308,6 +309,9 @@ do \
 
 - (id)initWithAttributes:(NSOpenGLPixelFormatAttribute *)attribs
 {
+  NSMutableData * glxAttributes;  
+  NSDictionary * dsattributes;
+
   self = [super init];
 
   fbconfig = NULL;
@@ -319,8 +323,8 @@ do \
   glxminorversion = [XGGLPixelFormat glxMinorVersion];
   NSDebugMLLog(@"GLX", @"minor version %d", glxminorversion);
 
-  NSMutableData * glxAttributes = [self assembleGLXAttributes:attribs];  
-  NSDictionary * dsattributes = [GSCurrentServer() attributes];
+  glxAttributes = [self assembleGLXAttributes:attribs];  
+  dsattributes = [GSCurrentServer() attributes];
 
   if (glxminorversion >= 3)
     {
