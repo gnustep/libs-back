@@ -1252,7 +1252,7 @@ typedef enum {
         {
           NSPoint p = NSMakePoint(x, y);
           
-          p = [ictm pointInMatrixSpace: p];
+          p = [ictm transformPoint: p];
 	  [color_pattern compositeToPoint: p
                          operation: NSCompositeSourceOver];
 	  x += size.width;
