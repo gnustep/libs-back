@@ -1236,6 +1236,12 @@ typedef enum {
   NSSize size;
   float x;
   float y;
+  NSAffineTransform *ictm;
+
+  // The coordinates we get here are already in device space,
+  // but compositeToPoint needs user space coordinates
+  ictm = [ctm copyWithZone: GSObjCZone(self)];
+  [ictm invert];
 
   size = [pattern size];
   y = floor(NSMinY(rect) / size.height) * size.height;
@@ -1243,13 +1249,17 @@ typedef enum {
     {
       x = floor(NSMinX(rect) / size.width) * size.width;
       while (x < NSMaxX(rect))
-      {
-	  [color_pattern compositeToPoint: NSMakePoint(x, y)
+        {
+          NSPoint p = NSMakePoint(x, y);
+          
+          p = [ictm pointInMatrixSpace: p];
+	  [color_pattern compositeToPoint: p
                          operation: NSCompositeSourceOver];
 	  x += size.width;
-      }
+        }
       y += size.height;
     }
+  RELEASE(ictm);
 }
 
 - (void) fillRect: (NSRect)rect withPattern: (NSImage*)color_pattern
