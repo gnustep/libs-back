@@ -256,7 +256,7 @@ do \
 
           case NSOpenGLPFASampleBuffers:
             {
-              #ifdef GLX_VERSION_1_4
+              #ifdef GLX_SAMPLE_BUFFERS
               if ( glxminorversion >= 4 )
                 {
                   ptr++;
@@ -269,7 +269,7 @@ do \
             }
           case NSOpenGLPFASamples:
             {
-              #ifdef GLX_VERSION_1_4
+              #ifdef GLX_SAMPLES
               if ( glxminorversion >= 4 )
                 {
                   ptr++;
