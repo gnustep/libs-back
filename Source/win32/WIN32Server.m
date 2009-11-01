@@ -541,7 +541,7 @@ NSLog(@"Callback");
 
   [self setFlagsforEventLoop: hwnd];
  
-NSLog(@"event %u", uMsg);
+//NSLog(@"event %u", uMsg);
   switch (uMsg) 
     { 
       case WM_SIZING: 
