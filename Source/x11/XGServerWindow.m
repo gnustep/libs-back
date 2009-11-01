@@ -327,14 +327,18 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
       if (styleMask & NSIconWindowMask)
 	{
 	  // FIXME
-	  hints->flags &= ~MWM_HINTS_DECORATIONS;
+	  hints->flags |= MWM_HINTS_DECORATIONS;
+	  hints->flags |= MWM_HINTS_FUNCTIONS;
 	  hints->decorations = 0;
+	  hints->functions = 0;
 	}
       if (styleMask & NSMiniWindowMask)
 	{
 	  // FIXME
-	  hints->flags &= ~MWM_HINTS_DECORATIONS;
+	  hints->flags |= MWM_HINTS_DECORATIONS;
+	  hints->flags |= MWM_HINTS_FUNCTIONS;
 	  hints->decorations = 0;
+	  hints->functions = 0;
 	}
     }  
   
@@ -2584,27 +2588,6 @@ NSLog(@"styleoffsets ... guessing offsets\n");
     XIconifyWindow(dpy, window->ident, window->screen);
   else
     XWithdrawWindow(dpy, window->ident, window->screen);
-
-  /* Now discard all events for this window up to (and including) the
-   * property notify which tells us it is in a miniaturised state.
-   * This measns we can safely assume that the next event showing the
-   * window in a mapped state will mean it has been deminiaturised.
-   *
-   * FIXME ... what if the window manager doesn't tell us that the window
-   * has gone?  Presumably we shouldn't wait forever?
-   */
-  XSync(dpy, False);
-  for (;;)
-    {
-      XWindowEvent(dpy, window->ident, 0xffffffff, &e);
-      if (e.type == PropertyNotify
-	&& e.xproperty.atom == generic.netstates.net_wm_state_atom
-	&& e.xproperty.state == PropertyNewValue
-	&& [self _ewmh_isMinimized: e.xproperty.window])
-	{
-	  break;
-	}
-    }
 }
 
 /**
