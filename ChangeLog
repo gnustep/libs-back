@@ -1,3 +1,7 @@
+2009-11-01 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/winlib/WIN32GState.m: first hack at GSReadRect implementation.
+
 2009-11-01  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Source/x11/XGServerWindow.m (setWindowHintsForStyle): Revert
