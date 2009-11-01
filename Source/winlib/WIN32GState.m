@@ -1151,3 +1151,183 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 }
 
 @end
+
+@implementation WIN32GState (ReadRect)
+
+- (NSDictionary *) GSReadRect: (NSRect)r
+{
+  NSMutableDictionary *dict;
+  NSAffineTransform *matrix;
+  double x, y;
+  NSMutableData *data;
+  unsigned char *cdata;
+  unsigned char *bits;
+  int i = 0;
+  HDC hDC;
+  HDC hdcMemDC = NULL;
+  HBITMAP hbitmap = NULL;
+  BITMAP bmpScreen;
+  HGDIOBJ old;
+  RECT rcClient;
+  DWORD dwBmpSize;
+  HANDLE hDIB;
+  LPBITMAPINFOHEADER lpbi;
+
+  if (window == NULL)
+    {
+      NSLog(@"No window in GSReadRect");
+      return nil;
+    }
+
+  r = [ctm rectInMatrixSpace: r];
+  x = NSWidth(r);
+  y = NSHeight(r);
+
+  dict = [NSMutableDictionary dictionary];
+  [dict setObject: NSDeviceRGBColorSpace forKey: @"ColorSpace"];
+
+  [dict setObject: [NSNumber numberWithUnsignedInt: 8]
+	   forKey: @"BitsPerSample"];
+  [dict setObject: [NSNumber numberWithUnsignedInt: 32]
+	   forKey: @"Depth"];
+  [dict setObject: [NSNumber numberWithUnsignedInt: 4] 
+           forKey: @"SamplesPerPixel"];
+  [dict setObject: [NSNumber numberWithUnsignedInt: 1]
+           forKey: @"HasAlpha"];
+
+  matrix = [self GSCurrentCTM];
+  [matrix translateXBy: -r.origin.x - offset.x 
+		   yBy: r.origin.y + NSHeight(r) - offset.y];
+  [dict setObject: matrix forKey: @"Matrix"];
+
+  hDC = GetDC((HWND)window);
+  if (!hDC)
+    {
+      NSLog(@"No DC for window %d in GSReadRect. Error %d", 
+	(int)window, GetLastError());
+      return nil;
+    }
+
+  // Create a compatible DC which is used in a BitBlt from the window DC
+  hdcMemDC = CreateCompatibleDC(hDC); 
+  if (!hdcMemDC)
+    {
+      NSLog(@"No Compatible DC for window %d in GSReadRect. Error %d", 
+	(int)window, GetLastError());
+      ReleaseDC((HWND)window, hDC);
+      return nil;
+    }
+
+  ReleaseDC((HWND)window, hDC);
+
+  hDC = [self getHDC];
+
+  // Get the client area for size calculation
+  rcClient = GSWindowRectToMS(self, r);
+
+  // Create a compatible bitmap from the Window DC
+  hbitmap = CreateCompatibleBitmap(hDC, rcClient.right - rcClient.left, 
+  rcClient.bottom - rcClient.top);
+  if (!hbitmap)
+    {
+      NSLog(@"No Compatible bitmap for window %d in GSReadRect. Error %d", 
+	(int)window, GetLastError());
+      ReleaseDC((HWND)window, hdcMemDC);
+      [self releaseHDC: hDC];
+      return nil;
+    }
+
+  // Select the compatible bitmap into the compatible memory DC.
+  old = SelectObject(hdcMemDC, hbitmap);
+  if (!old)
+    {
+      NSLog(@"SelectObject failed for window %d in GSReadRect. Error %d", 
+	(int)window, GetLastError());
+      DeleteObject(hbitmap);
+      ReleaseDC((HWND)window, hdcMemDC);
+      [self releaseHDC: hDC];
+      return nil;
+    }
+
+  // Bit block transfer into our compatible memory DC.
+  if (!BitBlt(hdcMemDC, 0, 0, 
+    rcClient.right - rcClient.left, 
+    rcClient.bottom - rcClient.top, 
+    hDC, 
+    0, 0,
+    SRCCOPY))
+    {
+      NSLog(@"BitBlt failed for window %d in GSReadRect. Error %d", 
+	(int)window, GetLastError());
+      DeleteObject(hbitmap);
+      ReleaseDC((HWND)window, hdcMemDC);
+      [self releaseHDC: hDC];
+      return nil;
+    }
+
+  // Get the BITMAP from the HBITMAP
+  GetObject(hbitmap, sizeof(BITMAP), &bmpScreen);
+
+  dwBmpSize = bmpScreen.bmWidth * 4 * bmpScreen.bmHeight;
+
+  hDIB = GlobalAlloc(GHND, dwBmpSize + sizeof(BITMAPINFOHEADER)); 
+  lpbi = (LPBITMAPINFOHEADER)GlobalLock(hDIB);    
+  lpbi->biSize = sizeof(BITMAPINFOHEADER);    
+  lpbi->biWidth = bmpScreen.bmWidth;    
+  lpbi->biHeight = bmpScreen.bmHeight;  
+  lpbi->biPlanes = 1;    
+  lpbi->biBitCount = 32;    
+  lpbi->biCompression = BI_RGB;    
+  lpbi->biSizeImage = 0;  
+  lpbi->biXPelsPerMeter = 0;    
+  lpbi->biYPelsPerMeter = 0;    
+  lpbi->biClrUsed = 0;    
+  lpbi->biClrImportant = 0;
+
+  // Gets the "bits" from the bitmap and copies them into a buffer 
+  // which is pointed to by lpbi
+  GetDIBits(hDC, hbitmap, 0,
+    (UINT)bmpScreen.bmHeight, 
+    lpbi,
+    (BITMAPINFO *)lpbi, DIB_RGB_COLORS);    
+
+  data = [NSMutableData dataWithLength: dwBmpSize];
+  if (data == nil)
+    {
+      DeleteObject(hbitmap);
+      ReleaseDC((HWND)window, hdcMemDC);
+      [self releaseHDC: hDC];
+      return nil;
+    }
+
+  // Copy to data
+  cdata = [data mutableBytes];
+  bits = (unsigned char *)lpbi + sizeof(BITMAPINFOHEADER);
+  while (i < dwBmpSize)
+    {
+      cdata[i+0] = bits[i+2];
+      cdata[i+1] = bits[i+1];
+      cdata[i+2] = bits[i+0];
+      cdata[i+3] = 0xFF;
+      i += 4;
+    }
+
+
+  //Unlock and Free the DIB from the heap
+  GlobalUnlock(hDIB);    
+  GlobalFree(hDIB);
+
+  //Clean up
+  DeleteObject(hbitmap);
+  ReleaseDC((HWND)window, hdcMemDC);
+  [self releaseHDC: hDC];
+
+  [dict setObject: [NSValue valueWithSize: NSMakeSize(bmpScreen.bmWidth,
+  bmpScreen.bmHeight)]
+  forKey: @"Size"];
+  [dict setObject: data forKey: @"Data"];
+
+  return dict;
+}
+
+@end
