@@ -1301,12 +1301,13 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 
   [source->ctm boundingRectFor: aRect result: &aRect];
 
-  if ((copyOnSelf) && (cairo_version() >= CAIRO_VERSION_ENCODE(1, 8, 0)))
+  //  if ((copyOnSelf) && (cairo_version() >= CAIRO_VERSION_ENCODE(1, 8, 0)))
+  if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 8, 0))
     {
-      NSSize size = [_surface size];
+      NSSize size = [source->_surface size];
       
       // For cairo > 1.8 we seem to need this adjustment
-      aRect.origin.y -= 2*(offset.y - size.height);
+      aRect.origin.y -= 2*(source->offset.y - size.height);
     }
 
   x = floorf(aPoint.x);
