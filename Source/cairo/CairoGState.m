@@ -1300,8 +1300,6 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   }
 
   [source->ctm boundingRectFor: aRect result: &aRect];
-
-  //  if ((copyOnSelf) && (cairo_version() >= CAIRO_VERSION_ENCODE(1, 8, 0)))
   if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 8, 0))
     {
       NSSize size = [source->_surface size];
