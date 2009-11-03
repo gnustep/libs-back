@@ -302,6 +302,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
   device_color_t c;
 
   [super setColor: color state: cState];
+  /*
   if (_ct == NULL)
     {
       // Window device isn't set yet
@@ -311,6 +312,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
   gsColorToRGB(&c);
   // The underlying concept does not allow to determine if alpha is set or not.
   cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], c.field[AINDEX]);
+  */
 }
 
 - (void) GSSetPatterColor: (NSImage*)image 
@@ -499,7 +501,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
   cairo_set_matrix(_ct, &local_matrix);
 
   // super call did go to the old _ct, so redo it
-  [self setColor: &fillColor state: COLOR_BOTH];
+  //[self setColor: &fillColor state: COLOR_BOTH];
 
   // Cairo's default line width is 2.0
   cairo_set_line_width(_ct, 1.0);
@@ -811,12 +813,18 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
+      device_color_t c;
+
       if (pattern != nil)
         {
           [self eofillPath: path withPattern: pattern];
           return;
         }
 
+      c = fillColor;
+      gsColorToRGB(&c);
+      // The underlying concept does not allow to determine if alpha is set or not.
+      cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], c.field[AINDEX]);
       [self _setPath:YES];
       cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_EVEN_ODD);
       cairo_fill(_ct);
@@ -829,12 +837,18 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
+      device_color_t c;
+
       if (pattern != nil)
         {
           [self fillPath: path withPattern: pattern];
           return;
         }
 
+      c = fillColor;
+      gsColorToRGB(&c);
+      // The underlying concept does not allow to determine if alpha is set or not.
+      cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], c.field[AINDEX]);
       [self _setPath:YES];
       cairo_fill(_ct);
     }
@@ -853,6 +867,12 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
+      device_color_t c;
+
+      c = strokeColor;
+      gsColorToRGB(&c);
+      // The underlying concept does not allow to determine if alpha is set or not.
+      cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], c.field[AINDEX]);
       [self _setPath:NO];
       cairo_stroke(_ct);
     }
@@ -1224,10 +1244,15 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   if (_ct)
     {
       NSBezierPath *oldPath = path;
+      device_color_t c;
 
       cairo_save(_ct);
       _set_op(_ct, op);
 
+      c = fillColor;
+      gsColorToRGB(&c);
+      // The underlying concept does not allow to determine if alpha is set or not.
+      cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], c.field[AINDEX]);
       // This is almost a rectclip::::, but the path stays unchanged.
       path = [NSBezierPath bezierPathWithRect: aRect];
       [path transformUsingAffineTransform: ctm];

@@ -52,7 +52,8 @@ draw_info_t ART_DI;
   unsigned char r,g,b;
 
   [super setColor: color  state: cState];
-  if (cState&(COLOR_FILL|COLOR_STROKE))
+
+  if (cState & COLOR_FILL)
     {
       c = fillColor;
       gsColorToRGB(&c); /* TODO: check this */
@@ -66,20 +67,30 @@ draw_info_t ART_DI;
       if (c.field[2] < 0.0) c.field[2] = 0.0;
       b = c.field[2] * 255;
 
-      if (cState & COLOR_FILL)
-        {
-	  fill_color[0] = r;
-	  fill_color[1] = g;
-	  fill_color[2] = b;
-	  fill_color[3] = fillColor.field[AINDEX] * 255;
-	}
-      if (cState & COLOR_STROKE)
-        {
-	  stroke_color[0] = r;
-	  stroke_color[1] = g;
-	  stroke_color[2] = b;
-	  stroke_color[3] = strokeColor.field[AINDEX] * 255;
-	}
+      fill_color[0] = r;
+      fill_color[1] = g;
+      fill_color[2] = b;
+      fill_color[3] = fillColor.field[AINDEX] * 255;
+    }
+
+  if (cState & COLOR_STROKE)
+    {
+      c = strokeColor;
+      gsColorToRGB(&c); /* TODO: check this */
+      if (c.field[0] > 1.0) c.field[0] = 1.0;
+      if (c.field[0] < 0.0) c.field[0] = 0.0;
+      r = c.field[0] * 255;
+      if (c.field[1] > 1.0) c.field[1] = 1.0;
+      if (c.field[1] < 0.0) c.field[1] = 0.0;
+      g = c.field[1] * 255;
+      if (c.field[2] > 1.0) c.field[2] = 1.0;
+      if (c.field[2] < 0.0) c.field[2] = 0.0;
+      b = c.field[2] * 255;
+
+      stroke_color[0] = r;
+      stroke_color[1] = g;
+      stroke_color[2] = b;
+      stroke_color[3] = strokeColor.field[AINDEX] * 255;
     }
 }
 

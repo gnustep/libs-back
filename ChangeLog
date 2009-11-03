@@ -1,5 +1,11 @@
 2009-11-03 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/cairo/CairoGState.m: Set the fill or stroke colour
+	immediatly before the drawing.
+	* Source/art/ARTGState.m (-setColor:state:): Handle stroke colour correctly.
+
+2009-11-03 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/cairo/CairoGState.m (-compositeGState:...): Use the
 	offset adjustment for cairo > 1.8 in the general case.
 
