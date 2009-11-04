@@ -31,7 +31,12 @@
 
 // Define this so we pick up AlphaBlend, when loading windows.h
 #ifdef USE_ALPHABLEND
+#if	!defined(WINVER)
 #define WINVER 0x0500
+#elif (WINVER < 0x0500)
+#undef	WINVER
+#define WINVER 0x0500
+#endif
 #endif
 
 #include <AppKit/NSAffineTransform.h>
@@ -1166,7 +1171,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   HDC hDC;
   HDC hdcMemDC = NULL;
   HBITMAP hbitmap = NULL;
-  BITMAP bmpScreen;
+  BITMAP bmpCopied;
   HGDIOBJ old;
   RECT rcClient;
   DWORD dwBmpSize;
@@ -1219,7 +1224,6 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
     }
 
   ReleaseDC((HWND)window, hDC);
-
   hDC = [self getHDC];
 
   // Get the client area for size calculation
@@ -1266,15 +1270,15 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
     }
 
   // Get the BITMAP from the HBITMAP
-  GetObject(hbitmap, sizeof(BITMAP), &bmpScreen);
+  GetObject(hbitmap, sizeof(BITMAP), &bmpCopied);
 
-  dwBmpSize = bmpScreen.bmWidth * 4 * bmpScreen.bmHeight;
+  dwBmpSize = bmpCopied.bmWidth * 4 * bmpCopied.bmHeight;
 
   hDIB = GlobalAlloc(GHND, dwBmpSize + sizeof(BITMAPINFOHEADER)); 
   lpbi = (LPBITMAPINFOHEADER)GlobalLock(hDIB);    
   lpbi->biSize = sizeof(BITMAPINFOHEADER);    
-  lpbi->biWidth = bmpScreen.bmWidth;    
-  lpbi->biHeight = bmpScreen.bmHeight;  
+  lpbi->biWidth = bmpCopied.bmWidth;    
+  lpbi->biHeight = bmpCopied.bmHeight;  
   lpbi->biPlanes = 1;    
   lpbi->biBitCount = 32;    
   lpbi->biCompression = BI_RGB;    
@@ -1283,17 +1287,28 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   lpbi->biYPelsPerMeter = 0;    
   lpbi->biClrUsed = 0;    
   lpbi->biClrImportant = 0;
+  bits = (unsigned char *)lpbi + sizeof(BITMAPINFOHEADER);
 
   // Gets the "bits" from the bitmap and copies them into a buffer 
   // which is pointed to by lpbi
-  GetDIBits(hDC, hbitmap, 0,
-    (UINT)bmpScreen.bmHeight, 
-    lpbi,
-    (BITMAPINFO *)lpbi, DIB_RGB_COLORS);    
+  if (GetDIBits(hdcMemDC, hbitmap, 0, (UINT)bmpCopied.bmHeight, bits,
+    (BITMAPINFO *)lpbi, DIB_RGB_COLORS) == 0)
+    {
+      NSLog(@"GetDIBits failed for window %d in GSReadRect. Error %d", 
+	(int)window, GetLastError());
+      GlobalUnlock(hDIB);    
+      GlobalFree(hDIB);
+      DeleteObject(hbitmap);
+      ReleaseDC((HWND)window, hdcMemDC);
+      [self releaseHDC: hDC];
+      return nil;
+    }
 
   data = [NSMutableData dataWithLength: dwBmpSize];
   if (data == nil)
     {
+      GlobalUnlock(hDIB);    
+      GlobalFree(hDIB);
       DeleteObject(hbitmap);
       ReleaseDC((HWND)window, hdcMemDC);
       [self releaseHDC: hDC];
@@ -1302,7 +1317,6 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
   // Copy to data
   cdata = [data mutableBytes];
-  bits = (unsigned char *)lpbi + sizeof(BITMAPINFOHEADER);
   while (i < dwBmpSize)
     {
       cdata[i+0] = bits[i+2];
@@ -1322,8 +1336,8 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   ReleaseDC((HWND)window, hdcMemDC);
   [self releaseHDC: hDC];
 
-  [dict setObject: [NSValue valueWithSize: NSMakeSize(bmpScreen.bmWidth,
-  bmpScreen.bmHeight)]
+  [dict setObject: [NSValue valueWithSize: NSMakeSize(bmpCopied.bmWidth,
+  bmpCopied.bmHeight)]
   forKey: @"Size"];
   [dict setObject: data forKey: @"Data"];
 
