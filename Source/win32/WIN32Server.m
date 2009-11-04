@@ -480,7 +480,7 @@ NSLog(@"Callback");
       estyle = WS_EX_TOOLWINDOW;
     } 
 
-   return estyle;
+  return estyle;
 }
 
 - (void) resizeBackingStoreFor: (HWND)hwnd
@@ -868,7 +868,7 @@ NSLog(@"Callback");
               type, style, screen);
   NSDebugLLog(@"WTrace", @"         device frame: %d, %d, %d, %d", 
               r.left, r.top, r.right - r.left, r.bottom - r.top);
-  hwnd = CreateWindowEx(estyle, 
+  hwnd = CreateWindowEx(estyle | WS_EX_LAYERED, 
                         "GNUstepWindowClass", 
                         "GNUstepWindow", 
                         wstyle, 
@@ -881,6 +881,8 @@ NSLog(@"Callback");
                         hinstance, 
                         (void*)type);
   NSDebugLLog(@"WTrace", @"         num/handle: %d", hwnd);
+
+  SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
 
   [self _setWindowOwnedByServer: (int)hwnd];
   return (int)hwnd;

@@ -1,8 +1,14 @@
+2009-11-04 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source\winlib\WIN32GState.m: Fixes for read image.
+	* Source\win32\WIN32Server.m: Use layered window for alpha.
+
 2009-11-03 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m: Set the fill or stroke colour
 	immediatly before the drawing.
-	* Source/art/ARTGState.m (-setColor:state:): Handle stroke colour correctly.
+	* Source/art/ARTGState.m (-setColor:state:): Handle stroke colour
+	correctly.
 
 2009-11-03 Fred Kiefer <FredKiefer@gmx.de>
 
