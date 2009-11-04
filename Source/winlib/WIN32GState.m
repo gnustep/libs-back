@@ -1176,7 +1176,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   RECT rcClient;
   DWORD dwBmpSize;
   HANDLE hDIB;
-  LPBITMAPINFOHEADER lpbi;
+  LPBITMAPV4HEADER lpbi;
 
   if (window == NULL)
     {
@@ -1274,25 +1274,29 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
   dwBmpSize = bmpCopied.bmWidth * 4 * bmpCopied.bmHeight;
 
-  hDIB = GlobalAlloc(GHND, dwBmpSize + sizeof(BITMAPINFOHEADER)); 
-  lpbi = (LPBITMAPINFOHEADER)GlobalLock(hDIB);    
-  lpbi->biSize = sizeof(BITMAPINFOHEADER);    
-  lpbi->biWidth = bmpCopied.bmWidth;    
-  lpbi->biHeight = bmpCopied.bmHeight;  
-  lpbi->biPlanes = 1;    
-  lpbi->biBitCount = 32;    
-  lpbi->biCompression = BI_RGB;    
-  lpbi->biSizeImage = 0;  
-  lpbi->biXPelsPerMeter = 0;    
-  lpbi->biYPelsPerMeter = 0;    
-  lpbi->biClrUsed = 0;    
-  lpbi->biClrImportant = 0;
-  bits = (unsigned char *)lpbi + sizeof(BITMAPINFOHEADER);
+  hDIB = GlobalAlloc(GHND, dwBmpSize + sizeof(BITMAPV4HEADER)); 
+  lpbi = (LPBITMAPV4HEADER)GlobalLock(hDIB);    
+  lpbi->bV4Size = sizeof(BITMAPV4HEADER);
+  lpbi->bV4V4Compression = BI_BITFIELDS;
+  lpbi->bV4BlueMask = 0x000000FF;
+  lpbi->bV4GreenMask = 0x0000FF00;
+  lpbi->bV4RedMask = 0x00FF0000;
+  lpbi->bV4AlphaMask = 0xFF000000;
+  lpbi->bV4Width = bmpCopied.bmWidth;    
+  lpbi->bV4Height = bmpCopied.bmHeight;  
+  lpbi->bV4Planes = 1;    
+  lpbi->bV4BitCount = 32;    
+  lpbi->bV4SizeImage = 0;  
+  lpbi->bV4XPelsPerMeter = 0;    
+  lpbi->bV4YPelsPerMeter = 0;    
+  lpbi->bV4ClrUsed = 0;    
+  lpbi->bV4ClrImportant = 0;
+  bits = (unsigned char *)lpbi + sizeof(BITMAPV4HEADER);
 
   // Gets the "bits" from the bitmap and copies them into a buffer 
   // which is pointed to by lpbi
   if (GetDIBits(hdcMemDC, hbitmap, 0, (UINT)bmpCopied.bmHeight, bits,
-    (BITMAPINFO *)lpbi, DIB_RGB_COLORS) == 0)
+    (BITMAPINFOHEADER *)lpbi, DIB_RGB_COLORS) == 0)
     {
       NSLog(@"GetDIBits failed for window %d in GSReadRect. Error %d", 
 	(int)window, GetLastError());
@@ -1322,7 +1326,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
       cdata[i+0] = bits[i+2];
       cdata[i+1] = bits[i+1];
       cdata[i+2] = bits[i+0];
-      cdata[i+3] = 0xFF;
+      cdata[i+3] = bits[i+3];
       i += 4;
     }
 
