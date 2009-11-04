@@ -297,24 +297,6 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 /*
  * Color operations
  */
-- (void) setColor: (device_color_t *)color state: (color_state_t)cState
-{
-  device_color_t c;
-
-  [super setColor: color state: cState];
-  /*
-  if (_ct == NULL)
-    {
-      // Window device isn't set yet
-      return;
-    }
-  c = fillColor;
-  gsColorToRGB(&c);
-  // The underlying concept does not allow to determine if alpha is set or not.
-  cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], c.field[AINDEX]);
-  */
-}
-
 - (void) GSSetPatterColor: (NSImage*)image 
 {
   // FIXME: Create a cairo surface from the image and set it as source.
@@ -499,9 +481,6 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
   cairo_matrix_init_scale(&local_matrix, 1, -1);
   cairo_matrix_translate(&local_matrix, 0,  -[_surface size].height);
   cairo_set_matrix(_ct, &local_matrix);
-
-  // super call did go to the old _ct, so redo it
-  //[self setColor: &fillColor state: COLOR_BOTH];
 
   // Cairo's default line width is 2.0
   cairo_set_line_width(_ct, 1.0);
