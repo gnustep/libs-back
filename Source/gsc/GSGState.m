@@ -120,15 +120,10 @@
     in the current color */
 - (void) setColor: (device_color_t *)color state: (color_state_t)cState
 {
-  float alpha;
-  alpha = fillColor.field[AINDEX];
   if (cState & COLOR_FILL)
     fillColor = *color;
-  fillColor.field[AINDEX] = alpha;
-  alpha = strokeColor.field[AINDEX];
   if (cState & COLOR_STROKE)
     strokeColor = *color;
-  strokeColor.field[AINDEX] = alpha;
   cstate = cState;
   DESTROY(pattern);
 }
@@ -258,6 +253,8 @@
   CLAMP(y)
   CLAMP(k)
   gsMakeColor(&col, cmyk_colorspace, c, m, y, k);
+  // Keep the old alpha value
+  col.field[AINDEX] = fillColor.field[AINDEX];
   [self setColor: &col state: COLOR_BOTH];
 }
 
@@ -266,6 +263,8 @@
   device_color_t col;
   CLAMP(gray)
   gsMakeColor(&col, gray_colorspace, gray, 0, 0, 0);
+  // Keep the old alpha value
+  col.field[AINDEX] = fillColor.field[AINDEX];
   [self setColor: &col  state: COLOR_BOTH];
 }
 
@@ -276,6 +275,8 @@
   CLAMP(s)
   CLAMP(b)
   gsMakeColor(&col, hsb_colorspace, h, s, b, 0);
+  // Keep the old alpha value
+  col.field[AINDEX] = fillColor.field[AINDEX];
   [self setColor: &col state: COLOR_BOTH];
 }
 
@@ -286,6 +287,8 @@
   CLAMP(g)
   CLAMP(b)
   gsMakeColor(&col, rgb_colorspace, r, g, b, 0);
+  // Keep the old alpha value
+  col.field[AINDEX] = fillColor.field[AINDEX];
   [self setColor: &col state: COLOR_BOTH];
 }
 
@@ -296,6 +299,8 @@
 
   ASSIGN(fillColorS, spaceref);
   gsMakeColor(&col, rgb_colorspace, 0, 0, 0, 0);
+  // Keep the old alpha value
+  col.field[AINDEX] = fillColor.field[AINDEX];
   [self setColor: &col state: COLOR_FILL];
 }
 
@@ -305,6 +310,8 @@
 
   ASSIGN(strokeColorS, spaceref);
   gsMakeColor(&col, rgb_colorspace, 0, 0, 0, 0);
+  // Keep the old alpha value
+  col.field[AINDEX] = fillColor.field[AINDEX];
   [self setColor: &col state: COLOR_STROKE];
 }
 
@@ -322,6 +329,7 @@
       DPS_ERROR(DPSundefined, @"No fill colorspace defined, assume DeviceRGB");
       gsMakeColor(&dcolor, rgb_colorspace, values[0], values[1], 
                   values[2], values[3]);
+      dcolor.field[AINDEX] = values[4];
     }
   else 
     {
@@ -348,6 +356,7 @@
       DPS_ERROR(DPSundefined, @"No stroke colorspace defined, assume DeviceRGB");
       gsMakeColor(&dcolor, rgb_colorspace, values[0], values[1], 
                   values[2], values[3]);
+      dcolor.field[AINDEX] = values[4];
     }
   else 
     {
@@ -641,7 +650,6 @@ typedef enum {
      stroking unless fill and/or stroke color is set explicitly */
   gsMakeColor(&fillColor, gray_colorspace, 0, 0, 0, 0);
   fillColor.field[AINDEX] = 1.0;
-  strokeColor.field[AINDEX] = 1.0;
   [self setColor: &fillColor state: COLOR_BOTH];
 
   charSpacing = 0;
