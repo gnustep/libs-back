@@ -367,6 +367,12 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
       cairo_matrix_t saved_matrix;
       cairo_matrix_t local_matrix;
       NSPoint        p = [path currentPoint];
+      device_color_t c;
+
+      c = strokeColor;
+      gsColorToRGB(&c);
+      // The underlying concept does not allow to determine if alpha is set or not.
+      cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], c.field[AINDEX]);
 
       cairo_get_matrix(_ct, &saved_matrix);
 
@@ -411,12 +417,18 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
-      GS_BEGINITEMBUF(c, length + 1, char);
+      GS_BEGINITEMBUF(chars, length + 1, char);
+      device_color_t c;
+
+      c = strokeColor;
+      gsColorToRGB(&c);
+      // The underlying concept does not allow to determine if alpha is set or not.
+      cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], c.field[AINDEX]);
 
       [self _setPoint];
-      memcpy(c, string, length);
-      c[length] = 0;
-      cairo_show_text(_ct, c);
+      memcpy(chars, string, length);
+      chars[length] = 0;
+      cairo_show_text(_ct, chars);
       GS_ENDITEMBUF();
     }
 }
@@ -427,6 +439,12 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
     {
       cairo_matrix_t local_matrix;
       NSAffineTransformStruct	matrix = [ctm transformStruct];
+      device_color_t c;
+
+      c = strokeColor;
+      gsColorToRGB(&c);
+      // The underlying concept does not allow to determine if alpha is set or not.
+      cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], c.field[AINDEX]);
 
       [self _setPoint];
       // FIXME: Hack to get font in rotated view working
