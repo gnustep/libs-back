@@ -1,3 +1,7 @@
+2009-11-05 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m: Set the colour for all text drawing.
+
 2009-11-04 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSGState.m (-setColor:state:): Don't handle alpha specially.
