@@ -3835,7 +3835,7 @@ static BOOL didCreatePixmaps;
 
 - (void *) windowDevice: (int)win
 {
-  static Window ptrloc;
+  Window ptrloc;
   gswindow_device_t *window;
 
   window = WINDOW_WITH_TAG(win);
@@ -3843,7 +3843,7 @@ static BOOL didCreatePixmaps;
     ptrloc = window->ident;
   else
     ptrloc = 0;
-  return &ptrloc;
+  return (void *)ptrloc;
 }
 
 /* Cursor Ops */
