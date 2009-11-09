@@ -352,6 +352,11 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
   return self;
 }
 
+- (NSString*) displayName
+{
+  return face_info->displayName;
+}
+
 - (void) set
 {
   NSLog(@"ignore -set method of font '%@'", fontName);
