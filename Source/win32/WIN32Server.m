@@ -247,48 +247,50 @@ NSLog(@"Callback");
 
   self = [super initWithAttributes: info];
 
-  if(self)
-  {
-    [self _initWin32Context];
-    [super initWithAttributes: info];
+  if (self)
+    {
+      [self _initWin32Context];
+      [super initWithAttributes: info];
 
-    [self setupRunLoopInputSourcesForMode: NSDefaultRunLoopMode]; 
-    [self setupRunLoopInputSourcesForMode: NSConnectionReplyMode]; 
-    [self setupRunLoopInputSourcesForMode: NSModalPanelRunLoopMode]; 
-    [self setupRunLoopInputSourcesForMode: NSEventTrackingRunLoopMode]; 
+      [self setupRunLoopInputSourcesForMode: NSDefaultRunLoopMode]; 
+      [self setupRunLoopInputSourcesForMode: NSConnectionReplyMode]; 
+      [self setupRunLoopInputSourcesForMode: NSModalPanelRunLoopMode]; 
+      [self setupRunLoopInputSourcesForMode: NSEventTrackingRunLoopMode]; 
 
-    [self setHandlesWindowDecorations: NO];
-    [self setUsesNativeTaskbar: YES];
+      [self setHandlesWindowDecorations: YES];
+      [self setUsesNativeTaskbar: YES];
 
-    { // Check user defaults
-      NSUserDefaults	*defs;
-      defs = [NSUserDefaults standardUserDefaults];
- 
-      if ([defs objectForKey: @"GSUseWMStyles"])
-        {
-          NSWarnLog(@"Usage of 'GSUseWMStyles' as user default option is deprecated. "
-                    @"This option will be ignored in future versions. "
-                    @"You should use 'GSBackHandlesWindowDecorations' option.");
-          [self setHandlesWindowDecorations: ![defs boolForKey: @"GSUseWMStyles"]];
-        }
-      if ([defs objectForKey: @"GSUsesWMTaskbar"])
-        {
-          NSWarnLog(@"Usage of 'GSUseWMTaskbar' as user default option is deprecated. "
-                    @"This option will be ignored in future versions. "
-                    @"You should use 'GSBackUsesNativeTaskbar' option.");
-          [self setUsesNativeTaskbar: [defs boolForKey: @"GSUseWMTaskbar"]];
-        }
+      { // Check user defaults
+	NSUserDefaults	*defs;
+	defs = [NSUserDefaults standardUserDefaults];
+   
+	if ([defs objectForKey: @"GSUseWMStyles"])
+	  {
+	    NSWarnLog(@"Usage of 'GSUseWMStyles' as user default option is deprecated. "
+		      @"This option will be ignored in future versions. "
+		      @"You should use 'GSBackHandlesWindowDecorations' option.");
+	    [self setHandlesWindowDecorations: ![defs boolForKey: @"GSUseWMStyles"]];
+	  }
+	if ([defs objectForKey: @"GSUsesWMTaskbar"])
+	  {
+	    NSWarnLog(@"Usage of 'GSUseWMTaskbar' as user default option is deprecated. "
+		      @"This option will be ignored in future versions. "
+		      @"You should use 'GSBackUsesNativeTaskbar' option.");
+	    [self setUsesNativeTaskbar: [defs boolForKey: @"GSUseWMTaskbar"]];
+	  }
 
-      if ([defs objectForKey: @"GSBackHandlesWindowDecorations"])
-        {
-          [self setHandlesWindowDecorations: [defs boolForKey: @"GSBackHandlesWindowDecorations"]];
-        } 
-      if ([defs objectForKey: @"GSBackUsesNativeTaskbar"])
-        {
-          [self setUsesNativeTaskbar: [defs boolForKey: @"GSUseNativeTaskbar"]];
-        }
+	if ([defs objectForKey: @"GSBackHandlesWindowDecorations"])
+	  {
+	    [self setHandlesWindowDecorations:
+	      [defs boolForKey: @"GSBackHandlesWindowDecorations"]];
+	  } 
+	if ([defs objectForKey: @"GSBackUsesNativeTaskbar"])
+	  {
+	    [self setUsesNativeTaskbar:
+	      [defs boolForKey: @"GSUseNativeTaskbar"]];
+	  }
+      }
     }
-  }
   return self;
 }
 
