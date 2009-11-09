@@ -48,6 +48,7 @@
 #include <AppKit/NSText.h>
 #include <AppKit/NSTextField.h>
 #include <AppKit/DPSOperators.h>
+#include <GNUstepGUI/GSTheme.h>
 
 #include "win32/WIN32Server.h"
 #include "win32/WIN32Geometry.h"
@@ -260,6 +261,7 @@ NSLog(@"Callback");
       [self setHandlesWindowDecorations: YES];
       [self setUsesNativeTaskbar: YES];
 
+      [GSTheme theme];
       { // Check user defaults
 	NSUserDefaults	*defs;
 	defs = [NSUserDefaults standardUserDefaults];
