@@ -1,3 +1,9 @@
+2009-11-10 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source\win32\WIN32Server.m: Track mouse button state so that when
+	mouse down events are lost (which appears occasionally to be the case)
+	we can simulate the missing event.
+
 2009-11-08 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-windowDevice:): Don't return a
