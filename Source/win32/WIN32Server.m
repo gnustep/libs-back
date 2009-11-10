@@ -96,7 +96,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 {
   MSG msg;
   WINBOOL bRet; 
-NSLog(@"Callback");
+//NSLog(@"Callback");
   while ((bRet = PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) != 0)
     { 
       if (msg.message == WM_QUIT)
@@ -563,9 +563,9 @@ NSLog(@"Callback");
         if ([self handlesWindowDecorations])
           [self decodeWM_NCPAINTParams: wParam : lParam : hwnd]; 
         break;
-     //case WM_SHOWWINDOW: 
+      case WM_SHOWWINDOW: 
       //[self decodeWM_SHOWWINDOWParams: wParam : lParam : hwnd]; 
-      //break;
+        break;
       case WM_NCDESTROY: 
         [self decodeWM_NCDESTROYParams: wParam : lParam : hwnd]; 
         break;
@@ -711,6 +711,8 @@ NSLog(@"Callback");
         break;
       case WM_LBUTTONUP: //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONUP", hwnd);
+ev = process_mouse_event(self, hwnd, wParam, lParam, NSLeftMouseDown);
+[GSCurrentServer() postEvent: ev atStart: NO];
         ev = process_mouse_event(self, hwnd, wParam, lParam, NSLeftMouseUp);
         break;
       case WM_LBUTTONDBLCLK: //MOUSE
@@ -1171,6 +1173,9 @@ NSLog(@"Callback");
 
   SetWindowPos((HWND)winNum, (HWND)otherWin, 0, 0, 0, 0, 
     SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+
+  if (otherWin == (int)HWND_TOP)
+    SetForegroundWindow((HWND)winNum);
 
   /* For debug log window stack.
    */
@@ -1778,6 +1783,14 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
   short deltaY = 0;
   static int clickCount = 1;
   static LONG lastTime = 0;
+/*
+ * Occasionally the mouse down events are lost ... don't know why.
+ * So we track the mouse status  and simulate mouse down or up events
+ * if the button states appear to have changed when we get a move.
+ */
+  static BOOL lDown = NO;
+  static BOOL oDown = NO;
+  static BOOL rDown = NO;
 
   gcontext = GSCurrentContext();
   eventLocation = MSWindowPointToGS(svr, hwnd,  GET_X_LPARAM(lParam), 
@@ -1811,18 +1824,77 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
     }
   else if (eventType == NSMouseMoved)
     {
+      NSEvent	*e;
+
       if (wParam & MK_LBUTTON)
         { 
+	  if (lDown == NO)
+	    {
+	      e = process_mouse_event(svr, hwnd, wParam, lParam,
+		NSLeftMouseDown);
+	      [GSCurrentServer() postEvent: e atStart: NO];
+	    }
           eventType = NSLeftMouseDragged;
         }
       else if (wParam & MK_RBUTTON)
         {
+	  if (lDown == YES)
+	    {
+	      e = process_mouse_event(svr, hwnd, wParam, lParam,
+		NSLeftMouseUp);
+	      [GSCurrentServer() postEvent: e atStart: NO];
+	    }
+	  if (rDown == NO)
+	    {
+	      e = process_mouse_event(svr, hwnd, wParam, lParam,
+		NSRightMouseDown);
+	      [GSCurrentServer() postEvent: e atStart: NO];
+	    }
           eventType = NSRightMouseDragged;
         }
       else if (wParam & MK_MBUTTON)
         {
+	  if (lDown == YES)
+	    {
+	      e = process_mouse_event(svr, hwnd, wParam, lParam,
+		NSLeftMouseUp);
+	      [GSCurrentServer() postEvent: e atStart: NO];
+	    }
+	  if (rDown == YES)
+	    {
+	      e = process_mouse_event(svr, hwnd, wParam, lParam,
+		NSRightMouseUp);
+	      [GSCurrentServer() postEvent: e atStart: NO];
+	    }
+	  if (oDown == NO)
+	    {
+	      e = process_mouse_event(svr, hwnd, wParam, lParam,
+		NSOtherMouseDown);
+	      [GSCurrentServer() postEvent: e atStart: NO];
+	    }
           eventType = NSOtherMouseDragged;
         }
+      else
+	{
+	  if (lDown == YES)
+	    {
+	      e = process_mouse_event(svr, hwnd, wParam, lParam,
+		NSLeftMouseUp);
+	      [GSCurrentServer() postEvent: e atStart: NO];
+	    }
+	  if (rDown == YES)
+	    {
+	      e = process_mouse_event(svr, hwnd, wParam, lParam,
+		NSRightMouseUp);
+	      [GSCurrentServer() postEvent: e atStart: NO];
+	    }
+	  if (oDown == YES)
+	    {
+	      e = process_mouse_event(svr, hwnd, wParam, lParam,
+		NSOtherMouseUp);
+	      [GSCurrentServer() postEvent: e atStart: NO];
+	    }
+	}
     }
   else if ((eventType == NSLeftMouseDown)
     || (eventType == NSRightMouseDown)
@@ -1838,6 +1910,13 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
           lastTime = ltime;
         }
     }
+
+  if (eventType == NSLeftMouseDown) lDown = YES;
+  if (eventType == NSRightMouseDown) rDown = YES;
+  if (eventType == NSOtherMouseDown) oDown = YES;
+  if (eventType == NSLeftMouseUp) lDown = NO;
+  if (eventType == NSRightMouseUp) rDown = NO;
+  if (eventType == NSOtherMouseUp) oDown = NO;
 
   event = [NSEvent mouseEventWithType: eventType
 			     location: eventLocation
