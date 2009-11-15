@@ -46,7 +46,14 @@
 static void
 terminate(int sig)
 {
-  [NSApp terminate: NSApp];
+  if (nil != NSApp)
+    {
+      [NSApp terminate: NSApp];
+    }
+  else
+    {
+      exit(1);
+    }
 }
 
 #ifdef HAVE_WRASTER_H
