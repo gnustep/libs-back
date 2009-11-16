@@ -711,8 +711,6 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
         break;
       case WM_LBUTTONUP: //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONUP", hwnd);
-ev = process_mouse_event(self, hwnd, wParam, lParam, NSLeftMouseDown);
-[GSCurrentServer() postEvent: ev atStart: NO];
         ev = process_mouse_event(self, hwnd, wParam, lParam, NSLeftMouseUp);
         break;
       case WM_LBUTTONDBLCLK: //MOUSE
