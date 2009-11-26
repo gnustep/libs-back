@@ -3132,12 +3132,20 @@ static BOOL didCreatePixmaps;
   gswindow_device_t *window;
   int screenHeight;
   NSRect rect;
+  int x, y;
+  unsigned int width, height;
 
   window = WINDOW_WITH_TAG(win);
   if (!window)
     return NSZeroRect;
 
   NSDebugLLog(@"XGTrace", @"DPScurrentwindowbounds: %d", win);
+
+  // get the current xframe of the window
+  XGetGeometry(dpy, window->ident, &window->root,
+    &x, &y, &width, &height, &window->border, &window->depth);
+  window->xframe = NSMakeRect(x, y, width, height);
+
   screenHeight = DisplayHeight(dpy, window->screen);
   rect = window->xframe;
   rect.origin.y = screenHeight - NSMaxY(window->xframe);
