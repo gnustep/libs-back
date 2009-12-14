@@ -1,3 +1,12 @@
+2009-12-11 Eric Wasylishen <ewasylishen@gmail.com>
+
+	* Source/cairo/CairoGState.m: 
+	Add a call to cairo_pattern_set_extend(pattern, CAIRO_EXTEND_PAD);
+	on the pattern used to draw images. This keeps the edges of images
+	crisp when the are scaled up.
+	The description from the Cairo docs is: "pixels outside of the
+	pattern copy the closest pixel from the source".
+
 2009-11-19 Doug Simons
 
 	* Source/x11/XGServerWindow.m:
