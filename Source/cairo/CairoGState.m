@@ -512,8 +512,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
-      *flatness = (float)cairo_get_tolerance(_ct);
-      *flatness = floatToUserSpace(ctm, *flatness);
+      *flatness = (float)cairo_get_tolerance(_ct) * 2;
     }
 }
 
@@ -621,7 +620,9 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
   [super DPSsetflat: flatness];
   if (_ct)
     {
-      cairo_set_tolerance(_ct, floatFromUserSpace(ctm, flatness));
+      // Divide GNUstep flatness by 2 to get Cairo tolerance - this produces
+      // results visually similar to OS X.
+      cairo_set_tolerance(_ct, flatness / 2);
     }
 }
 
