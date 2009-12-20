@@ -1,3 +1,12 @@
+2009-12-19 Eric Wasylishen <ewasylishen@gmail.com>
+
+	* Source/cairo/CairoGState.m:
+	-DPSsetflat: and -DPScurrentflat should not have been transforming
+	the flatness value with the current transformation matrix.
+	The effect of this could be seen in the Apple BezierPathLab example;
+	zooming in on the circle caused it to look more and more like a
+	polygon.
+
 2009-12-11 Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/cairo/CairoGState.m: 
