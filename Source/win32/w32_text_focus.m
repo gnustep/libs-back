@@ -34,34 +34,13 @@
 
 @implementation WIN32Server (w32_text_focus)
 
-//- (LRESULT) decodeWM_SETTEXTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
-//{
-//printf("WM_SETTEXT\n");
-//printf("Window text is: %s\n", (LPSTR)lParam);
-
-//BOOL result=SetWindowText(hwnd, (LPSTR)lParam);    
-    
-  //      if (result==0)
-            //printf("error on setWindow text %ld\n", GetLastError());
-        
-//return 0;
-//}
-
-
 - (LRESULT) decodeWM_SETFOCUSParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   /* This message comes when the window already got focus, so we send a focus
      in event to the front end, but also mark the window as having current focus
      so that the front end doesn't try to focus the window again. */
    
-  int key_num, win_num;
-  NSPoint eventLocation;
-
-  key_num = [[NSApp keyWindow] windowNumber];
-  win_num = (int)hwnd;
-  
   currentFocus = hwnd;
-  eventLocation = NSMakePoint(0, 0);
   if (currentFocus == desiredFocus)
     {
       /* This was from a request from the front end. Mark as done. */
@@ -72,14 +51,20 @@
       /* We need to do this directly and not send an event to the frontend - 
          that's too slow and allows the window state to get out of sync, 
          causing bad recursion problems */
-      NSWindow *window = GSWindowWithNumber((int)hwnd);
-      if ([window canBecomeKeyWindow] == YES)
-        {
-          NSDebugLLog(@"Focus", @"Making %d key", win_num);
-          [window makeKeyWindow];
-          [window makeMainWindow];
-          [NSApp activateIgnoringOtherApps: YES];
-        }
+      NSEvent *ev;
+      
+      ev = [NSEvent otherEventWithType: NSAppKitDefined
+                              location: NSMakePoint(0, 0)
+                         modifierFlags: 0
+                             timestamp: 0
+                          windowNumber: (int)hwnd
+                               context: GSCurrentContext()
+                               subtype: GSAppKitWindowFocusIn
+                                 data1: 0
+                                 data2: 0];
+      
+      NSDebugLLog(@"Focus", @"Making %d key", (int)hwnd);
+      [EVENT_WINDOW(hwnd) sendEvent: ev];
     }
     
   return 0;
@@ -87,12 +72,13 @@
 
 - (void) decodeWM_KILLFOCUSParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-  // reused from original author (added debug output)
-  NSPoint eventLocation = NSMakePoint(0, 0);
-  NSEvent * ev=nil;
+  NSEvent *ev;
 
-  ev = [NSEvent otherEventWithType:NSAppKitDefined
-			  location: eventLocation
+  // Remember the now focused window
+  currentFocus = wParam;
+
+  ev = [NSEvent otherEventWithType: NSAppKitDefined
+			  location: NSMakePoint(0, 0)
 		     modifierFlags: 0
 			 timestamp: 0
 		      windowNumber: (int)hwnd
@@ -101,13 +87,26 @@
 			     data1: 0
 			     data2: 0];
 		      
-  [EVENT_WINDOW(hwnd) sendEvent:ev];
-  flags._eventHandled=YES;
+  [EVENT_WINDOW(hwnd) sendEvent: ev];
+  flags._eventHandled = YES;
 }
 
 - (void) decodeWM_GETTEXTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   // stub for future dev
 }
+
+/*
+- (LRESULT) decodeWM_SETTEXTParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
+{
+  printf("WM_SETTEXT\n");
+  printf("Window text is: %s\n", (LPSTR)lParam);
+  
+  if (SetWindowText(hwnd, (LPSTR)lParam) == 0)
+    printf("error on setWindow text %ld\n", GetLastError());
+  
+  return 0;
+}
+*/
 
 @end
