@@ -39,7 +39,21 @@
 
   switch (last_WM_ACTIVATE)
     {
-      case WA_ACTIVE:  //deactivate
+      case WA_ACTIVE:
+        {
+	  /* we become the inactivation event on WM_INACTIVE */
+	  /* Sending another leave event might confuse the front event */
+	  currentActive = hwnd;
+        }
+        break;
+      case WA_CLICKACTIVE:
+        {
+	  /* we become the inactivation event on WM_INACTIVE */
+	  /* Sending another leave event might confuse the front event */
+	  currentActive = hwnd;
+        }
+        break;
+      case WA_INACTIVE:
         {
 	  NSEvent *ev;
       
@@ -47,36 +61,13 @@
 		      	          location: NSMakePoint(0, 0)
 			     modifierFlags: 0
 			         timestamp: 0
-			      windowNumber: (int)lParam
+			      windowNumber: (int)hwnd
 			           context: GSCurrentContext()
 			           subtype: GSAppKitWindowLeave
 			             data1: 0
 			             data2: 0];
       
-	  [EVENT_WINDOW(lParam) sendEvent: ev];
-        }
-        break;
-      case WA_CLICKACTIVE:  //order back the window
-        {
-	  NSEvent *ev;
-      
-	  ev = [NSEvent otherEventWithType: NSAppKitDefined
-		      	          location: NSMakePoint(0, 0)
-			     modifierFlags: 0
-			         timestamp: 0
-			      windowNumber: (int)lParam
-			           context: GSCurrentContext()
-			           subtype: GSAppKitWindowLeave
-			             data1: 0
-			             data2: 0];
-      
-	  [EVENT_WINDOW(lParam) sendEvent: ev];
-        }
-        break;
-      case WA_INACTIVE: // set currentactive and display
-        {
-          currentActive = hwnd;
-          [EVENT_WINDOW(lParam) display];
+	  [EVENT_WINDOW(hwnd) sendEvent: ev];
         }
         break;
 	
