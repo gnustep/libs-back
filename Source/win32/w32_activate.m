@@ -41,12 +41,36 @@
     {
       case WA_ACTIVE:  //deactivate
         {
-          // future implimentation if needed
+	  NSEvent *ev;
+      
+	  ev = [NSEvent otherEventWithType: NSAppKitDefined
+		      	          location: NSMakePoint(0, 0)
+			     modifierFlags: 0
+			         timestamp: 0
+			      windowNumber: (int)lParam
+			           context: GSCurrentContext()
+			           subtype: GSAppKitWindowLeave
+			             data1: 0
+			             data2: 0];
+      
+	  [EVENT_WINDOW(lParam) sendEvent: ev];
         }
         break;
       case WA_CLICKACTIVE:  //order back the window
         {
-          // future implimentation if needed
+	  NSEvent *ev;
+      
+	  ev = [NSEvent otherEventWithType: NSAppKitDefined
+		      	          location: NSMakePoint(0, 0)
+			     modifierFlags: 0
+			         timestamp: 0
+			      windowNumber: (int)lParam
+			           context: GSCurrentContext()
+			           subtype: GSAppKitWindowLeave
+			             data1: 0
+			             data2: 0];
+      
+	  [EVENT_WINDOW(lParam) sendEvent: ev];
         }
         break;
       case WA_INACTIVE: // set currentactive and display
