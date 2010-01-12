@@ -75,7 +75,7 @@ static char *atom_names[] = {
   "text/html",
   "application/xhtml+xml",
   "image/png",
-  "image/svg"
+  "image/svg",
   "application/rtf",
 };
 static Atom atoms[sizeof(atom_names)/sizeof(char*)];
