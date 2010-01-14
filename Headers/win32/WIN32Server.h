@@ -111,6 +111,8 @@ typedef struct w32serverFlags {
 
 @interface WIN32Server (w32_activate)
 
+- (LRESULT) decodeWM_MOUSEACTIVATEParams: (WPARAM)wParam : (LPARAM)lParam 
+						: (HWND)hwnd;
 - (LRESULT) decodeWM_ACTIVEParams: (WPARAM)wParam : (LPARAM)lParam 
 				 : (HWND)hwnd;
 - (LRESULT) decodeWM_ACTIVEAPPParams: (HWND)hwnd : (WPARAM)wParam 

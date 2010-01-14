@@ -31,6 +31,7 @@
 #include <AppKit/NSWindow.h>
 #include "win32/WIN32Server.h"
 #include "win32/WIN32Geometry.h"
+#include <GNUstepGUI/GSTheme.h>
 
 @implementation WIN32Server (w32_General)
 
@@ -131,6 +132,7 @@
 
 - (void) decodeWM_COMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
+  [[GSTheme theme] processCommand: (void *)wParam];
 } 
       
 @end 
