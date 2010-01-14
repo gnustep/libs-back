@@ -68,8 +68,6 @@
 
 #define cWin ((gswindow_device_t*)generic.cachedWindow)
 
-extern Atom WM_STATE;
-
 // NumLock's mask (it depends on the keyboard mapping)
 static unsigned int _num_lock_mask;
 // Modifier state
@@ -595,6 +593,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
               else if ((Atom)xEvent.xclient.data.l[0]
                 == generic.miniaturize_atom)
                 {
+		  NSDebugLLog(@"Miniaturize", @"%d miniaturized", cWin->number);
                   eventLocation = NSMakePoint(0,0);
                   e = [NSEvent otherEventWithType: NSAppKitDefined
                                location: eventLocation
@@ -1388,61 +1387,85 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         NSDebugLLog(@"NSEvent", @"%d PropertyNotify - '%s'\n",
                     xEvent.xproperty.window,
                     XGetAtomName(dpy, xEvent.xproperty.atom));
-        {
-          /* Note: Don't rely on _NET_STATE_WM_HIDDEN with Window Maker,
-           * since it is impossible to distinguish miniaturized and hidden
-           * windows by their window properties.  Fortunately, Window Maker
-           * will send us client message when a window is miniaturized.
-           */
-          if ((generic.wm & XGWM_WINDOWMAKER) == 0
-	    && xEvent.xproperty.atom == generic.netstates.net_wm_state_atom
-	    && xEvent.xproperty.state == PropertyNewValue)
-            {
-              if (cWin == 0 || xEvent.xproperty.window != cWin->ident)
-                {
-                  generic.cachedWindow
-                      = [XGServer _windowForXWindow: xEvent.xproperty.window];
-                }
-              if (cWin != 0)
-                {
-                  /*
-                   * FIXME: we really should detect when the state changes from
-                   * unminimized to minimized, or vice versa
-                   */
-                  if ([self _ewmh_isMinimized: xEvent.xproperty.window])
-                    {
-                      // Same event as when we get ClientMessage with the atom
-                      // equal to generic.miniaturize_atom
-                      eventLocation = NSMakePoint(0,0);
-                      e = [NSEvent otherEventWithType: NSAppKitDefined
-                                   location: eventLocation
-                                   modifierFlags: 0
-                                   timestamp: xEvent.xproperty.time / 1000
-                                   windowNumber: cWin->number
-                                   context: gcontext
-                                   subtype: GSAppKitWindowMiniaturize
-                                   data1: 0
-                                   data2: 0];
-                    }
-		  else if ([GSWindowWithNumber(cWin->number) isMiniaturized])
-		    {
-		      /* A miniaturised window is now visible ... send event
-		       * to let the gui know it deminiaturised.
-		       */
-                      eventLocation = NSMakePoint(0,0);
-                      e = [NSEvent otherEventWithType: NSAppKitDefined
-                                   location: eventLocation
-                                   modifierFlags: 0
-                                   timestamp: xEvent.xproperty.time / 1000
-                                   windowNumber: cWin->number
-                                   context: gcontext
-                                   subtype: GSAppKitWindowDeminiaturize
-                                   data1: 0
-                                   data2: 0];
-		    }
-                }
-            }
-        }
+	if (xEvent.xproperty.atom == generic.wm_state_atom)
+	  {
+	    if (cWin == 0 || xEvent.xproperty.window != cWin->ident)
+	      {
+		generic.cachedWindow
+		  = [XGServer _windowForXWindow: xEvent.xproperty.window];
+	      }
+	    if (cWin != 0)
+	      {
+		int new_state;
+
+		/* Get the new window state */
+		if (xEvent.xproperty.state == PropertyNewValue)
+		  new_state = [self _wm_state: xEvent.xproperty.window];
+		else
+		  new_state = WithdrawnState;
+
+		switch (new_state)
+		  {
+		  case IconicState:
+		    /* Post miniaturize event upon transition from NormalState
+		       to IconicState. If the window manager supports the ewmh
+		       specification, also check that the _NET_WM_STATE
+		       property includes _NET_WM_STATE_HIDDEN. */
+		    /* Note: Don't rely on WM_STATE (nor on _NET_WM_STATE) with
+		       Window Maker, since it is impossible to distinguish
+		       miniaturized windows from hidden windows by their window
+		       properties. Fortunately, Window Maker sends us a client
+		       message when a window is miniaturized. */
+		    if ((generic.wm & XGWM_WINDOWMAKER) == 0 &&
+			cWin->wm_state == NormalState &&
+			((generic.wm & XGWM_EWMH) == 0 ||
+			 [self _ewmh_isHidden: xEvent.xproperty.window] == YES))
+		      {
+			/* Same event as when we get ClientMessage with the
+			 * atom equal to generic.miniaturize_atom
+			 */
+			NSDebugLLog(@"Miniaturize", @"%d miniaturized",
+				    cWin->number);
+			eventLocation = NSMakePoint(0,0);
+			e = [NSEvent otherEventWithType: NSAppKitDefined
+				     location: eventLocation
+				     modifierFlags: 0
+				     timestamp: xEvent.xproperty.time / 1000
+				     windowNumber: cWin->number
+				     context: gcontext
+				     subtype: GSAppKitWindowMiniaturize
+				     data1: 0
+				     data2: 0];
+		      }
+		    break;
+
+		  case NormalState:
+		    /* Post deminiaturize event upon transition from IconicState
+		       to NormalState, but only if our window is actually
+		       miniaturized. */
+		    if (cWin->wm_state == IconicState &&
+			[GSWindowWithNumber(cWin->number) isMiniaturized])
+		      {
+			NSDebugLLog(@"Miniaturize", @"%d deminiaturized",
+				    cWin->number);
+			eventLocation = NSMakePoint(0,0);
+			e = [NSEvent otherEventWithType: NSAppKitDefined
+				     location: eventLocation
+				     modifierFlags: 0
+				     timestamp: xEvent.xproperty.time / 1000
+				     windowNumber: cWin->number
+				     context: gcontext
+				     subtype: GSAppKitWindowDeminiaturize
+				     data1: 0
+				     data2: 0];
+		      }
+		    break;
+		  }
+
+		/* save the new state */
+		cWin->wm_state = new_state;
+	      }
+	  }
         break;
 
             // a client successfully reparents a window

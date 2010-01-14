@@ -103,6 +103,7 @@ struct XGGeneric {
   Atom			protocols_atom;
   Atom			delete_win_atom;
   Atom			take_focus_atom;
+  Atom			wm_state_atom;
   Atom			net_wm_ping_atom;
   Atom			miniaturize_atom;
   Atom			win_decor_atom;
