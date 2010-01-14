@@ -1,3 +1,10 @@
+2010-01-14 05:41-EST Gregory John Casamento <greg.casamento@gmail.com>
+
+	* Headers/win32/WIN32Server.h: Added decodeWM_MOUSEACTIVATE:..
+	* Source/win32/w32_general.m: Added call to decodeWM_COMMAND:
+	to -[GSTheme processCommand:] the theme callback which handles 
+	native menus, 
+
 2010-01-12 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Tools/xpbs.m: Add missing comma after name of selection atom.
