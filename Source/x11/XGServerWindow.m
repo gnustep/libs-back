@@ -750,6 +750,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 
   window->map_state = IsUnmapped;
   window->visibility = 2;
+  window->wm_state = WithdrawnState;
 
   // Create an X GC for the content view set it's colors
   values.foreground = window->xwn_attrs.background_pixel;
@@ -1266,6 +1267,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   window->number = -screen;
   window->map_state = IsViewable;
   window->visibility = -1;
+  window->wm_state = NormalState;
   if (window->ident)
     XGetGeometry(dpy, window->ident, &window->root, 
 		 &x, &y, &width, &height,
@@ -1416,6 +1418,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   generic.protocols_atom = XInternAtom(dpy, "WM_PROTOCOLS", False);
   generic.take_focus_atom = XInternAtom(dpy, "WM_TAKE_FOCUS", False);
   generic.delete_win_atom = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
+  generic.wm_state_atom = XInternAtom(dpy, "WM_STATE", False);
   generic.net_wm_ping_atom = XInternAtom(dpy, "_NET_WM_PING", False);
   generic.miniaturize_atom
     = XInternAtom(dpy, "_GNUSTEP_WM_MINIATURIZE_WINDOW", False);
@@ -1939,6 +1942,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 
   window->map_state = IsUnmapped;
   window->visibility = -1;
+  window->wm_state = WithdrawnState;
 
   // Create an X GC for the content view set it's colors
   values.foreground = window->xwn_attrs.background_pixel;
@@ -1960,8 +1964,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     | EnterWindowMask
     | LeaveWindowMask
     | FocusChangeMask
-    // enable property notifications under ewmh to detect window minimizing
-    | (generic.wm & XGWM_EWMH ? PropertyChangeMask : 0)
+    /* enable property notifications to detect window (de)miniaturization */
+    | PropertyChangeMask
 //    | ColormapChangeMask
     | KeymapStateMask
     | VisibilityChangeMask
@@ -2100,6 +2104,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   window->xwn_attrs.border_pixel = context->black;
   window->xwn_attrs.background_pixel = context->white;
   window->visibility = -1;
+  window->wm_state = [self _wm_state: windowRef];
 
   // Create an X GC for the content view set it's colors
   values.foreground = window->xwn_attrs.background_pixel;
@@ -2577,17 +2582,20 @@ NSLog(@"styleoffsets ... guessing offsets\n");
   XSync(dpy, False);
   while (XCheckWindowEvent(dpy, window->ident, 0xffffffff, &e) == True) ;
 
-  /*
-   * When the application owns the mini window, we withdraw the window itself
-   * during miniaturization and put up the mini window instead. However, this
-   * does not work for WindowMaker, which unmaps the mini window, too, when
-   * the actual window is withdrawn. Fortunately, miniaturizing the actual
-   * window does already the right thing on WindowMaker.
-   */
-  if (!generic.flags.appOwnsMiniwindow || (generic.wm & XGWM_WINDOWMAKER))
-    XIconifyWindow(dpy, window->ident, window->screen);
-  else
+  /* When the application owns the mini window, we withdraw the window itself
+     during miniaturization and put up the mini window instead. However, this
+     does not work for WindowMaker, which unmaps the mini window, too, when
+     the actual window is withdrawn. Fortunately, miniaturizing the actual
+     window does already the right thing on WindowMaker. */
+  /* Note: The wm_state != IconicState check is there to avoid iconifying a
+     window when -miniwindow: is called as a consequence of processing a
+     GSAppKitWindowMiniaturize event. This avoids iconifying shaded windows
+     under metacity, which sets _NET_WM_STATE for shaded windows to both
+     _NET_WM_STATE_SHADED and _NET_WM_STATE_HIDDEN. */
+  if (generic.flags.appOwnsMiniwindow && !(generic.wm & XGWM_WINDOWMAKER))
     XWithdrawWindow(dpy, window->ident, window->screen);
+  else if (window->wm_state != IconicState)
+    XIconifyWindow(dpy, window->ident, window->screen);
 }
 
 /**
@@ -4636,11 +4644,34 @@ _computeDepth(int class, int bpp)
 }
 
 /*
- * Check whether the window is miniaturized according to the EWMH window state
- * property.  We map the EWMH _NET_WM_STATE_HIDDEN state to GNUstep's
- * miniaturized state.
+ * Check whether the window is miniaturized according to the ICCCM window
+ * state property.
  */
-- (BOOL) _ewmh_isMinimized: (Window)win
+- (int) _wm_state: (Window)win
+{
+  long *data;
+  long state;
+
+  data = (long *)PropGetCheckProperty(dpy, win, generic.wm_state_atom,
+				      generic.wm_state_atom, 32, -1, NULL);
+
+  if (data)
+    {
+      state = *data;
+      XFree(data);
+    }
+  else
+    state = WithdrawnState;
+
+  return state;
+}
+
+/*
+ * Check whether the EWMH window state includes the _NET_WM_STATE_HIDDEN
+ * state. On EWMH, a window is iconified if it is iconic state and the
+ * _NET_WM_STATE_HIDDEN is present.
+ */
+- (BOOL) _ewmh_isHidden: (Window)win
 {
   Atom *data;
   int count;
@@ -4656,11 +4687,6 @@ _computeDepth(int class, int bpp)
 
   for (i = 0; i < count; i++)
     {
-      if (data[i] != 0)
-	{
-          NSDebugLLog(@"NSEvent", @"%d PropertyNotify detail - '%s'\n",
-	    win, XGetAtomName(dpy, data[i]));
-	}
       if (data[i] == generic.netstates.net_wm_state_hidden_atom)
         {
           XFree(data);

@@ -90,6 +90,7 @@ typedef struct _gswindow_device_t {
   unsigned int          border;        /* Border size */
   int			map_state;     /* X map state */
   int                   visibility;    /* X visibility */
+  int                   wm_state;      /* X WM state */
   NSBackingStoreType    type;          /* Backing type */
   NSRect                xframe;        /* Window frame */
 
@@ -130,7 +131,8 @@ typedef struct _gswindow_device_t {
 /* This needs to go in GSDisplayServer */
 - (void) _DPSsetcursor: (Cursor)c : (BOOL)set;
 
-- (BOOL) _ewmh_isMinimized: (Window) win;
+- (int) _wm_state: (Window) win;
+- (BOOL) _ewmh_isHidden: (Window) win;
 @end
 
 extern Pixmap
