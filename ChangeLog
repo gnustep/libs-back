@@ -1,3 +1,9 @@
+2010-01-22 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XWindowBuffer.m (+windowBufferForWindow:depthInfo:)
+	(test_xshm): Don't give up on xshm when pixmaps aren't supported.
+	Based on proposal by Derk Fawcus <dfawcus+lists-gnustep-dev@employees.org>.
+
 2010-01-22  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Source/x11/XWindowBuffer.m (+windowBufferForWindow:depthInfo:):
