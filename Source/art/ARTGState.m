@@ -638,7 +638,7 @@ draw_info_t ART_DI;
   di.bytes_per_pixel = DI.bytes_per_pixel;
   di.inline_alpha = DI.inline_alpha;
   di.inline_alpha_ofs = DI.inline_alpha_ofs;
-  di.byte_order_from_client = NO;
+  di.byte_order = ImageByteOrder(window->display);
 
   ASSIGN(wi, [XWindowBuffer windowBufferForWindow: window depthInfo: &di]);
 }

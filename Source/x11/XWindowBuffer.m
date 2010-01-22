@@ -391,20 +391,12 @@ no_xshm:
 
 	  /* Normally, the data of an XImage is saved with the X server's
 	     byte order. However, some backends (notably cairo) use the
-	     native byte order of the client for the backend image. Since
-	     XCreateImage sets up the image with the X server's byte order,
-	     we must correct the byte order for those backends. Otherwise,
-	     GNUstep applications would display wrong colors on an X server
-	     that is running on a machine with a different byte order than
-	     the client (bug #28590). */
-	  if (wi->DI.byte_order_from_client)
-	    {
-#if GS_WORDS_BIGENDIAN
-	      wi->ximage->byte_order = MSBFirst;
-#else
-	      wi->ximage->byte_order = LSBFirst;
-#endif
-	    }
+	     native byte order of the client for the backend image, hence
+	     we must set the image's byte order here. Without this, GNUstep
+	     applications would display wrong colors on an X server that
+	     is running on a machine with a different byte order than the
+	     client (bug #28590). */
+	  wi->ximage->byte_order = wi->DI.byte_order;
           wi->ximage->data = malloc(wi->ximage->height * wi->ximage->bytes_per_line);
           if (!wi->ximage->data)
             {
