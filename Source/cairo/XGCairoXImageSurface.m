@@ -54,7 +54,11 @@
   di.inline_alpha = YES;
   di.inline_alpha_ofs = 0;
   /* The cairo image surface uses the client's byte order (cf. bug #28590). */
-  di.byte_order_from_client = YES;
+#if GS_WORDS_BIGENDIAN
+  di.byte_order = MSBFirst;
+#else
+  di.byte_order = LSBFirst;
+#endif
 
   ASSIGN(wi, [XWindowBuffer windowBufferForWindow: GSWINDEVICE depthInfo: &di]);
 
