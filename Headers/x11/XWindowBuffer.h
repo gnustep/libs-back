@@ -50,6 +50,11 @@ struct XWindowBuffer_depth_info_s
   holds the alpha value. */
   BOOL inline_alpha;
   int inline_alpha_ofs;
+
+  /* If the buffer stores the data with the client's native byte order,
+     this should be YES. Normally, an XImage uses the byte order of the
+     X server. */
+  BOOL byte_order_from_client;
 };
 
 /*

@@ -53,6 +53,8 @@
   di.bytes_per_pixel = 4;
   di.inline_alpha = YES;
   di.inline_alpha_ofs = 0;
+  /* The cairo image surface uses the client's byte order (cf. bug #28590). */
+  di.byte_order_from_client = YES;
 
   ASSIGN(wi, [XWindowBuffer windowBufferForWindow: GSWINDEVICE depthInfo: &di]);
 
