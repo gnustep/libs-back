@@ -49,6 +49,7 @@ static int use_shape_hack = 0; /* this is an ugly hack : ) */
 
 static int did_test_xshm = 0;
 static int use_xshm = 1;
+static Bool use_xshm_pixmaps = 0;
 static int num_xshm_test_errors = 0;
 
 static NSString *xshm_warning
@@ -86,9 +87,8 @@ static void test_xshm(Display *display, Visual *visual, int drawing_depth)
 
   {
   int major, minor;
-  Bool pixmaps;
 
-  if (!XShmQueryVersion(display, &major, &minor, &pixmaps) || !pixmaps)
+  if (!XShmQueryVersion(display, &major, &minor, &use_xshm_pixmaps))
     {
       NSLog(@"XShm pixmaps not supported by X server.");
       NSLog(xshm_warning);
@@ -351,21 +351,24 @@ no_xshm:
           goto no_xshm;
         }
 
-      /* We try to create a shared pixmap using the same buffer, and set
-         it as the background of the window. This allows X to handle expose
-         events all by itself, which avoids white flashing when things are
-         dragged across a window. */
-      /* TODO: we still get and handle expose events, although we don't
-         need to. */
-      wi->pixmap = XShmCreatePixmap(wi->display, wi->drawable,
-                                    wi->ximage->data, &wi->shminfo,
-                                    wi->window->xframe.size.width,
-                                    wi->window->xframe.size.height,
-                                    drawing_depth);
-      if (wi->pixmap) /* TODO: this doesn't work */
+      if (use_xshm_pixmaps)
         {
-          XSetWindowBackgroundPixmap(wi->display, wi->window->ident,
-                                     wi->pixmap);
+          /* We try to create a shared pixmap using the same buffer, and set
+             it as the background of the window. This allows X to handle expose
+             events all by itself, which avoids white flashing when things are
+             dragged across a window. */
+          /* TODO: we still get and handle expose events, although we don't
+             need to. */
+          wi->pixmap = XShmCreatePixmap(wi->display, wi->drawable,
+                                        wi->ximage->data, &wi->shminfo,
+                                        wi->window->xframe.size.width,
+                                        wi->window->xframe.size.height,
+                                        drawing_depth);
+          if (wi->pixmap) /* TODO: this doesn't work */
+            {
+              XSetWindowBackgroundPixmap(wi->display, wi->window->ident,
+                                         wi->pixmap);
+            }
         }
 
       /* On some systems (eg. freebsd), X can't attach to the shared segment
