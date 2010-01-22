@@ -1,3 +1,10 @@
+2010-01-22  Wolfgang Lux  <wolfgang.lux@gmail.com>
+
+	* Source/x11/XWindowBuffer.m (+windowBufferForWindow:depthInfo:):
+	* Source/art/ARTGState.m (-GSSetDevice:):
+	* Source/cairo/XGCairoXImageSurface.m (-initWithDevice:):
+	Fix bug #28590 (with a little help from Fred Kiefer).
+
 2010-01-21 15:45-EST Riccardo Mottola <rmottola@users.sf.net>
 	Committed by: Gregory John Casamento <greg.casamento@gmail.com>
 
@@ -7,7 +14,7 @@
 
 2010-01-14  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
-	* Source/x11/XGServerEvent.m (-processEvent:): 
+	* Source/x11/XGServerEvent.m (-processEvent:):
 	* Source/x11/XGServerWindow.m (-_wm_state:, -_ewmh_state, -_checkStyle,
 	-_rootWindowForScreen:, -window::::, -nativeWindow:::::): Revise
 	detection of window miniaturization and deminiaturization based on
