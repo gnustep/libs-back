@@ -1,3 +1,11 @@
+2010-01-25 04:13-EST Gregory John Casamento <greg.casamento@gmail.com>
+
+	* Source/win32/w32_create.m: (-decodeWM_CREATEParams:::) add
+	code to load and set the HICON into the window.  Currently, 
+	an .ico file with the same name as the image specified in 
+	NSIcon or CFBundleIconName needs to be provided in the 
+	resources.  
+
 2010-01-22 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XWindowBuffer.m (+windowBufferForWindow:depthInfo:)

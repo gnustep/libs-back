@@ -28,6 +28,8 @@
 
 #include <AppKit/NSEvent.h>
 #include <AppKit/NSWindow.h>
+#include <Foundation/NSBundle.h>
+
 #include "win32/WIN32Server.h"
 #include "win32/WIN32Geometry.h"
 
@@ -44,6 +46,9 @@
 {
   WIN_INTERN *win;
   NSBackingStoreType type = (NSBackingStoreType)((LPCREATESTRUCT)lParam)->lpCreateParams;
+  NSBundle *bundle = [NSBundle mainBundle];
+  NSString *iconName = nil;
+  NSString *iconPath = nil;
 
   // Initialize the window. 
   NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "CREATE", hwnd);
@@ -74,6 +79,38 @@
   else
     {
       win->useHDC = NO;
+    }
+
+  // Find the icon file, assume it has the same name as the "icon" which
+  // was specified in the bundle's dictionary...
+  iconName = [[bundle infoDictionary] objectForKey: @"NSIcon"];
+  if(iconName == nil)
+    {
+      iconName = [[bundle infoDictionary] 
+		    objectForKey: @"CFBundleIconFile"];
+    }
+
+  // If the icon name is set, get the path...
+  if(iconName != nil)
+    {
+      iconName = [iconName stringByDeletingPathExtension];
+      iconPath = [[NSBundle mainBundle] pathForResource: iconName 
+						 ofType: @"ico"];
+      iconPath = [iconPath stringByStandardizingPath];
+    }
+  
+  // If the path is set, load the icon file and set it as the
+  // icon on the window.
+  if(iconPath != nil)
+    {
+      HICON icon = NULL;
+      const char *cpath = [iconPath cString];
+      
+      icon = LoadImage(NULL, 
+		       cpath,
+		       IMAGE_ICON,0,0,
+		       LR_DEFAULTCOLOR|LR_LOADFROMFILE);
+      SetClassLongPtr(hwnd,GCLP_HICON,(LONG_PTR)icon);
     }
 
   return 0;
