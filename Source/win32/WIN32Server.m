@@ -1218,7 +1218,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   p = GSWindowOriginToMS((HWND)winNum, loc);
 
   SetWindowPos((HWND)winNum, NULL, p.x, p.y, 0, 0, 
-               SWP_NOZORDER | SWP_NOSIZE);
+               SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
 }
 
 - (void) placewindow: (NSRect)frame : (int) winNum
@@ -1233,7 +1233,8 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   GetWindowRect((HWND)winNum, &r2);
 
   SetWindowPos((HWND)winNum, NULL, 
-    r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOZORDER); 
+               r.left, r.top, r.right - r.left, r.bottom - r.top, 
+               SWP_NOZORDER | SWP_NOACTIVATE); 
 
   if ((win->useHDC)
       && (r.right - r.left != r2.right - r2.left)
@@ -1426,7 +1427,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
     {
       return;
     }
-  if (state == GSTitleBarKey)
+  if (state == GSTitleBarMain)
     {
       SetActiveWindow((HWND)winNum);
     }
