@@ -52,7 +52,6 @@
          that's too slow and allows the window state to get out of sync, 
          causing bad recursion problems */
 
-      /*
       NSEvent *ev;
       
       ev = [NSEvent otherEventWithType: NSAppKitDefined
@@ -67,7 +66,6 @@
       
       NSDebugLLog(@"Focus", @"Making %d key", (int)hwnd);
       [EVENT_WINDOW(hwnd) sendEvent: ev];
-      */
     }
     
   return 0;

@@ -1,5 +1,13 @@
 2010-01-26 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/win32/w32_text_focus.m: Re-enable the focus in event.
+	* Source\win32\WIN32Server.m (-movewindow::, -placewindow::): Use
+	the SWP_NOACTIVATE flag to pervent window activation.
+	* Source\win32\WIN32Server.m (-setinputstate::): Set active on
+	main not key.
+
+2010-01-26 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/x11/XWindowBuffer.m (+windowBufferForWindow:depthInfo:):
 	Merge the two checks for xshm.
 	* Source/art/ftfont.m (-initWithFontName:...screenFont:):
