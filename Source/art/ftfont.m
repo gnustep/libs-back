@@ -285,7 +285,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
     FT_Face face = ft_size->face;
     FT_CharMap cmap;
     FT_Encoding e;
-    unicodeCmap = 0;
+    unicodeCmap = -1;
 
     if (!face)
       {
