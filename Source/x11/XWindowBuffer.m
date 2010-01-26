@@ -77,20 +77,13 @@ static void test_xshm(Display *display, Visual *visual, int drawing_depth)
 
   /* This seems to return success if the X server understands the XShm
   protocol, regardless of whether XShm can actually be used or not... */
-  if (!XShmQueryExtension(display))
-    {
-      NSLog(@"XShm not supported by X server.");
-      NSLog(xshm_warning);
-      use_xshm = 0;
-      return;
-    }
-
   {
   int major, minor;
 
-  if (!XShmQueryVersion(display, &major, &minor, &use_xshm_pixmaps))
+  if (!XShmQueryExtension(display) || 
+      !XShmQueryVersion(display, &major, &minor, &use_xshm_pixmaps))
     {
-      NSLog(@"XShm pixmaps not supported by X server.");
+      NSLog(@"XShm not supported by X server.");
       NSLog(xshm_warning);
       use_xshm = 0;
       return;

@@ -1,3 +1,11 @@
+2010-01-26 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XWindowBuffer.m (+windowBufferForWindow:depthInfo:):
+	Merge the two checks for xshm.
+	* Source/art/ftfont.m (-initWithFontName:...screenFont:):
+	Initialize unicodeCmap to -1 to be able to detect missing unicode
+	encoding in a font.
+
 2010-01-25 04:13-EST Gregory John Casamento <greg.casamento@gmail.com>
 
 	* Source/win32/w32_create.m: (-decodeWM_CREATEParams:::) add
