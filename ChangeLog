@@ -1,3 +1,9 @@
+2010-02-05 16:31-EST Gregory John Casamento <greg.casamento@gmail.com>
+
+	* Headers/win32/WIN32Server.h: Added declaration for decodeWM_HOTKEY:...
+	* Source/win32/WIN32Server.m: Added call to method decodeWM_HOTKEY:...
+	* Source/win32/w32_general.m: Added method decodeWM_HOTKEY:...
+
 2010-01-26 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/w32_text_focus.m: Re-enable the focus in event.

@@ -671,6 +671,9 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
         break;
       case WM_HELP: 
         break;
+      case WM_HOTKEY: 
+        [self decodeWM_HOTKEYParams: wParam : lParam : hwnd];
+        break;
       //case WM_GETICON: 
         //return [self decodeWM_GETICONParams: wParam : lParam : hwnd];
         //break;

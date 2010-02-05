@@ -134,5 +134,10 @@
 {
   [[GSTheme theme] processCommand: (void *)wParam];
 } 
+
+- (void) decodeWM_HOTKEYParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
+{
+  [[GSTheme theme] processCommand: (void *)wParam];
+} 
       
 @end 
