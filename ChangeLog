@@ -1,3 +1,14 @@
+2010-02-07 03:37-EST Gregory John Casamento <greg.casamento@gmail.com>
+
+	* Headers/win32/WIN32Server.h: Remove HOTKEY method.
+	* Source/win32/w32_general.m: Remove HOTKEY method.
+	* Source/win32/WIN32Server.m: Remove call to HOTKEY method.  Added
+	function "mask_for_keystate(..)" to implement modifier mappings
+	on Windows.   Also changed process_key_event to use the new function
+	and changed the call to ToUnicode to use a blank array instead of
+	modifying the existing keyState array since this was returning the
+	characters with the modifiers still applied.
+
 2010-02-05 16:31-EST Gregory John Casamento <greg.casamento@gmail.com>
 
 	* Headers/win32/WIN32Server.h: Added declaration for decodeWM_HOTKEY:...

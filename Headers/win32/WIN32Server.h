@@ -173,7 +173,6 @@ typedef struct w32serverFlags {
 - (void) decodeWM_QUERYOPENParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_SYSCOMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_COMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
-- (void) decodeWM_HOTKEYParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 
 @end
 
