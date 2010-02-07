@@ -671,9 +671,6 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
         break;
       case WM_HELP: 
         break;
-      case WM_HOTKEY: 
-        [self decodeWM_HOTKEYParams: wParam : lParam : hwnd];
-        break;
       //case WM_GETICON: 
         //return [self decodeWM_GETICONParams: wParam : lParam : hwnd];
         //break;
@@ -1649,6 +1646,65 @@ process_char(WPARAM wParam, unsigned *eventModifierFlags)
     }
 }
 
+static unsigned int
+mask_for_keystate(BYTE *keyState)
+{
+  unsigned int eventFlags = 0;
+  NSUserDefaults *defs = [NSUserDefaults standardUserDefaults];
+  NSString *firstCommand = [defs stringForKey: @"GSFirstCommandKey"];
+  NSString *firstControl = [defs stringForKey: @"GSFirstControlKey"];
+  NSString *firstAlt = [defs stringForKey: @"GSFirstAlternateKey"];
+  NSString *secondCommand = [defs stringForKey: @"GSSecondCommandKey"];
+  NSString *secondControl = [defs stringForKey: @"GSSecondControlKey"];
+  NSString *secondAlt = [defs stringForKey: @"GSSecondAlternateKey"];
+
+  /* AltGr is mapped to right alt + left control */ 
+  if (keyState[VK_RCONTROL] & 128) // && !((keyState[VK_LCONTROL] & 128) && (keyState[VK_RMENU] & 128))) 
+    {
+      if([@"Control_R" isEqualToString: firstAlt] ||
+	 [@"Control_R" isEqualToString: secondAlt])
+	eventFlags |= NSAlternateKeyMask;
+      else if([@"Control_R" isEqualToString: firstCommand] ||
+	      [@"Control_R" isEqualToString: secondCommand])
+	eventFlags |= NSCommandKeyMask;
+      else
+	eventFlags |= NSControlKeyMask;
+    }
+
+  if (keyState[VK_SHIFT] & 128)
+    eventFlags |= NSShiftKeyMask;
+  if (keyState[VK_CAPITAL] & 128)
+    eventFlags |= NSShiftKeyMask;
+
+  if (keyState[VK_MENU] & 128)
+    {
+      if([@"Alt_R" isEqualToString: firstControl] ||
+	 [@"Alt_R" isEqualToString: secondControl])
+	eventFlags |= NSControlKeyMask;
+      else if([@"Alt_R" isEqualToString: firstCommand] ||
+	      [@"Alt_R" isEqualToString: secondCommand])
+	eventFlags |= NSCommandKeyMask;
+      else
+	eventFlags |= NSAlternateKeyMask;
+    }
+
+  if (keyState[VK_HELP] & 128)
+    eventFlags |= NSHelpKeyMask;
+
+  if ((keyState[VK_LCONTROL] & 128) || (keyState[VK_RWIN] & 128))
+    {
+      if([@"Control_L" isEqualToString: firstAlt] ||
+	 [@"Control_L" isEqualToString: secondAlt])
+	eventFlags |= NSAlternateKeyMask;
+      else if([@"Control_L" isEqualToString: firstControl] ||
+	      [@"Control_L" isEqualToString: secondControl])
+	eventFlags |= NSControlKeyMask;
+      else
+	eventFlags |= NSCommandKeyMask;
+    }
+  return eventFlags;
+}
+
 static NSEvent*
 process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam, 
 		  NSEventType eventType)
@@ -1681,21 +1737,7 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
   time = ltime / 1000;
 
   GetKeyboardState(keyState);
-  eventFlags = 0;
-  /* AltGr is mapped to right alt + left control */ 
-  if ((keyState[VK_CONTROL] & 128) && !((keyState[VK_LCONTROL] & 128) && (keyState[VK_RMENU] & 128))) 
-    eventFlags |= NSControlKeyMask;
-  if (keyState[VK_SHIFT] & 128)
-    eventFlags |= NSShiftKeyMask;
-  if (keyState[VK_CAPITAL] & 128)
-    eventFlags |= NSShiftKeyMask;
-  if (keyState[VK_MENU] & 128)
-    eventFlags |= NSAlternateKeyMask;
-  if (keyState[VK_HELP] & 128)
-    eventFlags |= NSHelpKeyMask;
-  if ((keyState[VK_LWIN] & 128) || (keyState[VK_RWIN] & 128))
-    eventFlags |= NSCommandKeyMask;
-
+  eventFlags = mask_for_keystate(keyState);
 
   switch(wParam)
     {
@@ -1732,6 +1774,13 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
     }
   else
     {
+      BYTE blankKeyState[256];
+      int i = 0;
+
+      // initialize blank key state array....
+      for(i = 0; i < 256; i++)
+	blankKeyState[i] = 0;
+
       scan = ((lParam >> 16) & 0xFF);
       //NSLog(@"Got key code %d %d", scan, wParam);
       result = ToUnicode(wParam, scan, keyState, unicode, 5, 0);
@@ -1741,19 +1790,18 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	  // A non spacing accent key was found, we still try to use the result 
 	  result = 1;
 	}
-      keys = [NSString  stringWithCharacters: unicode  length: result];
-      // Now switch modifiers off
-      keyState[VK_LCONTROL] = 0;
-      keyState[VK_RCONTROL] = 0;
-      keyState[VK_LMENU] = 0;
-      keyState[VK_RMENU] = 0;
-      result = ToUnicode(wParam, scan, keyState, unicode, 5, 0);
+      keys = [NSString  stringWithCharacters: unicode length: result];
+
+      // Now get the characters with a blank keyboard state so that
+      // no modifiers are applied.
+      result = ToUnicode(wParam, scan, blankKeyState, unicode, 5, 0);
       //NSLog(@"To Unicode resulted in %d with %d", result, unicode[0]);
       if (result == -1)
 	{
 	  // A non spacing accent key was found, we still try to use the result 
 	  result = 1;
 	}
+      
       ukeys = [NSString  stringWithCharacters: unicode  length: result];
     }
 
