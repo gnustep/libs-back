@@ -1,3 +1,9 @@
+2010-02-10 Eric Wasylishen <ewasylishen@gmail.com>
+
+	* Source/x11/XGServerWindow.m:
+	* Source/x11/XGServerEvent.m:
+	* Headers/x11/XGGeneric.h: Handle horizontal scrolling events
+
 2010-02-07 03:37-EST Gregory John Casamento <greg.casamento@gmail.com>
 
 	* Headers/win32/WIN32Server.h: Remove HOTKEY method.

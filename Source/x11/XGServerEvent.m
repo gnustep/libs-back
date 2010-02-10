@@ -402,6 +402,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         }
         generic.lastClick = xEvent.xbutton.time;
         [self setLastTime: generic.lastClick];
+	deltaX = 0.0;
         deltaY = 0.0;
 
         if (xEvent.xbutton.button == generic.lMouse)
@@ -434,6 +435,20 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             deltaY = -1.;
             eventType = NSScrollWheel;
             buttonNumber = generic.downMouse;
+          }
+        else if (xEvent.xbutton.button == generic.scrollLeftMouse
+          && generic.scrollLeftMouse != 0)
+          {
+            deltaX = -1.;
+            eventType = NSScrollWheel;
+            buttonNumber = generic.scrollLeftMouse;
+          }
+        else if (xEvent.xbutton.button == generic.scrollRightMouse
+          && generic.scrollRightMouse != 0)
+          {
+            deltaX = 1.;
+            eventType = NSScrollWheel;
+            buttonNumber = generic.scrollRightMouse;
           }
         else
           {
@@ -484,7 +499,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                      clickCount: clickCount
                      pressure: 1.0
                      buttonNumber: buttonNumber /* FIXME */
-                     deltaX: 0.
+                     deltaX: deltaX
                      deltaY: deltaY
                      deltaZ: 0.];
         break;
