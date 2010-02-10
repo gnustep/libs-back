@@ -1295,13 +1295,15 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 - (void) _setupMouse
 {
   int			numButtons;
-  unsigned char		mouseNumbers[5];
-  unsigned char		buttons[5] = {
+  unsigned char		mouseNumbers[7];
+  unsigned char		buttons[7] = {
 			  Button1,
 			  Button2,
 			  Button3,
 			  Button4,
-			  Button5
+			  Button5,
+			  6,
+			  7
 			};
   int			masks[5] = {
 			  Button1Mask,
@@ -1314,15 +1316,21 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
    * Get pointer information - so we know which mouse buttons we have.
    * With a two button
    */
-  numButtons = XGetPointerMapping(dpy, mouseNumbers, 5);
-  if (numButtons > 5)
+  numButtons = XGetPointerMapping(dpy, mouseNumbers, 7);
+  if (numButtons > 7)
     {
-      NSDebugLLog(@"XGTrace", @"Warning - mouse/pointer seems to have more than 5 buttons "
-	@"(%d) - just using one to five", numButtons);
-      numButtons = 5;
+      NSDebugLLog(@"XGTrace", @"Warning - mouse/pointer seems to have more than 7 buttons "
+	@"(%d) - just using one to seven", numButtons);
+      numButtons = 7;
     }
   generic.lMouse = buttons[0];
   generic.lMouseMask = masks[0];
+  if (numButtons >= 7)
+    {
+      generic.scrollLeftMouse = buttons[5];
+      generic.scrollRightMouse = buttons[6];
+    }
+
   if (numButtons >= 5)
     {
       generic.upMouse = buttons[3];

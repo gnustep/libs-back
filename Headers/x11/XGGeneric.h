@@ -117,6 +117,8 @@ struct XGGeneric {
   unsigned char		rMouse;
   unsigned char		upMouse;
   unsigned char		downMouse;
+  unsigned char		scrollLeftMouse;
+  unsigned char		scrollRightMouse;
   int			lMouseMask;
   int			mMouseMask;
   int			rMouseMask;
