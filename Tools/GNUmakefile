@@ -57,8 +57,6 @@ MAN1_PAGES = gpbs.1
 
 -include GNUmakefile.preamble
 
--include GNUmakefile.local
-
 include $(GNUSTEP_MAKEFILES)/tool.make
 
 -include GNUmakefile.postamble

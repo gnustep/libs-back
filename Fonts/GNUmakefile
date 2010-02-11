@@ -31,8 +31,6 @@ back-resources_RESOURCE_FILES = $(FONT_INSTALL_FILES)
 
 FONT_INSTALL_FILES = Helvetica.nfont
 
--include GNUmakefile.local
-
 include $(GNUSTEP_MAKEFILES)/rules.make
 
 -include GNUmakefile.postamble

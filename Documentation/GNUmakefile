@@ -57,8 +57,6 @@ ANNOUNCE_DOC_INSTALL_DIR = Developer/Back/ReleaseNotes/$(VERSION)
 
 -include Makefile.preamble
 
--include GNUmakefile.local
-
 include $(GNUSTEP_MAKEFILES)/documentation.make
 include $(GNUSTEP_MAKEFILES)/aggregate.make
 

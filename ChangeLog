@@ -1,3 +1,15 @@
+2010-02-11  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Documentation/Back/GNUmakefile: Do not try including the
+	non-existing GNUmakefile.local file.
+	* Documentation/GNUmakefile: Same change.
+	* Fonts/GNUmakefile: Same change.
+	* Source/winlib/GNUmakefile: Same change.
+	* Tools/GNUmakefile: Same change.
+
+	* Fonts/GNUmakefile.postamble (before-uninstall): Remove
+	back-resources_INSTALL_DIR if empty.
+	
 2010-02-10 Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/x11/XGServerWindow.m:
