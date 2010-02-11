@@ -44,6 +44,7 @@ before-uninstall::
 	for file in $(FONT_INSTALL_FILES); do \
 	  rm -rf $(back-resources_INSTALL_DIR)/$$file;\
 	done
+	-rmdir $(back-resources_INSTALL_DIR)
 
 # Things to do after uninstalling
 # after-uninstall::

@@ -43,8 +43,6 @@ WIN32FontInfo.m
 
 -include GNUmakefile.preamble
 
--include GNUmakefile.local
-
 include $(GNUSTEP_MAKEFILES)/subproject.make
 
 -include GNUmakefile.postamble
