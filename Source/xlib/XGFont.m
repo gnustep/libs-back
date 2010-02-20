@@ -103,7 +103,7 @@ static BOOL XGInitAtoms(Display *dpy)
 }
 
 - initWithFontName: (NSString*)name
-	    matrix: (const float *)fmatrix
+	    matrix: (const CGFloat*)fmatrix
 	screenFont: (BOOL)screenFont
 {
   if (screenFont)
@@ -228,7 +228,7 @@ static BOOL XGInitAtoms(Display *dpy)
   XDrawString(xdpy, draw, xgcntxt, xp.x, xp.y, buf, len);
 }
 
-- (float) widthOfString: (NSString*)string
+- (CGFloat) widthOfString: (NSString*)string
 {
   NSData *d = [string dataUsingEncoding: mostCompatibleStringEncoding
 		      allowLossyConversion: YES];
@@ -239,12 +239,12 @@ static BOOL XGInitAtoms(Display *dpy)
   return XTextWidth(font_info, cstr, length);
 }
 
-- (float) widthOf: (const char*) s length: (int) len
+- (CGFloat) widthOf: (const char*) s length: (int) len
 {
   return XTextWidth(font_info, s, len);
 }
 
-- (float) widthOfGlyphs: (const NSGlyph *) glyphs length: (int) len
+- (CGFloat) widthOfGlyphs: (const NSGlyph *) glyphs length: (int) len
 {
   char buf[len];
   int i;

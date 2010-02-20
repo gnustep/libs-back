@@ -107,7 +107,7 @@ static int subpixel_text;
   unsigned int cachedGlyph[CACHE_SIZE];
   NSSize cachedSize[CACHE_SIZE];
 
-  float lineHeight;
+  CGFloat lineHeight;
 }
 @end
 
@@ -154,7 +154,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 
 @implementation FTFontInfo
 - initWithFontName: (NSString *)name
-	matrix: (const float *)fmatrix
+	matrix: (const CGFloat *)fmatrix
 	screenFont: (BOOL)p_screenFont
 {
   FT_Face face;
@@ -335,7 +335,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 }
 
 
--(float) defaultLineHeightForFont
+-(CGFloat) defaultLineHeightForFont
 {
   return lineHeight;
 }
@@ -1841,7 +1841,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 }
 
 
-- (float) widthOfString: (NSString*)string
+- (CGFloat) widthOfString: (NSString*)string
 {
   unichar ch;
   int i, c = [string length];

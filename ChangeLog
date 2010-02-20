@@ -1,3 +1,19 @@
+2010-02-20 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSStreamContext.m
+	* Headers/cairo/CairoFontInfo.h
+	* Source/cairo/CairoFontInfo.m
+	* Source/cairo/CairoGState.m
+	* Source/winlib/WIN32FontInfo.m
+	* Source/art/ftfont.m
+	* Source/art/ftfont-old.m
+	* Headers/xlib/GSXftFontInfo.h
+	* Headers/xlib/XGFontSetFontInfo.h
+	* Source/xlib/XGFontSetFontInfo.m
+	* Source/xlib/GSXftFontInfo.m
+	* Source/xlib/XGFont.m: Adjust to the CGFloat change for NSFont
+	and NSAffineTransform done in base and gui.
+
 2010-02-11  Nicola Pero  <nicola.pero@meta-innovation.com>
 
 	* Documentation/Back/GNUmakefile: Do not try including the

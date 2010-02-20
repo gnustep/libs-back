@@ -84,7 +84,7 @@ static BOOL char_struct_for_glyph(NSGlyph glyph, XFontSet font_set,
 @implementation XGFontSetFontInfo : GSFontInfo
 
 - (id) initWithFontName: (NSString *)name
-		 matrix: (const float *)fmatrix
+		 matrix: (const CGFloat*)fmatrix
 	     screenFont: (BOOL)screenFont
 {
   Display	*dpy;
@@ -217,7 +217,7 @@ static BOOL char_struct_for_glyph(NSGlyph glyph, XFontSet font_set,
     }
 }
 
-- (float) widthOfGlyphs: (const NSGlyph *)glyphs
+- (CGFloat) widthOfGlyphs: (const NSGlyph *)glyphs
                  length: (int)len
 {
   UTF8Str   ustr;
