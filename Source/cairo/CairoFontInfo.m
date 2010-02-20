@@ -145,7 +145,7 @@
 }
 
 - (id) initWithFontName: (NSString *)name 
-                 matrix: (const float *)fmatrix 
+                 matrix: (const CGFloat *)fmatrix 
              screenFont: (BOOL)p_screenFont
 {
   self = [super init];
@@ -189,7 +189,7 @@
   [super dealloc];
 }
 
-- (float) defaultLineHeightForFont
+- (CGFloat) defaultLineHeightForFont
 {
   return lineHeight;
 }
@@ -278,7 +278,7 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
   return NSZeroRect;
 }
 
-- (float) widthOfString: (NSString *)string
+- (CGFloat) widthOfString: (NSString *)string
 {
   cairo_text_extents_t ctext;
 

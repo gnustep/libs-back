@@ -33,7 +33,7 @@
 #include <X11/Xft/Xft.h>
 #undef id
 
-#include <GNUstepGUI/GSFontInfo.h>
+#import <GNUstepGUI/GSFontInfo.h>
 
 @interface FcFontEnumerator : GSFontEnumerator
 {
@@ -51,7 +51,7 @@
 - (void) draw: (const char*) s length: (int) len 
     onDisplay: (Display*) xdpy drawable: (Drawable) draw
 	 with: (GC) xgcntxt at: (XPoint) xp;
-- (float) widthOf: (const char*) s length: (int) len;
+- (CGFloat) widthOf: (const char*) s length: (int) len;
 - (void) setActiveFor: (Display*) xdpy gc: (GC) xgcntxt;
 
 @end

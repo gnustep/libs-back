@@ -390,7 +390,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 - (void) GSSetFont: (GSFontInfo *)fontref
 {
   cairo_matrix_t font_matrix;
-  const float *matrix; 
+  const CGFloat *matrix; 
 
   [super GSSetFont: fontref];
 

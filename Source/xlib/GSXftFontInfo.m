@@ -269,7 +269,7 @@ static NSArray *faFromFc(FcPattern *pat)
 @implementation GSXftFontInfo
 
 - initWithFontName: (NSString*)name
-	    matrix: (const float *)fmatrix
+	    matrix: (const CGFloat*)fmatrix
 	screenFont: (BOOL)screenFont
 {
   if (screenFont)
@@ -374,7 +374,7 @@ Ones(unsigned int n)
   return coveredCharacterSet;
 }
 
-- (float) widthOfString: (NSString*)string
+- (CGFloat) widthOfString: (NSString*)string
 {
   XGlyphInfo extents;
   int len = [string length];
@@ -390,7 +390,7 @@ Ones(unsigned int n)
   return extents.width;
 }
 
-- (float) widthOfGlyphs: (const NSGlyph *) glyphs length: (int) len
+- (CGFloat) widthOfGlyphs: (const NSGlyph *) glyphs length: (int) len
 {
   XGlyphInfo extents;
   XftChar16 buf[len];
@@ -477,7 +477,7 @@ Ones(unsigned int n)
 }
 
 /*
-- (float) pointSize
+- (CGFloat) pointSize
 {
   Display	*xdpy = [XGServer currentXDisplay];
 
@@ -546,7 +546,7 @@ Ones(unsigned int n)
     }
 }
 
-- (float) widthOf: (const char*) s length: (int) len
+- (CGFloat) widthOf: (const char*) s length: (int) len
 {
   XGlyphInfo extents;
 

@@ -38,7 +38,7 @@
 	cairo_scaled_font_t *_scaled;
 	CairoFaceInfo *_faceInfo;
 	BOOL _screenFont;
-	float lineHeight;
+	CGFloat lineHeight;
 
 	unsigned int _cacheSize;
 	unsigned int *_cachedGlyphs;

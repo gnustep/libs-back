@@ -263,7 +263,7 @@ fpfloat(FILE *stream, float f)
 
 - (void) GSSetFont: (void *)fontref
 {
-  const float *m = [(GSFontInfo *)fontref matrix];
+  const CGFloat *m = [(GSFontInfo *)fontref matrix];
   fprintf(gstream, "/%s findfont ", 
 	  [[(GSFontInfo *)fontref fontName] cString]);
   fprintf(gstream, "[");

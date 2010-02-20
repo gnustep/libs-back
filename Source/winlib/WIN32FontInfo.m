@@ -43,7 +43,7 @@ NSString *win32_font_family(NSString *fontName);
 @implementation WIN32FontInfo
 
 - initWithFontName: (NSString*)name
-	    matrix: (const float *)fmatrix
+	    matrix: (const CGFloat *)fmatrix
 	screenFont: (BOOL)screenFont
 {
   if (screenFont)
@@ -75,7 +75,7 @@ NSString *win32_font_family(NSString *fontName);
   [super dealloc];
 }
 
-- (float) widthOfString: (NSString*)string
+- (CGFloat) widthOfString: (NSString*)string
 {
   SIZE size;
   HDC hdc;

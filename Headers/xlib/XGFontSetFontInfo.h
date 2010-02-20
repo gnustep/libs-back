@@ -30,7 +30,7 @@
 #define __XGFontSetFontInfo_h
 
 #include <X11/Xlib.h>
-#include <GNUstepGUI/GSFontInfo.h>
+#import <GNUstepGUI/GSFontInfo.h>
 
 #ifdef X_HAVE_UTF8_STRING
 
@@ -58,23 +58,18 @@
     int		_num_fonts;
 }
 
-- (id) initWithFontName: (NSString *)name
-		 matrix: (const float *)matrix
+- (id) initWithFontName: (NSString*)name
+		 matrix: (const CGFloat*)matrix
 	     screenFont: (BOOL)screenFont;
-- (void) dealloc;
-- (NSSize) advancementForGlyph: (NSGlyph)glyph;
-- (NSRect) boundingRectForGlyph: (NSGlyph)glyph;
-- (BOOL) glyphIsEncoded: (NSGlyph)glyph;
-- (NSGlyph) glyphWithName: (NSString *)glyphName;
-- (void) drawGlyphs: (const NSGlyph *)glyphs
+- (void) drawGlyphs: (const NSGlyph*)glyphs
              length: (int)len
-          onDisplay: (Display *)dpy
+          onDisplay: (Display*)dpy
 	   drawable: (Drawable)win
 	       with: (GC)gc
 	         at: (XPoint)xp;
-- (float) widthOfGlyphs: (const NSGlyph *)glyphs
+- (CGFloat) widthOfGlyphs: (const NSGlyph*)glyphs
                  length: (int)len;
-- (void) setActiveFor: (Display *)dpy
+- (void) setActiveFor: (Display*)dpy
                    gc: (GC)gc;
 
 @end // XGFontSetFontInfo : GSFontInfo
