@@ -60,6 +60,8 @@
 #include <sys/file.h>
 #endif
 
+static BOOL _enableCallbacks = YES;
+
 static NSEvent *process_key_event(WIN32Server *svr, 
                                   HWND hwnd, WPARAM wParam, 
                                   LPARAM lParam, NSEventType eventType);
@@ -1429,7 +1431,9 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
     }
   if (state == GSTitleBarMain)
     {
+      _enableCallbacks = NO;
       SetActiveWindow((HWND)winNum);
+      _enableCallbacks = YES;
     }
 }
 
@@ -1990,6 +1994,11 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 			     WPARAM wParam, LPARAM lParam)
 {
   WIN32Server	*ctxt = (WIN32Server *)GSCurrentServer();
+  
+  if(_enableCallbacks == NO)
+    {
+      return (LRESULT)NULL;
+    }
 
   return [ctxt windowEventProc: hwnd : uMsg : wParam : lParam];
 }

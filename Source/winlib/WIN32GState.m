@@ -116,6 +116,79 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
   return GSWindowRectToMS(s, r);
 }
 
+void* get_bits(HDC dc,
+	       int w,
+	       int h,
+	       HBITMAP *bitmap)
+{
+  void          *bits = NULL;
+  BITMAPINFO     info;
+  HDC            cDC;
+
+  info.bmiHeader.biSize = sizeof(BITMAPINFO);
+  info.bmiHeader.biWidth = w;
+  info.bmiHeader.biHeight = h;
+  info.bmiHeader.biPlanes = 1;
+  info.bmiHeader.biBitCount = 32;
+  info.bmiHeader.biCompression = BI_RGB;
+  info.bmiHeader.biSizeImage = 0;
+  info.bmiHeader.biXPelsPerMeter = 0;
+  info.bmiHeader.biYPelsPerMeter = 0;
+  info.bmiHeader.biClrUsed = 0;
+  info.bmiHeader.biClrImportant = 0;
+
+  if(!(cDC = CreateCompatibleDC(dc)))
+    {
+      NSLog(@"Could not create compatible DC");
+      return NULL;
+    }
+  
+  if(!(*bitmap = CreateDIBSection(dc, (LPBITMAPINFO)&info, 
+				  DIB_RGB_COLORS, &bits, 
+				  NULL, 0)))
+    {
+      NSLog(@"Could not create bit map from DC");
+      return NULL;
+    }
+  
+  SelectObject(cDC, *bitmap);
+  
+  return bits;
+}
+
+BOOL alpha_blend_source_over(HDC destDC, 
+			     HDC srcDC, 
+			     RECT rectFrom, 
+			     int x, int y, int w, int h, 
+			     float delta)
+{
+  BOOL success = YES;
+
+#ifdef USE_ALPHABLEND
+  // Use (0..1) fraction to set a (0..255) alpha constant value
+  BYTE SourceConstantAlpha = (BYTE)(delta * 255);
+  BLENDFUNCTION blendFunc
+    = {AC_SRC_OVER, 0, SourceConstantAlpha, AC_SRC_ALPHA};
+
+  /* There is actually a very real chance this could fail, even on 
+     computers that supposedly support it. It's not known why it
+     fails though... */
+  success = AlphaBlend(destDC,
+		       x, y, w, h,
+		       srcDC,
+		       rectFrom.left, rectFrom.top,
+		       w, h, blendFunc);
+  // #else
+  // HBITMAP    sbitmap;
+  // HBITMAP    dbitmap; 
+  // unsigned char *sbits = (unsigned char *)get_bits(srcDC,w,h,&sbitmap);
+  // unsigned char *dbits = (unsigned char *)get_bits(destDC,w,h,&dbitmap);
+
+#endif
+
+  return success;
+}
+
 @interface WIN32GState (WinOps)
 - (void) setStyle: (HDC)hDC;
 - (void) restoreStyle: (HDC)hDC;
@@ -238,22 +311,13 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
     {
     case NSCompositeSourceOver:
       {
-#ifdef USE_ALPHABLEND
-        // Use (0..1) fraction to set a (0..255) alpha constant value
-        BYTE SourceConstantAlpha = (BYTE)(delta * 255);
-        BLENDFUNCTION blendFunc
-            = {AC_SRC_OVER, 0, SourceConstantAlpha, AC_SRC_ALPHA};
-        success = AlphaBlend(hDC,
-                             x, y, w, h,
-                             sourceDC,
-                             rectFrom.left, rectFrom.top,
-                             w, h, blendFunc);
-        /* There is actually a very real chance this could fail, even on 
-           computers that supposedly support it. It's not known why it
-           fails though... */
-        if (success)
-            break;
-#endif
+	success = alpha_blend_source_over(hDC, 
+					  sourceDC, 
+					  rectFrom, 
+					  x, y, w, h, 
+					  delta);
+	if (success)
+	  break;
       }
     case NSCompositeCopy:
       {
@@ -291,6 +355,7 @@ RECT GSViewRectToWin(WIN32GState *s, NSRect r)
                     op: (NSCompositingOperation)op
 {
   float gray;
+  BOOL success = NO;
 
   // FIXME: This is taken from the xlib backend
   [self DPScurrentgray: &gray];
