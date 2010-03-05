@@ -90,7 +90,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   NSAffineTransform *ictm;
   
-  ictm = [ctm copyWithZone: GSObjCZone(ctm)];
+  ictm = [ctm copyWithZone: [ctm zone]];
   [ictm invert];
   f = floatFromUserSpace(ictm, f);
   RELEASE(ictm);

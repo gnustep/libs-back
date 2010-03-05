@@ -78,7 +78,7 @@
 
 - (id) deepen
 {
-  NSZone *zone = GSObjCZone(self);
+  NSZone *zone = [self zone];
 
   if (path)
     self->path = [path copyWithZone: zone];
@@ -644,7 +644,7 @@ typedef enum {
   if (ctm)
     [ctm makeIdentityMatrix];
   else
-    ctm = [[NSAffineTransform allocWithZone: GSObjCZone(self)] init];
+    ctm = [[NSAffineTransform allocWithZone: [self zone]] init];
 
    /* Initialize colors. By default the same color is used for filling and 
      stroking unless fill and/or stroke color is set explicitly */
@@ -657,7 +657,7 @@ typedef enum {
   if (textCtm)
     [textCtm makeIdentityMatrix];
   else
-    textCtm = [[NSAffineTransform allocWithZone: GSObjCZone(self)] init];
+    textCtm = [[NSAffineTransform allocWithZone: [self zone]] init];
 }
 
 - (void)DPScurrentflat: (float *)flatness 
@@ -699,7 +699,7 @@ typedef enum {
     }
 
   // This is rather slow, but it is not used very often
-  ictm = [ctm copyWithZone: GSObjCZone(self)];
+  ictm = [ctm copyWithZone: [self zone]];
   [ictm invert];
   user = [ictm transformPoint: [path currentPoint]];
   RELEASE(ictm);
@@ -946,7 +946,7 @@ typedef enum {
 {
   // This is rather slow, but it is not used very often
   NSBezierPath *newPath = [path copy];
-  NSAffineTransform *ictm = [ctm copyWithZone: GSObjCZone(self)];
+  NSAffineTransform *ictm = [ctm copyWithZone: [self zone]];
 
   [ictm invert];
   [newPath transformUsingAffineTransform: ictm];
@@ -1248,7 +1248,7 @@ typedef enum {
 
   // The coordinates we get here are already in device space,
   // but compositeToPoint needs user space coordinates
-  ictm = [ctm copyWithZone: GSObjCZone(self)];
+  ictm = [ctm copyWithZone: [self zone]];
   [ictm invert];
 
   size = [pattern size];
