@@ -1,3 +1,9 @@
+2010-03-05 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/cairo/CairoGState.m:
+	* Source/gsc/GSGState.m:
+	Use the -zone method rather than GSObjCZone()
+
 2010-02-24 16:45-EST Gregory John Casamento <greg.casamento@gmail.com>
 
 	* Source/win32/WIN32Server.m: Added a boolean to control if 
