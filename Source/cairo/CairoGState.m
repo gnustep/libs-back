@@ -1207,7 +1207,10 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       cairo_matrix_init_scale(&local_matrix, 1, -1);
       cairo_matrix_translate(&local_matrix, 0, -2*pixelsHigh);
       cairo_pattern_set_matrix(cpattern, &local_matrix);
-      cairo_pattern_set_extend(cpattern, CAIRO_EXTEND_PAD);
+      if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 6, 0))
+        {
+          cairo_pattern_set_extend(cpattern, CAIRO_EXTEND_PAD);
+        }
       cairo_set_source(_ct, cpattern);
       cairo_pattern_destroy(cpattern);
 
@@ -1222,7 +1225,10 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       cairo_matrix_init_scale(&local_matrix, 1, -1);
       cairo_matrix_translate(&local_matrix, 0, -pixelsHigh);
       cairo_pattern_set_matrix(cpattern, &local_matrix);
-      cairo_pattern_set_extend(cpattern, CAIRO_EXTEND_PAD);
+      if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 6, 0))
+        {
+          cairo_pattern_set_extend(cpattern, CAIRO_EXTEND_PAD);
+        }
       cairo_set_source(_ct, cpattern);
       cairo_pattern_destroy(cpattern);
 

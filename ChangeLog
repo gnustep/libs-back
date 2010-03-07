@@ -1,3 +1,9 @@
+2010-03-07 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m: Only use calls for
+	cairo_pattern_set_extend() on cairo > 1.6.0.
+	Patch suggested by Eric Wasylishen <ewasylishen@gmail.com>.
+
 2010-03-05 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/cairo/CairoGState.m:
@@ -6,12 +12,12 @@
 
 2010-02-24 16:45-EST Gregory John Casamento <greg.casamento@gmail.com>
 
-	* Source/win32/WIN32Server.m: Added a boolean to control if 
-	callbacks are honored so that we can ignore the 
-	SetActiveWindow(...) call when windows are resigned.  Otherwise 
+	* Source/win32/WIN32Server.m: Added a boolean to control if
+	callbacks are honored so that we can ignore the
+	SetActiveWindow(...) call when windows are resigned.  Otherwise
 	this causes some issues and could result in an inconsistent state.
-	* Source/winlib/WIN32GState.m: Moved AlphaBlend to seperate 
-	function so that it can be called elsewhere. 
+	* Source/winlib/WIN32GState.m: Moved AlphaBlend to seperate
+	function so that it can be called elsewhere.
 
 2010-02-20 Fred Kiefer <FredKiefer@gmx.de>
 
