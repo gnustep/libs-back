@@ -1,3 +1,9 @@
+2010-03-08 Doug Simons <doug.simons@testplant.com>
+
+	* Source/win32/WIN32Server.m: When the shift key is down,
+	charactersIgnoringModifiers should be uppercase (this is
+	consistent with Cocoa and the x11 backend.
+
 2010-03-07 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m: Only use calls for

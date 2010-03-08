@@ -1,4 +1,4 @@
-/* WIN32Server - Implements window handling for MSWindows
+u/* WIN32Server - Implements window handling for MSWindows
 
    Copyright (C) 2002, 2005 Free Software Foundation, Inc.
 
@@ -1808,7 +1808,9 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
       
       ukeys = [NSString  stringWithCharacters: unicode  length: result];
     }
-
+  if (eventFlags & NSShiftKeyMask)
+    ukeys = [ukeys uppercaseString];
+  
   event = [NSEvent keyEventWithType: eventType
 			   location: eventLocation
 		      modifierFlags: eventFlags
