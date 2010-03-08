@@ -1,4 +1,4 @@
-u/* WIN32Server - Implements window handling for MSWindows
+/* WIN32Server - Implements window handling for MSWindows
 
    Copyright (C) 2002, 2005 Free Software Foundation, Inc.
 
