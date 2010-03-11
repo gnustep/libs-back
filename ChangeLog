@@ -1,3 +1,8 @@
+2010-03-11 Doug Simons <doug.simons@testplant.com>
+
+	* Source/win32/WIN32Server.m: Prevent generating spurious
+	NSMouseMoved events when the mouse hasn't actually moved.
+
 2010-03-08 Doug Simons <doug.simons@testplant.com>
 
 	* Source/win32/WIN32Server.m: Oops, I don't know how the

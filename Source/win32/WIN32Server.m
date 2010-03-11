@@ -1973,6 +1973,16 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
   if (eventType == NSLeftMouseUp) lDown = NO;
   if (eventType == NSRightMouseUp) rDown = NO;
   if (eventType == NSOtherMouseUp) oDown = NO;
+  
+  if (eventType == NSMouseMoved) {
+    static HWND lastHwnd = 0;
+	static NSPoint lastLocation = {0.0, 0.0};
+	if (hwnd == lastHwnd && NSEqualPoints(eventLocation, lastLocation))
+	  return nil; // mouse hasn't actually moved -- don't generate another event
+	// record window and location of this event, to check next mouseMoved event against
+	lastHwnd = hwnd;
+	lastLocation = eventLocation;
+  }
 
   event = [NSEvent mouseEventWithType: eventType
 			     location: eventLocation
