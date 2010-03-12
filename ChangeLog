@@ -1,3 +1,8 @@
+2010-03-12 Doug Simons <doug.simons@testplant.com>
+
+	* Source/win32/WIN32Server.m: Capture the mouse to get mouse
+	moved events outside of a window while a button is down.
+
 2010-03-11 Doug Simons <doug.simons@testplant.com>
 
 	* Source/win32/WIN32Server.m: Prevent generating spurious

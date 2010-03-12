@@ -1965,7 +1965,15 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
           clickCount = 1;
           lastTime = ltime;
         }
+      SetCapture(hwnd); // capture the mouse to get mouse moved events outside of window
     }
+  else if ( ((eventType == NSLeftMouseUp)
+    || (eventType == NSRightMouseUp)
+    || (eventType == NSOtherMouseUp)) 
+	&& !((wParam & MK_LBUTTON) || (wParam & MK_MBUTTON) || (wParam & MK_RBUTTON)) )
+	{
+	  ReleaseCapture(); // release capture when all mouse buttons are up
+	}
 
   if (eventType == NSLeftMouseDown) lDown = YES;
   if (eventType == NSRightMouseDown) rDown = YES;
