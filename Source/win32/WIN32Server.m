@@ -67,7 +67,8 @@ static NSEvent *process_key_event(WIN32Server *svr,
                                   LPARAM lParam, NSEventType eventType);
 static NSEvent *process_mouse_event(WIN32Server *svr, 
                                     HWND hwnd, WPARAM wParam, 
-                                    LPARAM lParam, NSEventType eventType);
+                                    LPARAM lParam, NSEventType eventType,
+                                    UINT uMsg);
 
 LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, 
                              WPARAM wParam, LPARAM lParam);
@@ -704,45 +705,50 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
         break;
       case WM_MOUSEMOVE: //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEMOVE", hwnd);
-        ev = process_mouse_event(self, hwnd, wParam, lParam, NSMouseMoved);
+        ev = process_mouse_event(self, hwnd, wParam, lParam, NSMouseMoved, uMsg);
         break;
       case WM_LBUTTONDOWN: //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONDOWN", hwnd);
         //[self decodeWM_LBUTTONDOWNParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd];
-        ev = process_mouse_event(self, hwnd, wParam, lParam, NSLeftMouseDown);
+        ev = process_mouse_event(self, hwnd, wParam, lParam, NSLeftMouseDown, uMsg);
         break;
       case WM_LBUTTONUP: //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONUP", hwnd);
-        ev = process_mouse_event(self, hwnd, wParam, lParam, NSLeftMouseUp);
+        ev = process_mouse_event(self, hwnd, wParam, lParam, NSLeftMouseUp, uMsg);
         break;
       case WM_LBUTTONDBLCLK: //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONDBLCLK", hwnd);
         break;
       case WM_MBUTTONDOWN: //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONDOWN", hwnd);
-        ev = process_mouse_event(self, hwnd, wParam, lParam, NSOtherMouseDown);
+        ev = process_mouse_event(self, hwnd, wParam, lParam, NSOtherMouseDown, uMsg);
         break;
       case WM_MBUTTONUP: //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONUP", hwnd);
-        ev = process_mouse_event(self, hwnd, wParam, lParam, NSOtherMouseUp);
+        ev = process_mouse_event(self, hwnd, wParam, lParam, NSOtherMouseUp, uMsg);
         break;
       case WM_MBUTTONDBLCLK: //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MBUTTONDBLCLK", hwnd);
         break;
       case WM_RBUTTONDOWN: //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONDOWN", hwnd);
-        ev = process_mouse_event(self, hwnd, wParam, lParam, NSRightMouseDown);
+        ev = process_mouse_event(self, hwnd, wParam, lParam, NSRightMouseDown, uMsg);
         break;
       case WM_RBUTTONUP: //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONUP", hwnd);
-        ev = process_mouse_event(self, hwnd, wParam, lParam, NSRightMouseUp);
+        ev = process_mouse_event(self, hwnd, wParam, lParam, NSRightMouseUp, uMsg);
         break;
       case WM_RBUTTONDBLCLK: //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "RBUTTONDBLCLK", hwnd);
         break;
+      case WM_MOUSEHWHEEL: //MOUSE
+        NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEHWHEEL", hwnd);
+        ev = process_mouse_event(self, hwnd, wParam, lParam, NSScrollWheel, uMsg);
+        break;
+	
       case WM_MOUSEWHEEL: //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEWHEEL", hwnd);
-        ev = process_mouse_event(self, hwnd, wParam, lParam, NSScrollWheel);
+        ev = process_mouse_event(self, hwnd, wParam, lParam, NSScrollWheel, uMsg);
         break;
 	
       case WM_KEYDOWN:  //KEYBOARD
@@ -1827,7 +1833,7 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 
 static NSEvent*
 process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam, 
-		    NSEventType eventType)
+		    NSEventType eventType, UINT uMsg)
 {
   NSEvent *event;
   NSPoint eventLocation;
@@ -1836,7 +1842,7 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
   LONG ltime;
   DWORD tick;
   NSGraphicsContext *gcontext;
-  short deltaY = 0;
+  float deltaX = 0.0, deltaY = 0.0;
   static int clickCount = 1;
   static LONG lastTime = 0;
   int clientX, clientY;
@@ -1895,8 +1901,12 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 
   if (eventType == NSScrollWheel)
     {
-      deltaY = GET_WHEEL_DELTA_WPARAM(wParam) / 120;
-      //NSLog(@"Scroll event with delat %d", deltaY);
+      float delta = GET_WHEEL_DELTA_WPARAM(wParam) / 120.0;
+      if (uMsg == WM_MOUSEWHEEL)
+        deltaY = delta;
+      else
+        deltaX = delta;
+      //NSLog(@"Scroll event with deltaX %f deltaY %f", deltaX, deltaY);
     }
   else if (eventType == NSMouseMoved)
     {
@@ -1907,7 +1917,7 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	  if (lDown == NO)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
-		NSLeftMouseDown);
+		NSLeftMouseDown, uMsg);
 	      [GSCurrentServer() postEvent: e atStart: NO];
 	    }
           eventType = NSLeftMouseDragged;
@@ -1917,13 +1927,13 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	  if (lDown == YES)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
-		NSLeftMouseUp);
+		NSLeftMouseUp, uMsg);
 	      [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (rDown == NO)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
-		NSRightMouseDown);
+		NSRightMouseDown, uMsg);
 	      [GSCurrentServer() postEvent: e atStart: NO];
 	    }
           eventType = NSRightMouseDragged;
@@ -1933,19 +1943,19 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	  if (lDown == YES)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
-		NSLeftMouseUp);
+		NSLeftMouseUp, uMsg);
 	      [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (rDown == YES)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
-		NSRightMouseUp);
+		NSRightMouseUp, uMsg);
 	      [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (oDown == NO)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
-		NSOtherMouseDown);
+		NSOtherMouseDown, uMsg);
 	      [GSCurrentServer() postEvent: e atStart: NO];
 	    }
           eventType = NSOtherMouseDragged;
@@ -1955,19 +1965,19 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	  if (lDown == YES)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
-		NSLeftMouseUp);
+		NSLeftMouseUp, uMsg);
 	      [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (rDown == YES)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
-		NSRightMouseUp);
+		NSRightMouseUp, uMsg);
 	      [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (oDown == YES)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
-		NSOtherMouseUp);
+		NSOtherMouseUp, uMsg);
 	      [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	}
@@ -2022,7 +2032,7 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 			   clickCount: clickCount
 			     pressure: 1.0
 			 buttonNumber: 0 /* FIXME */
-			       deltaX: 0.
+			       deltaX: deltaX
 			       deltaY: deltaY
 			       deltaZ: 0.];
   

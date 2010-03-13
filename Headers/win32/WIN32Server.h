@@ -67,6 +67,11 @@
 #define GET_Y_LPARAM(p) ((int)(short)HIWORD(p))
 #endif
 
+// The horizontal mousehweel message is missing in MinGW 
+#ifndef WM_MOUSEHWHEEL
+#define WM_MOUSEHWHEEL 0x020E
+#endif
+
 #define EVENT_WINDOW(lp) (GSWindowWithNumber((int)lp)) 
 
 DWORD windowStyleForGSStyle(unsigned int style);
