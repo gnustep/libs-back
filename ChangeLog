@@ -1,5 +1,11 @@
 2010-03-13 Eric Wasylishen <ewasylishen@gmail.com>
 
+	* Headers/win32/WIN32Server.h: 
+	* Source/win32/WIN32Server.m: Add support for horizontal 
+	mousewheel scrolling
+
+010-03-13 Eric Wasylishen <ewasylishen@gmail.com>
+
 	* Source/win32/WIN32Server.m: Fix handling of mousewheel events.
 	The WM_MOUSEWHEEL message uses screen coordinates, so convert
 	them to client coordinates. 
