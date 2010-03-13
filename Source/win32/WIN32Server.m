@@ -1839,6 +1839,7 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
   short deltaY = 0;
   static int clickCount = 1;
   static LONG lastTime = 0;
+  int clientX, clientY;
 /*
  * Occasionally the mouse down events are lost ... don't know why.
  * So we track the mouse status  and simulate mouse down or up events
@@ -1849,8 +1850,27 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
   static BOOL rDown = NO;
 
   gcontext = GSCurrentContext();
-  eventLocation = MSWindowPointToGS(svr, hwnd,  GET_X_LPARAM(lParam), 
-				    GET_Y_LPARAM(lParam));
+
+/*
+ * Some events give screen coordinates - we must convert those to client
+ * coordinates.
+ */
+  if (eventType == NSScrollWheel)
+    {
+      POINT point;
+      point.x = GET_X_LPARAM(lParam);
+      point.y = GET_Y_LPARAM(lParam);
+      ScreenToClient(hwnd, &point);
+      clientX = point.x;
+      clientY = point.y;
+    }
+  else
+    {
+      clientX = GET_X_LPARAM(lParam);
+      clientY = GET_Y_LPARAM(lParam);
+    }
+
+  eventLocation = MSWindowPointToGS(svr, hwnd, clientX, clientY);
   ltime = GetMessageTime();
   time = ltime / 1000;
   tick = GetTickCount();
@@ -2005,7 +2025,7 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 			       deltaX: 0.
 			       deltaY: deltaY
 			       deltaZ: 0.];
-            
+  
   return event;
 }
 

@@ -1,3 +1,9 @@
+2010-03-13 Eric Wasylishen <ewasylishen@gmail.com>
+
+	* Source/win32/WIN32Server.m: Fix handling of mousewheel events.
+	The WM_MOUSEWHEEL message uses screen coordinates, so convert
+	them to client coordinates. 
+
 2010-03-13 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSContext.m (-GSDrawImage::): 
