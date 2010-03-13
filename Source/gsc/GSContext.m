@@ -824,15 +824,15 @@ static NSMapTable *gtable;
 - (void) GSDrawImage: (NSRect) rect: (void *) imageref
 {
   NSBitmapImageRep *bitmap;
-  const unsigned char *data[5];
+  unsigned char *data[5];
 
   bitmap = (NSBitmapImageRep*)imageref;
-  [bitmap getBitmapDataPlanes: &data];
+  [bitmap getBitmapDataPlanes: data];
   [self NSDrawBitmap: rect : [bitmap pixelsWide] : [bitmap pixelsHigh]
         : [bitmap bitsPerSample] : [bitmap samplesPerPixel]
         : [bitmap bitsPerPixel] : [bitmap bytesPerRow] : [bitmap isPlanar]
         : [bitmap hasAlpha] :  [bitmap colorSpaceName]
-        : data];
+        : (const unsigned char**)data];
 }
 
 /* ----------------------------------------------------------------------- */
