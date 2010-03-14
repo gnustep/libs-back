@@ -1,5 +1,14 @@
 2010-03-13 Eric Wasylishen <ewasylishen@gmail.com>
 
+	* Source/win32/w32_GLcontext.m:
+	Make more than one NSOpenGLView in an application work.
+
+	Win32GLContext was using the hDC stored in the pixel format
+	object in a few places, instead of getting it from the
+	Win32Subwindow object. 
+
+2010-03-13 Eric Wasylishen <ewasylishen@gmail.com>
+
 	* Headers/win32/WIN32Server.h: 
 	* Source/win32/WIN32Server.m: Add support for horizontal 
 	mousewheel scrolling

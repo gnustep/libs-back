@@ -269,7 +269,7 @@ static Win32GLContext *currentGLContext;
 	{
 	  [Win32GLContext clearCurrentContext];
 	}
-      format->wgl_drawable = (HDC)NULL;
+      wsubwin->hDC = (HDC)NULL;
       DESTROY(wsubwin);
     }
 }
@@ -306,7 +306,7 @@ static Win32GLContext *currentGLContext;
 
 - (void)flushBuffer
 {
-  SwapBuffers(format->wgl_drawable);
+  SwapBuffers(wsubwin->hDC);
 }
 
 - (void)getValues:(long *)vals 
@@ -360,11 +360,11 @@ static Win32GLContext *currentGLContext;
     [NSException raise: NSGenericException
 		 format: @"GL Context is not bind, cannot be made current"];
   
-  NSAssert(wgl_context && format->wgl_drawable, 
+  NSAssert(wgl_context && wsubwin->hDC, 
 	   NSInternalInconsistencyException);
 
   NSDebugMLLog(@"WGL", @"before wglMakeCurrent");
-  wglMakeCurrent(format->wgl_drawable, wgl_context);
+  wglMakeCurrent(wsubwin->hDC, wgl_context);
   NSDebugMLLog(@"WGL", @"after wglMakeCurrent");
 
 //   NSAssert(glx_context != None,   NSInternalInconsistencyException);
