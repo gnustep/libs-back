@@ -153,9 +153,11 @@ LRESULT CALLBACK win32SubwindowProc(
   
   NSDebugMLLog(@"WGL", @"MS window creation (%d, %d, %u, %u)", x, y, width, height);
   
+  /* WS_DISABLED causes mouse/keyboard events to be forwarded to the parent window
+     so they can be processed normally; otherwise the OpenGL window would eat them */
   winid = CreateWindow(
       NSOPENGLSUBWINDOWCLASS, NSOPENGLSUBWINDOWNAME, 
-      WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE, 
+      WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE | WS_DISABLED, 
       x, y, width, height, 
       (HWND)[win windowNumber], (HMENU)NULL, hInstance, (LPVOID)self);
 
