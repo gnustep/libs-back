@@ -1,5 +1,13 @@
 2010-03-13 Eric Wasylishen <ewasylishen@gmail.com>
 
+	* Source/win32/w32_GLcontext.m: Set the WS_DISABLED flag
+	on the OpenGL subwindow so mouse/keyboard events get
+	redirected to the parent window.
+	Previously mouse/keyboard events were being eaten by
+	the OpenGL subwindow - now they work as expected.
+
+2010-03-13 Eric Wasylishen <ewasylishen@gmail.com>
+
 	* Source/win32/w32_GLcontext.m:
 	Make more than one NSOpenGLView in an application work.
 
