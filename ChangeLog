@@ -1,3 +1,12 @@
+2010-03-19 Eric Wasylishen <ewasylishen@gmail.com>
+
+	* Source/win32/WIN32Server.m: Process WM_SYSKEYDOWN
+	and WM_SYSKEYUP messages - these are delivered instead
+	of normal WM_KEYDOWN and WM_KEYUP messages when the
+	ALT key is presesd. (and also F10).
+	
+	This fixes NSAlternateKeyMask not being set.
+	
 2010-03-13 Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/win32/w32_GLcontext.m: Set the WS_DISABLED flag
