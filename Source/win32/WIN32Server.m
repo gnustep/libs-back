@@ -1841,6 +1841,7 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 {
   NSEvent *event;
   NSPoint eventLocation;
+  static NSPoint lastLocation = {0.0, 0.0};
   unsigned int eventFlags;
   NSTimeInterval time;
   LONG ltime;
@@ -1915,6 +1916,8 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
   else if (eventType == NSMouseMoved)
     {
       NSEvent	*e;
+      deltaX = eventLocation.x - lastLocation.x;
+      deltaY = -(eventLocation.y - lastLocation.y);
 
       if (wParam & MK_LBUTTON)
         { 
@@ -2018,13 +2021,13 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
   
   if (eventType == NSMouseMoved) {
     static HWND lastHwnd = 0;
-	static NSPoint lastLocation = {0.0, 0.0};
 	if (hwnd == lastHwnd && NSEqualPoints(eventLocation, lastLocation))
 	  return nil; // mouse hasn't actually moved -- don't generate another event
 	// record window and location of this event, to check next mouseMoved event against
-	lastHwnd = hwnd;
-	lastLocation = eventLocation;
+	lastHwnd = hwnd;	
   }
+
+  lastLocation = eventLocation;
 
   event = [NSEvent mouseEventWithType: eventType
 			     location: eventLocation
