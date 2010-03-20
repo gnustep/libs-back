@@ -1,5 +1,10 @@
 2010-03-19 Eric Wasylishen <ewasylishen@gmail.com>
 
+	* Source/win32/WIN32Server.m: Report deltaX and deltaY
+	for mouse move events, like OS X does.
+
+2010-03-19 Eric Wasylishen <ewasylishen@gmail.com>
+
 	* Source/win32/WIN32Server.m: Process WM_SYSKEYDOWN
 	and WM_SYSKEYUP messages - these are delivered instead
 	of normal WM_KEYDOWN and WM_KEYUP messages when the
