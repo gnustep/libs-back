@@ -367,15 +367,10 @@ NSDebugLLog(@"WTrace", @"swap %d (%d) with %d (%d)", hi, hl, lo, ll);
   return 0;
 }
 
-- (void) decodeWM_SIZINGParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
+- (LRESULT) decodeWM_SIZINGParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
 {
-   // stub for future dev
-
-   //[EVENT_WINDOW(hwnd) displayIfNeeded];
-   //[self decodeWM_SIZEParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam];
-   //printf("SIZING called\n");
-
-   //return TRUE;
+  [EVENT_WINDOW(hwnd) displayIfNeeded];
+  return TRUE;
 }
 
 - (LRESULT) decodeWM_MOVINGParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
