@@ -552,7 +552,8 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   switch (uMsg) 
     { 
       case WM_SIZING: 
-        [self decodeWM_SIZINGParams: hwnd : wParam : lParam];
+        return [self decodeWM_SIZINGParams: hwnd : wParam : lParam];
+	break;
       case WM_NCCREATE: 
         return [self decodeWM_NCCREATEParams: wParam : lParam : hwnd];
         break;

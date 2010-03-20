@@ -1,5 +1,13 @@
 2010-03-19 Eric Wasylishen <ewasylishen@gmail.com>
 
+	* Headers/win32/w32_movesize.h:
+	* Source/win32/w32_movesize.m:
+	* Source/win32/WIN32Server.m: Call displayIfNeeded on
+	the window when WM_SIZING is recieved so windows redraw
+	while being resized.
+
+2010-03-19 Eric Wasylishen <ewasylishen@gmail.com>
+
 	* Source/win32/WIN32Server.m: Report deltaX and deltaY
 	for mouse move events, like OS X does.
 
