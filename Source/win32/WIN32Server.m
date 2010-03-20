@@ -665,9 +665,13 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
       case WM_COMMAND: 
         [self decodeWM_COMMANDParams: wParam : lParam : hwnd];
         break;
-      case WM_SYSKEYDOWN: 
+      case WM_SYSKEYDOWN:  //KEYBOARD
+        NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SYSKEYDOWN", hwnd);
+        ev = process_key_event(self, hwnd, wParam, lParam, NSKeyDown);
         break;
-      case WM_SYSKEYUP: 
+      case WM_SYSKEYUP:  //KEYBOARD
+        NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SYSKEYUP", hwnd);
+        ev = process_key_event(self, hwnd, wParam, lParam, NSKeyUp);
         break;
       case WM_SYSCOMMAND: 
         [self decodeWM_SYSCOMMANDParams: wParam : lParam : hwnd];
