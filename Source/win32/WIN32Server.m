@@ -1994,6 +1994,10 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
     || (eventType == NSRightMouseDown)
     || (eventType == NSOtherMouseDown))
     {
+      // It seems Windows generates duplicate mouse down events on first click in a window
+      if (ltime == lastTime) // duplicate event has identical time
+	return nil; // ignore it
+
       if (lastTime + GetDoubleClickTime() > ltime)
         {
           clickCount += 1;
