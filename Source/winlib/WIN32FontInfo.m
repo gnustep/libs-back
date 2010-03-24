@@ -25,6 +25,7 @@
 */
 
 #include <Foundation/NSCharacterSet.h>
+#include <Foundation/NSDebug.h>
 #include <Foundation/NSDictionary.h>
 #include <Foundation/NSString.h>
 #include <Foundation/NSArray.h>
