@@ -1,3 +1,7 @@
+2010-03-25 Riccardo Mottola <rmottola@users.sf.net>
+
+	* Source/gsc/GSGState.m: import NSValue
+	
 2010-03-24 Doug Simons <doug.simons@testplant.com>
 
 	* Source/winlib/WIN32FontInfo.m: Include NSDebug.h for
