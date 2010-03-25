@@ -1,6 +1,6 @@
 /* GSGState - Generic graphic state
 
-   Copyright (C) 1998 Free Software Foundation, Inc.
+   Copyright (C) 1998-2010 Free Software Foundation, Inc.
 
    Written by:  Adam Fedor <fedor@gnu.org>
    Date: Mar 2002
@@ -25,20 +25,20 @@
 */
 
 #include "config.h"
-#include <Foundation/NSObjCRuntime.h>
+#import <Foundation/NSObjCRuntime.h>
 #import <Foundation/NSValue.h>
-#include <AppKit/NSAffineTransform.h>
-#include <AppKit/NSBezierPath.h>
-#include <AppKit/NSColor.h>
-#include <AppKit/NSColorSpace.h>
-#include <AppKit/NSImage.h>
-#include <GNUstepGUI/GSFontInfo.h>
-#include <AppKit/NSGraphics.h>
-#include "gsc/GSContext.h"
-#include "gsc/GSGState.h"
-#include "gsc/GSFunction.h"
+#import <AppKit/NSAffineTransform.h>
+#import <AppKit/NSBezierPath.h>
+#import <AppKit/NSColor.h>
+#import <AppKit/NSColorSpace.h>
+#import <AppKit/NSImage.h>
+#import <GNUstepGUI/GSFontInfo.h>
+#import <AppKit/NSGraphics.h>
+#import "gsc/GSContext.h"
+#import "gsc/GSGState.h"
+#import "gsc/GSFunction.h"
 #include "math.h"
-#include <GNUstepBase/Unicode.h>
+#import <GNUstepBase/Unicode.h>
 
 #define CHECK_PATH \
   if (!path) \
