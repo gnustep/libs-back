@@ -24,30 +24,31 @@
 
 #include <math.h>
 
-#include <Foundation/NSObject.h>
-#include <Foundation/NSArray.h>
-#include <Foundation/NSSet.h>
-#include <Foundation/NSDictionary.h>
-#include <Foundation/NSValue.h>
-#include <Foundation/NSPathUtilities.h>
-#include <Foundation/NSFileManager.h>
-#include <Foundation/NSUserDefaults.h>
-#include <Foundation/NSBundle.h>
-#include <Foundation/NSDebug.h>
-#include <GNUstepBase/Unicode.h>
+#import <Foundation/NSObject.h>
+#import <Foundation/NSArray.h>
+#import <Foundation/NSSet.h>
+#import <Foundation/NSDictionary.h>
+#import <Foundation/NSValue.h>
+#import <Foundation/NSPathUtilities.h>
+#import <Foundation/NSFileManager.h>
+#import <Foundation/NSUserDefaults.h>
+#import <Foundation/NSBundle.h>
+#import <Foundation/NSDebug.h>
+#import <Foundation/NSGeometry.h>
+#import <Foundation/NSString.h>
+#import <GNUstepBase/Unicode.h>
 
-#include <GNUstepGUI/GSFontInfo.h>
-#include <AppKit/NSAffineTransform.h>
-#include <AppKit/NSBezierPath.h>
+#import <GNUstepGUI/GSFontInfo.h>
+#import <AppKit/NSAffineTransform.h>
+#import <AppKit/NSBezierPath.h>
 
-//#include "gsc/GSContext.h"
-#include "gsc/GSGState.h"
+#import "gsc/GSGState.h"
 
-#include "ftfont.h"
-#include "FTFontEnumerator.h"
-#include "FTFaceInfo.h"
+#import "ftfont.h"
+#import "FTFontEnumerator.h"
+#import "FTFaceInfo.h"
 
-#include "blit.h"
+#import "blit.h"
 
 
 #define DI (*di)
