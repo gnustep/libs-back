@@ -1,6 +1,6 @@
 /* XGGState - Implements graphic state drawing for Xlib
 
-   Copyright (C) 1998 Free Software Foundation, Inc.
+   Copyright (C) 1998-2010 Free Software Foundation, Inc.
 
    Written by:  Adam Fedor <fedor@gnu.org>
    Date: Nov 1998
@@ -25,10 +25,14 @@
 */
 
 #include "config.h"
-#include <Foundation/NSObjCRuntime.h>
-#include <AppKit/NSBezierPath.h>
-#include <AppKit/NSFont.h>
-#include <AppKit/NSGraphics.h>
+#import <Foundation/NSObjCRuntime.h>
+#import <Foundation/NSUserDefaults.h>
+#import <Foundation/NSValue.h>
+#import <Foundation/NSDebug.h>
+#import <Foundation/NSException.h>
+#import <AppKit/NSBezierPath.h>
+#import <AppKit/NSFont.h>
+#import <AppKit/NSGraphics.h>
 
 #include "xlib/XGGeometry.h"
 #include "xlib/XGContext.h"
