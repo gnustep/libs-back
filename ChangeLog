@@ -1,8 +1,14 @@
+2010-03-25 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/ftfont.m,
+	* Source/art/ftfont-old.m,
+	* Source/xlib/XGGState.m: Add more missing imports.
+
 2010-03-25 Riccardo Mottola <rmottola@users.sf.net>
 
 	* Source/gsc/GSGState.m: import NSValue, include -> import
 	* Source/xlib/XGGState.m: added missing imports
-	
+
 2010-03-24 Doug Simons <doug.simons@testplant.com>
 
 	* Source/winlib/WIN32FontInfo.m: Include NSDebug.h for
@@ -32,9 +38,9 @@
 	and WM_SYSKEYUP messages - these are delivered instead
 	of normal WM_KEYDOWN and WM_KEYUP messages when the
 	ALT key is presesd. (and also F10).
-	
+
 	This fixes NSAlternateKeyMask not being set.
-	
+
 2010-03-13 Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/win32/w32_GLcontext.m: Set the WS_DISABLED flag

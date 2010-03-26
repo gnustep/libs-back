@@ -24,21 +24,22 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "config.h"
+#import "config.h"
 #import <Foundation/NSObjCRuntime.h>
 #import <Foundation/NSUserDefaults.h>
 #import <Foundation/NSValue.h>
 #import <Foundation/NSDebug.h>
+#import <Foundation/NSDictionary.h>
 #import <Foundation/NSException.h>
 #import <AppKit/NSBezierPath.h>
 #import <AppKit/NSFont.h>
 #import <AppKit/NSGraphics.h>
 
-#include "xlib/XGGeometry.h"
-#include "xlib/XGContext.h"
-#include "xlib/XGGState.h"
-#include "xlib/XGContext.h"
-#include "xlib/XGPrivate.h"
+#import "xlib/XGGeometry.h"
+#import "xlib/XGContext.h"
+#import "xlib/XGGState.h"
+#import "xlib/XGContext.h"
+#import "xlib/XGPrivate.h"
 #include "math.h"
 
 #define XDPY (((RContext *)context)->dpy)
