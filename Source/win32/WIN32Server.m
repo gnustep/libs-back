@@ -1011,6 +1011,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   int		foreground = 0;
   int		otherLevel;
   int		level;
+  NSWindow *window = GSWindowWithNumber(winNum);
 
   NSDebugLLog(@"WTrace", @"orderwindow: %d : %d : %d", op, otherWin, winNum);
 
@@ -1036,11 +1037,6 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
         }
     }
 
-  flag = SW_SHOW;
-  if (IsIconic((HWND)winNum))
-    flag = SW_RESTORE;
-  ShowWindow((HWND)winNum, flag); 
-
   if (op == NSWindowOut)
     {
       SetWindowLong((HWND)winNum, OFF_ORDERED, 0);
@@ -1048,6 +1044,22 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
         SWP_HIDEWINDOW | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER);
       return;
     }
+
+  if (![window canBecomeMainWindow] && ![window canBecomeKeyWindow]) 
+    {   // Bring front, but do not activate, eg - tooltips
+    flag = SW_SHOWNA; 
+    ShowWindow((HWND)winNum, flag);
+    }
+  else 
+    {
+    flag = SW_SHOW;
+    
+    if (IsIconic((HWND)winNum))
+      flag = SW_RESTORE;
+    
+    ShowWindow((HWND)winNum, flag); 
+    }
+
   SetWindowLong((HWND)winNum, OFF_ORDERED, 1);
   level = GetWindowLong((HWND)winNum, OFF_LEVEL);
 
