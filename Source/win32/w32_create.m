@@ -109,7 +109,7 @@
       icon = LoadImage(NULL, 
 		       cpath,
 		       IMAGE_ICON,0,0,
-		       LR_DEFAULTCOLOR|LR_LOADFROMFILE);
+		       LR_DEFAULTSIZE|LR_LOADFROMFILE);
       SetClassLongPtr(hwnd,GCLP_HICON,(LONG_PTR)icon);
     }
 
