@@ -1,3 +1,9 @@
+2010-04-15 Eric Wasylishen <ewasylishen@gmail.com>
+
+	* Source/win32/w32_create.m:
+	Use the default icon size when loading the app ico file
+	Otherwise, the first icon in the file would be used.
+
 2010-04-14 Jonathan Gillaspie <jonathan.gillaspie@testplant.com>
 
   * Source/win32/WIN32Server.m:  Have non-key, non-main windows 
