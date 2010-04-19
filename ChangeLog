@@ -1,3 +1,11 @@
+2010-04-18 Eric Wasylishen <ewasylishen@gmail.com>
+
+	* Source/winlib/WIN32FontInfo.m:
+	Use DEFAULT_QUALITY for fonts instead of ANTIALISED_QUALITY.
+
+	ANTIALISED_QUALITY forces small text to be non-antialised,
+	which looks out of place compared with most Windows apps.
+
 2010-04-15 Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/win32/w32_create.m:

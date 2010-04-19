@@ -452,7 +452,7 @@ NSLog(@"No glyph for U%d", c);
   if (range.length)
     logfont.lfItalic = 1; 
 
-  logfont.lfQuality = ANTIALIASED_QUALITY;
+  logfont.lfQuality = DEFAULT_QUALITY;
   wcsncpy(logfont.lfFaceName,
     (const unichar*)[familyName cStringUsingEncoding: NSUnicodeStringEncoding],
     LF_FACESIZE);
