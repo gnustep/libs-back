@@ -1198,8 +1198,11 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
     SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
 
   if (otherWin == (int)HWND_TOP)
-    SetForegroundWindow((HWND)winNum);
-
+    {
+      _enableCallbacks = NO;
+	  SetForegroundWindow((HWND)winNum);
+      _enableCallbacks = YES;
+	}
   /* For debug log window stack.
    */
   if (GSDebugSet(@"WTrace") == YES)
@@ -1834,11 +1837,16 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
   if (eventFlags & NSShiftKeyMask)
     ukeys = [ukeys uppercaseString];
   
+  // key events should go to the key window if we have one (Windows' focus window isn't always appropriate)
+  int windowNumber = [[NSApp keyWindow] windowNumber];
+  if (windowNumber == 0)
+    windowNumber  = (int)hwnd;
+	
   event = [NSEvent keyEventWithType: eventType
 			   location: eventLocation
 		      modifierFlags: eventFlags
 			  timestamp: time
-		       windowNumber: (int)hwnd
+		       windowNumber: windowNumber
 			    context: gcontext
 			 characters: keys
 		   charactersIgnoringModifiers: ukeys
