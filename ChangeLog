@@ -1,5 +1,10 @@
 2010-04-20 Doug Simons <doug.simons@testplant.com>
 
+	* Source/winlib/WIN32GState.m:
+	Fix problem with display location for some composited images.
+
+2010-04-20 Doug Simons <doug.simons@testplant.com>
+
 	* Source/win32/WIN32Server.m:
 	Fix problem with key events going to window other than the key window.
 	Block callbacks while setting the foreground window to prevent key/main

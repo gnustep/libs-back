@@ -283,6 +283,7 @@ BOOL alpha_blend_source_over(HDC destDC,
 
     [source->ctm boundingRectFor: sourceRect result: &newRect];
     rectFrom = GSWindowRectToMS(source, newRect);
+    y += (sourceRect.size.height - newRect.size.height); // adjust location for scaled source
   }
   h = rectFrom.bottom - rectFrom.top;
   w = rectFrom.right - rectFrom.left;
