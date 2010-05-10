@@ -7,11 +7,17 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.18.0}
+
+Many Windows improvements
+
+Implement pattern colours for all backends.
+
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.17.1}
 
 Use DejaVu as another fallback font.
-
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.17.0}
 
