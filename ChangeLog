@@ -1,3 +1,7 @@
+2010-05-09  Adam Fedor  <fedor@gnu.org>
+
+	* Version 0.18.0
+
 2010-04-20 Doug Simons <doug.simons@testplant.com>
 
 	* Source/winlib/WIN32GState.m:
