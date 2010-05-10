@@ -77,14 +77,5 @@ version.texi: ../Version
 	  echo '@set GNUSTEP-BACK-FTP-MACHINE $(GNUSTEP_BACK_FTP_MACHINE)' \
 		>> version.texi; fi
 	if [ $(GNUSTEP_BACK_FTP_DIRECTORY) ]; then \
-	  echo '@set GNUSTEP-BACK-FTP-DIRECTORY \
-		$(GNUSTEP_BACK_FTP_DIRECTORY)' \
-		>> version.texi; fi
-	if [ $(GNUSTEP_BACK_SNAP_FTP_MACHINE) ]; then \
-	  echo '@set GNUSTEP-BACK-SNAP-FTP-MACHINE \
-		$(GNUSTEP_BACK_SNAP_FTP_MACHINE)' \
-		>> version.texi; fi
-	if [ $(GNUSTEP_BACK_SNAP_FTP_DIRECTORY) ]; then \
-	  echo '@set GNUSTEP-BACK-SNAP-FTP-DIRECTORY \
-		$(GNUSTEP_BACK_SNAP_FTP_DIRECTORY)' \
+	  echo '@set GNUSTEP-BACK-FTP-DIRECTORY $(GNUSTEP_BACK_FTP_DIRECTORY)' \
 		>> version.texi; fi
