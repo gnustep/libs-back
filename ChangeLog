@@ -1,3 +1,9 @@
+2010-05-11 Fred Kiefer <FredKiefer@gmx.de>
+
+	* configure.ac: Make cairo the default backend. Fall back to art
+	and xlib gracefully.
+	* configure: Regenerate.
+
 2010-05-10  Adam Fedor  <fedor@gnu.org>
 
 	* Fix release documentation

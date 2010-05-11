@@ -458,9 +458,10 @@ LDFLAGS=${GRAPHIC_LFLAGS}
 # Which projects should we build?
 #--------------------------------------------------------------------
 BUILD_SERVER=x11
-BUILD_GRAPHICS=art
+BUILD_GRAPHICS=cairo
 case $target_os in
-  *mingw32* ) BUILD_SERVER=win32;;
+  *mingw32* ) BUILD_SERVER=win32
+              BUILD_GRAPHICS=winlib;;
 esac
 
 AC_ARG_ENABLE(server, 
@@ -478,33 +479,23 @@ AC_MSG_RESULT($BUILD_SERVER)
 AC_MSG_CHECKING(Backend Graphics)
 AC_MSG_RESULT($BUILD_GRAPHICS)
 
-if test x"$BUILD_GRAPHICS" = "xxdps"; then
-  CPPFLAGS="-I$x_includes/X11 $CPPFLAGS"
-  LIBS="-ldpstk -ldps -lpsres -lXt $X_PRE_LIBS $LIBS"
-elif test x"$BUILD_GRAPHICS" = "xart"; then
+if test x"$BUILD_GRAPHICS" = "xcairo"; then
   if test "$have_freetype" = no; then
-    AC_MSG_WARN([can't find freetype, required for graphics=art])
-    BUILD_GRAPHICS=xlib
-  fi
-  if test "$have_libart" = no; then
-    AC_MSG_WARN([can't find libart, required for graphics=art])
-    BUILD_GRAPHICS=xlib
-  fi
-  if test $BUILD_GRAPHICS = xlib; then
+    AC_MSG_WARN([can't find freetype, required for graphics=cairo])
     if test $BUILD_SERVER = win32; then
       BUILD_GRAPHICS=winlib
+    else
+      BUILD_GRAPHICS=xlib
     fi
     AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
-  else
-    LIBS="$LIBART_LIBS $FREETYPE_LIBS $LIBS"
-    CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
-  fi
-elif test x"$BUILD_GRAPHICS" = "xcairo"; then
-  if test "$have_freetype" = no; then
-    AC_MSG_ERROR([can't find freetype, required for graphics=cairo])
-  fi
-  if test "$have_cairo" = no -o "$have_cairo-ft" = no ; then
-    AC_MSG_ERROR([can't find cairo, required for graphics=cairo!])
+  elif test "$have_cairo" = no -o "$have_cairo-ft" = no ; then
+    AC_MSG_WARN([can't find cairo, required for graphics=cairo!])
+    if test $BUILD_SERVER = win32; then
+      BUILD_GRAPHICS=winlib
+    else
+      BUILD_GRAPHICS=art
+    fi
+    AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
   else
     AC_MSG_CHECKING(Cairo backend)
     CAIRO_LIBS="$CAIRO_FT_LIBS"
@@ -548,6 +539,34 @@ elif test x"$BUILD_GRAPHICS" = "xcairo"; then
     fi
     LIBS="$CAIRO_LIBS $LIBS"
     CPPFLAGS="$CAIRO_CFLAGS $CPPFLAGS"
+  fi
+fi
+
+if test x"$BUILD_GRAPHICS" = "xxdps"; then
+  CPPFLAGS="-I$x_includes/X11 $CPPFLAGS"
+  LIBS="-ldpstk -ldps -lpsres -lXt $X_PRE_LIBS $LIBS"
+elif test x"$BUILD_GRAPHICS" = "xcairo"; then
+ : # Alread handled above
+elif test x"$BUILD_GRAPHICS" = "xart"; then
+  if test "$have_freetype" = no; then
+    AC_MSG_WARN([can't find freetype, required for graphics=art])
+    if test $BUILD_SERVER = win32; then
+      BUILD_GRAPHICS=winlib
+    else
+      BUILD_GRAPHICS=xlib
+    fi
+    AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
+  elif test "$have_libart" = no; then
+    AC_MSG_WARN([can't find libart, required for graphics=art])
+    if test $BUILD_SERVER = win32; then
+      BUILD_GRAPHICS=winlib
+    else
+      BUILD_GRAPHICS=xlib
+    fi
+    AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
+  else
+    LIBS="$LIBART_LIBS $FREETYPE_LIBS $LIBS"
+    CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xxlib"; then
  : # Nothing to do
