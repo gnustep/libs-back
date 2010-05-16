@@ -1,3 +1,10 @@
+2010-05-16 17:39-EDT Gregory John Casamento <greg.casamento@gmail.com>
+
+	* Headers/win32/WIN32Server.h
+	* Source/win32/w32_general.m
+	* Source/win32/WIN32Server.m: Added code to re-activate the
+	theme when the theme changes on Windows.
+
 2010-05-11 Fred Kiefer <FredKiefer@gmx.de>
 
 	* configure.ac: Make cairo the default backend. Fall back to art

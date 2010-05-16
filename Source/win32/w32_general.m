@@ -134,5 +134,10 @@
 {
   [[GSTheme theme] processCommand: (void *)wParam];
 } 
-      
+
+- (void) decodeWM_THEMECHANGEDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
+{
+  // Reactivate the theme when the host system changes it's theme...
+  [[GSTheme theme] activate];
+}
 @end 
