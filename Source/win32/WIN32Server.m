@@ -666,6 +666,9 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
       case WM_COMMAND: 
         [self decodeWM_COMMANDParams: wParam : lParam : hwnd];
         break;
+      case WM_THEMECHANGED: 
+        [self decodeWM_THEMECHANGEDParams: wParam : lParam : hwnd];
+        break;
       case WM_SYSKEYDOWN:  //KEYBOARD
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "SYSKEYDOWN", hwnd);
         ev = process_key_event(self, hwnd, wParam, lParam, NSKeyDown);
@@ -1099,7 +1102,10 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
   if (level <= NSDesktopWindowLevel)
     {
+      HWND desktop = GetDesktopWindow();
+
       // For desktop level, put this at the bottom of the z-order
+      SetParent((HWND)winNum, desktop);
       otherWin = (int)HWND_BOTTOM;
       NSDebugLLog(@"WTrace",
 	@"orderwindow: set %i (%i) to bottom", winNum, level);
