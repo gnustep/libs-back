@@ -61,10 +61,10 @@ endif
 after-distclean::
 	rm -f config.status config.log config.cache TAGS config.h config.make back.make
 
-back.make: back.make.in
+back.make: back.make.in Version configure
 	./configure
 
-config.mak: config.mak.in
+config.mak: config.mak.in configure
 	./configure
 
 # Things to do before checking
