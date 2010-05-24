@@ -1,7 +1,7 @@
 /*
    XGDragView - Drag and Drop code for X11 backends.
 
-   Copyright (C) 1998,1999,2001 Free Software Foundation, Inc.
+   Copyright (C) 1998-2010 Free Software Foundation, Inc.
 
    Created by: Wim Oudshoorn <woudshoo@xs4all.nl>
    Date: Nov 2001
@@ -28,6 +28,10 @@
    Boston, MA 02110-1301, USA.
 */
 
+#include <Foundation/NSDebug.h>
+#include <Foundation/NSThread.h>
+#include <Foundation/NSSet.h>
+
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSCursor.h>
 #include <AppKit/NSGraphics.h>
@@ -35,9 +39,6 @@
 #include <AppKit/NSPasteboard.h>
 #include <AppKit/NSView.h>
 #include <AppKit/NSWindow.h>
-
-#include <Foundation/NSDebug.h>
-#include <Foundation/NSThread.h>
 
 #include "x11/XGServer.h"
 #include "x11/XGServerWindow.h"

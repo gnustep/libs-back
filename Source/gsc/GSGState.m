@@ -27,6 +27,7 @@
 #include "config.h"
 #import <Foundation/NSObjCRuntime.h>
 #import <Foundation/NSValue.h>
+#import <Foundation/NSDictionary.h>
 #import <AppKit/NSAffineTransform.h>
 #import <AppKit/NSBezierPath.h>
 #import <AppKit/NSColor.h>
