@@ -105,6 +105,16 @@ typedef enum {
 
 @end
 
+/** Informal protocol to which backends can conform to when they support drawing a 
+graphics state with arbitrary transforms on the current graphics context. */
+@interface NSObject (GSDrawGState)
+- (void) drawGState: (GSGState *)source 
+           fromRect: (NSRect)aRect 
+            toPoint: (NSPoint)aPoint 
+                 op: (NSCompositingOperation)op
+           fraction: (float)delta;
+@end
+
 #include "GSGStateOps.h"
 
 #endif /* _GSGState_h_INCLUDE */

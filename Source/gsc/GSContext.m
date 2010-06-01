@@ -821,6 +821,27 @@ static NSMapTable *gtable;
                  fraction: delta];
 }
 
+- (void) GSdraw: (int)gstateNum
+	toPoint: (NSPoint)aPoint
+       fromRect: (NSRect)srcRect
+      operation: (NSCompositingOperation)op
+       fraction: (float)delta
+{
+  GSGState *g = gstate;
+
+  if (gstateNum)
+    {
+      [self DPSexecuserobject: gstateNum];
+      ctxt_pop(g, opstack, GSGState);
+    }
+
+  [gstate drawGState: g
+	    fromRect: srcRect
+             toPoint: aPoint
+                  op: op
+            fraction: delta];
+}
+
 - (void) GSDrawImage: (NSRect) rect: (void *) imageref
 {
   NSBitmapImageRep *bitmap;

@@ -96,6 +96,11 @@
   return YES;
 }
 
+- (BOOL) supportsDrawGState
+{
+	return YES;
+}
+
 - (void) flushGraphics
 {
 #if BUILD_SERVER == SERVER_x11

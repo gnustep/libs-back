@@ -1038,6 +1038,17 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
     }
 }
 
+/* For debugging */
+- (void) drawOrientationMarkersIn: (cairo_t *)ct
+{
+  cairo_rectangle(_ct, 0, 0, 20, 10);
+  cairo_set_source_rgba(_ct, 0, 1, 0, 1);
+  cairo_fill(_ct);
+  cairo_rectangle(_ct, 0, 30, 20, 10);
+  cairo_set_source_rgba(_ct, 0, 0, 1, 1);
+  cairo_fill(_ct);
+}
+
 - (void) DPSimage: (NSAffineTransform *)matrix : (int)pixelsWide
 		 : (int)pixelsHigh : (int)bitsPerSample 
 		 : (int)samplesPerPixel : (int)bitsPerPixel
@@ -1197,45 +1208,26 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 		    tstruct.tX, tstruct.tY);
   cairo_transform(_ct, &local_matrix);
 
-  // Make up for flip done in GUI
-  if (viewIsFlipped)
-    {
-      cairo_pattern_t *cpattern;
-      cairo_matrix_t local_matrix;
-      
-      cpattern = cairo_pattern_create_for_surface(surface);
-      cairo_matrix_init_scale(&local_matrix, 1, -1);
-      cairo_matrix_translate(&local_matrix, 0, -2*pixelsHigh);
-      cairo_pattern_set_matrix(cpattern, &local_matrix);
-      if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 6, 0))
-        {
-          cairo_pattern_set_extend(cpattern, CAIRO_EXTEND_PAD);
-        }
-      cairo_set_source(_ct, cpattern);
-      cairo_pattern_destroy(cpattern);
-
-      cairo_rectangle(_ct, 0, pixelsHigh, pixelsWide, pixelsHigh);
-    }
-  else 
-    {
-      cairo_pattern_t *cpattern;
-      cairo_matrix_t local_matrix;
-      
-      cpattern = cairo_pattern_create_for_surface(surface);
-      cairo_matrix_init_scale(&local_matrix, 1, -1);
-      cairo_matrix_translate(&local_matrix, 0, -pixelsHigh);
-      cairo_pattern_set_matrix(cpattern, &local_matrix);
-      if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 6, 0))
-        {
-          cairo_pattern_set_extend(cpattern, CAIRO_EXTEND_PAD);
-        }
-      cairo_set_source(_ct, cpattern);
-      cairo_pattern_destroy(cpattern);
-
-      cairo_rectangle(_ct, 0, 0, pixelsWide, pixelsHigh);
-    }
+  {
+    cairo_pattern_t *cpattern;
+    cairo_matrix_t source_matrix;
+ 
+    cpattern = cairo_pattern_create_for_surface(surface);
+    cairo_matrix_init_scale(&source_matrix, 1, -1);
+    cairo_matrix_translate(&source_matrix, 0, -pixelsHigh);
+    cairo_pattern_set_matrix(cpattern, &source_matrix);
+    if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 6, 0))
+      {
+        cairo_pattern_set_extend(cpattern, CAIRO_EXTEND_PAD);
+      }
+    cairo_set_source(_ct, cpattern);
+    cairo_pattern_destroy(cpattern);
+    cairo_rectangle(_ct, 0, 0, pixelsWide, pixelsHigh);
+  }
+ 
   cairo_clip(_ct);
   cairo_paint(_ct);
+  //[self drawOrientationMarkersIn: _ct];
   cairo_surface_destroy(surface);
   cairo_restore(_ct);
 
@@ -1271,94 +1263,114 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 }
 
 - (void) compositeGState: (CairoGState *)source 
-                fromRect: (NSRect)aRect 
-                 toPoint: (NSPoint)aPoint 
+                fromRect: (NSRect)srcRect 
+                 toPoint: (NSPoint)destPoint 
                       op: (NSCompositingOperation)op
                 fraction: (float)delta
 {
-  cairo_surface_t *src;
+  cairo_surface_t *src = cairo_get_target(source->_ct);
+  NSSize ssize = NSZeroSize;
+  BOOL copyOnSelf = (src == cairo_get_target(_ct));
+  /* The source rect in the source base coordinate space.
+     This rect is the minimum bounding rect of srcRect. */
+  NSRect srcRectInBase = NSZeroRect;
+  /* The destination point in the target base coordinate space */
+  NSPoint destPointInBase = NSZeroPoint;
+  /* The origin of srcRectInBase */
   double minx, miny;
+  /* The composited content size */
   double width, height;
+  /* The adjusted destination point in the target base coordinate space */
   double x, y;
-  NSSize ssize;
+  /* Alternative source rect origin in the source current CTM */
+  NSPoint srcRectAltOrigin = NSMakePoint(srcRect.origin.x, srcRect.origin.y + srcRect.size.height);
+  /* Alternative source rect origin in the source base coordinate space */
+  NSPoint srcRectAltOriginInBase =  [source->ctm transformPoint: srcRectAltOrigin];
+  /* The source rect origin in the source base coordinate space */
+  NSPoint srcRectOriginInBase = [source->ctm transformPoint: srcRect.origin];
+  BOOL originFlippedBetweenBaseAndSource = NO;
+  /* The delta between the origins of srcRect and srcRectInBase */
+  double dx, dy;
   cairo_pattern_t *cpattern;
-  cairo_matrix_t local_matrix;
-  BOOL copyOnSelf = NO;
+  cairo_matrix_t source_matrix;
 
   if (!_ct || !source->_ct)
     {
       return;
     }
 
-  /* 
-   * we check if we copy on ourself, if that's the case
-   * we'll use the groups trick...
-   */
- 
-  src = cairo_get_target(source->_ct);
-  if (src == cairo_get_target(_ct))
-    {
-      NSRect targetRect;
-
-      targetRect.origin = aPoint;
-      targetRect.size = aRect.size;
-
-      if (!NSIsEmptyRect(NSIntersectionRect(aRect, targetRect)))
-        {
-          copyOnSelf = YES;
-        }
-    }
+  //NSLog(@"Composite surface %p source size %@ target size %@", self->_surface, NSStringFromSize([self->_surface size]), NSStringFromSize([source->_surface size]));
 
   cairo_save(_ct);
 
+  /* When the target and source are the same surface, we use the group tricks */
   if (copyOnSelf) cairo_push_group(_ct);
 
   cairo_new_path(_ct);
-  _set_op(_ct, op);
-  
-  if (viewIsFlipped && !copyOnSelf)
+  _set_op(_ct, op); 
+
+  //NSLog(@"Point %@", NSStringFromPoint(destPoint));
+
+  /* Scales and/or rotates the local destination point with the current AppKit CTM */
+  destPointInBase = [ctm transformPoint: destPoint];
+  //NSLog(@"Point in base %@", NSStringFromPoint(destPointInBase));
+
+  /* Scales and/or rotates the source rect and retrieves the minimum bounding
+     rectangle that encloses it and makes it our source area */
+  [source->ctm boundingRectFor: srcRect result: &srcRectInBase];
+  //NSLog(@"Bounding rect %@ from %@", NSStringFromRect(srcRectInBase), NSStringFromRect(srcRect)); 
+
+  /* Find whether the source rect origin in the base is the same than in the 
+     source current CTM.
+     We need to know the origin in the base to compute how much the source 
+     bounding rect origin is shifted relatively to the closest source rect corner.
+     We use this delta (dx, dy) to correctly composite from a rotated source. */
+  originFlippedBetweenBaseAndSource = 
+    ((srcRect.origin.y < srcRectAltOrigin.y && srcRectOriginInBase.y > srcRectAltOriginInBase.y)
+    || (srcRect.origin.y > srcRectAltOrigin.y && srcRectOriginInBase.y < srcRectAltOriginInBase.y));
+  if (originFlippedBetweenBaseAndSource)
     {
-      aPoint.y -= aRect.size.height;
+      srcRectOriginInBase = srcRectAltOriginInBase;
     }
+  dx = srcRectOriginInBase.x - srcRectInBase.origin.x;
+  dy = srcRectOriginInBase.y - srcRectInBase.origin.y;
 
-  {
-      NSRect newRect;
-      
-      newRect.origin = aPoint;
-      newRect.size = aRect.size;
-      [ctm boundingRectFor: newRect result: &newRect];
-      aPoint = newRect.origin;
-  }
-
-  [source->ctm boundingRectFor: aRect result: &aRect];
-  if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 8, 0))
-    {
-      NSSize size = [source->_surface size];
-      
-      // For cairo > 1.8 we seem to need this adjustment
-      aRect.origin.y -= 2*(source->offset.y - size.height);
-    }
-
-  x = floorf(aPoint.x);
-  y = floorf(aPoint.y + 0.5);
-  minx = NSMinX(aRect);
-  miny = NSMinY(aRect);
-  width = NSWidth(aRect);
-  height = NSHeight(aRect);
+  //NSLog(@"Point in base adjusted %@", NSStringFromPoint(NSMakePoint(destPointInBase.x - dx, destPointInBase.y - dy)));
 
   if (source->_surface != nil)
     {
       ssize = [source->_surface size];
     }
-  else 
-    {
-      ssize = NSMakeSize(0, 0);
+
+  if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 8, 0))
+    {      
+      // For cairo > 1.8 we seem to need this adjustment
+      srcRectInBase.origin.y -= 2 * (source->offset.y - ssize.height);
     }
 
+  x = floorf(destPointInBase.x);
+  y = floorf(destPointInBase.y + 0.5);
+  minx = NSMinX(srcRectInBase);
+  miny = NSMinY(srcRectInBase);
+  width = NSWidth(srcRectInBase);
+  height = NSHeight(srcRectInBase);
+
+  /* We respect the AppKit CTM effect on the origin 'aPoint' (see 
+     -[ctm transformPoint:]), but we ignore the scaling and rotation effect on 
+     the composited content and size. Which means we never rotate or scale the 
+     content we composite.
+     We use a pattern as a trick to simulate a target CTM change, this way we 
+     don't touch the source CTM even when both source and target are identical 
+     (e.g. scrolling case).
+     We must use a pattern matrix that matches the AppKit base CTM set up in 
+     -DPSinitgraphics to ensure no transform is applied to the source content, 
+     translation adjustements related to destination point and source rect put 
+     aside. */
   cpattern = cairo_pattern_create_for_surface(src);
-  cairo_matrix_init_scale(&local_matrix, 1, -1);
-  cairo_matrix_translate(&local_matrix, -x + minx, - ssize.height - y + miny);
-  cairo_pattern_set_matrix(cpattern, &local_matrix);
+  cairo_matrix_init_scale(&source_matrix, 1, -1);
+  //cairo_matrix_translate(&source_matrix, 0,  -[_surface size].height);
+  cairo_matrix_translate(&source_matrix, minx - x + dx, miny - y + dy - ssize.height);
+  cairo_pattern_set_matrix(cpattern, &source_matrix);
   cairo_set_source(_ct, cpattern);
   cairo_pattern_destroy(cpattern);
   cairo_rectangle(_ct, x, y, width, height);
@@ -1376,6 +1388,82 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   if (copyOnSelf)
     {
       cairo_pop_group_to_source(_ct);
+      cairo_paint(_ct);
+    }
+
+  cairo_restore(_ct);
+}
+
+/** Unlike -compositeGState, -drawGSstate fully respects the AppKit CTM but 
+doesn't support to use the receiver cairo target as the source. */
+- (void) drawGState: (CairoGState *)source 
+           fromRect: (NSRect)aRect 
+            toPoint: (NSPoint)aPoint 
+                 op: (NSCompositingOperation)op
+           fraction: (float)delta
+{
+  NSAffineTransformStruct tstruct =  [ctm transformStruct];
+  cairo_surface_t *src = cairo_get_target(source->_ct);
+  double width, height;
+  double x, y;
+  cairo_pattern_t *cpattern;
+  cairo_matrix_t local_matrix;
+  cairo_matrix_t source_matrix;
+
+  if (!_ct || !source->_ct)
+    {
+      return;
+    }
+
+  cairo_save(_ct);
+
+  cairo_new_path(_ct);
+  _set_op(_ct, op);
+  
+  if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 8, 0))
+    {
+      NSSize size = [source->_surface size];
+      
+      // For cairo > 1.8 we seem to need this adjustment
+      aRect.origin.y -= 2*(source->offset.y - size.height);
+    }
+
+  x = floorf(aPoint.x);
+  y = floorf(aPoint.y + 0.5);
+  width = NSWidth(aRect);
+  height = NSHeight(aRect);
+
+  // NOTE: We don't keep the Cairo matrix in sync with the AppKit matrix (aka 
+  // -[NSGraphicsContext GSCurrentCTM])
+
+  /* Prepare a Cairo matrix with the current AppKit CTM */
+  cairo_matrix_init(&local_matrix,
+		    tstruct.m11, tstruct.m12,
+		    tstruct.m21, tstruct.m22, 
+		    tstruct.tX, tstruct.tY);
+  /* Append the local point transformation */
+  cairo_matrix_translate(&local_matrix, x - aRect.origin.x, y - aRect.origin.y);
+  /* Concat to the Cairo matrix created in -DPSinitgraphics, which adjusts the 
+     mismatch between the Cairo top left vs AppKit bottom left origin. */
+  cairo_transform(_ct, &local_matrix);
+
+  //[self drawOrientationMarkersIn: _ct];
+
+  cpattern = cairo_pattern_create_for_surface(src);
+  cairo_matrix_init_scale(&source_matrix, 1, -1);
+  cairo_matrix_translate(&source_matrix, 0, -[source->_surface size].height);
+  cairo_pattern_set_matrix(cpattern, &source_matrix);
+  cairo_set_source(_ct, cpattern);
+  cairo_pattern_destroy(cpattern);
+  cairo_rectangle(_ct, aRect.origin.x, aRect.origin.y, width, height);
+  cairo_clip(_ct);
+
+  if (delta < 1.0)
+    {
+      cairo_paint_with_alpha(_ct, delta);
+    }
+  else
+    {
       cairo_paint(_ct);
     }
 

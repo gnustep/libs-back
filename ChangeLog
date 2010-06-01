@@ -1,3 +1,26 @@
+2010-06-01  Quentin Mathe <quentin.mathe@gmail.com>
+
+	Fixed composite operator to behave correctly and added a new draw 
+	operator to get -[NSImage drawXXX] methods work exactly as Cocoa and 
+	improve the drawing performance in some cases.
+	Eliminated all flipping checks in the backend to ensure the flipping 
+	remains an high-level AppKit concept.
+	* Source/gsc/GSContext.m:
+	(-GSdraw:toPoint:fromRect:operation:fraction:): Added.
+	This method calls -drawGState:fromRect:toPoint:op:fraction:.
+	* Headers/gsc/GSGState.h (-drawGState:fromRect:toPoint:op:): Added 
+	as an informal protocol which can be implemented by subclasses
+	* Source/cairo/CairoContext.m (-supportsDrawGState): Added overriden 
+	implementation that enables -drawGState:fromRect:toPoint:op:fraction:.
+	* Source/cairo/CairoGState.m:
+	(-drawOrientationMarkersIn:): Added.
+	(-DPSimage::::::): Removed flipping check.
+	(-compositeGState:fromRect:toPoint:op:fraction:): Fixed to precisely 
+	implement the PostScript behavior which is to ignore rotation and 
+	scaling effect for the content but not for the destination point.
+	Also documented in details since this code is complex.
+	(-drawGState:fromRect:toPoint:op:fraction:): Added.
+
 2010-05-25 Riccardo Mottola <rmottola@users.sf.net>
 
 	* Source/x11/XGDragView.m
