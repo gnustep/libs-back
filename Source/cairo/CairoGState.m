@@ -1268,9 +1268,9 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
                       op: (NSCompositingOperation)op
                 fraction: (float)delta
 {
-  cairo_surface_t *src = cairo_get_target(source->_ct);
+  cairo_surface_t *src;
   NSSize ssize = NSZeroSize;
-  BOOL copyOnSelf = (src == cairo_get_target(_ct));
+  BOOL copyOnSelf;
   /* The source rect in the source base coordinate space.
      This rect is the minimum bounding rect of srcRect. */
   NSRect srcRectInBase = NSZeroRect;
@@ -1283,11 +1283,11 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   /* The adjusted destination point in the target base coordinate space */
   double x, y;
   /* Alternative source rect origin in the source current CTM */
-  NSPoint srcRectAltOrigin = NSMakePoint(srcRect.origin.x, srcRect.origin.y + srcRect.size.height);
+  NSPoint srcRectAltOrigin;
   /* Alternative source rect origin in the source base coordinate space */
-  NSPoint srcRectAltOriginInBase =  [source->ctm transformPoint: srcRectAltOrigin];
+  NSPoint srcRectAltOriginInBase;
   /* The source rect origin in the source base coordinate space */
-  NSPoint srcRectOriginInBase = [source->ctm transformPoint: srcRect.origin];
+  NSPoint srcRectOriginInBase;
   BOOL originFlippedBetweenBaseAndSource = NO;
   /* The delta between the origins of srcRect and srcRectInBase */
   double dx, dy;
@@ -1300,6 +1300,11 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
     }
 
   //NSLog(@"Composite surface %p source size %@ target size %@", self->_surface, NSStringFromSize([self->_surface size]), NSStringFromSize([source->_surface size]));
+  src = cairo_get_target(source->_ct);
+  copyOnSelf = (src == cairo_get_target(_ct));
+  srcRectAltOrigin = NSMakePoint(srcRect.origin.x, srcRect.origin.y + srcRect.size.height);
+  srcRectAltOriginInBase =  [source->ctm transformPoint: srcRectAltOrigin];
+  srcRectOriginInBase = [source->ctm transformPoint: srcRect.origin];
 
   cairo_save(_ct);
 
