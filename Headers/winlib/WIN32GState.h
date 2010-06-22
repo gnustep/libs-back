@@ -46,6 +46,7 @@
   HGDIOBJ oldBrush;
   HGDIOBJ oldPen;
   HRGN oldClipRegion;
+  XFORM oldWorldTransform;
 }
 
 - (void) setWindow: (HWND)number;

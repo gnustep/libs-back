@@ -77,4 +77,9 @@
   [gstate setOffset: NSMakePoint(x, y)];
 }
 
+- (BOOL) supportsDrawGState
+{
+        return YES;
+}
+
 @end

@@ -1,3 +1,17 @@
+2010-06-23  Quentin Mathe <quentin.mathe@gmail.com>
+
+	Fixed Windows backend issues introduced with r30523 where images are 
+	drawn at the wrong location by -[NSImage drawXXX] methods.
+	See bug report #30069
+	Images are also now drawn correctly with these methods in a 
+	rotated/scaled context unlike previously (but alpha blending still 
+	doesn't work properly with a rotated context).
+	* Source/winlib/WIN32Context.m (-supportsDrawGState): Added.
+	* Headers/winlib/WIN32GState.m: Added oldWorldTransform ivar.
+	* Source/winlib/WIN32GState.m:
+	(-setUpAppKitBaseCoordinatesForHDC:, -restoreGDIBaseCoordinatesForHDC:, 
+	drawGState:fromRect:toPoint:op:fraction:): Added.
+
 2010-06-06 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m
