@@ -5,7 +5,7 @@
 	See bug report #30069
 	Images are also now drawn correctly with these methods in a 
 	rotated/scaled context unlike previously (but alpha blending still 
-	doesn't work properly with a rotated context).
+	doesn't work properly).
 	* Source/winlib/WIN32Context.m (-supportsDrawGState): Added.
 	* Headers/winlib/WIN32GState.m: Added oldWorldTransform ivar.
 	* Source/winlib/WIN32GState.m:

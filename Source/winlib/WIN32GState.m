@@ -451,7 +451,7 @@ BOOL alpha_blend_source_over(HDC destDC,
     }
 }
 
-// FIXME: Drawing rotated images with alpha blending is broken
+// FIXME: Drawing images with alpha blending is broken
 - (void) drawGState: (WIN32GState *)source 
            fromRect: (NSRect)aRect 
             toPoint: (NSPoint)aPoint 
