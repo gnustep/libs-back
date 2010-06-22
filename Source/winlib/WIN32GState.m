@@ -246,6 +246,54 @@ BOOL alpha_blend_source_over(HDC destDC,
     wscolor = RGB(color.field[0]*255, color.field[1]*255, color.field[2]*255);
 }
 
+// NOTE: Ideally this code should be moved to -DPSinitgraphics and not called 
+// directly, but this would imply to rewrite WIN32GState more extensively since 
+// the current code expects the GDI base coordinates in many methods.
+- (void) setUpAppKitBaseCoordinatesForHDC: (HDC)hDC
+{
+  int surfaceHeight = WindowHeight(window);
+  int bottomOffset = offset.y - surfaceHeight;
+  XFORM xForm;
+
+  // NOTE: The world transform is the GDI CTM.
+  GetWorldTransform(hDC, &oldWorldTransform);
+
+  // Enables the use of transforms
+  SetGraphicsMode(hDC, GM_ADVANCED);
+  // Maps units to pixels
+  SetMapMode(hDC, MM_TEXT);
+
+  /* Flip the GDI base coordinate to match the AppKit because GDI draws the 
+     other way around with MM_TEXT.
+     Also offset the drawing area to take in account the window border. */
+
+  xForm.eM11 = (FLOAT)1; 
+  xForm.eM12 = (FLOAT)0; 
+  xForm.eM21 = (FLOAT)0; 
+  xForm.eM22 = (FLOAT)-1; 
+  xForm.eDx  = (FLOAT)-offset.x; 
+  xForm.eDy  = (FLOAT)surfaceHeight + bottomOffset;
+
+  SetWorldTransform(hDC, &xForm);
+}
+
+- (void) restoreGDIBaseCoordinatesForHDC: (HDC)hDC
+{
+  SetWorldTransform(hDC, &oldWorldTransform);
+  SetGraphicsMode(hDC, GM_COMPATIBLE);
+}
+
+/* For debugging */
+- (void) drawOrientationMarkersIn: (HDC)hDC
+{
+  RECT rect1 = { 0, 0, 20, 10 };
+  RECT rect2 = { 0, 30, 20, 30 + 10 };
+  FillRect(hDC, &rect1, CreateSolidBrush(RGB(255, 0, 255)));
+  FillRect(hDC, &rect2, CreateSolidBrush(RGB(0, 255, 0)));
+}
+
+// FIXME: Drawing rotated images is broken (the origin is wrong).
+// If rewritten, viewIsFlipped  check must be removed.
 - (void) compositeGState: (WIN32GState *)source
 		fromRect: (NSRect)sourceRect
 		 toPoint: (NSPoint)destPoint
@@ -356,7 +404,6 @@ BOOL alpha_blend_source_over(HDC destDC,
                     op: (NSCompositingOperation)op
 {
   float gray;
-  BOOL success = NO;
 
   // FIXME: This is taken from the xlib backend
   [self DPScurrentgray: &gray];
@@ -404,6 +451,115 @@ BOOL alpha_blend_source_over(HDC destDC,
     }
 }
 
+// FIXME: Drawing rotated images with alpha blending is broken
+- (void) drawGState: (WIN32GState *)source 
+           fromRect: (NSRect)aRect 
+            toPoint: (NSPoint)aPoint 
+                 op: (NSCompositingOperation)op
+           fraction: (float)delta
+{
+  HDC sourceDC;
+  HDC hDC;
+  XFORM xForm, xForm2;
+  NSAffineTransformStruct tstruct = [ctm transformStruct];
+  RECT rectFrom = GSWindowRectToMS(source, aRect);
+  int x = aPoint.x;
+  int y = aPoint.y;
+  int w = aRect.size.width;
+  int h = aRect.size.height;
+  BOOL success;
+
+  sourceDC = [source getHDC];
+  if (!sourceDC)
+    {
+      return;
+    } 
+
+  if (self == source)
+    {
+      hDC = sourceDC;
+    }
+  else
+    {
+      hDC = [self getHDC];
+      if (!hDC)
+        {
+          [source releaseHDC: sourceDC];
+          return;
+        }
+    }
+
+  /* Set up the AppKit base coordinates as the World transform */
+
+  [self setUpAppKitBaseCoordinatesForHDC: hDC];
+
+  /* Apply the AppKit CTM */
+
+  xForm.eM11 = (FLOAT)tstruct.m11; 
+  xForm.eM12 = (FLOAT)tstruct.m12; 
+  xForm.eM21 = (FLOAT)tstruct.m21; 
+  xForm.eM22 = (FLOAT)tstruct.m22; 
+  xForm.eDx  = (FLOAT)tstruct.tX;
+  xForm.eDy  = (FLOAT)tstruct.tY;
+
+  // Concat the transform by prepending it to the CTM
+  ModifyWorldTransform(hDC, &xForm, MWT_LEFTMULTIPLY);
+
+  /* Flip the CTM to compensate the fact that images are drawn upside down 
+     by -DPSimage which uses the GDI top left origin coordinates. */
+
+  xForm2.eM11 = (FLOAT)1;
+  xForm2.eM12 = (FLOAT)0; 
+  xForm2.eM21 = (FLOAT)0; 
+  xForm2.eM22 = (FLOAT)-1; 
+  xForm2.eDx  = (FLOAT)0; 
+  xForm2.eDy  = (FLOAT)y * 2 + aRect.size.height;
+
+  // Concat the flip transform by prepending it to the CTM
+  ModifyWorldTransform(hDC, &xForm2, MWT_LEFTMULTIPLY);
+  
+  switch (op)
+    {
+    case NSCompositeSourceOver:
+      {
+	success = alpha_blend_source_over(hDC, 
+					  sourceDC, 
+					  rectFrom, 
+					  x, y, w, h, 
+					  delta);
+	if (success)
+	  break;
+      }
+    case NSCompositeCopy:
+      {
+        success = BitBlt(hDC, x, y, w, h,
+                         sourceDC, rectFrom.left, rectFrom.top, SRCCOPY);
+        break;	      
+      }
+    case NSCompositeClear:
+      {
+        break;
+      }
+    default:
+      success = BitBlt(hDC, x, y, w, h,
+                       sourceDC, rectFrom.left, rectFrom.top, SRCCOPY);
+      break;
+    }
+  //[self drawOrientationMarkersIn: hDC];
+
+  if (!success)
+    {
+      NSLog(@"Blit operation failed %d", GetLastError());
+    }
+
+  [self restoreGDIBaseCoordinatesForHDC: hDC];
+
+  if (self != source)
+    {
+      [self releaseHDC: hDC];
+    }
+  [source releaseHDC: sourceDC];
+}
 
 static
 HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
@@ -620,6 +776,15 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   return hbitmap;
 }
 
+// NOTE: Draws the image with the GDI top left coordinate origin rather than 
+// the AppKit bottom left coordinate origin. Hence drawing from an image cache 
+// window into an AppKit base coordinate space results in an upside down image.
+// Ideally we should draw image in their cache windows with the AppKit base 
+// coordinates to prevent extra flip transforms to be required later on (see 
+// drawGState:fromRect:toPoint:op:fraction).
+// For some unknown reason, invoking -setUpAppKitBaseCoordinatesForHDC: in 
+// -DPSimage: can cause images to be drawn with a 1px horizontal line cut at 
+// the top. That's why -DPSimage we still use the GDI top left coordinates.
 - (void)DPSimage: (NSAffineTransform*) matrix 
 		: (int) pixelsWide : (int) pixelsHigh
 		: (int) bitsPerSample : (int) samplesPerPixel 
@@ -698,12 +863,12 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   pa[1] = GSViewPointToWin(self, NSMakePoint(pixelsWide, pixelsHigh));
   pa[2] = GSViewPointToWin(self, NSMakePoint(0, 0));
 
-  if (viewIsFlipped)
+  /*if (viewIsFlipped)
     {
       pa[0].y += pixelsHigh;
       pa[1].y += pixelsHigh;
       pa[2].y += pixelsHigh;
-    }
+    }*/
 
   if (old_ctm != nil)
     {
