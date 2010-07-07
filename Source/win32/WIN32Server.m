@@ -459,7 +459,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
         wstyle |= WS_MINIMIZEBOX + WS_SYSMENU;
 
       if ((style & NSResizableWindowMask) == NSResizableWindowMask)
-        wstyle |= WS_SIZEBOX;
+        wstyle |= WS_SIZEBOX + WS_MAXIMIZEBOX;
 
       if (((style & NSMiniWindowMask) == NSMiniWindowMask)
           || ((style & NSIconWindowMask) == NSIconWindowMask))
