@@ -69,12 +69,6 @@
         }
         break;
 
-      case SIZE_MAXIMIZED:
-        {
-          // stubbed for future development
-        }
-        break;
-
       case SIZE_MAXSHOW:
         {
           // stubbed for future development
@@ -91,6 +85,7 @@
         }
         break;
 
+      case SIZE_MAXIMIZED:
       case SIZE_RESTORED:
         {
           NSPoint eventLocation;

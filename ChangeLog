@@ -1,5 +1,12 @@
 2010-07-06  Eric Wasylishen <ewasylishen@gmail.com>
 
+  * Source/win32/WIN32Server.m:
+  * Source/win32/w32_movesize.m: 
+  Fix for bug #29709: Windows: Maximize button in a window title bar is 
+  always grayed out
+
+2010-07-06  Eric Wasylishen <ewasylishen@gmail.com>
+
 	* Source/win32/WIN32Server.m: Tweak the conditions for incrementing the
 	clickCount when handling mouse clicks: (i.e. double click detection)
 	 - Require a click to be within a distance (retrieved from Windows)
