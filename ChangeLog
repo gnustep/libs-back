@@ -1,3 +1,16 @@
+2010-07-06  Eric Wasylishen <ewasylishen@gmail.com>
+
+	* Source/win32/WIN32Server.m: Tweak the conditions for incrementing the
+	clickCount when handling mouse clicks: (i.e. double click detection)
+	 - Require a click to be within a distance (retrieved from Windows)
+	   of the last click to count (previously there was no proximity check)
+   - Allow clicks separated by the Windows double click time interval
+     to count (e.g. if the Windows double click time interval is n,
+     clicking at times 0, n, 2n, 3n would produce events with click counts
+     1, 2, 3, and 4. This matches OS X behaviour. Previously, all clicks
+     had to be within the windows double click time interval to count as
+     one group.)
+
 2010-06-23  Quentin Mathe <quentin.mathe@gmail.com>
 
 	Fixed Windows backend issues introduced with r30523 where images are 

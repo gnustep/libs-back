@@ -60,6 +60,8 @@
 #include <sys/file.h>
 #endif
 
+#include <math.h>
+
 static BOOL _enableCallbacks = YES;
 
 static NSEvent *process_key_event(WIN32Server *svr, 
@@ -2024,15 +2026,21 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
       if (ltime == lastTime) // duplicate event has identical time
 	return nil; // ignore it
 
-      if (lastTime + GetDoubleClickTime() > ltime)
+      static NSPoint lastClick = {0.0, 0.0};
+      
+      if (lastTime + GetDoubleClickTime() > ltime 
+          && fabs(eventLocation.x - lastClick.x) < GetSystemMetrics(SM_CXDOUBLECLK)
+          && fabs(eventLocation.y - lastClick.y) < GetSystemMetrics(SM_CYDOUBLECLK))
         {
           clickCount += 1;
         }
       else 
         {
           clickCount = 1;
-          lastTime = ltime;
         }
+      lastTime = ltime;  
+      lastClick = eventLocation;
+        
       SetCapture(hwnd); // capture the mouse to get mouse moved events outside of window
     }
   else if ( ((eventType == NSLeftMouseUp)
