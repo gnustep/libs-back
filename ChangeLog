@@ -1,5 +1,14 @@
 2010-07-06  Eric Wasylishen <ewasylishen@gmail.com>
 
+	* Source/win32/WIN32Server.m:
+	When ordering out a window, use the SWP_NOACTIVATE flag on SetWindowPos
+	so Windows doesn't activate/deactivate any windows when hiding a window.
+	
+	This fixes the bug where when a tooltip disappeared, it would deactivate
+	the window the tooltip was over.
+
+2010-07-06  Eric Wasylishen <ewasylishen@gmail.com>
+
   * Source/win32/WIN32Server.m:
   * Source/win32/w32_movesize.m: 
   Fix for bug #29709: Windows: Maximize button in a window title bar is 
