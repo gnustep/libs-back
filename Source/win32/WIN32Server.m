@@ -1046,7 +1046,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
     {
       SetWindowLong((HWND)winNum, OFF_ORDERED, 0);
       SetWindowPos((HWND)winNum, NULL, 0, 0, 0, 0, 
-        SWP_HIDEWINDOW | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER);
+        SWP_HIDEWINDOW | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
       return;
     }
 
