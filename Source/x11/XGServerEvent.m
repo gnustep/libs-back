@@ -71,6 +71,7 @@
 // NumLock's mask (it depends on the keyboard mapping)
 static unsigned int _num_lock_mask;
 // Modifier state
+static char _shift_pressed = 0;
 static char _control_pressed = 0;
 static char _command_pressed = 0;
 static char _alt_pressed = 0;
@@ -1198,6 +1199,17 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
           NSDebugLLog(@"NSEvent", @"%d KeymapNotify\n",
                       xEvent.xkeymap.window);
 
+          // Check if shift is pressed
+          _shift_pressed = 0;
+          if (check_modifier (&xEvent, XK_Shift_L))
+            {
+              _shift_pressed |= 1;
+            }
+          if (check_modifier (&xEvent, XK_Shift_R))
+            {
+              _shift_pressed |= 2;
+            }
+
           // Check if control is pressed
           _control_pressed = 0;
           if ((_control_keysyms[0] != NoSymbol)
@@ -1969,8 +1981,6 @@ keysym_is_X_modifier (KeySym keysym)
   switch (keysym)
     {
     case XK_Num_Lock: 
-    case XK_Shift_L:    
-    case XK_Shift_R:    
     case XK_Caps_Lock:  
     case XK_Shift_Lock: 
       return YES;
@@ -1993,6 +2003,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
   NSEvent *event = nil;
   NSEventType originalType;
   gswindow_device_t *window;
+  int shift_key = 0;
   int control_key = 0;
   int command_key = 0;
   int alt_key = 0;
@@ -2033,7 +2044,15 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
       XLookupKeysym((XKeyEvent *)xEvent, 0) : keysym;
   if (modKeysym != NoSymbol)
     {
-      if (modKeysym == _control_keysyms[0]) 
+      if (modKeysym == XK_Shift_L)
+        {
+          shift_key = 1;
+        }
+      else if (modKeysym == XK_Shift_R)
+        {
+          shift_key = 2;
+        }
+      else if (modKeysym == _control_keysyms[0]) 
         {
           control_key = 1;
         }
@@ -2068,11 +2087,13 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
     }
 
   originalType = eventType;
-  if (control_key || command_key || alt_key || help_key)
+  if (shift_key || control_key || command_key || alt_key || help_key)
     {
       eventType = NSFlagsChanged;
       if (xEvent->xkey.type == KeyPress)
         {
+          if (shift_key)
+            _shift_pressed |= shift_key;
           if (control_key)
             _control_pressed |= control_key;
           if (command_key)
@@ -2084,6 +2105,8 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
         }
       else if (xEvent->xkey.type == KeyRelease)
         {
+          if (shift_key)
+            _shift_pressed &= ~shift_key;
           if (control_key)
             _control_pressed &= ~control_key;
           if (command_key)
@@ -2374,7 +2397,7 @@ process_modifier_flags(unsigned int state)
 {
   unsigned int eventModifierFlags = 0;
 
-  if (state & ShiftMask)
+  if (_shift_pressed != 0)
     eventModifierFlags = eventModifierFlags | NSShiftKeyMask;
 
   if (state & LockMask)

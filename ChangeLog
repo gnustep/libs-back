@@ -1,31 +1,42 @@
-2010-07-06  Eric Wasylishen <ewasylishen@gmail.com>
+2010-07-25 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerEvent.m:
+	Treat Shift modifiers in the same manner as other modifiers.
+	This fixes the value of the shift bit (NSShiftKeyMask) in
+	the modifierFlags passed to a -flagsChanged: method call.
+	Without it the shift bit is inverted, as explained in
+	the source comments, as X reports the modifier bits in
+	force before the key was pressed/released.
+	Patch by Derek Fawcus <dfawcus@employees.org>.
+
+2010-07-25  Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/win32/WIN32Server.m:
 	When ordering out a window, use the SWP_NOACTIVATE flag on SetWindowPos
 	so Windows doesn't activate/deactivate any windows when hiding a window.
-	
+
 	This fixes the bug where when a tooltip disappeared, it would deactivate
 	the window the tooltip was over.
 
-2010-07-06  Eric Wasylishen <ewasylishen@gmail.com>
+2010-07-07  Eric Wasylishen <ewasylishen@gmail.com>
 
-  * Source/win32/WIN32Server.m:
-  * Source/win32/w32_movesize.m: 
-  Fix for bug #29709: Windows: Maximize button in a window title bar is 
-  always grayed out
+	* Source/win32/WIN32Server.m:
+	* Source/win32/w32_movesize.m:
+	Fix for bug #29709: Windows: Maximize button in a window title bar is
+	always grayed out
 
 2010-07-06  Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/win32/WIN32Server.m: Tweak the conditions for incrementing the
 	clickCount when handling mouse clicks: (i.e. double click detection)
-	 - Require a click to be within a distance (retrieved from Windows)
+	- Require a click to be within a distance (retrieved from Windows)
 	   of the last click to count (previously there was no proximity check)
-   - Allow clicks separated by the Windows double click time interval
-     to count (e.g. if the Windows double click time interval is n,
-     clicking at times 0, n, 2n, 3n would produce events with click counts
-     1, 2, 3, and 4. This matches OS X behaviour. Previously, all clicks
-     had to be within the windows double click time interval to count as
-     one group.)
+	- Allow clicks separated by the Windows double click time interval
+	to count (e.g. if the Windows double click time interval is n,
+	clicking at times 0, n, 2n, 3n would produce events with click counts
+	1, 2, 3, and 4. This matches OS X behaviour. Previously, all clicks
+	had to be within the windows double click time interval to count as
+	one group.)
 
 2010-06-23  Quentin Mathe <quentin.mathe@gmail.com>
 
