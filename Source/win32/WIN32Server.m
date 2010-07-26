@@ -1772,7 +1772,7 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
     = MSWindowPointToGS(svr, hwnd,  GET_X_LPARAM(pos), GET_Y_LPARAM(pos));
 
   ltime = GetMessageTime();
-  time = ltime / 1000;
+  time = ltime / 1000.0f;
 
   GetKeyboardState(keyState);
   eventFlags = mask_for_keystate(keyState);
@@ -1912,7 +1912,7 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 
   eventLocation = MSWindowPointToGS(svr, hwnd, clientX, clientY);
   ltime = GetMessageTime();
-  time = ltime / 1000;
+  time = ltime / 1000.0f;
   tick = GetTickCount();
   eventFlags = 0;
   if (wParam & MK_CONTROL)
