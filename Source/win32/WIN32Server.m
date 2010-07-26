@@ -1628,7 +1628,7 @@ process_char(WPARAM wParam, unsigned *eventModifierFlags)
       case VK_RETURN: return NSCarriageReturnCharacter;
       case VK_TAB:    return NSTabCharacter;
       case VK_ESCAPE:  return 0x1b;
-      case VK_BACK:   return NSBackspaceCharacter;
+      case VK_BACK:   return NSDeleteCharacter;
 
 	/* The following keys need to be reported as function keys */
   #define WIN_FUNCTIONKEY \

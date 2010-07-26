@@ -2292,11 +2292,11 @@ process_char (KeySym keysym, unsigned *eventModifierFlags)
     case XK_Linefeed:     return NSFormFeedCharacter;
     case XK_Tab:          return NSTabCharacter;
 #ifdef XK_XKB_KEYS
-    case XK_ISO_Left_Tab: return NSTabCharacter;
+    case XK_ISO_Left_Tab: return NSBackTabCharacter;
 #endif
       /* FIXME: The following line ? */
     case XK_Escape:       return 0x1b;
-    case XK_BackSpace:    return NSBackspaceKey;
+    case XK_BackSpace:    return NSDeleteCharacter;
 
       /* The following keys need to be reported as function keys */
 #define XGPS_FUNCTIONKEY \
