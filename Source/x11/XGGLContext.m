@@ -104,6 +104,10 @@
        */
       rect = [view convertRect: [view bounds]
                         toView: [window contentView]];
+      if ([[window contentView] isFlipped])
+        {
+          rect.origin.y = NSHeight([[window contentView] frame]) - (rect.size.height + rect.origin.y);
+        }
     }
   else
     {
@@ -194,6 +198,10 @@
        */
       rect = [attached convertRect: [attached bounds]
 			    toView: [[attached window] contentView]];
+      if ([[[attached window] contentView] isFlipped])
+        {
+          rect.origin.y = NSHeight([[[attached window] contentView] frame]) - (rect.size.height + rect.origin.y);
+        }
     }
   else
     {

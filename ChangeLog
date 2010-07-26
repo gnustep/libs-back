@@ -1,3 +1,11 @@
+2010-07-25  Eric Wasylishen <ewasylishen@gmail.com>
+
+	* Source/win32/w32_GLContext.m:
+	* Source/x11/XGGLContext.m:
+	Apply fix for bug 29705: OpenGL subwindow positioning error
+	(OpenGL subwindow position was incorrectly calculated when
+	the window content view was flipped)
+
 2010-07-25 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerEvent.m:
