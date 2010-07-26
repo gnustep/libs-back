@@ -1,5 +1,12 @@
 2010-07-25  Eric Wasylishen <ewasylishen@gmail.com>
 
+	* Source/win32/WIN32Server.m:
+	Fix accidental integer division intended to be float division when
+	setting the timestamp on events. This was causing all timestamps
+	to be rounded to the nearest second.
+	
+2010-07-25  Eric Wasylishen <ewasylishen@gmail.com>
+
 	* Source/win32/w32_GLContext.m:
 	* Source/x11/XGGLContext.m:
 	Apply fix for bug 29705: OpenGL subwindow positioning error
