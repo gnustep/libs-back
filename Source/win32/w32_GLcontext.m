@@ -137,6 +137,10 @@ LRESULT CALLBACK win32SubwindowProc(
        * we must therefore use content view coordinates.
        */
       rect = [view convertRect: [view bounds] toView: [[attached window] contentView]];
+      if ([[[attached window] contentView] isFlipped])
+        {
+          rect.origin.y = NSHeight([[[attached window] contentView] frame]) - (rect.size.height + rect.origin.y);
+        }
     }
   else
     {
@@ -210,6 +214,10 @@ LRESULT CALLBACK win32SubwindowProc(
        */
       rect = [attached convertRect: [attached bounds]
 			    toView: [[attached window] contentView]];
+      if ([[[attached window] contentView] isFlipped])
+        {
+          rect.origin.y = NSHeight([[[attached window] contentView] frame]) - (rect.size.height + rect.origin.y);
+        }
     }
   else
     {
