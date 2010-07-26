@@ -1,10 +1,20 @@
+2010-07-26 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m,
+	* Source/x11/XGServerEvent.m: Use NSDeleteCharacter instead of
+	NSBackSpaceCharacter for the backspace key. This is what Cocoa and
+	OpenStep have been doing all the time.
+	Also use NSBackTabCharacter on X11 when XK_ISO_Left_Tab is
+	pressed, but don't convert shift-tab into NSBackTabCharacter.
+	Patch by Derek Fawcus <dfawcus@employees.org>.
+
 2010-07-25  Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/win32/WIN32Server.m:
 	Fix accidental integer division intended to be float division when
 	setting the timestamp on events. This was causing all timestamps
 	to be rounded to the nearest second.
-	
+
 2010-07-25  Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/win32/w32_GLContext.m:
