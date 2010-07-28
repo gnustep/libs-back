@@ -1,3 +1,12 @@
+2010-07-28 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSGState.m (-fillRect:withPattern:): Don't use an
+	autoreleased bezier path.
+	* Source/art/path.m (-DPSrectfill::::),
+	* Source/xlib/XGGState.m (-DPSrectfill::::): Use
+	-fillPath:withPattern: not -fillRect:withPattern: as the rect needs
+	to be converted first.
+
 2010-07-26 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/WIN32Server.m,

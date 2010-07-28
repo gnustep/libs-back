@@ -1255,7 +1255,8 @@ typedef enum {
 
   size = [pattern size];
   y = floor(NSMinY(rect) / size.height) * size.height;
-  while (y < NSMaxY(rect))
+
+    while (y < NSMaxY(rect))
     {
       x = floor(NSMinX(rect) / size.width) * size.width;
       while (x < NSMaxX(rect))
@@ -1278,12 +1279,14 @@ typedef enum {
   void *oldClip;
 
   oldClip = [self saveClip];
-  path = [NSBezierPath bezierPathWithRect: rect];
+  path = [[NSBezierPath alloc] init];
+  [path appendBezierPathWithRect: rect];
   [self DPSclip];
 
   [self _fillRect: rect withPattern: color_pattern];
 
   [self restoreClip: oldClip];
+  RELEASE(path);
   path = oldPath;
 }
 

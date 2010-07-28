@@ -984,7 +984,13 @@ static void clip_svp_callback(void *data, int y, int start,
 
   if (pattern != nil)
     {
-      [self fillRect: NSMakeRect(x, y, w, h) withPattern: pattern];
+      NSBezierPath *path;
+
+      path = [[NSBezierPath alloc] init];
+      [path appendBezierPathWithRect: NSMakeRect(x, y, w, h)];
+      [path transformUsingAffineTransform: ctm];
+      [self fillPath: path withPattern: pattern];
+      RELEASE(path);
       return;
     }
 
