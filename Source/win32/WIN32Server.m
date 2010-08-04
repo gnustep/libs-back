@@ -477,16 +477,17 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 {
   DWORD estyle = 0;
 
-  if ((style & NSMiniaturizableWindowMask) == NSMiniaturizableWindowMask)
+  if ((style & NSUtilityWindowMask) == NSUtilityWindowMask)
     {
+      estyle = WS_EX_TOOLWINDOW;
+    }
+  else
+    {
+      //FIXME: This looks like a hack
       if ([self usesNativeTaskbar])
         estyle = WS_EX_APPWINDOW;
       else
         estyle = WS_EX_TOOLWINDOW;
-    }
-  else
-    {
-      estyle = WS_EX_TOOLWINDOW;
     } 
 
   return estyle;
