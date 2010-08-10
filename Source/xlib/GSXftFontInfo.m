@@ -179,7 +179,8 @@ static NSArray *faFromFc(FcPattern *pat)
   NSMutableArray *fcxft_allFontNames = [[NSMutableArray alloc] init];
 
   FcPattern *pat = FcPatternCreate();
-  FcObjectSet *os = FcObjectSetBuild(FC_FAMILY, FC_SLANT, FC_WEIGHT, NULL);
+  FcObjectSet *os = FcObjectSetBuild(FC_FAMILY, FC_SLANT, FC_WEIGHT, 
+                                     FC_SPACING, NULL);
   FcFontSet *fs = FcFontList(0, pat, os);
 
   FcPatternDestroy(pat);
