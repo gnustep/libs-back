@@ -1,3 +1,8 @@
+2010-08-24  Eric Wasylishen <ewasylishen@gmail.com>
+
+	* Source/win32/WIN32Server.m (-setmaxsize::):
+  Remove the maximize box when a maximum size is set on a window.
+
 2010-08-10 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoFontEnumerator.m,
