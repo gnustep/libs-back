@@ -1384,6 +1384,18 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   p.x = size.width;
   p.y = size.height;
   win->minmax.ptMaxTrackSize = p;
+
+  // Disable the maximize box if a maximum size is set
+  if (size.width < 10000 || size.height < 10000)
+    {
+      SetWindowLong((HWND)winNum, GWL_STYLE, 
+          GetWindowLong((HWND)winNum, GWL_STYLE) ^ WS_MAXIMIZEBOX);
+    }
+  else
+    {
+      SetWindowLong((HWND)winNum, GWL_STYLE, 
+          GetWindowLong((HWND)winNum, GWL_STYLE) | WS_MAXIMIZEBOX);
+    }
 }
 
 /** Set the minimum size of the window */
