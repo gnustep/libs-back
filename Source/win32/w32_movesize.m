@@ -315,15 +315,12 @@ NSDebugLLog(@"WTrace", @"swap %d (%d) with %d (%d)", hi, hl, lo, ll);
 
   if ((inf->flags & SWP_NOZORDER) == 0)
     {
-      WIN_INTERN	*win;
-
       /* desktop level windows should stay at the bottom of the
        * window list, so we can simply override any re-ordering
        * to ensure that they are at the bottom unless another
        * desktop level window is inserted below them.
        */
-      win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
-      if (win->level <= NSDesktopWindowLevel)
+      if (GetWindowLong(hwnd, OFF_LEVEL) <= NSDesktopWindowLevel)
 	{
 	  inf->hwndInsertAfter = HWND_BOTTOM;
 	}
