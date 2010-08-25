@@ -1,5 +1,10 @@
 2010-08-24  Eric Wasylishen <ewasylishen@gmail.com>
 
+	* Source/win32/WIN32Server.m: Handle Page Down and Page Up keys,
+  as well as adding a few others.
+
+2010-08-24  Eric Wasylishen <ewasylishen@gmail.com>
+
 	* Headers/win32/WIN32Server.h:
 	* Source/win32/WIN32Server.m:
 	* Source/win32/w32_movesize.m:
