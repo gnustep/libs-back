@@ -182,11 +182,18 @@ typedef struct w32serverFlags {
 
 @end
 
-typedef struct _win_intern {
-  int32_t level;
+// FIXME: Keep all of the extra window data in one place
+
+// Extra window data accessed via GetWindowLong
+
 #define OFF_LEVEL	0
-  int32_t orderedIn;
-#define OFF_ORDERED	sizeof(int32_t)
+#define OFF_ORDERED	sizeof(DWORD)
+#define WIN_EXTRABYTES (2*sizeof(DWORD))
+
+// Extra window data allocated using objc_malloc in WM_CREATE and accessed via
+// the GWL_USERDATA pointer
+
+typedef struct _win_intern {
   BOOL useHDC;
   BOOL backingStoreEmpty;
   HDC hdc; 

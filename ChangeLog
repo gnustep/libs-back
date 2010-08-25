@@ -1,5 +1,23 @@
 2010-08-24  Eric Wasylishen <ewasylishen@gmail.com>
 
+	* Headers/win32/WIN32Server.h:
+	* Source/win32/WIN32Server.m:
+	* Source/win32/w32_movesize.m:
+	Fix a rather serious error where the extra window data was allocated
+	in two places (allocated with objc_malloc in the WM_CREATE handler,
+	and also allocated by Windows using the cbWndExtra field of the window
+	class structure). Sometimes the window level was accessed from one
+	memory area and sometimes from the other.
+	
+	This is a quick fix that leaves the level and ordered properties
+	in the cbWndExtra area, and the rest is left in the WIN_INTERN
+	structure. 
+
+	This fixes the problem where window ordering was broken when running
+	apps in gdb.
+
+2010-08-24  Eric Wasylishen <ewasylishen@gmail.com>
+
 	* Source/win32/WIN32Server.m (-setmaxsize::):
   Remove the maximize box when a maximum size is set on a window.
 

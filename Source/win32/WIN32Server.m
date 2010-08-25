@@ -197,8 +197,8 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   wc.style = CS_HREDRAW | CS_VREDRAW; 
   wc.lpfnWndProc = (WNDPROC) MainWndProc; 
   wc.cbClsExtra = 0; 
-  // Keep extra space for each window, for GS data
-  wc.cbWndExtra = sizeof(WIN_INTERN); 
+  // Keep extra space for each window, for OFF_LEVEL and OFF_ORDERED
+  wc.cbWndExtra = WIN_EXTRABYTES; 
   wc.hInstance = hinstance; 
   wc.hIcon = NULL;//currentAppIcon;
   wc.hCursor = LoadCursor(NULL, IDC_ARROW);
@@ -1314,13 +1314,11 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
 - (void) setwindowlevel: (int) level : (int) winNum
 {
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)winNum, GWLP_USERDATA);
-
   NSDebugLLog(@"WTrace", @"setwindowlevel: %d : %d", level, winNum);
-  if (win->level != level)
+  if (GetWindowLong((HWND)winNum, OFF_LEVEL) != level)
     {
       SetWindowLong((HWND)winNum, OFF_LEVEL, level);
-      if (win->orderedIn == YES)
+      if (GetWindowLong((HWND)winNum, OFF_ORDERED) == YES)
 	{
           [self orderwindow: NSWindowAbove : 0 : winNum];
 	}
@@ -1329,8 +1327,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
 - (int) windowlevel: (int) winNum
 {
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)winNum, GWLP_USERDATA);
-  return win->level;
+  return GetWindowLong((HWND)winNum, OFF_LEVEL);
 }
 
 - (NSArray *) windowlist
