@@ -1674,20 +1674,21 @@ process_char(WPARAM wParam, unsigned *eventModifierFlags)
       case VK_RIGHT:       WIN_FUNCTIONKEY return NSRightArrowFunctionKey;
       case VK_UP:          WIN_FUNCTIONKEY return NSUpArrowFunctionKey;
       case VK_DOWN:        WIN_FUNCTIONKEY return NSDownArrowFunctionKey;
-      case VK_PRIOR:       WIN_FUNCTIONKEY return NSPrevFunctionKey;
-      case VK_NEXT:        WIN_FUNCTIONKEY return NSNextFunctionKey;
+      case VK_PRIOR:       WIN_FUNCTIONKEY return NSPageUpFunctionKey;
+      case VK_NEXT:        WIN_FUNCTIONKEY return NSPageDownFunctionKey;
       case VK_END:         WIN_FUNCTIONKEY return NSEndFunctionKey;
-	//case VK_BEGIN:       WIN_FUNCTIONKEY return NSBeginFunctionKey;
       case VK_SELECT:      WIN_FUNCTIONKEY return NSSelectFunctionKey;
       case VK_PRINT:       WIN_FUNCTIONKEY return NSPrintFunctionKey;
+      case VK_SNAPSHOT:    WIN_FUNCTIONKEY return NSPrintScreenFunctionKey;
       case VK_EXECUTE:     WIN_FUNCTIONKEY return NSExecuteFunctionKey;
       case VK_INSERT:      WIN_FUNCTIONKEY return NSInsertFunctionKey;
       case VK_HELP:        WIN_FUNCTIONKEY return NSHelpFunctionKey;
       case VK_CANCEL:      WIN_FUNCTIONKEY return NSBreakFunctionKey;
-	//case VK_MODECHANGE:  WIN_FUNCTIONKEY return NSModeSwitchFunctionKey;
+      case VK_MODECHANGE:  WIN_FUNCTIONKEY return NSModeSwitchFunctionKey;
       case VK_SCROLL:      WIN_FUNCTIONKEY return NSScrollLockFunctionKey;
       case VK_PAUSE:       WIN_FUNCTIONKEY return NSPauseFunctionKey;
       case VK_OEM_CLEAR:   WIN_FUNCTIONKEY return NSClearDisplayFunctionKey;
+      case VK_CLEAR:       WIN_FUNCTIONKEY return NSClearLineFunctionKey;  
   #undef WIN_FUNCTIONKEY
       default: 
 	return 0;
