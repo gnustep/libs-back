@@ -91,6 +91,8 @@
         break;
       case FALSE:
         {
+          [NSApp deactivate];
+          flags._eventHandled = YES;
         }            
         break;
               
