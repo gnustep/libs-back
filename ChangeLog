@@ -1,3 +1,11 @@
+2010-08-29  Eric Wasylishen <ewasylishen@gmail.com>
+
+	* Source/win32/w32_activate.m: Call -[NSApp deactivate] in response
+	to a WM_ACTIVEAPPP message reporting that the app lost focus.
+
+	This delivers NSApplicationWillResignActiveNotification
+	and NSApplicationDidResignActiveNotification, hides panels, etc.
+
 2010-08-24  Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/win32/WIN32Server.m: Handle Page Down and Page Up keys,
