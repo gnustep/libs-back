@@ -479,16 +479,38 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
   if ((style & NSUtilityWindowMask) == NSUtilityWindowMask)
     {
-      estyle = WS_EX_TOOLWINDOW;
+      // WS_EX_TOOLWINDOW gives windows a thinner frame, like NSUtilityWindowMask
+      estyle |= WS_EX_TOOLWINDOW;
     }
-  else
+
+  if ([self usesNativeTaskbar])
     {
-      //FIXME: This looks like a hack
-      if ([self usesNativeTaskbar])
-        estyle = WS_EX_APPWINDOW;
-      else
-        estyle = WS_EX_TOOLWINDOW;
-    } 
+      // We will put all bordered windows except utility windows in the
+      // taskbar. Utility windows don't need to be in the taskbar since
+      // they are in the floating window level, so always visible.
+
+      if (style == NSBorderlessWindowMask)
+        {
+          // WS_EX_TOOLWINDOW also prevents windows from appearing in the taskbar.
+          estyle |= WS_EX_TOOLWINDOW;
+        }
+      else if ((style & NSUtilityWindowMask) == 0)
+        {
+          // WS_EX_APPWINDOW requests that the window appear in the taskbar
+          estyle |= WS_EX_APPWINDOW;
+        }
+   }
+  else /* (NO == [self usesNativeTaskbar]) */
+   {
+      // Prevent all windows from appearing in the taskbar. As an undesired 
+      // side effect this will give all windows with frames thin "tool window" 
+      // frames. We could also get rid of the taskbar buttons by creating
+      // a hidden window, and setting it as the parent of all other windows, 
+      // but that would be more complicated to manage.
+      // See http://msdn.microsoft.com/en-us/library/bb776822(v=VS.85).aspx#Managing_Taskbar_But
+ 
+      estyle |= WS_EX_TOOLWINDOW;
+    }
 
   return estyle;
 }
