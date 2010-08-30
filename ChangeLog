@@ -1,3 +1,13 @@
+2010-08-30  Eric Wasylishen <ewasylishen@gmail.com>
+
+	* Source/win32/WIN32Server.m: Only show taskbar buttons for windows
+	which satisfy both:
+	
+	- style mask isn't NSBorderlessWindowMask
+	- style mask don't have NSUtilityWindowMask set
+	
+	Should fix bug 30911
+
 2010-08-29  Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/win32/w32_activate.m: Call -[NSApp deactivate] in response
