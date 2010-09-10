@@ -1,3 +1,8 @@
+2010-09-10  Eric Wasylishen <ewasylishen@gmail.com>
+
+	* Source/win32/w32_activate.m: Revert the change to call
+	 -[NSApp deactivate].. more investigation needed
+
 2010-08-30  Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/win32/WIN32Server.m: Only show taskbar buttons for windows

@@ -91,8 +91,11 @@
         break;
       case FALSE:
         {
-          [NSApp deactivate];
-          flags._eventHandled = YES;
+// FIXME: We should deactivate the application, however the following
+// causes problems. See "Re: Problem with recent change to w32_activate.m
+// -- PLEASE REVERT" for details.
+//          [NSApp deactivate];
+//          flags._eventHandled = YES;
         }            
         break;
               
