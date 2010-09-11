@@ -4246,6 +4246,8 @@ _computeDepth(int class, int bpp)
 	spp = 3;
 	break;
       default:
+        NSLog(@"Unknown visual class %d in computeDepth", class);
+        return 0;
 	break;
     }
 

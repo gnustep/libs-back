@@ -635,7 +635,7 @@ image2StandardPseudoColor(RContext *ctx, RImage *image)
 		x1-=channels;
 		nerr[x++] = ptr[x1++];
 		nerr[x++] = ptr[x1++];
-		nerr[x++] = ptr[x1++];
+		nerr[x] = ptr[x1];
 	    }
 	    for (x=0; x<image->width*3; x+=3, ofs++) {
 		/* reduce pixel */

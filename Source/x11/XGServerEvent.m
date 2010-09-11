@@ -2015,15 +2015,18 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
   if (_is_keyboard_initialized == NO)
     initialize_keyboard ();
 
-  /* Process location */
   window = [XGServer _windowWithTag: [[NSApp keyWindow] windowNumber]];
-  if (window != 0)
+  if (!window)
     {
-      eventLocation.x = xEvent->xbutton.x;
-      eventLocation.y = xEvent->xbutton.y;
-      eventLocation = [context _XPointToOSPoint: eventLocation
-                                            for: window];
+      // No key event if we don't have a key window
+      return nil;
     }
+
+  /* Process location */
+  eventLocation.x = xEvent->xbutton.x;
+  eventLocation.y = xEvent->xbutton.y;
+  eventLocation = [context _XPointToOSPoint: eventLocation
+                                        for: window];
     
   /* Process characters */
   keys = [context->inputServer lookupStringForEvent: (XKeyEvent *)xEvent
