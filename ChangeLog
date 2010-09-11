@@ -1,3 +1,14 @@
+2010-09-11 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/convert.c (image2StandardPseudoColor): Small change
+	to keep static code analyser happy.
+	* Source/x11/XGServerEvent.m (process_key_event): Don't process
+	the event if we don't have a key window.
+	* Source/x11/XGServerWindow.m (_computeDepth): Test for unknown
+	visual class.
+	* Tools/gpbs.m: Rename newDataWithVersion: into dataWithVersion to
+	follwo the Objective_c naming convention.
+
 2010-09-10  Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/win32/w32_activate.m: Revert the change to call
@@ -7,10 +18,10 @@
 
 	* Source/win32/WIN32Server.m: Only show taskbar buttons for windows
 	which satisfy both:
-	
+
 	- style mask isn't NSBorderlessWindowMask
 	- style mask don't have NSUtilityWindowMask set
-	
+
 	Should fix bug 30911
 
 2010-08-29  Eric Wasylishen <ewasylishen@gmail.com>

@@ -152,7 +152,7 @@ NSMutableDictionary	*pasteboards = nil;
 	      hasGNUDataForType: (BOOL)GNUData;
 - (BOOL) checkConnection: (NSConnection*)c;
 - (NSData*) data;
-- (NSData*) newDataWithVersion: (int)version;
+- (NSData*) dataWithVersion: (int)version;
 - (id) owner;
 - (id) pboard;
 - (void) setData: (NSData*)d;
@@ -234,7 +234,7 @@ NSMutableDictionary	*pasteboards = nil;
   return data;
 }
 
-- (NSData*) newDataWithVersion: (int)version
+- (NSData*) dataWithVersion: (int)version
 {
   /*
    * If the owner of this item is an X window - we can't use the data from
@@ -766,7 +766,7 @@ NSMutableDictionary	*pasteboards = nil;
 
       if (d)
 	{
-	  return [d newDataWithVersion: [e refNum]];
+	  return [d dataWithVersion: [e refNum]];
 	}
     }
   return nil;
