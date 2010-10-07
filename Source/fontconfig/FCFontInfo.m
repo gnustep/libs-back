@@ -149,6 +149,11 @@
   return NSZeroRect;
 }
 
+- (NSString *) displayName
+{
+  return [_faceInfo displayName];
+}
+
 - (CGFloat) widthOfString: (NSString *)string
 {
   [self subclassResponsibility: _cmd];

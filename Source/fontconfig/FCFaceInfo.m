@@ -67,6 +67,17 @@
   return _familyName;
 }
 
+- (NSString *) displayName
+{
+	char	*fcstyle;
+
+	if (FcPatternGetString(_pattern, FC_STYLE, 0, (FcChar8 **)&fcstyle) == FcResultMatch) {
+		return [NSString stringWithFormat: @"%@ %@", _familyName, 
+				[NSString stringWithUTF8String: fcstyle]];
+	}
+	return _familyName;
+}
+
 - (int) weight
 {
   return _weight;

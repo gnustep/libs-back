@@ -241,6 +241,12 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
   return NSZeroRect;
 }
 
+- (NSString *) displayName
+{
+	return [_faceInfo displayName];
+}
+
+
 - (CGFloat) widthOfString: (NSString *)string
 {
   cairo_text_extents_t ctext;

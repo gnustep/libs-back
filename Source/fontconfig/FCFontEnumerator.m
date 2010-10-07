@@ -78,9 +78,9 @@ NSMutableDictionary * __allFonts;
 // Make a GNUstep style font descriptor from a FcPattern
 static NSArray *faFromFc(FcPattern *pat)
 {
-  int weight, slant, spacing, nsweight;
+  int weight, slant, spacing, width, nsweight;
   unsigned int nstraits = 0;
-  char *family;
+  char *family, *fcstyle;
   NSMutableString *name, *style;
 
   if (FcPatternGetInteger(pat, FC_WEIGHT, 0, &weight) != FcResultMatch
@@ -92,18 +92,35 @@ static NSArray *faFromFc(FcPattern *pat)
   if (FcPatternGetInteger(pat, FC_SPACING, 0, &spacing) == FcResultMatch)
     if (spacing==FC_MONO || spacing==FC_CHARCELL)
       nstraits |= NSFixedPitchFontMask;
-  
+
   name = [NSMutableString stringWithCapacity: 100];
   style = [NSMutableString stringWithCapacity: 100];
   [name appendString: [NSString stringWithUTF8String: family]];
 
   switch (weight) 
     {
+      case FC_WEIGHT_THIN:
+        [style appendString: @"Thin"];
+        nsweight = 1;
+        break;
+      case FC_WEIGHT_ULTRALIGHT:
+        [style appendString: @"Ultralight"];
+        nsweight = 2;
+        break;
       case FC_WEIGHT_LIGHT:
         [style appendString: @"Light"];
         nsweight = 3;
         break;
+      case FC_WEIGHT_BOOK:
+        [style appendString: @"Book"];
+        nsweight = 4;
+        break;
+      case FC_WEIGHT_REGULAR:
+//        [style appendString: @"Regular"];
+        nsweight = 5;
+        break;
       case FC_WEIGHT_MEDIUM:
+        [style appendString: @"Medium"];
         nsweight = 6;
         break;
       case FC_WEIGHT_DEMIBOLD:
@@ -115,14 +132,64 @@ static NSArray *faFromFc(FcPattern *pat)
         nsweight = 9;
         nstraits |= NSBoldFontMask;
         break;
+      case FC_WEIGHT_ULTRABOLD:
+        [style appendString: @"Ultrabold"];
+        nsweight = 11;
+        nstraits |= NSBoldFontMask;
+        break;
       case FC_WEIGHT_BLACK:
         [style appendString: @"Black"];
         nsweight = 12;
         nstraits |= NSBoldFontMask;
         break;
+      case FC_WEIGHT_ULTRABLACK:
+        [style appendString: @"Ultrablack"];
+        nsweight = 13;
+        nstraits |= NSBoldFontMask;
+        break;
       default:
-        nsweight = 6;
+        nsweight = 5;
     }
+
+  if (FcPatternGetInteger(pat, FC_WIDTH, 0, &width) == FcResultMatch)
+    switch (width) 
+      {
+	case FC_WIDTH_ULTRACONDENSED:
+          [style appendString: @"Ultracondensed"];
+          nstraits |= NSCondensedFontMask;
+	  break;
+	case FC_WIDTH_EXTRACONDENSED:
+          [style appendString: @"Extracondensed"];
+          nstraits |= NSCondensedFontMask;
+	  break;
+	case FC_WIDTH_CONDENSED:
+          [style appendString: @"Condensed"];
+          nstraits |= NSCondensedFontMask;
+	  break;
+	case FC_WIDTH_SEMICONDENSED:
+          [style appendString: @"Semicondensed"];
+          nstraits |= NSCondensedFontMask;
+	  break;
+	case FC_WIDTH_SEMIEXPANDED:
+          [style appendString: @"Semiexpanded"];
+          nstraits |= NSExpandedFontMask;
+	  break;
+	case FC_WIDTH_EXPANDED:
+          [style appendString: @"Expanded"];
+          nstraits |= NSExpandedFontMask;
+	  break;
+	case FC_WIDTH_EXTRAEXPANDED:
+          [style appendString: @"Extraexpanded"];
+          nstraits |= NSExpandedFontMask;
+	  break;
+	case FC_WIDTH_ULTRAEXPANDED:
+          [style appendString: @"Ultraexpanded"];
+          nstraits |= NSExpandedFontMask;
+	  break;
+
+	default:
+      	  break;
+      }
 
   switch (slant) 
     {
@@ -145,9 +212,13 @@ static NSArray *faFromFc(FcPattern *pat)
     }
   else
     {
-      [style appendString: @"Roman"];
+      [style setString: @"Regular"];
     }
 
+  if (FcPatternGetString(pat, FC_STYLE, 0, (FcChar8 **)&fcstyle) == FcResultMatch)
+    style = [NSString stringWithUTF8String: fcstyle];
+
+//  NSLog (@"family: %@, style: %s/%@", name, fcstyle, style);
   return [NSArray arrayWithObjects: name, 
 		  style, 
 		  [NSNumber numberWithInt: nsweight], 
@@ -164,7 +235,8 @@ static NSArray *faFromFc(FcPattern *pat)
   Class faceInfoClass = [[self class] faceInfoClass];
 
   FcPattern *pat = FcPatternCreate();
-  FcObjectSet *os = FcObjectSetBuild(FC_FAMILY, FC_SLANT, FC_WEIGHT, 
+  FcObjectSet *os = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FULLNAME,
+                                     FC_SLANT, FC_WEIGHT, FC_WIDTH,
                                      FC_SPACING, NULL);
   FcFontSet *fs = FcFontList(NULL, pat, os);
 
@@ -199,7 +271,7 @@ static NSArray *faFromFc(FcPattern *pat)
                 }
               NSDebugLLog(@"NSFont", @"fc enumerator: adding font: %@", name);
               [familyArray addObject: fontArray];
-              [fcxft_allFontNames addObject: name];      
+              [fcxft_allFontNames addObject: name];
               aFont = [[faceInfoClass alloc] initWithfamilyName: familyString
                                              weight: [[fontArray objectAtIndex: 2] intValue]
                                              traits: [[fontArray objectAtIndex: 3] unsignedIntValue]
@@ -218,6 +290,18 @@ static NSArray *faFromFc(FcPattern *pat)
 
 - (NSString *) defaultSystemFontName
 {
+  if ([allFontNames containsObject: @"DejaVu Sans-Book"])
+    {
+      return @"DejaVu Sans-Book";
+    }
+  if ([allFontNames containsObject: @"DejaVu Sans"])
+    {
+      return @"DejaVu Sans";
+    }
+  if ([allFontNames containsObject: @"Bitstream Vera Sans-Roman"])
+    {
+      return @"Bitstream Vera Sans-Roman";
+    }
   if ([allFontNames containsObject: @"Bitstream Vera Sans"])
     {
       return @"Bitstream Vera Sans";
@@ -225,10 +309,6 @@ static NSArray *faFromFc(FcPattern *pat)
   if ([allFontNames containsObject: @"FreeSans"])
     {
       return @"FreeSans";
-    }
-  if ([allFontNames containsObject: @"DejaVu Sans"])
-    {
-      return @"DejaVu Sans";
     }
   if ([allFontNames containsObject: @"Tahoma"])
     {
@@ -243,6 +323,10 @@ static NSArray *faFromFc(FcPattern *pat)
 
 - (NSString *) defaultBoldSystemFontName
 {
+  if ([allFontNames containsObject: @"DejaVu Sans-Bold"])
+    {
+      return @"DejaVu Sans-Bold";
+    }
   if ([allFontNames containsObject: @"Bitstream Vera Sans-Bold"])
     {
       return @"Bitstream Vera Sans-Bold";
@@ -250,10 +334,6 @@ static NSArray *faFromFc(FcPattern *pat)
   if ([allFontNames containsObject: @"FreeSans-Bold"])
     {
       return @"FreeSans-Bold";
-    }
-  if ([allFontNames containsObject: @"DejaVu Sans-Bold"])
-    {
-      return @"DejaVu Sans-Bold";
     }
   if ([allFontNames containsObject: @"Tahoma-Bold"])
     {
@@ -268,6 +348,10 @@ static NSArray *faFromFc(FcPattern *pat)
 
 - (NSString *) defaultFixedPitchFontName
 {
+  if ([allFontNames containsObject: @"DejaVu Sans Mono"])
+    {
+      return @"DejaVu Sans Mono";
+    }
   if ([allFontNames containsObject: @"Bitstream Vera Sans Mono"])
     {
       return @"Bitstream Vera Sans Mono";
@@ -275,10 +359,6 @@ static NSArray *faFromFc(FcPattern *pat)
   if ([allFontNames containsObject: @"FreeMono"])
     {
       return @"FreeMono";
-    }
-  if ([allFontNames containsObject: @"DejaVu Sans Mono"])
-    {
-      return @"DejaVu Sans Mono";
     }
   if ([allFontNames containsObject: @"Courier New"])
     {
