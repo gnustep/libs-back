@@ -1100,7 +1100,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   switch (bitsPerPixel)
     {
     case 32:
-      tmp = objc_malloc(pixels * 4);
+      tmp = malloc(pixels * 4);
       if (!tmp)
         {
           NSLog(@"Could not allocate drawing space for image");
@@ -1134,7 +1134,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       format = CAIRO_FORMAT_ARGB32;
       break;
     case 24:
-      tmp = objc_malloc(pixels * 4);
+      tmp = malloc(pixels * 4);
       if (!tmp)
         {
           NSLog(@"Could not allocate drawing space for image");
@@ -1183,7 +1183,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       NSLog(@"Cairo status '%s' in DPSimage", cairo_status_to_string(status));
       if (tmp)
         {
-          objc_free(tmp);
+          free(tmp);
         }
 
       return;
@@ -1233,7 +1233,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 
   if (tmp)
     {
-      objc_free(tmp);
+      free(tmp);
     }
 }
 

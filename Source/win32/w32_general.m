@@ -74,7 +74,7 @@
       DeleteObject(old);
       DeleteDC(win->hdc);
     }
-  objc_free(win);
+  free(win);
   flags._eventHandled=YES;
 
 }

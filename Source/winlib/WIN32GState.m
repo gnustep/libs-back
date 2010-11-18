@@ -616,11 +616,11 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
   if (bitsPerPixel > 8)
     {
-      bitmap = objc_malloc(sizeof(BITMAPV4HEADER));
+      bitmap = malloc(sizeof(BITMAPV4HEADER));
     }
   else 
     {
-      bitmap = objc_malloc(sizeof(BITMAPINFOHEADER) +  
+      bitmap = malloc(sizeof(BITMAPINFOHEADER) +  
 			   (1 << bitsPerPixel) * sizeof(RGBQUAD));
     }
   bmih = (BITMAPINFOHEADER*)bitmap;
@@ -659,7 +659,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
       NSDebugLLog(@"WIN32GState", @"8bit greyscale picture with pixelsWide:%d "
 	@"pixelsHigh:%d", pixelsWide, pixelsHigh);
       
-      tmp = objc_malloc(pixels * 4);
+      tmp = malloc(pixels * 4);
       
       if ([colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace])
         {
@@ -707,7 +707,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
       bmih->bV4GreenMask = 0x0000FF00;
       bmih->bV4RedMask = 0x00FF0000;
       bmih->bV4AlphaMask = 0xFF000000;
-      tmp = objc_malloc(pixels * 4);
+      tmp = malloc(pixels * 4);
       while (i < pixels*4)
 	{
 	  tmp[i+0] = bits[i+2];
@@ -729,7 +729,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
       NSDebugLLog(@"WIN32GState", @"24bit picure with pixelsWide:%d "
 	@"pixelsHigh:%d", pixelsWide, pixelsHigh);
       
-      tmp = objc_malloc(pixels * 4);
+      tmp = malloc(pixels * 4);
       //memset(tmp, 0xFF, pixels*4);
       while (i < (pixels*4))
         {
@@ -770,9 +770,9 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   if (bits != data[0])
     {
       /* cast bits to Void Pointer to fix warning in compile */
-      objc_free((void *)(bits));
+      free((void *)(bits));
     }
-  objc_free(bitmap);
+  free(bitmap);
   return hbitmap;
 }
 
@@ -1252,14 +1252,14 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
       // The user has defined a dash pattern for stroking on
       // the path. Note that we lose the floating point information
       // here, as windows only supports DWORD elements, not float.
-      thePattern = objc_malloc(sizeof(float) * patternCount);
+      thePattern = malloc(sizeof(float) * patternCount);
       [path getLineDash: thePattern count: &patternCount phase: &phase];
 
-      iPattern = objc_malloc(sizeof(DWORD) * patternCount);
+      iPattern = malloc(sizeof(DWORD) * patternCount);
       int i  = 0;
       for (i = 0 ; i < patternCount; i ++)
 	iPattern[i] = (DWORD)thePattern[i];
-      objc_free(thePattern);
+      free(thePattern);
       thePattern = NULL;
     }
   else
@@ -1274,7 +1274,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
   if (iPattern)
     {
-      objc_free(iPattern);
+      free(iPattern);
       iPattern = NULL;
     }
 
