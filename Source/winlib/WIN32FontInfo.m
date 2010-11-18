@@ -210,7 +210,7 @@ NSLog(@"No glyph for U%d", c);
       count = (unsigned)GetFontUnicodeRanges(hdc, 0);
       if (count > 0)
         {
-          gs = (GLYPHSET*)objc_malloc(count);
+          gs = (GLYPHSET*)malloc(count);
           if (!gs)
             {
               SelectObject(hdc, old);
@@ -246,7 +246,7 @@ NSLog(@"No glyph for U%d", c);
                     }
                 }
             }
-          objc_free(gs);
+          free(gs);
         }
       SelectObject(hdc, old);
       DeleteDC(hdc);
@@ -375,16 +375,16 @@ NSLog(@"No glyph for U%d", c);
       return;
     }
 
-  ptPoints = objc_malloc(sizeof(POINT) * iPoints);
+  ptPoints = malloc(sizeof(POINT) * iPoints);
   if (!ptPoints)
     {
       DeleteDC(hDC);
       return;
     }
-  bTypes = objc_malloc(sizeof(BYTE) * iPoints);
+  bTypes = malloc(sizeof(BYTE) * iPoints);
   if (!bTypes)
     {
-      objc_free(ptPoints);
+      free(ptPoints);
       DeleteDC(hDC);
       return;
     }
@@ -419,8 +419,8 @@ NSLog(@"No glyph for U%d", c);
         }
     }
 
-  objc_free(bTypes);
-  objc_free(ptPoints);
+  free(bTypes);
+  free(ptPoints);
   DeleteDC(hDC);
 }
 

@@ -55,7 +55,7 @@
   /* For windows with backingstore we create a compatible DC, that 
 	   is stored in the extra fields for this window. Drawing operations 
 	   work on this buffer. */
-  win = objc_malloc(sizeof(WIN_INTERN));
+  win = malloc(sizeof(WIN_INTERN));
   SetWindowLong(hwnd, GWL_USERDATA, (int)win);
 	
   if (type != NSBackingStoreNonretained)

@@ -1,3 +1,15 @@
+2010-11-18 Eric Wasylishen <ewasylishen@gmail.com>
+
+	* Source/winlib/WIN32FontInfo.m:
+	* Source/winlib/WIN32GState.m:
+	* Source/cairo/CairoFontInfo.m:
+	* Source/cairo/CairoGState.m:
+	* Source/win32/w32_general.m:
+	* Source/win32/w32_create.m:
+	* Source/x11/XGServerWindow.m:
+	* Source/gsc/GSGState.m: Replace objc_malloc with malloc and
+	objc_free with free
+
 2010-09-11 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/convert.c (image2StandardPseudoColor): Small change

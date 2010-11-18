@@ -703,7 +703,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   root = [self _rootWindowForScreen: defScreen];
   context = [self xrContextForScreen: defScreen];
 
-  window = objc_malloc(sizeof(gswindow_device_t));
+  window = malloc(sizeof(gswindow_device_t));
   memset(window, '\0', sizeof(gswindow_device_t));
   window->display = dpy;
   window->screen = defScreen;
@@ -1256,7 +1256,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   if (window)
     return window;
 
-  window = objc_malloc(sizeof(gswindow_device_t));
+  window = malloc(sizeof(gswindow_device_t));
   memset(window, '\0', sizeof(gswindow_device_t));
 
   window->display = dpy;
@@ -1509,7 +1509,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     {
       const char	*str = [[pInfo processName] UTF8String];
 
-      rootName = objc_malloc(strlen(str) + 1);
+      rootName = malloc(strlen(str) + 1);
       strcpy(rootName, str);
     }
   classhint.res_name = rootName;
@@ -1536,13 +1536,13 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       args = [pInfo arguments];
     }
   argc = [args count];
-  argv = (char**)objc_malloc(argc*sizeof(char*));
+  argv = (char**)malloc(argc*sizeof(char*));
   for (i = 0; i < argc; i++)
     {
       argv[i] = (char*)[[args objectAtIndex: i] UTF8String];
     }
   XSetCommand(dpy, ROOT, argv, argc);
-  objc_free(argv);
+  free(argv);
 
   // Store the host name of the machine we a running on
   XStringListToTextProperty((char**)&host_name, 1, &windowName);
@@ -1772,7 +1772,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   data = [rep bitmapData];
 
   iconSize = 2 + w * h;
-  iconPropertyData = (long *)objc_malloc(sizeof(long) * iconSize);
+  iconPropertyData = (long *)malloc(sizeof(long) * iconSize);
   if (iconPropertyData == NULL)
     {
       NSLog(@"No memory for WM icon");
@@ -1853,7 +1853,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     {
       if (iconPropertyData != NULL)
         {
-	  objc_free(iconPropertyData);
+	  free(iconPropertyData);
 	}
 
       image = [NSApp applicationIconImage];
@@ -1891,7 +1891,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 
   /* Create the window structure and set the style early so we can use it to
   convert frames. */
-  window = objc_malloc(sizeof(gswindow_device_t));
+  window = malloc(sizeof(gswindow_device_t));
   memset(window, '\0', sizeof(gswindow_device_t));
   window->display = dpy;
   window->screen = screen;
@@ -2089,7 +2089,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 
   /* Create the window structure and set the style early so we can use it to
   convert frames. */
-  window = objc_malloc(sizeof(gswindow_device_t));
+  window = malloc(sizeof(gswindow_device_t));
   memset(window, '\0', sizeof(gswindow_device_t));
   window->display = dpy;
   window->screen = *screen;
@@ -2219,7 +2219,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     XDestroyRegion (window->region);
   RELEASE(window->exposedRects);
   NSMapRemove(windowtags, (void*)(uintptr_t)win);
-  objc_free(window);
+  free(window);
 }
 
 /*

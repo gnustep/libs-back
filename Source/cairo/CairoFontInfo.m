@@ -42,18 +42,18 @@
   _cacheSize = size;
   if (_cachedSizes)
     {
-      objc_free(_cachedSizes);
+      free(_cachedSizes);
     }
   if (_cachedGlyphs)
     {
-      objc_free(_cachedGlyphs);
+      free(_cachedGlyphs);
     }
-  _cachedSizes = objc_malloc(sizeof(NSSize) * size);
+  _cachedSizes = malloc(sizeof(NSSize) * size);
   if (_cachedSizes)
     {
       memset(_cachedSizes, 0, sizeof(NSSize) * size);
     }
-  _cachedGlyphs = objc_malloc(sizeof(unsigned int) * size);
+  _cachedGlyphs = malloc(sizeof(unsigned int) * size);
   if (_cachedGlyphs)
     {
       memset(_cachedGlyphs, 0, sizeof(unsigned int) * size);
@@ -183,9 +183,9 @@
       cairo_scaled_font_destroy(_scaled);
     }
   if (_cachedSizes)
-    objc_free(_cachedSizes);
+    free(_cachedSizes);
   if (_cachedGlyphs)
-    objc_free(_cachedGlyphs);
+    free(_cachedGlyphs);
   [super dealloc];
 }
 
@@ -338,7 +338,7 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
       return;
     }
 
-  cdata = objc_malloc(sizeof(char) * 4 * ix * iy);
+  cdata = malloc(sizeof(char) * 4 * ix * iy);
   if (!cdata)
     {
       NSLog(@"Could not allocate drawing space for glyphs");
@@ -352,7 +352,7 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
       NSLog(@"Error while creating surface: %s", 
             cairo_status_to_string(status));
       cairo_surface_destroy(isurface);
-      objc_free(cdata);
+      free(cdata);
       return;
     }
  
@@ -363,7 +363,7 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
             cairo_status_to_string(cairo_status(ct)));
       cairo_destroy(ct);
       cairo_surface_destroy(isurface);
-      objc_free(cdata);
+      free(cdata);
       return;
     }
 
@@ -377,7 +377,7 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
             cairo_status_to_string(cairo_status(ct)));
       cairo_destroy(ct);
       cairo_surface_destroy(isurface);
-      objc_free(cdata);
+      free(cdata);
       return;
     }
 
@@ -388,7 +388,7 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
             cairo_status_to_string(cairo_status(ct)));
       cairo_destroy(ct);
       cairo_surface_destroy(isurface);
-      objc_free(cdata);
+      free(cdata);
       return;
     }
 
@@ -433,7 +433,7 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
     }
   cairo_destroy(ct);
   cairo_surface_destroy(isurface);
-  objc_free(cdata);
+  free(cdata);
 }
 
 - (void) drawGlyphs: (const NSGlyph*)glyphs

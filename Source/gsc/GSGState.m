@@ -1172,7 +1172,7 @@ typedef enum {
   rect = [function affectedRect];
   iwidth = rect.size.width;
   iheight = rect.size.height;
-  data = objc_malloc(sizeof(char) * iwidth * iheight * 4);
+  data = malloc(sizeof(char) * iwidth * iheight * 4);
   i = 0;
 
   for (y = NSMinY(rect); y < NSMaxY(rect); y++)
@@ -1218,7 +1218,7 @@ typedef enum {
         : 32 : 4 * iwidth  : NO
         : YES : NSDeviceRGBColorSpace
         : (const unsigned char **)&data];
-  objc_free(data);
+  free(data);
 
   DESTROY(matrix);
   DESTROY(inverse);
