@@ -1,3 +1,9 @@
+2010-12-08 Jonathan Gillaspie <jonathan.gillaspie@testplant.com>
+
+	* Source/win32/WIN32Server.m: Added better logging on Window create and destroy errors.
+	Added a secondary call to get current mouse position if the first call fails.	
+	* Source/win32/w32_text_focus.m: Cast parameter to appropriate (HWND) type.
+	
 2010-11-18 Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/winlib/WIN32FontInfo.m:

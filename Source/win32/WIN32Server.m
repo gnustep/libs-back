@@ -925,8 +925,11 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
                         (HMENU)NULL, 
                         hinstance, 
                         (void*)type);
-  NSDebugLLog(@"WTrace", @"         num/handle: %d", hwnd);
-
+  NSDebugLLog(@"WCTrace", @"         num/handle: %d", hwnd);
+  if (!hwnd) {
+    NSLog(@"CreateWindowEx Failed %d", GetLastError());
+  }
+  
   SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
 
   [self _setWindowOwnedByServer: (int)hwnd];
@@ -935,8 +938,10 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
 - (void) termwindow: (int) winNum
 {
-  NSDebugLLog(@"WTrace", @"termwindow: %d", winNum);
-  DestroyWindow((HWND)winNum); 
+  NSDebugLLog(@"WCTrace", @"termwindow: %d", winNum);
+  if (!DestroyWindow((HWND)winNum)) {
+    NSLog(@"DestroyWindow Failed %d", GetLastError());
+  }
 }
 
 - (void) stylewindow: (unsigned int)style : (int) winNum
@@ -1545,9 +1550,15 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   POINT p;
 
   if (!GetCursorPos(&p))
-    {  
-      NSLog(@"GetCursorPos failed with %d", GetLastError());
-      return NSZeroPoint;
+    { 
+	  // Try using cursorInfo which should work in more situations
+	  CURSORINFO cursorInfo;
+	  cursorInfo.cbSize = sizeof(CURSORINFO); 
+	  if (!GetCursorInfo(&cursorInfo)) {
+		NSLog(@"GetCursorInfo failed with %d", GetLastError());
+        return NSZeroPoint;
+      }
+	  p = cursorInfo.ptScreenPos;
     }
 
   return MSScreenPointToGS(p.x, p.y);
