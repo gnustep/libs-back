@@ -76,7 +76,7 @@
   NSEvent *ev;
 
   // Remember the now focused window
-  currentFocus = wParam;
+  currentFocus = (HWND) wParam;
 
   ev = [NSEvent otherEventWithType: NSAppKitDefined
 			  location: NSMakePoint(0, 0)
