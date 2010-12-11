@@ -1,9 +1,14 @@
+2010-12-11 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/winlib/WIN32GState.m (GSCreateBitmap, -DPSImage:::...:):
+	Better error detection.
+
 2010-12-08 Jonathan Gillaspie <jonathan.gillaspie@testplant.com>
 
 	* Source/win32/WIN32Server.m: Added better logging on Window create and destroy errors.
-	Added a secondary call to get current mouse position if the first call fails.	
+	Added a secondary call to get current mouse position if the first call fails.
 	* Source/win32/w32_text_focus.m: Cast parameter to appropriate (HWND) type.
-	
+
 2010-11-18 Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/winlib/WIN32FontInfo.m:
@@ -65,10 +70,10 @@
 	and also allocated by Windows using the cbWndExtra field of the window
 	class structure). Sometimes the window level was accessed from one
 	memory area and sometimes from the other.
-	
+
 	This is a quick fix that leaves the level and ordered properties
 	in the cbWndExtra area, and the rest is left in the WIN_INTERN
-	structure. 
+	structure.
 
 	This fixes the problem where window ordering was broken when running
 	apps in gdb.
@@ -166,16 +171,16 @@
 
 2010-06-23  Quentin Mathe <quentin.mathe@gmail.com>
 
-	Fixed Windows backend issues introduced with r30523 where images are 
+	Fixed Windows backend issues introduced with r30523 where images are
 	drawn at the wrong location by -[NSImage drawXXX] methods.
 	See bug report #30069
-	Images are also now drawn correctly with these methods in a 
-	rotated/scaled context unlike previously (but alpha blending still 
+	Images are also now drawn correctly with these methods in a
+	rotated/scaled context unlike previously (but alpha blending still
 	doesn't work properly).
 	* Source/winlib/WIN32Context.m (-supportsDrawGState): Added.
 	* Headers/winlib/WIN32GState.m: Added oldWorldTransform ivar.
 	* Source/winlib/WIN32GState.m:
-	(-setUpAppKitBaseCoordinatesForHDC:, -restoreGDIBaseCoordinatesForHDC:, 
+	(-setUpAppKitBaseCoordinatesForHDC:, -restoreGDIBaseCoordinatesForHDC:,
 	drawGState:fromRect:toPoint:op:fraction:): Added.
 
 2010-06-06 Fred Kiefer <FredKiefer@gmx.de>
@@ -186,23 +191,23 @@
 
 2010-06-01  Quentin Mathe <quentin.mathe@gmail.com>
 
-	Fixed composite operator to behave correctly and added a new draw 
-	operator to get -[NSImage drawXXX] methods work exactly as Cocoa and 
+	Fixed composite operator to behave correctly and added a new draw
+	operator to get -[NSImage drawXXX] methods work exactly as Cocoa and
 	improve the drawing performance in some cases.
-	Eliminated all flipping checks in the backend to ensure the flipping 
+	Eliminated all flipping checks in the backend to ensure the flipping
 	remains an high-level AppKit concept.
 	* Source/gsc/GSContext.m:
 	(-GSdraw:toPoint:fromRect:operation:fraction:): Added.
 	This method calls -drawGState:fromRect:toPoint:op:fraction:.
-	* Headers/gsc/GSGState.h (-drawGState:fromRect:toPoint:op:): Added 
+	* Headers/gsc/GSGState.h (-drawGState:fromRect:toPoint:op:): Added
 	as an informal protocol which can be implemented by subclasses
-	* Source/cairo/CairoContext.m (-supportsDrawGState): Added overriden 
+	* Source/cairo/CairoContext.m (-supportsDrawGState): Added overriden
 	implementation that enables -drawGState:fromRect:toPoint:op:fraction:.
 	* Source/cairo/CairoGState.m:
 	(-drawOrientationMarkersIn:): Added.
 	(-DPSimage::::::): Removed flipping check.
-	(-compositeGState:fromRect:toPoint:op:fraction:): Fixed to precisely 
-	implement the PostScript behavior which is to ignore rotation and 
+	(-compositeGState:fromRect:toPoint:op:fraction:): Fixed to precisely
+	implement the PostScript behavior which is to ignore rotation and
 	scaling effect for the content but not for the destination point.
 	Also documented in details since this code is complex.
 	(-drawGState:fromRect:toPoint:op:fraction:): Added.
@@ -266,7 +271,7 @@
 
 2010-04-14 Jonathan Gillaspie <jonathan.gillaspie@testplant.com>
 
-  * Source/win32/WIN32Server.m:  Have non-key, non-main windows 
+  * Source/win32/WIN32Server.m:  Have non-key, non-main windows
   that order front not become active.  Also don't bring windows
   that are ordering out to the foreground first.
 
@@ -328,23 +333,23 @@
 
 	Win32GLContext was using the hDC stored in the pixel format
 	object in a few places, instead of getting it from the
-	Win32Subwindow object. 
+	Win32Subwindow object.
 
 2010-03-13 Eric Wasylishen <ewasylishen@gmail.com>
 
-	* Headers/win32/WIN32Server.h: 
-	* Source/win32/WIN32Server.m: Add support for horizontal 
+	* Headers/win32/WIN32Server.h:
+	* Source/win32/WIN32Server.m: Add support for horizontal
 	mousewheel scrolling
 
 010-03-13 Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/win32/WIN32Server.m: Fix handling of mousewheel events.
 	The WM_MOUSEWHEEL message uses screen coordinates, so convert
-	them to client coordinates. 
+	them to client coordinates.
 
 2010-03-13 Fred Kiefer <FredKiefer@gmx.de>
 
-	* Source/gsc/GSContext.m (-GSDrawImage::): 
+	* Source/gsc/GSContext.m (-GSDrawImage::):
 	Bug fix by Anibal Rindisbacher <anibal784@gmail.com>
 
 2010-03-12 Doug Simons <doug.simons@testplant.com>
@@ -416,7 +421,7 @@
 
 	* Fonts/GNUmakefile.postamble (before-uninstall): Remove
 	back-resources_INSTALL_DIR if empty.
-	
+
 2010-02-10 Eric Wasylishen <ewasylishen@gmail.com>
 
 	* Source/x11/XGServerWindow.m:
@@ -459,10 +464,10 @@
 2010-01-25 04:13-EST Gregory John Casamento <greg.casamento@gmail.com>
 
 	* Source/win32/w32_create.m: (-decodeWM_CREATEParams:::) add
-	code to load and set the HICON into the window.  Currently, 
-	an .ico file with the same name as the image specified in 
-	NSIcon or CFBundleIconName needs to be provided in the 
-	resources.  
+	code to load and set the HICON into the window.  Currently,
+	an .ico file with the same name as the image specified in
+	NSIcon or CFBundleIconName needs to be provided in the
+	resources.
 
 2010-01-22 Fred Kiefer <FredKiefer@gmx.de>
 
@@ -480,8 +485,8 @@
 2010-01-21 15:45-EST Riccardo Mottola <rmottola@users.sf.net>
 	Committed by: Gregory John Casamento <greg.casamento@gmail.com>
 
-	* Source/win32/w32_text_focus.m: Correction for extra event which 
-	was causing main/key windows to get out of sync in the backend and 
+	* Source/win32/w32_text_focus.m: Correction for extra event which
+	was causing main/key windows to get out of sync in the backend and
 	gui.
 
 2010-01-14  Wolfgang Lux  <wolfgang.lux@gmail.com>
@@ -498,8 +503,8 @@
 
 	* Headers/win32/WIN32Server.h: Added decodeWM_MOUSEACTIVATE:..
 	* Source/win32/w32_general.m: Added call to decodeWM_COMMAND:
-	to -[GSTheme processCommand:] the theme callback which handles 
-	native menus, 
+	to -[GSTheme processCommand:] the theme callback which handles
+	native menus,
 
 2010-01-12 Fred Kiefer <FredKiefer@gmx.de>
 
@@ -525,7 +530,7 @@
 
 2009-12-11 Eric Wasylishen <ewasylishen@gmail.com>
 
-	* Source/cairo/CairoGState.m: 
+	* Source/cairo/CairoGState.m:
 	Add a call to cairo_pattern_set_extend(pattern, CAIRO_EXTEND_PAD);
 	on the pattern used to draw images. This keeps the edges of images
 	crisp when the are scaled up.
@@ -541,7 +546,7 @@
 
 	* Source\win32\WIN32Server.m: Remove left-over call to a mouse down
 	event in a mouse-up
-	
+
 2009-11-10 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source\win32\WIN32Server.m: Track mouse button state so that when
@@ -551,7 +556,7 @@
 2009-11-08 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-windowDevice:): Don't return a
-	static variable as the window device.	
+	static variable as the window device.
 
 2009-11-05 Fred Kiefer <FredKiefer@gmx.de>
 
@@ -611,7 +616,7 @@
 
 	* Source/x11/XGGLFormat.m
 	cleaned up c99-isms
-	
+
 2009-10-25 Thomas Gamper <icicle@cg.tuwien.ac.at>
 
 	* Source/x11/XGServerWindow.m
@@ -667,13 +672,13 @@
 2009-07-13 Fred Kiefer <FredKiefer@gmx.de>
 
         * Source/winlib/WIN32GState.m (-_paintPath:) Only draw when the
-	fill/stroke colour has a non zero alpha. 
+	fill/stroke colour has a non zero alpha.
 
 2009-07-10 Fred Kiefer <FredKiefer@gmx.de>
 
         * Source/cairo/CairoGState.m
 	(-compositeGState:fromRect:toPoint:op:fraction:): Add hack to
-	avoid scrolling problem for cairo > 1.8.	
+	avoid scrolling problem for cairo > 1.8.
 
 2009-05-31 Fred Kiefer <FredKiefer@gmx.de>
 
@@ -684,14 +689,14 @@
 
 	* Source/gsc/GSContext.m (-DPScomposite:...:, -DPSdissolve:...:) Map
 	onto GScomposite:toPoint:fromRect:operation:fraction:.
-	* Source/gsc/GSGState.m (-compositeGState:fromRect:toPoint:op:, 
+	* Source/gsc/GSGState.m (-compositeGState:fromRect:toPoint:op:,
 	-dissolveGState:fromRect:toPoint:delta:) Map onto
-	compositeGState:fromRect:toPoint:op:fraction:. 
-        * Source/winlib/WIN32GState.m (-compositeGState:fromRect:toPoint:op:, 
+	compositeGState:fromRect:toPoint:op:fraction:.
+        * Source/winlib/WIN32GState.m (-compositeGState:fromRect:toPoint:op:,
 	-dissolveGState:fromRect:toPoint:delta:),
-	* Source/xlib/XGGState.m (-compositeGState:fromRect:toPoint:op:, 
+	* Source/xlib/XGGState.m (-compositeGState:fromRect:toPoint:op:,
 	-dissolveGState:fromRect:toPoint:delta:),
-        * Source/cairo/CairoGState.m (-compositeGState:fromRect:toPoint:op:, 
+        * Source/cairo/CairoGState.m (-compositeGState:fromRect:toPoint:op:,
 	-dissolveGState:fromRect:toPoint:delta:): Remove these methods.
 	* Source/art/composite.m
 	(-compositeGState:fromRect:toPoint:op:fraction:): Added.
@@ -724,7 +729,7 @@
 2009-03-07 Xavier Glattard <xavier.glattard@online.fr>
 
 	* Source/x11/XGServerEvent.m:
-	Fix a bug (from rev.28036) and consolidate the computing of 
+	Fix a bug (from rev.28036) and consolidate the computing of
 	expose rectangle of subwindows.
 
 2009-03-06 Xavier Glattard <xavier.glattard@online.fr>
@@ -774,7 +779,7 @@
 2009-02-11 Riccardo Mottola <rmottola@users.sf.net>
 
 	* Source/win32/WIN32Server.m: Handle Alt-Gr (bug #25397)
-	
+
 2009-02-11 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGServerWindow.m: Minor fixes to compile with GC
@@ -794,7 +799,7 @@
 2009-02-06 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-copyWithZone:): Correction to last
-	change. 
+	change.
 
 2009-02-05 Fred Kiefer <FredKiefer@gmx.de>
 
@@ -822,7 +827,7 @@
 	* Source/x11/XGServerWindow.m (-setPartentWindow:forChildWindow:):
 	Implement new method.
 	* Source/cairo/CairoGState.m (-compositeGState:...): Adjust y
-	coordinate of point. 
+	coordinate of point.
 
 2009-01-25 Riccardo Mottola <rmottola@users.sf.net>
 
@@ -831,8 +836,8 @@
 2009-01-24 Riccardo Mottola <rmottola@users.sf.net>
 
 	* Source/art/image.m: Optimized and correct handling of 16 bit in
-	_get_8_bits() 
-	
+	_get_8_bits()
+
 2009-01-17  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Source/x11/XGServerWindow.m (_setSupportedWMProtocols:,
@@ -953,7 +958,7 @@
 	windows.
         * Source/winlib/WIN32GState.m (-DPSimage:...:): Call
 	SetStretchBltMode() before scaling a bitmap.
-	
+
 2008-10-24 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Tools/xpbs.m (+initializePasteboard): Use XInternAtom when
@@ -983,7 +988,7 @@
 	* Source/win32/WIN32Server.m,
 	* Source/win32/w32_movesize.m:
 	Remove unused parameters from these functions and adjust callers.
-	
+
 2008-10-17 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/win32/WIN32Server.h,
@@ -993,7 +998,7 @@
 	* Source/win32/w32_general.m: Removed unused and unneeded code
 	left over from the last cleanup. This code was mostly setting
 	server flags that never got read or using falgs that never were set.
-	
+
 2008-10-14 Fred Kiefer <FredKiefer@gmx.de>
 
         * Source/winlib/WIN32GState.m: Removed unneeded code. General cleanup.
@@ -1022,15 +1027,15 @@
         * Source/art/ARTContext.m (-setupDrawInfo): Try to handle
 	endianess differance better.
         * Source/art/ARTContext.m (-initializeBackend): Call
-	artcontext_setup_gamma(). 
+	artcontext_setup_gamma().
 	* Source/art/blit.h,
 	* Source/art/blit-main.m:  New function artcontext_setup_gamma()
 	split off from artcontext_setup_draw_info().
-	
+
 2008-08-14 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-_ewmh_isMinimized:): Correct
-	indentation. 
+	indentation.
 	* Source/x11/XGServerEvent.m (-receivedEvent:type:extra:forMode:):
 	For PropertyNotify cache the window first.
 
@@ -1041,7 +1046,7 @@
 	* Source/x11/XGServerWindow.m (-_ewmh_isMinimized:): Check whether
 	the window is minimized.
 	* Headers/x11/XGServerWindow.h (-_ewmh_isMinimized:): Declare new
-	method. 
+	method.
 	* Source/x11/XGServerEvent.m: Handle case when window gets minimized.
 	* Headers/x11/XGGeneric.h: Add atom for hidden state.
 	Patch by Hubert Chathi <hubert@uhoreg.ca>.
@@ -1080,7 +1085,7 @@
 	* Source/cairo/CairoGState.m (-copyWithZone:): Use a runtime
 	version check and adjust from > to >= 1.6.0.
 	* Source/cairo/CairoFontInfo.m (-setupAttributes): Slightly better
-	error checks. 
+	error checks.
 
 2008-06-14  Adam Fedor  <fedor@gnu.org>
 
@@ -1105,7 +1110,7 @@
 2008-06-01 18:00-EDT Gregory John Casamento <greg_casamento@yahoo.com>
 
 	* Headers/x11/XGGeneric.h:
-	* Source/x11/XGServerWindow.m: Added code to automatically make 
+	* Source/x11/XGServerWindow.m: Added code to automatically make
 	any window which uses the NSDesktopWindowLevel also be omnipresent.
 	This capability will be added as a style later.
 
@@ -1160,7 +1165,7 @@
 	* Source/xlib/XGGState.m (-_paintPath:, -_doComplexPath:...):
 	Correct the handling of complex path filling. This is needed for
 	the glyph drawing.
-	
+
 2008-04-07 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/GSXftFontInfo.m
@@ -1230,7 +1235,7 @@
 
 2008-03-13 19:37-EST Gregory John Casamento <greg_casamento@yahoo.com>
 
-	* Source/gsc/GSStreamContext.m: Remove implementation of 
+	* Source/gsc/GSStreamContext.m: Remove implementation of
 	DPSrectclip:::: since it was causing issues with printing.  Will
 	investigate further to see if this is the correct fix.
 
@@ -1243,12 +1248,12 @@
 
 2008-03-08 Fred Kiefer <FredKiefer@gmx.de>
 
-	* Source\win32\WIN32Server.m (-exwindowStyleForGSStyle:): 
+	* Source\win32\WIN32Server.m (-exwindowStyleForGSStyle:):
 	New method used in window::::, stylewindow: and styleoffsets:::::.
 	* Headers\win32\WIN32Server.h,
 	* Source\win32\WIN32Server.m (-resetForGSWindowStyle:w32Style:):
 	Remove method.
-	
+
 2008-03-06 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Headers\win32\WIN32Server.h: make 'orderedIn' and 'level' 32bit
@@ -1256,7 +1261,7 @@
 	and SetWindowLong() with them.
 	* Source\win32\w32_movesize.m:
 	* Source\win32\WIN32Server.m:
-	Change to accessing 'orderedIn' and 'level' directly using 
+	Change to accessing 'orderedIn' and 'level' directly using
 	GetWindowLong() and SetWindowLong() so that code works when windows
 	are owned by another app.
 
@@ -1280,7 +1285,7 @@
 	z-order and hence breaks the level rules, use a bubble sort to get
 	the windows back in level order by raising any windows which are
 	lower than they should be.
-	
+
 2008-03-05 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Headers\win32\WIN32Server.h: Add fields to track window level/ordering
@@ -1306,7 +1311,7 @@
 2008-02-26 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-_checkStyle:): Restructure code
-	for double parent handling to avoid wrong computation path. 
+	for double parent handling to avoid wrong computation path.
 
 2008-02-25 Fred Kiefer <FredKiefer@gmx.de>
 
@@ -1331,7 +1336,7 @@
 	* Source/win32/w32_windowdisplay.m:
 	General cleanup and reformatting.
 	* Source/win32/w32_Events.h: Removed this file.
-	
+
 2008-02-14 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/win32/WIN32Server.h: Extend WIN_INTERN with
@@ -1341,7 +1346,7 @@
 	* Source/win32/w32_windowdisplay.m: Use backingStoreEmpty to
 	determine drawing method.
 	Patch by Christopher Armstrong <carmstrong@fastmail.com.au>.
-	
+
 2008-02-14 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Tools/win32pbs.m (-receivedEvent:...forMode:): Don't call NSApp
@@ -1368,7 +1373,7 @@
 2008-01-26 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Tools/xpbs.m: Add secondary selection support. Define some more
-	MIME types and add support for more standard targets. 
+	MIME types and add support for more standard targets.
 
 2008-01-24 Fred Kiefer <FredKiefer@gmx.de>
 
@@ -1379,16 +1384,16 @@
 
 	* Headers/x11/XGOpenGL.h,
 	* Source/x11/XGGLContext.m,
-	* Source/x11/XGGLFormat.m: 
+	* Source/x11/XGGLFormat.m:
 	Get to work with newer versions of GLX.
 	Patch by Thomas Gamper <icicle@cg.tuwien.ac.at>,
 	slightly reworked.
-	
+
 2008-01-19 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/WIN32Server.m (-setWindowdevice:forContext:):
 	Correct wrong parameter name.
-	
+
 2008-01-19 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m: (-setWindowdevice:forContext:),
@@ -1405,7 +1410,7 @@
 	setWindowdevice:forContext: when the destination is a window.
 	* Source/art/ARTContext.m (-setupDrawInfo): New method, code comes
 	from old initWithContextInfo:, now called in GSSetDevice:::.
-		
+
 2008-01-11 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/XGServerWindow.m:
@@ -1449,12 +1454,12 @@
 	Explicitly include NSDictionary.h header for better MacOS-X
 	compatibility.
 	* Headers/gsc/GSGState.h: Change fillColorS and strokeColorS to
-	NSColorSpace. 
+	NSColorSpace.
 	* Source/gsc/GSGState.m (NSColor-colorWithValues:colorSpaceName:):
-	Removed.  
+	Removed.
 	* Source/gsc/GSGState.m (-GSSetFillColorspace:,
-	-GSSetStrokeColorspace:, -GSSetFillColor:, -GSSetStrokeColor:): 
-	Changed to use NSColorSpace. 
+	-GSSetStrokeColorspace:, -GSSetFillColor:, -GSSetStrokeColor:):
+	Changed to use NSColorSpace.
 
 2007-12-03 Riccardo Mottola <riccardo@kaffe.org>
 
@@ -1485,16 +1490,16 @@
 2007-11-22 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSContext.m (-GSDrawImage:):Implement via
-	NSDrawBitmap::::::. 
+	NSDrawBitmap::::::.
 
 2007-11-09  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.13.0
-	
+
 2007-11-05 Fred Kiefer <FredKiefer@gmx.de>
 
 	* COPYING: Add GPL 3 licence file.
-	
+
 2007-11-05 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-DPSsetflat:, -DPSsetlinewidth:,
@@ -1518,34 +1523,34 @@
 
 	* Change files to use GPL 3 and LGPL 3.
 	* Prepare for next release.
-	
+
 2007-10-18 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoContext.m,
 	* Source/cairo/CairoGState.m: Format cleanup.
 	* Source/cairo/XGCairoXImageSurface.m (-initWithDevice:): Use
 	XGCairoSurface when a NSBackingStoreNonretained type window is used.
-	
+
 2007-10-12 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-placewindow:): Change window to be
-	temporary resizable. Patch by Wolfgang Lux <wolfgang.lux@gmail.com>. 
+	temporary resizable. Patch by Wolfgang Lux <wolfgang.lux@gmail.com>.
 	* Source/x11/XIMInputServer.m: Clean up includes to avoid compiler warning.
 	* Source/x11/raster.c (calculateCombineArea): Change parameter
 	signedness to avoid compiler warnings.
 	* Source/x11/convert.c (convertTrueColor_generic,
 	convertPseudoColor_to_8): Change parameter signedness to avoid compiler warnings.
-	
+
 2007-10-08 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoFontInfo.m
 	(-appendBezierPathWithGlyphs:count:toBezierPath:):  First implemenation.
-	
+
 2007-10-07 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/gsc/GSFunction.h: Declare the -getsample:: method in
 	header.
-	
+
 2007-10-05 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/art/shfill.m (-DPSshfill:): Correct typing error. Remove
@@ -1554,7 +1559,7 @@
 	* Source/gsc/GSFunction.m: New files. Implementation of Postscript
 	function taken from art/shfill.m.
 	* Source/gsc/GNUmakefile: Compile new file.
-	* Source/gsc/GSContext.m (-DPSshfill:), 
+	* Source/gsc/GSContext.m (-DPSshfill:),
 	* Source/gsc/GSGState.m (-DPSshfill:): Implement new method.
 
 2007-10-05 Fred Kiefer <FredKiefer@gmx.de>
@@ -1573,7 +1578,7 @@
 	* Source/cairo/CairoGState.m (-copyWithZone:): No error logging
 	when copy of path fails. This is normal in cairo 1.4.10 for empty
 	paths.
-	
+
 2007-09-12 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/cairo/CairoGState.h,
@@ -1584,7 +1589,7 @@
 	* Source/cairo/GNUmakefile: Add new source file.
 	* Source/cairo/CairoContext.m (-initWithContextInfo:,
 	-beginPrologueBBox:...title:) Rewrite to support PDF output.
-	
+
 2007-09-09 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-DPSeofill, -DPSfill, -DPSstroke):
@@ -1602,7 +1607,7 @@
 	* Source/x11/XGServerEvent.m (-setLastTime:, -lastTime): Implement
 	new methods and use them to store event time.
 	* Source/x11/XGServerWindow.m: Use these methods to get event time.
-	
+
 2007-09-05 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m: Add more checks for cairo status.
@@ -1618,7 +1623,7 @@
 	* configure: Move checking for Xrender extension.
 	* Source/cairo/XGCairoXImageSurface.m: Add include for config.h.
 	Patch by Yen-Ju Chen <yjchenx@gmail.com>.
-	
+
 2007-09-04 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source\winlib\WIN32FontInfo.m (-coveredCharacterSet): Create the
@@ -1632,7 +1637,7 @@
 	* Source/cairo/XGCairoXImageSurface.m: use 32 bits surfaces when
 	available, else stay with 24bits surface.
 	* Source/cairo/CairoGState.m: some cleaning, and fixed the scrolling
-	bug. 
+	bug.
 
 2007-09-02 Nicolas Roard <nicolas@roard.com>
 
@@ -1662,7 +1667,7 @@
 	change.
 	* Source/x11/XGServerWindow.m (-setinputfocus:): Use CurrentTime
 	instead of generic.lastTime.
-	
+
 2007-08-21 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerEvent.m (-processEvent:): Made handling of
@@ -1805,7 +1810,7 @@
 	these methods.
 	* Source/cairo/CairoGState.m (-compositeGState:...fraction:):
 	Another try on conversion of the coordinates.
-	
+
 2007-04-14  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.12.0 (From gnustep-stable branch)
@@ -1840,7 +1845,7 @@
 
 	* Source/cairo/CairoGState.m (-compositeGState:...fraction:):
 	Correct computation of source rectangle and add flip correction.
-	The later is currently commented out. 
+	The later is currently commented out.
 
 2007-03-21 Fred Kiefer <FredKiefer@gmx.de>
 
@@ -1882,20 +1887,20 @@
 	Deletion of all non-GNUstep debug stuff (printf...)
 	Deletion of all Notification hooks (used for a debugging purpose)
 	Deletion of the Application preference Panel that pops up the 1st
-	time you run _any_ application. 
-	Deletion of the check of GSWINHandlesWindowDecorations and 
+	time you run _any_ application.
+	Deletion of the check of GSWINHandlesWindowDecorations and
 	GSWIN32HandlesWindowDecorations options (none worked because of a
-	typo and are now deprecated). Use of GSBackHandlesWindowDecorations 
+	typo and are now deprecated). Use of GSBackHandlesWindowDecorations
 	option like X11 backend instead of GSUseWMStyles (marked as deprecated).
 	Use of GSBackUsesNativeTaskbar option instead of GSUseWMTaskbar
 	(marked as deprecated)
 	All these options are read in -initWithAttribute: (no more in
-	+inializeBackend) and set an instance (not class) variable. 
+	+inializeBackend) and set an instance (not class) variable.
 	Add methods -handlesWindowDecorations/-setHandlesWindowDecorations
 	Add methods -usesNativeTaskbar/-setUsesNativeTaskbar
 	* Source/win32/w32_GLcontext.m:
 	Fix a bug in OpenGL sub-window placement when handlesWindowDecorations == YES
-	
+
 2007-03-06 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* configure.ac: Add check for syslog
@@ -1922,9 +1927,9 @@
 	* Source/cairo/CairoGState.m (-setColor:state:): Use fillColor
 	instead of parameter. Only in the former is the alpha field
 	set. Bug found by using valgrind.
-	
+
 2007-02-28 Fred Kiefer <FredKiefer@gmx.de>
-	
+
 	* Source/cairo/CairoContext.m (-initWithContextInfo:): Set self
 	from super call to get PS contexts working.
 
@@ -1942,7 +1947,7 @@
 	request recent Microsoft Windows APIs by setting WINVER.
 
 2007-02-27 Fred Kiefer <FredKiefer@gmx.de>
-	
+
 	* Source/winlib/Win32FontInfo.m (-setupAttributes:):
 	Correct setting of maximumAdvancement and add xHeight.
 	* Source/art/ftfont.m (-initWithFontName:matrix:screenFont:):
@@ -1950,13 +1955,13 @@
 	* Source/xlib/GSXftFontInfo.m (-setupAttributes:):
 	Correct setting of maximumAdvancement.
 	* Source/xlib/XGFont.m(-setupAttributes:): Correct setting of
-	maximumAdvancement. 
+	maximumAdvancement.
 	* Headers/cairo/CairoFontInfo.h: Add new ivar lineHeight.
 	* Source/cairo/CairoFontInfo.m (-setupAttributes:):
 	Correct setting of descender and add lineHeight and xHeight.
 	* Source/cairo/CairoFontInfo.m (-drawGlyphs:length:on:): Remove adjustment.
 	* Source/cairo/CairoGState.m: Better protection against _ct being null.
-	
+
 2007-02-27  Nicola Pero  <nicola.pero@meta-innovation.com>
 
 	* Source/GNUmakefile.postamble (config.h): Use MKDIRS, not
@@ -1972,20 +1977,20 @@
 	* Source/winlib/GNUmakefile.preamble: Same change.
 	* gnustep-back-debug.spec.in: Obsolete file removed.
 	* GNUmakefile (CVS_MODULE_NAME): Obsolete variable removed.
-	
+
 2007-02-27  Nicola Pero  <nicola.pero@meta-innovation.com>
 
 	* configure.ac: Fixed typo: store XFT_LIBS in CAIRO_LIBS, not in
 	CAIRO_CFLAGS.
 	* configure: Regenerated.
-	
+
 2007-02-24 Graham J Lee <leeg@thaesofereode.info>
 
 	* Source/cairo/CairoGState.m (DPSmoveto::, DPSlineto::,
 	DPSnewpath): check for valid context.
 
 2007-02-18 Fred Kiefer <FredKiefer@gmx.de>
-	
+
 	* Source/cairo/CairoGState.m (_set_op): Change cairo operators for
 	NSCompositeHighlight and NSCompositePlusDarker.
 	* Source/cairo/CairoGState.m (DPSrectstroke::::, DPSrectfill::::,
@@ -2003,7 +2008,7 @@
 	and GNUSTEP_SYSTEM_LIBRARIES if available rather than using
 	hardcoded paths.
 	* configure: Regenerated.
-	
+
 2007-02-14  Nicola Pero  <nicola.pero@meta-innovation.com>
 
 	* Fonts/GNUmakefile (back-resources_INSTALL_DIR): New variable.
@@ -2015,19 +2020,19 @@
 	configure.ac: opengl fixups for win32
 
 2007-02-11 Fred Kiefer <FredKiefer@gmx.de>
-	
+
 	* Source/cairo/CairoGState.m (-DPScharpath::, -DPSshow:,
 	-GSSetFont:, -GSSetFontSize:, -GSShowText::, -GSShowGlyphs::):
-	Protect all font operation from _ct being NULL. 
+	Protect all font operation from _ct being NULL.
 	* Source/cairo/CairoGState.m (-compositeGState:...fraction:):
 	Small improvement for scrolling.
-	
+
 2007-02-11 Fred Kiefer <FredKiefer@gmx.de>
-	
+
 	* Source/cairo/CairoGState.m (-GSReadRect:): Implemented this method.
 
 2007-02-10 Fred Kiefer <FredKiefer@gmx.de>
-	
+
 	* Source/gsc/GSGState.m (-bezierPath): New method.
 	* Source/gsc/GSGState.m (-DPSpathbbox::::): Corrected to use new method.
 	* Source/cairo/CairoGState.m (-GSSetPatterColor:,
@@ -2089,11 +2094,11 @@
 	bug report by Xavier Glattard.
 
 2006-12-31 Fred Kiefer <FredKiefer@gmx.de>
-	
+
 	* Source/cairo/CairoGState.m (-setOffset:, -DPSinitmatrix): Use
 	cairo functions to handle offset.
 	* Source/cairo/CairoGState.m (-GSCurrentCTM): Changed order of
-	transformations. 
+	transformations.
 	* Source/cairo/CairoGState.m (-compositeGState:...fraction:):
 	Corrected cases for flipped surface.
 
@@ -2110,7 +2115,7 @@
 
 2006-12-28  Matt Rice  <ratmice@gmail.com>
 
-	* Source/x11/XGServerWindow.m (-flushwindowrect::): Don't convert 
+	* Source/x11/XGServerWindow.m (-flushwindowrect::): Don't convert
 	rect origin sent to handleExposeRect:forDriver: to int and back to
 	float.
 
@@ -2128,24 +2133,24 @@
 	-setwindowlevel::): Prevent some window types from showing up in
 	the taskbar for old window managers that cannot handle window types.
 	Patch by Yen-Ju Chen <yjchenx@gmail.com>.
-	
+
 2006-12-26 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/cairo/XGCairoXImageSurface.h:
 	* Source/cairo/XGCairoXImageSurface.m (-initWithDevice:):  Use
 	XWindowBuffer to draw on.
 	* Source/cairo/CairoContext.m (+initializeBackend): Use
-	XGCairoXImageSurface as surface. 
+	XGCairoXImageSurface as surface.
 	* Source/cairo/CairoGState.m (-DPSimage:...:): Respect endianess,
 	when creating a cairo image surface.
 	Patch by Yen-Ju Chen <yjchenx@gmail.com>.
-	
+
 2006-12-19 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/XGCairoGlitzSurface.m (-initWithDevice:): Correct
-	getting of visual ID. 
+	getting of visual ID.
 	Patch by: Xavier Glattard <xavier.glattard@free.fr>.
-	
+
 2006-12-08 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGServerEvent.m: Fix incorrect setting for second help
@@ -2173,7 +2178,7 @@
 	to improve readability.
 
 2006-11-15  Nicola Pero  <nicola.pero@meta-innovation.com>
-	
+
 	Notice: you should now use 'make DESTDIR=/tmp/xxx install' if you
 	want to relocate all the installation into /tmp/xxx/
 	* GNUmakefile.postamble: Use DESTDIR instead of INSTALL_ROOT_DIR
@@ -2200,7 +2205,7 @@
 	mapping can be found from the font registry to the encoding.
 
 2006-10-31  Matt Rice  <ratmice@yahoo.com>
-	
+
 	* Source/x11/XGServerEvent.m (_handleTakeFocusAtom:forContext:):
 	Unset ignore_take_focus for the key window.
 
@@ -2219,13 +2224,13 @@
 
 	* Source/x11/XIMInputServer.m (-initWithDelegate:display:name:):
 	Replace call to GetStringEncoding with [NSString
-	localizedNameOfStringEncoding:] 
+	localizedNameOfStringEncoding:]
 	* Source/x11/XGServerWindow.m (-_setupMouse): Make log message on
 	multiple mouse buttons a debug log message. Seems like newer X
 	servers detect loads of mouse buttons which are not there.
-	
+
 2006-10-21  Matt Rice  <ratmice@yahoo.com>
-	
+
 	* Source/win32/WIN32Server.m: Update -windowlist implementation.
 	* Source/x11/XGServerWindow.m (-orderwin:::): Replace
 	desiredOrderedWindow with ignore_take_focus.
@@ -2237,19 +2242,19 @@
 
 2006-10-15 22:48-EDT Gregory John Casamento <greg_casamento@yahoo.com>
 
-	* Source/gsc/GSStreamContext.m: GSRectClipList() copied 
+	* Source/gsc/GSStreamContext.m: GSRectClipList() copied
 	implementation from GSGState.m.
 
 2006-10-15 11:14-EDT Mark Tracy <tracy454 at concentric dot net>
 
-	* Source/gsc/GSStreamContext.m: GSStreamContext did not implement 
+	* Source/gsc/GSStreamContext.m: GSStreamContext did not implement
 	GSRectFillList fix: copied code from GSGState.m.
 	Patch applied by Gregory Casamento
-	
+
 2006-10-12  Adam Fedor  <fedor@gnu.org>
 
 	* Source/xlib/XGFontSetFontInfo.m (-drawGlyphs:length:onDisplay:drawable:with:at:], [-widthOfGlyphs:length:]): Fix spelling of length
-	
+
 2006-10-11 Nicola Pero <nicola.pero@meta-innovation.com>
 
 	* GNUmakefile (GNUSTEP_INSTALLATION_DOMAIN): Use GNUSTEP_INSTALLATION_DOMAIN
@@ -2271,9 +2276,9 @@
 	already defined in the new super class GSGState.
 	* Source/cairo/CairoGState.m: Changed to use super class ivars
 	where apropriate. Removed all compiler warnings. Changed colour
-	setting and getting to work with super class methods. 
+	setting and getting to work with super class methods.
 	Reimplemented DPSinitmatrix to handle offset and use this from
-	everywhere. Removed methods duplicating super class code. 
+	everywhere. Removed methods duplicating super class code.
 	* Source/cairo/CairoContext.m (GSWSetViewIsFlipped:): Removed as
 	super class implementation should be used.
 
@@ -2297,17 +2302,17 @@
 	and alpha from cairos internal structures. Will be replaced by proper
 	code when the cairo functions are available
 	* Source/cairo/CairoGState.m:
-	* Headers/cairo/CairoGState.h: refactored class as a subclass of 
-	GSGState. Removed all unimplemented methods implemented in the 
+	* Headers/cairo/CairoGState.h: refactored class as a subclass of
+	GSGState. Removed all unimplemented methods implemented in the
 	superclass.
 	* Headers/cairo/CairoFaceInfo.h: fixed header file to include the
 	needed freetype headers
 	* Source/cairo/XGCairoGlitzSurface.m: fixed glitz api change
-	glitz_glx_find_drawable_format -> 
+	glitz_glx_find_drawable_format ->
 	glitz_glx_find_drawable_format_for_visual. Compiles now but doesnt
 	work yet, because I don't know how to retrieve a proper VisualID.
 	someone who knows, please fix it!
-	
+
 2006-09-28 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/win32/WIN32Server.m: Use GSBackHandlesWindowDecorations
@@ -2396,16 +2401,16 @@
 	* Source/xlib/GSXftFontInfo.m:
 	changed method signatures to fix typos (lenght->length)
 	Patch by: Hans Baier <hansfbaier@gmail.com>
-	
+
 2006-08-13 Christopher Armstrong <carmstrong@fastmail.com.au>
 
 	* Source/winlib/WIN32GState.m: Fixups to last patch
 
 2006-08-10 Christopher Armstrong (carmstrong@fastmail.com.au)
-	(patch committed by Greg Casamento) 
-	* Source/winlib/WIN32GState.m: Better 24bit image support, Slightly 
+	(patch committed by Greg Casamento)
+	* Source/winlib/WIN32GState.m: Better 24bit image support, Slightly
 	extended composite method, Dashed-line handling (for selections)
-	* Headers/winlin/WIN32FontInfo.m: Changed method 
+	* Headers/winlin/WIN32FontInfo.m: Changed method
 	signature draw:length:onDC:at: to correct spelling of length.
 
 2006-08-01 Riccardo Mottola <riccardo@kaffe.org>
@@ -2446,7 +2451,7 @@
 	* Source/xlib/XGGState.m (-dealloc, -deepen):
 	Free XFT drawing structures and don't reuse the same ones for
 	copies of the gstate. Fixes bug #13705.
-	
+
 2006-05-29  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/GSXftFontInfo.m (FcFontEnumerator
@@ -2459,7 +2464,7 @@
 	* Source/xlib/XGFont.m
 	* Source/xlib/XGGState.m:
 	* Tools/font_cacher.m:
-	Removed compiler warnings. 
+	Removed compiler warnings.
 
 2006-05-27  Fred Kiefer <FredKiefer@gmx.de>
 
@@ -2474,7 +2479,7 @@
 	was converted to an OS frame and from this the X hints were computed.
 	* Source/x11/XGServerWindow.m, Source/x11/XGServerEvent.m:
 	Replaced all usages of [_OSFrameToXHints:for:] with [_XFrameToXHints:for:].
-	
+
 2006-05-04  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-styleoffsets::::::): New method to
@@ -2496,7 +2501,7 @@
 
 	* Source/x11/XGServerEvent.m (gotShmCompletion:) Declare privat
 	interface for shared memory handling.
-	
+
 2006-03-13  Adam Fedor  <fedor@gnu.org>
 
 	* Source/x11/XGServerWindow.m (titlewindow::): Set NAME and ICON_NAME
@@ -2507,13 +2512,13 @@
 	* Source/cairo/XGCairoGlitzSurface.m
 	* Headers/cairo/XGCairoGlitzSurface.h:
 	Rewrote to fit with changed glitz interface.
-	
+
 2006-03-13  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.10.3
 
 2006-03-13  Fred Kiefer <FredKiefer@gmx.de>
-	
+
 	* Source/x11/XGServerWindow.m (-termwindow:): Reset the window
 	cache, if it points to the terminated window.
 
@@ -2535,7 +2540,7 @@
 	* Source/cairo/CairoFontInfo.m (-setupAttributes):
 	Free the font options.
 	* Source/cairo/CairoGState.m (:bezierPath, -GSSendBezierPath:):
-	Added NSBezierPath methods. 	
+	Added NSBezierPath methods.
 	* Source/cairo/XGCairoXImageSurface.m
 	* Source/cairo/CairoContext.m
 	* Source/cairo/XGCairoSurface.m
@@ -2543,7 +2548,7 @@
 	* Source/cairo/XGCairoGlitzSurface.m
 	* Headers/cairo/CairoSurface.h:
 	Clean up of cairo backend code.
-	
+
 2006-03-07  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-compositeGState:...fraction:,
@@ -2576,7 +2581,7 @@
 2006-02-06  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServer.m (_initXContext): Don't set the environment
-	value for NSHOST. Patch by Tim MacIntosh <tmcintos@avalon.net>. 
+	value for NSHOST. Patch by Tim MacIntosh <tmcintos@avalon.net>.
 	See mails on dev mailing list for more explaination.
 
 2006-02-06  Fred Kiefer <FredKiefer@gmx.de>
@@ -2590,7 +2595,7 @@
 	-drawGlyphs:length:on:) Corrected the conversion from NSGlyph to UTF8.
 	* Source/cairo/CairoFontEnumerator.m:
 	Use the same default fonts as the art backend.
-	
+
 2006-01-23  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/cairo/CairoFaceInfo.h,
@@ -2655,7 +2660,7 @@
 2005-11-18  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-window::::): Don't use the NET WM
-	window icon for Window Maker. 
+	window icon for Window Maker.
 	* Source/x11/XGServerWindow.m (_createNetIcon:::, _setNetWMIconFor:):
 	Rewrote this methods to be prepared to use the mini window icon,
 	when that gets available in back.
@@ -2700,7 +2705,7 @@
 	* Source/x11/XGServerWindow.m (_createNetIcon, _setNetWMIconFor:):
 	New methods to create and set NET WM icon for window.
 	* Source/x11/XGServerWindow.m (-window::::): Use this methods to
-	set window icon. 
+	set window icon.
 
 	* Source/cairo/CairoGState.m (-DPSImage::::::::): Try to deal with
 	flipped views.
@@ -2750,10 +2755,10 @@
 	* w32_debug.m, w32_activate.m, w32_create.m, w32_general.m,
 	w32_movesize.m, w32_text_focus.m, w32_windowdisplay.m,
 	GSDisplayServer_details.m: New files.
-	* Source/win32/WIN32Server.m: Large changes. Merged with 
+	* Source/win32/WIN32Server.m: Large changes. Merged with
 	WIN32ServerEvent. Lots of documentation.
 
-	* Source/winlib/WIN32GState.m: Variable name changes to 
+	* Source/winlib/WIN32GState.m: Variable name changes to
 	avoid shadowing.
 
 2005-08-28  Fred Kiefer <FredKiefer@gmx.de>
@@ -2776,7 +2781,7 @@
 
 	* Source/cairo/CairoGState.m (-DPSImage::::::::):
 	For the ARGB32 case sort the colour fields in the bitmap correctly.
-	
+
 2005-08-20  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoFaceInfo.m (-fontFace): Use
@@ -2811,7 +2816,7 @@
 
 	* Source/cairo/GNUmakefile:
 	Removed file CairoFontManager.m
-	
+
 2005-07-22  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.10.0
@@ -2825,26 +2830,26 @@
 
 2005-07-14  Adam Fedor  <fedor@gnu.org>
 
-	* Source/winlib/WIN32GState.m ([WIN32GState -compositeGState:...]): 
+	* Source/winlib/WIN32GState.m ([WIN32GState -compositeGState:...]):
 	Fall through to default operation if alpha blend not sucessful.
 
 2005-07-09  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/gsc/GSGState.h,
-	Source/gsc/GSGState.m: New methods  
+	Source/gsc/GSGState.m: New methods
 	[-compositeGState:fromRect:toPoint:op:fraction:] and
-	[GSSetPatterColor:]. Also added ivar pattern. 
+	[GSSetPatterColor:]. Also added ivar pattern.
 	* Source/gsc/GSGState.m (-dealloc, -deepen, -setColor:state:):
 	Deal with pattern ivar.
 	* Source/gsc/GSContext.m,
 	Source/gsc/GSStreamContext.m: New methods
-	[-GScomposite:toPoint:fromRect:operation:fraction:] and 
+	[-GScomposite:toPoint:fromRect:operation:fraction:] and
 	[-GSSetPatterColor:].
-	* Source/xlib/XGGState.m: New method  
+	* Source/xlib/XGGState.m: New method
 	[-compositeGState:fromRect:toPoint:op:fraction:] use this to
 	implement [-compositeGState:fromRect:toPoint:op:] and
-	[-dissolveGState:fromRect:toPoint:delta:]. 
-	
+	[-dissolveGState:fromRect:toPoint:delta:].
+
 2005-07-04  Adam Fedor  <fedor@gnu.org>
 
 	* Documentation/news.texi: Update.
@@ -2867,7 +2872,7 @@
 
 2005-06-17  Adam Fedor  <fedor@gnu.org>
 
-	* Tools/gpbs.m ([PasteboardServer -connectionBecameInvalid:]): 
+	* Tools/gpbs.m ([PasteboardServer -connectionBecameInvalid:]):
 	Use isKindOfClass.
 
 2005-06-07  Fred Kiefer <FredKiefer@gmx.de>
@@ -2905,7 +2910,7 @@
 
 2005-04-20  Adam Fedor  <fedor@gnu.org>
 
-	* Fonts/GNUmakefile.postamble: Make sure to install in 
+	* Fonts/GNUmakefile.postamble: Make sure to install in
 	$(GNUSTEP_INSTALLATION_DIR).
 	* GNUmakefile: Add check to not install fonts if fonts=no.
 	Fixes bug #12749
@@ -2918,7 +2923,7 @@
 2005-04-16  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/XGGState.m
-	(-_compositeGState:sourcefromRect:fromRecttoPoint:toPointop:opfraction:]): 
+	(-_compositeGState:sourcefromRect:fromRecttoPoint:toPointop:opfraction:]):
 	New way to compute drect. This fixes bug #12459.
 
 2005-04-07  Fred Kiefer <FredKiefer@gmx.de>
@@ -2947,7 +2952,7 @@
 
 	* Version 0.9.5
 
-	* Headers/x11/XGDragView.h, Source/x11/XGDragView.m: Tag previous 
+	* Headers/x11/XGDragView.h, Source/x11/XGDragView.m: Tag previous
 	version of file for release.
 	* Source/win32/WIN32Server.m: Revert 2005-02-23 change for this release.
 
@@ -3129,10 +3134,10 @@
 
 2004-11-28  Matt Rice <ratmice@yahoo.com>
 
-	* Source/x11/XGGLFormat.m (-initWithAttributes:,append,append1): Add 
+	* Source/x11/XGGLFormat.m (-initWithAttributes:,append,append1): Add
 	missing curly brackets, fix append and append1 macros so they can safely
 	be used without curly brackets.
-	
+
 2004-11-28 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Tools/gpbs.m: When run as daemon, re-execute with --no-fork flag
@@ -3207,7 +3212,7 @@
 2004-09-23  Adam Fedor  <fedor@gnu.org>
 
 	* Version 0.9.4
-	
+
 	* Documentation/news.texi: Update
 
 2004-09-21 19:19  Alexander Malmberg <alexander@malmberg.org>
@@ -3231,7 +3236,7 @@
 	* Tools/xpbs.m (-[XPbOwner getSelectionData:type:], -[XPbOwner
 	xProvideSelection:]): Removed some compiler warnings.
 	* Source/cairo/CairoGState.m (-DPSimage:...:): Slightly improved.
-	(-compositeGState:fromRect:toPoint:op:fraction:) New method 
+	(-compositeGState:fromRect:toPoint:op:fraction:) New method
 	(-compositeGState:fromRect:toPoint:op:,
 	-dissolveGState:fromRect:toPoint:delta:) Implemented via new method.
 	Added all missing colour conversions.
@@ -3239,14 +3244,14 @@
 	* Header/cairo/CairoFontInfo.h (-drawGlyphs:length:on:atX:y:) New method.
 	* Source/cairo/CairoFontInfo.m (-drawGlyphs:length:on:atX:y:) New method.
 	Moved some includes from header to here, extracted method
-	[setupAttributes] and other cleanup. 
-	
+	[setupAttributes] and other cleanup.
+
 2004-09-08  Adam Fedor  <fedor@gnu.org>
 
-	* Headers/x11/XGServer.h: Add 8bit fast drawing.	
+	* Headers/x11/XGServer.h: Add 8bit fast drawing.
 	* Source/x11/XGServer.m ([XGScreenContext
 	-initForDisplay:screen:]): For 8bit, test for RGB_BEST_MAP.
-	* Source/xlib/XGBitmap.m (_pixmap_combine_alpha, 
+	* Source/xlib/XGBitmap.m (_pixmap_combine_alpha,
 	_bitmap_combine_alpha, _pixmap_read_alpha): Add 8 bit case.
 	(patch from Paul Secchia <paul@worldnet.att.net>).
 
@@ -3276,13 +3281,13 @@
 	check_modifier(), -processEvent: (KeyMapNotify), changed
 	default_key_code() to key_sym_from_defaults(), updated
 	initialize_keyboard().)
-	
+
 2004-08-30  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/xlib/GSXftFontInfo.m: Changed usage of CString for font
 	name and family into UTF8String for XFT. Patch by Yen-Ju Chen
 	<yjchenx@hotmail.com>.
-	
+
 2004-08-24  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/WIN32Server.m (-windowbounds:): Corrected variable
@@ -3290,7 +3295,7 @@
 	(-setupRunLoopInputSourcesForMode:): Added new event polling code
 	for Cygwin.
 	* Source/cairo/CairoContext.m (-NSReadPixel:, beep): Removed methods.
-	
+
 2004-08-23  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoContext.m (-DPScurrentalpha:,
@@ -3299,8 +3304,8 @@
 	(-forwardInvocation:): Improved output.
 	(-GSSetDevice:::) Commented out NSLog calls.
 	* Source/gsc/GSGState.m (-_showString:lenght:): Removed this
-	method which was a left over from last patch. 
-	
+	method which was a left over from last patch.
+
 2004-08-09 14:38  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/win32/WIN32Server.m, Source/win32/WIN32ServerEvent.m,
@@ -3323,7 +3328,7 @@
 	* configure.ac:
 	* configure:
 	Added cairo backend from Banlu Kemiyatorn <object@gmail.com>.
-	
+
 2004-07-30 15:52  Alexander Malmberg <alexander@malmberg.org>
 
 	* Headers/gsc/GSCStateOps.h, Source/gsc/GSContext.m,
@@ -3371,7 +3376,7 @@
 	* Source/xlib/XGGState.m: Moved additional show methods to super class.
 	* Source/gsc/GSGState.m: Implemented additional show methods based
 	on (-showGlyphs::) and simple glyph conversion.
-	
+
 2004-06-19  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-standardcursor::): Added more
@@ -3451,7 +3456,7 @@
 	Patch by MA Garcias <lists@tragnarion.com>.
 	* Source/win32/WIN32ServerEvent.m Corrected definition of the
 	GET_X_LPARAM and GET_Y_LPARAM macros.
-	
+
 2004-03-30 01:49  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/x11/XGGLFormat.m (-initWithAttributes:): Fix handling of
@@ -3474,7 +3479,7 @@
 
 2004-02-28  Fred Kiefer <FredKiefer@gmx.de>
 
-	* Source/win32/WIN32Server.m (-setupRunLoopInputSourcesForMode:): 
+	* Source/win32/WIN32Server.m (-setupRunLoopInputSourcesForMode:):
 	Use a shorte timer interval.
 
 2004-02-24 15:45  Alexander Malmberg <alexander@malmberg.org>
@@ -3494,7 +3499,7 @@
 
 	* Source/xlib/XGGState.m: Added necessary calibrated
 	colorspaces to the DPSimage: method.
-	
+
 2004-02-04 01:48  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/x11/XGServerEvent.m: Remove uses of the now deprecated
@@ -3510,9 +3515,9 @@
 	* Source/art/shfill.m (-DPSshfill:):
 	* Source/winlib/Win32GState.m (-DPSimage::::):
 	* Source/xlib/XGGState.m (-DPSimage::::): Replaced
-	appendTransform: with prependTransform:. 
+	appendTransform: with prependTransform:.
 	* Source/art/image.m (-DPSimage:): Replaced prependTransform: with
-	appendTransform:. 
+	appendTransform:.
 
 2004-01-25 13:52  Alexander Malmberg <alexander@malmberg.org>
 
@@ -3523,27 +3528,27 @@
 
 	* configure.ac: Check if XShm is really implemented (it isn't on
 	Cygwin even though the headers are there).
-	* Source/x11/XGServerEvent.m ([XGServer -processEvent:event]): 
+	* Source/x11/XGServerEvent.m ([XGServer -processEvent:event]):
 	ifdef around XShm call.
 
 2004-01-10  Adam Fedor  <fedor@gnu.org>
 
 	* Prevent orderwindow:relativeTo: from making a window key.
 	* Headers/x11/XGGeneric.h: Add Ivar.
-	* Source/x11/XGServerEvent.m (-_handleTakeFocusAtom:forContext:): 
+	* Source/x11/XGServerEvent.m (-_handleTakeFocusAtom:forContext:):
 	Don't take focus if we ordered this window previously.
 
-	* Source/x11/XGServerWindow.m ([XGServer -orderwindow:::]): 
+	* Source/x11/XGServerWindow.m ([XGServer -orderwindow:::]):
 	Set desiredOrderWindow.
 	([XGServer -setinputfocus:]): Reset it.
 
 2004-01-10  Adam Fedor  <fedor@gnu.org>
 
-	* Source/x11/XGServerWindow.m ([XGServer -orderwindow:::]): 
+	* Source/x11/XGServerWindow.m ([XGServer -orderwindow:::]):
 	When otherWin == 0, make sure the window does not go in front
 	of the current key window.
 
-	* Source/win32/WIN32Server.m ([WIN -orderwindow:op:otherWin:winNum]): 
+	* Source/win32/WIN32Server.m ([WIN -orderwindow:op:otherWin:winNum]):
 	Allow otherWin < 0.
 
 2004-01-10 16:25  Alexander Malmberg <alexander@malmberg.org>
@@ -3572,7 +3577,7 @@
 2004-01-07  Fred Kiefer <FredKiefer@gmx.de>
 
 	Added missing .cvsignore files and extended the existing ones.
-	
+
 2003-12-31  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Tools/win32pbs.m New file to handle windows clipboard
@@ -3580,21 +3585,21 @@
 	* Tools/GNUmakefile
 	Compile new file for windows backend.
 	* Tools/gpbs.m (PasteboardServer -init) for windows backends use
-	Win32PbOwner as the pasteboard owner class.	
-	
+	Win32PbOwner as the pasteboard owner class.
+
 2003-12-30  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/path.m (-GSSendBezierPath:) preset the count
 	variable, as this is expected by the method [NSBezierPath
-	getLineDash:count:phase:]. 
+	getLineDash:count:phase:].
 	* Source/xlib/XGGState.m (-_doPath::draw:) allways set fill rule
 	for path_fill.
 
 2003-12-30  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/art/path.m (-DPSrectstroke::::,
-	-_axis_rectangle::::vpath:axis::::pixel:): Adopted to change in 
-	NSAffineTransform.h. 
+	-_axis_rectangle::::vpath:axis::::pixel:): Adopted to change in
+	NSAffineTransform.h.
 
 2003-12-28  Fred Kiefer <FredKiefer@gmx.de>
 
@@ -3607,7 +3612,7 @@
 	* Headers/win32/WIN32Server.h: Add flags ivar
 	* Source/win32/WIN32Server.m (orderwindow:::): If useWMTaskBar
 	flag set, don't show app icon and don't order out menu window.
-	* Source/win32/WIN32ServerEvent.m (windowEventProc:::): 
+	* Source/win32/WIN32ServerEvent.m (windowEventProc:::):
 	On activation message, activate app, on deactivation message,
 	deactivate app (if message comes from menu window).
 
@@ -3672,7 +3677,7 @@
 2003-11-23  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerEvent.m (process_modifier_flags()) treat caps
-	lock as alpha shift and not as shift modifier. 
+	lock as alpha shift and not as shift modifier.
 
 2003-11-20  Adam Fedor  <fedor@gnu.org>
 
@@ -3845,13 +3850,13 @@
 	* Tools/xpbs.m
 	Made all calls to XGetAtomName() free their memory later on.
 	Removed function osTypeToX(). Extracted method
-	[getSelectionData:type:] from [xSelectionNotify:]. 
+	[getSelectionData:type:] from [xSelectionNotify:].
 	[xSelectionNotify:] now supports incremental data transfer and is
 	save against failing string conversions. Complete rewrite of
 	[xProvideSelection:] to better follow the ICCCM
 	specification. This now implements TIMESTAMP, MULTIPLE and
 	COMPOUND_TEXT (all untested!)
-	
+
 2003-08-31  Adam Fedor  <fedor@gnu.org>
 
 	* Tools/gpbs.m (init): Close file descriptors so gpbs can be a proper
@@ -3879,7 +3884,7 @@
 
 2003-08-16  Fred Kiefer <FredKiefer@gmx.de>
 
-	* Source/xlib/XGFontManager.m 
+	* Source/xlib/XGFontManager.m
 	In load_cache() enclosed loading of archive in exception handling and
 	removed the writing of the archive previously done to update the format.
 
@@ -3897,14 +3902,14 @@
 
 	* Tools/xpbs.m
 	Reworked the X interaction so that both STRING and UTF8_STRING are
-	supported both ways. 
-	
+	supported both ways.
+
 2003-08-08  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Tools/xpbs.m
 	[XPbOwner initialize] switched the usage of PRIMARY and CLIPBOARD.
 	* Documentation/Back/DefaultsSummary.gsdoc
-	Add new GSOldClipboard deafult.	
+	Add new GSOldClipboard deafult.
 
 2003-08-02  Kazunobu Kuriyama  <kazunobu.kuriyama@nifty.com>
 
@@ -3934,7 +3939,7 @@
 	* Headers/winlib/*.h: Ditto.
 	* Headers/x11/XGServer.h: Ditto.
 	* Headers/xlib/*.h: Ditto.
-	
+
 	* Source/art/ftfont.m: Ditto.
 	* Source/gsc/*.m: Ditto.
 	* Source/x11/*.m: Ditto.
@@ -3962,7 +3967,7 @@
 	* Headers/xlib/XGFontSetFontInfo.h: New file.
 	* Source/xlib/XGFontSetFontInfo.m: New file.
 	* Source/xlib/XGContext.m:
-	([XGContext +initializeBackend]): Modified to use XGFontSetFontInfo. 
+	([XGContext +initializeBackend]): Modified to use XGFontSetFontInfo.
 	* Source/xlib/GNUmakefile: Modified to include XGFontSetFontInfo.m.
 
 2003-07-22  Adam Fedor  <fedor@gnu.org>
@@ -3974,9 +3979,9 @@
 	(-initWithFormat:shareContext:, makeCurrentContext): Idem.
 	* Source/x11/XGGLFormat.m ([ XGGLPixelFormat -getValues:
         forAttribute:forVirtualScreen:]): Idem.
-	(initWithAttributes:): Idem. 
+	(initWithAttributes:): Idem.
 	(Patch from Damien Genet with some changes).
-	
+
 2003-07-21  Adam Fedor  <fedor@gnu.org>
 
 	* Documentation/Back/DefaultsSummary.gsdoc: Add new
@@ -4010,15 +4015,15 @@
 	* Source/x11/XGServerWindow.m
 	[_checkWindowManager] better clean up of memory.
 	[_setupRootWindow] and [titlewindow::] free the value of the
-	XTextProperty. 
-	
+	XTextProperty.
+
 2003-07-16  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Tools/xpbs.m
 	[XPbOwner xSelectionNotify:] and [XPbOwner xProvideSelection:]
 	explicit conversion of transferd strings from/to
 	NSISOLatin1StringEncoding.
-	
+
 2003-07-05  Adam Fedor  <fedor@gnu.org>
 
 	* Documentation/Back/DefaultsSummary.gsdoc: New file.
@@ -4034,9 +4039,9 @@
 	Added some new Atoms to structure XGWMWinTypes.
 	* Source/x11/XGServerWindow.m
 	[_checkWindowManager] initializes the new atoms. In
-	[setwindowlevel::] changed the EWMH case, so that it works 
+	[setwindowlevel::] changed the EWMH case, so that it works
 	correctly with KDE 3.1. There we used to have borders on menu windows.
-	
+
 2003-07-05 14:05  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Handle freetype <=2.1.2 in the error
@@ -4113,13 +4118,13 @@
 2003-06-17  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSStreamContext.m (GSShowGlyphs::, output:length:)
-	Removed compiler warnings about signed/unsigned comparision. 
+	Removed compiler warnings about signed/unsigned comparision.
 	Declared the extension method [GSFontInfo nameOfGlyph:].
 	In [NSDrawBitmap:::::::::::] initiliale variable alpha to stop the
 	compiler from complaining.
 	* Source/x11/xdnd.c (xdnd_is_dnd_aware(), xdnd_get_type_list)
-	Removed compiler warnings about signed/unsigned comparision. 
-	* Header/x11/XGGeneric.h 
+	Removed compiler warnings about signed/unsigned comparision.
+	* Header/x11/XGGeneric.h
 	Made ivar focusRequestNumber unsigned.
 	* Source/x11/XGServerEvent.m (receivedEvent:type:extra:forMode:)
 	Removed compiler warnings about signed/unsigned comparision.
@@ -4131,7 +4136,7 @@
 	Adopted to changes in GSDisplayServer.h.
 	* Source/x11/XGDragView.m (_handleEventDuringDragging:,
 	_updateAndMoveImageToCorrectPosition, _xWindowAcceptingDnDunderX:Y:,
-	_xWindowAcceptingDnDDescendentOf:underX:Y:)  
+	_xWindowAcceptingDnDDescendentOf:underX:Y:)
 	Removed compiler warnings about signed/unsigned comparision.
 	* Source/xlib/XGGState.m (_doComplexPath:::)
 	Removed compiler warnings about signed/unsigned comparision.
@@ -4142,7 +4147,7 @@
 	windowStyleForGSStyle() changed parameter style to unsigned.
 	* Tools/xpbs.m
 	Removed include for file GSPasteboardServer.h to remove some
-	compiler warnings.	
+	compiler warnings.
 
 2003-06-12 21:44  Alexander Malmberg <alexander@malmberg.org>
 
@@ -4229,7 +4234,7 @@
 	In [setupAttributes] removed setting of fontDictionary values.
 	* Source/xdps/AFMFileFontInfo.m
 	Create the fontDictionary in [_setFontInfo].
-	
+
 2003-04-27 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Tools/xpbs.m: ([xSendData:format:items:type:to:]) Fix bug
@@ -4270,7 +4275,7 @@
 
 2003-03-22  Willem Rein Oudshoorn  <woudshoo@xs4all.nl>
 
-	* Source/x11/XGServerWindow.m ([XGServer -orderwindow:::]): 
+	* Source/x11/XGServerWindow.m ([XGServer -orderwindow:::]):
 	Use XWithDrawWindow instead of XUnmapWindow as suggested by
 	Xlib programming manuals.
 
@@ -4285,7 +4290,7 @@
 	In [setupAttributes] moved the call to open the XFT font further
 	to the back as Derek Zhou claims that this takes over the
 	ownership of the pattern, which then results in strange behaviour.
-	
+
 2003-02-27  Fred Kiefer <FredKiefer@gmx.de>
 
 	* configure.ac
@@ -4294,13 +4299,13 @@
 	* config.h.in
 	Regenerated
 	* Header/xlib/GSXftFontInfo.h
-	Define font enumerator for fontconfig.	
+	Define font enumerator for fontconfig.
 	* Source/xlib/XGContext.m
 	Use new enumerator in anti-alias mode if available.
 	* Source/xlib/GSXftFontInfo.m
 	Added fontconfig specific code.
 	Patch from Derek Zhou dzhou@chrontel.com with some adaption
-	
+
 2003-03-24  Adam Fedor  <fedor@gnu.org>
 
 	* Version: 0.8.5
@@ -4333,9 +4338,9 @@
 	* Source/x11/XGDragView.m ([XGDragView -drawRect:]): use [self
 	frame] instead of `rect'.  Fixes #101846.
 	([XGDragView -_handleDrag:]): Fixed typo in comment
-	([XGDragView -_handleEventDuringDragging:theEvent]): Removed old 
+	([XGDragView -_handleEventDuringDragging:theEvent]): Removed old
 	comment.
-	
+
 2003-02-16 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGDragView.m: Set drag window at NSPopUpMenuWindowLevel
@@ -4351,7 +4356,7 @@
 	Removed files as they are now in the front end.
 	* Source/x11/GNUmakefile
 	Removed XGSlideView.m
-	
+
 2003-02-10 18:44  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Implement -glyphIsEncoded:.
@@ -4406,7 +4411,7 @@
 
 	* Source/xlib/GSXftFontInfo.m
 	Added glyph methods needed for new text system.
-	
+
 2003-01-31  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m
@@ -4418,7 +4423,7 @@
 	class can now be moved to frontend.
 	* Source/x11/XGDragView.m
 	Use new display server methods.
-	
+
 2003-01-31 22:33  Alexander Malmberg <alexander@malmberg.org>
 
 	* Source/art/ftfont.m (-_generateGlyphsForRun:at:): Implement
@@ -4492,7 +4497,7 @@
 	* Source/xlib/GSXftFontInfo.m: Idem.
 	* Source/xlib/GNUmakefile: Update for change.
 	* Source/xlib/XGContext.m: Idem.
-	
+
 2003-01-23  Adam Fedor  <fedor@gnu.org>
 
 	* Documentation/Back: Some documentation.
@@ -4534,12 +4539,12 @@ Tue Jan 21 02:08:05 2003  Alexander Malmberg <alexander@malmberg.org>
 	* Source/x11/XIMInputServer.m
 	In [lookupStringForEvent:window:keysym:] autorelease the string,
 	so it gets freed late on.
-	
+
 2002-11-21  Adam Fedor  <fedor@gnu.org>
 
 	* Version: 0.8.3
 
-	* Source/gsc/GSStreamContext.m (-GSSendBezierPath:): Add back and 
+	* Source/gsc/GSStreamContext.m (-GSSendBezierPath:): Add back and
 	implement.
 
 	* Source/x11/XGServerEvent.m ([XGServer
@@ -4673,7 +4678,7 @@ Fri Oct 11 00:47:04 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 	Use given window as focus window, not one under mouse.
 	* Source/x11/XGServerWindow.m ([XGServer -setinputfocus:]): Don't
 	reset focus if we already requested it on this window.
-	
+
 2002-09-28 22:04  Alexander Malmberg  <alexander@malmberg.org>
 
 	* Source/art/ftfont.m: Add .font package handling again.
@@ -4743,7 +4748,7 @@ Fri Oct 11 00:47:04 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 	(-_compositeGState:sourcefromRect:fromRecttoPoint:toPointop:opfraction):
 	Convert destination point not rect.
 	(-DPSimage:matrix:pixelsWide:pixelsHigh:bitsPerSample:samplesPerPixel:bitsPerPixel:bytesPerRow:isPlanar:hasAlpha:colorSpaceName:data):
-	Remove flipping.	
+	Remove flipping.
 
 2002-09-19 00:33  Alexander Malmberg  <alexander@malmberg.org>
 
@@ -4819,7 +4824,7 @@ Fri Oct 11 00:47:04 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 
 	* Source/GSStreamContext.m: Fix for 'show'ing parenthesis
 	characters (patch from Stefan Urbanek).
-	
+
 2002-09-01  Adam Fedor  <fedor@gnu.org>
 
 	* Version: 0.8.1
@@ -5021,7 +5026,7 @@ Fri Oct 11 00:47:04 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 2002-08-01  Adam Fedor  <fedor@gnu.org>
 
 	* Version: 0.8.0
-	
+
 	* configure.ac: Check for usleep.
 	* Source/x11/XGServerWindow.m ([XGServer -windowdevice:]):
 	Use alternate if no usleep.
@@ -5056,7 +5061,7 @@ Fri Oct 11 00:47:04 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 2002-06-28  Adam Fedor  <fedor@gnu.org>
 
 	* Source/xlib/XGFont.m ([XGFontInfo -xCharStructForGlyph:glyph]):
-	Fix variable typo - using wrong index to glyph (patch from 
+	Fix variable typo - using wrong index to glyph (patch from
 	stoyan@hologr.com).
 
 2002-06-24  Adam Fedor  <fedor@gnu.org>
@@ -5078,7 +5083,7 @@ Sat Jun 22 14:24:20 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 	isPlanar:hasAlpha:colorSpaceName:data]): Use scaleXBy:yBy: rather
 	than scaleBy::.
 	* Source/gsc/GSGState.m ([-DPSscale::]): Idem.
-	
+
 2002-06-20  Adam Fedor  <fedor@gnu.org>
 
 	* Source/x11/XGServer.m (_parse_display_name): New.
@@ -5106,28 +5111,28 @@ Sat Jun 22 14:24:20 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 	Added ivar for font handle.
 	* Source/winlib/WIN32FontInfo.m
 	Implemented most of the code to support different fonts.
-	
+
 2002-06-08  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSGState.m
-	Coorected [DPSrectfill::::], [DPSrectstroke::::] and 
-	[DPSrectclip::::] not to change the path. 
+	Coorected [DPSrectfill::::], [DPSrectstroke::::] and
+	[DPSrectclip::::] not to change the path.
 	* Source/winlib/WIN32GState.m
 	[DPSrectstroke::::] same correction.
 
 2002-06-04  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSGState.m
-	Added default implementation for [DPSrectfill::::], 
+	Added default implementation for [DPSrectfill::::],
 	[DPSrectstroke::::] and [DPSrectclip::::].
 	* Header/winlib/WIN32GState.h
 	Added ivar to store old clip region.
 	* Source/winlib/WIN32GState.m
-	[_paintPath:], [DPSrectclip::::], [DPSinitclip], [setStyle:]  
+	[_paintPath:], [DPSrectclip::::], [DPSinitclip], [setStyle:]
 	and [restoreStyle:]: Rewrote the whole clipping code.
 	Added [deepen] and [dealloc] for consistency.
 	Simplified [DPSrectstroke::::].
-	
+
 2002-06-03  Adam Fedor  <fedor@gnu.org>
 
 	* Source/win32/WIN32Server.m (-beep): Implement
@@ -5139,13 +5144,13 @@ Sat Jun 22 14:24:20 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 2002-06-02  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/WIN32Server.m
-	Treat NSBackingStoreRetained the same as NSBackingStoreBuffered, 
-	just as the X backends do. 
+	Treat NSBackingStoreRetained the same as NSBackingStoreBuffered,
+	just as the X backends do.
 	* Source/winlib/WIN32GState.m
-	Reimplemented creation of bitmaps. This should now work for all 
-	bitmaps with >16 bits per pixel. The bitmaps that are still missing 
+	Reimplemented creation of bitmaps. This should now work for all
+	bitmaps with >16 bits per pixel. The bitmaps that are still missing
 	are due to clipping problems, as can be seen by switching clipping off.
-	
+
 2002-05-12  Adam Fedor  <fedor@gnu.org>
 
 	* Source/gsc/GSGState.m (-DPSsetalpha:): Call setColor:state:.
@@ -5156,7 +5161,7 @@ Sat Jun 22 14:24:20 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 	(-DPSsetrgbcolor:::):Idem.
 	(-GSSetFontSize:): Use given size.
 	(-initWithDrawContext:): Call DPSinitgraphics
-	(-DPSinitgraphics): Init all our graphics state.  
+	(-DPSinitgraphics): Init all our graphics state.
 	* Source/gsc/gscolors.c (gsHSBToRGB): Fix for h==1.
 	(gsColorToCMYK): Implement.
 	(gsColorToHSB): Idem. (Patches and suggestions from
@@ -5219,7 +5224,7 @@ Sat Jun 22 14:24:20 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 	* Source/gsc/GSContext.m (-dealloc): Destroy gstate.
 	* Source/x11/XGServerWindow.m([XGServer
 	-_addExposedRectangle::]): Use current context class
-	([XGServer -flushwindowrect::]): Idem. (patches from 
+	([XGServer -flushwindowrect::]): Idem. (patches from
 	alexander@malmberg.org).
 
 2002-05-04  Adam Fedor  <fedor@gnu.org>
@@ -5265,7 +5270,7 @@ Sat Jun 22 14:24:20 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 	* Source/win32/WIN32Server.m
 	* Source/winlib/WIN32GState.m
 	Made sure only resources allocated by our code will ever be freed.
-	
+
 2002-04-26  Adam Fedor  <fedor@gnu.org>
 
 	* acconfig.h: Define HAVE_UTF8
@@ -5281,7 +5286,7 @@ Sat Jun 22 14:24:20 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 	* Headers/x11/XGServer.h: Rework to handle multiple screens.
 	* Headers/xlib/XGContext.h: Simplify.
 
-	* Source/win32/WIN32Server.m (-mouseLocationOnScreen:window:): 
+	* Source/win32/WIN32Server.m (-mouseLocationOnScreen:window:):
 	Implement.
 
 	* Source/x11/XGServer.m: Rework to handle multiple screens. New
@@ -5317,7 +5322,7 @@ Sat Jun 22 14:24:20 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 
 	* Source/win32/WIN32Server.m (window::::): Update for new interface -
 	frame is frame rect, not content rect.
-	
+
 	* Source/x11/XGServer.m (-_initXContext): Look for
 	display attributes in server_info.
 	* Source/x11/XGServerWindow.m (-window::::): Update for new interface.
@@ -5350,9 +5355,9 @@ Sat Jun 22 14:24:20 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 	* Source/GSBackend.m
 	Corrected to handle the winlib/win32 backend correctly.
 	* Tools/gpbs.m
-	Ifdefed some signals that are not defined in mingw and use spawn 
-	instead of fork on mingw. 
-	
+	Ifdefed some signals that are not defined in mingw and use spawn
+	instead of fork on mingw.
+
 2002-04-19  Richard Frith-Macdonald <rfm@gnu.org>
 
         * Tools/gpbs.m: If given -NSHost specification for the current host,
@@ -5360,7 +5365,7 @@ Sat Jun 22 14:24:20 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 
 2002-04-15  Gregory John Casamento <greg_casamento@yahoo.com>
 	* configure.in: Added check to determine if libXft contains
-	XftDrawStringUtf8 which is used to draw unicode strings.  
+	XftDrawStringUtf8 which is used to draw unicode strings.
 
 2002-04-15  Adam Fedor  <fedor@gnu.org>
 
@@ -5369,7 +5374,7 @@ Sat Jun 22 14:24:20 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 	([XGServer -flushwindowrect::]): Idem.
 	(Suggestion by alexander@malmberg.org)
 
-	* Source/x11/XIMInputServer.m (-initWithDelegate:display:name:): 
+	* Source/x11/XIMInputServer.m (-initWithDelegate:display:name:):
 	Use defaultCStringEncoding if UTF8 doesn't work.
 	(Patch from stoyan@on.com.ua).
 
@@ -5420,7 +5425,7 @@ Thu Apr 11 22:24:01 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 
 	* Source/xlib/xrtools.c: Simplify color conversion routines.
 	* Source/xlib/XGGState.m: Use them
-	
+
 2002-04-03  Adam Fedor  <fedor@gnu.org>
 
 	* Source/GNUmakefile.preamble: Fix LIB_DIRS and
@@ -5465,7 +5470,7 @@ Thu Apr 11 22:24:01 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 	* Source/x11/XGServerWindow.m
 	In [window:::] set the initial hints for a window, as
 	setWindowHintsForStyle() would otherwise never be called.
-	
+
 2002-03-30  Adam Fedor  <fedor@gnu.org>
 
 	* Source/GNUmakefile.preamble: Add graphic includes, -Wall
@@ -5480,7 +5485,7 @@ Thu Apr 11 22:24:01 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 	* Source/gsc/GSGState.m (-GSSendBezierPath:): Append path in all
 	cases.
 	(- GSRectFillList): Implement.
-	* Source/x11/XGServerWindow.m: 
+	* Source/x11/XGServerWindow.m:
 	([XGServer -windowbounds:]): Don't get screen bounds.
 
 	* Source/x11/*.c: Fix includes.
@@ -5489,7 +5494,7 @@ Thu Apr 11 22:24:01 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 
 	* Source/x11/GNUmakefile: Get headers from right place.
 	* Source/xlib/GNUmakefile: Remove invalid header.
-	
+
 	* Source/x11/XGServerWindow.m (-window:::): Change method to
 	match frontend (including setting of style).
 
