@@ -605,12 +605,15 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
   if (!(GetDeviceCaps(hDC, RASTERCAPS) &  RC_DI_BITMAP)) 
     {
+      NSLog(@"Device %d does not support bitmap operations", hDC);
       return NULL;
     }
 
   hbitmap = CreateCompatibleBitmap(hDC, pixelsWide, pixelsHigh);
   if (!hbitmap)
     {
+      NSLog(@"Failed to CreateCompatibleBitmap (%d, %d). Error %d", 
+            pixelsWide, pixelsHigh, GetLastError());
       return NULL;
     }
 
@@ -620,13 +623,21 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
     }
   else 
     {
+      // Leave some extra space for colour map. (Currently not used)
       bitmap = malloc(sizeof(BITMAPINFOHEADER) +  
 			   (1 << bitsPerPixel) * sizeof(RGBQUAD));
     }
-  bmih = (BITMAPINFOHEADER*)bitmap;
+  if (!bitmap)
+    {
+       NSLog(@"Failed to allocate memory for bitmap. Error %d", GetLastError());
+       DeleteObject(hbitmap);
+       return NULL;
+    }
 
+  bmih = (BITMAPINFOHEADER*)bitmap;
   bmih->biSize = sizeof(BITMAPINFOHEADER);
   bmih->biWidth = pixelsWide;
+  // Top down orientation
   bmih->biHeight = -pixelsHigh;
   bmih->biPlanes = 1;
   bmih->biBitCount = bitsPerPixel;
@@ -640,14 +651,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   bmih->biClrImportant = 0;
   fuColorUse = 0;
 
-  if (bitsPerPixel <= 8 && samplesPerPixel > 1)
-    {
-      // FIXME How to get a colour palette?
-      NSLog(@"Need to define colour map for images with %d bits", bitsPerPixel);
-      //bitmap->bmiColors;
-      fuColorUse = DIB_RGB_COLORS;
-    }
-  else if (bitsPerPixel == 8)
+  if (bitsPerPixel == 8 && samplesPerPixel == 1)
     {
       unsigned char* tmp;
       unsigned int pixels = pixelsHigh * pixelsWide;
@@ -660,7 +664,15 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 	@"pixelsHigh:%d", pixelsWide, pixelsHigh);
       
       tmp = malloc(pixels * 4);
-      
+      if (!tmp)
+        {
+          NSLog(@"Failed to allocate temporary memory for bitmap. Error %d", 
+                GetLastError());
+          free(bitmap);
+          DeleteObject(hbitmap);
+          return NULL;
+        }
+
       if ([colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace])
         {
           while (i < (pixels*4))
@@ -690,7 +702,13 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
             }
 	  }
       else
-      	NSLog(@"Unexpected condition, greyscale which is neither whte nor black calibrated");
+        {
+          NSLog(@"Unexpected condition, greyscale which is neither white nor black calibrated");
+          free(tmp);
+          free(bitmap);
+          DeleteObject(hbitmap);
+          return NULL;
+        }
       bits = tmp;
     }
   else if (bitsPerPixel == 32)
@@ -708,6 +726,15 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
       bmih->bV4RedMask = 0x00FF0000;
       bmih->bV4AlphaMask = 0xFF000000;
       tmp = malloc(pixels * 4);
+      if (!tmp)
+        {
+          NSLog(@"Failed to allocate temporary memory for bitmap. Error %d", 
+                GetLastError());
+          free(bitmap);
+          DeleteObject(hbitmap);
+          return NULL;
+        }
+
       while (i < pixels*4)
 	{
 	  tmp[i+0] = bits[i+2];
@@ -730,7 +757,15 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 	@"pixelsHigh:%d", pixelsWide, pixelsHigh);
       
       tmp = malloc(pixels * 4);
-      //memset(tmp, 0xFF, pixels*4);
+      if (!tmp)
+        {
+          NSLog(@"Failed to allocate temporary memory for bitmap. Error %d", 
+                GetLastError());
+          free(bitmap);
+          DeleteObject(hbitmap);
+          return NULL;
+        }
+
       while (i < (pixels*4))
         {
           // We expand the bytes in a 24bit image into 32bits as Windows
@@ -745,24 +780,27 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
         }
       bits = tmp;
     }
-  else if (bitsPerPixel == 16)
+  else
     {
-/*
-      BITMAPV4HEADER *bmih;
-
-      bmih = (BITMAPV4HEADER*)bitmap;
-      bmih->bV4Size = sizeof(BITMAPV4HEADER);
-      bmih->bV4V4Compression = BI_BITFIELDS;
-      bmih->bV4RedMask = 0xF000;
-      bmih->bV4GreenMask = 0x0F00;
-      bmih->bV4BlueMask = 0x00F0;
-      bmih->bV4AlphaMask = 0x000F;
-*/
-      NSLog(@"Unsure how to handle images with %d bits", bitsPerPixel);
+      if (bitsPerPixel <= 8 && samplesPerPixel > 1)
+        {
+          // FIXME How to get a colour palette?
+          NSLog(@"Need to define colour map for images with %d bits", bitsPerPixel);
+          //bitmap->bmiColors;
+          //fuColorUse = DIB_RGB_COLORS;
+        }
+      else
+        {
+          NSLog(@"Unsure how to handle images with %d bits", bitsPerPixel);
+        }
+      free(bitmap);
+      DeleteObject(hbitmap);
+      return NULL;
     }
 
   if (!SetDIBits(hDC, hbitmap, 0, pixelsHigh, bits, bitmap, fuColorUse))
     {
+      NSLog(@"SetDIBits failed. Error %d", GetLastError());
       DeleteObject(hbitmap);
       hbitmap = NULL;
     }
@@ -822,6 +860,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
     {
       NSLog(@"No DC for window %d in DPSImage. Error %d", 
 	    (int)window, GetLastError());
+      return;
     }
 
   hbitmap = GSCreateBitmap(hDC, pixelsWide, pixelsHigh,
@@ -832,6 +871,8 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   if (!hbitmap)
     {
       NSLog(@"Created bitmap failed %d", GetLastError());
+      ReleaseDC((HWND)window, hDC);
+      return;
     }
 
   hDC2 = CreateCompatibleDC(hDC); 
@@ -839,12 +880,20 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
     {
       NSLog(@"No Compatible DC for window %d in DPSImage. Error %d", 
 	    (int)window, GetLastError());
+      DeleteObject(hbitmap);
+      ReleaseDC((HWND)window, hDC);
+      return;
     }
+
   old = SelectObject(hDC2, hbitmap);
   if (!old)
     {
       NSLog(@"SelectObject failed for window %d in DPSImage. Error %d", 
 	    (int)window, GetLastError());
+      DeleteDC(hDC2);
+      DeleteObject(hbitmap);
+      ReleaseDC((HWND)window, hDC);
+      return;
     }
 
   //SetMapMode(hDC2, GetMapMode(hDC));
