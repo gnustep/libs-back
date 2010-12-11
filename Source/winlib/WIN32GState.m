@@ -39,16 +39,20 @@
 #endif
 #endif
 
-#include <AppKit/NSAffineTransform.h>
-#include <AppKit/NSBezierPath.h>
-#include <AppKit/NSColor.h>
-#include <AppKit/NSFont.h>
-#include <AppKit/NSGraphics.h>
+#import <Foundation/NSData.h>
+#import <Foundation/NSDictionary.h>
+#import <Foundation/NSString.h>
 
-#include "winlib/WIN32GState.h"
-#include "winlib/WIN32Context.h"
-#include "winlib/WIN32FontInfo.h"
-#include "win32/WIN32Server.h"
+#import <AppKit/NSAffineTransform.h>
+#import <AppKit/NSBezierPath.h>
+#import <AppKit/NSColor.h>
+#import <AppKit/NSFont.h>
+#import <AppKit/NSGraphics.h>
+
+#import "winlib/WIN32GState.h"
+#import "winlib/WIN32Context.h"
+#import "winlib/WIN32FontInfo.h"
+#import "win32/WIN32Server.h"
 
 #include <math.h>
 #include <limits.h>
@@ -467,7 +471,7 @@ BOOL alpha_blend_source_over(HDC destDC,
   int y = aPoint.y;
   int w = aRect.size.width;
   int h = aRect.size.height;
-  BOOL success;
+  BOOL success = YES;
 
   sourceDC = [source getHDC];
   if (!sourceDC)
@@ -1576,7 +1580,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   // Gets the "bits" from the bitmap and copies them into a buffer 
   // which is pointed to by lpbi
   if (GetDIBits(hdcMemDC, hbitmap, 0, (UINT)bmpCopied.bmHeight, bits,
-    (BITMAPINFOHEADER *)lpbi, DIB_RGB_COLORS) == 0)
+    (LPBITMAPINFO)lpbi, DIB_RGB_COLORS) == 0)
     {
       NSLog(@"GetDIBits failed for window %d in GSReadRect. Error %d", 
 	(int)window, GetLastError());

@@ -1,5 +1,9 @@
 2010-12-11 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/winlib/WIN32GState.m: Remove a few compiler warnings.
+
+2010-12-11 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/winlib/WIN32GState.m (GSCreateBitmap, -DPSImage:::...:):
 	Better error detection.
 
