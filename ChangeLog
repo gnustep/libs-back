@@ -1,3 +1,9 @@
+2011-02-14  Wolfgang Lux  <wolfgang.lux@gmail.com>
+
+	* Source/x11/XGServerWindow.m (-orderwindow:::): Omit app icons
+	and mini windows from the pager and task bar even when they are
+	displayed at normal window level.
+
 2010-12-11 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/winlib/WIN32GState.m: Remove a few compiler warnings.

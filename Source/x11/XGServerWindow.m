@@ -2940,7 +2940,9 @@ static BOOL didCreatePixmaps;
        *
        * [self _resetDragTypesForWindow: GSWindowWithNumber(window->number)];
        */
-      if (window->win_attrs.window_level != NSNormalWindowLevel)
+      if ((window->win_attrs.window_level != NSNormalWindowLevel) ||
+	  ((window->win_attrs.window_style &
+	    (NSIconWindowMask|NSMiniWindowMask)) != 0)
         {
 	  /*
 	   * Make any window which assumes the desktop level act as the background.
@@ -2964,7 +2966,7 @@ static BOOL didCreatePixmaps;
 		    data1: generic.netstates.net_wm_state_skip_taskbar_atom
 		    data2: generic.netstates.net_wm_state_skip_pager_atom
                 data3: 1];
-	    } 
+	    }
 	}
     }
   XFlush(dpy);
