@@ -2942,7 +2942,7 @@ static BOOL didCreatePixmaps;
        */
       if ((window->win_attrs.window_level != NSNormalWindowLevel) ||
 	  ((window->win_attrs.window_style &
-	    (NSIconWindowMask|NSMiniWindowMask)) != 0)
+	    (NSIconWindowMask|NSMiniWindowMask)) != 0))
         {
 	  /*
 	   * Make any window which assumes the desktop level act as the background.
