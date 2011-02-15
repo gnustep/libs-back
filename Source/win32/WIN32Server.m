@@ -1638,7 +1638,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
     */
 }
 
-- (void) setcursorcolor: (NSColor *)fg : (NSColor *)bg : (void*) cid
+- (void) recolorcursor: (NSColor *)fg : (NSColor *)bg : (void*) cid
 {
   /* FIXME The colour is currently ignored
      if (fg != nil)
@@ -1651,8 +1651,17 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
      }
      }
   */
+}
 
+- (void) setcursor: (void*) cid
+{
   SetCursor((HCURSOR)cid);
+}
+
+- (void) freecursor: (void*) cid
+{
+  // This is only allowed on non-shared cursors and we have no way of knowing that.
+  //DestroyCursor((HCURSOR)cid);
 }
 
 - (void) setParentWindow: (int)parentWin 

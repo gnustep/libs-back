@@ -4191,25 +4191,25 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
     *cid = (void *)cursor;
 }
 
-- (void) setcursorcolor: (NSColor *)fg : (NSColor *)bg : (void*) cid
+- (void) recolorcursor: (NSColor *)fg : (NSColor *)bg : (void*) cid
 {
   XColor xf, xb;
   Cursor cursor;
 
   cursor = (Cursor)cid;
   if (cursor == None)
-    NSLog(@"Invalidparam: Invalid cursor");
-
-  [self _DPSsetcursor: cursor : YES];
-  /* Special hack: Don't set the color when fg == nil. Used by NSCursor
-     to just set the cursor but not the color. */
-  if (fg == nil)
     {
+      NSLog(@"Invalidparam: Invalid cursor");
       return;
     }
 
   fg = [fg colorUsingColorSpaceName: NSDeviceRGBColorSpace];
   bg = [bg colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+  if (fg == nil || bg == nil)
+    {
+      return;
+    }
+
   xf.red   = 65535 * [fg redComponent];
   xf.green = 65535 * [fg greenComponent];
   xf.blue  = 65535 * [fg blueComponent];
@@ -4220,6 +4220,34 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
   xb = [self xColorFromColor: xb forScreen: defScreen];
 
   XRecolorCursor(dpy, cursor, &xf, &xb);
+}
+
+- (void) setcursor: (void*) cid
+{
+  Cursor cursor;
+
+  cursor = (Cursor)cid;
+  if (cursor == None)
+    {
+      NSLog(@"Invalidparam: Invalid cursor");
+      return;
+    }
+
+  [self _DPSsetcursor: cursor : YES];
+}
+
+- (void) freecursor: (void*) cid
+{
+  Cursor cursor;
+
+  cursor = (Cursor)cid;
+  if (cursor == None)
+    {
+      NSLog(@"Invalidparam: Invalid cursor");
+      return;
+    }
+
+  XFreeCursor(dpy, cursor);
 }
 
 static NSWindowDepth
