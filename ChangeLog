@@ -1,3 +1,9 @@
+2011-02-15 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m,
+	* Source/x11/XGServerWindow.m: New methods for cursor
+	handling. Requires corresponding gui change.
+
 2011-02-14  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Source/x11/XGServerWindow.m (-orderwindow:::): Omit app icons
