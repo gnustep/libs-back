@@ -143,6 +143,7 @@ static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 + (NSDate*) timedOutEvent: (void*)data
                      type: (RunLoopEventType)type
                   forMode: (NSString*)mode;
++ (void) xEvent: (XEvent *)xEvent;
 + (void) xPropertyNotify: (XPropertyEvent*)xEvent;
 + (void) xSelectionClear: (XSelectionClearEvent*)xEvent;
 + (void) xSelectionNotify: (XSelectionEvent*)xEvent;
@@ -326,8 +327,8 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
 #if 0
       /* Don't attempt to be smart here. We may enter this method recursively
        * when further data is requested while processing this event, which
-       * means that the count will not longer be correct when returning to
-       * the outer invocation.
+       * means that the count will no longer be correct when returning to the
+       * outer invocation.
        */
       while (count-- > 0)
 #endif
@@ -335,33 +336,7 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
           XEvent	xEvent;
 
           XNextEvent(xDisplay, &xEvent);
-          
-          switch (xEvent.type)
-            {
-              case PropertyNotify:
-                [self xPropertyNotify: (XPropertyEvent*)&xEvent];
-                NSDebugLLog(@"Pbs", @"PropertyNotify.");
-                break;
-                
-              case SelectionNotify:
-                [self xSelectionNotify: (XSelectionEvent*)&xEvent];
-                NSDebugLLog(@"Pbs", @"SelectionNotify.");
-                break;
-
-              case SelectionClear:
-                [self xSelectionClear: (XSelectionClearEvent*)&xEvent];
-                NSDebugLLog(@"Pbs", @"SelectionClear.");
-                break;
-
-              case SelectionRequest:
-                [self xSelectionRequest: (XSelectionRequestEvent*)&xEvent];
-                NSDebugLLog(@"Pbs", @"SelectionRequest.");
-                break;
-
-              default:
-                NSDebugLLog(@"Pbs", @"Unexpected X event.");
-                break;
-            }
+	  [self xEvent: &xEvent];
         }
     }
 }
@@ -378,6 +353,36 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
 }
 
 #define FULL_LENGTH 8192L	/* Amount to read */
+
++ (void) xEvent: (XEvent *)xEvent
+{
+  switch (xEvent->type)
+    {
+    case PropertyNotify:
+      NSDebugLLog(@"Pbs", @"PropertyNotify.");
+      [self xPropertyNotify: &xEvent->xproperty];
+      break;
+                
+    case SelectionNotify:
+      NSDebugLLog(@"Pbs", @"SelectionNotify.");
+      [self xSelectionNotify: &xEvent->xselection];
+      break;
+
+    case SelectionClear:
+      NSDebugLLog(@"Pbs", @"SelectionClear.");
+      [self xSelectionClear: &xEvent->xselectionclear];
+      break;
+
+    case SelectionRequest:
+      NSDebugLLog(@"Pbs", @"SelectionRequest.");
+      [self xSelectionRequest: &xEvent->xselectionrequest];
+      break;
+
+    default:
+      NSDebugLLog(@"Pbs", @"Unexpected X event.");
+      break;
+    }
+}
 
 + (void) xSelectionClear: (XSelectionClearEvent*)xEvent
 {
@@ -586,9 +591,21 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
       /*
        * Run an event loop to read X events until we have aquired the
        * pasteboard data we need.
+       * However, before entering the event loop be sure to drain the X event
+       * queue, since XFlush may read events from the X connection and thus
+       * may have enqueued our expected property change notification in the
+       * X event queue already.
        */
       limit = [NSDate dateWithTimeIntervalSinceNow: 20.0];
       [self setWaitingForSelection: whenRequested];
+      while (XQLength(xDisplay) > 0 &&
+             [self waitingForSelection] == whenRequested)
+        {
+          XEvent xEvent;
+
+          XNextEvent(xDisplay, &xEvent);
+          [[self class] xEvent: &xEvent];
+        }
       while ([self waitingForSelection] == whenRequested)
         {
           [[NSRunLoop currentRunLoop] runMode: xWaitMode
@@ -992,6 +1009,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
   BOOL			status;
 
   status = [self xProvideSelection: xEvent];
+  if (!status)
+    NSDebugLLog(@"Pbs", @"Could not provide selection upon request.");
 
   /*
    * Set up the selection notify information from the event information
@@ -1420,7 +1439,18 @@ xErrorHandler(Display *d, XErrorEvent *e)
   /*
    * Run an event loop until we get a notification for our nul append.
    * this will give us an up-to-date timestamp as required by ICCCM.
+   * However, before entering the event loop be sure to drain the X event
+   * queue, since XFlush may read events from the X connection and thus may
+   * have enqueued our expected property change notification in the X event
+   * queue already.
    */
+  while (XQLength(xDisplay) && [self timeOfLastAppend] == 0)
+    {
+      XEvent xEvent;
+
+      XNextEvent(xDisplay, &xEvent);
+      [[self class] xEvent: &xEvent];
+    }
   while ([self timeOfLastAppend] == 0)
     {
       [[NSRunLoop currentRunLoop] runMode: xWaitMode

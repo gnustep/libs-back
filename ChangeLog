@@ -1,3 +1,10 @@
+2011-03-05  Wolfgang Lux  <wolfgang.lux@gmail.com>
+
+	* Tools/xpbs.m (+xEvent:, +receivedEvent:type:extra:,
+	-requestData:, -xTimeByAppending): Fix race condition where gpbs
+	could time out waiting for a property change notification from the
+	X server, which is already present in the X event queue.
+
 2011-02-15 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/WIN32Server.m,
