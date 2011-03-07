@@ -1624,13 +1624,13 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   *cid = (void*)hCursor;
 }
 
-- (void) imagecursor: (NSPoint)hotp : (int) w :  (int) h 
-		    : (int)colors : (const unsigned char *)image : (void **)cid
+- (void) imagecursor: (NSPoint)hotp : (NSImage *)image : (void **)cid
 {
   /*
     HCURSOR cur;
     BYTE *and;
     BYTE *xor;
+    int w, h;
 
     xor = image;
     cur = CreateCursor(hinstance, (int)hotp.x, (int)hotp.y,  (int)w, (int)h, and, xor);

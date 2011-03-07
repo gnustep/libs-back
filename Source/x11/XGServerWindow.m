@@ -94,6 +94,17 @@ static int		last_win_num = 0;
 - (void *)_cid;
 @end
 
+@interface NSBitmapImageRep (GSPrivate)
+- (NSBitmapImageRep *) _convertToFormatBitsPerSample: (int)bps
+                                     samplesPerPixel: (int)spp
+                                            hasAlpha: (BOOL)alpha
+                                            isPlanar: (BOOL)isPlanar
+                                      colorSpaceName: (NSString*)colorSpaceName
+                                        bitmapFormat: (NSBitmapFormat)bitmapFormat 
+                                         bytesPerRow: (int)rowBytes
+                                        bitsPerPixel: (int)pixelBits;
+@end
+
 void __objc_xgcontextwindow_linking (void)
 {
 }
@@ -4156,16 +4167,76 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
     *cid = (void *)cursor;
 }
 
-- (void) imagecursor: (NSPoint)hotp : (int) w :  (int) h : (int)colors
-		    : (const unsigned char *)image : (void **)cid
+- (void) imagecursor: (NSPoint)hotp : (NSImage *)image : (void **)cid
 {
   Cursor cursor;
   Pixmap source, mask;
   unsigned int maxw, maxh;
   XColor fg, bg;
+  NSBitmapImageRep *rep;
+  int w, h;
+  int colors;
+  const unsigned char *data;
 
   /* FIXME: We might create a blank cursor here? */
-  if (image == NULL || w <= 0 || h <= 0)
+  if (image == nil)
+    {
+      *cid = NULL;
+      return;
+    }
+
+/*
+  We should rather convert the image to a bitmap representation here via 
+  the following code, but this is currently not supported by the libart backend
+
+{
+  NSSize size = [image size];
+
+  [image lockFocus];
+  rep = [[NSBitmapImageRep alloc] initWithFocusedViewRect: 
+            NSMakeRect(0, 0, size.width, size.height)];
+  AUTORELEASE(rep);
+  [image unlockFocus];
+} 
+ */
+  rep = (NSBitmapImageRep *)[image bestRepresentationForDevice: nil];
+  if (!rep || ![rep respondsToSelector: @selector(samplesPerPixel)])
+    {
+      NSLog(@"NSCursor can only handle NSBitmapImageReps for now");
+      *cid = NULL;
+      return;
+    }
+  else
+    {
+      // Convert into something usable by the backend
+      rep = [rep _convertToFormatBitsPerSample: 8
+                               samplesPerPixel: [rep hasAlpha] ? 4 : 3
+                                      hasAlpha: [rep hasAlpha]
+                                      isPlanar: NO
+                                colorSpaceName: NSCalibratedRGBColorSpace
+                                  bitmapFormat: 0
+                                   bytesPerRow: 0
+                                  bitsPerPixel: 0];
+      if (rep == nil)
+        {
+          NSLog(@"Could not convert bitmap data");
+          *cid = NULL;
+          return;
+        }
+    }
+
+  if (hotp.x >= [rep pixelsWide])
+    hotp.x = [rep pixelsWide]-1;
+  
+  if (hotp.y >= [rep pixelsHigh])
+    hotp.y = [rep pixelsHigh]-1;
+
+  w = [rep pixelsWide];
+  h = [rep pixelsHigh];
+  colors = [rep samplesPerPixel];
+  data = [rep bitmapData];
+
+  if (w <= 0 || h <= 0)
     {
       *cid = NULL;
       return;
@@ -4178,8 +4249,8 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
   if ((unsigned int)h > maxh)
     h = maxh;
 
-  source = xgps_cursor_image(dpy, ROOT, image, w, h, colors, &fg, &bg);
-  mask = xgps_cursor_mask(dpy, ROOT, image, w, h, colors);
+  source = xgps_cursor_image(dpy, ROOT, data, w, h, colors, &fg, &bg);
+  mask = xgps_cursor_mask(dpy, ROOT, data, w, h, colors);
   bg = [self xColorFromColor: bg forScreen: defScreen];
   fg = [self xColorFromColor: fg forScreen: defScreen];
 
