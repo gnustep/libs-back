@@ -1,3 +1,10 @@
+2011-03-07 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m,
+	* Source/x11/XGServerWindow.m: Change the way the image for the cursor
+	gets passed on to the backend. The old way could only work for 8
+	bit data.
+
 2011-03-05  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Tools/xpbs.m (+xEvent:, +receivedEvent:type:extra:,
