@@ -201,7 +201,8 @@ static void add_face(NSString *family, int family_weight,
       int i;
 
       l = [d objectForKey: @"LocalizedNames"];
-      lang = [NSUserDefaults userLanguages];
+      lang = [[NSUserDefaults standardUserDefaults]
+	stringArrayForKey: @"NSLanguages"];
       faceName = nil;
       rawFaceName = [l objectForKey: @"English"];
       for (i = 0; i < [lang count] && !faceName; i++)
