@@ -138,8 +138,20 @@ if test $set_x_paths = yes; then
   LIBS="-lX11 $X_EXTRA_LIBS $LIBS"
 
   AC_CHECK_LIB(Xext, main)
+  if test "$HAVE_LIBXext" = no; then
+    PKG_CHECK_MODULES([XEXT], [xext])
+  fi
+
   AC_CHECK_LIB(Xt, main)
+  if test "$HAVE_LIBXt" = no; then
+    PKG_CHECK_MODULES([XT], [xt])
+  fi
+
   AC_CHECK_LIB(Xmu, main)
+  if test "$HAVE_LIBXmu" = no; then
+    PKG_CHECK_MODULES([XMU], [xmu])
+  fi
+
   LIBS="$X_LIBS $LIBS"
 fi
 AC_SUBST(X_PRE_LIBS)

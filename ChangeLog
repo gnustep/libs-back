@@ -1,3 +1,8 @@
+2011-03-13  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* configure.ac: Check for the X extention libraries (Xext, Xt, Xmu)
+	using pkg-config if they aren't found with the default test
+
 2011-03-07 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/WIN32Server.m,
