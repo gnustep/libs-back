@@ -105,6 +105,50 @@ static int		last_win_num = 0;
                                         bitsPerPixel: (int)pixelBits;
 @end
 
+static NSBitmapImageRep *getStandardBitmap(NSImage *image)
+{
+  NSBitmapImageRep *rep;
+
+  if (image == nil)
+    {
+      return nil;
+    }
+
+/*
+  We should rather convert the image to a bitmap representation here via 
+  the following code, but this is currently not supported by the libart backend
+
+{
+  NSSize size = [image size];
+
+  [image lockFocus];
+  rep = [[NSBitmapImageRep alloc] initWithFocusedViewRect: 
+            NSMakeRect(0, 0, size.width, size.height)];
+  AUTORELEASE(rep);
+  [image unlockFocus];
+} 
+*/
+
+  rep = (NSBitmapImageRep *)[image bestRepresentationForDevice: nil];
+  if (!rep || ![rep respondsToSelector: @selector(samplesPerPixel)])
+    {
+      return nil;
+    }
+  else
+    {
+      // Convert into something usable by the backend
+      return [rep _convertToFormatBitsPerSample: 8
+                                samplesPerPixel: [rep hasAlpha] ? 4 : 3
+                                       hasAlpha: [rep hasAlpha]
+                                       isPlanar: NO
+                                 colorSpaceName: NSCalibratedRGBColorSpace
+                                   bitmapFormat: 0
+                                    bytesPerRow: 0
+                                   bitsPerPixel: 0];
+    }
+}
+
+
 void __objc_xgcontextwindow_linking (void)
 {
 }
@@ -366,6 +410,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 /*
  * End of motif hints for window manager code
  */
+
 
 @interface NSEvent (WindowHack)
 - (void) _patchLocation: (NSPoint)loc;
@@ -1761,17 +1806,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   long *iconPropertyData;
   int iconSize;
  
-  rep = (NSBitmapImageRep *)[image bestRepresentationForDevice:nil];
-  if (![rep isKindOfClass: [NSBitmapImageRep class]])
-    {
-      NSLog(@"Wrong bitmap class for WM icon %@ %@", rep, image);
-      return NO;
-    }
-
-  if ([rep bitsPerSample] != 8
-      || (![[rep colorSpaceName] isEqual: NSDeviceRGBColorSpace]
-	  && ![[rep colorSpaceName] isEqual: NSCalibratedRGBColorSpace])
-      || [rep isPlanar])
+  rep = getStandardBitmap(image);
+  if (rep == nil)
     {
       NSLog(@"Wrong image type for WM icon");
       return NO;
@@ -2697,17 +2733,10 @@ static BOOL didCreatePixmaps;
   didCreatePixmaps = YES;
   
   image = [NSApp applicationIconImage];
-  rep = (NSBitmapImageRep *)[image bestRepresentationForDevice:nil];
-  
-  if (![rep isKindOfClass: [NSBitmapImageRep class]])
+  rep = getStandardBitmap(image);
+  if (rep == nil)
     return 0;
 
-  if ([rep bitsPerSample] != 8
-      || (![[rep colorSpaceName] isEqual: NSDeviceRGBColorSpace]
-	  && ![[rep colorSpaceName] isEqual: NSCalibratedRGBColorSpace])
-      || [rep isPlanar])
-    return 0;
-  
   data = [rep bitmapData];
   screen = [[[self screenList] objectAtIndex: 0] intValue];
   xIconPixmap = XCreatePixmap(dpy,
@@ -3003,17 +3032,16 @@ static BOOL didCreatePixmaps;
   if ([[image backgroundColor] alphaComponent] * 256 <= ALPHA_THRESHOLD)
     {
       // The mask computed here is only correct for unscaled images.
-      NSImageRep *rep = [image bestRepresentationForDevice: nil];
+      NSBitmapImageRep *rep = getStandardBitmap(image);
 
-      if ([rep isKindOfClass: [NSBitmapImageRep class]])
+      if (rep != nil)
         {
-	    if (![(NSBitmapImageRep*)rep isPlanar] && 
-		([(NSBitmapImageRep*)rep samplesPerPixel] == 4))
+	    if ([rep samplesPerPixel] == 4)
 	      {
 		pixmap = xgps_cursor_mask(dpy, GET_XDRAWABLE(window),
-					  [(NSBitmapImageRep*)rep bitmapData], 
+					  [rep bitmapData], 
 					  [rep pixelsWide], [rep pixelsHigh], 
-					  [(NSBitmapImageRep*)rep samplesPerPixel]);
+					  [rep samplesPerPixel]);
 	      }
 	}
     }
@@ -4178,51 +4206,13 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
   int colors;
   const unsigned char *data;
 
-  /* FIXME: We might create a blank cursor here? */
-  if (image == nil)
+  rep = getStandardBitmap(image);
+  if (rep == nil)
     {
+      /* FIXME: We might create a blank cursor here? */
+      NSLog(@"Could not convert cursor bitmap data");
       *cid = NULL;
       return;
-    }
-
-/*
-  We should rather convert the image to a bitmap representation here via 
-  the following code, but this is currently not supported by the libart backend
-
-{
-  NSSize size = [image size];
-
-  [image lockFocus];
-  rep = [[NSBitmapImageRep alloc] initWithFocusedViewRect: 
-            NSMakeRect(0, 0, size.width, size.height)];
-  AUTORELEASE(rep);
-  [image unlockFocus];
-} 
- */
-  rep = (NSBitmapImageRep *)[image bestRepresentationForDevice: nil];
-  if (!rep || ![rep respondsToSelector: @selector(samplesPerPixel)])
-    {
-      NSLog(@"NSCursor can only handle NSBitmapImageReps for now");
-      *cid = NULL;
-      return;
-    }
-  else
-    {
-      // Convert into something usable by the backend
-      rep = [rep _convertToFormatBitsPerSample: 8
-                               samplesPerPixel: [rep hasAlpha] ? 4 : 3
-                                      hasAlpha: [rep hasAlpha]
-                                      isPlanar: NO
-                                colorSpaceName: NSCalibratedRGBColorSpace
-                                  bitmapFormat: 0
-                                   bytesPerRow: 0
-                                  bitsPerPixel: 0];
-      if (rep == nil)
-        {
-          NSLog(@"Could not convert bitmap data");
-          *cid = NULL;
-          return;
-        }
     }
 
   if (hotp.x >= [rep pixelsWide])
