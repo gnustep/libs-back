@@ -1,3 +1,8 @@
+2011-03-18 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m: Extract the bitmap conversion into
+	a local function and use it througout the file.
+
 2011-03-13  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* configure.ac: Check for the X extention libraries (Xext, Xt, Xmu)
