@@ -1,3 +1,8 @@
+2011-03-23 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/xpbs.m (-pasteboard:provideDataForType:, -availableTypes)
+	(-xSelectionNotify:): Better handling of plain text data types.
+
 2011-03-18 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m: Extract the bitmap conversion into
