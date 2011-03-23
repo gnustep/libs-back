@@ -638,6 +638,8 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
       [self requestData: XG_UTF8_STRING];
       if ([self data] == nil)
         [self requestData: XA_STRING];
+      if ([self data] == nil)
+        [self requestData: XG_TEXT];
     }
   else if ([type isEqual: NSFilenamesPboardType])
     {
@@ -734,7 +736,9 @@ xErrorHandler(Display *d, XErrorEvent *e)
       type = targets[i];
 
       if ((type == XG_UTF8_STRING) 
-          ||(type == XA_STRING))
+          || (type == XA_STRING)
+          || (type == XG_TEXT)
+          || (type == XG_MIME_PLAIN))
         {
           [types addObject: NSStringPboardType];
         }
@@ -944,7 +948,9 @@ xErrorHandler(Display *d, XErrorEvent *e)
               [self setData: d];
             }
         }
-      else if (actual_type == XA_STRING)
+      else if ((actual_type == XA_STRING)
+               || (actual_type == XG_TEXT)
+               || (actual_type == XG_MIME_PLAIN))
         {
           NSString	*s;
           NSData	*d;
