@@ -236,3 +236,48 @@ static NSArray *faFromFc(FcPattern *pat)
 }
 
 @end
+
+@implementation FontconfigCharacterSet
+
+- (id)initWithFontconfigCharSet: (FcCharSet*)charset
+{
+  if ((self = [super init]))
+    {
+      _charset = FcCharSetCopy(charset);
+    }
+  return self;
+}
+
+- (id)mutableCopyWithZone: (NSZone*)aZone
+{
+  return [[NSMutableCharacterSet characterSetWithBitmapRepresentation: 
+				   [self bitmapRepresentation]] retain];
+}
+
+- (void)dealloc
+{
+  FcCharSetDestroy(_charset);
+  [super dealloc];
+}
+
+- (FcCharSet*)fontconfigCharSet
+{
+  return _charset;
+}
+
+- (BOOL)characterIsMember: (unichar)c
+{
+  return FcCharSetHasChar(_charset, c);
+}
+
+- (BOOL)longCharacterIsMember: (UTF32Char)c
+{
+  return FcCharSetHasChar(_charset, c);
+}
+
+// FIXME: Implement for better performance
+//- (NSData *)bitmapRepresentation
+//{
+//}
+
+@end

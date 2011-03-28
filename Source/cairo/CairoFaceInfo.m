@@ -29,6 +29,7 @@
 */
 
 #include "cairo/CairoFaceInfo.h"
+#include "cairo/CairoFontEnumerator.h"
 #include <cairo-ft.h>
 #include <AppKit/NSFontManager.h>
 
@@ -120,6 +121,26 @@
     }
 
   return _fontFace;
+}
+
+- (NSCharacterSet*)characterSet
+{
+  FcResult result;
+  FcPattern *resolved;
+  FcCharSet *charset;
+  NSCharacterSet *characterSet = nil;
+
+  FcConfigSubstitute(NULL, _pattern, FcMatchPattern); 
+  FcDefaultSubstitute(_pattern);
+  resolved = FcFontMatch(NULL, _pattern, &result);
+
+  if (FcResultMatch == FcPatternGetCharSet(resolved, FC_CHARSET, 0, &charset))
+    {
+      characterSet = [[[FontconfigCharacterSet alloc] initWithFontconfigCharSet: charset] autorelease];
+    }  
+  
+  FcPatternDestroy(resolved);
+  return characterSet;
 }
 
 @end

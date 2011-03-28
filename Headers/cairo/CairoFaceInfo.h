@@ -64,5 +64,7 @@
 
 - (cairo_font_face_t *)fontFace;
 
+- (NSCharacterSet*)characterSet;
+
 @end
 #endif
