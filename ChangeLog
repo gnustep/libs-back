@@ -1,3 +1,18 @@
+2011-03-27  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/cairo/CairoFontEnumerator.m:
+	* Source/cairo/CairoFaceInfo.m:
+	* Source/cairo/CairoFontInfo.m:
+	* Headers/cairo/CairoFontEnumerator.h:
+	* Headers/cairo/CairoFaceInfo.h: Set the coveredCharacterSet ivar
+	of CairoFontInfo. The character set is obtained from Fontconfig.
+	There is an NSCharacterSet subclass which wraps the FcCharSet
+	structure from fontconfig, so there is no need for a slow conversion
+	from one character set format to another.
+
+	This has the effect of enabling glyph substitution when using
+	the cairo backend.
+
 2011-03-23 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Tools/xpbs.m (-pasteboard:provideDataForType:, -availableTypes)

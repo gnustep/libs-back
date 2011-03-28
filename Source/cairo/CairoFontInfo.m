@@ -79,7 +79,7 @@
 
   /* setting GSFontInfo:
    * weight, traits, familyName,
-   * mostCompatibleStringEncoding, encodingScheme,
+   * mostCompatibleStringEncoding, encodingScheme, coveredCharacterSet
    */
 
   weight = [_faceInfo weight];
@@ -87,6 +87,8 @@
   familyName = [[_faceInfo familyName] copy];
   mostCompatibleStringEncoding = NSUTF8StringEncoding;
   encodingScheme = @"iso10646-1";
+  coveredCharacterSet = [[_faceInfo characterSet] retain];
+
 
   /* setting GSFontInfo:
    * xHeight, pix_width, pix_height

@@ -30,10 +30,21 @@
 
 #include <GNUstepGUI/GSFontInfo.h>
 #include <cairo.h>
+#include <fontconfig/fontconfig.h>
 #include "cairo/CairoFaceInfo.h"
 
 @interface CairoFontEnumerator : GSFontEnumerator
 + (CairoFaceInfo *) fontWithName: (NSString *)name;
+@end
+
+@interface FontconfigCharacterSet : NSCharacterSet
+{
+  FcCharSet *_charset;
+}
+
+- (id)initWithFontconfigCharSet: (FcCharSet*)charset;
+- (FcCharSet*)fontconfigCharSet;
+
 @end
 
 #endif
