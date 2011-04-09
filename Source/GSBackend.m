@@ -77,15 +77,15 @@
     context = [defs stringForKey: @"GSContext"];
 
   if ([context isEqual: @"xdps"])
-    contextClass = objc_get_class("NSDPSContext");
+    contextClass = NSClassFromString(@"NSDPSContext");
   else if ([context isEqual: @"art"])
-    contextClass = objc_get_class("ARTContext");
+    contextClass = NSClassFromString(@"ARTContext");
   else if ([context isEqual: @"winlib"])
-    contextClass = objc_get_class("WIN32Context");
+    contextClass = NSClassFromString(@"WIN32Context");
    else if ([context isEqual: @"cairo"])
-    contextClass = objc_get_class("CairoContext");
+    contextClass = NSClassFromString(@"CairoContext");
  else
-    contextClass = objc_get_class("XGContext");
+    contextClass = NSClassFromString(@"XGContext");
 
   [contextClass initializeBackend];
 }

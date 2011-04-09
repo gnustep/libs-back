@@ -195,19 +195,19 @@ static void
 setNormalHints(Display *d, gswindow_device_t *w)
 {
   if (w->siz_hints.flags & (USPosition | PPosition))
-    NSDebugLLog(@"XGTrace", @"Hint posn %d: %d, %d",
+    NSDebugLLog(@"XGTrace", @"Hint posn %lu: %d, %d",
       w->number, w->siz_hints.x, w->siz_hints.y);
   if (w->siz_hints.flags & (USSize | PSize))
-    NSDebugLLog(@"XGTrace", @"Hint size %d: %d, %d",
+    NSDebugLLog(@"XGTrace", @"Hint size %lu: %d, %d",
       w->number, w->siz_hints.width, w->siz_hints.height);
   if (w->siz_hints.flags & PMinSize)
-    NSDebugLLog(@"XGTrace", @"Hint mins %d: %d, %d",
+    NSDebugLLog(@"XGTrace", @"Hint mins %lu: %d, %d",
       w->number, w->siz_hints.min_width, w->siz_hints.min_height);
   if (w->siz_hints.flags & PMaxSize)
-    NSDebugLLog(@"XGTrace", @"Hint maxs %d: %d, %d",
+    NSDebugLLog(@"XGTrace", @"Hint maxs %lu: %d, %d",
       w->number, w->siz_hints.max_width, w->siz_hints.max_height);
   if (w->siz_hints.flags & PResizeInc)
-    NSDebugLLog(@"XGTrace", @"Hint incr %d: %d, %d",
+    NSDebugLLog(@"XGTrace", @"Hint incr %lu: %d, %d",
       w->number, w->siz_hints.width_inc, w->siz_hints.height_inc);
   if (handlesWindowDecorations
     && !(w->win_attrs.window_style & NSResizableWindowMask))
@@ -490,7 +490,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   x.origin.x = o.origin.x + l;
   x.origin.y = o.origin.y + o.size.height - t;
   x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y;
-  NSDebugLLog(@"Frame", @"O2X %d, %x, %@, %@", win->number, style,
+  NSDebugLLog(@"Frame", @"O2X %lu, %x, %@, %@", win->number, style,
     NSStringFromRect(o), NSStringFromRect(x));
   return x;
 }
@@ -515,7 +515,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   x.origin.x = o.origin.x;
   x.origin.y = o.origin.y + o.size.height;
   x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y;
-  NSDebugLLog(@"Frame", @"O2H %d, %x, %@, %@", win->number, style,
+  NSDebugLLog(@"Frame", @"O2H %lu, %x, %@, %@", win->number, style,
     NSStringFromRect(o), NSStringFromRect(x));
   return x;
 }
@@ -562,7 +562,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   o.size.width += l + r;
   o.size.height += t + b;
 
-  NSDebugLLog(@"Frame", @"X2O %d, %x, %@, %@", win->number, style,
+  NSDebugLLog(@"Frame", @"X2O %lu, %x, %@, %@", win->number, style,
     NSStringFromRect(x), NSStringFromRect(o));
   return o;
 }
@@ -588,7 +588,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   x.size.height = o.size.height;
   x.origin.x = o.origin.x - l;
   x.origin.y = o.origin.y - t;
-  NSDebugLLog(@"Frame", @"X2H %d, %x, %@, %@", win->number, style,
+  NSDebugLLog(@"Frame", @"X2H %lu, %x, %@, %@", win->number, style,
     NSStringFromRect(o), NSStringFromRect(x));
   return x;
 }
@@ -944,7 +944,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
                 }
             }
           XNextEvent(dpy, &xEvent);
-          NSDebugLLog(@"Offset", @"Testing ... event %d window %d\n",
+          NSDebugLLog(@"Offset", @"Testing ... event %d window %lu\n",
                       xEvent.type, xEvent.xany.window);
           if (xEvent.xany.window != window->ident)
             {
@@ -957,7 +957,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
                 break;
               
               case ReparentNotify:
-                NSDebugLLog(@"Offset", @"%d ReparentNotify - offset %d %d\n",
+                NSDebugLLog(@"Offset", @"%lu ReparentNotify - offset %d %d\n",
                             xEvent.xreparent.window, xEvent.xreparent.x,
                             xEvent.xreparent.y);
                 repp = xEvent.xreparent.parent;
@@ -1017,7 +1017,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       o->t = extents[2];
       o->b = extents[3];
       o->known = YES;
-      NSDebugLLog(@"Offset", @"Extents left %d, right %d, top %d, bottom %d", 
+      NSDebugLLog(@"Offset", @"Extents left %lu, right %lu, top %lu, bottom %lu", 
                   extents[0], extents[1], extents[2], extents[3]);
       XFree(extents);
     }
@@ -1070,7 +1070,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
                   parent = new_parent;
                   repx = wattr.x;
                   repy = wattr.y;
-                  NSLog(@"QueryTree window is %d (root %d cwin root %d)", 
+                  NSLog(@"QueryTree window is %lu (root %lu cwin root %lu)", 
                         parent, root, window->root);
                   if (!XQueryTree(dpy, parent, &root, &new_parent, 
                                   &children, &nchildren))
@@ -1120,7 +1120,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   while (XPending(dpy) > 0)
     {
       XNextEvent(dpy, &xEvent);
-      NSDebugLLog(@"Offset", @"Destroying ... event %d window %d\n",
+      NSDebugLLog(@"Offset", @"Destroying ... event %d window %lu\n",
                   xEvent.type, xEvent.xany.window);
       if (xEvent.xany.window != window->ident)
         {
@@ -2122,7 +2122,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   NSRect xframe;
 
   windowRef = *((Window*)winref);
-  NSDebugLLog(@"XGTrace", @"nativeWindow: %d", windowRef);
+  NSDebugLLog(@"XGTrace", @"nativeWindow: %lu", windowRef);
   if (!XGetWindowAttributes(dpy, windowRef, &win_attributes))
     {
       return 0;
@@ -2324,7 +2324,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       if (extents) 
         {
           NSDebugLLog(@"Frame",
-                      @"Window %d, left %d, right %d, top %d, bottom %d", 
+                      @"Window %lu, left %lu, right %lu, top %lu, bottom %lu", 
                       win, extents[0], extents[1], extents[2], extents[3]);
           *l = extents[0];
           *r = extents[1];
@@ -2353,7 +2353,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       *b = o->b;
       *t = o->t;
       NSDebugLLog(@"Frame",
-                  @"Window %d, offsets %f, %f, %f, %f", 
+                  @"Window %lu, offsets %f, %f, %f, %f", 
                   win, *l, *r, *t, *b);
       return;
     }
@@ -2373,7 +2373,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
           *t = 25.0;
         }
       NSDebugLLog(@"Frame",
-                  @"Window %d, windowmaker %f, %f, %f, %f", 
+                  @"Window %lu, windowmaker %f, %f, %f, %f", 
                   win, *l, *r, *t, *b);
     }
   else if ((generic.wm & XGWM_EWMH) != 0)
@@ -2389,7 +2389,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
           *t = 20;
         }
       NSDebugLLog(@"Frame",
-                  @"Window %d, EWMH %f, %f, %f, %f", 
+                  @"Window %lu, EWMH %f, %f, %f, %f", 
                   win, *l, *r, *t, *b);
     }
   else
@@ -2401,7 +2401,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
        */
       *l = *r = *t = *b = 0.0;
       NSDebugLLog(@"Frame",
-                  @"Window %d, unknown %f, %f, %f, %f", 
+                  @"Window %lu, unknown %f, %f, %f, %f", 
                   win, *l, *r, *t, *b);
     }
 }
@@ -2825,7 +2825,7 @@ static BOOL didCreatePixmaps;
 	      gen_hints.flags |= IconPixmapHint;
 	      gen_hints.icon_pixmap = xIconPixmap;
 	    }
-	  if (xIconMask);
+	  if (xIconMask)
 	    {
 	      gen_hints.flags |= IconMaskHint;
 	      gen_hints.icon_mask = xIconMask;
@@ -3128,7 +3128,7 @@ static BOOL didCreatePixmaps;
   window->siz_hints.x = (int)xHint.origin.x;
   window->siz_hints.y = (int)xHint.origin.y;
 
-  NSDebugLLog(@"Moving", @"Place %d - o:%@, x:%@", window->number,
+  NSDebugLLog(@"Moving", @"Place %lu - o:%@, x:%@", window->number,
     NSStringFromRect(rect), NSStringFromRect(xVal));
   XMoveResizeWindow (dpy, window->ident,
     window->siz_hints.x, window->siz_hints.y,
@@ -3148,7 +3148,7 @@ static BOOL didCreatePixmaps;
 
   if (resize == YES)
     {
-      NSDebugLLog(@"Moving", @"Fake size %d - %@", window->number,
+      NSDebugLLog(@"Moving", @"Fake size %lu - %@", window->number,
 	NSStringFromSize(rect.size));
       e = [NSEvent otherEventWithType: NSAppKitDefined
 			     location: rect.origin
@@ -3163,7 +3163,7 @@ static BOOL didCreatePixmaps;
     }
   else if (move == YES)
     {
-      NSDebugLLog(@"Moving", @"Fake move %d - %@", window->number,
+      NSDebugLLog(@"Moving", @"Fake move %lu - %@", window->number,
 	NSStringFromPoint(rect.origin));
       e = [NSEvent otherEventWithType: NSAppKitDefined
 			     location: NSZeroPoint
@@ -3731,7 +3731,7 @@ static BOOL didCreatePixmaps;
    */
   if (win == generic.desiredFocusWindow && generic.focusRequestNumber != 0)
     {
-      NSDebugLLog(@"Focus", @"Focus already set on %d", window->number);
+      NSDebugLLog(@"Focus", @"Focus already set on %lu", window->number);
       return;
     }
 
@@ -3745,12 +3745,12 @@ static BOOL didCreatePixmaps;
           user_time_atom = XInternAtom(dpy, "_NET_WM_USER_TIME", False);
         }
 
-      NSDebugLLog(@"Focus", @"Setting user time for %d to %ul", window->ident, last);
+      NSDebugLLog(@"Focus", @"Setting user time for %lu to %lu", window->ident, last);
       XChangeProperty(dpy, window->ident, user_time_atom, XA_CARDINAL, 32, 
                       PropModeReplace, (unsigned char *)&last, 1);
     }
 
-  NSDebugLLog(@"Focus", @"Setting focus to %d", window->number);
+  NSDebugLLog(@"Focus", @"Setting focus to %lu", window->number);
   generic.desiredFocusWindow = win;
   generic.focusRequestNumber = XNextRequest(dpy);
   XSetInputFocus(dpy, window->ident, RevertToParent, [self lastTime]);
@@ -3983,7 +3983,7 @@ static BOOL   cursor_hidden = NO;
   gswindow_device_t  *d;
   Window root;
 
-  NSDebugLLog (@"NSCursor", @"_DPSsetcursor: cursor = %p, set = %d", c, set);
+  NSDebugLLog (@"NSCursor", @"_DPSsetcursor: cursor = %lu, set = %d", c, set);
 
   root = DefaultRootWindow(dpy);
   enumerator = NSEnumerateMapTable (windowmaps);

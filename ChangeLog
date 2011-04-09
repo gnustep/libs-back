@@ -1,3 +1,21 @@
+2011-04-09 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSFunction.m (-initWith:): Correct printf format.
+	* Source/x11/XGServerEvent.m (-XGErrorHandler::,
+	-_XPointToOSPoint:for:, -processEvent:,
+	-_handleTakeFocusAtom:forContext:, process_key_event): Correct printf format.
+	* Source/x11/XGServerWindow.m (setNormalHints, -_OSFrameToXFrame:for:,
+	-_OSFrameToXHints:for:, -_XFrameToOSFrame:for:, -_checkStyle:,
+	-nativeWindow:...:, -styleoffsets:...:, -placewindow::,
+	-setinputfocus:, -_DPSsetcursor::): Correct printf format.
+	* Source/x11/XGServerWindow.m (-orderwindow): Remove misplaced semicolon.
+	* Source/x11/XGDragView.m (-_resetDragTypesForWindow:): Correct printf format.
+	* Source/x11/XIMInputServer.m (-ximStyleInit, -ximFocusICWindow:): Correct printf format.
+	* Source/x11/XWindowBuffer.m: Correct printf format.
+	* Source/GSBackend.m: Replace objc_get_class with NSClassFromString.
+	* Tools/xpbs.m (-xSelectionNotify:): Correct printf format.
+	Fixes warnings reported by clang.
+
 2011-03-27  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/cairo/CairoFontEnumerator.m:

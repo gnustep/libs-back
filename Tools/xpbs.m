@@ -886,7 +886,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
 
   if ([self waitingForSelection] > xEvent->time)
     {
-      NSDebugLLog(@"Pbs", @"Unexpected selection notify - time %u.", xEvent->time);
+      NSDebugLLog(@"Pbs", @"Unexpected selection notify - time %lu.", xEvent->time);
       return;
     }
   [self setWaitingForSelection: 0];
