@@ -52,9 +52,6 @@ static int use_xshm = 1;
 static Bool use_xshm_pixmaps = 0;
 static int num_xshm_test_errors = 0;
 
-static NSString *xshm_warning
-        = @"Falling back to normal XImage: s (will be slower).";
-
 static int test_xshm_error_handler(Display *d, XErrorEvent *ev)
 {
   num_xshm_test_errors++;
@@ -84,7 +81,7 @@ static void test_xshm(Display *display, Visual *visual, int drawing_depth)
       !XShmQueryVersion(display, &major, &minor, &use_xshm_pixmaps))
     {
       NSLog(@"XShm not supported by X server.");
-      NSLog(xshm_warning);
+      NSLog(@"Falling back to normal XImage (will be slower).");
       use_xshm = 0;
       return;
     }
@@ -164,7 +161,7 @@ static void test_xshm(Display *display, Visual *visual, int drawing_depth)
       {
         NSLog(@"XShm not supported.");
 no_xshm: 
-        NSLog(xshm_warning);
+        NSLog(@"Falling back to normal XImage (will be slower).");
         use_xshm = 0;
       }
     XSetErrorHandler(old_error_handler);
@@ -201,8 +198,8 @@ no_xshm:
         sizeof(XWindowBuffer *) * (num_window_buffers + 1));
       if (!window_buffers)
         {
-          NSLog(@"Out of memory (failed to allocate %i bytes)",
-                sizeof(XWindowBuffer *) * (num_window_buffers + 1));
+          NSLog(@"Out of memory (failed to allocate %lu bytes)",
+                (unsigned long)sizeof(XWindowBuffer *) * (num_window_buffers + 1));
           exit(1);
         }
       window_buffers[num_window_buffers++] = wi;
@@ -308,7 +305,7 @@ no_xshm:
       if (!wi->ximage)
         {
           NSLog(@"Warning: XShmCreateImage failed!");
-          NSLog(xshm_warning);
+          NSLog(@"Falling back to normal XImage (will be slower).");
           goto no_xshm;
         }
       wi->shminfo.shmid = shmget(IPC_PRIVATE,
@@ -318,7 +315,7 @@ no_xshm:
       if (wi->shminfo.shmid == -1)
         {
           NSLog(@"Warning: shmget() failed: %m.");
-          NSLog(xshm_warning);
+          NSLog(@"Falling back to normal XImage (will be slower).");
           XDestroyImage(wi->ximage);
           goto no_xshm;
         }
@@ -327,7 +324,7 @@ no_xshm:
       if ((intptr_t)wi->shminfo.shmaddr == -1)
         {
           NSLog(@"Warning: shmat() failed: %m.");
-          NSLog(xshm_warning);
+          NSLog(@"Falling back to normal XImage (will be slower).");
           XDestroyImage(wi->ximage);
           shmctl(wi->shminfo.shmid, IPC_RMID, 0);
           goto no_xshm;
@@ -337,7 +334,7 @@ no_xshm:
       if (!XShmAttach(wi->display, &wi->shminfo))
         {
           NSLog(@"Warning: XShmAttach() failed.");
-          NSLog(xshm_warning);
+          NSLog(@"Falling back to normal XImage (will be slower).");
           XDestroyImage(wi->ximage);
           shmdt(wi->shminfo.shmaddr);
           shmctl(wi->shminfo.shmid, IPC_RMID, 0);

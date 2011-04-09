@@ -421,7 +421,7 @@ static	XGDragView	*sharedDragView = nil;
 
   typelist = mimeTypeForPasteboardType(XDPY, [self zone],
 				       [drag_set allObjects]);
-  NSDebugLLog(@"NSDragging", @"Set types on %x to %@", 
+  NSDebugLLog(@"NSDragging", @"Set types on %lu to %@", 
 	      window->ident, drag_set);
   xdnd_set_dnd_aware(&dnd, window->ident, typelist);
 

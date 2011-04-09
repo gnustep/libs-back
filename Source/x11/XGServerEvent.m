@@ -191,22 +191,22 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
     {
       NSLog(@"X-Windows error - %s\n\
           on display: %s\n\
-                    type: %d\n\
-       serial number: %d\n\
+                type: %d\n\
+       serial number: %lu\n\
         request code: %d\n",
         buffer,
-            XDisplayName(DisplayString(display)),
+        XDisplayName(DisplayString(display)),
         err->type, err->serial, err->request_code);
       return 0;
     }
   [NSException raise: NSWindowServerCommunicationException
     format: @"X-Windows error - %s\n\
           on display: %s\n\
-                    type: %d\n\
-       serial number: %d\n\
+                type: %d\n\
+       serial number: %lu\n\
         request code: %d\n",
         buffer,
-            XDisplayName(DisplayString(display)),
+        XDisplayName(DisplayString(display)),
         err->type, err->serial, err->request_code];
   return 0;
 }
@@ -324,7 +324,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
   o.x = x.x + l;
   o.y = NSHeight(win->xframe) - x.y + b;
 
-  NSDebugLLog(@"Frame", @"X2OP %d, %x, %@, %@", win->number, style,
+  NSDebugLLog(@"Frame", @"X2OP %lu, %x, %@, %@", win->number, style,
     NSStringFromPoint(x), NSStringFromPoint(o));
   return o;
 }
@@ -352,8 +352,8 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
     {
         // mouse button events
       case ButtonPress:
-        NSDebugLLog(@"NSEvent", @"%d ButtonPress: \
-                xEvent.xbutton.time %u timeOfLastClick %u \n",
+        NSDebugLLog(@"NSEvent", @"%lu ButtonPress: \
+                xEvent.xbutton.time %lu timeOfLastClick %lu \n",
                     xEvent.xbutton.window, xEvent.xbutton.time,
                     generic.lastClick);
         /*
@@ -506,7 +506,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         break;
 
       case ButtonRelease:
-        NSDebugLLog(@"NSEvent", @"%d ButtonRelease\n",
+        NSDebugLLog(@"NSEvent", @"%lu ButtonRelease\n",
                     xEvent.xbutton.window);
         [self setLastTime: xEvent.xbutton.time];
         if (xEvent.xbutton.button == generic.lMouse)
@@ -560,12 +560,12 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         break;
 
       case CirculateNotify:
-        NSDebugLLog(@"NSEvent", @"%d CirculateNotify\n",
+        NSDebugLLog(@"NSEvent", @"%lu CirculateNotify\n",
                     xEvent.xcirculate.window);
         break;
 
       case CirculateRequest:
-        NSDebugLLog(@"NSEvent", @"%d CirculateRequest\n",
+        NSDebugLLog(@"NSEvent", @"%lu CirculateRequest\n",
                     xEvent.xcirculaterequest.window);
         break;
 
@@ -574,7 +574,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
           NSTimeInterval time;
           DndClass dnd = xdnd ();
               
-          NSDebugLLog(@"NSEvent", @"%d ClientMessage - %s\n",
+          NSDebugLLog(@"NSEvent", @"%lu ClientMessage - %s\n",
 	    xEvent.xclient.window,
 	    XGetAtomName(dpy, xEvent.xclient.message_type));
           if (cWin == 0 || xEvent.xclient.window != cWin->ident)
@@ -609,7 +609,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
               else if ((Atom)xEvent.xclient.data.l[0]
                 == generic.miniaturize_atom)
                 {
-		  NSDebugLLog(@"Miniaturize", @"%d miniaturized", cWin->number);
+		  NSDebugLLog(@"Miniaturize", @"%lu miniaturized", cWin->number);
                   eventLocation = NSMakePoint(0,0);
                   e = [NSEvent otherEventWithType: NSAppKitDefined
                                location: eventLocation
@@ -797,14 +797,14 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 
       case ColormapNotify:
         // colormap attribute
-        NSDebugLLog(@"NSEvent", @"%d ColormapNotify\n",
+        NSDebugLLog(@"NSEvent", @"%lu ColormapNotify\n",
                     xEvent.xcolormap.window);
         break;
 
             // the window has been resized, change the width and height
             // and update the window so the changes get displayed
       case ConfigureNotify:
-        NSDebugLLog(@"NSEvent", @"%d ConfigureNotify "
+        NSDebugLLog(@"NSEvent", @"%lu ConfigureNotify "
                     @"x:%d y:%d w:%d h:%d b:%d %c", xEvent.xconfigure.window,
                     xEvent.xconfigure.x, xEvent.xconfigure.y,
                     xEvent.xconfigure.width, xEvent.xconfigure.height,
@@ -854,7 +854,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             cWin->xframe = x;
             n = [self _XFrameToOSFrame: x for: cWin];
             NSDebugLLog(@"Moving",
-                        @"Update win %d:\n   original:%@\n   new:%@",
+                        @"Update win %lu:\n   original:%@\n   new:%@",
                         cWin->number, NSStringFromRect(r), 
                         NSStringFromRect(x));
             /*
@@ -917,31 +917,31 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             // same as ConfigureNotify but we get this event
             // before the change has actually occurred
       case ConfigureRequest:
-        NSDebugLLog(@"NSEvent", @"%d ConfigureRequest\n",
+        NSDebugLLog(@"NSEvent", @"%lu ConfigureRequest\n",
                     xEvent.xconfigurerequest.window);
         break;
 
             // a window has been created
       case CreateNotify:
-        NSDebugLLog(@"NSEvent", @"%d CreateNotify\n",
+        NSDebugLLog(@"NSEvent", @"%lu CreateNotify\n",
                     xEvent.xcreatewindow.window);
         break;
 
             // a window has been destroyed
       case DestroyNotify:
-        NSDebugLLog(@"NSEvent", @"%d DestroyNotify\n",
+        NSDebugLLog(@"NSEvent", @"%lu DestroyNotify\n",
                     xEvent.xdestroywindow.window);
         break;
 
             // when the pointer enters a window
       case EnterNotify:
-        NSDebugLLog(@"NSEvent", @"%d EnterNotify\n",
+        NSDebugLLog(@"NSEvent", @"%lu EnterNotify\n",
                     xEvent.xcrossing.window);
         break;
               
             // when the pointer leaves a window
       case LeaveNotify:
-        NSDebugLLog(@"NSEvent", @"%d LeaveNotify\n",
+        NSDebugLLog(@"NSEvent", @"%lu LeaveNotify\n",
                     xEvent.xcrossing.window);
         if (cWin == 0 || xEvent.xcrossing.window != cWin->ident)
           {
@@ -964,7 +964,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 
             // the visibility of a window has changed
       case VisibilityNotify:
-        NSDebugLLog(@"NSEvent", @"%d VisibilityNotify %d\n", 
+        NSDebugLLog(@"NSEvent", @"%lu VisibilityNotify %d\n", 
                     xEvent.xvisibility.window, xEvent.xvisibility.state);
         if (cWin == 0 || xEvent.xvisibility.window != cWin->ident)
           {
@@ -995,7 +995,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         // a portion of the window has become visible and
         // we must redisplay it
       case Expose:
-        NSDebugLLog(@"NSEvent", @"%d Expose\n",
+        NSDebugLLog(@"NSEvent", @"%lu Expose\n",
                     xEvent.xexpose.window);
         {
           BOOL isSubWindow = NO;
@@ -1075,7 +1075,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 
       // keyboard focus entered a window
       case FocusIn:
-        NSDebugLLog(@"NSEvent", @"%d FocusIn\n",
+        NSDebugLLog(@"NSEvent", @"%lu FocusIn\n",
                     xEvent.xfocus.window);
         if (cWin == 0 || xEvent.xfocus.window != cWin->ident)
           {
@@ -1084,7 +1084,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
           }
         if (cWin == 0)
           break;
-        NSDebugLLog(@"Focus", @"%d got focus on %d\n",
+        NSDebugLLog(@"Focus", @"%lu got focus on %lu\n",
                     xEvent.xfocus.window, cWin->number);
         // Store this for debugging, may not be the real focus window
         generic.currentFocusWindow = cWin->number;
@@ -1113,7 +1113,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
            * If it has gone to a window - we see if it is one of ours.
            */
           XGetInputFocus(xEvent.xfocus.display, &fw, &rev);
-          NSDebugLLog(@"NSEvent", @"%d FocusOut\n",
+          NSDebugLLog(@"NSEvent", @"%lu FocusOut\n",
                       xEvent.xfocus.window);
           if (fw != None && fw != PointerRoot)
             {
@@ -1135,7 +1135,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             {
               nswin = nil;
             }
-          NSDebugLLog(@"Focus", @"Focus went to %d (xwin %d)\n", 
+          NSDebugLLog(@"Focus", @"Focus went to %lu (xwin %lu)\n", 
                       (nswin != nil) ? cWin->number : 0, fw);
 
           // Focus went to a window not in this application.
@@ -1147,7 +1147,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
           // Clean up old focus request
           generic.cachedWindow
               = [XGServer _windowForXWindow: xEvent.xfocus.window];
-          NSDebugLLog(@"Focus", @"%d lost focus on %d\n",
+          NSDebugLLog(@"Focus", @"%lu lost focus on %lu\n",
                       xEvent.xfocus.window, (cWin) ? cWin->number : 0);
           generic.currentFocusWindow = 0;
           if (cWin && generic.desiredFocusWindow == cWin->number)
@@ -1159,7 +1159,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         break;
 
       case GraphicsExpose:
-        NSDebugLLog(@"NSEvent", @"%d GraphicsExpose\n",
+        NSDebugLLog(@"NSEvent", @"%lu GraphicsExpose\n",
                     xEvent.xexpose.window);
         break;
 
@@ -1169,13 +1169,13 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 
       // window is moved because of a change in the size of its parent
       case GravityNotify:
-        NSDebugLLog(@"NSEvent", @"%d GravityNotify\n",
+        NSDebugLLog(@"NSEvent", @"%lu GravityNotify\n",
                     xEvent.xgravity.window);
         break;
 
             // a key has been pressed
       case KeyPress:
-        NSDebugLLog(@"NSEvent", @"%d KeyPress\n",
+        NSDebugLLog(@"NSEvent", @"%lu KeyPress\n",
                     xEvent.xkey.window);
         [self setLastTime: xEvent.xkey.time];
         e = process_key_event (&xEvent, self, NSKeyDown, event_queue);
@@ -1183,7 +1183,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 
             // a key has been released
       case KeyRelease:
-        NSDebugLLog(@"NSEvent", @"%d KeyRelease\n",
+        NSDebugLLog(@"NSEvent", @"%lu KeyRelease\n",
                     xEvent.xkey.window);
         [self setLastTime: xEvent.xkey.time];
         e = process_key_event (&xEvent, self, NSKeyUp, event_queue);
@@ -1196,7 +1196,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
           if (_is_keyboard_initialized == NO)
             initialize_keyboard ();
 
-          NSDebugLLog(@"NSEvent", @"%d KeymapNotify\n",
+          NSDebugLLog(@"NSEvent", @"%lu KeymapNotify\n",
                       xEvent.xkeymap.window);
 
           // Check if shift is pressed
@@ -1267,7 +1267,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             // when a window changes state from ummapped to
             // mapped or vice versa
       case MapNotify:
-        NSDebugLLog(@"NSEvent", @"%d MapNotify\n",
+        NSDebugLLog(@"NSEvent", @"%lu MapNotify\n",
                     xEvent.xmap.window);
         if (cWin == 0 || xEvent.xmap.window != cWin->ident)
           {
@@ -1284,7 +1284,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             if (generic.desiredFocusWindow == cWin->number
                 && generic.focusRequestNumber == 0)
               {
-                NSDebugLLog(@"Focus", @"Refocusing %d on map notify", 
+                NSDebugLLog(@"Focus", @"Refocusing %lu on map notify", 
                             cWin->number);
                 [self setinputfocus: cWin->number];
               }
@@ -1298,7 +1298,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 
             // Window is no longer visible.
       case UnmapNotify:
-        NSDebugLLog(@"NSEvent", @"%d UnmapNotify\n",
+        NSDebugLLog(@"NSEvent", @"%lu UnmapNotify\n",
                     xEvent.xunmap.window);
         if (cWin == 0 || xEvent.xunmap.window != cWin->ident)
           {
@@ -1314,13 +1314,13 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 
             // like MapNotify but occurs before the request is carried out
       case MapRequest:
-        NSDebugLLog(@"NSEvent", @"%d MapRequest\n",
+        NSDebugLLog(@"NSEvent", @"%lu MapRequest\n",
                     xEvent.xmaprequest.window);
         break;
 
             // keyboard or mouse mapping has been changed by another client
       case MappingNotify:
-        NSDebugLLog(@"NSEvent", @"%d MappingNotify\n",
+        NSDebugLLog(@"NSEvent", @"%lu MappingNotify\n",
                     xEvent.xmapping.window);
         if ((xEvent.xmapping.request == MappingModifier) 
             || (xEvent.xmapping.request == MappingKeyboard))
@@ -1331,7 +1331,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         break;
 
       case MotionNotify:
-        NSDebugLLog(@"NSMotionEvent", @"%d MotionNotify - %d %d\n",
+        NSDebugLLog(@"NSMotionEvent", @"%lu MotionNotify - %d %d\n",
                     xEvent.xmotion.window, xEvent.xmotion.x, xEvent.xmotion.y);
         {
           unsigned int        state;
@@ -1411,7 +1411,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 
       // a window property has changed or been deleted
       case PropertyNotify:
-        NSDebugLLog(@"NSEvent", @"%d PropertyNotify - '%s'\n",
+        NSDebugLLog(@"NSEvent", @"%lu PropertyNotify - '%s'\n",
                     xEvent.xproperty.window,
                     XGetAtomName(dpy, xEvent.xproperty.atom));
 	if (xEvent.xproperty.atom == generic.wm_state_atom)
@@ -1451,7 +1451,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 			/* Same event as when we get ClientMessage with the
 			 * atom equal to generic.miniaturize_atom
 			 */
-			NSDebugLLog(@"Miniaturize", @"%d miniaturized",
+			NSDebugLLog(@"Miniaturize", @"%lu miniaturized",
 				    cWin->number);
 			eventLocation = NSMakePoint(0,0);
 			e = [NSEvent otherEventWithType: NSAppKitDefined
@@ -1473,7 +1473,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 		    if (cWin->wm_state == IconicState &&
 			[GSWindowWithNumber(cWin->number) isMiniaturized])
 		      {
-			NSDebugLLog(@"Miniaturize", @"%d deminiaturized",
+			NSDebugLLog(@"Miniaturize", @"%lu deminiaturized",
 				    cWin->number);
 			eventLocation = NSMakePoint(0,0);
 			e = [NSEvent otherEventWithType: NSAppKitDefined
@@ -1497,7 +1497,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 
             // a client successfully reparents a window
       case ReparentNotify:
-        NSDebugLLog(@"NSEvent", @"%d ReparentNotify - offset %d %d\n",
+        NSDebugLLog(@"NSEvent", @"%lu ReparentNotify - offset %d %d\n",
                     xEvent.xreparent.window, xEvent.xreparent.x,
                     xEvent.xreparent.y);
         if (cWin == 0 || xEvent.xreparent.window != cWin->ident)
@@ -1563,8 +1563,8 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                     unsigned int nchildren;
 
                     parent = new_parent;
-                    NSLog(@"QueryTree window is %d (root %d cwin root %d)", 
-                          parent, root, cWin->root);
+                    NSLog(@"QueryTree window is %lu (cwin root %lu)", 
+                          parent, cWin->root);
                     if (!XQueryTree(dpy, parent, &root, &new_parent, 
                       &children, &nchildren))
                       {
@@ -1664,23 +1664,23 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 
             // another client attempts to change the size of a window
       case ResizeRequest:
-        NSDebugLLog(@"NSEvent", @"%d ResizeRequest\n",
+        NSDebugLLog(@"NSEvent", @"%lu ResizeRequest\n",
                     xEvent.xresizerequest.window);
         break;
 
             // events dealing with the selection
       case SelectionClear:
-        NSDebugLLog(@"NSEvent", @"%d SelectionClear\n",
+        NSDebugLLog(@"NSEvent", @"%lu SelectionClear\n",
                     xEvent.xselectionclear.window);
         break;
 
       case SelectionNotify:
-        NSDebugLLog(@"NSEvent", @"%d SelectionNotify\n",
+        NSDebugLLog(@"NSEvent", @"%lu SelectionNotify\n",
                     xEvent.xselection.requestor);
         break;
 
       case SelectionRequest:
-        NSDebugLLog(@"NSEvent", @"%d SelectionRequest\n",
+        NSDebugLLog(@"NSEvent", @"%lu SelectionRequest\n",
                     xEvent.xselectionrequest.requestor);
         {
           NSPasteboard *pb = [NSPasteboard pasteboardWithName: NSDragPboard];
@@ -1757,7 +1757,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
   NSEvent *e = nil;
   key_win = [NSApp keyWindow];
   key_num = [key_win windowNumber];
-  NSDebugLLog(@"Focus", @"take focus:%d (current=%d key=%d)",
+  NSDebugLLog(@"Focus", @"take focus:%lu (current=%lu key=%d)",
               cWin->number, generic.currentFocusWindow, key_num);
 
   /* Sometimes window managers lose the setinputfocus on the key window
@@ -2128,7 +2128,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
   if (IsKeypadKey (keysym))
     eventFlags = eventFlags | NSNumericPadKeyMask;
 
-  NSDebugLLog (@"NSKeyEvent", @"keysym=%d, keyCode=%d flags=%d (state=%d)",
+  NSDebugLLog (@"NSKeyEvent", @"keysym=%lu, keyCode=%d flags=%d (state=%d)",
               keysym, keyCode, eventFlags, ((XKeyEvent *)xEvent)->state);
   
   /* Add NSFunctionKeyMask if the key is a function or a misc function key */

@@ -279,8 +279,8 @@
     }
   else
     {
-      NSLog(@"XIM: Unknown style '%s'.\n"
-	    @"Fallback to RootWindow style.", [request cString]);
+      NSLog(@"XIM: Unknown style '%@'.\n"
+	    @"Fallback to RootWindow style.", request);
       xim_requested_style = RootWindowStyle;
     }
 
@@ -301,7 +301,7 @@
 	  return 1;
 	}
     }
-  NSLog(@"XIM: '%s' is not supported", request);
+  NSLog(@"XIM: '%@' is not supported", request);
   XFree(styles);
   return 0;
 }
@@ -344,7 +344,7 @@
   /* Now set focus to this window */
   if (windev->ic)
     {
-      NSDebugLLog(@"XIM", @"XSetICFocus to window %p", 
+      NSDebugLLog(@"XIM", @"XSetICFocus to window %lu", 
 		  windev->ident);
       XSetICFocus(windev->ic);
     }

@@ -111,8 +111,8 @@
   j = (j +7)/8;
   if ([data length] < j)
     {
-      NSDebugLLog(@"GSFunction", @"Need %i bytes of data, DataSource only has %i bytes.", 
-      j, [data length]);
+      NSDebugLLog(@"GSFunction", @"Need %i bytes of data, DataSource only has %lu bytes.", 
+                  j, (unsigned long)[data length]);
       RELEASE(self);
       return nil;
     }
