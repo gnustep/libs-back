@@ -37,6 +37,22 @@
 + (CairoFaceInfo *) fontWithName: (NSString *)name;
 @end
 
+@interface FontconfigPatternGenerator : NSObject
+{
+  NSDictionary *_attributes;
+  FcPattern *_pat;
+}
+- (FcPattern *)createPatternWithAttributes: (NSDictionary *)attributes;
+@end
+
+@interface FontconfigPatternParser : NSObject
+{
+  NSMutableDictionary *_attributes;
+  FcPattern *_pat;
+}
+- (NSDictionary*)attributesFromPattern: (FcPattern *)pat;
+@end
+
 @interface FontconfigCharacterSet : NSCharacterSet
 {
   FcCharSet *_charset;
