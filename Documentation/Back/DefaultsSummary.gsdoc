@@ -94,6 +94,7 @@
 	  the window decorations, which is particularly useful if you aren't
 	  running any window manager.
 	  </p>
+	  </desc>
 	  <term>GSUseWMTaskBar</term>
 	  <desc>
           <p> [W32 backend only]
@@ -120,7 +121,6 @@
 	  <code>RootWindow</code>, <code>OffTheSpot</code>, or
 	  <code>OverTheSpot</code>.
           </p>
-	  </desc>
 	  </desc>
 	  <term>GraphicCompositing</term>
 	  <desc>

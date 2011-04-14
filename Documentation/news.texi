@@ -7,11 +7,19 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.20.0}
+
+Cairo is now the default backend, but falls back to art and xlib gracefully.
+
+Fixed drawing and flipping (goes along with gui change).
+
+More Windows improvements.
+
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.19.0}
 
 This is an (unstable) copy of the 0.18.0 release
-
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.18.0}
 
