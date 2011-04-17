@@ -635,6 +635,26 @@ AC_SUBST(BUILD_GRAPHICS)
 AC_SUBST(BUILD_SERVER)
 
 #--------------------------------------------------------------------
+# Check for -Wdeclaration-after-statement
+#--------------------------------------------------------------------
+AC_MSG_CHECKING(whether the compiler supports -Wdeclaration-after-statement)
+
+saved_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -Wdeclaration-after-statement"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM()],HAS_W_DECL_AFTER_STATEMENT=yes,HAS_W_DECL_AFTER_STATEMENT=no)
+CFLAGS="$saved_CFLAGS"
+
+AC_MSG_RESULT($HAS_W_DECL_AFTER_STATEMENT)
+
+if test x"$HAS_W_DECL_AFTER_STATEMENT" = x"yes"; then
+  WARN_FLAGS="-Wall -Wdeclaration-after-statement"
+else
+  WARN_FLAGS=-Wall
+fi
+
+AC_SUBST(WARN_FLAGS)
+
+#--------------------------------------------------------------------
 # Set the name of the backend
 #--------------------------------------------------------------------
 AC_ARG_WITH(name, 

@@ -594,6 +594,7 @@ ac_includes_default="\
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 BACKEND_NAME
+WARN_FLAGS
 BUILD_SERVER
 BUILD_GRAPHICS
 WITH_WRASTER
@@ -6722,6 +6723,44 @@ cat >>confdefs.h <<_ACEOF
 #define BUILD_GRAPHICS $BUILD_GRAPHICS
 _ACEOF
 
+
+
+
+#--------------------------------------------------------------------
+# Check for -Wdeclaration-after-statement
+#--------------------------------------------------------------------
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the compiler supports -Wdeclaration-after-statement" >&5
+$as_echo_n "checking whether the compiler supports -Wdeclaration-after-statement... " >&6; }
+
+saved_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -Wdeclaration-after-statement"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  HAS_W_DECL_AFTER_STATEMENT=yes
+else
+  HAS_W_DECL_AFTER_STATEMENT=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+CFLAGS="$saved_CFLAGS"
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAS_W_DECL_AFTER_STATEMENT" >&5
+$as_echo "$HAS_W_DECL_AFTER_STATEMENT" >&6; }
+
+if test x"$HAS_W_DECL_AFTER_STATEMENT" = x"yes"; then
+  WARN_FLAGS="-Wall -Wdeclaration-after-statement"
+else
+  WARN_FLAGS=-Wall
+fi
 
 
 
