@@ -1,5 +1,11 @@
 2011-04-17  Eric Wasylishen  <ewasylishen@gmail.com>
 
+	* Source/cairo/CairoFontEnumerator.m: Replace
+	-handleKey:selector:valueClass: and -handleKey:selector:
+	methods with macros.
+
+2011-04-17  Eric Wasylishen  <ewasylishen@gmail.com>
+	
 	* configure.ac: Copy the -Wdeclaration-after-statement test from
 	base. Also adds -Wall.
 	
