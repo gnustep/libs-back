@@ -1,5 +1,10 @@
 2011-04-17  Eric Wasylishen  <ewasylishen@gmail.com>
 
+	* Source/cairo/CairoFontEnumerator.m: Remove declarations after
+	statements for c89 compatability
+
+2011-04-17  Eric Wasylishen  <ewasylishen@gmail.com>
+
 	* Source/cairo/CairoFontEnumerator.m: Replace
 	-handleKey:selector:valueClass: and -handleKey:selector:
 	methods with macros.

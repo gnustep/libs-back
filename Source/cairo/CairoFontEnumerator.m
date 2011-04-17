@@ -263,8 +263,9 @@ static NSArray *faFromFc(FcPattern *pat)
     }
   else
     {
+      FcFontSet *fontSet;
       result = FcResultMatch;
-      FcFontSet *fontSet = FcFontSort(NULL, matchedpat, FcFalse, NULL, &result);
+      fontSet = FcFontSort(NULL, matchedpat, FcFalse, NULL, &result);
       if (result == FcResultMatch)
 	{
 	  int i;
@@ -403,12 +404,12 @@ static NSArray *faFromFc(FcPattern *pat)
 	}
       if (symTraits & NSFontMonoSpaceTrait)
 	{
+	  FcValue value;
 	  // If you run "fc-match :spacing=100", you get "DejaVu Sans" even though you would
 	  // expect to get "DejaVu Sans Mono". So, we also add "monospace" as a weak family
 	  // name to fix the problem.
 	  FcPatternAddInteger(_pat, FC_SPACING, FC_MONO);
-
-	  FcValue value;
+	  
 	  value.type = FcTypeString;
 	  value.u.s = (FcChar8*)"monospace";
 	  FcPatternAddWeak(_pat, FC_FAMILY, value, FcTrue);
@@ -422,36 +423,38 @@ static NSArray *faFromFc(FcPattern *pat)
 	  // NOTE: Fontconfig can't express this
 	}
 
-      NSFontFamilyClass class = symTraits & NSFontFamilyClassMask;
-      char *addWeakFamilyName = NULL;
-      switch (class)
-	{
-	default:
-	case NSFontUnknownClass:
-	case NSFontOrnamentalsClass:
-	case NSFontScriptsClass:
-	case NSFontSymbolicClass:
-	  // FIXME: Is there some way to convey these to Fontconfig?
-	  break;
-	case NSFontOldStyleSerifsClass:
-	case NSFontTransitionalSerifsClass:
-	case NSFontModernSerifsClass:
-	case NSFontClarendonSerifsClass:
-	case NSFontSlabSerifsClass:
-	case NSFontFreeformSerifsClass:
-	  addWeakFamilyName = "serif";
-	  break;
-	case NSFontSansSerifClass:
-	  addWeakFamilyName = "sans";
-	  break;
-	}
-      if (addWeakFamilyName)
-	{
-	  FcValue value;
-	  value.type = FcTypeString;
-	  value.u.s = (const FcChar8 *)addWeakFamilyName;
-	  FcPatternAddWeak(_pat, FC_FAMILY, value, FcTrue);
-	}
+      {
+	NSFontFamilyClass class = symTraits & NSFontFamilyClassMask;
+	char *addWeakFamilyName = NULL;
+	switch (class)
+	  {
+	  default:
+	  case NSFontUnknownClass:
+	  case NSFontOrnamentalsClass:
+	  case NSFontScriptsClass:
+	  case NSFontSymbolicClass:
+	    // FIXME: Is there some way to convey these to Fontconfig?
+	    break;
+	  case NSFontOldStyleSerifsClass:
+	  case NSFontTransitionalSerifsClass:
+	  case NSFontModernSerifsClass:
+	  case NSFontClarendonSerifsClass:
+	  case NSFontSlabSerifsClass:
+	  case NSFontFreeformSerifsClass:
+	    addWeakFamilyName = "serif";
+	    break;
+	  case NSFontSansSerifClass:
+	    addWeakFamilyName = "sans";
+	    break;
+	  }
+	if (addWeakFamilyName)
+	  {
+	    FcValue value;
+	    value.type = FcTypeString;
+	    value.u.s = (const FcChar8 *)addWeakFamilyName;
+	    FcPatternAddWeak(_pat, FC_FAMILY, value, FcTrue);
+	  }
+      }
     }
 
   if ([traits objectForKey: NSFontWeightTrait])
@@ -460,8 +463,9 @@ static NSArray *faFromFc(FcPattern *pat)
        * Scale: -1 is thinnest, 0 is normal, 1 is heaviest
        */
       double weight = [[traits objectForKey: NSFontWeightTrait] doubleValue];
-      weight = MAX(-1, MIN(1, weight));
       int fcWeight;
+
+      weight = MAX(-1, MIN(1, weight));
       if (weight <= 0)
 	{
 	  fcWeight = FC_WEIGHT_THIN + ((weight + 1.0) * (FC_WEIGHT_NORMAL - FC_WEIGHT_THIN));
@@ -479,8 +483,9 @@ static NSArray *faFromFc(FcPattern *pat)
        * Scale: -1 is most condensed, 0 is normal, 1 is most spread apart
        */
       double width = [[traits objectForKey: NSFontWidthTrait] doubleValue];
-      width = MAX(-1, MIN(1, width));
       int fcWidth;
+
+      width = MAX(-1, MIN(1, width));
       if (width <= 0)
 	{
 	  fcWidth = FC_WIDTH_ULTRACONDENSED + ((width + 1.0) * (FC_WIDTH_NORMAL - FC_WIDTH_ULTRACONDENSED));
@@ -672,12 +677,13 @@ static NSArray *faFromFc(FcPattern *pat)
     }
   if (FcResultMatch == FcPatternGetInteger(pat, FC_WEIGHT, 0, &value))
     {
+      double weight;
+
       if (value >= FC_WEIGHT_BOLD)
 	{
 	  symTraits |= NSFontBoldTrait;
 	}
 
-      double weight;
       if (value <= FC_WEIGHT_NORMAL)
 	{
 	  weight = ((value - FC_WEIGHT_THIN) / (double)(FC_WEIGHT_NORMAL - FC_WEIGHT_THIN)) - 1.0;
@@ -692,6 +698,8 @@ static NSArray *faFromFc(FcPattern *pat)
     }
   if (FcResultMatch == FcPatternGetInteger(pat, FC_WIDTH, 0, &value))
     {
+      double width;
+
       if (value >= FC_WIDTH_EXPANDED)
 	{
 	  symTraits |= NSFontExpandedTrait;
@@ -701,7 +709,6 @@ static NSArray *faFromFc(FcPattern *pat)
 	  symTraits |= NSFontCondensedTrait;
 	}
 
-      double width;
       if (value <= FC_WIDTH_NORMAL)
 	{
 	  width = ((value - FC_WIDTH_ULTRACONDENSED) / (double)(FC_WIDTH_NORMAL - FC_WIDTH_ULTRACONDENSED)) - 1.0;
