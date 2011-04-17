@@ -549,34 +549,31 @@ static NSArray *faFromFc(FcPattern *pat)
     }
 }
 
-- (void)handleKey: (NSString*)key selector: (SEL)selector valueClass: (Class)valueClass
-{
-  id value = [_attributes objectForKey: key];
-  if (value)
-    {
-      if ([value isKindOfClass: valueClass])
-	{
-	  if ([self respondsToSelector: selector])
-	    {
-	      [self performSelector: selector withObject: value];
-	    }
-	}
-      else
-	{
-	  NSLog(@"NSFontDescriptor: Ignoring invalid value %@ for attribute %@", value, key);
-	}
-    }
-}
+#define ADD_TO_PATTERN(key, handlerMethod, valueClass)	\
+  do {							\
+    id value = [_attributes objectForKey: key];		\
+    if (value)						\
+      {							\
+	if ([value isKindOfClass: valueClass])		\
+	  {								\
+	    [self handlerMethod value];					\
+	  }								\
+	else								\
+	  {								\
+	    NSLog(@"NSFontDescriptor: Ignoring invalid value %@ for attribute %@", value, key);	\
+	  }								\
+      }									\
+  } while (0);
 
 - (void)addAttributes
 {
-  [self handleKey: NSFontNameAttribute selector: @selector(addName:) valueClass: [NSString class]];
-  [self handleKey: NSFontVisibleNameAttribute selector: @selector(addVisibleName:) valueClass: [NSString class]];
-  [self handleKey: NSFontFamilyAttribute selector: @selector(addFamilyName:) valueClass: [NSString class]];
-  [self handleKey: NSFontFaceAttribute selector: @selector(addStyleName:) valueClass: [NSString class]];
-  [self handleKey: NSFontTraitsAttribute selector: @selector(addTraits:) valueClass: [NSDictionary class]];
-  [self handleKey: NSFontSizeAttribute selector: @selector(addSize:) valueClass: [NSNumber class]];
-  [self handleKey: NSFontCharacterSetAttribute selector: @selector(addCharacterSet:) valueClass: [NSCharacterSet class]];
+  ADD_TO_PATTERN(NSFontNameAttribute, addName:, [NSString class]);
+  ADD_TO_PATTERN(NSFontVisibleNameAttribute, addVisibleName:, [NSString class]);
+  ADD_TO_PATTERN(NSFontFamilyAttribute, addFamilyName:, [NSString class]);
+  ADD_TO_PATTERN(NSFontFaceAttribute, addStyleName:, [NSString class]);
+  ADD_TO_PATTERN(NSFontTraitsAttribute, addTraits:, [NSDictionary class]);
+  ADD_TO_PATTERN(NSFontSizeAttribute, addSize:, [NSNumber class]);
+  ADD_TO_PATTERN(NSFontCharacterSetAttribute, addCharacterSet:, [NSCharacterSet class]);
 }
 
 - (FcPattern *)createPatternWithAttributes: (NSDictionary *)attributes
@@ -749,29 +746,25 @@ static NSArray *faFromFc(FcPattern *pat)
   return nil;
 }
 
-- (void)handleKey: (NSString*)key selector: (SEL)sel
-{
-  if ([self respondsToSelector: sel])
-    {
-      id (*readMethod)(id, SEL, FcPattern*) = (id (*)(id, SEL, FcPattern*))[self methodForSelector: sel];
-      id result = readMethod(self, sel, _pat);
-      if (result != nil)
-	{
-	  [_attributes setObject: result
-			  forKey: key];
-	}
-    }
-}
+#define READ_FROM_PATTERN(key, readMethod)	\
+  do {						\
+    id result = [self readMethod _pat];		\
+    if (result != nil)				\
+      {						\
+	[_attributes setObject: result		\
+			forKey: key];		\
+      }						\
+  } while (0);
 
 - (void)parseAttributes
 {
-  [self handleKey: NSFontNameAttribute selector: @selector(readNameFromPattern:)];
-  [self handleKey: NSFontVisibleNameAttribute selector: @selector(readVisibleNameFromPattern:)];
-  [self handleKey: NSFontFamilyAttribute selector: @selector(readFamilyNameFromPattern:)];
-  [self handleKey: NSFontFaceAttribute selector: @selector(readStyleNameFromPattern:)];
-  [self handleKey: NSFontTraitsAttribute selector: @selector(readTraitsFromPattern:)];
-  [self handleKey: NSFontSizeAttribute selector: @selector(readSizeFromPattern:)];
-  [self handleKey: NSFontCharacterSetAttribute selector: @selector(readCharacterSetFromPattern:)];
+  READ_FROM_PATTERN(NSFontNameAttribute, readNameFromPattern:);
+  READ_FROM_PATTERN(NSFontVisibleNameAttribute, readVisibleNameFromPattern:);
+  READ_FROM_PATTERN(NSFontFamilyAttribute, readFamilyNameFromPattern:);
+  READ_FROM_PATTERN(NSFontFaceAttribute, readStyleNameFromPattern:);
+  READ_FROM_PATTERN(NSFontTraitsAttribute, readTraitsFromPattern:);
+  READ_FROM_PATTERN(NSFontSizeAttribute, readSizeFromPattern:);
+  READ_FROM_PATTERN(NSFontCharacterSetAttribute, readCharacterSetFromPattern:);
 }
 
 - (NSDictionary*)attributesFromPattern: (FcPattern *)pat
