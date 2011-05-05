@@ -1,5 +1,11 @@
 2011-05-05  Eric Wasylishen  <ewasylishen@gmail.com>
 
+	* Undo the previous change and try a different approach..
+	just cache the character set in CairoFaceInfo, but load them
+	as needed as we were doing before.
+
+2011-05-05  Eric Wasylishen  <ewasylishen@gmail.com>
+
 	* Source/cairo/CairoFontEnumerator.m:
 	* Source/cairo/CairoFaceInfo (-characterSet): Remove the call to
 	FcFontMatch in -characterSet which was a big performace
