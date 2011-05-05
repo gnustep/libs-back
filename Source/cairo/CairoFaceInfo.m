@@ -125,21 +125,14 @@
 
 - (NSCharacterSet*)characterSet
 {
-  FcResult result;
-  FcPattern *resolved;
-  FcCharSet *charset;
+  FcCharSet *fcCharset;
   NSCharacterSet *characterSet = nil;
 
-  FcConfigSubstitute(NULL, _pattern, FcMatchPattern); 
-  FcDefaultSubstitute(_pattern);
-  resolved = FcFontMatch(NULL, _pattern, &result);
-
-  if (FcResultMatch == FcPatternGetCharSet(resolved, FC_CHARSET, 0, &charset))
+  if (FcResultMatch == FcPatternGetCharSet(_pattern, FC_CHARSET, 0, &fcCharset))
     {
-      characterSet = [[[FontconfigCharacterSet alloc] initWithFontconfigCharSet: charset] autorelease];
+      characterSet = [[[FontconfigCharacterSet alloc] initWithFontconfigCharSet: fcCharset] autorelease];
     }  
   
-  FcPatternDestroy(resolved);
   return characterSet;
 }
 

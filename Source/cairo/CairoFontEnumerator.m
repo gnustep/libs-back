@@ -152,7 +152,7 @@ static NSArray *faFromFc(FcPattern *pat)
 
   FcPattern *pat = FcPatternCreate();
   FcObjectSet *os = FcObjectSetBuild(FC_FAMILY, FC_SLANT, FC_WEIGHT, 
-                                     FC_SPACING, NULL);
+                                     FC_SPACING, FC_CHARSET, NULL);
   FcFontSet *fs = FcFontList(NULL, pat, os);
 
   FcPatternDestroy(pat);
