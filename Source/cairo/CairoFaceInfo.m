@@ -58,7 +58,7 @@
     }
   FcPatternDestroy(_pattern);
   RELEASE(_familyName);
-
+  RELEASE(_characterSet);
   [super dealloc];
 }
 
@@ -125,22 +125,30 @@
 
 - (NSCharacterSet*)characterSet
 {
-  FcResult result;
-  FcPattern *resolved;
-  FcCharSet *charset;
-  NSCharacterSet *characterSet = nil;
-
-  FcConfigSubstitute(NULL, _pattern, FcMatchPattern); 
-  FcDefaultSubstitute(_pattern);
-  resolved = FcFontMatch(NULL, _pattern, &result);
-
-  if (FcResultMatch == FcPatternGetCharSet(resolved, FC_CHARSET, 0, &charset))
+  if (_characterSet == nil && !_hasNoCharacterSet)
     {
-      characterSet = [[[FontconfigCharacterSet alloc] initWithFontconfigCharSet: charset] autorelease];
-    }  
-  
-  FcPatternDestroy(resolved);
-  return characterSet;
+      FcResult result;
+      FcPattern *resolved;
+      FcCharSet *charset;
+      
+      FcConfigSubstitute(NULL, _pattern, FcMatchPattern); 
+      FcDefaultSubstitute(_pattern);
+      resolved = FcFontMatch(NULL, _pattern, &result);
+      
+      if (FcResultMatch == FcPatternGetCharSet(resolved, FC_CHARSET, 0, &charset))
+	{
+	  _characterSet = [[FontconfigCharacterSet alloc] initWithFontconfigCharSet: charset];
+	}  
+      
+      /* Only try to get the character set once because FcFontMatch is expensive */
+      if (_characterSet == nil)
+	{
+	  _hasNoCharacterSet = YES;
+	}
+
+      FcPatternDestroy(resolved);
+    }
+  return _characterSet;
 }
 
 @end
