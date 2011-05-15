@@ -1447,6 +1447,9 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   if ((generic.wm & XGWM_EWMH) != 0)
     {
       window->protocols[window->numProtocols++] = generic.net_wm_ping_atom;
+#ifdef HAVE_LIBXEXT
+      window->protocols[window->numProtocols++] = generic.net_wm_sync_request_atom;
+#endif
     }
   if ((generic.wm & XGWM_WINDOWMAKER) != 0
       && (window->win_attrs.window_style & NSMiniaturizableWindowMask) != 0)
@@ -1484,6 +1487,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   generic.delete_win_atom = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
   generic.wm_state_atom = XInternAtom(dpy, "WM_STATE", False);
   generic.net_wm_ping_atom = XInternAtom(dpy, "_NET_WM_PING", False);
+  generic.net_wm_sync_request_atom = XInternAtom(dpy, "_NET_WM_SYNC_REQUEST", False);
+  generic.net_wm_sync_request_counter_atom = XInternAtom(dpy, "_NET_WM_SYNC_REQUEST_COUNTER", False);
   generic.miniaturize_atom
     = XInternAtom(dpy, "_GNUSTEP_WM_MINIATURIZE_WINDOW", False);
   generic.win_decor_atom = XInternAtom(dpy,"_GNUSTEP_WM_ATTR", False);
@@ -2074,6 +2079,27 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   // All the windows of a GNUstep application belong to one group.
   window->gen_hints.flags |= WindowGroupHint;
   window->gen_hints.window_group = ROOT;
+  
+#ifdef HAVE_LIBXEXT
+  /**
+   * Setup net_wm_sync_request_counter
+   */
+  {
+    XSyncValue value;
+    XSyncIntToValue(&value, 0);
+    window->net_wm_sync_request_counter = XSyncCreateCounter(dpy, value);
+    XChangeProperty(dpy,
+		    window->ident,
+		    generic.net_wm_sync_request_counter_atom,
+		    XA_CARDINAL,
+		    32,
+		    PropModeReplace,
+		    (unsigned char *) &(window->net_wm_sync_request_counter),
+		    1);
+    window->net_wm_sync_request_counter_value_low = 0;
+    window->net_wm_sync_request_counter_value_high = 0;
+  }
+#endif
 
   /*
    * Prepare the protocols supported by the window.
@@ -3619,6 +3645,20 @@ static BOOL didCreatePixmaps;
 		     xi, yi, width, height, xi, yi);
 	}
     }
+
+#ifdef HAVE_LIBXEXT
+  if (window->net_wm_sync_request_counter_value_low != 0 
+      || window->net_wm_sync_request_counter_value_high != 0) 
+    {
+      XSyncValue value;
+      XSyncIntsToValue(&value,
+		       window->net_wm_sync_request_counter_value_low,
+		       window->net_wm_sync_request_counter_value_high);
+      XSyncSetCounter(dpy, window->net_wm_sync_request_counter, value);
+      window->net_wm_sync_request_counter_value_low = 0;
+      window->net_wm_sync_request_counter_value_high = 0;
+    }
+#endif
 
   XFlush(dpy);
 }

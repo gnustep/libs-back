@@ -1,3 +1,19 @@
+2011-05-15  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/x11/XGServerWindow.m:
+	* Source/x11/XGServer.m:
+	* Source/x11/XGServerEvent.m:
+	* Headers/x11/XGGeneric.h:
+	* Headers/x11/XGServerWindow.h:
+	* Headers/x11/XGServer.h:
+	Implement the _NET_WM_SYNC_REQUEST protocol described here:
+	http://standards.freedesktop.org/wm-spec/1.3/ar01s06.html
+
+	This is supposed to make window resizing smoother when dragging
+	a resize handle provided by the window manager, by waiting to
+	change the window manager's frame until the GNUstep window is
+	finished repainting.
+
 2011-05-05  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Undo the previous change and try a different approach..

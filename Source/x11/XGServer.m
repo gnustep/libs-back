@@ -447,6 +447,15 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 
   XSetErrorHandler(XGErrorHandler);
 
+#ifdef HAVE_LIBXEXT
+  {
+    int xsync_evbase, xsync_errbase;
+    int major, minor;
+    if (XSyncQueryExtension(dpy, &xsync_evbase, &xsync_errbase))
+      XSyncInitialize(dpy, &major, &minor);
+  }
+#endif
+
   if (GSDebugSet(@"XSynchronize") == YES)
     XSynchronize(dpy, True);
 

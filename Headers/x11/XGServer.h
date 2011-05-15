@@ -34,7 +34,9 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include "x11/XGGeneric.h"
-
+#ifdef HAVE_LIBXEXT
+#include <X11/extensions/sync.h>
+#endif
 /*
  * Enumerated type to say how we should draw pixels to the X display - used
  * to select different drawing mechanisms to try to optimise.

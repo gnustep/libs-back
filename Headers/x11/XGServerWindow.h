@@ -115,6 +115,11 @@ typedef struct _gswindow_device_t {
   void                  *gdriver;      /* gdriver ident. Managed by gdriver */
   int                   gdriverProtocol; /* Managed by gdriver */
   BOOL			ignore_take_focus;
+#ifdef HAVE_LIBXEXT
+  uint32_t              net_wm_sync_request_counter_value_low;
+  uint32_t              net_wm_sync_request_counter_value_high;
+  XSyncCounter          net_wm_sync_request_counter;
+#endif
 } gswindow_device_t;
 
 #define GET_XDRAWABLE(win)  ((win)->buffer ? (win)->buffer: (win)->ident)

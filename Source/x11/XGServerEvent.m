@@ -635,6 +635,14 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                     (SubstructureRedirectMask | SubstructureNotifyMask), 
                     &xEvent);
                 }
+#ifdef HAVE_LIBXEXT
+	      else if ((Atom)xEvent.xclient.data.l[0]
+		== generic.net_wm_sync_request_atom)
+		{
+		  cWin->net_wm_sync_request_counter_value_low = (Atom)xEvent.xclient.data.l[2];
+		  cWin->net_wm_sync_request_counter_value_high = (Atom)xEvent.xclient.data.l[3];
+		}
+#endif
             }
           else if (xEvent.xclient.message_type == dnd.XdndEnter)
             {
@@ -911,7 +919,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                              data1: n.origin.x
                              data2: n.origin.y];
               }
-          }
+          }	
         break;
 
             // same as ConfigureNotify but we get this event
