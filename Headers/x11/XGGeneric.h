@@ -105,6 +105,8 @@ struct XGGeneric {
   Atom			take_focus_atom;
   Atom			wm_state_atom;
   Atom			net_wm_ping_atom;
+  Atom                  net_wm_sync_request_atom;
+  Atom                  net_wm_sync_request_counter_atom;
   Atom			miniaturize_atom;
   Atom			win_decor_atom;
   Atom			titlebar_state_atom;
