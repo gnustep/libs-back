@@ -1,3 +1,11 @@
+2011-05-19 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/cairo/CairoFontEnumerator.h,
+	* Headers/cairo/CairoFaceInfo.h: Protect the name id.
+	* Source/cairo/CairoGState.m: Reorder variable declarations before
+	GS_BEGINITEMBUF as some compilers may complain.
+	Patch by Sebastian Reitenbach <sebastia@l00-bugdead-prods.de>
+
 2011-05-15  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/x11/XGServerWindow.m:
@@ -41,14 +49,14 @@
 	methods with macros.
 
 2011-04-17  Eric Wasylishen  <ewasylishen@gmail.com>
-	
+
 	* configure.ac: Copy the -Wdeclaration-after-statement test from
 	base. Also adds -Wall.
-	
+
 2011-04-14  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/cairo/CairoFontEnumerator.m:
-	* Headers/cairo/CairoFontEnumerator.h: Override 
+	* Headers/cairo/CairoFontEnumerator.h: Override
 	-matchingFontDescriptorsFor: to delegate the matching to Fontconfig
 
 	This uses two utility classes which map Fontconfig patterns

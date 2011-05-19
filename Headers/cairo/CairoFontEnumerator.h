@@ -30,7 +30,9 @@
 
 #include <GNUstepGUI/GSFontInfo.h>
 #include <cairo.h>
+#define id fontconfig_id
 #include <fontconfig/fontconfig.h>
+#undef id
 #include "cairo/CairoFaceInfo.h"
 
 @interface CairoFontEnumerator : GSFontEnumerator
