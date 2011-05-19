@@ -417,8 +417,8 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
-      GS_BEGINITEMBUF(chars, length + 1, char);
       device_color_t c;
+      GS_BEGINITEMBUF(chars, length + 1, char);
 
       c = strokeColor;
       gsColorToRGB(&c);
@@ -599,9 +599,9 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
-      GS_BEGINITEMBUF(dpat, size, double);
       double doffset = (double)floatFromUserSpace(ctm, foffset);
       int i;
+      GS_BEGINITEMBUF(dpat, size, double);
 
       i = size;
       while (i)

@@ -34,7 +34,9 @@
 #include <Foundation/Foundation.h>
 #include <ft2build.h>  
 #include FT_FREETYPE_H
+#define id cairo_id
 #include <cairo-ft.h>
+#undef id
 
 @interface CairoFaceInfo : NSObject
 {
