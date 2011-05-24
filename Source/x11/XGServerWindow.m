@@ -759,7 +759,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   root = [self _rootWindowForScreen: defScreen];
   context = [self xrContextForScreen: defScreen];
 
-  window = malloc(sizeof(gswindow_device_t));
+  window = NSAllocateCollectable(sizeof(gswindow_device_t), NSScannedOption);
   memset(window, '\0', sizeof(gswindow_device_t));
   window->display = dpy;
   window->screen = defScreen;
@@ -1312,7 +1312,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   if (window)
     return window;
 
-  window = malloc(sizeof(gswindow_device_t));
+  window = NSAllocateCollectable(sizeof(gswindow_device_t), NSScannedOption);
   memset(window, '\0', sizeof(gswindow_device_t));
 
   window->display = dpy;
@@ -1943,7 +1943,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 
   /* Create the window structure and set the style early so we can use it to
   convert frames. */
-  window = malloc(sizeof(gswindow_device_t));
+  window = NSAllocateCollectable(sizeof(gswindow_device_t), NSScannedOption);
   memset(window, '\0', sizeof(gswindow_device_t));
   window->display = dpy;
   window->screen = screen;
@@ -2162,7 +2162,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 
   /* Create the window structure and set the style early so we can use it to
   convert frames. */
-  window = malloc(sizeof(gswindow_device_t));
+  window = NSAllocateCollectable(sizeof(gswindow_device_t), NSScannedOption);
   memset(window, '\0', sizeof(gswindow_device_t));
   window->display = dpy;
   window->screen = *screen;
