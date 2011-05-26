@@ -1296,8 +1296,10 @@ static Region emptyRegion;
   [path relativeMoveToPoint: NSMakePoint(width * scale.width, 0)];
 }
 
-- (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t) length
+
+- (void) GSShowGlyphsWithAdvances: (const NSGlyph *)glyphs : (const NSSize *)advances : (size_t) length
 {
+  // FIXME: Currently advances is ignored
   int width;
   NSSize scale;
   XPoint xp;

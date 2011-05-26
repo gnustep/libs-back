@@ -1,3 +1,19 @@
+2011-05-25  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/winlib/WIN32GState.m:
+	* Source/art/ARTGState.m:
+	* Source/cairo/CairoGState.m:
+	* Source/xlib/XGGState.m:
+	* Source/gsc/GSContext.m:
+	* Source/gsc/GSGState.m:
+	* Headers/gsc/GSGStateOps.h:
+	Add a new interface, GSShowGlyphsWithAdvances, which replaces
+	GSShowGlyphs as the primitive text drawing method.
+
+	None of the backends implement it properly yet; I simply renamed
+	the existing -GSShowGlyphs:: methods to -GSShowGlyphsWithAdvances:::,
+	so they currently ignore the glyph advances.
+
 2011-05-19 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/cairo/CairoFontEnumerator.h,

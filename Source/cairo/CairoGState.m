@@ -433,8 +433,9 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
     }
 }
 
-- (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t)length
+- (void) GSShowGlyphsWithAdvances: (const NSGlyph *)glyphs : (const NSSize *)advances : (size_t) length
 {
+  // FIXME: Currently advances is ignored
   if (_ct)
     {
       cairo_matrix_t local_matrix;
@@ -458,8 +459,8 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
       cairo_transform(_ct, &local_matrix);
 
       [(CairoFontInfo *)font drawGlyphs: glyphs
-                        length: length
-                        on: _ct];
+				 length: length
+				     on: _ct];
       cairo_restore(_ct);
     }
 }

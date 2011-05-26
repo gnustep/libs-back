@@ -74,6 +74,7 @@
 - (void) GSSetTextPosition: (NSPoint)loc;
 - (void) GSShowText: (const char *)string : (size_t) length;
 - (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t) length;
+- (void) GSShowGlyphsWithAdvances: (const NSGlyph *)glyphs : (const NSSize *)advances : (size_t) length;
 
 /* ----------------------------------------------------------------------- */
 /* Gstate operations */
