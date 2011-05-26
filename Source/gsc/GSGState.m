@@ -630,9 +630,21 @@ typedef enum {
 
 - (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t) length
 {
-  [self subclassResponsibility: _cmd];
+  int i;
+  NSSize advances[length];
+
+  for (i=0; i<length; i++)
+    {
+      advances[i] = [font advancementForGlyph: glyphs[i]];
+    }
+  
+  [self GSShowGlyphsWithAdvances: glyphs : advances : length];
 }
 
+- (void) GSShowGlyphsWithAdvances: (const NSGlyph *)glyphs : (const NSSize *)advances : (size_t) length
+{
+  [self subclassResponsibility: _cmd];
+}
 
 /* ----------------------------------------------------------------------- */
 /* Gstate operations */

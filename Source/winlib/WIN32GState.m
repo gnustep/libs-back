@@ -1144,8 +1144,10 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   [self releaseHDC: hDC];
 }
 
-- (void) GSShowGlyphs: (const NSGlyph *)glyphs : (size_t)length 
+
+- (void) GSShowGlyphsWithAdvances: (const NSGlyph *)glyphs : (const NSSize *)advances : (size_t) length
 {
+  // FIXME: Currently advances is ignored
   NSPoint current = [path currentPoint];
   POINT p;
   HDC hDC;

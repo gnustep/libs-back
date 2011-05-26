@@ -427,6 +427,11 @@ static NSMapTable *gtable;
   [gstate GSShowGlyphs: glyphs : length];
 }
 
+- (void) GSShowGlyphsWithAdvances: (const NSGlyph *)glyphs : (const NSSize *)advances : (size_t) length
+{
+  [gstate GSShowGlyphsWithAdvances: glyphs : advances : length];
+}
+
 /* ----------------------------------------------------------------------- */
 /* Gstate Handling */
 /* ----------------------------------------------------------------------- */
