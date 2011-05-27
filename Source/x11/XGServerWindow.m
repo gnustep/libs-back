@@ -2292,7 +2292,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     XDestroyRegion (window->region);
   RELEASE(window->exposedRects);
   NSMapRemove(windowtags, (void*)(uintptr_t)win);
-  free(window);
+  NSZoneFree(0, window);
 }
 
 /*
