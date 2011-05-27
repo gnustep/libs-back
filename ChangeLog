@@ -1,3 +1,9 @@
+2011-05-27 13:53  David Chisnall <theraven@gna.org>
+
+	* libs/back/trunk/Source/x11/XGServerWindow.m: Call NSZoneFree() on
+	  pointer allocated with NSAllocateCollectable(), not free(). This
+	  is a no-op in GC mode, and will free the memory in non-GC mode.
+
 2011-05-25  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/winlib/WIN32GState.m:
