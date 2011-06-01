@@ -1456,6 +1456,9 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     {
       window->protocols[window->numProtocols++] = generic.miniaturize_atom;
     }
+  NSAssert1(window->numProtocols <= GSMaxWMProtocols,
+	    @"Too many protocols (%d > GSMaxWMProtocols)",
+	    window->numProtocols);
   XSetWMProtocols(dpy, window->ident, window->protocols, window->numProtocols);
 }
 
