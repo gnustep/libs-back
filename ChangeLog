@@ -1,3 +1,12 @@
+2011-06-01  Wolfgang Lux  <wolfgang.lux@gmail.com>
+
+	* Headers/x11/XGServerWindow.h (GSMaxWMProtocols, _gswindow_device_t):
+	Enlarge protocol array to make space for the _NET_WM_SYNC_REQUEST
+	protocol atom.
+
+	* Source/x11/XGServerWindow.m (_setSupportedWMProtocols:): Add
+	assertion to catch out of bounds errors in the future.
+
 2011-05-27 13:53  David Chisnall <theraven@gna.org>
 
 	* libs/back/trunk/Source/x11/XGServerWindow.m: Call NSZoneFree() on

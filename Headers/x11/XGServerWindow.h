@@ -72,6 +72,8 @@ typedef struct {
 #define WMFHideOtherApplications		10
 #define WMFHideApplication			12
 
+#define GSMaxWMProtocols 5
+
 /* Graphics Driver protocol. Setup in [NSGraphicsContext-contextDevice:] */
 enum {
   GDriverHandlesBacking = 1,
@@ -109,7 +111,7 @@ typedef struct _gswindow_device_t {
   int			xoff;
   int			yoff;
   int			boff;
-  Atom			protocols[4];
+  Atom			protocols[GSMaxWMProtocols];
   int			numProtocols;
   XIC                   ic;
   void                  *gdriver;      /* gdriver ident. Managed by gdriver */
