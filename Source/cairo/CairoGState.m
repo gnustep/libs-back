@@ -229,8 +229,6 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
                       cairo_clip(copy->_ct);
                     }
                 }
-
-              cairo_rectangle_list_destroy(clip_rects);
             }
           else if (status == CAIRO_STATUS_CLIP_NOT_REPRESENTABLE)
             {
@@ -248,6 +246,8 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
             {
               NSLog(@"Cairo status '%s' in copy clip", cairo_status_to_string(status));
             }
+
+          cairo_rectangle_list_destroy(clip_rects);
 #endif
         }
     }
@@ -1398,6 +1398,23 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
     }
 
   cairo_restore(_ct);
+}
+
+- (BOOL) supportsDrawGState
+{
+#if CAIRO_VERSION > CAIRO_VERSION_ENCODE(1, 4, 0)
+  cairo_rectangle_list_t *clip_rects;
+  cairo_status_t status;
+
+  clip_rects = cairo_copy_clip_rectangle_list(_ct);
+  status = clip_rects->status;
+  cairo_rectangle_list_destroy(clip_rects);
+  if (status == CAIRO_STATUS_SUCCESS)
+    {
+      return YES;
+    }    
+#endif
+  return NO;
 }
 
 /** Unlike -compositeGState, -drawGSstate fully respects the AppKit CTM but 

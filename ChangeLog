@@ -1,3 +1,13 @@
+2011-06-13 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoContext.m (-supportsDrawGState): Delegate to gstate.
+	* Headers/cairo/CairoGState.h (-supportsDrawGState): Declare this method.
+	* Source/cairo/CairoGState.m (-supportsDrawGState): Only allow the
+	faster drawing operation when the clip can be represented as a
+	list of rectangles.
+	* Source/cairo/CairoGState.m (-copyWithZone:): Always free the
+	clip rectangle list.
+
 2011-06-01  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Headers/x11/XGServerWindow.h (GSMaxWMProtocols, _gswindow_device_t):
