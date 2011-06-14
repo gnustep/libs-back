@@ -44,7 +44,6 @@
 - (void) GSSetSurface: (CairoSurface *)surface : (int)x : (int)y;
 
 - (void) showPage;
-- (BOOL) supportsDrawGState;
 @end
 
 #endif

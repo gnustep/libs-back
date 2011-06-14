@@ -98,7 +98,7 @@
 
 - (BOOL) supportsDrawGState
 {
-  return [CGSTATE supportsDrawGState];
+  return YES;
 }
 
 - (void) flushGraphics

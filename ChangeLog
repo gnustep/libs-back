@@ -1,3 +1,10 @@
+2011-06-15 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoContext.m (-supportsDrawGState),
+	* Headers/cairo/CairoGState.h (-supportsDrawGState)
+	* Source/cairo/CairoGState.m (-supportsDrawGState): Revert last
+	change as gui is fixed now.
+
 2011-06-13 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoContext.m (-supportsDrawGState): Delegate to gstate.
