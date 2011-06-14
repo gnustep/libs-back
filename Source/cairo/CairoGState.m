@@ -1400,23 +1400,6 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   cairo_restore(_ct);
 }
 
-- (BOOL) supportsDrawGState
-{
-#if CAIRO_VERSION > CAIRO_VERSION_ENCODE(1, 4, 0)
-  cairo_rectangle_list_t *clip_rects;
-  cairo_status_t status;
-
-  clip_rects = cairo_copy_clip_rectangle_list(_ct);
-  status = clip_rects->status;
-  cairo_rectangle_list_destroy(clip_rects);
-  if (status == CAIRO_STATUS_SUCCESS)
-    {
-      return YES;
-    }    
-#endif
-  return NO;
-}
-
 /** Unlike -compositeGState, -drawGSstate fully respects the AppKit CTM but 
 doesn't support to use the receiver cairo target as the source. */
 - (void) drawGState: (CairoGState *)source 
