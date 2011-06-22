@@ -1543,13 +1543,13 @@ static Region emptyRegion;
 
   if (pattern != nil)
     {
-      NSBezierPath *path;
+      NSBezierPath *rpath;
 
-      path = [[NSBezierPath alloc] init];
-      [path appendBezierPathWithRect: NSMakeRect(x, y, w, h)];
-      [path transformUsingAffineTransform: ctm];
-      [self fillPath: path withPattern: pattern];
-      RELEASE(path);
+      rpath = [[NSBezierPath alloc] init];
+      [rpath appendBezierPathWithRect: NSMakeRect(x, y, w, h)];
+      [rpath transformUsingAffineTransform: ctm];
+      [self fillPath: rpath withPattern: pattern];
+      RELEASE(rpath);
       return;
     }
 
