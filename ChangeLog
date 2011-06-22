@@ -1,3 +1,7 @@
+2011-06-22 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/x11/XGServer.h: Add #include of config.h.
+
 2011-06-15 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoContext.m (-supportsDrawGState),
