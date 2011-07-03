@@ -1,5 +1,10 @@
 2011-07-03  Eric Wasylishen  <ewasylishen@gmail.com>
 
+	* Source/cairo/XGCairoSurface.m (-contentsOfScreen:inRect:):
+	Use the passed rect properly.
+
+2011-07-03  Eric Wasylishen  <ewasylishen@gmail.com>
+
 	* Source/cairo/XGCairoSurface.m: Implementation of
 	-[GSDisplayServer contentsOfScreen:inRect:] for x11/cairo
 
