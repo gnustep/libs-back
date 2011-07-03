@@ -99,13 +99,18 @@
  
   if (XGetWindowAttributes(dpy, win, &attrs))
     {
+      NSInteger width = rect.size.width;
+      NSInteger height = rect.size.height;
       NSImage *result;
       NSBitmapImageRep *bmp;
       cairo_surface_t *src, *dest;
 
+      // Convert rect to flipped coordinates
+      rect.origin.y = attrs.height - NSMaxY(rect);
+
       bmp = [[[NSBitmapImageRep alloc] initWithBitmapDataPlanes: NULL
-						     pixelsWide: attrs.width 
-						     pixelsHigh: attrs.height 
+						     pixelsWide: width
+						     pixelsHigh: height
 						  bitsPerSample: 8
 						samplesPerPixel: 4
 						       hasAlpha: YES
@@ -116,11 +121,11 @@
 						   bitsPerPixel: 32] autorelease];
 
       src = cairo_xlib_surface_create(dpy, win, attrs.visual, attrs.width, attrs.height);
-      dest = cairo_image_surface_create_for_data([bmp bitmapData], CAIRO_FORMAT_ARGB32, attrs.width, attrs.height, [bmp bytesPerRow]);
+      dest = cairo_image_surface_create_for_data([bmp bitmapData], CAIRO_FORMAT_ARGB32, width, height, [bmp bytesPerRow]);
       
       {
 	cairo_t *cr = cairo_create(dest);
-	cairo_set_source_surface(cr, src, 0, 0);
+	cairo_set_source_surface(cr, src, -1 * rect.origin.x, -1 * rect.origin.y);
 	cairo_paint(cr);
 	cairo_destroy(cr);
       }
@@ -137,9 +142,9 @@
 	stride = [bmp bytesPerRow];
 	cdata = [bmp bitmapData];
 
-	for (y = 0; y < attrs.height; y++)
+	for (y = 0; y < height; y++)
 	  {
-	    for (x = 0; x < attrs.width; x++)
+	    for (x = 0; x < width; x++)
 	      {
 		NSInteger i = (y * stride) + (x * 4);
 		unsigned char d = cdata[i];
@@ -159,7 +164,7 @@
 	  }
       }
 
-      result = [[[NSImage alloc] initWithSize: NSMakeSize(attrs.width, attrs.height)] autorelease];
+      result = [[[NSImage alloc] initWithSize: NSMakeSize(width, height)] autorelease];
       [result addRepresentation: bmp];
       return result;
     }
