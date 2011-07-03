@@ -1,3 +1,8 @@
+2011-07-03  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/cairo/XGCairoSurface.m: Implementation of
+	-[GSDisplayServer contentsOfScreen:inRect:] for x11/cairo
+
 2011-06-22 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/x11/XGServer.h: Add #include of config.h.

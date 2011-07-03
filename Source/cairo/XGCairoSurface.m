@@ -22,6 +22,8 @@
    Boston, MA 02110-1301, USA.
 */
 
+#include <AppKit/NSImage.h>
+#include <AppKit/NSGraphics.h>
 #include "x11/XGServer.h"
 #include "x11/XGServerWindow.h"
 #include "cairo/XGCairoSurface.h"
@@ -81,6 +83,88 @@
 - (NSSize) size
 {
   return GSWINDEVICE->xframe.size;
+}
+
+@end
+
+
+@implementation XGServer (ScreenCapture)
+
+- (NSImage *) contentsOfScreen: (int)screen inRect: (NSRect)rect
+{
+  Window win;
+  XWindowAttributes attrs;
+
+  win = [self xDisplayRootWindowForScreen: screen];
+ 
+  if (XGetWindowAttributes(dpy, win, &attrs))
+    {
+      NSImage *result;
+      NSBitmapImageRep *bmp;
+      cairo_surface_t *src, *dest;
+
+      bmp = [[[NSBitmapImageRep alloc] initWithBitmapDataPlanes: NULL
+						     pixelsWide: attrs.width 
+						     pixelsHigh: attrs.height 
+						  bitsPerSample: 8
+						samplesPerPixel: 4
+						       hasAlpha: YES
+						       isPlanar: NO
+						 colorSpaceName: NSDeviceRGBColorSpace
+						   bitmapFormat: 0
+						    bytesPerRow: 0
+						   bitsPerPixel: 32] autorelease];
+
+      src = cairo_xlib_surface_create(dpy, win, attrs.visual, attrs.width, attrs.height);
+      dest = cairo_image_surface_create_for_data([bmp bitmapData], CAIRO_FORMAT_ARGB32, attrs.width, attrs.height, [bmp bytesPerRow]);
+      
+      {
+	cairo_t *cr = cairo_create(dest);
+	cairo_set_source_surface(cr, src, 0, 0);
+	cairo_paint(cr);
+	cairo_destroy(cr);
+      }
+
+      cairo_surface_destroy(src);
+      cairo_surface_destroy(dest);
+
+      // Convert BGRA to RGBA
+      {
+	NSInteger stride;
+	NSInteger x, y;
+	unsigned char *cdata;
+
+	stride = [bmp bytesPerRow];
+	cdata = [bmp bitmapData];
+
+	for (y = 0; y < attrs.height; y++)
+	  {
+	    for (x = 0; x < attrs.width; x++)
+	      {
+		NSInteger i = (y * stride) + (x * 4);
+		unsigned char d = cdata[i];
+	    
+#if GS_WORDS_BIGENDIAN
+		cdata[i] = cdata[i + 1];
+		cdata[i + 1] = cdata[i + 2];
+		cdata[i + 2] = cdata[i + 3];
+		cdata[i + 3] = d;
+#else
+		cdata[i] = cdata[i + 2];
+		//cdata[i + 1] = cdata[i + 1];
+		cdata[i + 2] = d;
+		//cdata[i + 3] = cdata[i + 3];
+#endif 
+	      }
+	  }
+      }
+
+      result = [[[NSImage alloc] initWithSize: NSMakeSize(attrs.width, attrs.height)] autorelease];
+      [result addRepresentation: bmp];
+      return result;
+    }
+  
+  return nil;
 }
 
 @end
