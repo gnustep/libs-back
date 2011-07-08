@@ -312,7 +312,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
   NSPoint p;
 
   p = [path currentPoint];
-  cairo_move_to(_ct, floorf(p.x), floorf(p.y));
+  cairo_move_to(_ct, p.x, p.y);
 }
 
 - (void) DPScharpath: (const char *)s : (int)b
@@ -505,8 +505,6 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
   cairo_set_line_width(_ct, 1.0);
   cairo_set_operator(_ct, CAIRO_OPERATOR_OVER);
   cairo_new_path(_ct);
-
-  _strokeadjust = 1;
 }
 
 - (void) DPScurrentflat: (float *)flatness
@@ -593,7 +591,6 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 
 - (void) DPScurrentstrokeadjust: (int *)b
 {
-    // FIXME
 }
 
 - (void) DPSsetdash: (const float *)pat : (int)size : (float)foffset
@@ -661,102 +658,18 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 
 - (void) DPSsetstrokeadjust: (int)b
 {
-  _strokeadjust = b;
 }
 
 /*
  * Path operations
  */
 
-- (void) _adjustPath: (float)offs
-{
-  unsigned            count = [path elementCount];
-  NSBezierPathElement type;
-  NSPoint             points[3] = {{0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}};
-  NSPoint             last_points[3] = {{0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}};
-  unsigned            i;
-  int                 index, last_index;
-
-  for (i = 0; i < count; i++)
-    {
-      type = [path elementAtIndex:i associatedPoints:points];
-
-      if (type == NSCurveToBezierPathElement) break;
-
-      points[0].x = floorf(points[0].x) + offs;
-      points[0].y = floorf(points[0].y) + offs;
-
-      index = i;
-      last_index = i - 1;
-
-      if (type == NSClosePathBezierPathElement)
-        {
-          index = 0;
-          [path elementAtIndex:0 associatedPoints:points];
-          if (fabs(last_points[0].x - points[0].x) < 1.0)
-            {
-              last_points[0].x = floorf(last_points[0].x) + offs;
-              points[0].x = last_points[0].x;
-            }
-          else if (fabs(last_points[0].y - points[0].y) < 1.0)
-            {
-              last_points[0].y = floorf(last_points[0].y) + offs;
-              points[0].y = last_points[0].y;
-            }
-          else
-            {
-              index = -1;
-            }
-        }
-      else if (fabs(last_points[0].x - points[0].x) < 1.0)
-        { // Vertical path
-          points[0].x = floorf(points[0].x) + offs;
-          points[0].y = floorf(points[0].y);
-          if (type == NSLineToBezierPathElement)
-            {
-              last_points[0].x = points[0].x;
-            }
-        }
-      else if (fabs(last_points[0].y - points[0].y) < 1.0)
-        { // Horizontal path
-          points[0].x = floorf(points[0].x);
-          points[0].y = floorf(points[0].y) + offs;
-          if (type == NSLineToBezierPathElement)
-            {
-              last_points[0].y = points[0].y;
-            }
-        }
-
-      // Save adjusted values into NSBezierPath
-      if (index >= 0)
-        [path setAssociatedPoints:points atIndex:index];
-      if (last_index >= 0)
-        [path setAssociatedPoints:last_points atIndex:last_index];
-
-      last_points[0].x = points[0].x;
-      last_points[0].y = points[0].y;
-    }
-}
-
-- (void) _setPath: (BOOL)fillOrClip
+- (void) _setPath
 {
   unsigned count = [path elementCount];
   unsigned i;
   SEL elmsel = @selector(elementAtIndex:associatedPoints:);
   IMP elmidx = [path methodForSelector: elmsel];
-
-  if (_strokeadjust)
-    {
-      float offs;
-
-      if ((remainderf((float)cairo_get_line_width(_ct), 2.0) == 0.0)
-          || fillOrClip == YES)
-        offs = 0.0;
-      else
-        offs = 0.5;
-
-      [self _adjustPath:offs];
-    }
 
   // reset current cairo path
   cairo_new_path(_ct);
@@ -792,7 +705,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
-      [self _setPath:YES];
+      [self _setPath];
       cairo_clip(_ct);
      }
 }
@@ -801,7 +714,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
-      [self _setPath:YES];
+      [self _setPath];
       cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_EVEN_ODD);
       cairo_clip(_ct);
       cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_WINDING);
@@ -824,7 +737,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
       gsColorToRGB(&c);
       // The underlying concept does not allow to determine if alpha is set or not.
       cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], c.field[AINDEX]);
-      [self _setPath:YES];
+      [self _setPath];
       cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_EVEN_ODD);
       cairo_fill(_ct);
       cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_WINDING);
@@ -848,7 +761,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
       gsColorToRGB(&c);
       // The underlying concept does not allow to determine if alpha is set or not.
       cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], c.field[AINDEX]);
-      [self _setPath:YES];
+      [self _setPath];
       cairo_fill(_ct);
     }
   [self DPSnewpath];
@@ -872,7 +785,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
       gsColorToRGB(&c);
       // The underlying concept does not allow to determine if alpha is set or not.
       cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], c.field[AINDEX]);
-      [self _setPath:NO];
+      [self _setPath];
       cairo_stroke(_ct);
     }
   [self DPSnewpath];
@@ -1255,7 +1168,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       // This is almost a rectclip::::, but the path stays unchanged.
       path = [NSBezierPath bezierPathWithRect: aRect];
       [path transformUsingAffineTransform: ctm];
-      [self _setPath:YES];
+      [self _setPath];
       cairo_clip(_ct);
       cairo_paint(_ct);
       cairo_restore(_ct);
@@ -1354,8 +1267,8 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       srcRectInBase.origin.y -= 2 * (source->offset.y - ssize.height);
     }
 
-  x = floorf(destPointInBase.x);
-  y = floorf(destPointInBase.y + 0.5);
+  x = destPointInBase.x;
+  y = destPointInBase.y;
   minx = NSMinX(srcRectInBase);
   miny = NSMinY(srcRectInBase);
   width = NSWidth(srcRectInBase);
@@ -1434,8 +1347,8 @@ doesn't support to use the receiver cairo target as the source. */
       aRect.origin.y -= 2*(source->offset.y - size.height);
     }
 
-  x = floorf(aPoint.x);
-  y = floorf(aPoint.y + 0.5);
+  x = aPoint.x;
+  y = aPoint.y;
   width = NSWidth(aRect);
   height = NSHeight(aRect);
 

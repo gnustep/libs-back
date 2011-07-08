@@ -36,8 +36,6 @@
   @public
     cairo_t *_ct;
     CairoSurface *_surface;
-
-    int _strokeadjust;
 }
 
 - (void) GSCurrentSurface: (CairoSurface **)surface: (int *)x : (int *)y;

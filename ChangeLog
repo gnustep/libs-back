@@ -1,3 +1,9 @@
+2011-07-08  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Headers/cairo/CairoGState.h:
+	* Source/cairo/CairoGState.m: Remove most of the rounding code and
+	implementation of DPSstrokeadjust.
+
 2011-07-03  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/cairo/XGCairoSurface.m (-contentsOfScreen:inRect:):
