@@ -1274,15 +1274,31 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
           
           // Window state
           generic.netstates.net_wm_state_atom = 
-              XInternAtom(dpy, "_NET_WM_STATE", False);
-          generic.netstates.net_wm_state_skip_taskbar_atom = 
-              XInternAtom(dpy, "_NET_WM_STATE_SKIP_TASKBAR", False);
-          generic.netstates.net_wm_state_skip_pager_atom = 
-              XInternAtom(dpy, "_NET_WM_STATE_SKIP_PAGER", False);
+	    XInternAtom(dpy, "_NET_WM_STATE", False);
+	  generic.netstates.new_wm_state_modal_atom = 
+	    XInternAtom(dpy, "_NET_WM_STATE_MODAL", False);
           generic.netstates.net_wm_state_sticky_atom = 
-              XInternAtom(dpy, "_NET_WM_STATE_STICKY", False);
+	    XInternAtom(dpy, "_NET_WM_STATE_STICKY", False);
+	  generic.netstates.net_wm_state_maximized_vert_atom = 
+	    XInternAtom(dpy, "_NET_WM_STATE_MAXIMIZED_VERT", False);	 
+	  generic.netstates.net_wm_state_maximized_horz_atom = 
+	    XInternAtom(dpy, "_NET_WM_STATE_MAXIMIZED_HORZ", False);
+	  generic.netstates.net_wm_state_shaded_atom = 
+	    XInternAtom(dpy, "_NET_WM_STATE_SHADED", False);
+          generic.netstates.net_wm_state_skip_taskbar_atom = 
+	    XInternAtom(dpy, "_NET_WM_STATE_SKIP_TASKBAR", False);
+          generic.netstates.net_wm_state_skip_pager_atom = 
+	    XInternAtom(dpy, "_NET_WM_STATE_SKIP_PAGER", False);
           generic.netstates.net_wm_state_hidden_atom = 
-              XInternAtom(dpy, "_NET_WM_STATE_HIDDEN", False);
+	    XInternAtom(dpy, "_NET_WM_STATE_HIDDEN", False);
+	  generic.netstates.net_wm_state_fullscreen_atom = 
+	    XInternAtom(dpy, "_NET_WM_STATE_FULLSCREEN", False);
+	  generic.netstates.net_wm_state_above_atom = 
+	    XInternAtom(dpy, "_NET_WM_STATE_ABOVE", False);
+	  generic.netstates.net_wm_state_below_atom = 
+	    XInternAtom(dpy, "_NET_WM_STATE_BELOW", False);
+	  generic.netstates.net_wm_state_demands_attention_atom = 
+	    XInternAtom(dpy, "_NET_WM_STATE_DEMANDS_ATTENTION", False);
         }
       if (win1)
         {

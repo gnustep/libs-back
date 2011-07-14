@@ -60,10 +60,18 @@ typedef struct {
 
 typedef struct {
   Atom net_wm_state_atom;
+  Atom new_wm_state_modal_atom;
+  Atom net_wm_state_sticky_atom;
+  Atom net_wm_state_maximized_vert_atom;
+  Atom net_wm_state_maximized_horz_atom;
+  Atom net_wm_state_shaded_atom;
   Atom net_wm_state_skip_taskbar_atom;
   Atom net_wm_state_skip_pager_atom;
-  Atom net_wm_state_sticky_atom;
   Atom net_wm_state_hidden_atom;
+  Atom net_wm_state_fullscreen_atom;
+  Atom net_wm_state_above_atom;
+  Atom net_wm_state_below_atom;
+  Atom net_wm_state_demands_attention_atom;
 } XGWMNetStates;
 
 /*
