@@ -36,6 +36,10 @@
 
 #include <windows.h>
 
+#ifdef __CYGWIN__
+#include <sys/file.h>
+#endif
+
 @interface Win32PbOwner : NSObject
 {
   NSPasteboard	*_pb;
