@@ -1,3 +1,8 @@
+2011-07-13  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Headers/x11/XGGeneric.h
+	* Source/x11/XGServerWindow.m: Add new netwm window state atoms
+
 2011-07-14 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Tools/win32pbs.m: Add include needed for Cygwin.
