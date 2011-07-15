@@ -57,7 +57,9 @@
 // For X_HAVE_UTF8_STRING
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>
-
+#if HAVE_XCURSOR
+#include <X11/Xcursor/Xcursor.h>
+#endif
 #include <X11/extensions/shape.h>
 
 #include "x11/XGDragView.h"
@@ -4257,9 +4259,6 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
 - (void) imagecursor: (NSPoint)hotp : (NSImage *)image : (void **)cid
 {
   Cursor cursor;
-  Pixmap source, mask;
-  unsigned int maxw, maxh;
-  XColor fg, bg;
   NSBitmapImageRep *rep;
   int w, h;
   int colors;
@@ -4291,22 +4290,96 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
       return;
     }
 
-  /* FIXME: Handle this better or return an error? */
-  XQueryBestCursor(dpy, ROOT, w, h, &maxw, &maxh);
-  if ((unsigned int)w > maxw)
-    w = maxw;
-  if ((unsigned int)h > maxh)
-    h = maxh;
+#if HAVE_XCURSOR
+  // FIXME: Standardize getStandardBitmap() so it always returns
+  // alpha, and document the format.
+  if (colors != 4)
+    {
+      *cid = NULL;
+      return;
+    }
 
-  source = xgps_cursor_image(dpy, ROOT, data, w, h, colors, &fg, &bg);
-  mask = xgps_cursor_mask(dpy, ROOT, data, w, h, colors);
-  bg = [self xColorFromColor: bg forScreen: defScreen];
-  fg = [self xColorFromColor: fg forScreen: defScreen];
+  {
+    XcursorImage *xcursorImage;
+    xcursorImage = XcursorImageCreate(w, h);
+    xcursorImage->xhot = hotp.x;
+    xcursorImage->yhot = hotp.y;
 
-  cursor = XCreatePixmapCursor(dpy, source, mask, &fg, &bg, 
-			       (int)hotp.x, (int)hotp.y);
-  XFreePixmap(dpy, source);
-  XFreePixmap(dpy, mask);
+    // Copy the data from the image rep to the Xcursor structure
+    {
+      int bytesPerRow;
+      size_t row;
+
+      bytesPerRow = [rep bytesPerRow];
+
+      for (row = 0; row < h; row++)
+	{
+	  memcpy((char*)xcursorImage->pixels + (row * (w * 4)),
+		 data + (row * bytesPerRow),
+		 bytesPerRow);
+	}
+    }
+
+    // FIXME: Factor this out
+    // Convert RGBA unpacked to BGRA packed
+    {
+      NSInteger stride;
+      NSInteger x, y;
+      unsigned char *cdata;
+      
+      stride = 4 * w;
+      cdata = (unsigned char *)xcursorImage->pixels;
+      
+      for (y = 0; y < h; y++)
+	{
+	  for (x = 0; x < w; x++)
+	    {
+	      NSInteger i = (y * stride) + (x * 4);
+	      unsigned char d = cdata[i];
+	      
+#if GS_WORDS_BIGENDIAN
+	      cdata[i] = cdata[i + 1];
+	      cdata[i + 1] = cdata[i + 2];
+	      cdata[i + 2] = cdata[i + 3];
+	      cdata[i + 3] = d;
+#else
+	      cdata[i] = cdata[i + 2];
+	      //cdata[i + 1] = cdata[i + 1];
+	      cdata[i + 2] = d;
+	      //cdata[i + 3] = cdata[i + 3];
+#endif 
+	    }
+	}
+    }
+    
+    cursor = XcursorImageLoadCursor(dpy, xcursorImage);
+    XcursorImageDestroy(xcursorImage);
+  }
+#else // !HAVE_XCURSOR
+  {
+    Pixmap source, mask;
+    unsigned int maxw, maxh;
+    XColor fg, bg;
+
+    /* FIXME: Handle this better or return an error? */
+    XQueryBestCursor(dpy, ROOT, w, h, &maxw, &maxh);
+    if ((unsigned int)w > maxw)
+      w = maxw;
+    if ((unsigned int)h > maxh)
+      h = maxh;
+    
+    source = xgps_cursor_image(dpy, ROOT, data, w, h, colors, &fg, &bg);
+    mask = xgps_cursor_mask(dpy, ROOT, data, w, h, colors);
+    bg = [self xColorFromColor: bg forScreen: defScreen];
+    fg = [self xColorFromColor: fg forScreen: defScreen];
+    
+    cursor = XCreatePixmapCursor(dpy, source, mask, &fg, &bg, 
+				 (int)hotp.x, (int)hotp.y);
+    XFreePixmap(dpy, source);
+    XFreePixmap(dpy, mask);
+  }
+#endif
+
   if (cid)
     *cid = (void *)cursor;
 }
