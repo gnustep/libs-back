@@ -1,3 +1,9 @@
+2011-07-15  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/x11/XGServerWindow.m: Add Xcursor support (for RGBA
+	imagecursor support.) configure test is still TODO, so it isn't
+	compiled in at the moment.
+
 2011-07-13  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Headers/x11/XGGeneric.h
