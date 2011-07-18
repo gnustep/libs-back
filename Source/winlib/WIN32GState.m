@@ -749,6 +749,43 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 	}
       bits = tmp;
     }
+  else if (bitsPerPixel == 16 && samplesPerPixel == 2) // 8 bit greyscale 8 bit alpha
+    {
+      BITMAPV4HEADER	*bmih;
+      unsigned char	*tmp;
+      unsigned int	pixels = pixelsHigh * pixelsWide;
+      unsigned int	i = 0, j = 0;
+
+      ((BITMAPINFOHEADER*)bitmap)->biBitCount = 32;
+
+      bmih = (BITMAPV4HEADER*)bitmap;
+      bmih->bV4Size = sizeof(BITMAPV4HEADER);
+      bmih->bV4V4Compression = BI_BITFIELDS;
+      bmih->bV4BlueMask = 0x000000FF;
+      bmih->bV4GreenMask = 0x0000FF00;
+      bmih->bV4RedMask = 0x00FF0000;
+      bmih->bV4AlphaMask = 0xFF000000;
+      tmp = malloc(pixels * 4);
+      if (!tmp)
+        {
+          NSLog(@"Failed to allocate temporary memory for bitmap. Error %d", 
+                GetLastError());
+          free(bitmap);
+          DeleteObject(hbitmap);
+          return NULL;
+        }
+
+      while (i < pixels*4)
+	{
+	  tmp[i+0] = bits[j];
+	  tmp[i+1] = bits[j];
+	  tmp[i+2] = bits[j];
+	  tmp[i+3] = bits[j + 1];
+	  i += 4;
+	  j += 2;
+	}
+      bits = tmp;
+    }
   else if (bitsPerPixel == 24)
    {
       unsigned char* tmp;
@@ -795,7 +832,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
         }
       else
         {
-          NSLog(@"Unsure how to handle images with %d bits", bitsPerPixel);
+          NSLog(@"Unsure how to handle images with %d bpp %d spp", bitsPerPixel, samplesPerPixel);
         }
       free(bitmap);
       DeleteObject(hbitmap);
