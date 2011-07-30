@@ -4550,6 +4550,20 @@ _computeDepth(int class, int bpp)
 
 - (NSSize) resolutionForScreen: (int)screen_num
 { 
+  // NOTE:
+  // -gui now trusts the return value of resolutionForScreen:,
+  // so if it is not {72, 72} then the entire UI will be scaled.
+  //
+  // I commented out the implementation below because it may not
+  // be safe to use the DPI value we get from the X server.
+  // (i.e. I don't know if it will be a "fake" DPI like 72 or 96,
+  //  or a real measurement reported from the monitor's firmware
+  //  (possibly incorrect?))
+  // More research needs to be done.
+
+  return NSMakeSize(72, 72);
+
+  /*
   int res_x, res_y;
 
   if (screen_num < 0 || screen_num >= ScreenCount(dpy))
@@ -4564,6 +4578,7 @@ _computeDepth(int class, int bpp)
       (DisplayHeightMM(dpy, screen_num) / 25.4);
 	
   return NSMakeSize(res_x, res_y);
+  */
 }
 
 - (NSRect) boundsForScreen: (int)screen
