@@ -351,19 +351,26 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   return (int)hwnd;
 }
 
-// FIXME: The following methods wont work for multiple screens
+// FIXME: The following methods wont work for multiple screens.
+// However, GetDeviceCaps docs say that on a system with multiple screens,
+// LOGPIXELSX/Y will be the same for all screens, so the following is OK.
 /* Screen information */
 - (NSSize) resolutionForScreen: (int)screen
 {
-  int xres, yres;
+  int windowsXRes, windowsYRes;
+  NSSize gnustepRes;
   HDC hdc;
 
   hdc = GetDC(NULL);
-  xres = GetDeviceCaps(hdc, LOGPIXELSX);
-  yres = GetDeviceCaps(hdc, LOGPIXELSY);
+  windowsXRes = GetDeviceCaps(hdc, LOGPIXELSX);
+  windowsYRes = GetDeviceCaps(hdc, LOGPIXELSY);
   ReleaseDC(NULL, hdc);
   
-  return NSMakeSize(xres, yres);
+  // We want to return 72 to indicate no scaling factor, but the default
+  // DPI on Windows is 96. So, multiply the result by (72/96) = 0.75
+
+  gnustepRes = NSMakeSize(0.75 * windowsXRes, 0.75 * windowsYRes);
+  return gnustepRes;
 }
 
 - (NSRect) boundsForScreen: (int)screen
