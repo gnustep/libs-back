@@ -1,3 +1,9 @@
+2011-08-01  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* configure.ac: Add a configure test for Xcursor
+	* configure: regenerate
+	* config.h.in: regernate
+
 2011-07-30  Eric Wasylishen  <ewasylishen@gmail.com>
 	* Source/win32/WIN32Server.m (-resolutionForScreen:):
 	Scale the result by 0.75 so the Windows default of 96 DPI is

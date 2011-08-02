@@ -152,6 +152,13 @@ if test $set_x_paths = yes; then
     PKG_CHECK_MODULES([XMU], [xmu])
   fi
 
+  AC_CHECK_LIB(Xcursor, XcursorImageCreate,
+    [
+      LIBS="-lXcursor $LIBS"
+      AC_DEFINE(HAVE_XCURSOR, 1, [Define to enable Xcursor support])
+    ]
+    ,)
+
   LIBS="$X_LIBS $LIBS"
 fi
 AC_SUBST(X_PRE_LIBS)

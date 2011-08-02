@@ -92,6 +92,9 @@
 /* Define to 1 if you have the <X11/extensions/XShm.h> header file. */
 #undef HAVE_X11_EXTENSIONS_XSHM_H
 
+/* Define to enable Xcursor support */
+#undef HAVE_XCURSOR
+
 /* Define if you have a functional XFreeType installation, including libXft.
    */
 #undef HAVE_XFT
@@ -113,6 +116,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
