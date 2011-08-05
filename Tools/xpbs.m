@@ -77,6 +77,7 @@ static char *atom_names[] = {
   "image/png",
   "image/svg",
   "application/rtf",
+  "text/richtext"
 };
 static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 
@@ -119,6 +120,7 @@ static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 #define XG_MIME_PNG       atoms[32]
 #define XG_MIME_SVG       atoms[33]
 #define XG_MIME_APP_RTF   atoms[34]
+#define XG_MIME_TEXT_RICHTEXT atoms[35]
 
 
 
@@ -651,6 +653,8 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
       [self requestData: XG_MIME_RTF];
       if ([self data] == nil)
         [self requestData: XG_MIME_APP_RTF];
+      if ([self data] == nil)
+        [self requestData: XG_MIME_TEXT_RICHTEXT];
     }
   else if ([type isEqual: NSTIFFPboardType])
     {
@@ -720,6 +724,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
   unsigned int i;
   Atom *targets;
 
+  NSDebugLLog(@"Pbs", @"%@ availableTypes called", [[self osPb] name]);
+
   [self setData: nil];
   [self requestData: XG_TARGETS];
   data = [self data];
@@ -729,6 +735,9 @@ xErrorHandler(Display *d, XErrorEvent *e)
   count = [data length] / sizeof(Atom);
   targets = (Atom*)[data bytes];
   types = [NSMutableArray arrayWithCapacity: count];
+
+  NSDebugLLog(@"Pbs", @"%@ availableTypes: %d types available", [[self osPb] name], count);
+
   for (i = 0; i < count; i++)
     {
       Atom type;
@@ -747,7 +756,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
           [types addObject: NSFilenamesPboardType];
         }
       else if ((type == XG_MIME_RTF)
-               || (type == XG_MIME_APP_RTF))
+               || (type == XG_MIME_APP_RTF)
+	       || (type == XG_MIME_TEXT_RICHTEXT))
         {
           [types addObject: NSRTFPboardType];
         }
@@ -767,7 +777,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
         }
       // FIXME: Support more types
       else
-        {
+	{
           char *name = XGetAtomName(xDisplay, type);
 
           // FIXME: We should rather add this type to the
@@ -775,7 +785,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
           NSDebugLLog(@"Pbs", @"Unsupported selection type '%s' available", 
                       name);
           XFree(name);
-        }
+	}
     }
 
   return types;
@@ -816,7 +826,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
                                   xEvent->property,
                                   long_offset,         // offset
                                   long_length,
-                                  True,               // Delete prop when read.
+                                  False,               // Aug 2011 - changed to False (don't delete property)
                                   req_type,
                                   &actual_type,
                                   &actual_format,
@@ -826,7 +836,17 @@ xErrorHandler(Display *d, XErrorEvent *e)
       
       if ((status == Success) && (number_items > 0))
         {
-          long count = number_items * actual_format / 8;
+          long count;
+	  if (actual_type == XA_ATOM)
+	    {
+	      // xlib will report an actual_format of 32, even if
+	      // data contains an array of 64-bit Atoms
+	      count = number_items * sizeof(Atom);
+	    }
+	  else
+	    {
+	      count = number_items * actual_format / 8;
+	    }
             
           if (md == nil)
             {
@@ -985,7 +1005,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
           RELEASE(url);
         }
       else if ((actual_type == XG_MIME_RTF)
-               || (actual_type == XG_MIME_APP_RTF))
+               || (actual_type == XG_MIME_APP_RTF)
+	       || (actual_type == XG_MIME_TEXT_RICHTEXT))
         {
           [self setData: md];
         }
@@ -1093,6 +1114,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
         {
           xTypes[numTypes++] = XG_MIME_RTF;
           xTypes[numTypes++] = XG_MIME_APP_RTF;
+	  xTypes[numTypes++] = XG_MIME_TEXT_RICHTEXT;
         }
 
       if ([types containsObject: NSTIFFPboardType])
@@ -1319,7 +1341,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
         }
     }
   else if (((xEvent->target == XG_MIME_RTF) 
-            || (xEvent->target == XG_MIME_APP_RTF))
+            || (xEvent->target == XG_MIME_APP_RTF)
+	    || (xEvent->target == XG_MIME_TEXT_RICHTEXT))
            && [types containsObject: NSRTFPboardType])
     {
       NSData *d = [_pb dataForType: NSRTFPboardType];
