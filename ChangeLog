@@ -1,3 +1,16 @@
+2011-08-04  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Tools/xpbs.m: Get copy and paste of rich text from OpenOffice.org
+	to Ink working.
+
+	- OOo uses the MIME type "text/richtext", so make that another alias for RTF
+	- Fix an obscure bug in measuring the size of the return buffer of
+	XGetWindowProperty. When an array of Atom's is returned xlib will claim
+	that they are 32-bit when in fact they may be 64-bit. This was causing
+	xpbs to miss half of the available types for a clipboard on 64-bit systems.
+	- Don't use 'True' for the delete paramater of XGetWindowProperty. I'm not sure
+	why we were deleting window properties before. gtk doesn't do that.
+
 2011-08-01  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* configure.ac: Add a configure test for Xcursor
