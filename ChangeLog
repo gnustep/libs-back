@@ -1,5 +1,9 @@
 2011-08-07  Eric Wasylishen  <ewasylishen@gmail.com>
 
+	* Tools/xpbs.m: Add some more comments
+
+2011-08-07  Eric Wasylishen  <ewasylishen@gmail.com>
+
 	* configure.ac: Test for Xfixes
 	* configure: Regenerate
  	* config.h.in: Regenerate
