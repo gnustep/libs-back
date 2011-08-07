@@ -617,6 +617,14 @@ static int              xFixesEventBase;
    *	so we must tell the X server that we have the current selection.
    *	To conform to ICCCM we need to specify an up-to-date timestamp.
    */
+
+  // FIXME: See note in -xSelectionClear:. This method is called by
+  // -[NSPasteboard declareTypes:owner:], but we might not want
+  // GNUstep to take ownership. (e.g. suppose selection ownership changes from
+  // gnome-terminal to OpenOffice.org. But, we will still need to update the
+  // types available on the pasteboard in case a GNUstep app wants to read from
+  // the pasteboard.)
+
   _timeOfSetSelectionOwner = [self xTimeByAppending];
   XSetSelectionOwner(xDisplay, _xPb, xAppWin, _timeOfSetSelectionOwner);
 
@@ -862,6 +870,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
  */
 - (void) xSelectionClear
 {
+  // FIXME: This will cause -pasteboardChangedOwner: to be called, which will
+  // take ownership of the X selection. That is probably wrong...
   [_pb declareTypes: [self availableTypes] owner: self];
   [self setOwnedByOpenStep: NO];
 }
