@@ -152,6 +152,13 @@ if test $set_x_paths = yes; then
     PKG_CHECK_MODULES([XMU], [xmu])
   fi
 
+  AC_CHECK_LIB(Xfixes, XFixesSelectSelectionInput,
+    [
+      LIBS="-lXfixes $LIBS"
+      AC_DEFINE(HAVE_XFIXES, 1, [Define to enable Xfixes support])
+    ]
+    ,)
+
   AC_CHECK_LIB(Xcursor, XcursorImageCreate,
     [
       LIBS="-lXcursor $LIBS"

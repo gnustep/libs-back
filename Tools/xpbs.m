@@ -27,6 +27,8 @@
    Boston, MA 02110-1301, USA.
 */
 
+#include "config.h"
+
 #include <Foundation/Foundation.h>
 #include <Foundation/NSUserDefaults.h>
 #include <AppKit/NSPasteboard.h>
@@ -35,6 +37,9 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <x11/xdnd.h>
+#if HAVE_XFIXES
+#include <X11/extensions/Xfixes.h>
+#endif
 
 /*
  *	Non-predefined atoms that are used in the X selection mechanism
@@ -167,6 +172,9 @@ static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 - (void) xSelectionClear;
 - (void) xSelectionNotify: (XSelectionEvent*)xEvent;
 - (void) xSelectionRequest: (XSelectionRequestEvent*)xEvent;
+#if HAVE_XFIXES
++ (void) xFixesSelectionNotify: (XFixesSelectionNotifyEvent*)xEvent;
+#endif
 - (BOOL) xProvideSelection: (XSelectionRequestEvent*)xEvent;
 - (Time) xTimeByAppending;
 - (BOOL) xSendData: (unsigned char*) data format: (int) format 
@@ -193,6 +201,7 @@ static Window		xAppWin;
 static NSMapTable	*ownByX;
 static NSMapTable	*ownByO;
 static NSString		*xWaitMode = @"XPasteboardWaitMode";
+static int              xFixesEventBase;
 
 @implementation	XPbOwner
 
@@ -256,6 +265,32 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
       forMode: xWaitMode];
 
   XSelectInput(xDisplay, xAppWin, PropertyChangeMask);
+
+#if HAVE_XFIXES
+  {
+    int error;
+
+    // Subscribe to notifications of when the X clipboard changes,
+    // so we can invalidate our cached list of types on it.
+    //
+    // FIXME: If we don't have Xfixes, we should really set up a polling timer.
+    
+    if (XFixesQueryExtension(xDisplay, &xFixesEventBase, &error))
+      {
+       XFixesSelectSelectionInput(xDisplay, xAppWin, XA_CLIPBOARD,
+                                  XFixesSetSelectionOwnerNotifyMask |
+                                  XFixesSelectionWindowDestroyNotifyMask |
+                                  XFixesSelectionClientCloseNotifyMask );
+       XFixesSelectSelectionInput(xDisplay, xAppWin, XA_PRIMARY,
+                                  XFixesSetSelectionOwnerNotifyMask |
+                                  XFixesSelectionWindowDestroyNotifyMask |
+                                  XFixesSelectionClientCloseNotifyMask);
+       // FIXME: Also handle the dnd pasteboard
+       NSDebugLLog(@"Pbs", @"Subscribed to XFixes notifications");
+      }
+  }
+#endif
+
   XFlush(xDisplay);
 
   /*
@@ -381,6 +416,14 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
       break;
 
     default:
+#if HAVE_XFIXES
+      if (xEvent->type == xFixesEventBase + XFixesSelectionNotify)
+       {
+         [self xFixesSelectionNotify: (XFixesSelectionNotifyEvent*)xEvent];
+         break;
+       }
+#endif
+
       NSDebugLLog(@"Pbs", @"Unexpected X event.");
       break;
     }
@@ -474,6 +517,27 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
 
   [o xSelectionNotify: xEvent];
 }
+
+#if HAVE_XFIXES
++ (void) xFixesSelectionNotify: (XFixesSelectionNotifyEvent*)xEvent
+{
+  XPbOwner *o = [self ownerByXPb: xEvent->selection];
+  
+  if (o != nil)
+    {
+      if (xEvent->owner != (Window)xAppWin)
+       {
+         NSDebugLLog(@"Pbs", @"Notified that selection %@ changed", [[o osPb] name]);
+	 // FIXME: Invalidate the cached types in the pasteboard since they are no longer valid
+       }
+      else
+       {
+	 // The notification is telling us that we became the selection owner,
+	 // which we already know about since we must have initiated that change.
+       }
+    }
+}
+#endif
 
 + (void) xSelectionRequest: (XSelectionRequestEvent*)xEvent
 {

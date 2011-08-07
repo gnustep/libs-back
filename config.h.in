@@ -95,6 +95,9 @@
 /* Define to enable Xcursor support */
 #undef HAVE_XCURSOR
 
+/* Define to enable Xfixes support */
+#undef HAVE_XFIXES
+
 /* Define if you have a functional XFreeType installation, including libXft.
    */
 #undef HAVE_XFT
