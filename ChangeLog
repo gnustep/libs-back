@@ -1,3 +1,20 @@
+2011-08-07  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* configure.ac: Test for Xfixes
+	* configure: Regenerate
+ 	* config.h.in: Regenerate
+	* Tools/xpbs.m: If Xfixes is available, use it to receive notifications when the
+	owner of an X11 selection changes.
+
+	In the future we should invalidate the list of cached pasteboard types when this
+	happens, so, e.g. copying text from gnome-terminal, the general pasteboard will only
+	have the text type, but subsequently copying text from OpenOffice.org, the general
+	pasteboard will have plain text and RTF types (currently we don't do this, so
+	you can't paste RTF contents unless it is in the clipboard when gpbs starts.)
+
+	The above problem is also why DND from X to GNUstep doesn't work - the dragging
+	pasteboard types are never updated.
+
 2011-08-04  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Tools/xpbs.m: Get copy and paste of rich text from OpenOffice.org
