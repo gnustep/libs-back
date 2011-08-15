@@ -779,6 +779,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
+      BOOL zeroLineWidth = NO;
       device_color_t c;
 
       c = strokeColor;
@@ -786,7 +787,25 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
       // The underlying concept does not allow to determine if alpha is set or not.
       cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], c.field[AINDEX]);
       [self _setPath];
+
+      // If the line width is 0, draw a thin line.
+      // cairo (and Quartz) will draw nothing with a line width of 0.
+      // See the PostScript Language Reference, 3rd ed, p. 674
+      if (cairo_get_line_width(_ct) == 0)
+	{
+	  double w1 = 1.0;
+	  double w2 = 1.0;
+	  cairo_device_to_user_distance(_ct, &w1, &w2);
+	  cairo_set_line_width(_ct, w1);
+	  zeroLineWidth = YES;
+	}
+
       cairo_stroke(_ct);
+
+      if (zeroLineWidth)
+	{
+	  cairo_set_line_width(_ct, 0);
+	}
     }
   [self DPSnewpath];
 }
