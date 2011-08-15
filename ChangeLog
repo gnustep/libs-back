@@ -1,3 +1,12 @@
+2011-08-15  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/cairo/CairoGState.m (-DPSstroke:): If the line width is
+	0, temporarily set it to 1 unit wide (in device space.) This
+	is an attempt at matching the behaviour of the setlinewidth
+	PostScript operator, which is supposed to interpret 0 as meaning
+	the thinnest line that the output device can draw.
+	Note that Quartz (and cairo) draw nothing with a line width of 0.
+
 2011-08-07  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Tools/xpbs.m: Add some more comments
