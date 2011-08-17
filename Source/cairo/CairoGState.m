@@ -1391,6 +1391,10 @@ doesn't support to use the receiver cairo target as the source. */
   cairo_matrix_init_scale(&source_matrix, 1, -1);
   cairo_matrix_translate(&source_matrix, 0, -[source->_surface size].height);
   cairo_pattern_set_matrix(cpattern, &source_matrix);
+  if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 6, 0))
+    {
+      cairo_pattern_set_extend(cpattern, CAIRO_EXTEND_PAD);
+    }
   cairo_set_source(_ct, cpattern);
   cairo_pattern_destroy(cpattern);
   cairo_rectangle(_ct, aRect.origin.x, aRect.origin.y, width, height);

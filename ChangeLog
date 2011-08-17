@@ -1,3 +1,8 @@
+2011-08-16  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/cairo/CairoGState.m (-drawGState:...): Use CAIRO_EXTEND_PAD
+	on the pattern to prevent blurred edges when scaling up.
+
 2011-08-15  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/cairo/CairoGState.m (-DPSstroke:): If the line width is
