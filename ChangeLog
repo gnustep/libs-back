@@ -1,3 +1,9 @@
+2011-09-12 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGDragView.m (GSActionForDragOperation,
+	GSDragOperationForAction): Corrected drag type conversion.
+	Patch by Andreas Schick <andreas.schik@googlemail.com>
+
 2011-09-11  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/cairo/CairoGState.m (-drawGState:...): Check that the source
