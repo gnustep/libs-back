@@ -1341,7 +1341,7 @@ doesn't support to use the receiver cairo target as the source. */
            fraction: (float)delta
 {
   NSAffineTransformStruct tstruct =  [ctm transformStruct];
-  cairo_surface_t *src = cairo_get_target(source->_ct);
+  cairo_surface_t *src;
   double width, height;
   double x, y;
   cairo_pattern_t *cpattern;
@@ -1350,8 +1350,12 @@ doesn't support to use the receiver cairo target as the source. */
 
   if (!_ct || !source->_ct)
     {
+      NSLog(@"WARNING: -drawGState called with a NULL target context (%p) or source context (%p)",
+	    _ct, source->_ct);
       return;
     }
+
+  src = cairo_get_target(source->_ct);
 
   cairo_save(_ct);
 
