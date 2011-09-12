@@ -73,28 +73,31 @@
     NSZoneFree(NSDefaultMallocZone(), _base); \
   }
 
-static float floatFromUserSpace(NSAffineTransform *ctm, float f)
+static inline double doubleFromUserSpace(NSAffineTransform *ctm, double d)
 {
-  NSSize s = {f, f};
-
   if (ctm)
     {
+      NSSize s = {d, d};
+
       s = [ctm transformSize: s];
-      f = (((s.width > 0.0) ? s.width : -s.width) + 
+      d = (((s.width > 0.0) ? s.width : -s.width) + 
            ((s.height > 0.0) ? s.height : -s.height)) / 2;
     }
-  return f;
+  return d;
 }
 
-static float floatToUserSpace(NSAffineTransform *ctm, float f)
+static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
 {
-  NSAffineTransform *ictm;
-  
-  ictm = [ctm copyWithZone: [ctm zone]];
-  [ictm invert];
-  f = floatFromUserSpace(ictm, f);
-  RELEASE(ictm);
-  return f;
+  if (ctm)
+    {
+      NSAffineTransform *ictm;
+      
+      ictm = [ctm copy];
+      [ictm invert];
+      d = doubleFromUserSpace(ictm, d);
+      RELEASE(ictm);
+    }
+  return (float)d;
 }
 
 
@@ -408,8 +411,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
-      size = floatFromUserSpace(ctm, size);
-      cairo_set_font_size(_ct, size);
+      cairo_set_font_size(_ct, doubleFromUserSpace(ctm, size));
     }
 }
 
@@ -575,8 +577,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
-      *width = (float)cairo_get_line_width(_ct);
-      *width = floatToUserSpace(ctm, *width);
+      *width = floatToUserSpace(ctm, cairo_get_line_width(_ct));
     }
 }
 
@@ -584,8 +585,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
-      *limit = (float)cairo_get_miter_limit(_ct);
-      *limit = floatToUserSpace(ctm, *limit);
+      *limit = floatToUserSpace(ctm, cairo_get_miter_limit(_ct));
     }
 }
 
@@ -597,7 +597,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
-      double doffset = (double)floatFromUserSpace(ctm, foffset);
+      double doffset = doubleFromUserSpace(ctm, foffset);
       int i;
       GS_BEGINITEMBUF(dpat, size, double);
 
@@ -606,7 +606,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
         {
           i--;
           // FIXME: When using the correct values, some dashes look wrong
-          dpat[i] = (double)floatFromUserSpace(ctm, pat[i]) * 1.4;
+          dpat[i] = doubleFromUserSpace(ctm, pat[i]) * 1.4;
         }
       cairo_set_dash(_ct, dpat, size, doffset);
       GS_ENDITEMBUF();
@@ -644,7 +644,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
-      cairo_set_line_width(_ct, floatFromUserSpace(ctm, width));
+      cairo_set_line_width(_ct, doubleFromUserSpace(ctm, width));
     }
 }
 
@@ -652,7 +652,7 @@ static float floatToUserSpace(NSAffineTransform *ctm, float f)
 {
   if (_ct)
     {
-      cairo_set_miter_limit(_ct, floatFromUserSpace(ctm, limit));
+      cairo_set_miter_limit(_ct, doubleFromUserSpace(ctm, limit));
     }
 }
 
@@ -1423,13 +1423,16 @@ doesn't support to use the receiver cairo target as the source. */
 - (void *) saveClip
 {
 #if CAIRO_VERSION > CAIRO_VERSION_ENCODE(1, 4, 0)
-  cairo_status_t status;
-  cairo_rectangle_list_t *clip_rects = cairo_copy_clip_rectangle_list(_ct);
-
-  status = cairo_status(_ct);
-  if (status == CAIRO_STATUS_SUCCESS)
+  if (_ct)
     {
-      return clip_rects;
+      cairo_status_t status;
+      cairo_rectangle_list_t *clip_rects = cairo_copy_clip_rectangle_list(_ct);
+
+      status = cairo_status(_ct);
+      if (status == CAIRO_STATUS_SUCCESS)
+        {
+          return clip_rects;
+        }
     }
 #endif
 
@@ -1439,7 +1442,7 @@ doesn't support to use the receiver cairo target as the source. */
 - (void) restoreClip: (void *)savedClip
 {
 #if CAIRO_VERSION > CAIRO_VERSION_ENCODE(1, 4, 0)
-  if (savedClip)
+  if (_ct && savedClip)
     {
       int i;
       cairo_rectangle_list_t *clip_rects = (cairo_rectangle_list_t *)savedClip;
@@ -1488,38 +1491,49 @@ doesn't support to use the receiver cairo target as the source. */
                radius: (CGFloat)endRadius
               options: (NSUInteger)options
 {
-  int i;
-  int stops = [gradient numberOfColorStops];
-  NSPoint startP = [ctm transformPoint: startCenter];
-  NSPoint endP = [ctm transformPoint: endCenter];
-  cairo_pattern_t *cpattern = cairo_pattern_create_radial(startP.x, startP.y, 
-                                                          floatFromUserSpace(ctm, startRadius),
-                                                          endP.x, endP.y, 
-                                                          floatFromUserSpace(ctm, endRadius));
-  for (i = 0; i < stops; i++)
+  if (_ct)
     {
-      NSColor *color;
-      CGFloat location;
-      double red;
-      double green;
-      double blue;
-      double alpha;
+      cairo_status_t status;
+      int i;
+      int stops = [gradient numberOfColorStops];
+      NSPoint startP = [ctm transformPoint: startCenter];
+      NSPoint endP = [ctm transformPoint: endCenter];
+      cairo_pattern_t *cpattern = cairo_pattern_create_radial(startP.x, startP.y, 
+                                                              doubleFromUserSpace(ctm, startRadius),
+                                                              endP.x, endP.y, 
+                                                              doubleFromUserSpace(ctm, endRadius));
+      status = cairo_pattern_status(cpattern);
+      if (status != CAIRO_STATUS_SUCCESS)
+        {
+          return;
+        }
 
-      [gradient getColor: &color
-                location: &location
-                atIndex: i];
-      red = [color redComponent];
-      green = [color greenComponent];
-      blue = [color blueComponent];
-      alpha = [color alphaComponent];
-      cairo_pattern_add_color_stop_rgba(cpattern, location,
-                                        red, green, blue, alpha);
+      for (i = 0; i < stops; i++)
+        {
+          NSColor *color;
+          CGFloat location;
+          double red;
+          double green;
+          double blue;
+          double alpha;
+          
+          [gradient getColor: &color
+                    location: &location
+                     atIndex: i];
+          red = [color redComponent];
+          green = [color greenComponent];
+          blue = [color blueComponent];
+          alpha = [color alphaComponent];
+          cairo_pattern_add_color_stop_rgba(cpattern, location,
+                                            red, green, blue, alpha);
+        }
+      
+      cairo_save(_ct);
+      cairo_set_source(_ct, cpattern);
+      cairo_pattern_destroy(cpattern);
+      cairo_paint(_ct);
+      cairo_restore(_ct);
     }
-  cairo_save(_ct);
-  cairo_set_source(_ct, cpattern);
-  cairo_pattern_destroy(cpattern);
-  cairo_paint(_ct);
-  cairo_restore(_ct);
 }
 
 - (void) drawGradient: (NSGradient*)gradient
@@ -1527,37 +1541,48 @@ doesn't support to use the receiver cairo target as the source. */
               toPoint: (NSPoint)endPoint
               options: (NSUInteger)options
 {
-  int i;
-  int stops = [gradient numberOfColorStops];
-  NSPoint startP = [ctm transformPoint: startPoint];
-  NSPoint endP = [ctm transformPoint: endPoint];
-  cairo_pattern_t *cpattern = cairo_pattern_create_linear(startP.x, startP.y,
-                                                          endP.x, endP.y);
-
-  for (i = 0; i < stops; i++)
+  if (_ct)
     {
-      NSColor *color;
-      CGFloat location;
-      double red;
-      double green;
-      double blue;
-      double alpha;
+      cairo_status_t status;
+      int i;
+      int stops = [gradient numberOfColorStops];
+      NSPoint startP = [ctm transformPoint: startPoint];
+      NSPoint endP = [ctm transformPoint: endPoint];
+      cairo_pattern_t *cpattern = cairo_pattern_create_linear(startP.x, startP.y,
+                                                              endP.x, endP.y);
+      
+      status = cairo_pattern_status(cpattern);
+      if (status != CAIRO_STATUS_SUCCESS)
+        {
+          return;
+        }
 
-      [gradient getColor: &color
-                location: &location
-                atIndex: i];
-      red = [color redComponent];
-      green = [color greenComponent];
-      blue = [color blueComponent];
-      alpha = [color alphaComponent];
-      cairo_pattern_add_color_stop_rgba(cpattern, location,
-                                        red, green, blue, alpha);
+      for (i = 0; i < stops; i++)
+        {
+          NSColor *color;
+          CGFloat location;
+          double red;
+          double green;
+          double blue;
+          double alpha;
+          
+          [gradient getColor: &color
+                    location: &location
+                     atIndex: i];
+          red = [color redComponent];
+          green = [color greenComponent];
+          blue = [color blueComponent];
+          alpha = [color alphaComponent];
+          cairo_pattern_add_color_stop_rgba(cpattern, location,
+                                            red, green, blue, alpha);
+        }
+      
+      cairo_save(_ct);
+      cairo_set_source(_ct, cpattern);
+      cairo_pattern_destroy(cpattern);
+      cairo_paint(_ct);
+      cairo_restore(_ct);
     }
-  cairo_save(_ct);
-  cairo_set_source(_ct, cpattern);
-  cairo_pattern_destroy(cpattern);
-  cairo_paint(_ct);
-  cairo_restore(_ct);
 }
 
 @end

@@ -1,5 +1,12 @@
 2011-09-12 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/cairo/CairoGState.m (-saveClip, -restoreClip:,
+	-drawGradient:...): Check that the _ct isnt NULL.
+	* Source/cairo/CairoGState.m (doubleFromUserSpace,
+	floatToUserSpace): Use correct types in these helper functions.
+
+2011-09-12 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/x11/XGDragView.m (GSActionForDragOperation,
 	GSDragOperationForAction): Corrected drag type conversion.
 	Patch by Andreas Schick <andreas.schik@googlemail.com>
