@@ -45,10 +45,10 @@
 #    define _CAIRO_SURFACE_CLASSNAME XGCairoGlitzSurface
 #    include "cairo/XGCairoGlitzSurface.h"
 #  else
-#    define _CAIRO_SURFACE_CLASSNAME XGCairoSurface
-#    include "cairo/XGCairoSurface.h"
-//#    define _CAIRO_SURFACE_CLASSNAME XGCairoXImageSurface
-//#    include "cairo/XGCairoXImageSurface.h"
+//#    define _CAIRO_SURFACE_CLASSNAME XGCairoSurface
+//#    include "cairo/XGCairoSurface.h"
+#    define _CAIRO_SURFACE_CLASSNAME XGCairoXImageSurface
+#    include "cairo/XGCairoXImageSurface.h"
 #  endif /* USE_GLITZ */
 #  include "x11/XGServerWindow.h"
 #  include "x11/XWindowBuffer.h"
