@@ -65,4 +65,8 @@
   return _surface;
 }
 
+- (void) handleExposeRect: (NSRect)rect
+{
+}
+
 @end

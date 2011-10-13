@@ -47,8 +47,10 @@
 #  else
 //#    define _CAIRO_SURFACE_CLASSNAME XGCairoSurface
 //#    include "cairo/XGCairoSurface.h"
-#    define _CAIRO_SURFACE_CLASSNAME XGCairoXImageSurface
-#    include "cairo/XGCairoXImageSurface.h"
+//#    define _CAIRO_SURFACE_CLASSNAME XGCairoXImageSurface
+//#    include "cairo/XGCairoXImageSurface.h"
+#    define _CAIRO_SURFACE_CLASSNAME XGCairoModernSurface
+#    include "cairo/XGCairoModernSurface.h"
 #  endif /* USE_GLITZ */
 #  include "x11/XGServerWindow.h"
 #  include "x11/XWindowBuffer.h"
@@ -103,6 +105,7 @@
 
 - (void) flushGraphics
 {
+  // FIXME: Why is this here? When is it called?
 #if BUILD_SERVER == SERVER_x11
   XFlush([(XGServer *)server xDisplay]);
 #endif // BUILD_SERVER = SERVER_x11
@@ -113,7 +116,16 @@
 /* Private backend methods */
 + (void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
 {
-  [(XWindowBuffer *)driver _exposeRect: rect];
+  if ([(id)driver isKindOfClass: [XWindowBuffer class]])
+    {
+      // For XGCairoXImageSurface
+      [(XWindowBuffer *)driver _exposeRect: rect];
+    }
+  else if ([(id)driver isKindOfClass: [CairoSurface class]])
+    {
+      // For XGCairoModernSurface
+      [(CairoSurface *)driver handleExposeRect: rect];
+    }
 }
 
 #ifdef XSHM

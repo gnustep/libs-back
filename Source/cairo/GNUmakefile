@@ -42,7 +42,7 @@ ifeq ($(BUILD_SERVER),x11)
   ifeq ($(WITH_GLITZ),yes)
     cairo_OBJC_FILES += XGCairoGlitzSurface.m
   else
-    cairo_OBJC_FILES += XGCairoSurface.m XGCairoXImageSurface.m
+    cairo_OBJC_FILES += XGCairoSurface.m XGCairoXImageSurface.m XGCairoModernSurface.m
   endif
 else
   ifeq ($(BUILD_GRAPHICS),cairo)

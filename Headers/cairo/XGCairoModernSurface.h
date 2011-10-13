@@ -1,7 +1,7 @@
 /*
-   Copyright (C) 2002 Free Software Foundation, Inc.
+   Copyright (C) 2011 Free Software Foundation, Inc.
 
-   Author: Banlu Kemiyatorn <object at gmail dot com>
+   Author: Eric Wasylishen <ewasylishen@gmail.com>
 
    This file is part of GNUstep.
 
@@ -22,28 +22,16 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef CairoSurface_h
-#define CairoSurface_h
+#ifndef XGCairoXModernSurface_h
+#define XGCairoXModernSurface_h
 
-#include <cairo.h>
-#include <Foundation/Foundation.h>
+#include "cairo/CairoSurface.h"
 
-@interface CairoSurface : NSObject
+@interface XGCairoModernSurface : CairoSurface
 {
-@public
-  void *gsDevice;
-  cairo_surface_t *_surface;
+  @private
+    cairo_surface_t *_windowSurface;
 }
-
-- (id) initWithDevice: (void *)device;
-
-- (NSSize) size;
-- (void) setSize: (NSSize)newSize;
-
-- (cairo_surface_t *) surface;
-
-- (void) handleExposeRect: (NSRect)rect;
-
 @end
 
 #endif
