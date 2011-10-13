@@ -1,3 +1,17 @@
+2011-10-13  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/cairo/GNUmakefile:
+	* Source/cairo/CairoContext.m:
+	* Source/cairo/CairoSurface.m:
+	* Source/cairo/XGCairoModernSurface.m:
+	* Headers/cairo/XGCairoModernSurface.h:
+	* Headers/cairo/CairoSurface.h: New cairo surface which uses
+	cairo_surface_create_similar to create a back buffer which
+	has an alpha channel, even if the X server doesn't support
+	surfaces with alpha. This new surface is also made the default
+	since this seems to be the recommended way to double buffer
+	with cairo.
+
 2011-09-18  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/cairo/CairoContext.m: revert the last change for now
