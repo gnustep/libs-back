@@ -60,7 +60,9 @@
 #if HAVE_XCURSOR
 #include <X11/Xcursor/Xcursor.h>
 #endif
+#ifdef HAVE_XSHAPE
 #include <X11/extensions/shape.h>
+#endif
 
 #include "x11/XGDragView.h"
 #include "x11/XGInputServer.h"
@@ -3076,6 +3078,7 @@ static BOOL didCreatePixmaps;
       return;
     }
 
+#ifdef HAVE_XSHAPE
   if ([[image backgroundColor] alphaComponent] * 256 <= ALPHA_THRESHOLD)
     {
       // The mask computed here is only correct for unscaled images.
@@ -3100,6 +3103,7 @@ static BOOL didCreatePixmaps;
     {
       XFreePixmap(dpy, pixmap);
     }
+#endif
 }
 
 /* This method is a fast implementation of move that only works 

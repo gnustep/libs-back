@@ -1,3 +1,13 @@
+2011-10-17 Fred Kiefer <FredKiefer@gmx.de>
+
+	* configure.ac: Test for X shape extension
+	* configure: Regenerate
+ 	* config.h.in: Regenerate
+	* Source/x11/XGServerWindow.m (-restrictWindow:toImage:),
+	* Source/x11/XWindowBuffer.m (-_exposeRect:): Protect usage of
+	shape extension.
+	Should fix bug #34552.
+
 2011-10-13  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/cairo/GNUmakefile:

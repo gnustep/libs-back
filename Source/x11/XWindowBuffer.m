@@ -28,16 +28,15 @@
 
 #include "x11/XGServer.h"
 #include "x11/XGServerWindow.h"
-
 #include "x11/XWindowBuffer.h"
 
 #include <math.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-
+#ifdef HAVE_XSHAPE
 #include <X11/extensions/shape.h>
-
+#endif
 
 static XWindowBuffer **window_buffers;
 static int num_window_buffers;
@@ -509,6 +508,7 @@ accuracy, we do the test using int: s.
   if (use_shm)
     {
 
+#ifdef HAVE_XSHAPE
       /* HACK: lets try to use shaped windows to get some use out of
          destination alpha */
       if (has_alpha && use_shape_hack)
@@ -585,6 +585,7 @@ static int warn = 0;
               XFreePixmap(display, p);
             }
         }
+#endif // HAVE_XSHAPE
 
       if (pending_event)
         {

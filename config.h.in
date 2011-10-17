@@ -47,6 +47,9 @@
 /* Define to 1 if you have the `Xt' library (-lXt). */
 #undef HAVE_LIBXT
 
+/* Define to 1 if you have the `shape' extension. */
+#undef HAVE_XSHAPE
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
