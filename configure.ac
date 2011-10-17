@@ -166,6 +166,19 @@ if test $set_x_paths = yes; then
     ]
     ,)
 
+  have_xshape=no
+  AC_CHECK_HEADERS(X11/extensions/shape.h,
+	have_xshape=yes,,
+	[#include <X11/Xlib.h>])
+  if test $have_xshape = yes; then
+  AC_CHECK_LIB(Xext, XShapeCombineMask,
+    [
+      LIBS="-lXext $LIBS"
+      AC_DEFINE(HAVE_XSHAPE, 1, [Define to enable Xshape support])
+    ]
+    ,)
+  fi
+
   LIBS="$X_LIBS $LIBS"
 fi
 AC_SUBST(X_PRE_LIBS)
