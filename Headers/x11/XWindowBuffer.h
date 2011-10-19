@@ -25,8 +25,14 @@
 #ifndef XWindowBuffer_h
 #define XWindowBuffer_h
 
-#include <X11/extensions/XShm.h>
+#include <config.h>
 
+#ifdef XSHM
+#include <X11/extensions/XShm.h>
+#else
+// FIXME
+#define XShmSegmentInfo int
+#endif
 
 struct XWindowBuffer_depth_info_s
 {
