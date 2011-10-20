@@ -1,5 +1,11 @@
 2011-10-20 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/cairo/CairoFontEnumerator.m: Define FC_WEIGHT_ULTRABLACK
+	for old versions of fontconfig.
+	Patch by Richard Frith-Macdonald <rfm@gnu.org>
+
+2011-10-20 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Headers/x11/XWindowBuffer.h: Bracket even more usage of shm in
 	conditional compilation.
 

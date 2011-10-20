@@ -47,6 +47,12 @@
 #include "cairo/CairoFontEnumerator.h"
 #include "cairo/CairoFontInfo.h"
 
+// Old versions of fontconfig don't have FC_WEIGHT_ULTRABLACK defined.
+// Use the maximal value instead.
+#ifndef FC_WEIGHT_ULTRABLACK
+#define FC_WEIGHT_ULTRABLACK FC_WEIGHT_BLACK
+#endif
+
 @implementation CairoFontEnumerator 
 
 NSMutableDictionary * __allFonts;
