@@ -250,6 +250,7 @@ no_xshm:
                         wi->window->xframe.size.width, wi->window->xframe.size.height);*/
       if (wi->ximage)
         {
+#ifdef XSHM
           if (wi->use_shm)
             {
               XShmDetach(wi->display, &wi->shminfo);
@@ -257,6 +258,7 @@ no_xshm:
               shmdt(wi->shminfo.shmaddr);
             }
           else
+#endif
             XDestroyImage(wi->ximage);
         }
       if (wi->pixmap)
@@ -425,6 +427,7 @@ extern int XShmGetEventBase(Display *d);
 
 - (void) _gotShmCompletion
 {
+#ifdef XSHM
   if (!use_shm)
     return;
 
@@ -458,6 +461,7 @@ extern int XShmGetEventBase(Display *d);
         }
     }
 //        XFlush(window->display);
+#endif
 }
 
 - (void) _exposeRect: (NSRect)rect
@@ -505,9 +509,9 @@ accuracy, we do the test using int: s.
   if (w <= 0 || h <= 0)
     return;
 
+#ifdef XSHM
   if (use_shm)
     {
-
 #ifdef HAVE_XSHAPE
       /* HACK: lets try to use shaped windows to get some use out of
          destination alpha */
@@ -645,7 +649,9 @@ static int warn = 0;
           }
       }
     }
-  else if (ximage)
+  else
+#endif
+    if (ximage)
     {
       XPutImage(display, drawable, gc, ximage, x, y, x, y, w, h);
     }
@@ -708,6 +714,7 @@ static int warn = 0;
           pixmap=0;
         }
 
+#ifdef XSHM
       if (use_shm)
         {
           XShmDetach(display, &shminfo);
@@ -715,6 +722,7 @@ static int warn = 0;
           shmdt(shminfo.shmaddr);
         }
       else
+#endif
         XDestroyImage(ximage);
     }
   if (alpha)
