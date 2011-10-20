@@ -1,3 +1,8 @@
+2011-10-20 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/x11/XWindowBuffer.h: Bracket even more usage of shm in
+	conditional compilation.
+
 2011-10-18 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/x11/XWindowBuffer.h: Protect the usage of shm.
