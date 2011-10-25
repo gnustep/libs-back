@@ -49,22 +49,9 @@
 #include "x11/XGGeneric.h"
 #include "x11/xdnd.h"
 
-#ifdef HAVE_WRASTER_H
-#include "wraster.h"
-#else
-#include "x11/wraster.h"
-#endif
-
 #include "math.h"
 #include <X11/keysym.h>
 #include <X11/Xproto.h>
-
-#if LIB_FOUNDATION_LIBRARY
-# include <Foundation/NSPosixFileDescriptor.h>
-#elif defined(NeXT_PDO)
-# include <Foundation/NSFileHandle.h>
-# include <Foundation/NSNotification.h>
-#endif
 
 #define cWin ((gswindow_device_t*)generic.cachedWindow)
 
@@ -94,15 +81,6 @@ static BOOL next_event_is_a_keyrepeat;
 void __objc_xgcontextevent_linking (void)
 {
 }
-
-static SEL procSel = 0;
-static void (*procEvent)(id, SEL, XEvent*) = 0;
-
-#ifdef XSHM
-@interface NSGraphicsContext (SharedMemory)
--(void) gotShmCompletion: (Drawable)d;
-@end
-#endif
 
 @interface XGServer (Private)
 - (void) receivedEvent: (void*)data
@@ -251,12 +229,6 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
                    watcher: (id<RunLoopEvents>)self
                    forMode: mode];
 #endif
-  if (procSel == 0)
-    {
-      procSel = @selector(processEvent:);
-      procEvent = (void (*)(id, SEL, XEvent*))
-        [self methodForSelector: procSel];
-    }
 }
 
 #if LIB_FOUNDATION_LIBRARY
@@ -307,7 +279,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         }
 #endif
 
-      (*procEvent)(self, procSel, &xEvent);
+      [self processEvent: &xEvent];
     }
 }
 
@@ -1735,15 +1707,6 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 
             // We shouldn't get here unless we forgot to trap an event above
       default:
-#ifdef XSHM
-        if (xEvent.type == XShmGetEventBase(dpy)+ShmCompletion
-            && [gcontext respondsToSelector: @selector(gotShmCompletion:)])
-          {
-            [gcontext gotShmCompletion: 
-                        ((XShmCompletionEvent *)&xEvent)->drawable];
-            break;
-          }
-#endif
         NSLog(@"Received an untrapped event\n");
         break;
     }

@@ -53,7 +53,7 @@
 #    include "cairo/XGCairoModernSurface.h"
 #  endif /* USE_GLITZ */
 #  include "x11/XGServerWindow.h"
-#  include "x11/XWindowBuffer.h"
+//#  include "x11/XWindowBuffer.h"
 #elif BUILD_SERVER == SERVER_win32
 #  include <windows.h>
 #  ifdef USE_GLITZ
@@ -116,12 +116,13 @@
 /* Private backend methods */
 + (void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
 {
-  if ([(id)driver isKindOfClass: [XWindowBuffer class]])
-    {
-      // For XGCairoXImageSurface
-      [(XWindowBuffer *)driver _exposeRect: rect];
-    }
-  else if ([(id)driver isKindOfClass: [CairoSurface class]])
+//  if ([(id)driver isKindOfClass: [XWindowBuffer class]])
+//    {
+//      // For XGCairoXImageSurface
+//      [(XWindowBuffer *)driver _exposeRect: rect];
+//    }
+//  else
+  if ([(id)driver isKindOfClass: [CairoSurface class]])
     {
       // For XGCairoModernSurface
       [(CairoSurface *)driver handleExposeRect: rect];
@@ -132,12 +133,12 @@
 
 + (void) _gotShmCompletion: (Drawable)d
 {
-  [XWindowBuffer _gotShmCompletion: d];
+//  [XWindowBuffer _gotShmCompletion: d];
 }
 
 - (void) gotShmCompletion: (Drawable)d
 {
-  [XWindowBuffer _gotShmCompletion: d];
+//  [XWindowBuffer _gotShmCompletion: d];
 }
 
 #endif // XSHM

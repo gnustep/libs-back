@@ -33,18 +33,8 @@ include ../../config.make
 SUBPROJECT_NAME=x11
 
 # The C source files to be compiled
-ifeq ($(WITH_WRASTER),yes)
 x11_C_FILES = \
 xdnd.c
-else
-x11_C_FILES = \
-context.c \
-convert.c \
-raster.c \
-scale.c \
-xdnd.c \
-xutil.c
-endif
 
 # The Objective-C source files to be compiled
 x11_OBJC_FILES = \
@@ -53,7 +43,6 @@ XGServerEvent.m \
 XGServerWindow.m \
 XGDragView.m \
 XIMInputServer.m \
-XWindowBuffer.m\
 XGGLFormat.m\
 XGGLContext.m
 

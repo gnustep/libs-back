@@ -86,7 +86,6 @@ typedef struct _gswindow_device_t {
   Window                root;          /* Handle of root window */
   Window		parent;        /* Handle of parent window */
   int                   screen;        /* Screeen this window is on */
-  GC                    gc;            /* GC for drawing */
   long                  number;        /* Globally unique identifier */
   unsigned int          depth;         /* Window depth */
   unsigned int          border;        /* Border size */
@@ -98,12 +97,8 @@ typedef struct _gswindow_device_t {
 
   unsigned int          buffer_width;  /* Size in pixels of the current buffers. */
   unsigned int          buffer_height;
-  Drawable              buffer;        /* Backing store pixmap */
-  Drawable              alpha_buffer;  /* Alpha buffer. Managed by gdriver
-					  will be freed if HandlesBacking=0 */
   BOOL			is_exposed;
   NSMutableArray	*exposedRects; /* List of exposure event rects */
-  Region		region;	       /* Used between several expose events */
   XWMHints		gen_hints;
   XSizeHints		siz_hints;
   GNUstepWMAttributes	win_attrs;
@@ -123,8 +118,6 @@ typedef struct _gswindow_device_t {
   XSyncCounter          net_wm_sync_request_counter;
 #endif
 } gswindow_device_t;
-
-#define GET_XDRAWABLE(win)  ((win)->buffer ? (win)->buffer: (win)->ident)
 
 @interface XGServer (DPSWindow)
 + (gswindow_device_t *) _windowForXWindow: (Window)xWindow;
