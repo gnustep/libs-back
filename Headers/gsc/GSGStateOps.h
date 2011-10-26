@@ -46,8 +46,8 @@
 
 - (void) GSSetFillColorspace: (void *)spaceref;
 - (void) GSSetStrokeColorspace: (void *)spaceref;
-- (void) GSSetFillColor: (const float *)values;
-- (void) GSSetStrokeColor: (const float *)values;
+- (void) GSSetFillColor: (const CGFloat *)values;
+- (void) GSSetStrokeColor: (const CGFloat *)values;
 
 /* ----------------------------------------------------------------------- */
 /* Text operations */

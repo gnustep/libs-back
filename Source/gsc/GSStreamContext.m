@@ -178,12 +178,12 @@ fpfloat(FILE *stream, float f)
   fprintf(gstream, "setrgbcolor\n");
 }
 
-- (void) GSSetFillColor: (const float *)values
+- (void) GSSetFillColor: (const CGFloat *)values
 {
   [self notImplemented: _cmd];
 }
 
-- (void) GSSetStrokeColor: (const float *)values
+- (void) GSSetStrokeColor: (const CGFloat *)values
 {
   [self notImplemented: _cmd];
 }

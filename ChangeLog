@@ -1,3 +1,11 @@
+2011-10-25  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/gsc/GSStreamContext.m:
+	* Source/gsc/GSContext.m:
+	* Source/gsc/GSGState.m:
+	* Headers/gsc/GSGStateOps.h: Change type for -GSSetFillColor: and
+	-GSSetStrokeColor: from float to CGFloat
+
 2011-10-20 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoFontEnumerator.m: Define FC_WEIGHT_ULTRABLACK
