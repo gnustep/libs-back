@@ -838,7 +838,8 @@ bestContext(Display *dpy, int screen_number, RContext *context)
           {
 	    XRenderPictFormat* pictFormat = 
 		XRenderFindVisualFormat (dpy, vinfo[i].visual);
-	    if ((pictFormat->type == PictTypeDirect)
+	    if (NULL != pictFormat
+		&& (pictFormat->type == PictTypeDirect)
 		&& (pictFormat->direct.alphaMask))
 	      {
 		best = i;	
