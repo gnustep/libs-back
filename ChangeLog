@@ -1,5 +1,11 @@
 2011-11-07 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/x11/XGGLFormat.m (-assembleGLXAttributes:): Use
+	GLX_BUFFER_SIZE for NSOpenGLPFAColorSize instead of setting all
+	the single colour sizes, which was wrong.
+
+2011-11-07 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/x11/XGServerEvent.m (initialize_keyboard): Use
 	XK_ISO_Level3_Shift as second alternate key.
 	* Documentation/Back/DefaultsSummary.gsdoc: Document this mapping.
