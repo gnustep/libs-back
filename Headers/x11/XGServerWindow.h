@@ -110,7 +110,6 @@ typedef struct _gswindow_device_t {
   int			numProtocols;
   XIC                   ic;
   void                  *gdriver;      /* gdriver ident. Managed by gdriver */
-  int                   gdriverProtocol; /* Managed by gdriver */
   BOOL			ignore_take_focus;
 #ifdef HAVE_LIBXEXT
   uint32_t              net_wm_sync_request_counter_value_low;

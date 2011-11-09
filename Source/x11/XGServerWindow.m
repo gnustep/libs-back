@@ -1643,12 +1643,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 
   NSDebugLLog(@"XGTrace", @"DPSwindowbacking: %@ : %d", type, win);
 
-  if ((window->gdriverProtocol & GDriverHandlesBacking))
-    {
-      window->type = type;
-      return;
-    }
-
   window->type = type;
 }
 
@@ -2577,18 +2571,12 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 
 
       [isa waitAllContexts];
-      if ((window->gdriverProtocol & GDriverHandlesExpose))
-	{
-	  /* Temporary protocol until we standardize the backing buffer */
-	  NSRect rect = NSMakeRect(rectangle.x, rectangle.y, 
-				   rectangle.width, rectangle.height);
-	  [[GSCurrentContext() class] handleExposeRect: rect
-			     forDriver: window->gdriver];
-	}
-      else
-        {
-	  assert(0);
-	}
+
+      /* Temporary protocol until we standardize the backing buffer */
+      NSRect rect = NSMakeRect(rectangle.x, rectangle.y, 
+			       rectangle.width, rectangle.height);
+      [[GSCurrentContext() class] handleExposeRect: rect
+					 forDriver: window->gdriver];
     }
   else
     {
@@ -2641,18 +2629,12 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   if (width > 0 || height > 0)
     {
       [isa waitAllContexts];
-      if ((window->gdriverProtocol & GDriverHandlesBacking))
-	{
-	  NSDebugLLog (@"XGFlush", 
-	       @"expose X rect ((%d, %d), (%d, %d))", xi, yi, width, height);
-	  /* Temporary protocol until we standardize the backing buffer */
-	  [[GSCurrentContext() class] handleExposeRect: rect
-			     forDriver: window->gdriver];
-	}
-      else
-        {
-	  assert(0);
-	}
+
+      NSDebugLLog (@"XGFlush", 
+		   @"expose X rect ((%d, %d), (%d, %d))", xi, yi, width, height);
+      /* Temporary protocol until we standardize the backing buffer */
+      [[GSCurrentContext() class] handleExposeRect: rect
+					 forDriver: window->gdriver];
     }
 
 #ifdef HAVE_LIBXEXT

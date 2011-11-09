@@ -73,9 +73,6 @@
       // Do double-buffer:
       // Create a similar surface to the window which supports alpha
 
-      // Ask XGServerWindow to call +[CairoContext handleExposeRect:forDriver:]
-      // to let us handle the back buffer -> front buffer copy using cairo.
-      GSWINDEVICE->gdriverProtocol |= GDriverHandlesExpose | GDriverHandlesBacking;
       GSWINDEVICE->gdriver = self;
 
       _windowSurface = windowsurface;
