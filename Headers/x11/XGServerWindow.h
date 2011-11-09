@@ -90,7 +90,6 @@ typedef struct _gswindow_device_t {
 
   unsigned int          buffer_width;  /* Size in pixels of the current buffers. */
   unsigned int          buffer_height;
-  BOOL			is_exposed;
   NSMutableArray	*exposedRects; /* List of exposure event rects */
   XWMHints		gen_hints;
   XSizeHints		siz_hints;

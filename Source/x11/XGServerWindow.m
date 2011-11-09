@@ -2572,9 +2572,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       NSDebugLLog (@"NSWindow", @"copy exposed area ((%d, %d), (%d, %d))",
 		  rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 
-
-      [isa waitAllContexts];
-
       /* Temporary protocol until we standardize the backing buffer */
       NSRect rect = NSMakeRect(rectangle.x, rectangle.y, 
 			       rectangle.width, rectangle.height);
@@ -2622,17 +2619,13 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       return;
     }
 
-  [self styleoffsets: &l : &r : &t : &b
-		    : window->win_attrs.window_style : window->ident];
-  xi = rect.origin.x = NSMinX(rect) - l;
-  yi = rect.origin.y = NSHeight(window->xframe) + b - NSMaxY(rect);
+  xi = rect.origin.x = NSMinX(rect);
+  yi = rect.origin.y = NSHeight(window->xframe) - NSMaxY(rect);
   width = NSWidth(rect);
   height = NSHeight(rect);
 
   if (width > 0 || height > 0)
     {
-      [isa waitAllContexts];
-
       NSDebugLLog (@"XGFlush", 
 		   @"expose X rect ((%d, %d), (%d, %d))", xi, yi, width, height);
       /* Temporary protocol until we standardize the backing buffer */
