@@ -318,12 +318,12 @@ static NSMapTable *gtable;
   [gstate GSSetStrokeColorspace: spaceref];
 }
 
-- (void) GSSetFillColor: (const float *)values
+- (void) GSSetFillColor: (const CGFloat *)values
 {
   [gstate GSSetFillColor: values];
 }
 
-- (void) GSSetStrokeColor: (const float *)values
+- (void) GSSetStrokeColor: (const CGFloat *)values
 {
   [gstate GSSetStrokeColor: values];
 }

@@ -317,7 +317,7 @@
   [self setColor: &col state: COLOR_STROKE];
 }
 
-- (void) GSSetFillColor: (const float *)values
+- (void) GSSetFillColor: (const CGFloat *)values
 {
   device_color_t dcolor;
   NSColor *color;
@@ -335,16 +335,21 @@
     }
   else 
     {
-      [color getRed: &dcolor.field[0]
-             green: &dcolor.field[1]
-             blue: &dcolor.field[2]
-             alpha: &dcolor.field[AINDEX]];
+      CGFloat r, g, b, a;
+      [color getRed: &r
+             green: &g
+             blue: &b
+             alpha: &a];
+      dcolor.field[0] = r;
+      dcolor.field[1] = g;
+      dcolor.field[2] = b;
+      dcolor.field[AINDEX] = a;
     }
 
   [self setColor: &dcolor state: COLOR_FILL];
 }
 
-- (void) GSSetStrokeColor: (const float *)values
+- (void) GSSetStrokeColor: (const CGFloat *)values
 {
   device_color_t dcolor;
   NSColor *color;
@@ -362,10 +367,15 @@
     }
   else 
     {
-      [color getRed: &dcolor.field[0]
-             green: &dcolor.field[1]
-             blue: &dcolor.field[2]
-             alpha: &dcolor.field[AINDEX]];
+      CGFloat r, g, b, a;
+      [color getRed: &r
+             green: &g
+             blue: &b
+             alpha: &a];
+      dcolor.field[0] = r;
+      dcolor.field[1] = g;
+      dcolor.field[2] = b;
+      dcolor.field[AINDEX] = a;
     }
 
   [self setColor: &dcolor state: COLOR_STROKE];
