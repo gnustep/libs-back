@@ -477,8 +477,10 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 { 
   gswindow_device_t	*win = (gswindow_device_t*)window;
   NSRect x = o;
-  x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y;
 
+  x.origin.y = DisplayHeight(dpy, win->screen) - 
+    (x.origin.y + x.size.height);
+  
   NSDebugLLog(@"Frame", @"O2X %lu, %@, %@", win->number,
     NSStringFromRect(o), NSStringFromRect(x));
   return x;
