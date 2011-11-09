@@ -74,12 +74,6 @@ typedef struct {
 
 #define GSMaxWMProtocols 5
 
-/* Graphics Driver protocol. Setup in [NSGraphicsContext-contextDevice:] */
-enum {
-  GDriverHandlesBacking = 1,
-  GDriverHandlesExpose = 2
-};
-
 typedef struct _gswindow_device_t {
   Display               *display;      /* Display this window is on */
   Window                ident;         /* Window handle */
@@ -88,7 +82,6 @@ typedef struct _gswindow_device_t {
   int                   screen;        /* Screeen this window is on */
   long                  number;        /* Globally unique identifier */
   unsigned int          depth;         /* Window depth */
-  unsigned int          border;        /* Border size */
   int			map_state;     /* X map state */
   int                   visibility;    /* X visibility */
   int                   wm_state;      /* X WM state */
@@ -103,9 +96,6 @@ typedef struct _gswindow_device_t {
   XSizeHints		siz_hints;
   GNUstepWMAttributes	win_attrs;
   XSetWindowAttributes	xwn_attrs;
-  int			xoff;
-  int			yoff;
-  int			boff;
   Atom			protocols[GSMaxWMProtocols];
   int			numProtocols;
   XIC                   ic;

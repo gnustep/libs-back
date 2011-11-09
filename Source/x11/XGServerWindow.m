@@ -874,10 +874,12 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   window->map_state = IsViewable;
   window->visibility = -1;
   window->wm_state = NormalState;
+
+  unsigned int border;
   if (window->ident)
     XGetGeometry(dpy, window->ident, &window->root, 
 		 &x, &y, &width, &height,
-		 &window->border, &window->depth);
+		 &border, &window->depth);
 
   window->xframe = NSMakeRect(x, y, width, height);
   NSMapInsert (windowtags, (void*)(uintptr_t)window->number, window);
@@ -2247,9 +2249,10 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 
   NSDebugLLog(@"XGTrace", @"DPScurrentwindowbounds: %d", win);
 
+  unsigned int border;
   // get the current xframe of the window
   XGetGeometry(dpy, window->ident, &window->root,
-    &x, &y, &width, &height, &window->border, &window->depth);
+    &x, &y, &width, &height, &border, &window->depth);
   window->xframe = NSMakeRect(x, y, width, height);
 
   screenHeight = DisplayHeight(dpy, window->screen);
