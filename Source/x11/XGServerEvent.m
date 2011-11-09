@@ -78,10 +78,6 @@ static BOOL _mod_ignore_shift = NO;
 
 static BOOL next_event_is_a_keyrepeat;
 
-void __objc_xgcontextevent_linking (void)
-{
-}
-
 @interface XGServer (Private)
 - (void) receivedEvent: (void*)data
                   type: (RunLoopEventType)type
