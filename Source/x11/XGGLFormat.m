@@ -164,9 +164,12 @@ do \
           case NSOpenGLPFAColorSize:
             {
                 ptr++;
+                append(GLX_BUFFER_SIZE, *ptr);
+/*
                 append(GLX_RED_SIZE, *ptr);
                 append(GLX_GREEN_SIZE, *ptr);
                 append(GLX_BLUE_SIZE, *ptr);
+*/
                 break;
             }
           case NSOpenGLPFAAlphaSize:

@@ -1,3 +1,9 @@
+2011-11-07 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGGLFormat.m (-assembleGLXAttributes:): Use
+	GLX_BUFFER_SIZE for NSOpenGLPFAColorSize instead of setting all
+	the single colour sizes, which was wrong.
+
 2011-10-25  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/gsc/GSStreamContext.m:
