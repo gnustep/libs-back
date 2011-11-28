@@ -1,3 +1,9 @@
+2011-11-28 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerEvent.m (initialize_keyboard): Don't use
+	XK_ISO_Level3_Shift as second alternate key.
+	* Documentation/Back/DefaultsSummary.gsdoc: Document this mapping.
+
 2011-11-07 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGGLFormat.m (-assembleGLXAttributes:): Use
