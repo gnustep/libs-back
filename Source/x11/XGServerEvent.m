@@ -1913,7 +1913,7 @@ initialize_keyboard (void)
 
   _alt_keysyms[1] = key_sym_from_defaults(display, defaults,
                                           @"GSSecondAlternateKey",
-                                          XK_ISO_Level3_Shift);
+                                          NoSymbol);
 
   if (_alt_keysyms[0] == _alt_keysyms[1])
     _alt_keysyms[1] = NoSymbol;
