@@ -27,6 +27,8 @@
 
 #include <AppKit/NSBitmapImageRep.h>
 #include <AppKit/NSGraphics.h>
+#include <AppKit/NSPrintInfo.h>
+#include <AppKit/NSPrintOperation.h>
 
 #include "cairo/CairoContext.h"
 #include "cairo/CairoGState.h"
@@ -225,6 +227,21 @@
   NSSize size;
   NSString *contextType;
 
+  NSPrintOperation *printOp = [NSPrintOperation currentOperation];
+  NSPrintInfo *printInfo = [printOp printInfo];
+
+  if (printInfo != nil)
+    {
+      size = [printInfo paperSize];
+    }
+  else
+    {
+      [NSException raise: NSInternalInconsistencyException
+		  format: @"current print operation printInfo is nil in %@",
+		   NSStringFromSelector(_cmd)];
+      return;
+    }
+
   contextType = [context_info objectForKey:
 			 NSGraphicsContextRepresentationFormatAttributeName];
 
@@ -232,7 +249,6 @@
     {
       if ([contextType isEqual: NSGraphicsContextPSFormat])
         {
-          size = boundingBox.size;
           surface = [[CairoPSSurface alloc] initWithDevice: context_info];
           [surface setSize: size];
           // This strange setting is needed because of the way GUI handles offset.
@@ -241,7 +257,6 @@
         }
       else if ([contextType isEqual: NSGraphicsContextPDFFormat])
         {
-          size = boundingBox.size;
           surface = [[CairoPDFSurface alloc] initWithDevice: context_info];
           [surface setSize: size];
           // This strange setting is needed because of the way GUI handles offset.
