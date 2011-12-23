@@ -1,3 +1,11 @@
+2011-12-23  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/cairo/CairoContext.m (-beginPrologueBBox:...): Use
+	paper size from print info to set the cairo page size, instead
+	of using the bounding box (which is usually smaller than the
+	paper size, and was causing cairo print output to be wrong
+	compared to GNUstep's built-in PostScript writer.)
+
 2011-11-28 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerEvent.m (initialize_keyboard): Don't use
