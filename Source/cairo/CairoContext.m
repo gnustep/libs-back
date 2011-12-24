@@ -233,6 +233,17 @@
   if (printInfo != nil)
     {
       size = [printInfo paperSize];
+
+      // FIXME: This is confusing..
+      // When an 8.5x11 page is set to landscape,
+      // NSPrintInfo also swaps the paperSize to be 11x8.5,
+      // but gui also adds a 90 degree rotation as if it will
+      // be drawing on a 8.5x11 page. So, swap 11x8.5 back to
+      // 8.5x11 here.
+      if ([printInfo orientation] == NSLandscapeOrientation)
+	{
+	  size = NSMakeSize(size.height, size.width);
+	}
     }
   else
     {
