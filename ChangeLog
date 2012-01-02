@@ -1,3 +1,9 @@
+2012-01-02  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/cairo/CairoGState.m (-GSShowGlyphsWithAdvances:):
+	Update the current point after drawing text. Should not affect
+	anything in gui right now, but will be useful later.
+
 2011-12-24  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/cairo/CairoContext.m (-beginPrologueBBox:...):
