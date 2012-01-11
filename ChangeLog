@@ -1,3 +1,11 @@
+2012-01-11 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/winlib/WIN32FontEnumerator.m,
+	* Source/cairo/CairoFontEnumerator.m,
+	* Source/xlib/GSXftFontInfo.m,
+	* Source/xlib/XGFont.m: Use NSDebugLLog instead of NSDebugLog to
+	reduce amount of default output.
+
 2012-01-02  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/cairo/CairoGState.m (-GSShowGlyphsWithAdvances:):

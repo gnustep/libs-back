@@ -141,7 +141,7 @@ int CALLBACK fontenum(ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEXW *lpntme,
 
   fontName = [NSString stringWithCharacters: lpelfe->elfFullName
 				     length: wcslen(lpelfe->elfFullName)];
-  NSLog(@"Found font %@", fontName);
+  NSDebugLLog(@"NSFont", @"Found font %@", fontName);
   add_font((NSMutableArray *)lParam, fontName, lpelfe, lpntme);
   return 1;
 }
@@ -154,7 +154,7 @@ void enumerate_font(NSMutableArray *fontDefs, NSString *fontFamily)
   int res;
   CREATE_AUTORELEASE_POOL(pool);
 
-  NSLog(@"Enumerate font family %@", fontFamily);
+  NSDebugLLog(@"NSFont", @"Enumerate font family %@", fontFamily);
   hdc = GetDC(NULL);
   logfont.lfCharSet = DEFAULT_CHARSET;
   wcsncpy(logfont.lfFaceName,
