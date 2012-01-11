@@ -24,10 +24,11 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "Foundation/NSArray.h"
+#include <Foundation/NSArray.h>
 #include <Foundation/NSAutoreleasePool.h>
-#include "Foundation/NSDictionary.h"
-#include "Foundation/NSValue.h"
+#include <Foundation/NSDebug.h>
+#include <Foundation/NSDictionary.h>
+#include <Foundation/NSValue.h>
 
 #include "winlib/WIN32FontEnumerator.h"
 #include "windows.h"

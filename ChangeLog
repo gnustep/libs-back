@@ -1,5 +1,9 @@
 2012-01-11 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/winlib/WIN32FontEnumerator.m: Add missing include.
+
+2012-01-11 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/winlib/WIN32FontEnumerator.m,
 	* Source/cairo/CairoFontEnumerator.m,
 	* Source/xlib/GSXftFontInfo.m,
