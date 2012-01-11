@@ -295,7 +295,7 @@ static BOOL XGInitAtoms(Display *dpy)
       return NO;
     }
   else
-    NSDebugLog(@"Loaded font: %@", xfontname);
+    NSDebugLLog(@"NSFont", @"Loaded font: %@", xfontname);
 
   // Fill the ivars
   ASSIGN(familyName, XGFontFamily(xdpy, font_info));
@@ -330,7 +330,7 @@ static BOOL XGInitAtoms(Display *dpy)
 	    }
 	  mostCompatibleStringEncoding
 	    = [GSMimeDocument encodingFromCharset: encodingScheme];
-	  NSDebugLog(@"Found encoding %d for %@", 
+	  NSDebugLLog(@"NSFont", @"Found encoding %d for %@", 
 		     mostCompatibleStringEncoding, encodingScheme);
 	  if (mostCompatibleStringEncoding == GSUndefinedEncoding)
 	    {

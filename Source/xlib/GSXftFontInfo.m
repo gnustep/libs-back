@@ -208,7 +208,7 @@ static NSArray *faFromFc(FcPattern *pat)
                   [fcxft_allFontFamilies setObject: familyArray forKey: familyString];
 		  RELEASE(familyArray);
                 }
-              NSDebugLog(@"fc enumerator: adding font: %@", name);
+              NSDebugLLog(@"NSFont", @"fc enumerator: adding font: %@", name);
               [familyArray addObject: fontArray];
               [fcxft_allFontNames addObject: name];      
               aFont = [[FcFont alloc] initWithPattern: fs->fonts[i]];
@@ -819,11 +819,11 @@ static FT_Outline_Funcs bezierpath_funcs = {
   // Derek Zhou claims that this takes over the ownership of the pattern
   if ((font_info = XftFontOpenPattern(xdpy, pattern)))
     {
-      NSDebugLog(@"Loaded font: %@", fontName);
+      NSDebugLLog(@"NSFont", @"Loaded font: %@", fontName);
     }
   else
     {
-      NSDebugLog(@"Cannot load font: %@", fontName);
+      NSDebugLLog(@"NSFont", @"Cannot load font: %@", fontName);
       return NO;
     }
 
