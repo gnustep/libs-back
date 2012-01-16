@@ -294,8 +294,15 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 {
   XEvent xEvent;
 
-  // loop and grab all of the events from the X queue
-  while (XPending(dpy) > 0)
+  // loop and grab ONE of the events from the X queue.
+  //
+  // we don't want to flood the AppKit event queue with
+  // events because it will block autodisplay (which only
+  // happens when the AppKit queue is empty and we try to
+  // run the runloop - see:
+  // [GSDisplayServer getEventMatchingMask:beforeDate:inMode:dequeue:])
+
+  if (XPending(dpy) > 0)
     {
       XNextEvent(dpy, &xEvent);
 
@@ -303,7 +310,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
       if (XFilterEvent(&xEvent, None)) 
         {
           NSDebugLLog(@"NSKeyEvent", @"Event filtered (by XIM?)\n");
-          continue;
+          return;
         }
 #endif
 
@@ -2548,6 +2555,12 @@ process_modifier_flags(unsigned int state)
   return p;
 }
 
+// NOTE: The calls to [self receivedEvent:type:extra:forMode:]
+// were commented out because they cause flooding of the AppKit
+// event queue and can prevent autodisplay; see comment in
+// [self receivedEvent:type:extra:forMode:]
+
+/*
 - (NSEvent*) getEventMatchingMask: (unsigned)mask
                        beforeDate: (NSDate*)limit
                            inMode: (NSString*)mode
@@ -2567,6 +2580,7 @@ process_modifier_flags(unsigned int state)
   [super discardEventsMatchingMask: mask
                        beforeEvent: limit];
 }
+*/
 
 @end
 
