@@ -350,6 +350,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
   NSGraphicsContext *gcontext;
   float deltaX;
   float deltaY;
+  float scrollDelta = 1;
   int buttonNumber;
 
   gcontext = GSCurrentContext();
@@ -363,6 +364,38 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                 xEvent.xbutton.time %lu timeOfLastClick %lu \n",
                     xEvent.xbutton.window, xEvent.xbutton.time,
                     generic.lastClick);
+
+	/*
+	 * Compress scroll events to avoid flooding
+	 */
+	if ((xEvent.xbutton.button == generic.scrollLeftMouse
+	     && generic.scrollLeftMouse != 0) ||
+	    (xEvent.xbutton.button == generic.scrollRightMouse
+	     && generic.scrollRightMouse != 0) ||
+	    (xEvent.xbutton.button == generic.upMouse
+	     && generic.upMouse != 0) ||
+	    (xEvent.xbutton.button == generic.downMouse 
+	     && generic.downMouse != 0))
+	  {
+	    XEvent peek;
+	    while (XCheckTypedWindowEvent(xEvent.xbutton.display,
+					  xEvent.xbutton.window,
+					  ButtonPress,
+					  &peek))
+	      {
+		if (xEvent.xbutton.button == peek.xbutton.button
+		    && xEvent.xbutton.x == peek.xbutton.x
+		    && xEvent.xbutton.y == peek.xbutton.y)
+		  {
+		    scrollDelta += 1.0;
+		  }
+		else
+		  {
+		    break;
+		  }
+	      }
+	  }
+
         /*
          * hardwired test for a double click
          *
@@ -433,28 +466,28 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         else if (xEvent.xbutton.button == generic.upMouse
           && generic.upMouse != 0)
           {
-            deltaY = 1.;
+            deltaY = scrollDelta;
             eventType = NSScrollWheel;
             buttonNumber = generic.upMouse;
           }
         else if (xEvent.xbutton.button == generic.downMouse
           && generic.downMouse != 0)
           {
-            deltaY = -1.;
+            deltaY = -scrollDelta;
             eventType = NSScrollWheel;
             buttonNumber = generic.downMouse;
           }
         else if (xEvent.xbutton.button == generic.scrollLeftMouse
           && generic.scrollLeftMouse != 0)
           {
-            deltaX = -1.;
+            deltaX = -scrollDelta;
             eventType = NSScrollWheel;
             buttonNumber = generic.scrollLeftMouse;
           }
         else if (xEvent.xbutton.button == generic.scrollRightMouse
           && generic.scrollRightMouse != 0)
           {
-            deltaX = 1.;
+            deltaX = scrollDelta;
             eventType = NSScrollWheel;
             buttonNumber = generic.scrollRightMouse;
           }
