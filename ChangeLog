@@ -1,3 +1,30 @@
+2012-01-15  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/x11/XGServer.m: Don't read X events in NSConnectionReplyMode
+	* Source/x11/XGServerEvent.m (-receivedEvent:type:extra:forMode:):
+	Only read one event from the xlib event queue, instead of all of them.
+	* Source/x11/XGServerEvent.m (-getEventMatchingMask:beforeDate:inMode:):
+	Remove call to -receivedEvent:type:extra:forMode:
+	* Source/x11/XGServerEvent.m (-discardEventsMatchingMask:beforeEvent:):
+	Remove call to -receivedEvent:type:extra:forMode:
+
+	These changes are an attempt to fix a bug where a steady stream
+	of X events can postpone autodisplay indefinitely. To see it, open
+	a long document in Ink and scroll with the mousewheel slowly but
+	continuously. If you scroll steadily enough, the window will not
+	update until you stop scrolling.
+
+	This occurs beacuse autodisplay only occurs when the AppKit event
+	queue is empty and the runloop runs, and without the above changes,
+	the AppKit event queue was filling up and not emptying until the
+	mousewheel events stopped arriving.
+
+	In the long run I think we should get rid of the AppKit event queue
+	and have XGServer override the default implementation of
+	-[GSDisplayServer getEventMatchingMask:beforeDate:inMode:dequeue:]
+	and related methods with custom ones that interact
+	directly with the Xlib event queue.
+
 2012-01-11 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/winlib/WIN32FontEnumerator.m: Add missing include.
