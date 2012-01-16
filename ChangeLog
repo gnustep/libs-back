@@ -1,5 +1,10 @@
 2012-01-15  Eric Wasylishen  <ewasylishen@gmail.com>
 
+	* Source/x11/XGServerEvent.m (-processEvent:): Coalesce
+	mousewheel events
+
+2012-01-15  Eric Wasylishen  <ewasylishen@gmail.com>
+
 	* Source/x11/XGServer.m: Don't read X events in NSConnectionReplyMode
 	* Source/x11/XGServerEvent.m (-receivedEvent:type:extra:forMode:):
 	Only read one event from the xlib event queue, instead of all of them.
