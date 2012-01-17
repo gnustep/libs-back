@@ -377,17 +377,24 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 	    (xEvent.xbutton.button == generic.downMouse 
 	     && generic.downMouse != 0))
 	  {
-	    XEvent peek;
-	    while (XCheckTypedWindowEvent(xEvent.xbutton.display,
-					  xEvent.xbutton.window,
-					  ButtonPress,
-					  &peek))
+	    while (XPending(xEvent.xbutton.display))
 	      {
-		if (xEvent.xbutton.button == peek.xbutton.button
+		XEvent peek;
+		XPeekEvent(xEvent.xbutton.display, &peek);
+		
+		/*
+		 * A stream of scroll events seems to consist of
+		 * a press followed by several releases
+		 */
+		if ((ButtonPress == peek.type 
+		     || ButtonRelease == peek.type)
+		    && xEvent.xbutton.window == peek.xbutton.window
+		    && xEvent.xbutton.button == peek.xbutton.button
 		    && xEvent.xbutton.x == peek.xbutton.x
 		    && xEvent.xbutton.y == peek.xbutton.y)
 		  {
 		    scrollDelta += 1.0;
+		    XNextEvent(xEvent.xbutton.display, &xEvent);
 		  }
 		else
 		  {
