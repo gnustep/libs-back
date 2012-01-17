@@ -1,3 +1,8 @@
+2012-01-16  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/x11/XGServerEvent.m (-processEvent:): Rewrite coalescing
+	code to only combine an uninterrupted set of scroll events.
+
 2012-01-15  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/x11/XGServerEvent.m (-processEvent:): Coalesce
