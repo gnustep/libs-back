@@ -294,15 +294,8 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 {
   XEvent xEvent;
 
-  // loop and grab ONE of the events from the X queue.
-  //
-  // we don't want to flood the AppKit event queue with
-  // events because it will block autodisplay (which only
-  // happens when the AppKit queue is empty and we try to
-  // run the runloop - see:
-  // [GSDisplayServer getEventMatchingMask:beforeDate:inMode:dequeue:])
-
-  if (XPending(dpy) > 0)
+  // loop and grab all of the events from the X queue
+  while (XPending(dpy) > 0)
     {
       XNextEvent(dpy, &xEvent);
 
@@ -310,7 +303,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
       if (XFilterEvent(&xEvent, None)) 
         {
           NSDebugLLog(@"NSKeyEvent", @"Event filtered (by XIM?)\n");
-          return;
+          continue;
         }
 #endif
 
@@ -350,7 +343,6 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
   NSGraphicsContext *gcontext;
   float deltaX;
   float deltaY;
-  float scrollDelta = 1;
   int buttonNumber;
 
   gcontext = GSCurrentContext();
@@ -364,45 +356,6 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                 xEvent.xbutton.time %lu timeOfLastClick %lu \n",
                     xEvent.xbutton.window, xEvent.xbutton.time,
                     generic.lastClick);
-
-	/*
-	 * Compress scroll events to avoid flooding
-	 */
-	if ((xEvent.xbutton.button == generic.scrollLeftMouse
-	     && generic.scrollLeftMouse != 0) ||
-	    (xEvent.xbutton.button == generic.scrollRightMouse
-	     && generic.scrollRightMouse != 0) ||
-	    (xEvent.xbutton.button == generic.upMouse
-	     && generic.upMouse != 0) ||
-	    (xEvent.xbutton.button == generic.downMouse 
-	     && generic.downMouse != 0))
-	  {
-	    while (XPending(xEvent.xbutton.display))
-	      {
-		XEvent peek;
-		XPeekEvent(xEvent.xbutton.display, &peek);
-		
-		/*
-		 * A stream of scroll events seems to consist of
-		 * a press followed by several releases
-		 */
-		if ((ButtonPress == peek.type 
-		     || ButtonRelease == peek.type)
-		    && xEvent.xbutton.window == peek.xbutton.window
-		    && xEvent.xbutton.button == peek.xbutton.button
-		    && xEvent.xbutton.x == peek.xbutton.x
-		    && xEvent.xbutton.y == peek.xbutton.y)
-		  {
-		    scrollDelta += 1.0;
-		    XNextEvent(xEvent.xbutton.display, &xEvent);
-		  }
-		else
-		  {
-		    break;
-		  }
-	      }
-	  }
-
         /*
          * hardwired test for a double click
          *
@@ -473,28 +426,28 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         else if (xEvent.xbutton.button == generic.upMouse
           && generic.upMouse != 0)
           {
-            deltaY = scrollDelta;
+            deltaY = 1.;
             eventType = NSScrollWheel;
             buttonNumber = generic.upMouse;
           }
         else if (xEvent.xbutton.button == generic.downMouse
           && generic.downMouse != 0)
           {
-            deltaY = -scrollDelta;
+            deltaY = -1.;
             eventType = NSScrollWheel;
             buttonNumber = generic.downMouse;
           }
         else if (xEvent.xbutton.button == generic.scrollLeftMouse
           && generic.scrollLeftMouse != 0)
           {
-            deltaX = -scrollDelta;
+            deltaX = -1.;
             eventType = NSScrollWheel;
             buttonNumber = generic.scrollLeftMouse;
           }
         else if (xEvent.xbutton.button == generic.scrollRightMouse
           && generic.scrollRightMouse != 0)
           {
-            deltaX = scrollDelta;
+            deltaX = 1.;
             eventType = NSScrollWheel;
             buttonNumber = generic.scrollRightMouse;
           }
@@ -2595,12 +2548,6 @@ process_modifier_flags(unsigned int state)
   return p;
 }
 
-// NOTE: The calls to [self receivedEvent:type:extra:forMode:]
-// were commented out because they cause flooding of the AppKit
-// event queue and can prevent autodisplay; see comment in
-// [self receivedEvent:type:extra:forMode:]
-
-/*
 - (NSEvent*) getEventMatchingMask: (unsigned)mask
                        beforeDate: (NSDate*)limit
                            inMode: (NSString*)mode
@@ -2620,7 +2567,6 @@ process_modifier_flags(unsigned int state)
   [super discardEventsMatchingMask: mask
                        beforeEvent: limit];
 }
-*/
 
 @end
 
