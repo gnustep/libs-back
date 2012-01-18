@@ -475,16 +475,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   [self _initXContext];
 
   [self setupRunLoopInputSourcesForMode: NSDefaultRunLoopMode]; 
-
-  // FIXME: Not sure why we were accepting X events in
-  // NSConnectionReplyMode. This was causing X event processing in
-  // weird places, like [NSApplication run] -> [_main_menu update] ->
-  // [NSPasteboard generalPasteboard] -> [NSDistantObject forwardInvocation:] ->
-  // [NSRunLoop acceptInputForMode:beforeDate:]
-  // so I am disabling X event listening for NSConnectionReplyMode
-  // for now.
-
-  //[self setupRunLoopInputSourcesForMode: NSConnectionReplyMode]; 
+  [self setupRunLoopInputSourcesForMode: NSConnectionReplyMode]; 
   [self setupRunLoopInputSourcesForMode: NSModalPanelRunLoopMode]; 
   [self setupRunLoopInputSourcesForMode: NSEventTrackingRunLoopMode]; 
   return self;
