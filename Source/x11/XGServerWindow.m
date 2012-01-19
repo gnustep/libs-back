@@ -622,6 +622,33 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   XFlush(dpy);
 }
 
+- (void)_sendRoot: (Window)root
+             type: (Atom)type 
+           window: (Window)window
+            data0: (long)data0
+            data1: (long)data1
+            data2: (long)data2
+            data3: (long)data3
+            data4: (long)data4
+{
+  XEvent event;
+
+  memset(&event, 0, sizeof(event));
+	event.xclient.type = ClientMessage;
+	event.xclient.message_type = type;
+	event.xclient.format = 32;
+	event.xclient.display = dpy;
+	event.xclient.window = window;
+	event.xclient.data.l[0] = data0;
+	event.xclient.data.l[1] = data1;
+	event.xclient.data.l[2] = data2;
+	event.xclient.data.l[3] = data3;
+	event.xclient.data.l[4] = data4;
+	XSendEvent(dpy, root, False,
+             (SubstructureNotifyMask|SubstructureRedirectMask), &event);
+  XFlush(dpy);
+}
+
 /*
  * Check if the window manager supports a feature.
  */
@@ -3033,10 +3060,12 @@ static BOOL didCreatePixmaps;
 	  ((window->win_attrs.window_style &
 	    (NSIconWindowMask|NSMiniWindowMask)) != 0))
         {
+	  NSUserDefaults *defs = [NSUserDefaults standardUserDefaults];
 	  /*
-	   * Make any window which assumes the desktop level act as the background.
+	   * Make any window which assumes the desktop level act as the
+	   * background.
 	   */ 
-	  if(window->win_attrs.window_level == NSDesktopWindowLevel) 
+	  if (window->win_attrs.window_level == NSDesktopWindowLevel) 
 	    {
 	      [self _sendRoot: window->root 
 		    type: generic.netstates.net_wm_state_atom
@@ -3046,6 +3075,30 @@ static BOOL didCreatePixmaps;
 		    data2: generic.netstates.net_wm_state_sticky_atom
 		    data3: 1];
 	    }
+	  else if (((window->win_attrs.window_style & NSIconWindowMask) != 0)
+		   && [defs boolForKey: @"StickyAppIcons"] == YES)
+	    {
+	      [self _sendRoot: window->root 
+		    type: generic.netstates.net_wm_state_atom
+		    window: window->ident
+		    data0: _NET_WM_STATE_ADD
+		    data1: generic.netstates.net_wm_state_skip_taskbar_atom
+		    data2: generic.netstates.net_wm_state_skip_pager_atom
+		    data3: generic.netstates.net_wm_state_sticky_atom
+		    data4: 1];
+	    }
+	  else if (((window->win_attrs.window_style & NSMiniWindowMask) != 0)
+		   && [defs boolForKey: @"StickyMiniWindows"] == YES)
+	    {
+	      [self _sendRoot: window->root 
+		    type: generic.netstates.net_wm_state_atom
+		    window: window->ident
+		    data0: _NET_WM_STATE_ADD
+		    data1: generic.netstates.net_wm_state_skip_taskbar_atom
+		    data2: generic.netstates.net_wm_state_skip_pager_atom
+		    data3: generic.netstates.net_wm_state_sticky_atom
+		    data4: 1];
+	    }
 	  else
 	    {
 	      [self _sendRoot: window->root 
@@ -3054,7 +3107,7 @@ static BOOL didCreatePixmaps;
 		    data0: _NET_WM_STATE_ADD
 		    data1: generic.netstates.net_wm_state_skip_taskbar_atom
 		    data2: generic.netstates.net_wm_state_skip_pager_atom
-                data3: 1];
+                    data3: 1];
 	    }
 	}
     }
