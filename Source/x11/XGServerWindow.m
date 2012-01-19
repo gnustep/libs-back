@@ -3083,8 +3083,8 @@ static BOOL didCreatePixmaps;
 		    window: window->ident
 		    data0: _NET_WM_STATE_ADD
 		    data1: generic.netstates.net_wm_state_skip_taskbar_atom
-		    data2: generic.netstates.net_wm_state_skip_pager_atom
-		    data3: generic.netstates.net_wm_state_sticky_atom
+		    data2: generic.netstates.net_wm_state_sticky_atom
+		    data3: generic.netstates.net_wm_state_skip_pager_atom
 		    data4: 1];
 	    }
 	  else if (((window->win_attrs.window_style & NSMiniWindowMask) != 0)
@@ -3095,8 +3095,8 @@ static BOOL didCreatePixmaps;
 		    window: window->ident
 		    data0: _NET_WM_STATE_ADD
 		    data1: generic.netstates.net_wm_state_skip_taskbar_atom
-		    data2: generic.netstates.net_wm_state_skip_pager_atom
-		    data3: generic.netstates.net_wm_state_sticky_atom
+		    data2: generic.netstates.net_wm_state_sticky_atom
+		    data3: generic.netstates.net_wm_state_skip_pager_atom
 		    data4: 1];
 	    }
 	  else
