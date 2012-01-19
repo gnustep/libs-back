@@ -3076,7 +3076,7 @@ static BOOL didCreatePixmaps;
 		    data3: 1];
 	    }
 	  else if (((window->win_attrs.window_style & NSIconWindowMask) != 0)
-		   && [defs boolForKey: @"StickyAppIcons"] == YES)
+		   && [defs boolForKey: @"GSStickyAppIcons"] == YES)
 	    {
 	      [self _sendRoot: window->root 
 		    type: generic.netstates.net_wm_state_atom
@@ -3088,7 +3088,7 @@ static BOOL didCreatePixmaps;
 		    data4: 1];
 	    }
 	  else if (((window->win_attrs.window_style & NSMiniWindowMask) != 0)
-		   && [defs boolForKey: @"StickyMiniWindows"] == YES)
+		   && [defs boolForKey: @"GSStickyMiniWindows"] == YES)
 	    {
 	      [self _sendRoot: window->root 
 		    type: generic.netstates.net_wm_state_atom
