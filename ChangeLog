@@ -1,3 +1,10 @@
+2012-01-19  Wolfgang Lux  <wolfgang.lux@gmail.com>
+
+	* Source/x11/XGServerWindow.m (-orderwindow:::,
+	-_sendRoot:type:window:data0:data1:data2:data3:data4:): Introduce
+	new user defaults to respectively make app icons and mini windows
+	sticky (aka omnipresent).
+
 2012-01-11 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/winlib/WIN32FontEnumerator.m: Add missing include.
