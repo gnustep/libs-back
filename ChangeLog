@@ -1,6 +1,13 @@
 2012-01-23  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/cairo/CairoFontInfo.m (-setupAttributes):
+	use CAIRO_HINT_METRICS_ON instead of CAIRO_HINT_METRICS_OFF,
+	otherwise some text is cut of (e.g. quit Ink with unsaved
+	changes, the "t" in "Quit" in the dialog is cut off)
+
+2012-01-23  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/cairo/CairoFontInfo.m (-setupAttributes):
 	We must not leave the hinting settings as their defaults,
 	because if we did, that would mean using the surface defaults
 	which might or might not use hinting (xlib does by default.)
