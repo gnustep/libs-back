@@ -111,6 +111,17 @@
       return NO;
     }
 
+  // We must not leave the hinting settings as their defaults,
+  // because if we did, that would mean using the surface defaults
+  // which might or might not use hinting (xlib does by default.)
+  //
+  // Since we make measurements outside of the context of a surface
+  // (-advancementForGlyph:), we need to ensure that the same
+  // hinting settings are used there as when we draw. For now,
+  // just force hinting to be off.
+  cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_OFF);
+  cairo_font_options_set_hint_style(options, CAIRO_HINT_STYLE_NONE);
+
   _scaled = cairo_scaled_font_create(face, &font_matrix, &ctm, options);
   cairo_font_options_destroy(options);
   if (cairo_scaled_font_status(_scaled) != CAIRO_STATUS_SUCCESS)
@@ -394,6 +405,25 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
       return;
     }
 
+  // Set font options from the scaled font
+  // FIXME: Instead of setting the matrix, setting the face, and setting
+  // the options, we should be using cairo_set_scaled_font
+  {
+    cairo_font_options_t *options = cairo_font_options_create();
+    cairo_scaled_font_get_font_options(_scaled, options);
+    cairo_set_font_options(ct, options);
+    cairo_font_options_destroy(options);
+  }
+  if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
+    {
+      NSLog(@"Error while setting font options: %s", 
+            cairo_status_to_string(cairo_status(ct)));
+      cairo_destroy(ct);
+      cairo_surface_destroy(isurface);
+      free(cdata);
+      return;
+    }
+
   if ([path elementCount] > 0)
     {
       NSPoint p;
@@ -478,6 +508,22 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
   if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
     {
       NSLog(@"Error while setting font face: %s", 
+            cairo_status_to_string(cairo_status(ct)));
+      return;
+    }
+
+  // Set font options from the scaled font
+  // FIXME: Instead of setting the matrix, setting the face, and setting
+  // the options, we should be using cairo_set_scaled_font
+  {
+    cairo_font_options_t *options = cairo_font_options_create();
+    cairo_scaled_font_get_font_options(_scaled, options);
+    cairo_set_font_options(ct, options);
+    cairo_font_options_destroy(options);
+  }
+  if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
+    {
+      NSLog(@"Error while setting font options: %s", 
             cairo_status_to_string(cairo_status(ct)));
       return;
     }

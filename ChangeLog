@@ -1,3 +1,15 @@
+2012-01-23  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/cairo/CairoFontInfo.m (-setupAttributes):
+	We must not leave the hinting settings as their defaults,
+	because if we did, that would mean using the surface defaults
+	which might or might not use hinting (xlib does by default.)
+
+	Since we make measurements outside of the context of a surface
+	(-advancementForGlyph:), we need to ensure that the same
+	hinting settings are used there as when we draw. For now,
+	just force hinting to be off.
+
 2012-01-19  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Source/x11/XGServerWindow.m (-orderwindow:::): Introduce new
