@@ -119,7 +119,7 @@
   // (-advancementForGlyph:), we need to ensure that the same
   // hinting settings are used there as when we draw. For now,
   // just force hinting to be off.
-  cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_OFF);
+  cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_ON);
   cairo_font_options_set_hint_style(options, CAIRO_HINT_STYLE_NONE);
 
   _scaled = cairo_scaled_font_create(face, &font_matrix, &ctm, options);
