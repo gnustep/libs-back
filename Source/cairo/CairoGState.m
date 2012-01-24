@@ -437,6 +437,7 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
 
 - (void) GSShowGlyphsWithAdvances: (const NSGlyph *)glyphs : (const NSSize *)advances : (size_t) length
 {
+  // FIXME: this method should just be a call to cairo_show_glyphs
   // FIXME: Currently advances is ignored
   if (_ct)
     {
@@ -463,7 +464,16 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
       [(CairoFontInfo *)font drawGlyphs: glyphs
 				 length: length
 				     on: _ct];
+
+      double x, y;
+      cairo_get_current_point(_ct, &x, &y);
+      cairo_user_to_device(_ct, &x, &y);
+      
       cairo_restore(_ct);
+      
+      // reset the current point
+      cairo_device_to_user(_ct, &x, &y);
+      [path moveToPoint: NSMakePoint(x,y)];
     }
 }
 

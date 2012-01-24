@@ -64,7 +64,7 @@ NSMutableDictionary * __allFonts;
   face = [__allFonts objectForKey: name];
   if (!face)
     {
-      NSDebugLog(@"Font not found %@", name);
+      NSDebugLLog(@"NSFont", @"Font not found %@", name);
     }
   return face;
 }
@@ -184,13 +184,13 @@ static NSArray *faFromFc(FcPattern *pat)
               familyArray = [fcxft_allFontFamilies objectForKey: familyString];
               if (familyArray == nil)
                 {
-                  NSDebugLog(@"Found font family %@", familyString);
+                  NSDebugLLog(@"NSFont", @"Found font family %@", familyString);
                   familyArray = [[NSMutableArray alloc] init];
                   [fcxft_allFontFamilies setObject: familyArray
                                          forKey: familyString];
                   RELEASE(familyArray);
                 }
-              NSDebugLog(@"fc enumerator: adding font: %@", name);
+              NSDebugLLog(@"NSFont", @"fc enumerator: adding font: %@", name);
               [familyArray addObject: fontArray];
               [fcxft_allFontNames addObject: name];      
               aFont = [[CairoFaceInfo alloc] initWithfamilyName: familyString

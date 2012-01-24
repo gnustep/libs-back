@@ -2034,9 +2034,10 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 	    (NSIconWindowMask|NSMiniWindowMask)) != 0))
         {
 	  /*
-	   * Make any window which assumes the desktop level act as the background.
+	   * Make any window which assumes the desktop level act as the
+	   * background.
 	   */ 
-	  if(window->win_attrs.window_level == NSDesktopWindowLevel) 
+	  if (window->win_attrs.window_level == NSDesktopWindowLevel) 
 	    {
 	      [self _sendRoot: window->root 
 		    type: generic.netstates.net_wm_state_atom
@@ -2048,13 +2049,35 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 	    }
 	  else
 	    {
+	      BOOL sticky = NO;
+	      NSUserDefaults *defs = [NSUserDefaults standardUserDefaults];
+
 	      [self _sendRoot: window->root 
 		    type: generic.netstates.net_wm_state_atom
 		    window: window->ident
 		    data0: _NET_WM_STATE_ADD
 		    data1: generic.netstates.net_wm_state_skip_taskbar_atom
 		    data2: generic.netstates.net_wm_state_skip_pager_atom
-                data3: 1];
+                    data3: 1];
+
+	      if ((window->win_attrs.window_style & NSIconWindowMask) != 0)
+		{
+		  sticky = [defs boolForKey: @"GSStickyAppIcons"];
+		}
+	      else if ((window->win_attrs.window_style & NSMiniWindowMask) != 0)
+		{
+		  sticky = [defs boolForKey: @"GSStickyMiniWindows"];
+		}
+	      if (sticky == YES)
+		{
+		  [self _sendRoot: window->root 
+			     type: generic.netstates.net_wm_state_atom
+			   window: window->ident
+			    data0: _NET_WM_STATE_ADD
+			    data1: generic.netstates.net_wm_state_sticky_atom
+			    data2: 0
+			    data3: 1];
+		}
 	    }
 	}
     }
