@@ -222,7 +222,8 @@ NSMutableDictionary	*pasteboards = nil;
 
 - (NSString*) description
 {
-  return [NSString stringWithFormat: @"PasteboardData for type '%@'", type];
+  return [NSString stringWithFormat: @"%@ for type '%@'",
+    [super description], type];
 }
 
 - (NSData*) data
