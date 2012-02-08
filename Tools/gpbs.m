@@ -229,7 +229,7 @@ NSMutableDictionary	*pasteboards = nil;
 {
   if (verbose)
     {
-      NSLog(@"get data for %p\n", self);
+      NSLog(@"get %p[%"PRIuPTR"] %@\n", data, [data length], self);
     }
   return data;
 }
@@ -278,7 +278,7 @@ NSMutableDictionary	*pasteboards = nil;
 {
   if (verbose)
     {
-      NSLog(@"set data for %p\n", self);
+      NSLog(@"set %p[%"PRIuPTR"] %@\n", d, [d length], self);
     }
   ASSIGN(data, d);
 }
@@ -885,11 +885,12 @@ NSMutableDictionary	*pasteboards = nil;
 {
   PasteboardEntry	*e;
 
+  e = [self entryByCount: count];
   if (verbose)
     {
-      NSLog(@"%@ set data for type '%@' version %d\n", self, type, count);
+      NSLog(@"%@ set data %p[%"PRIuPTR"] for type '%@' version %d in %@\n",
+	self, data, [data length], type, count, e);
     }
-  e = [self entryByCount: count];
   if (e)
     {
       PasteboardData	*d;
