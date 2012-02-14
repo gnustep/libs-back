@@ -1,3 +1,11 @@
+2012-02-09 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Tools/gbps.m: Add lots of debug information (have objects describe
+	themselves and where they are in the data sturcture).
+	Simplify code by removing cached information about which owners
+	respond to which selectors (probably not needed on modern systems,
+	and we could re-add this more simply if it turns out I'm wrong).
+
 2012-02-03  Adam Fedor  <fedor@gnu.org>
 
 	* Bump version
