@@ -140,16 +140,12 @@ NSMutableDictionary	*pasteboards = nil;
   NSString	*type;
   id		owner;
   id		pboard;
-  BOOL		wantsChangedOwner;
-  BOOL		hasGNUDataForType;
-  BOOL		hasStdDataForType;
+  id		entry;
 }
 + (PasteboardData*) newWithType: (NSString*)aType
 			  owner: (id)anObject
 			 pboard: (id)anotherObject
-	      wantsChangedOwner: (BOOL)wants
-	      hasStdDataForType: (BOOL)StdData
-	      hasGNUDataForType: (BOOL)GNUData;
+			  entry: (id)anEntry;
 - (BOOL) checkConnection: (NSConnection*)c;
 - (NSData*) data;
 - (NSData*) dataWithVersion: (int)version;
@@ -157,7 +153,6 @@ NSMutableDictionary	*pasteboards = nil;
 - (id) pboard;
 - (void) setData: (NSData*)d;
 - (NSString*) type;
-- (BOOL) wantsChangedOwner;
 @end
 
 @implementation PasteboardData
@@ -165,9 +160,7 @@ NSMutableDictionary	*pasteboards = nil;
 + (PasteboardData*) newWithType: (NSString*)aType
 			  owner: (id)anObject
 			 pboard: (id)anotherObject
-	      wantsChangedOwner: (BOOL)wants
-	      hasStdDataForType: (BOOL)StdData
-	      hasGNUDataForType: (BOOL)GNUData;
+			  entry: (id)anEntry
 {
   PasteboardData*   d = [PasteboardData alloc];
 
@@ -176,9 +169,7 @@ NSMutableDictionary	*pasteboards = nil;
       d->type = RETAIN(aType);
       d->owner = RETAIN(anObject);
       d->pboard = RETAIN(anotherObject);
-      d->wantsChangedOwner = wants;
-      d->hasStdDataForType = StdData;
-      d->hasGNUDataForType = GNUData;
+      d->entry = RETAIN(anEntry);
     }
   return d;
 }
@@ -186,26 +177,19 @@ NSMutableDictionary	*pasteboards = nil;
 - (BOOL) checkConnection: (NSConnection*)c
 {
   BOOL	ourConnection = NO;
-  id	o;
 
   if (owner && [owner isProxy] && [owner connectionForProxy] == c)
     {
-      o = owner;
-      owner = nil;
-      RELEASE(o);
-      o = pboard;
-      pboard = nil;
-      RELEASE(o);
+      DESTROY(owner);
+      DESTROY(pboard);
+      DESTROY(entry);
       ourConnection = YES;
     }
   if (pboard && [pboard isProxy] && [pboard connectionForProxy] == c)
     {
-      o = owner;
-      owner = nil;
-      RELEASE(o);
-      o = pboard;
-      pboard = nil;
-      RELEASE(o);
+      DESTROY(owner);
+      DESTROY(pboard);
+      DESTROY(entry);
       ourConnection = YES;
     }
   return ourConnection;
@@ -217,26 +201,32 @@ NSMutableDictionary	*pasteboards = nil;
   RELEASE(data);
   RELEASE(owner);
   RELEASE(pboard);
+  RELEASE(entry);
   [super dealloc];
 }
 
 - (NSString*) description
 {
-  return [NSString stringWithFormat: @"%@ for type '%@'",
-    [super description], type];
+  return [NSString stringWithFormat:
+    @"%@ %p for type '%@' in %@",
+    [super description], data, type, entry];
 }
 
 - (NSData*) data
 {
   if (verbose)
     {
-      NSLog(@"get %p[%"PRIuPTR"] %@\n", data, [data length], self);
+      NSLog(@"-data for %@", self);
     }
   return data;
 }
 
 - (NSData*) dataWithVersion: (int)version
 {
+  if (verbose)
+    {
+      NSLog(@"-dataWithversion:%d for %@", version, self);
+    }
   /*
    * If the owner of this item is an X window - we can't use the data from
    * the last time the selection was accessed because the X window may have
@@ -250,13 +240,15 @@ NSMutableDictionary	*pasteboards = nil;
 
   if (data == nil && (owner && pboard))
     {
-      if (hasGNUDataForType)
+      if ([owner respondsToSelector:
+	@selector(pasteboard:provideDataForType:andVersion:)])
 	{
 	  [owner pasteboard: pboard
 	 provideDataForType: type
 		 andVersion: version];
 	}
-      else if (hasStdDataForType)
+      else if ([owner respondsToSelector:
+	@selector(pasteboard:provideDataForType:)])
 	{
 	  [owner pasteboard: pboard
 	 provideDataForType: type];
@@ -277,21 +269,16 @@ NSMutableDictionary	*pasteboards = nil;
 
 - (void) setData: (NSData*)d
 {
+  ASSIGN(data, d);
   if (verbose)
     {
-      NSLog(@"set %p[%"PRIuPTR"] %@\n", d, [d length], self);
+      NSLog(@"-setData: for %@", self);
     }
-  ASSIGN(data, d);
 }
 
 - (NSString*) type
 {
   return type;
-}
-
-- (BOOL) wantsChangedOwner
-{
-  return wantsChangedOwner;
 }
 
 @end
@@ -304,9 +291,6 @@ NSMutableDictionary	*pasteboards = nil;
   id			owner;
   id			pboard;
   NSMutableArray	*items;
-  BOOL			wantsChangedOwner;
-  BOOL			hasGNUDataForType;
-  BOOL			hasStdDataForType;
 }
 + (PasteboardEntry*) newWithTypes: (NSArray*)someTypes
 			    owner: (id)anOwner
@@ -337,22 +321,6 @@ NSMutableDictionary	*pasteboards = nil;
       e->owner = RETAIN(anOwner);
       e->pboard = RETAIN(aPboard);
 
-      if (anOwner && [anOwner respondsToSelector:
-		@selector(pasteboardChangedOwner:)])
-	{
-	  e->wantsChangedOwner = YES;
-	}
-      if (anOwner && [anOwner respondsToSelector:
-		@selector(pasteboard:provideDataForType:)])
-	{
-	  e->hasStdDataForType = YES;
-	}
-      if (anOwner && [anOwner respondsToSelector:
-		@selector(pasteboard:provideDataForType:andVersion:)])
-	{
-	  e->hasGNUDataForType = YES;
-	}
-
       e->items = [[NSMutableArray alloc] initWithCapacity: [someTypes count]];
       for (i = 0; i < [someTypes count]; i++)
 	{
@@ -362,16 +330,14 @@ NSMutableDictionary	*pasteboards = nil;
 	  d = [PasteboardData newWithType: type
 				    owner: anOwner
 				   pboard: aPboard
-			wantsChangedOwner: e->wantsChangedOwner
-			hasStdDataForType: e->hasStdDataForType
-			hasGNUDataForType: e->hasGNUDataForType];
+				    entry: e];
 	  [e->items addObject: d];
 	  RELEASE(d);
 	}
       e->refNum = count;
       if (verbose > 1)
 	{
-	  NSLog(@"New PasteboardEntry %d with items - %@", count, e->items);
+	  NSLog(@"New PasteboardEntry %@ with items - %@", e, e->items);
 	}
     }
   return e;
@@ -382,25 +348,6 @@ NSMutableDictionary	*pasteboards = nil;
        pasteboard: (id)pb
 {
   int	i;
-  BOOL	wants = NO;
-  BOOL	StdData = NO;
-  BOOL	GNUData = NO;
-
-  if (newOwner && [newOwner respondsToSelector:
-	@selector(pasteboardChangedOwner:)])
-    {
-      wants = YES;
-    }
-  if (newOwner && [newOwner respondsToSelector:
-	@selector(pasteboard:provideDataForType:)])
-    {
-      StdData = YES;
-    }
-  if (newOwner && [newOwner respondsToSelector:
-	@selector(pasteboard:provideDataForType:andVersion:)])
-    {
-      GNUData = YES;
-    }
 
   for (i = 0; i < [newTypes count]; i++)
     {
@@ -413,16 +360,14 @@ NSMutableDictionary	*pasteboards = nil;
 	  d = [PasteboardData newWithType: type
 				    owner: newOwner
 				   pboard: pb
-			wantsChangedOwner: wants
-			hasStdDataForType: StdData
-			hasGNUDataForType: GNUData];
+				    entry: self];
 	  [items addObject: d];
 	  RELEASE(d);
 	}
     }
   if (verbose > 1)
     {
-      NSLog(@"Modified PasteboardEntry %d with items - %@", refNum, items);
+      NSLog(@"Modified %@ with items - %@", self, items);
     }
 }
 
@@ -462,7 +407,7 @@ NSMutableDictionary	*pasteboards = nil;
 	{
 	  if (verbose > 1)
 	    {
-	      NSLog(@"Removing item from PasteboardEntry %d\n", refNum);
+	      NSLog(@"Removing item from PasteboardEntry %d", refNum);
 	    }
 	  [items removeObjectAtIndex: i-1];
 	}
@@ -476,6 +421,13 @@ NSMutableDictionary	*pasteboards = nil;
   RELEASE(pboard);
   RELEASE(items);
   [super dealloc];
+}
+
+- (NSString*) description
+{
+  return [NSString stringWithFormat:
+    @"%@ ref %d on %@ owned by %@",
+    [super description], refNum, pboard, owner];
 }
 
 - (PasteboardData*) itemForType: (NSString*)type
@@ -502,7 +454,8 @@ NSMutableDictionary	*pasteboards = nil;
 
   NS_DURING
     {
-      if (wantsChangedOwner == YES && owner != nil)
+      if (owner && [owner respondsToSelector:
+	@selector(pasteboardChangedOwner:)])
 	{
 	  [a addObject: owner];
 	}
@@ -510,15 +463,17 @@ NSMutableDictionary	*pasteboards = nil;
       for (i = 0; i < [items count]; i++)
 	{
 	  PasteboardData	*d = [items objectAtIndex: i];
+	  id			o = [d owner];
 
-	  if ([d wantsChangedOwner] == YES && [d owner] != nil
-	    && [a indexOfObjectIdenticalTo: [d owner]] == NSNotFound)
+	  if (o && [o respondsToSelector: @selector(pasteboardChangedOwner:)]
+	    && [a indexOfObjectIdenticalTo: o] == NSNotFound)
 	    {
-	      [a addObject: [d owner]];
+	      [a addObject: o];
 	    }
 	}
 
-      if (wantsChangedOwner == YES)
+      if (owner && [owner respondsToSelector:
+	@selector(pasteboardChangedOwner:)])
 	{
 	  [owner pasteboardChangedOwner: pboard];
 	  if (owner != nil)
@@ -541,7 +496,7 @@ NSMutableDictionary	*pasteboards = nil;
     }
   NS_HANDLER
     {
-      NSLog(@"Error informing objects of ownership change - %@\n",
+      NSLog(@"Error informing objects of ownership change - %@",
 	[localException reason]);
     }
   NS_ENDHANDLER
@@ -758,7 +713,7 @@ NSMutableDictionary	*pasteboards = nil;
     }
   if (verbose)
     {
-      NSLog(@"%@ get data for type '%@' version %d\n",
+      NSLog(@"%@ get data for type '%@' version %d",
 	self, type, e ? [e refNum] : -1);
     }
   if (e)
@@ -833,10 +788,16 @@ NSMutableDictionary	*pasteboards = nil;
     [x pasteboardChangedOwner: pb];
   if (verbose)
     {
-      NSLog(@"%@ declare types '%@' version %d\n",
-	self, types, [current refNum]);
+      NSLog(@"%@ declare types '%@' version %d on %@ for %@",
+	self, types, [current refNum], pb, owner);
     }
   return [current refNum];
+}
+
+- (NSString*) description
+{
+  return [NSString stringWithFormat: @"%@ %@",
+    [super description], name];
 }
 
 - (PasteboardEntry*) entryByCount: (int)count
@@ -889,8 +850,8 @@ NSMutableDictionary	*pasteboards = nil;
   e = [self entryByCount: count];
   if (verbose)
     {
-      NSLog(@"%@ set data %p[%"PRIuPTR"] for type '%@' version %d in %@\n",
-	self, data, [data length], type, count, e);
+      NSLog(@"%@ set data %p for type '%@' version %d in %@",
+	self, data, type, count, e);
     }
   if (e)
     {
@@ -1018,7 +979,7 @@ NSMutableDictionary	*pasteboards = nil;
 
   if (connection == conn)
     {
-      NSLog(@"Help - pasteboard server connection has died!\n");
+      NSLog(@"Help - pasteboard server connection has died!");
       exit(EXIT_FAILURE);
     }
   if ([connection isKindOfClass: [NSConnection class]])
@@ -1282,7 +1243,7 @@ main(int argc, char** argv, char **env)
 
   if (server == nil)
     {
-      NSLog(@"Unable to create server object.\n");
+      NSLog(@"Unable to create server object.");
       exit(EXIT_FAILURE);
     }
 
@@ -1304,7 +1265,7 @@ main(int argc, char** argv, char **env)
     {
       if ([conn registerName: PBSNAME] == NO)
         {
-          NSLog(@"Unable to register with name server.\n");
+          NSLog(@"Unable to register with name server.");
           exit(EXIT_FAILURE);
         }
     }
@@ -1347,7 +1308,7 @@ main(int argc, char** argv, char **env)
 
   if (verbose)
     {
-      NSLog(@"GNU pasteboard server startup.\n");
+      NSLog(@"GNU pasteboard server startup.");
     }
 
   if ([[NSUserDefaults standardUserDefaults]
