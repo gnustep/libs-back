@@ -67,6 +67,7 @@ if necessary. Returns new operation, or -1 it it's a noop. */
 	case NSCompositeDestinationOver:
 	case NSCompositeDestinationOut:
 	case NSCompositeXOR:
+        case NSCompositeHighlight:
 	case NSCompositePlusLighter:
 	  return -1; /* noop */
 	}
@@ -79,6 +80,7 @@ if necessary. Returns new operation, or -1 it it's a noop. */
 	  case NSCompositeSourceOver:
 	  case NSCompositeSourceIn:
 	  case NSCompositeSourceAtop:
+          case NSCompositeHighlight:
 	    return NSCompositeCopy;
 
 	  case NSCompositeSourceOut:
@@ -104,6 +106,7 @@ if necessary. Returns new operation, or -1 it it's a noop. */
 	switch (op)
 	  {
 	  case NSCompositeSourceOver:
+          case NSCompositeHighlight:
 	    return NSCompositeCopy;
 
 	  case NSCompositeSourceIn:
@@ -145,6 +148,7 @@ if necessary. Returns new operation, or -1 it it's a noop. */
 
 	  case NSCompositeSourceOver:
 	  case NSCompositeSourceAtop:
+          case NSCompositeHighlight:
 	    blit_func = DI.composite_sover_ao;
 	    break;
 
@@ -178,6 +182,7 @@ if necessary. Returns new operation, or -1 it it's a noop. */
 	switch (op)
 	  {
 	  case NSCompositeSourceOver:
+          case NSCompositeHighlight:
 	    blit_func = DI.composite_sover_aa;
 	    break;
 	  case NSCompositeSourceIn:
@@ -475,7 +480,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
 
   /* these ignore the source window, so we send them off to
      compositerect: op: */
-  if (op == NSCompositeClear || op == NSCompositeHighlight)
+  if (op == NSCompositeClear || op == GSCompositeHighlight)
     {
       [self compositerect: NSMakeRect(aPoint.x, aPoint.y,
 				      aRect.size.width, aRect.size.height)
@@ -1406,7 +1411,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
 	  memset(dst_alpha, 0, n);
 )
     }
-  else if (op == NSCompositeHighlight)
+  else if (op == GSCompositeHighlight)
     {
       DO_STUFF(
 	{

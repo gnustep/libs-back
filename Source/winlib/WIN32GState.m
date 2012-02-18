@@ -363,6 +363,7 @@ BOOL alpha_blend_source_over(HDC destDC,
   switch (op)
     {
     case NSCompositeSourceOver:
+    case NSCompositeHighlight:
       {
 	success = alpha_blend_source_over(hDC, 
 					  sourceDC, 
@@ -420,7 +421,7 @@ BOOL alpha_blend_source_over(HDC destDC,
     {
       case   NSCompositeClear:
 	break;
-      case   NSCompositeHighlight:
+      case   GSCompositeHighlight:
 	{
 	  HDC hDC;
 	  RECT rect = GSViewRectToWin(self, aRect);
@@ -438,6 +439,7 @@ BOOL alpha_blend_source_over(HDC destDC,
       case   NSCompositeCopy:
       // FIXME
       case   NSCompositeSourceOver:
+      case   NSCompositeHighlight:
       case   NSCompositeSourceIn:
       case   NSCompositeSourceOut:
       case   NSCompositeSourceAtop:
@@ -525,6 +527,7 @@ BOOL alpha_blend_source_over(HDC destDC,
   switch (op)
     {
     case NSCompositeSourceOver:
+    case NSCompositeHighlight:
       {
 	success = alpha_blend_source_over(hDC, 
 					  sourceDC, 
