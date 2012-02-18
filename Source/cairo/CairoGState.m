@@ -1188,12 +1188,22 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       device_color_t c;
 
       cairo_save(_ct);
-      _set_op(_ct, op);
 
-      c = fillColor;
-      gsColorToRGB(&c);
-      // The underlying concept does not allow to determine if alpha is set or not.
-      cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], c.field[AINDEX]);
+      if (GSCompositeHighlight == op)
+        {
+          cairo_set_operator(_ct, CAIRO_OPERATOR_DIFFERENCE);
+          cairo_set_source_rgb(_ct, 1, 1, 1);
+        }
+      else
+        {
+          _set_op(_ct, op);
+          
+          c = fillColor;
+          gsColorToRGB(&c);
+          // The underlying concept does not allow to determine if alpha is set or not.
+          cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], c.field[AINDEX]);
+        }
+
       // This is almost a rectclip::::, but the path stays unchanged.
       path = [NSBezierPath bezierPathWithRect: aRect];
       [path transformUsingAffineTransform: ctm];

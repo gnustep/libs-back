@@ -674,6 +674,7 @@ static Region emptyRegion;
       comp_gcv.function = GXcopy;
       break;
     case NSCompositeSourceOver:
+    case NSCompositeHighlight:
       CHECK_ALPHA;
       if (source_alpha == NO)
         do_copy = YES;
@@ -737,7 +738,7 @@ static Region emptyRegion;
       do_copy = NO;
       comp_gcv.function = GXcopy;
       break;
-    case NSCompositeHighlight:
+    case GSCompositeHighlight:
       do_copy = NO;
       comp_gcv.function = GXxor;
       break;
@@ -798,6 +799,7 @@ static Region emptyRegion;
       gcv.function = GXcopy;
       break;
     case NSCompositeSourceOver:
+    case NSCompositeHighlight:
       gcv.function = GXcopy;
       break;
     case NSCompositeSourceIn:
@@ -827,7 +829,7 @@ static Region emptyRegion;
     case NSCompositePlusDarker:
       gcv.function = GXcopy;
       break;
-    case NSCompositeHighlight:
+    case GSCompositeHighlight:
       gcv.function = GXxor;
       break;
     case NSCompositePlusLighter:

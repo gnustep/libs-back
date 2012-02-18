@@ -1,3 +1,14 @@
+2012-02-18 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/winlib/WIN32GState.m
+	* Source/art/composite.m
+	* Source/xlib/XGGState.m
+	* Source/xdps/NSDPSContextOps.m: Replace NSCompositeHighlight with
+	GSCompositeHighlight and map NSCompositeHighlight onto
+	NSCompositeSourceOver.
+	* Source/cairo/CairoGState.m (-compositerect:op:): Implement
+	GSCompositeHighlight with the difference operator.
+
 2012-02-09 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Tools/gbps.m: Add lots of debug information (have objects describe

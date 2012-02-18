@@ -1144,6 +1144,7 @@
 	  gcv.function = GXcopy;
 	  break;
 	case   NSCompositeSourceOver:
+	case   NSCompositeHighlight:
 	  gcv.function = GXcopy;
 	  break;
 	case   NSCompositeSourceIn:
@@ -1173,7 +1174,7 @@
 	case   NSCompositePlusDarker:
 	  gcv.function = GXcopy;
 	  break;
-	case   NSCompositeHighlight:
+	case   GSCompositeHighlight:
 	  gcv.function = GXxor;
 	  break;
 	case   NSCompositePlusLighter:
