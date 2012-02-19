@@ -1189,12 +1189,14 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
 
       cairo_save(_ct);
 
+#if CAIRO_VERSION >= CAIRO_VERSION_ENCODE(1, 9, 4)
       if (GSCompositeHighlight == op)
         {
           cairo_set_operator(_ct, CAIRO_OPERATOR_DIFFERENCE);
           cairo_set_source_rgb(_ct, 1, 1, 1);
         }
       else
+#endif
         {
           _set_op(_ct, op);
           
