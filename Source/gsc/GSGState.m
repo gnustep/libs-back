@@ -340,6 +340,7 @@
              green: &g
              blue: &b
              alpha: &a];
+      dcolor.space = rgb_colorspace;
       dcolor.field[0] = r;
       dcolor.field[1] = g;
       dcolor.field[2] = b;
@@ -372,6 +373,7 @@
              green: &g
              blue: &b
              alpha: &a];
+      dcolor.space = rgb_colorspace;
       dcolor.field[0] = r;
       dcolor.field[1] = g;
       dcolor.field[2] = b;
