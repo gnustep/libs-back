@@ -1159,6 +1159,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
     cairo_matrix_init_scale(&source_matrix, 1, -1);
     cairo_matrix_translate(&source_matrix, 0, -pixelsHigh);
     cairo_pattern_set_matrix(cpattern, &source_matrix);
+    cairo_pattern_set_filter(cpattern, CAIRO_FILTER_BILINEAR);
     if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 6, 0))
       {
         cairo_pattern_set_extend(cpattern, CAIRO_EXTEND_PAD);
@@ -1331,6 +1332,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   //cairo_matrix_translate(&source_matrix, 0,  -[_surface size].height);
   cairo_matrix_translate(&source_matrix, minx - x + dx, miny - y + dy - ssize.height);
   cairo_pattern_set_matrix(cpattern, &source_matrix);
+  cairo_pattern_set_filter(cpattern, CAIRO_FILTER_BILINEAR);
   cairo_set_source(_ct, cpattern);
   cairo_pattern_destroy(cpattern);
   cairo_rectangle(_ct, x, y, width, height);
@@ -1417,6 +1419,7 @@ doesn't support to use the receiver cairo target as the source. */
   cairo_matrix_init_scale(&source_matrix, 1, -1);
   cairo_matrix_translate(&source_matrix, 0, -[source->_surface size].height);
   cairo_pattern_set_matrix(cpattern, &source_matrix);
+  cairo_pattern_set_filter(cpattern, CAIRO_FILTER_BILINEAR);
   if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 6, 0))
     {
       cairo_pattern_set_extend(cpattern, CAIRO_EXTEND_PAD);
