@@ -1,3 +1,8 @@
+2012-02-20 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m: Set the filter to BILINEAR for all
+	patterns we use.
+
 2012-02-19  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Source/gsc/GSGState.m (-GSSetFillColor:, -GSSetStrokeColor:):
