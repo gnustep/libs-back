@@ -1934,7 +1934,7 @@ initialize_keyboard (void)
 
   
   set_up_num_lock ();
-  _mod_ignore_shift = [defaults boolForKey: @"GSModifiersAreKeys"];
+  _mod_ignore_shift = ![defaults boolForKey: @"GSModifiersAreNotKeys"];
   
   _is_keyboard_initialized = YES;
 }
@@ -2050,7 +2050,7 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
      XIM events can potentially return this. */
   /* Possibly ignore shift/other modifier state in determining KeySym to
      work around correct but undesired behavior with shifted modifiers.
-     See Back defaults documentation for "GSModifiersAreKeys". */
+     See Back defaults documentation for "GSModifiersAreNotKeys". */
   modKeysym = (_mod_ignore_shift == YES) ?
       XLookupKeysym((XKeyEvent *)xEvent, 0) : keysym;
   if (modKeysym != NoSymbol)

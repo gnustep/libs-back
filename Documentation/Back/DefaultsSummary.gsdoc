@@ -186,7 +186,7 @@
           keyboard setup</uref>.
           </p>
 	  </desc>
-	  <term>GSModifiersAreKeys</term>
+	  <term>GSModifiersAreNotKeys</term>
 	  <desc>
           <p>
           On some keyboards, the default X11 mapping includes keycodes that
@@ -200,9 +200,15 @@
           occur when trying to use the modifier in conjunction with a shifted
           character.  In particular, you will need to hit and release the
           modifier and the shift key in a particular order, or else things
-          will not work as expected, and the modifier may become "stuck".  If
-          you experience such a problem, set <code>GSModifiersAreKeys</code>
-          to <code>YES</code>.
+          will not work as expected, and the modifier may become "stuck".
+	  </p>
+	  <p>
+	  Previously this default was called <code>GSModifiersAreKeys</code>,
+	  and Shift+Alt key equivalents only worked if Shift and Alt were
+	  pressed in the right order, unless the default was set to
+	  <code>YES</code>. That is now the default; to get back the 
+	  previous default behaviour, set
+	  <code>GSModifiersAreNotKeys</code> to <code>YES</code>.
           </p>
           </desc>
 	  <term>UseWindowMakerIcons</term>
