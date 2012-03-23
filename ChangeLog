@@ -1,3 +1,12 @@
+2012-03-22  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/x11/XGServerEvent.m: Make the GSModifiersAreKeys
+	default to YES, by renaming the default to GSModifiersAreNotKeys.
+	This should fix bug 25659; for example, in Ink you can now
+	open the color panel with <Shift>+<Alt>+c or <Alt>+<Shift>+c.
+	* Documentation/Back/DefaultsSummary.gsdoc: Update docs for
+	GSModifiersAreNotKeys.
+
 2012-02-20 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m: Set the filter to BILINEAR for all
