@@ -43,6 +43,7 @@
 #include <AppKit/NSWindow.h>
 #include <AppKit/NSImage.h>
 #include <AppKit/NSBitmapImageRep.h>
+#include <GNUstepGUI/GSTheme.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -93,6 +94,54 @@ static NSMapTable *windowtags = NULL;
 /* Track used window numbers */
 static int		last_win_num = 0;
 
+
+@interface GSTheme (Backend)
+- (Window) createWindowWithDisplay: (Display *)disp
+			    parent: (Window)parent
+				 X: (int)x
+				 Y: (int)y
+			     width: (unsigned int)width
+			    height: (unsigned int)height
+		       borderWidth: (unsigned int)borderWidth
+			     depth: (int)depth
+			     class: (unsigned int)cls
+			    visual: (Visual *)visual
+			 valuemask: (unsigned long)valuemask
+			attributes: (XSetWindowAttributes *)attrs;
+@end
+
+@implementation GSTheme (Backend)
+// Create Window method...
+- (Window) createWindowWithDisplay: (Display *)disp
+			    parent: (Window)parent
+				 X: (int)x
+				 Y: (int)y
+			     width: (unsigned int)width
+			    height: (unsigned int)height
+		       borderWidth: (unsigned int)borderWidth
+			     depth: (int)depth
+			     class: (unsigned int)cls
+			    visual: (Visual *)visual
+			 valuemask: (unsigned long)valuemask
+			attributes: (XSetWindowAttributes *)attrs
+{
+  Window ident;
+  ident = XCreateWindow(disp, 
+			parent,
+			x, 
+			y,
+			width, 
+			height,
+			borderWidth, 
+			depth,
+			cls,
+			visual,
+			valuemask,
+			attrs);
+  return ident;
+}
+// End create window method...
+@end
 
 @interface NSCursor (BackendPrivate)
 - (void *)_cid;
@@ -791,19 +840,19 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   window->xwn_attrs.save_under = False;
   window->xwn_attrs.override_redirect = False;
   
-  window->ident = [self createWindowWithDisplay: dpy
-					 parent: window->root
-					      X: NSMinX(frame)
-					      Y: NSMinY(frame)
-					  width: NSWidth(frame)
-					 height: NSHeight(frame)
-				    borderWidth: 0
-					  depth: context->depth
-					  class: CopyFromParent
-					 visual: context->visual
-				      valuemask: (CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect)
-				     attributes: &window->xwn_attrs];
-
+  window->ident = [[GSTheme theme] createWindowWithDisplay: dpy
+						    parent: window->root
+							 X: NSMinX(frame)
+							 Y: NSMinY(frame)
+						     width: NSWidth(frame)
+						    height: NSHeight(frame)
+					       borderWidth: 0
+						     depth: context->depth
+						     class: CopyFromParent
+						    visual: context->visual
+						 valuemask: (CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect)
+						attributes: &window->xwn_attrs];
+  
  /*
   window->ident = XCreateWindow(dpy, window->root,
 				NSMinX(frame), NSMinY(frame), 
@@ -1965,37 +2014,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     }
 }
 
-// Create Window method...
-- (Window) createWindowWithDisplay: (Display *)disp
-			    parent: (Window)parent
-				 X: (int)x
-				 Y: (int)y
-			     width: (unsigned int)width
-			    height: (unsigned int)height
-		       borderWidth: (unsigned int)borderWidth
-			     depth: (int)depth
-			     class: (unsigned int)cls
-			    visual: (Visual *)visual
-			 valuemask: (unsigned long)valuemask
-			attributes: (XSetWindowAttributes *)attrs
-{
-  Window ident;
-  ident = XCreateWindow(disp, 
-			parent,
-			x, 
-			y,
-			width, 
-			height,
-			borderWidth, 
-			depth,
-			cls,
-			visual,
-			valuemask,
-			attrs);
-  return ident;
-}
-// End create window method...
-
 - (int) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style
 	      : (int)screen
 {
@@ -2052,18 +2070,18 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
    */
   window->xwn_attrs.override_redirect = False;
 
-  window->ident = [self createWindowWithDisplay: dpy
-					 parent: window->root
-					      X: NSMinX(frame)
-					      Y: NSMinY(frame)
-					  width: NSWidth(frame)
-					 height: NSHeight(frame)
-				    borderWidth: 0
-					  depth: context->depth
-					  class: CopyFromParent
-					 visual: context->visual
-				      valuemask: (CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect)
-				     attributes: &window->xwn_attrs];
+  window->ident = [[GSTheme theme] createWindowWithDisplay: dpy
+						    parent: window->root
+							 X: NSMinX(frame)
+							 Y: NSMinY(frame)
+						     width: NSWidth(frame)
+						    height: NSHeight(frame)
+					       borderWidth: 0
+						     depth: context->depth
+						     class: CopyFromParent
+						    visual: context->visual
+						 valuemask: (CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect)
+						attributes: &window->xwn_attrs];
 
  
   /*
