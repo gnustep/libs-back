@@ -790,7 +790,21 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   window->xwn_attrs.colormap = context->cmap;
   window->xwn_attrs.save_under = False;
   window->xwn_attrs.override_redirect = False;
+  
+  window->ident = [self createWindowWithDisplay: dpy
+					 parent: window->root
+					      X: NSMinX(frame)
+					      Y: NSMinY(frame)
+					  width: NSWidth(frame)
+					 height: NSHeight(frame)
+				    borderWidth: 0
+					  depth: context->depth
+					  class: CopyFromParent
+					 visual: context->visual
+				      valuemask: (CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect)
+				     attributes: &window->xwn_attrs];
 
+ /*
   window->ident = XCreateWindow(dpy, window->root,
 				NSMinX(frame), NSMinY(frame), 
 				NSWidth(frame), NSHeight(frame),
@@ -800,6 +814,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 				context->visual,
 				(CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect),
 				&window->xwn_attrs);
+ */
 
   /*
    * Mark this as a GNUstep app with the current application name.
@@ -1950,6 +1965,37 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     }
 }
 
+// Create Window method...
+- (Window) createWindowWithDisplay: (Display *)disp
+			    parent: (Window)parent
+				 X: (int)x
+				 Y: (int)y
+			     width: (unsigned int)width
+			    height: (unsigned int)height
+		       borderWidth: (unsigned int)borderWidth
+			     depth: (int)depth
+			     class: (unsigned int)cls
+			    visual: (Visual *)visual
+			 valuemask: (unsigned long)valuemask
+			attributes: (XSetWindowAttributes *)attrs
+{
+  Window ident;
+  ident = XCreateWindow(disp, 
+			parent,
+			x, 
+			y,
+			width, 
+			height,
+			borderWidth, 
+			depth,
+			cls,
+			visual,
+			valuemask,
+			attrs);
+  return ident;
+}
+// End create window method...
+
 - (int) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style
 	      : (int)screen
 {
@@ -2006,16 +2052,20 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
    */
   window->xwn_attrs.override_redirect = False;
 
-  window->ident = XCreateWindow(dpy, window->root,
-				NSMinX(frame), NSMinY(frame), 
-				NSWidth(frame), NSHeight(frame),
-				0, 
-				context->depth,
-				CopyFromParent,
-				context->visual,
-				(CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect),
-				&window->xwn_attrs);
+  window->ident = [self createWindowWithDisplay: dpy
+					 parent: window->root
+					      X: NSMinX(frame)
+					      Y: NSMinY(frame)
+					  width: NSWidth(frame)
+					 height: NSHeight(frame)
+				    borderWidth: 0
+					  depth: context->depth
+					  class: CopyFromParent
+					 visual: context->visual
+				      valuemask: (CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect)
+				     attributes: &window->xwn_attrs];
 
+ 
   /*
    * Mark this as a GNUstep app with the current application name.
    */
