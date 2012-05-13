@@ -44,8 +44,6 @@
   NSString *server_name;
   XIM       xim;
   XIMStyle  xim_style;
-  NSMutableData   *dbuf;
-  NSStringEncoding encoding;
 
   /* Track the XIC:s and destroy them explicitly to work around an XFree86
   bug:
