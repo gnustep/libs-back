@@ -68,32 +68,8 @@
 		display: (Display *)dpy
 		   name: (NSString *)name
 {
-  char *locale;
   delegate = aDelegate;
   ASSIGN(server_name, name);
-  dbuf = RETAIN([NSMutableData dataWithCapacity: BUF_LEN]);
-
-  /* Use X11 version of setlocale since many people just set the locale
-     for X. Also just get CTYPE locale (which is typically the one that
-     deals with character handling */
-  locale = setlocale(LC_CTYPE, "");
-  if (XSupportsLocale() != True) 
-    {
-      NSLog(@"Xlib does not support locale setting %s", locale);
-      /* FIXME: Should we reset the locale or just hope that X 
-	 can deal with it? */
-    }
-  encoding = GSEncodingFromLocale(locale);
-#ifndef HAVE_UTF8
-  if (encoding == NSUTF8StringEncoding)
-    encoding = GSUndefinedEncoding;
-#endif
-  if (encoding == GSUndefinedEncoding)
-    {
-      encoding = [NSString defaultCStringEncoding];
-    }
-  NSDebugLLog(@"XIM", @"XIM locale encoding for %s is %@", locale,
-	      [NSString localizedNameOfStringEncoding: encoding]);
 
 #ifdef USE_XIM
   if ([self ximInit: dpy] == NO)
@@ -107,7 +83,6 @@
 - (void) dealloc
 {
   DESTROY(server_name);
-  DESTROY(dbuf);
   [self ximClose];
   [super dealloc];
 }
@@ -129,56 +104,52 @@
 			     window: (gswindow_device_t *)windev
 			     keysym: (KeySym *)keysymptr
 {
-  int count;
-  Status status;
-  NSString *keys;
-  KeySym   keysym;
-  XComposeStatus compose;
-  char *buf = [dbuf mutableBytes];
+  int count = 0;
+  NSString *keys = nil;
+  KeySym keysym = 0;
+  char buf[BUF_LEN];
 
   /* Process characters */
-  keys = nil;
+
+  /* N.B. The Xutf8LookupString manpage says this macro will be defined 
+     in the X headers if that function is available. */
+#if defined(X_HAVE_UTF8_STRING)
   if (windev->ic && event->type == KeyPress)
     {
-      [dbuf setLength: BUF_LEN];
-#ifdef HAVE_UTF8
-#ifdef HAVE_XUTF8LOOKUPSTRING
-      if (encoding == NSUTF8StringEncoding)
-        count = Xutf8LookupString(windev->ic, event, buf, BUF_LEN, 
-      		                  &keysym, &status);
-      else 
-#endif
-#endif
-        count = XmbLookupString(windev->ic, event, buf, BUF_LEN, 
-			        &keysym, &status);
+      Status status = 0;
+      count = Xutf8LookupString(windev->ic, event, buf, BUF_LEN, 
+				&keysym, &status);
 
       if (status==XBufferOverflow)
 	NSDebugLLog(@"NSKeyEvent",@"XmbLookupString buffer overflow\n");
       if (count)
 	{
-	  [dbuf setLength: count];
-	  keys = AUTORELEASE([[NSString alloc] initWithData: dbuf encoding: encoding]);
+	  keys = [[[NSString alloc] initWithBytes: buf
+					   length: count
+					 encoding: NSUTF8StringEncoding] autorelease];
 	}
-    }
-  else 
-    {
-      count = XLookupString (event, buf, BUF_LEN, &keysym, &compose);
-      /* Make sure that the string is properly terminated */
-      if (count > BUF_LEN)
-	buf[BUF_LEN] = '\0';
-      else
+      if (status == XLookupKeySym 
+	  || status == XLookupBoth)
 	{
-	  if (count < 1) 
-	    buf[0] = '\0';
-	  else           
-	    buf[count] = '\0';
+	  if (keysymptr)
+	    *keysymptr = keysym;
 	}
-      if (count)
-	keys = [NSString stringWithCString: buf];
     }
+ else
+#endif
+    {
+      /* Always returns a Latin-1 string according to the manpage */
+      count = XLookupString (event, buf, BUF_LEN, &keysym, NULL);
+      if (count)
+	{
+	  keys = [[[NSString alloc] initWithBytes: buf
+					   length: count
+					 encoding: NSISOLatin1StringEncoding] autorelease];
+	}
 
-  if (keysymptr)
-    *keysymptr = keysym;
+      if (keysymptr)
+	*keysymptr = keysym;
+    }
 
   return keys;
 }

@@ -1,3 +1,10 @@
+2012-05-12  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/x11/XIMInputServer.m: Remove the locale setting code.
+	Use the correct #ifdef check for Xutf8LookupString, and use
+	that function if available; otherwise use XLookupString.
+	Interpret the return value of XLookupString as Latin-1.
+
 2012-03-22  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/x11/XGServerEvent.m: Make the GSModifiersAreKeys
