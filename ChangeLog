@@ -1,3 +1,13 @@
+2012-05-14  Quentin Mathe  <quentin.mathe@gmail.com>
+
+	* Source/gsc/GSContext.m (+initialize): Protected +initialize from being 
+	called multiple times because of subclasses. As a result, this 
+	eliminates a gtable memory leak (e.g. +initialize sent to both GSContext 
+	and CairoContext at backend initialization time), and prevents the 
+	gstate stack to be reset while still in use (e.g. the program enumerates 
+	classes at runtime and sends messages to them... +initialize might be 
+	sent to GSStreamContext in such a case). 
+
 2012-05-12  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/x11/XIMInputServer.m: Remove the locale setting code.
