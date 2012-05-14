@@ -135,8 +135,11 @@ static NSMapTable *gtable;
 
 + (void) initialize
 {
-  gtable = NSCreateMapTable(NSIntMapKeyCallBacks,
-                                 NSObjectMapValueCallBacks, 20);
+  if (self == [GSContext class])
+    {
+      gtable = NSCreateMapTable(NSIntMapKeyCallBacks,
+                                NSObjectMapValueCallBacks, 20);
+    }
 }
 
 + (void) insertObject: (id)obj forKey: (int)index
