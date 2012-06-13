@@ -46,6 +46,8 @@ ifeq ($(BUILD_SERVER),x11)
   endif
 else
   ifeq ($(BUILD_GRAPHICS),cairo)
+    ADDITIONAL_INCLUDE_DIRS += -I/mingw/include -I/mingw/include/freetype2 -I/mingw/include/freetype2/freetype -I/mingw/include/cairo
+    ADDITIONAL_LIB_DIRS += -L/mingw/lib
     ifeq ($(WITH_GLITZ),yes)
       cairo_OBJC_FILES += Win32CairoGlitzSurface.m
     else
