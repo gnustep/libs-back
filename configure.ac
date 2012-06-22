@@ -424,6 +424,22 @@ PKG_CHECK_MODULES(CAIRO_WIN32, cairo-win32, have_cairo_win32=yes, have_cairo_win
 PKG_CAIRO_GLITZ=no
 PKG_CHECK_MODULES(CAIRO_GLITZ, cairo-glitz, have_cairo_glitz=yes, have_cairo_glitz=no)
 
+if test "$have_cairo" = no; then
+  AC_CHECK_LIB(cairo, cairo_create, have_cairo=yes)
+fi
+
+if test "$have_cairo_ft" = no; then
+  AC_CHECK_LIB(cairo, cairo_ft_font_face_create_for_ft_face, have_cairo_ft=yes)
+fi
+
+if test "$have_cairo_xlib" = no; then
+  AC_CHECK_LIB(cairo, cairo_xlib_surface_create, have_cairo_xlib=yes)
+fi
+
+if test "$have_cairo_win32" = no; then
+  AC_CHECK_LIB(cairo, cairo_win32_surface_create, have_cairo_win32=yes)
+fi
+
 #--------------------------------------------------------------------
 # XRender support
 #--------------------------------------------------------------------
