@@ -1,3 +1,9 @@
+2012-06-21  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* configure.ac: use AC_CHECK_LIB to check for cairo if pkg-config
+	is not available
+	* configure: regenerate
+
 2012-05-14  Quentin Mathe  <quentin.mathe@gmail.com>
 
 	* Source/gsc/GSContext.m (+initialize): Protected +initialize from being 
