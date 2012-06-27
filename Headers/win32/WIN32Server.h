@@ -93,6 +93,7 @@ typedef struct w32serverFlags {
   HWND desiredFocus;
   HWND currentActive;
   HICON  currentAppIcon;
+  NSMutableArray *monitorInfo;
 }
 
 - (BOOL) handlesWindowDecorations;

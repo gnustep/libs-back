@@ -1,3 +1,12 @@
+2012-06-27  Marcian Lytwyn <marcian.lytwyn@advcsi.com>
+
+	*** Modifications to Win32 server backend to support multiple
+	    monitors.
+	* Headers/win32/WIN32Server.h - Added a mutable array for storing
+	  multiple screen information from GDI screen lookup
+	* Source/win32/WIN32Server.m - Added startup sequence to invoke
+	  GDI functions to look up multiple screen/monitor information
+
 2012-05-14  Quentin Mathe  <quentin.mathe@gmail.com>
 
 	* Source/gsc/GSContext.m (+initialize): Protected +initialize from being 
