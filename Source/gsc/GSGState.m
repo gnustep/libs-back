@@ -51,7 +51,7 @@
 
 /* Designated initializer. */
 - initWithDrawContext: (GSContext *)drawContext
-{
+{  
   self = [super init];
   if (!self)
     return nil;
@@ -99,6 +99,14 @@
     RETAIN(pattern);
 
   return self;
+}
+
+- (NSString*) description
+{
+  NSMutableString *description = [[super description] mutableCopy];
+  [description appendFormat: @" drawcontext: %@",drawcontext];
+  [description appendFormat: @" ctm: %@",ctm];
+  return [description copy];
 }
 
 - copyWithZone: (NSZone *)zone
@@ -299,7 +307,7 @@
 {
   device_color_t col;
 
-  ASSIGN(fillColorS, spaceref);
+  ASSIGN(fillColorS, (NSColorSpace*)spaceref);
   gsMakeColor(&col, rgb_colorspace, 0, 0, 0, 0);
   // Keep the old alpha value
   col.field[AINDEX] = fillColor.field[AINDEX];
@@ -310,7 +318,7 @@
 {
   device_color_t col;
 
-  ASSIGN(strokeColorS, spaceref);
+  ASSIGN(strokeColorS, (NSColorSpace*)spaceref);
   gsMakeColor(&col, rgb_colorspace, 0, 0, 0, 0);
   // Keep the old alpha value
   col.field[AINDEX] = fillColor.field[AINDEX];
