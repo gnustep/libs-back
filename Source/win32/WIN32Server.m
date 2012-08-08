@@ -62,6 +62,7 @@
 
 #include <math.h>
 
+
 @interface W32DisplayMonitorInfo : NSObject
 {
   HMONITOR _hMonitor;
@@ -151,6 +152,13 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
 
 @implementation WIN32Server
+
+static BOOL USING_CAIRO = NO;
+
+- (BOOL) useHDC
+{
+  return (USING_CAIRO == NO);
+}
 
 - (BOOL) handlesWindowDecorations
 {
@@ -259,6 +267,8 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   NSDebugLog(@"Initializing GNUstep win32 backend.\n");
 
   [GSDisplayServer setDefaultServerClass: [WIN32Server class]];
+  NSString *context = [NSString stringWithCString: STRINGIFY(BUILD_GRAPHICS)];
+  USING_CAIRO       = [context isEqualToString:@"cairo"];
 }
 
 - (void) _initWin32Context
@@ -620,7 +630,6 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
 - (void) resizeBackingStoreFor: (HWND)hwnd
 {
-  RECT r;
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
   
   // FIXME: We should check if the size really did change.
@@ -629,6 +638,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       HDC hdc, hdc2;
       HBITMAP hbitmap;
       HGDIOBJ old;
+      RECT r;
       
       old = SelectObject(win->hdc, win->old);
       DeleteObject(old);
@@ -644,7 +654,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       win->hdc = hdc2;
       
       ReleaseDC((HWND)hwnd, hdc);
-
+        
       // After resizing the backing store, we need to redraw the window
       win->backingStoreEmpty = YES;
     }
@@ -1082,7 +1092,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       win->useHDC = NO;
     }
 
-  if (type != NSBackingStoreNonretained)
+  if ([self useHDC] && (type != NSBackingStoreNonretained))
     {
       HDC hdc, hdc2;
       HBITMAP hbitmap;
@@ -1544,24 +1554,38 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 - (void) flushwindowrect: (NSRect)rect : (int)winNum
 {
   HWND hwnd = (HWND)winNum;
-  RECT r = GSWindowRectToMS(self, hwnd, rect);
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
 
-  if (win->useHDC)
+  if (win)
     {
-      HDC hdc = GetDC(hwnd);
-      WINBOOL result;
-
-      result = BitBlt(hdc, r.left, r.top, 
-                      (r.right - r.left), (r.bottom - r.top), 
-                      win->hdc, r.left, r.top, SRCCOPY);
-      if (!result)
+      if (win->useHDC)
         {
-          NSLog(@"Flush window %d %@", hwnd, 
-                NSStringFromRect(MSWindowRectToGS(self, hwnd, r)));
-          NSLog(@"Flush window failed with %d", GetLastError());
+          HDC     hdc = GetDC(hwnd);
+          RECT    r   = GSWindowRectToMS(self, hwnd, rect);
+          WINBOOL result;
+
+          result = BitBlt(hdc, r.left, r.top, 
+                          (r.right - r.left), (r.bottom - r.top), 
+                          win->hdc, r.left, r.top, SRCCOPY);
+          if (!result)
+            {
+              NSLog(@"Flush window %d %@", hwnd, 
+                    NSStringFromRect(MSWindowRectToGS(self, hwnd, r)));
+              NSLog(@"Flush window failed with %d", GetLastError());
+            }
+          ReleaseDC(hwnd, hdc);
         }
-      ReleaseDC(hwnd, hdc);
+      else if (USING_CAIRO)
+        {
+          if (win->hdc == NULL)
+            {
+              NSLog(@"%s:Flush failed for window %p", __PRETTY_FUNCTION__, hwnd);
+            }
+          else
+            {
+              [[GSCurrentContext() class] handleExposeRect: rect forDriver: (void*)win->hdc];
+            }
+        }
     }
 }
 
