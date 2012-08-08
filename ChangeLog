@@ -1,3 +1,18 @@
+2012-08-08  Marcian Lytwyn <marcian.lytwyn@advcsi.com>
+
+	*** Modifications/fixes for cairo support on win32 ***
+	* Headers/win32/Win32CairoGState.h - NEW
+	* Source/win32/Win32CairoGState.m - NEW
+	* Headers/win32/WIN32Server.h
+	* Source/gsc/GSGState.m: Fix compiler warnings
+	* Source/win32/WIN32Server.m
+	* Source/win32/w32_create.m
+	* Source/win32/Win32CairoSurface.m
+	* Source/cairo/GNUmakefile
+	* Source/cairo/CairoContext.m
+	* configure
+	* configure.ac
+
 2012-06-27  Marcian Lytwyn <marcian.lytwyn@advcsi.com>
 
 	*** Modifications to Win32 server backend to support multiple
