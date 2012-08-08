@@ -423,6 +423,8 @@ PKG_CAIRO_WIN32=no
 PKG_CHECK_MODULES(CAIRO_WIN32, cairo-win32, have_cairo_win32=yes, have_cairo_win32=no)
 PKG_CAIRO_GLITZ=no
 PKG_CHECK_MODULES(CAIRO_GLITZ, cairo-glitz, have_cairo_glitz=yes, have_cairo_glitz=no)
+PKG_FONTCONFIG=no
+PKG_CHECK_MODULES(FONTCONFIG, fontconfig, have_fontconfig=yes, have_fontconfig=no)
 
 #--------------------------------------------------------------------
 # XRender support
@@ -535,11 +537,19 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
       BUILD_GRAPHICS=art
     fi
     AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
+  elif test $BUILD_SERVER = win32 -a test "$have_fontconfig" = no ; then
+    AC_MSG_WARN([can't find fontconfig, required for graphics=cairo!])
+    BUILD_GRAPHICS=winlib
+    AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
   else
     AC_MSG_CHECKING(Cairo backend)
     CAIRO_LIBS="$CAIRO_FT_LIBS"
     CAIRO_CFLAGS="$CAIRO_FT_CFLAGS"
-
+    if test $BUILD_SERVER = win32; then
+      CAIRO_LIBS="$CAIRO_LIBS $FONTCONFIG_LIBS"
+      CAIRO_CFLAGS="$CAIRO_CFLAGS $FONTCONFIG_CFLAGS"
+    fi
+    
     if test "$have_xrender" = yes; then
       if test $BUILD_SERVER = x11 -a "x$have_cairo_xlib" = "xyes"; then
         AC_DEFINE(XRENDER,1,[Define if you have X11 XRender extension])
