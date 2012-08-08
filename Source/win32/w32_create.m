@@ -26,6 +26,7 @@
    Boston, MA 02110-1301, USA.
 */
 
+#include "config.h"
 #include <AppKit/NSEvent.h>
 #include <AppKit/NSWindow.h>
 #include <Foundation/NSBundle.h>
@@ -34,6 +35,7 @@
 #include "win32/WIN32Geometry.h"
 
 @implementation WIN32Server (w32_create)
+
 
 - (LRESULT) decodeWM_NCCREATEParams: (WPARAM)wParam : (LPARAM)lParam 
                                    : (HWND)hwnd
@@ -56,9 +58,10 @@
 	   is stored in the extra fields for this window. Drawing operations 
 	   work on this buffer. */
   win = malloc(sizeof(WIN_INTERN));
+  memset(win, 0, sizeof(WIN_INTERN));
   SetWindowLong(hwnd, GWL_USERDATA, (int)win);
-	
-  if (type != NSBackingStoreNonretained)
+  
+  if ([self useHDC] && (type != NSBackingStoreNonretained))
     {
       HDC hdc, hdc2;
       HBITMAP hbitmap;
@@ -72,6 +75,7 @@
       win->old = SelectObject(hdc2, hbitmap);
 
       win->hdc = hdc2;
+
       win->useHDC = YES;
 	    
       ReleaseDC(hwnd, hdc);
