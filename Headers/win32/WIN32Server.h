@@ -113,6 +113,8 @@ typedef struct w32serverFlags {
 
 - (void) resizeBackingStoreFor: (HWND)hwnd;
 
+- (BOOL) useHDC;
+
 @end
 
 @interface WIN32Server (w32_activate)
@@ -201,6 +203,5 @@ typedef struct _win_intern {
   HGDIOBJ old;
   MINMAXINFO minmax;
 } WIN_INTERN;
-
 
 #endif /* _WIN32Server_h_INCLUDE */
