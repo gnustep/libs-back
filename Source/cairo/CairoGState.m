@@ -1,3 +1,4 @@
+
 /*
    CairoGState.m
 
@@ -38,6 +39,7 @@
 #include "cairo/CairoContext.h"
 #include <math.h>
 
+#include "win32/WIN32Server.h"
 
 // Macro stolen from base/Header/Additions/GNUstepBase/GSObjRuntime.h
 #ifndef	GS_MAX_OBJECTS_FROM_STACK
@@ -120,6 +122,14 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
   RELEASE(_surface);
 
   [super dealloc];
+}
+
+- (NSString*) description
+{
+  NSMutableString *description = [[super description] mutableCopy];
+  [description appendFormat: @" surface: %@",_surface];
+  [description appendFormat: @" context: %p",_ct];
+  return [description copy];
 }
 
 - (id) copyWithZone: (NSZone *)zone
@@ -1250,6 +1260,8 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   cairo_pattern_t *cpattern;
   cairo_matrix_t source_matrix;
 
+  NSDebugLLog(@"CairoGState", @"%s:self: %@\n", __PRETTY_FUNCTION__, self);
+
   if (!_ct || !source->_ct)
     {
       return;
@@ -1372,6 +1384,11 @@ doesn't support to use the receiver cairo target as the source. */
   cairo_matrix_t local_matrix;
   cairo_matrix_t source_matrix;
 
+  NSDebugLLog(@"CairoGState", @"%s - source: %@ fromRect: %@ toPoint: %@\n", __PRETTY_FUNCTION__,
+              source,
+              NSStringFromRect(aRect),
+              NSStringFromPoint(aPoint));
+  
   if (!_ct || !source->_ct)
     {
       NSLog(@"WARNING: -drawGState called with a NULL target context (%p) or source context (%p)",
