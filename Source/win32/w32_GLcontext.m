@@ -284,6 +284,13 @@ static Win32GLContext *currentGLContext;
     }
 }
 
+- (void *)CGLContextObj
+{
+  // FIXME: Until we have a wrapper library
+  // return the underlying context directly
+  return (void*)wgl_context;
+}
+
 - (void)clearDrawable
 {
   [self _detach];
@@ -326,6 +333,20 @@ static Win32GLContext *currentGLContext;
   [self notImplemented: _cmd];
 }
 
+
+- (id)initWithCGLContextObj: (void *)context
+{
+  self = [super init];
+
+  if (!self)
+    {
+      return nil;
+    }
+
+  // FIXME: Need to set the pixelFormat ivar
+  wgl_context = context;
+  return self;
+}
 
 - (id)initWithFormat:(NSOpenGLPixelFormat *)aFormat 
 	shareContext:(NSOpenGLContext *)share

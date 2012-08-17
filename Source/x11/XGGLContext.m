@@ -301,6 +301,13 @@ static XGGLContext *currentGLContext;
   return glx_context;
 }
 
+- (void *)CGLContextObj
+{
+  // FIXME: Until we have a wrapper library
+  // return the underlying context directly
+  return (void*)glx_context;
+}
+
 - (void)clearDrawable
 {
   [self _detach];
@@ -358,6 +365,20 @@ static XGGLContext *currentGLContext;
 {
   //  TODO
   [self notImplemented: _cmd];
+}
+
+- (id)initWithCGLContextObj: (void *)context
+{
+  self = [super init];
+
+  if (!self)
+    {
+      return nil;
+    }
+
+  // FIXME: Need to set the pixelFormat ivar
+  glx_context = context;
+  return self;
 }
 
 - (id)initWithFormat: (NSOpenGLPixelFormat *)_format 

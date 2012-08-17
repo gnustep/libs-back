@@ -212,33 +212,71 @@ static NSArray *faFromFc(FcPattern *pat)
 - (NSString *) defaultSystemFontName
 {
   if ([allFontNames containsObject: @"Bitstream Vera Sans"])
-    return @"Bitstream Vera Sans";
+    {
+      return @"Bitstream Vera Sans";
+    }
   if ([allFontNames containsObject: @"FreeSans"])
-    return @"FreeSans";
+    {
+      return @"FreeSans";
+    }
   if ([allFontNames containsObject: @"DejaVu Sans"])
-    return @"DejaVu Sans";
+    {
+      return @"DejaVu Sans";
+    }
+  if ([allFontNames containsObject: @"Tahoma"])
+    {
+      return @"Tahoma";
+    }
+  if ([allFontNames containsObject: @"Arial"])
+    {
+      return @"Arial";
+    }
   return @"Helvetica";
 }
 
 - (NSString *) defaultBoldSystemFontName
 {
   if ([allFontNames containsObject: @"Bitstream Vera Sans-Bold"])
-    return @"Bitstream Vera Sans-Bold";
+    {
+      return @"Bitstream Vera Sans-Bold";
+    }
   if ([allFontNames containsObject: @"FreeSans-Bold"])
-    return @"FreeSans-Bold";
+    {
+      return @"FreeSans-Bold";
+    }
   if ([allFontNames containsObject: @"DejaVu Sans-Bold"])
-    return @"DejaVu Sans-Bold";
+    {
+      return @"DejaVu Sans-Bold";
+    }
+  if ([allFontNames containsObject: @"Tahoma-Bold"])
+    {
+      return @"Tahoma-Bold";
+    }
+  if ([allFontNames containsObject: @"Arial-Bold"])
+    {
+      return @"Arial-Bold";
+    }
   return @"Helvetica-Bold";
 }
 
 - (NSString *) defaultFixedPitchFontName
 {
   if ([allFontNames containsObject: @"Bitstream Vera Sans Mono"])
-    return @"Bitstream Vera Sans Mono";
+    {
+      return @"Bitstream Vera Sans Mono";
+    }
   if ([allFontNames containsObject: @"FreeMono"])
-    return @"FreeMono";
+    {
+      return @"FreeMono";
+    }
   if ([allFontNames containsObject: @"DejaVu Sans Mono"])
-    return @"DejaVu Sans Mono";
+    {
+      return @"DejaVu Sans Mono";
+    }
+  if ([allFontNames containsObject: @"Courier New"])
+    {
+      return @"Courier New";
+    }
   return @"Courier";
 }
 
