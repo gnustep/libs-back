@@ -1,3 +1,11 @@
+2012-08-17 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoFontEnumerator.m: Allow for Windows default
+	fonts.
+	* Source/win32/w32_GLcontext.m,
+	* Source/x11/XGGLContext.m: Implement 10.6 methods to get/set the
+	CGLContextObj.
+
 2012-06-21  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* configure.ac: use AC_CHECK_LIB to check for cairo if pkg-config
