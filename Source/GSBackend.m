@@ -55,7 +55,7 @@
 + (void) initializeBackend
 {
   Class           contextClass;
-  NSString       *context;
+  NSString       *context = nil;
   NSUserDefaults *defs = [NSUserDefaults standardUserDefaults];
 
   /* Load in only one server */
@@ -70,23 +70,35 @@
 
   /* The way the frontend is currently structured
      it's not possible to have more than one */
-  context = [NSString stringWithCString: STRINGIFY(BUILD_GRAPHICS)];
 
   /* What backend context? */
   if ([defs stringForKey: @"GSContext"])
     context = [defs stringForKey: @"GSContext"];
-
-  if ([context isEqual: @"xdps"])
-    contextClass = NSClassFromString(@"NSDPSContext");
-  else if ([context isEqual: @"art"])
-    contextClass = NSClassFromString(@"ARTContext");
-  else if ([context isEqual: @"winlib"])
-    contextClass = NSClassFromString(@"WIN32Context");
-   else if ([context isEqual: @"cairo"])
-    contextClass = NSClassFromString(@"CairoContext");
- else
-    contextClass = NSClassFromString(@"XGContext");
-
+  
+  if ((context == nil) || ([context length] == 0))
+    {
+#if (BUILD_GRAPHICS==GRAPHICS_xdps)
+    context = @"NSDPSContext";
+#elif (BUILD_GRAPHICS==GRAPHICS_art)
+    context = @"ARTContext";
+#elif (BUILD_GRAPHICS==GRAPHICS_xlib)
+    context = @"XGContext";
+#elif (BUILD_GRAPHICS==GRAPHICS_winlib)
+    context = @"WIN32Context";
+#elif (BUILD_GRAPHICS==GRAPHICS_cairo)
+    context = @"CairoContext";
+#else
+#error INVALID build graphics type
+#endif
+    }
+    
+  // Reference the requested build time class...
+  contextClass = NSClassFromString(context);
+  if (contextClass == nil)
+    {
+      NSLog(@"%s:Backend context class missing for: %@\n", __PRETTY_FUNCTION__, context);
+      exit(1);
+    }
   [contextClass initializeBackend];
 }
 

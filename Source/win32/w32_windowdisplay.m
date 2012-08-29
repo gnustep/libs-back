@@ -55,6 +55,7 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
       win->backingStoreEmpty = NO;
     }
 
+#if (BUILD_GRAPHICS==GRAPHICS_winlib)
   if (win->useHDC)
     {
       HDC hdc = GetDC((HWND)hwnd);
@@ -69,6 +70,7 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
         }
       ReleaseDC((HWND)hwnd, hdc);
     }
+#endif
 }
 
 @implementation WIN32Server (w32_windowdisplay)

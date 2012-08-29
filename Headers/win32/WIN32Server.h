@@ -53,7 +53,7 @@
 #include <AppKit/NSImage.h>
 
 #include <GNUstepGUI/GSDisplayServer.h>
-
+#include <config.h>
 #include <windows.h>
 
 /*
@@ -112,8 +112,6 @@ typedef struct w32serverFlags {
 - (DWORD) windowStyleForGSStyle: (unsigned int) style;
 
 - (void) resizeBackingStoreFor: (HWND)hwnd;
-
-- (BOOL) useHDC;
 
 @end
 
@@ -202,6 +200,10 @@ typedef struct _win_intern {
   HDC hdc; 
   HGDIOBJ old;
   MINMAXINFO minmax;
+  NSBackingStoreType type;
+#if (BUILD_GRAPHICS==GRAPHICS_cairo)
+  void *surface;
+#endif
 } WIN_INTERN;
 
 #endif /* _WIN32Server_h_INCLUDE */

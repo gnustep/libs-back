@@ -153,13 +153,6 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
 @implementation WIN32Server
 
-static BOOL USING_CAIRO = NO;
-
-- (BOOL) useHDC
-{
-  return (USING_CAIRO == NO);
-}
-
 - (BOOL) handlesWindowDecorations
 {
   return handlesWindowDecorations;
@@ -267,8 +260,6 @@ static BOOL USING_CAIRO = NO;
   NSDebugLog(@"Initializing GNUstep win32 backend.\n");
 
   [GSDisplayServer setDefaultServerClass: [WIN32Server class]];
-  NSString *context = [NSString stringWithCString: STRINGIFY(BUILD_GRAPHICS)];
-  USING_CAIRO       = [context isEqualToString:@"cairo"];
 }
 
 - (void) _initWin32Context
@@ -382,7 +373,7 @@ static BOOL USING_CAIRO = NO;
 	if ([defs objectForKey: @"GSBackUsesNativeTaskbar"])
 	  {
 	    [self setUsesNativeTaskbar:
-	      [defs boolForKey: @"GSUseNativeTaskbar"]];
+	      [defs boolForKey: @"GSBackUsesNativeTaskbar"]];
 	  }
       }
     }
@@ -559,7 +550,7 @@ static BOOL USING_CAIRO = NO;
     return WS_POPUP | WS_CLIPCHILDREN;
         
   if (style == 0)
-    wstyle = WS_POPUP;
+    wstyle = WS_POPUP | WS_VISIBLE;
   else
     {
       if ((style & NSTitledWindowMask) == NSTitledWindowMask)
@@ -1092,7 +1083,8 @@ static BOOL USING_CAIRO = NO;
       win->useHDC = NO;
     }
 
-  if ([self useHDC] && (type != NSBackingStoreNonretained))
+#if (BUILD_GRAPHICS==GRAPHICS_winlib)
+  if (type != NSBackingStoreNonretained)
     {
       HDC hdc, hdc2;
       HBITMAP hbitmap;
@@ -1110,10 +1102,14 @@ static BOOL USING_CAIRO = NO;
       ReleaseDC((HWND)winNum, hdc);
     }
   else
+#endif
     {
       win->useHDC = NO;
       win->hdc = NULL;
     }
+    
+  // Save updated window backing store type...
+  win->type = type;
 }
 
 - (void) titlewindow: (NSString*)window_title : (int) winNum
@@ -1402,7 +1398,6 @@ static BOOL USING_CAIRO = NO;
 {
   RECT r;
   RECT r2;
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
 
   NSDebugLLog(@"WTrace", @"placewindow: %@ : %d", NSStringFromRect(frame), 
               winNum);
@@ -1412,6 +1407,9 @@ static BOOL USING_CAIRO = NO;
   SetWindowPos((HWND)winNum, NULL, 
                r.left, r.top, r.right - r.left, r.bottom - r.top, 
                SWP_NOZORDER | SWP_NOACTIVATE); 
+
+#if (BUILD_GRAPHICS==GRAPHICS_winlib)
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
 
   if ((win->useHDC)
       && (r.right - r.left != r2.right - r2.left)
@@ -1436,6 +1434,7 @@ static BOOL USING_CAIRO = NO;
       
       ReleaseDC((HWND)winNum, hdc);
     }
+#endif
 }
 
 - (BOOL) findwindow: (NSPoint)loc : (int) op : (int) otherWin 
@@ -1558,6 +1557,7 @@ static BOOL USING_CAIRO = NO;
 
   if (win)
     {
+#if (BUILD_GRAPHICS==GRAPHICS_winlib)
       if (win->useHDC)
         {
           HDC     hdc = GetDC(hwnd);
@@ -1575,17 +1575,18 @@ static BOOL USING_CAIRO = NO;
             }
           ReleaseDC(hwnd, hdc);
         }
-      else if (USING_CAIRO)
-        {
-          if (win->hdc == NULL)
-            {
-              NSLog(@"%s:Flush failed for window %p", __PRETTY_FUNCTION__, hwnd);
-            }
-          else
-            {
-              [[GSCurrentContext() class] handleExposeRect: rect forDriver: (void*)win->hdc];
-            }
-        }
+#elif (BUILD_GRAPHICS==GRAPHICS_cairo)
+        if (win->surface == NULL)
+          {
+            NSLog(@"%s:NULL surface for window %p", __PRETTY_FUNCTION__, hwnd);
+          }
+        else
+          {
+            [[GSCurrentContext() class] handleExposeRect: rect forDriver: (void*)win->surface];
+          }
+#else
+#error INVALID build graphics type
+#endif
     }
 }
 

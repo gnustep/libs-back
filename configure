@@ -6838,7 +6838,7 @@ $as_echo "$as_me: WARNING: can't find cairo, required for graphics=cairo!" >&2;}
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: Switching to $BUILD_GRAPHICS" >&5
 $as_echo "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
-  elif test $BUILD_SERVER = win32 -a test "$have_fontconfig" = no ; then
+  elif test $BUILD_SERVER = win32 -a "$have_fontconfig" = no ; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: can't find fontconfig, required for graphics=cairo!" >&5
 $as_echo "$as_me: WARNING: can't find fontconfig, required for graphics=cairo!" >&2;}
     BUILD_GRAPHICS=winlib
@@ -6889,10 +6889,8 @@ $as_echo "$as_me: WARNING: **** Are you a backend developer ?" >&2;}
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_WIN32_CFLAGS"
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: winlib" >&5
 $as_echo "winlib" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: **** Cairo backend on win32 is experimental and is not supported." >&5
-$as_echo "$as_me: WARNING: **** Cairo backend on win32 is experimental and is not supported." >&2;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: **** Are you a backend developer ?" >&5
-$as_echo "$as_me: WARNING: **** Are you a backend developer ?" >&2;}
+      #AC_MSG_WARN([**** Cairo backend on win32 is experimental and is not supported.])
+      #AC_MSG_WARN([**** Are you a backend developer ?])
     elif test $BUILD_SERVER = x11 -a "x$have_cairo_xlib" = "xyes"; then
       CAIRO_LIBS="$CAIRO_LIBS $CAIRO_XLIB_LIBS $XFT_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS"
@@ -6989,7 +6987,7 @@ _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define BUILD_GRAPHICS $BUILD_GRAPHICS
+#define BUILD_GRAPHICS GRAPHICS_$BUILD_GRAPHICS
 _ACEOF
 
 

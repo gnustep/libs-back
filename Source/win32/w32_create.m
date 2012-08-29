@@ -58,10 +58,17 @@
 	   is stored in the extra fields for this window. Drawing operations 
 	   work on this buffer. */
   win = malloc(sizeof(WIN_INTERN));
+  
+  // Initialize win internals structure...
   memset(win, 0, sizeof(WIN_INTERN));
+  win->type = type;
+  win->useHDC = NO;
+
+  // Save win internals structure pointer for window handle...
   SetWindowLong(hwnd, GWL_USERDATA, (int)win);
   
-  if ([self useHDC] && (type != NSBackingStoreNonretained))
+ #if (BUILD_GRAPHICS==GRAPHICS_winlib)
+  if (type != NSBackingStoreNonretained)
     {
       HDC hdc, hdc2;
       HBITMAP hbitmap;
@@ -80,10 +87,7 @@
 	    
       ReleaseDC(hwnd, hdc);
     }
-  else
-    {
-      win->useHDC = NO;
-    }
+#endif
 
   // Find the icon file, assume it has the same name as the "icon" which
   // was specified in the bundle's dictionary...
