@@ -39,7 +39,6 @@
 #include "cairo/CairoContext.h"
 #include <math.h>
 
-#include "win32/WIN32Server.h"
 
 // Macro stolen from base/Header/Additions/GNUstepBase/GSObjRuntime.h
 #ifndef	GS_MAX_OBJECTS_FROM_STACK
