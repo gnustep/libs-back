@@ -550,7 +550,18 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
     return WS_POPUP | WS_CLIPCHILDREN;
         
   if (style == 0)
-    wstyle = WS_POPUP | WS_VISIBLE;
+    {
+      wstyle = WS_POPUP | WS_VISIBLE;
+      OSVERSIONINFOEX osversioninfo;
+      osversioninfo.dwOSVersionInfoSize = sizeof(osversioninfo);
+      if (GetVersionEx(&osversioninfo))
+        {
+          // Windows 7 and above...
+          if ((osversioninfo.dwMajorVersion >= 6) &&
+              (osversioninfo.dwMinorVersion >= 1))
+            wstyle = WS_POPUP;
+        }
+    }
   else
     {
       if ((style & NSTitledWindowMask) == NSTitledWindowMask)
@@ -1033,7 +1044,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   if (!hwnd) {
     NSLog(@"CreateWindowEx Failed %d", GetLastError());
   }
-  
+      
   SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
 
   [self _setWindowOwnedByServer: (int)hwnd];
@@ -1154,7 +1165,9 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   int		otherLevel;
   int		level;
   NSWindow *window = GSWindowWithNumber(winNum);
-
+  LONG dwStyle = GetWindowLong((HWND)winNum, GWL_STYLE);
+  BOOL isPopup = ((dwStyle & WS_POPUP) ? YES : NO);
+  
   NSDebugLLog(@"WTrace", @"orderwindow: %d : %d : %d", op, otherWin, winNum);
 
   if ([self usesNativeTaskbar])
@@ -1189,17 +1202,16 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
   if (![window canBecomeMainWindow] && ![window canBecomeKeyWindow]) 
     {   // Bring front, but do not activate, eg - tooltips
-    flag = SW_SHOWNA; 
-    ShowWindow((HWND)winNum, flag);
+      flag = (isPopup ? SW_SHOW : SW_SHOWNA);
+      ShowWindow((HWND)winNum, flag);
     }
   else 
     {
-    flag = SW_SHOW;
-    
-    if (IsIconic((HWND)winNum))
-      flag = SW_RESTORE;
-    
-    ShowWindow((HWND)winNum, flag); 
+      flag = SW_SHOW;
+      
+      if (IsIconic((HWND)winNum))
+        flag = SW_RESTORE;
+      ShowWindow((HWND)winNum, flag); 
     }
 
   SetWindowLong((HWND)winNum, OFF_ORDERED, 1);
