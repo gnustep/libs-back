@@ -551,6 +551,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
         
   if (style == 0)
     {
+#if 0
       wstyle = WS_POPUP | WS_VISIBLE;
       OSVERSIONINFOEX osversioninfo;
       osversioninfo.dwOSVersionInfoSize = sizeof(osversioninfo);
@@ -561,6 +562,9 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
               (osversioninfo.dwMinorVersion >= 1))
             wstyle = WS_POPUP;
         }
+#else
+      wstyle = WS_POPUP;
+#endif
     }
   else
     {
