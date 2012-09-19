@@ -35,7 +35,7 @@
 @implementation Win32CairoSurface
 
 
-//#define EXPOSE_USES_BITBLT_SURFACE_RENDERING
+#define EXPOSE_USES_BITBLT_SURFACE_RENDERING
 
 
 static cairo_user_data_key_t SurfaceHWND;

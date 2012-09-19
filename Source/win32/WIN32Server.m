@@ -572,13 +572,13 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
         wstyle |= WS_CAPTION;
 
       if ((style & NSClosableWindowMask) == NSClosableWindowMask)
-        wstyle |= WS_CAPTION + WS_SYSMENU;
+        wstyle |= WS_CAPTION | WS_SYSMENU;
       
       if ((style & NSMiniaturizableWindowMask) == NSMiniaturizableWindowMask)
-        wstyle |= WS_MINIMIZEBOX + WS_SYSMENU;
+        wstyle |= WS_MINIMIZEBOX | WS_SYSMENU;
 
       if ((style & NSResizableWindowMask) == NSResizableWindowMask)
-        wstyle |= WS_SIZEBOX + WS_MAXIMIZEBOX;
+        wstyle |= WS_SIZEBOX | WS_MAXIMIZEBOX;
 
       if (((style & NSMiniWindowMask) == NSMiniWindowMask)
           || ((style & NSIconWindowMask) == NSIconWindowMask))
@@ -586,7 +586,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
       if (wstyle == 0)
         wstyle = WS_POPUP; //WS_CAPTION+WS_SYSMENU;
-   }
+    }
 
    //NSLog(@"Window wstyle %d for style %d", wstyle, style);
    return wstyle | WS_CLIPCHILDREN;
