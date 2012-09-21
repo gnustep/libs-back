@@ -4348,7 +4348,9 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
     }
 
     // FIXME: Factor this out
-    // Convert RGBA unpacked to BGRA packed
+    // Convert RGBA unpacked to ARGB packed
+    // NB Packed ARGB values are layed out as ARGB on big endian systems
+    // and as BDRA on low endian systems
     {
       NSInteger stride;
       NSInteger x, y;
@@ -4362,14 +4364,16 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
 	  for (x = 0; x < w; x++)
 	    {
 	      NSInteger i = (y * stride) + (x * 4);
+#if GS_WORDS_BIGENDIAN
+	      unsigned char d = cdata[i + 3];
+	      
+	      cdata[i + 3] = cdata[i + 2];
+	      cdata[i + 2] = cdata[i + 1];
+	      cdata[i + 1] = cdata[i];
+	      cdata[i] = d;
+#else
 	      unsigned char d = cdata[i];
 	      
-#if GS_WORDS_BIGENDIAN
-	      cdata[i] = cdata[i + 1];
-	      cdata[i + 1] = cdata[i + 2];
-	      cdata[i + 2] = cdata[i + 3];
-	      cdata[i + 3] = d;
-#else
 	      cdata[i] = cdata[i + 2];
 	      //cdata[i + 1] = cdata[i + 1];
 	      cdata[i + 2] = d;
