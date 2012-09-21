@@ -1,3 +1,8 @@
+2012-09-21  Wolfgang Lux  <wolfgang.lux@gmail.com>
+
+	* Source/x11/XGServerWindow.m (-imagecursor:::): Fix Xcursor
+	specific code for big endian machines.
+
 2012-08-17 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoFontEnumerator.m: Allow for Windows default
