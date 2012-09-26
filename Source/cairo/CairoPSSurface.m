@@ -62,4 +62,9 @@
   cairo_ps_surface_dsc_comment(_surface, [comment UTF8String]);
 }
 
+- (BOOL) isDrawingToScreen
+{
+  return NO;
+}
+
 @end

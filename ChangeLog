@@ -1,3 +1,15 @@
+2012-09-26  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/cairo/CairoPDFSurface.m:
+	* Source/cairo/CairoContext.m:
+	* Source/cairo/CairoSurface.m:
+	* Source/cairo/CairoPSSurface.m:
+	* Headers/cairo/CairoSurface.h: Add a -isDrawingToScreen method
+	to CairoSurface. Returns NO for PDF/PS surfaces, yes for others.
+	Use it to implement -[CairoContext isDrawingToScreen], so that
+	-[NSGraphicsContext isDrawingToScreen] will return the correct
+	value.
+
 2012-09-21  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Source/x11/XGServerWindow.m (-imagecursor:::): Fix Xcursor
