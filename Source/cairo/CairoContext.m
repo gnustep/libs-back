@@ -105,6 +105,13 @@
   return YES;
 }
 
+- (BOOL) isDrawingToScreen
+{
+  CairoSurface *surface = nil;
+  [CGSTATE GSCurrentSurface: &surface : NULL : NULL];
+  return [surface isDrawingToScreen];
+}
+
 - (void) flushGraphics
 {
   // FIXME: Why is this here? When is it called?

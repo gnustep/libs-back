@@ -69,4 +69,9 @@
 {
 }
 
+- (BOOL) isDrawingToScreen
+{
+  return YES;
+}
+
 @end
