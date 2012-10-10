@@ -2151,7 +2151,8 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSLeftMouseDown, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
           eventType = NSLeftMouseDragged;
         }
@@ -2161,13 +2162,15 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSLeftMouseUp, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (rDown == NO)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSRightMouseDown, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
           eventType = NSRightMouseDragged;
         }
@@ -2177,19 +2180,22 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSLeftMouseUp, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (rDown == YES)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSRightMouseUp, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (oDown == NO)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSOtherMouseDown, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
           eventType = NSOtherMouseDragged;
         }
@@ -2199,19 +2205,22 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSLeftMouseUp, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (rDown == YES)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSRightMouseUp, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (oDown == YES)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSOtherMouseUp, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	}
     }

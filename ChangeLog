@@ -1,3 +1,7 @@
+2012-10-10  Jonathan Gillaspie <jonathan.gillaspie@testplant.com>
+
+	* Source/win32/WIN32Server.m : Fix for fatal exceptions when a nil mouse event tried to post
+
 2012-08-08  Marcian Lytwyn <marcian.lytwyn@advcsi.com>
 
 	*** Modifications/fixes for cairo support on win32 ***
