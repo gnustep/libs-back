@@ -1056,9 +1056,6 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       if (style == 0)
 #endif
       {
-        NSLog(@"%s:creating borderless window with frame: %@\n", __PRETTY_FUNCTION__, NSStringFromRect(frame));
-        NSLog(@"%s:creating borderless window with RECT(0): %d, %d, %d, %d", __PRETTY_FUNCTION__,
-              r.top, r.bottom, r.left, r.right);
 #ifndef USE_WS_POPUP
         LONG    wstyleOld  = GetWindowLong(hwnd, GWL_STYLE);
         LONG    estyleOld  = GetWindowLong(hwnd, GWL_EXSTYLE);
@@ -1073,14 +1070,9 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
         // Modify window style parameters and update the window information...
         SetWindowLong(hwnd, GWL_STYLE, wstyleNew);
         SetWindowLong(hwnd, GWL_EXSTYLE, estyleNew);
-//        SetWindowPos(hwnd, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top,
-//                     SWP_FRAMECHANGED | SWP_NOSENDCHANGING | SWP_NOREPOSITION | SWP_NOZORDER | SWP_NOACTIVATE);
         SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
                      SWP_FRAMECHANGED | SWP_NOSENDCHANGING | SWP_NOREPOSITION |
                      SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
-#else
-//        HRGN hrgn = CreateRectRgn(0, 0, r.right - r.left, r.bottom - r.top);
-//        SetWindowRgn(hwnd, hrgn, FALSE);
 #endif
       }
 #endif
