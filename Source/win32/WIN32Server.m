@@ -62,6 +62,7 @@
 
 #include <math.h>
 
+//#define USE_WS_POPUP
 
 @interface W32DisplayMonitorInfo : NSObject
 {
@@ -269,9 +270,8 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
   // Register the main window class. 
   wc.cbSize = sizeof(wc);          
-  //wc.style = CS_OWNDC; // | CS_HREDRAW | CS_VREDRAW; 
-  wc.style = CS_HREDRAW | CS_VREDRAW; 
-  wc.lpfnWndProc = (WNDPROC) MainWndProc; 
+  wc.style = 0;
+  wc.lpfnWndProc = (WNDPROC) MainWndProc;
   wc.cbClsExtra = 0; 
   // Keep extra space for each window, for OFF_LEVEL and OFF_ORDERED
   wc.cbWndExtra = WIN_EXTRABYTES; 
@@ -551,17 +551,12 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
         
   if (style == 0)
     {
-#if 0
-      wstyle = WS_POPUP | WS_VISIBLE;
-      OSVERSIONINFOEX osversioninfo;
-      osversioninfo.dwOSVersionInfoSize = sizeof(osversioninfo);
-      if (GetVersionEx(&osversioninfo))
-        {
-          // Windows 7 and above...
-          if ((osversioninfo.dwMajorVersion >= 6) &&
-              (osversioninfo.dwMinorVersion >= 1))
-            wstyle = WS_POPUP;
-        }
+#if (BUILD_GRAPHICS==GRAPHICS_cairo)
+#if defined(USE_WS_POPUP)
+      wstyle = WS_POPUP;
+#else
+      wstyle = WS_OVERLAPPED;
+#endif
 #else
       wstyle = WS_POPUP;
 #endif
@@ -636,6 +631,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
 - (void) resizeBackingStoreFor: (HWND)hwnd
 {
+#if (BUILD_GRAPHICS==GRAPHICS_winlib)
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
   
   // FIXME: We should check if the size really did change.
@@ -664,6 +660,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       // After resizing the backing store, we need to redraw the window
       win->backingStoreEmpty = YES;
     }
+#endif
 }
 
 - (BOOL) displayEvent: (unsigned int)uMsg;   // diagnotic filter
@@ -692,13 +689,13 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
   [self setFlagsforEventLoop: hwnd];
  
-//NSLog(@"event %u", uMsg);
-  switch (uMsg) 
+  //NSLog(@"%s:event 0x%x", __PRETTY_FUNCTION__, uMsg);
+  switch (uMsg)
     { 
       case WM_SIZING: 
         return [self decodeWM_SIZINGParams: hwnd : wParam : lParam];
-	break;
-      case WM_NCCREATE: 
+        break;
+      case WM_NCCREATE:
         return [self decodeWM_NCCREATEParams: wParam : lParam : hwnd];
         break;
       case WM_NCCALCSIZE: 
@@ -1045,13 +1042,53 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
                         hinstance, 
                         (void*)type);
   NSDebugLLog(@"WCTrace", @"         num/handle: %d", hwnd);
-  if (!hwnd) {
-    NSLog(@"CreateWindowEx Failed %d", GetLastError());
-  }
-      
-  SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
+  if (!hwnd)
+    {
+      NSLog(@"CreateWindowEx Failed %d", GetLastError());
+    }
+  else
+  {
+    // Borderless window request...
+#if (BUILD_GRAPHICS==GRAPHICS_cairo)
+#if defined(USE_WS_POPUP)
+      if (wstyle & WS_POPUP)
+#else
+      if (style == 0)
+#endif
+      {
+        NSLog(@"%s:creating borderless window with frame: %@\n", __PRETTY_FUNCTION__, NSStringFromRect(frame));
+        NSLog(@"%s:creating borderless window with RECT(0): %d, %d, %d, %d", __PRETTY_FUNCTION__,
+              r.top, r.bottom, r.left, r.right);
+#ifndef USE_WS_POPUP
+        LONG    wstyleOld  = GetWindowLong(hwnd, GWL_STYLE);
+        LONG    estyleOld  = GetWindowLong(hwnd, GWL_EXSTYLE);
+        LONG    wstyleNew  = (wstyleOld & ~WS_OVERLAPPEDWINDOW);
+        LONG    estyleNew  = estyleOld | WS_EX_TOOLWINDOW;
+        
+        NSDebugLLog(@"WCTrace", @"%s:wstyles - old: %8.8X new: %8.8X\n",
+                    __PRETTY_FUNCTION__, wstyleOld, wstyleNew);
+        NSDebugLLog(@"WCTrace", @"%s:estyles - old: %8.8X new: %8.8X\n",
+                    __PRETTY_FUNCTION__, estyleOld, estyleNew);
+        
+        // Modify window style parameters and update the window information...
+        SetWindowLong(hwnd, GWL_STYLE, wstyleNew);
+        SetWindowLong(hwnd, GWL_EXSTYLE, estyleNew);
+//        SetWindowPos(hwnd, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top,
+//                     SWP_FRAMECHANGED | SWP_NOSENDCHANGING | SWP_NOREPOSITION | SWP_NOZORDER | SWP_NOACTIVATE);
+        SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
+                     SWP_FRAMECHANGED | SWP_NOSENDCHANGING | SWP_NOREPOSITION |
+                     SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+#else
+//        HRGN hrgn = CreateRectRgn(0, 0, r.right - r.left, r.bottom - r.top);
+//        SetWindowRgn(hwnd, hrgn, FALSE);
+#endif
+      }
+#endif
 
-  [self _setWindowOwnedByServer: (int)hwnd];
+    SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
+
+    [self _setWindowOwnedByServer: (int)hwnd];
+  }
   return (int)hwnd;
 }
 
@@ -1086,6 +1123,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
 
   NSDebugLLog(@"WTrace", @"windowbacking: %d : %d", type, winNum);
+#if (BUILD_GRAPHICS==GRAPHICS_winlib)
   if (win->useHDC)
     {
       HGDIOBJ old;
@@ -1098,7 +1136,6 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       win->useHDC = NO;
     }
 
-#if (BUILD_GRAPHICS==GRAPHICS_winlib)
   if (type != NSBackingStoreNonretained)
     {
       HDC hdc, hdc2;
@@ -1164,13 +1201,11 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
 - (void) orderwindow: (int) op : (int) otherWin : (int) winNum
 {
-  int		flag;
+  int		flag = 0;
   int		foreground = 0;
   int		otherLevel;
   int		level;
   NSWindow *window = GSWindowWithNumber(winNum);
-  LONG dwStyle = GetWindowLong((HWND)winNum, GWL_STYLE);
-  BOOL isPopup = ((dwStyle & WS_POPUP) ? YES : NO);
   
   NSDebugLLog(@"WTrace", @"orderwindow: %d : %d : %d", op, otherWin, winNum);
 
@@ -1199,43 +1234,43 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   if (op == NSWindowOut)
     {
       SetWindowLong((HWND)winNum, OFF_ORDERED, 0);
-      SetWindowPos((HWND)winNum, NULL, 0, 0, 0, 0, 
-        SWP_HIDEWINDOW | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+      ShowWindow((HWND)winNum, SW_HIDE);
       return;
     }
 
-  if (![window canBecomeMainWindow] && ![window canBecomeKeyWindow]) 
-    {   // Bring front, but do not activate, eg - tooltips
-      flag = (isPopup ? SW_SHOW : SW_SHOWNA);
-      ShowWindow((HWND)winNum, flag);
+  if (![window canBecomeMainWindow] && ![window canBecomeKeyWindow])
+    {
+      // Bring front, but do not activate, eg - tooltips
+      flag = SW_SHOWNA;
     }
-  else 
+  else
     {
       flag = SW_SHOW;
-      
       if (IsIconic((HWND)winNum))
         flag = SW_RESTORE;
-      ShowWindow((HWND)winNum, flag); 
     }
 
+  ShowWindow((HWND)winNum, flag);
   SetWindowLong((HWND)winNum, OFF_ORDERED, 1);
+  
+  // Process window leveling...
   level = GetWindowLong((HWND)winNum, OFF_LEVEL);
 
   if (otherWin <= 0)
     {
       if (otherWin == 0 && op == NSWindowAbove)
-	{
-	  /* This combination means we should move to the top of the current
-	   * window level but stay below the key window, so if we have a key
-	   * window (other than the current window), we store it's id for
-	   * testing later.
-	   */
-	  foreground = (int)GetForegroundWindow();
-	  if (foreground < 0 || foreground == winNum)
-	    {
-	      foreground = 0;
-	    }
-	}
+        {
+          /* This combination means we should move to the top of the current
+           * window level but stay below the key window, so if we have a key
+           * window (other than the current window), we store it's id for
+           * testing later.
+           */
+          foreground = (int)GetForegroundWindow();
+          if (foreground < 0 || foreground == winNum)
+            {
+              foreground = 0;
+            }
+        }
       otherWin = 0;
     }
 
@@ -1246,13 +1281,13 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
        */
       otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
       if (level != otherLevel)
-	{
-	  NSDebugLLog(@"WTrace",
-	    @"orderwindow: implicitly set level of %d (%d) to that of %d (%d)",
-	    winNum, level, otherWin, otherLevel);
-          level = otherLevel;
-	  SetWindowLong((HWND)winNum, OFF_LEVEL, level);
-	}
+        {
+          NSDebugLLog(@"WTrace",
+            @"orderwindow: implicitly set level of %d (%d) to that of %d (%d)",
+            winNum, level, otherWin, otherLevel);
+                level = otherLevel;
+          SetWindowLong((HWND)winNum, OFF_LEVEL, level);
+        }
     }
 
   if (level <= NSDesktopWindowLevel)
@@ -1262,108 +1297,103 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       // For desktop level, put this at the bottom of the z-order
       SetParent((HWND)winNum, desktop);
       otherWin = (int)HWND_BOTTOM;
-      NSDebugLLog(@"WTrace",
-	@"orderwindow: set %i (%i) to bottom", winNum, level);
+      NSDebugLLog(@"WTrace", @"orderwindow: set %i (%i) to bottom", winNum, level);
     }
   else if (otherWin == 0 || op == NSWindowAbove)
     {
       if (otherWin == 0)
-	{
-	  /* Start searching from bottom of window list...
-	   * The last child of the desktop.
-	   */
-	  otherWin = (int)GetDesktopWindow();
-	  otherWin = (int)GetWindow((HWND)otherWin, GW_CHILD);
-	  if (otherWin > 0)
-	    {
-	      otherWin = (int)GetWindow((HWND)otherWin, GW_HWNDLAST);
-	    }
-	}
-      NSDebugLLog(@"WTrace",
-	@"orderwindow: traverse for %d (%d) starting at %d",
-	winNum, level, otherWin);
+        {
+          /* Start searching from bottom of window list...
+           * The last child of the desktop.
+           */
+          otherWin = (int)GetDesktopWindow();
+          otherWin = (int)GetWindow((HWND)otherWin, GW_CHILD);
+          if (otherWin > 0)
+            {
+              otherWin = (int)GetWindow((HWND)otherWin, GW_HWNDLAST);
+            }
+        }
+      NSDebugLLog(@"WTrace", @"orderwindow: traverse for %d (%d) starting at %d",
+                  winNum, level, otherWin);
       while (otherWin > 0)
         {
-	  TCHAR	buf[32];
+          TCHAR	buf[32];
 
-	  otherWin = (int)GetNextWindow((HWND)otherWin, GW_HWNDPREV);
+          otherWin = (int)GetNextWindow((HWND)otherWin, GW_HWNDPREV);
 
-	  /* We only look at gnustep windows (other than the one being
-	   * ordered) to decide where to place our window.
-	   * The assumption is, that if we are ordering a window in,
-	   * we want it to be above any non-gnustep window.
-	   * FIXME ... perhaps we should move all non-gnustep windows
-	   * to be lower than the lowest (excluding gnustep desktop
-	   * level windows I suppose) gnustep window.
-	   */
-	  if (otherWin > 0 && otherWin != winNum
-	    && GetClassName((HWND)otherWin, buf, 32) == 18
-	    && strncmp(buf, "GNUstepWindowClass", 18) == 0)
-	    {
-	      if (GetWindowLong((HWND)otherWin, OFF_ORDERED) == 1)
-		{
-		  otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
-		  NSDebugLLog(@"WTrace",
-		    @"orderwindow: found gnustep window %d (%d)",
-		    otherWin, otherLevel);
-		  if (otherLevel >= level)
-		    {
-		      if (otherLevel > level)
-			{
-			  /* On windows, there is no notion of levels, so
-			   * native apps will automatically move to the
-		           * very top of the stack (above our alert panels etc)
-			   *
-			   * So to cope with this, when we move to the top
-			   * of a level, we assume there may be native apps
-			   * above us and we set otherWin=0 to move to the
-			   * very top of the stack past them.
-			   * 
-			   * We rely on the fact that we have code in the
-			   * window positioning notification to rearrange
-			   * (sort) all the windows into level order if
-			   * moving this window to the top messes up the
-			   * level ordering.
-			   */
-			  otherWin = 0;
-			  break;
-			}
-		      if (op == NSWindowBelow || foreground == otherWin)
-			{
-			  break;
-			}
-		    }
-		}
-	    }
-	}
+          /* We only look at gnustep windows (other than the one being
+           * ordered) to decide where to place our window.
+           * The assumption is, that if we are ordering a window in,
+           * we want it to be above any non-gnustep window.
+           * FIXME ... perhaps we should move all non-gnustep windows
+           * to be lower than the lowest (excluding gnustep desktop
+           * level windows I suppose) gnustep window.
+           */
+          if (otherWin > 0 && otherWin != winNum
+            && GetClassName((HWND)otherWin, buf, 32) == 18
+            && strncmp(buf, "GNUstepWindowClass", 18) == 0)
+            {
+              if (GetWindowLong((HWND)otherWin, OFF_ORDERED) == 1)
+                {
+                  otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
+                  NSDebugLLog(@"WTrace", @"orderwindow: found gnustep window %d (%d)",
+                              otherWin, otherLevel);
+                  if (otherLevel >= level)
+                    {
+                      if (otherLevel > level)
+                        {
+                          /* On windows, there is no notion of levels, so
+                           * native apps will automatically move to the
+                                 * very top of the stack (above our alert panels etc)
+                           *
+                           * So to cope with this, when we move to the top
+                           * of a level, we assume there may be native apps
+                           * above us and we set otherWin=0 to move to the
+                           * very top of the stack past them.
+                           * 
+                           * We rely on the fact that we have code in the
+                           * window positioning notification to rearrange
+                           * (sort) all the windows into level order if
+                           * moving this window to the top messes up the
+                           * level ordering.
+                           */
+                          otherWin = 0;
+                          break;
+                        }
+                      if (op == NSWindowBelow || foreground == otherWin)
+                        {
+                          break;
+                        }
+                    }
+                }
+            }
+        }
     }
 
   if (otherWin == 0)
     {
       otherWin = (int)HWND_TOP;
-      NSDebugLLog(@"WTrace",
-	@"orderwindow: set %i (%i) to top", winNum, level);
+      NSDebugLLog(@"WTrace", @"orderwindow: set %i (%i) to top", winNum, level);
     }
   else if (otherWin == (int)HWND_BOTTOM)
     {
-      NSDebugLLog(@"WTrace",
-	@"orderwindow: set %i (%i) to bottom", winNum, level);
+      NSDebugLLog(@"WTrace", @"orderwindow: set %i (%i) to bottom", winNum, level);
     }
   else
     {
-      NSDebugLLog(@"WTrace",
-	@"orderwindow: set %i (%i) below %d", winNum, level, otherWin);
+      NSDebugLLog(@"WTrace", @"orderwindow: set %i (%i) below %d", winNum, level, otherWin);
     }
 
   SetWindowPos((HWND)winNum, (HWND)otherWin, 0, 0, 0, 0, 
-    SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+               SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
 
   if (otherWin == (int)HWND_TOP)
     {
       _enableCallbacks = NO;
-	  SetForegroundWindow((HWND)winNum);
+      if (SetForegroundWindow((HWND)winNum) == 0)
+        NSLog(@"%s:SetForegroundWindow error\n", __PRETTY_FUNCTION__);
       _enableCallbacks = YES;
-	}
+    }
   /* For debug log window stack.
    */
   if (GSDebugSet(@"WTrace") == YES)
@@ -1373,27 +1403,27 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       otherWin = (int)GetDesktopWindow();
       otherWin = (int)GetWindow((HWND)otherWin, GW_CHILD);
       if (otherWin > 0)
-	{
-	  otherWin = (int)GetWindow((HWND)otherWin, GW_HWNDLAST);
-	}
+        {
+          otherWin = (int)GetWindow((HWND)otherWin, GW_HWNDLAST);
+        }
       while (otherWin > 0)
-	{
-	  TCHAR	buf[32];
+        {
+          TCHAR	buf[32];
 
-	  otherWin = (int)GetNextWindow((HWND)otherWin, GW_HWNDPREV);
+          otherWin = (int)GetNextWindow((HWND)otherWin, GW_HWNDPREV);
 
-	  if (otherWin > 0
-	    && GetClassName((HWND)otherWin, buf, 32) == 18
-	    && strncmp(buf, "GNUstepWindowClass", 18) == 0)
-	    {
-	      if (GetWindowLong((HWND)otherWin, OFF_ORDERED) == 1)
-		{
-		  otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
-		  s = [s stringByAppendingFormat:
-		    @"%d (%d)\n", otherWin, otherLevel];
-		}
-	    }
-	}
+          if (otherWin > 0
+            && GetClassName((HWND)otherWin, buf, 32) == 18
+            && strncmp(buf, "GNUstepWindowClass", 18) == 0)
+            {
+              if (GetWindowLong((HWND)otherWin, OFF_ORDERED) == 1)
+                {
+                  otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
+                  s = [s stringByAppendingFormat:
+                    @"%d (%d)\n", otherWin, otherLevel];
+                }
+            }
+        }
       NSDebugLLog(@"WTrace", @"orderwindow: %@", s);
     }
 }
@@ -1407,7 +1437,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   p = GSWindowOriginToMS((HWND)winNum, loc);
 
   SetWindowPos((HWND)winNum, NULL, p.x, p.y, 0, 0, 
-               SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+               SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
 }
 
 - (void) placewindow: (NSRect)frame : (int) winNum
@@ -1419,11 +1449,11 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
               winNum);
   r = GSScreenRectToMS(frame);
   GetWindowRect((HWND)winNum, &r2);
-
+  
   SetWindowPos((HWND)winNum, NULL, 
                r.left, r.top, r.right - r.left, r.bottom - r.top, 
-               SWP_NOZORDER | SWP_NOACTIVATE); 
-
+               SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
+  
 #if (BUILD_GRAPHICS==GRAPHICS_winlib)
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
 
@@ -1621,7 +1651,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       *r = rect.right - 200;
       *t = 100 - rect.top;
       *b = rect.bottom - 200;
-      //NSLog(@"Style %d offset %f %f %f %f", wstyle, *l, *r, *t, *b);
+      //NSLog(@"Style 0x%X offset %f %f %f %f", wstyle, *l, *r, *t, *b);
     }
   else
     {
@@ -2304,3 +2334,4 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
   return [ctxt windowEventProc: hwnd : uMsg : wParam : lParam];
 }
+

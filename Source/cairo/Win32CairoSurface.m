@@ -35,9 +35,6 @@
 @implementation Win32CairoSurface
 
 
-#define EXPOSE_USES_BITBLT_SURFACE_RENDERING
-
-
 static cairo_user_data_key_t SurfaceHWND;
 static cairo_user_data_key_t SurfaceWindow;
 
@@ -96,7 +93,8 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
     {
       // This is the raw DC surface...
       _surface = cairo_win32_surface_create(hDC);
-      
+      NSLog(@"%s:NSBackingStoreNonretained", __PRETTY_FUNCTION__);
+
       // Check for error...
       if (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS)
         {
@@ -135,12 +133,12 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
         }
       else
         {
-           // and this is the in-memory DC surface...surface owns its DC...
-           // NOTE: For some reason we get an init sequence with zewro width/height,
-           //       which creates problems in the cairo layer.  It tries to clear
-           //       the 'similar' surface it's creating, and with a zeor width/height
-           //       it incorrectly thinks the clear failed...so we will init with
-           //       a minimum size of 1 for width/height...
+          // and this is the in-memory DC surface...surface owns its DC...
+          // NOTE: For some reason we get an init sequence with zero width/height,
+          //       which creates problems in the cairo layer.  It tries to clear
+          //       the 'similar' surface it's creating, and with a zero width/height
+          //       it incorrectly thinks the clear failed...so we will init with
+          //       a minimum size of 1 for width/height...
           _surface = cairo_surface_create_similar(window, CAIRO_CONTENT_COLOR_ALPHA,
                                                   MAX(1, crect.right - crect.left),
                                                   MAX(1, crect.bottom - crect.top));
@@ -189,6 +187,7 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
 
 - (void) dealloc
 {
+  //NSLog(@"%s:self: %@\n", __PRETTY_FUNCTION__, self);
   if ((_surface == NULL) || (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS))
     {
       NSLog(@"%s:null surface or bad status\n", __PRETTY_FUNCTION__);
@@ -212,10 +211,10 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
   HDC hdc = NULL;
   if (_surface)
     hdc = cairo_win32_surface_get_dc(_surface);
-  NSMutableString *description = [[super description] mutableCopy];
+  NSMutableString *description = [[[super description] mutableCopy] autorelease];
   [description appendFormat: @" _surface: %p",_surface];
   [description appendFormat: @" dc: %p",hdc];
-  return [description copy];
+  return [[description copy] autorelease];
 }
 
 - (NSSize) size
@@ -241,63 +240,65 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
   
   // If the surface is buffered then it will have the main surface set as user data...
   cairo_surface_t *window = cairo_surface_get_user_data(_surface, &SurfaceWindow);
+  
+#if 0
+  NSWindow *nswindow = GSWindowWithNumber(gsDevice);
+  if ([[nswindow title] isEqualToString: @"GSToolTips"])
+  {
+    NSLog(@"%s:title: %@ _surface: %p window: %p rect: %@\n", __PRETTY_FUNCTION__,
+          [nswindow title], _surface, window,
+          NSStringFromRect(rect));
+  }
+#endif
 
   // If the surface is buffered then...
   if (window)
     {
-#if defined(EXPOSE_USES_BITBLT_SURFACE_RENDERING)
-      // Use old fashioned BitBlt'ing methodology...
-      HDC              dhdc   = cairo_win32_surface_get_dc(window);
-      HDC              shdc   = cairo_win32_surface_get_dc(_surface);
-      RECT             r      = GSWindowRectToMS((WIN32Server*)GSCurrentServer(), GSWINDEVICE, rect);
-  
-      // Ensure that surface context is flushed...
-      cairo_surface_flush(window);
-      
-      // Do the BitBlt...
-      WINBOOL result = BitBlt(dhdc, r.left, r.top, rect.size.width, rect.size.height, 
-                              shdc, r.left, r.top, SRCCOPY);
-      if (!result)
-          NSLog(@"%s:BitBlt failed - error: %d", __PRETTY_FUNCTION__, GetLastError());
-                  
-      // Inform surface that we've done something...
-      cairo_surface_mark_dirty(window);
-#else
-      if (GetWindowLong(GSWINDEVICE, GWL_STYLE) & WS_POPUP)
+      // First check the current status of the foreground surface...
+      if (cairo_surface_status(window) != CAIRO_STATUS_SUCCESS)
         {
-          // Use old fashioned BitBlt'ing methodology...
-          HDC              dhdc   = cairo_win32_surface_get_dc(window);
-          HDC              shdc   = cairo_win32_surface_get_dc(_surface);
-          RECT             r      = GSWindowRectToMS((WIN32Server*)GSCurrentServer(), GSWINDEVICE, rect);
+          NSLog(@"%s:cairo initial window error status: %s\n", __PRETTY_FUNCTION__,
+                cairo_status_to_string(cairo_surface_status(window)));
+          return;
+        }
       
-          // Ensure that surface context is flushed...
-          cairo_surface_flush(window);
-          
-          // Do the BitBlt...
-          WINBOOL result = BitBlt(dhdc, r.left, r.top, rect.size.width, rect.size.height, 
-                                  shdc, r.left, r.top, SRCCOPY);
-          if (!result)
-              NSLog(@"%s:BitBlt failed - error: %d", __PRETTY_FUNCTION__, GetLastError());
-                      
-          // Inform surface that we've done something...
-          cairo_surface_mark_dirty(window);
+      cairo_t *context = cairo_create(window);
+
+      if (cairo_status(context) != CAIRO_STATUS_SUCCESS)
+        {
+          NSLog(@"%s:cairo context create error - status: _surface: %s window: %s windowCtxt: %s (%d)",
+                __PRETTY_FUNCTION__,
+                cairo_status_to_string(cairo_surface_status(_surface)),
+                cairo_status_to_string(cairo_surface_status(window)),
+                cairo_status_to_string(cairo_status(context)), cairo_get_reference_count(context));
         }
       else
         {
-          double   backupOffsetX = 0;
-          double   backupOffsetY = 0;
-          cairo_t *context       = cairo_create(window);
-          RECT     r             = GSWindowRectToMS((WIN32Server*)GSCurrentServer(), GSWINDEVICE, rect);
+          double  backupOffsetX = 0;
+          double  backupOffsetY = 0;
+          RECT    msRect        = GSWindowRectToMS((WIN32Server*)GSCurrentServer(), GSWINDEVICE, rect);
 
+          // Flush source surface...
+          cairo_surface_flush(_surface);
+          
           // Need to save the device offset context...
           cairo_surface_get_device_offset(_surface, &backupOffsetX, &backupOffsetY);
           cairo_surface_set_device_offset(_surface, 0, 0);
 
-          cairo_rectangle(context, r.left, r.top, rect.size.width, rect.size.height);
+          cairo_rectangle(context, msRect.left, msRect.top, rect.size.width, rect.size.height);
           cairo_clip(context);
           cairo_set_source_surface(context, _surface, 0, 0);
           cairo_set_operator(context, CAIRO_OPERATOR_SOURCE);
           cairo_paint(context);
+          
+          if (cairo_status(context) != CAIRO_STATUS_SUCCESS)
+          {
+            NSLog(@"%s:cairo expose error - status: _surface: %s window: %s windowCtxt: %s",
+                  __PRETTY_FUNCTION__,
+                  cairo_status_to_string(cairo_surface_status(_surface)),
+                  cairo_status_to_string(cairo_surface_status(window)),
+                  cairo_status_to_string(cairo_status(context)));
+          }
 
           // Cleanup...
           cairo_destroy(context);
@@ -305,7 +306,6 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
           // Restore device offset
           cairo_surface_set_device_offset(_surface, backupOffsetX, backupOffsetY);
         }
-#endif
     }
 }
 

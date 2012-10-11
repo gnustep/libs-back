@@ -125,10 +125,10 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
 
 - (NSString*) description
 {
-  NSMutableString *description = [[super description] mutableCopy];
+  NSMutableString *description = [[[super description] mutableCopy] autorelease];
   [description appendFormat: @" surface: %@",_surface];
   [description appendFormat: @" context: %p",_ct];
-  return [description copy];
+  return [[description copy] autorelease];
 }
 
 - (id) copyWithZone: (NSZone *)zone
@@ -500,6 +500,7 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
   if (_ct)
     {
       cairo_destroy(_ct);
+      _ct = NULL;
     }
   if (!_surface)
     {
