@@ -1,3 +1,20 @@
+2012-10-14  Fred Kiefer  <FredKiefer@gmx.de>
+
+	* Source/win32/w32_create.m (-decodeWM_CREATEParams:::): Call
+	windowbacking:: instead of handling backingstore here.
+	Merge some changes from testplant branch
+	* Source/win32/WIN32Server.m : Fix for fatal exceptions when a nil
+	mouse event tried to post
+	Patch by Jonathan Gillaspie <jonathan.gillaspie@testplant.com>
+	* Source/gsc/GSGState.m (-description),
+	* Source/cairo/CairoGState.m (-description): Add this method.
+	* Headers/win32/WIN32Server.h - Added a mutable array for storing
+	multiple screen information from GDI screen lookup
+	* Source/win32/WIN32Server.m - Added startup sequence to invoke
+	GDI functions to look up multiple screen/monitor information
+	* Source/gsc/GSGState.m: Fix compiler warnings
+	Patch by Marcian Lytwyn <marcian.lytwyn@advcsi.com>
+
 2012-09-28  Fred Kiefer  <FredKiefer@gmx.de>
 
 	* Source/gsc/GSStreamContext.m (-GSShowGlyphsWithAdvances:): Add

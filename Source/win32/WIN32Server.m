@@ -75,6 +75,81 @@ static NSEvent *process_mouse_event(WIN32Server *svr,
 LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, 
                              WPARAM wParam, LPARAM lParam);
 
+@interface W32DisplayMonitorInfo : NSObject
+{
+  HMONITOR _hMonitor;
+  RECT     _rect;
+  NSRect   _frame;
+}
+
+- (id)initWithHMonitor:(HMONITOR)hMonitor rect:(LPRECT)lprcMonitor;
+- (HMONITOR)hMonitor;
+- (RECT)rect;
+- (NSRect)frame;
+- (void)setFrame:(NSRect)frame;
+
+@end
+
+@implementation W32DisplayMonitorInfo
+
+- (id) initWithHMonitor: (HMONITOR)hMonitor rect: (LPRECT)lprcMonitor
+{
+  self = [self init];
+  if (self)
+  {
+    CGFloat w = lprcMonitor->right - lprcMonitor->left;
+    CGFloat h = lprcMonitor->bottom - lprcMonitor->top;
+    CGFloat x = lprcMonitor->left;
+    CGFloat y = h - lprcMonitor->bottom;
+    _frame = NSMakeRect(x, y, w, h);
+    memcpy(&_rect, lprcMonitor, sizeof(RECT));
+  }
+  return self;
+}
+
+- (HMONITOR) hMonitor
+{
+  return _hMonitor;
+}
+
+- (RECT) rect
+{
+  return _rect;
+}
+
+- (NSRect) frame
+{
+  return _frame;
+}
+
+- (void) setFrame: (NSRect)frame
+{
+  _frame = frame;
+}
+
+@end
+
+BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
+                                     HDC hdcMonitor,
+                                     LPRECT lprcMonitor,
+                                     LPARAM dwData)
+{
+  NSMutableArray *monitors = (NSMutableArray*)dwData;
+  W32DisplayMonitorInfo *info = [[W32DisplayMonitorInfo alloc]
+                                  initWithHMonitor: hMonitor
+                                              rect: lprcMonitor];
+  
+  NSDebugLog(@"screen %ld:hdc: %ld frame:top:%ld left:%ld right:%ld bottom:%ld  frame:x:%f y:%f w:%f h:%f\n",
+        [monitors count], (long)hMonitor,
+        lprcMonitor->top, lprcMonitor->left,
+        lprcMonitor->right, lprcMonitor->bottom,
+        [info frame].origin.x, [info frame].origin.y,
+        [info frame].size.width, [info frame].size.height);
+  [monitors addObject:info];
+  
+  return TRUE;
+}
+
 @implementation WIN32Server
 
 - (BOOL) handlesWindowDecorations
@@ -258,6 +333,9 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
       [self _initWin32Context];
       [super initWithAttributes: info];
 
+      monitorInfo = [NSMutableArray array];
+      EnumDisplayMonitors(NULL, NULL, (MONITORENUMPROC)LoadDisplayMonitorInfo, (LPARAM)monitorInfo);
+
       [self setupRunLoopInputSourcesForMode: NSDefaultRunLoopMode]; 
       [self setupRunLoopInputSourcesForMode: NSConnectionReplyMode]; 
       [self setupRunLoopInputSourcesForMode: NSModalPanelRunLoopMode]; 
@@ -294,7 +372,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 	if ([defs objectForKey: @"GSBackUsesNativeTaskbar"])
 	  {
 	    [self setUsesNativeTaskbar:
-	      [defs boolForKey: @"GSUseNativeTaskbar"]];
+	      [defs boolForKey: @"GSBackUsesNativeTaskbar"]];
 	  }
       }
     }
@@ -375,20 +453,35 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
 - (NSRect) boundsForScreen: (int)screen
 {
-  return NSMakeRect(0, 0, GetSystemMetrics(SM_CXSCREEN), 
-		    GetSystemMetrics(SM_CYSCREEN));
+  if (screen < [monitorInfo count])
+    {
+      return [[monitorInfo objectAtIndex:screen] frame];
+    }
+  return NSZeroRect;
 }
 
 - (NSWindowDepth) windowDepthForScreen: (int)screen
 {
-  HDC hdc;
-  int bits;
+  HDC hdc = 0;
+  int bits = 0;
   //int planes;
       
-  hdc = GetDC(NULL);
-  bits = GetDeviceCaps(hdc, BITSPIXEL) / 3;
-  //planes = GetDeviceCaps(hdc, PLANES);
-  //NSLog(@"bits %d planes %d", bits, planes);
+  if (screen < [monitorInfo count])
+    {
+      MONITORINFOEX mix = { 0 };
+      mix.cbSize        = sizeof(MONITORINFOEX);
+      HMONITOR hMonitor = [[monitorInfo objectAtIndex: screen] hMonitor];
+      
+      if (GetMonitorInfo(hMonitor, (LPMONITORINFO)&mix))
+        {
+          hdc  = CreateDC("DISPLAY", mix.szDevice, NULL, NULL);
+          bits = GetDeviceCaps(hdc, BITSPIXEL) / 3;
+          //planes = GetDeviceCaps(hdc, PLANES);
+          //NSLog(@"bits %d planes %d", bits, planes);
+          ReleaseDC(NULL, hdc);
+        }
+    }
+
   ReleaseDC(NULL, hdc);
   
   return (_GSRGBBitValue | bits);
@@ -410,7 +503,15 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
 - (NSArray *) screenList
 {
-  return [NSArray arrayWithObject: [NSNumber numberWithInt: 0]];
+  NSInteger       index;
+  NSInteger       nMonitors  = [monitorInfo count];
+  NSMutableArray *screenList = [NSMutableArray arrayWithCapacity: nMonitors];
+
+  for (index = 0; index < nMonitors; ++index)
+    {
+      [screenList addObject: [NSNumber numberWithInt: index]];
+    }
+  return [[screenList copy] autorelease];
 }
 
 /**
@@ -2014,7 +2115,8 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSLeftMouseDown, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+              if (e != nil)
+                [GSCurrentServer() postEvent: e atStart: NO];
 	    }
           eventType = NSLeftMouseDragged;
         }
@@ -2024,13 +2126,15 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSLeftMouseUp, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+              if (e != nil)
+                [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (rDown == NO)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSRightMouseDown, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+              if (e != nil)
+                [GSCurrentServer() postEvent: e atStart: NO];
 	    }
           eventType = NSRightMouseDragged;
         }
@@ -2040,19 +2144,22 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSLeftMouseUp, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+              if (e != nil)
+                [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (rDown == YES)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSRightMouseUp, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+              if (e != nil)
+                [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (oDown == NO)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSOtherMouseDown, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+              if (e != nil)
+                [GSCurrentServer() postEvent: e atStart: NO];
 	    }
           eventType = NSOtherMouseDragged;
         }
@@ -2062,19 +2169,22 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSLeftMouseUp, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+              if (e != nil)
+                [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (rDown == YES)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSRightMouseUp, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+              if (e != nil)
+                [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (oDown == YES)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSOtherMouseUp, uMsg);
-	      [GSCurrentServer() postEvent: e atStart: NO];
+              if (e != nil)
+                [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	}
     }

@@ -122,6 +122,12 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
   [super dealloc];
 }
 
+- (NSString*) description
+{
+  return [NSString stringWithFormat: @"%@  surface: %@  context: %p",
+                   [super description], _surface, _ct];
+}
+
 - (id) copyWithZone: (NSZone *)zone
 {
   CairoGState *copy = (CairoGState *)[super copyWithZone: zone];
@@ -491,6 +497,7 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
   if (_ct)
     {
       cairo_destroy(_ct);
+      _ct = NULL;
     }
   if (!_surface)
     {

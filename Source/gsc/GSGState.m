@@ -101,6 +101,12 @@
   return self;
 }
 
+- (NSString*) description
+{
+  return [NSString stringWithFormat: @"%@  drawcontext: %@  ctm: %@",
+                   [super description], drawcontext, ctm];
+}
+
 - copyWithZone: (NSZone *)zone
 {
   GSGState *new = (GSGState *)NSCopyObject(self, 0, zone);  
@@ -299,7 +305,7 @@
 {
   device_color_t col;
 
-  ASSIGN(fillColorS, spaceref);
+  ASSIGN(fillColorS, (NSColorSpace*)spaceref);
   gsMakeColor(&col, rgb_colorspace, 0, 0, 0, 0);
   // Keep the old alpha value
   col.field[AINDEX] = fillColor.field[AINDEX];
@@ -310,7 +316,7 @@
 {
   device_color_t col;
 
-  ASSIGN(strokeColorS, spaceref);
+  ASSIGN(strokeColorS, (NSColorSpace*)spaceref);
   gsMakeColor(&col, rgb_colorspace, 0, 0, 0, 0);
   // Keep the old alpha value
   col.field[AINDEX] = fillColor.field[AINDEX];
