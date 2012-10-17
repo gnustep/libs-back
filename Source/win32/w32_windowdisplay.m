@@ -66,7 +66,7 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 		      win->hdc, rect.left, rect.top, SRCCOPY);
       if (!result)
         {
-          NSLog(@"validateWindow failed %d", GetLastError());
+          NSWarnMLog(@"validateWindow failed %d", GetLastError());
         }
       ReleaseDC((HWND)hwnd, hdc);
     }

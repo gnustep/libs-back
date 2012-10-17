@@ -52,8 +52,8 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
           HWND whandle = (HWND)cairo_surface_get_user_data(surface, &SurfaceHWND);
           if (whandle == NULL)
             {
-              NSLog(@"%s:Window handle is NULL - leaking DC: %p\n", __PRETTY_FUNCTION__,
-                    cairo_win32_surface_get_dc(surface));
+              NSWarnMLog(@"Window handle is NULL - leaking DC: %p\n",
+                         cairo_win32_surface_get_dc(surface));
             }
           else
             {
@@ -81,7 +81,7 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
 
   if (!hDC)
     {
-      NSLog(@"%s:Win32CairoSurface line: %d : no device context", __PRETTY_FUNCTION__, __LINE__);
+      NSWarnMLog(@"Win32CairoSurface line: %d : no device context", __LINE__);
       exit(1);
     }
   
@@ -93,15 +93,14 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
     {
       // This is the raw DC surface...
       _surface = cairo_win32_surface_create(hDC);
-      NSLog(@"%s:NSBackingStoreNonretained", __PRETTY_FUNCTION__);
+      NSWarnMLog(@"NSBackingStoreNonretained\n");
 
       // Check for error...
       if (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS)
         {
           // Output the surface create error...
           cairo_status_t status = cairo_surface_status(_surface);
-          NSLog(@"%s:surface create FAILED - status: %s\n", __PRETTY_FUNCTION__,
-                cairo_status_to_string(status));
+          NSWarnMLog(@"surface create FAILED - status: %s\n", cairo_status_to_string(status));
           
           // And deallocate ourselves...
           DESTROY(self);
@@ -109,10 +108,7 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
     }
   else
     {
-      RECT crect;
-      
-      // Get the client rectangle information...
-      GetClientRect(GSWINDEVICE, &crect);
+      NSSize csize = [self size];
 
       // This is the raw DC surface...
       cairo_surface_t *window = cairo_win32_surface_create(hDC);
@@ -122,8 +118,7 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
         {
           // Output the surface create error...
           cairo_status_t status = cairo_surface_status(window);
-          NSLog(@"%s:surface create FAILED - status: %s\n", __PRETTY_FUNCTION__,
-                cairo_status_to_string(status));
+          NSWarnMLog(@"surface create FAILED - status: %s\n",  cairo_status_to_string(status));
                 
           // Destroy the initial surface created...
           cairo_surface_destroy(window);
@@ -140,16 +135,15 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
           //       it incorrectly thinks the clear failed...so we will init with
           //       a minimum size of 1 for width/height...
           _surface = cairo_surface_create_similar(window, CAIRO_CONTENT_COLOR_ALPHA,
-                                                  MAX(1, crect.right - crect.left),
-                                                  MAX(1, crect.bottom - crect.top));
+                                                  MAX(1, csize.width),
+                                                  MAX(1, csize.height));
 
           // Check for error...
           if (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS)
             {
               // Output the surface create error...
               cairo_status_t status = cairo_surface_status(_surface);
-              NSLog(@"%s:surface create FAILED - status: %s\n", __PRETTY_FUNCTION__,
-                    cairo_status_to_string(status));
+              NSWarnMLog(@"surface create FAILED - status: %s\n",  cairo_status_to_string(status));
                     
               // Destroy the initial surface created...
               cairo_surface_destroy(window);
@@ -187,16 +181,15 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
 
 - (void) dealloc
 {
-  //NSLog(@"%s:self: %@\n", __PRETTY_FUNCTION__, self);
   if ((_surface == NULL) || (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS))
     {
-      NSLog(@"%s:null surface or bad status\n", __PRETTY_FUNCTION__);
+      NSWarnMLog(@"null surface or bad status\n");
     }
   else
     {
       if (cairo_win32_surface_get_dc(_surface) == NULL)
         {
-          NSLog(@"%s:HDC is NULL for surface: %@\n", __PRETTY_FUNCTION__, self);
+          NSWarnMLog(@"HDC is NULL for surface: %@\n", self);
         }
       else
         {
@@ -208,48 +201,42 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
 
 - (NSString*) description
 {
-  HDC hdc = NULL;
+  HDC              shdc   = NULL;
+  HDC              whdc   = NULL;
+  cairo_surface_t *window = NULL;
   if (_surface)
-    hdc = cairo_win32_surface_get_dc(_surface);
-  NSMutableString *description = [[[super description] mutableCopy] autorelease];
+  {
+    shdc   = cairo_win32_surface_get_dc(_surface);
+    window = cairo_surface_get_user_data(_surface, &SurfaceWindow);
+    if (window)
+      whdc = cairo_win32_surface_get_dc(window);
+  }
+  NSMutableString *description = AUTORELEASE([[super description] mutableCopy]);
+  [description appendFormat: @" size: %@",NSStringFromSize([self size])];
   [description appendFormat: @" _surface: %p",_surface];
-  [description appendFormat: @" dc: %p",hdc];
-  return [[description copy] autorelease];
+  [description appendFormat: @" surfDC: %p",shdc];
+  [description appendFormat: @" window: %p",window];
+  [description appendFormat: @" windDC: %p",whdc];
+  return AUTORELEASE([description copy]);
 }
 
 - (NSSize) size
 {
-  RECT sz;
+  RECT csize;
 
-  GetClientRect(GSWINDEVICE, &sz);
-  return NSMakeSize(sz.right - sz.left, sz.top - sz.bottom);
+  GetClientRect(GSWINDEVICE, &csize);
+  return NSMakeSize(csize.right - csize.left, csize.bottom - csize.top);
 }
 
 - (void) setSize: (NSSize)newSize
 {
-  NSDebugLLog(@"Win32CairoSurface",
-              @"%s:size: %@\n", __PRETTY_FUNCTION__,
-              NSStringFromSize(newSize));
+  NSDebugMLLog(@"Win32CairoSurface", @"size: %@\n", NSStringFromSize(newSize));
 }
 
 - (void) handleExposeRect: (NSRect)rect
 {
-  NSDebugLLog(@"Win32CairoSurface",
-              @"%s:rect: %@\n", __PRETTY_FUNCTION__,
-              NSStringFromRect(rect));
-  
   // If the surface is buffered then it will have the main surface set as user data...
   cairo_surface_t *window = cairo_surface_get_user_data(_surface, &SurfaceWindow);
-  
-#if 0
-  NSWindow *nswindow = GSWindowWithNumber(gsDevice);
-  if ([[nswindow title] isEqualToString: @"GSToolTips"])
-  {
-    NSLog(@"%s:title: %@ _surface: %p window: %p rect: %@\n", __PRETTY_FUNCTION__,
-          [nswindow title], _surface, window,
-          NSStringFromRect(rect));
-  }
-#endif
 
   // If the surface is buffered then...
   if (window)
@@ -257,8 +244,8 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
       // First check the current status of the foreground surface...
       if (cairo_surface_status(window) != CAIRO_STATUS_SUCCESS)
         {
-          NSLog(@"%s:cairo initial window error status: %s\n", __PRETTY_FUNCTION__,
-                cairo_status_to_string(cairo_surface_status(window)));
+          NSWarnMLog(@"cairo initial window error status: %s\n",
+                     cairo_status_to_string(cairo_surface_status(window)));
           return;
         }
       
@@ -266,11 +253,10 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
 
       if (cairo_status(context) != CAIRO_STATUS_SUCCESS)
         {
-          NSLog(@"%s:cairo context create error - status: _surface: %s window: %s windowCtxt: %s (%d)",
-                __PRETTY_FUNCTION__,
-                cairo_status_to_string(cairo_surface_status(_surface)),
-                cairo_status_to_string(cairo_surface_status(window)),
-                cairo_status_to_string(cairo_status(context)), cairo_get_reference_count(context));
+          NSWarnMLog(@"cairo context create error - status: _surface: %s window: %s windowCtxt: %s (%d)",
+                     cairo_status_to_string(cairo_surface_status(_surface)),
+                     cairo_status_to_string(cairo_surface_status(window)),
+                     cairo_status_to_string(cairo_status(context)), cairo_get_reference_count(context));
         }
       else
         {
@@ -293,11 +279,10 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
           
           if (cairo_status(context) != CAIRO_STATUS_SUCCESS)
           {
-            NSLog(@"%s:cairo expose error - status: _surface: %s window: %s windowCtxt: %s",
-                  __PRETTY_FUNCTION__,
-                  cairo_status_to_string(cairo_surface_status(_surface)),
-                  cairo_status_to_string(cairo_surface_status(window)),
-                  cairo_status_to_string(cairo_status(context)));
+            NSWarnMLog(@"cairo expose error - status: _surface: %s window: %s windowCtxt: %s",
+                       cairo_status_to_string(cairo_surface_status(_surface)),
+                       cairo_status_to_string(cairo_surface_status(window)),
+                       cairo_status_to_string(cairo_status(context)));
           }
 
           // Cleanup...

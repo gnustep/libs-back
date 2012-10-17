@@ -62,8 +62,6 @@
 
 #include <math.h>
 
-//#define USE_WS_POPUP
-
 @interface W32DisplayMonitorInfo : NSObject
 {
   HMONITOR _hMonitor;
@@ -551,15 +549,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
         
   if (style == 0)
     {
-#if (BUILD_GRAPHICS==GRAPHICS_cairo)
-#if defined(USE_WS_POPUP)
       wstyle = WS_POPUP;
-#else
-      wstyle = WS_OVERLAPPED;
-#endif
-#else
-      wstyle = WS_POPUP;
-#endif
     }
   else
     {
@@ -580,7 +570,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
         wstyle |= WS_ICONIC;
 
       if (wstyle == 0)
-        wstyle = WS_POPUP; //WS_CAPTION+WS_SYSMENU;
+        wstyle = WS_POPUP;
     }
 
    //NSLog(@"Window wstyle %d for style %d", wstyle, style);
@@ -689,7 +679,6 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
   [self setFlagsforEventLoop: hwnd];
  
-  //NSLog(@"%s:event 0x%x", __PRETTY_FUNCTION__, uMsg);
   switch (uMsg)
     { 
       case WM_SIZING: 
@@ -743,10 +732,10 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
         return [self decodeWM_SIZEParams: hwnd : wParam : lParam];
         break;
       case WM_ENTERSIZEMOVE: 
+        return [self decodeWM_ENTERSIZEMOVEParams: wParam : lParam : hwnd];
         break;
       case WM_EXITSIZEMOVE: 
-        //return [self decodeWM_EXITSIZEMOVEParams: wParam : lParam : hwnd];
-        return DefWindowProc(hwnd, uMsg, wParam, lParam); 
+        return [self decodeWM_EXITSIZEMOVEParams: wParam : lParam : hwnd];
         break; 
       case WM_ACTIVATE: 
         if ((int)lParam !=0)
@@ -1032,9 +1021,13 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   hwnd = CreateWindowEx(estyle | WS_EX_LAYERED, 
                         "GNUstepWindowClass", 
                         "GNUstepWindow", 
-                        wstyle, 
-                        r.left, 
-                        r.top, 
+#if (BUILD_GRAPHICS==GRAPHICS_cairo)
+                        ((wstyle & WS_POPUP) ? ((wstyle & ~WS_POPUP) | WS_OVERLAPPED) : wstyle),
+#else
+                        wstyle,
+#endif
+                        r.left,
+                        r.top,
                         r.right - r.left, 
                         r.bottom - r.top, 
                         (HWND)NULL, 
@@ -1042,30 +1035,25 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
                         hinstance, 
                         (void*)type);
   NSDebugLLog(@"WCTrace", @"         num/handle: %d", hwnd);
-  if (!hwnd)
+  if (hwnd == NULL)
     {
       NSLog(@"CreateWindowEx Failed %d", GetLastError());
     }
   else
-  {
-    // Borderless window request...
+    {
 #if (BUILD_GRAPHICS==GRAPHICS_cairo)
-#if defined(USE_WS_POPUP)
+      // Borderless window request...
       if (wstyle & WS_POPUP)
-#else
-      if (style == 0)
-#endif
       {
-#ifndef USE_WS_POPUP
         LONG    wstyleOld  = GetWindowLong(hwnd, GWL_STYLE);
         LONG    estyleOld  = GetWindowLong(hwnd, GWL_EXSTYLE);
         LONG    wstyleNew  = (wstyleOld & ~WS_OVERLAPPEDWINDOW);
         LONG    estyleNew  = estyleOld | WS_EX_TOOLWINDOW;
         
-        NSDebugLLog(@"WCTrace", @"%s:wstyles - old: %8.8X new: %8.8X\n",
-                    __PRETTY_FUNCTION__, wstyleOld, wstyleNew);
-        NSDebugLLog(@"WCTrace", @"%s:estyles - old: %8.8X new: %8.8X\n",
-                    __PRETTY_FUNCTION__, estyleOld, estyleNew);
+        NSDebugMLLog(@"WCTrace", @"wstyles - old: %8.8X new: %8.8X\n",
+                    wstyleOld, wstyleNew);
+        NSDebugMLLog(@"WCTrace", @"estyles - old: %8.8X new: %8.8X\n",
+                    estyleOld, estyleNew);
         
         // Modify window style parameters and update the window information...
         SetWindowLong(hwnd, GWL_STYLE, wstyleNew);
@@ -1073,14 +1061,13 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
         SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
                      SWP_FRAMECHANGED | SWP_NOSENDCHANGING | SWP_NOREPOSITION |
                      SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
-#endif
       }
 #endif
 
-    SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
+      SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
 
-    [self _setWindowOwnedByServer: (int)hwnd];
-  }
+      [self _setWindowOwnedByServer: (int)hwnd];
+    }
   return (int)hwnd;
 }
 
@@ -1166,7 +1153,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 - (void) miniwindow: (int) winNum
 {
   NSDebugLLog(@"WTrace", @"miniwindow: %d", winNum);
-  ShowWindow((HWND)winNum, SW_MINIMIZE); 
+  ShowWindow((HWND)winNum, SW_MINIMIZE);
 }
 
 /** Returns NO as we don't provide mini windows on MS Windows */ 
@@ -1383,7 +1370,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
     {
       _enableCallbacks = NO;
       if (SetForegroundWindow((HWND)winNum) == 0)
-        NSLog(@"%s:SetForegroundWindow error\n", __PRETTY_FUNCTION__);
+        NSDebugMLLog(@"WError", @"SetForegroundWindow error for HWND: %p\n", winNum);
       _enableCallbacks = YES;
     }
   /* For debug log window stack.
@@ -1616,7 +1603,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 #elif (BUILD_GRAPHICS==GRAPHICS_cairo)
         if (win->surface == NULL)
           {
-            NSLog(@"%s:NULL surface for window %p", __PRETTY_FUNCTION__, hwnd);
+            NSWarnMLog(@"NULL surface for window %p", hwnd);
           }
         else
           {
