@@ -394,6 +394,26 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   //TODO [self subclassResponsibility: _cmd];
 }
 
+static HWND foundWindowHwnd = 0;
+static POINT findWindowAtPoint;
+
+LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
+{
+	if (foundWindowHwnd == 0 && hwnd != (HWND)lParam)
+		{
+          RECT	r;
+          GetWindowRect(hwnd, &r);
+		  
+          if (PtInRect(&r,findWindowAtPoint) && IsWindowVisible(hwnd))
+            {
+				NSWindow *window = GSWindowWithNumber((int)hwnd);
+				if (![window ignoresMouseEvents])
+					foundWindowHwnd = hwnd;
+            }
+        }
+	return true;
+}
+
 - (int) findWindowAt: (NSPoint)screenLocation 
            windowRef: (int*)windowRef 
            excluding: (int)win
@@ -402,26 +422,20 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   POINT p;
 
   p = GSScreenPointToMS(screenLocation);
-  hwnd = WindowFromPoint(p);
-  if ((int)hwnd == win)
-    {
-      /*
-       * If the window at the point we want is excluded, 
-       * we must look through ALL windows at a lower level
-       * until we find one which contains the same point.
-       */
-      while (hwnd != 0)
-        {
-          RECT	r;
-
-          hwnd = GetWindow(hwnd, GW_HWNDNEXT);
-          GetWindowRect(hwnd, &r);
-          if (PtInRect(&r, p) && IsWindowVisible(hwnd))
-            {
-              break;
-            }
-        }
-    }
+  /*
+   * This is insufficient: hwnd = WindowFromPoint(p);
+   *
+   * We must look through all windows until we find one
+   * which contains the specified point, does not have
+   * the ignoresMouseEvents property set, and is not
+   * the excluded window. This is done through the
+   * EnumWindows function which makes a call back to us
+   * for each window.
+   */
+    foundWindowHwnd = 0;
+    findWindowAtPoint = p;
+	EnumWindows((WNDENUMPROC)windowEnumCallback, win);
+	hwnd = foundWindowHwnd;
 
   *windowRef = (int)hwnd;	// Any windows
 
