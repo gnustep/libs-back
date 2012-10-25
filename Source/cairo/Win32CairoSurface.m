@@ -35,41 +35,6 @@
 @implementation Win32CairoSurface
 
 
-static cairo_user_data_key_t SurfaceHWND;
-static cairo_user_data_key_t SurfaceWindow;
-
-static void CairoSurfaceDestroyCallback(void *surfacePtr)
-{
-  if (surfacePtr)
-    {
-      cairo_surface_t *surface = (cairo_surface_t*)surfacePtr;
-
-      // We did a GetDC on the window handle - which requires a ReleaseDC...
-      // Not sure what would happen if we don't do this so we are going to
-      // release the device context from the window surface ourselves...
-      if (cairo_win32_surface_get_dc(surface))
-        {
-          HWND whandle = (HWND)cairo_surface_get_user_data(surface, &SurfaceHWND);
-          if (whandle == NULL)
-            {
-              NSWarnMLog(@"Window handle is NULL - leaking DC: %p\n",
-                         cairo_win32_surface_get_dc(surface));
-            }
-          else
-            {
-              // Release the DC for the window surface...
-              ReleaseDC(whandle, cairo_win32_surface_get_dc(surface));
-      
-              // Clear any user setting...
-              cairo_surface_set_user_data(surface, &SurfaceHWND, NULL, NULL);
-            }
-        }
-      
-      // Destroy the associated surface...
-      cairo_surface_destroy(surface);
-    }
-}
-
 - (id) initWithDevice: (void *)device
 {
   // Save/set initial state...
@@ -79,103 +44,96 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(GSWINDEVICE, GWL_USERDATA);
   HDC         hDC = GetDC(GSWINDEVICE);
 
-  if (!hDC)
+  if (hDC == NULL)
     {
       NSWarnMLog(@"Win32CairoSurface line: %d : no device context", __LINE__);
-      exit(1);
-    }
-  
-  // Create the cairo surfaces...
-  // NSBackingStoreRetained works like Buffered since 10.5 (See apple docs)...
-  // NOTE: According to Apple docs NSBackingStoreBuffered should be the only one
-  //       ever used anymore....others are NOT recommended...
-  if (win && (win->type == NSBackingStoreNonretained))
-    {
-      // This is the raw DC surface...
-      _surface = cairo_win32_surface_create(hDC);
-      NSWarnMLog(@"NSBackingStoreNonretained\n");
-
-      // Check for error...
-      if (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS)
-        {
-          // Output the surface create error...
-          cairo_status_t status = cairo_surface_status(_surface);
-          NSWarnMLog(@"surface create FAILED - status: %s\n", cairo_status_to_string(status));
-          
-          // And deallocate ourselves...
-          DESTROY(self);
-        }
+      
+      // And deallocate ourselves...
+      DESTROY(self);
     }
   else
     {
-      NSSize csize = [self size];
-
-      // This is the raw DC surface...
-      cairo_surface_t *window = cairo_win32_surface_create(hDC);
-      
-      // Check for error...
-      if (cairo_surface_status(window) != CAIRO_STATUS_SUCCESS)
+      // Create the cairo surfaces...
+      // NSBackingStoreRetained works like Buffered since 10.5 (See apple docs)...
+      // NOTE: According to Apple docs NSBackingStoreBuffered should be the only one
+      //       ever used anymore....others are NOT recommended...
+      if (win && (win->type == NSBackingStoreNonretained))
         {
-          // Output the surface create error...
-          cairo_status_t status = cairo_surface_status(window);
-          NSWarnMLog(@"surface create FAILED - status: %s\n",  cairo_status_to_string(status));
-                
-          // Destroy the initial surface created...
-          cairo_surface_destroy(window);
-          
-          // And deallocate ourselves...
-          DESTROY(self);
-        }
-      else
-        {
-          // and this is the in-memory DC surface...surface owns its DC...
-          // NOTE: For some reason we get an init sequence with zero width/height,
-          //       which creates problems in the cairo layer.  It tries to clear
-          //       the 'similar' surface it's creating, and with a zero width/height
-          //       it incorrectly thinks the clear failed...so we will init with
-          //       a minimum size of 1 for width/height...
-          _surface = cairo_surface_create_similar(window, CAIRO_CONTENT_COLOR_ALPHA,
-                                                  MAX(1, csize.width),
-                                                  MAX(1, csize.height));
+          // This is the raw DC surface...
+          _surface = cairo_win32_surface_create(hDC);
 
           // Check for error...
           if (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS)
             {
               // Output the surface create error...
               cairo_status_t status = cairo_surface_status(_surface);
-              NSWarnMLog(@"surface create FAILED - status: %s\n",  cairo_status_to_string(status));
-                    
+              NSWarnMLog(@"surface create FAILED - status: %s\n", cairo_status_to_string(status));
+              
               // Destroy the initial surface created...
-              cairo_surface_destroy(window);
+              cairo_surface_destroy(_surface);
+              
+              // And deallocate ourselves...
+              DESTROY(self);
+            }
+        }
+      else
+        {
+          NSSize csize = [self size];
+          NSWarnMLog(@"HWND: %p csize: %@\n", GSWINDEVICE, NSStringFromSize(csize));
+          
+          // This is the raw DC surface...
+          cairo_surface_t *window = cairo_win32_surface_create(hDC);
+          
+          // Check for error...
+          if (cairo_surface_status(window) != CAIRO_STATUS_SUCCESS)
+            {
+              // Output the surface create error...
+              cairo_status_t status = cairo_surface_status(window);
+              NSWarnMLog(@"surface create FAILED - status: %s\n",  cairo_status_to_string(status));
               
               // And deallocate ourselves...
               DESTROY(self);
             }
           else
             {
-              // We need the window handle in the destroy callback to properly
-              // release the DC...
-              cairo_surface_set_user_data(window, &SurfaceHWND, device, NULL);
+              // and this is the in-memory DC surface...surface owns its DC...
+              // NOTE: For some reason we get an init sequence with zero width/height,
+              //       which creates problems in the cairo layer.  It tries to clear
+              //       the 'similar' surface it's creating, and with a zero width/height
+              //       it incorrectly thinks the clear failed...so we will init with
+              //       a minimum size of 1 for width/height...
+              _surface = cairo_surface_create_similar(window, CAIRO_CONTENT_COLOR_ALPHA,
+                                                      MAX(1, csize.width),
+                                                      MAX(1, csize.height));
 
-              // Save the raw DC surface as user data on in-memory surface...
-              // It will be used during handleExposeRect invocations...
-              cairo_surface_set_user_data(_surface, &SurfaceWindow, window,
-                                          (cairo_destroy_func_t)CairoSurfaceDestroyCallback);
+              // Check for error...
+              if (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS)
+                {
+                  // Output the surface create error...
+                  cairo_status_t status = cairo_surface_status(_surface);
+                  NSWarnMLog(@"surface create FAILED - status: %s\n",  cairo_status_to_string(status));
+                  
+                  // Destroy the surface created...
+                  cairo_surface_destroy(_surface);
+                  
+                  // And deallocate ourselves...
+                  DESTROY(self);
+                }
             }
+          
+          // Destroy the initial surface created...
+          cairo_surface_destroy(window);
         }
-    }
       
-  if (self)
-    {
-      // We need this for handleExposeEvent in WIN32Server...
-      win->surface = (void*)self;
-    }
-  else
-    {
       // Release the device context...
       ReleaseDC(GSWINDEVICE, hDC);
+
+      if (self)
+        {
+          // We need this for handleExposeEvent in WIN32Server...
+          win->surface = (void*)self;
+        }
     }
-    
   return self;
 }
 
@@ -202,21 +160,14 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
 - (NSString*) description
 {
   HDC              shdc   = NULL;
-  HDC              whdc   = NULL;
-  cairo_surface_t *window = NULL;
   if (_surface)
   {
     shdc   = cairo_win32_surface_get_dc(_surface);
-    window = cairo_surface_get_user_data(_surface, &SurfaceWindow);
-    if (window)
-      whdc = cairo_win32_surface_get_dc(window);
   }
   NSMutableString *description = AUTORELEASE([[super description] mutableCopy]);
   [description appendFormat: @" size: %@",NSStringFromSize([self size])];
   [description appendFormat: @" _surface: %p",_surface];
   [description appendFormat: @" surfDC: %p",shdc];
-  [description appendFormat: @" window: %p",window];
-  [description appendFormat: @" windDC: %p",whdc];
   return AUTORELEASE([description copy]);
 }
 
@@ -235,62 +186,82 @@ static void CairoSurfaceDestroyCallback(void *surfacePtr)
 
 - (void) handleExposeRect: (NSRect)rect
 {
-  // If the surface is buffered then it will have the main surface set as user data...
-  cairo_surface_t *window = cairo_surface_get_user_data(_surface, &SurfaceWindow);
-
-  // If the surface is buffered then...
-  if (window)
+  // If the surface is buffered then we will have been invoked...
+  HDC hdc = GetDC(GSWINDEVICE);
+  
+  // Make sure we got a HDC...
+  if (hdc == NULL)
     {
-      // First check the current status of the foreground surface...
-      if (cairo_surface_status(window) != CAIRO_STATUS_SUCCESS)
-        {
-          NSWarnMLog(@"cairo initial window error status: %s\n",
-                     cairo_status_to_string(cairo_surface_status(window)));
-          return;
-        }
+      NSWarnMLog(@"ERROR: cannot get a HDC for surface: %@\n", self);
+    }
+  else
+    {
+      // Create a cairo surface for the hDC...
+      cairo_surface_t *window = cairo_win32_surface_create(hdc);
       
-      cairo_t *context = cairo_create(window);
-
-      if (cairo_status(context) != CAIRO_STATUS_SUCCESS)
+      // If the surface is buffered then...
+      if (window == NULL)
         {
-          NSWarnMLog(@"cairo context create error - status: _surface: %s window: %s windowCtxt: %s (%d)",
-                     cairo_status_to_string(cairo_surface_status(_surface)),
-                     cairo_status_to_string(cairo_surface_status(window)),
-                     cairo_status_to_string(cairo_status(context)), cairo_get_reference_count(context));
+          NSWarnMLog(@"ERROR: cannot create cairo surface for: %@\n", self);
         }
       else
         {
-          double  backupOffsetX = 0;
-          double  backupOffsetY = 0;
-          RECT    msRect        = GSWindowRectToMS((WIN32Server*)GSCurrentServer(), GSWINDEVICE, rect);
+          // First check the current status of the foreground surface...
+          if (cairo_surface_status(window) != CAIRO_STATUS_SUCCESS)
+            {
+              NSWarnMLog(@"cairo initial window error status: %s\n",
+                         cairo_status_to_string(cairo_surface_status(window)));
+            }
+          else
+            {
+              cairo_t *context = cairo_create(window);
 
-          // Flush source surface...
-          cairo_surface_flush(_surface);
+              if (cairo_status(context) != CAIRO_STATUS_SUCCESS)
+                {
+                  NSWarnMLog(@"cairo context create error - status: _surface: %s window: %s windowCtxt: %s (%d)",
+                             cairo_status_to_string(cairo_surface_status(_surface)),
+                             cairo_status_to_string(cairo_surface_status(window)),
+                             cairo_status_to_string(cairo_status(context)), cairo_get_reference_count(context));
+                }
+              else
+                {
+                  double  backupOffsetX = 0;
+                  double  backupOffsetY = 0;
+                  RECT    msRect        = GSWindowRectToMS((WIN32Server*)GSCurrentServer(), GSWINDEVICE, rect);
+                  NSWarnMLog(@"selfSize: %@ rsize: %@\n", NSStringFromSize([self size]), NSStringFromSize(rect.size));
+
+                  // Need to save the device offset context...
+                  cairo_surface_get_device_offset(_surface, &backupOffsetX, &backupOffsetY);
+                  cairo_surface_set_device_offset(_surface, 0, 0);
+
+                  cairo_rectangle(context, msRect.left, msRect.top, rect.size.width, rect.size.height);
+                  cairo_clip(context);
+                  cairo_set_source_surface(context, _surface, 0, 0);
+                  cairo_set_operator(context, CAIRO_OPERATOR_SOURCE);
+                  cairo_paint(context);
+                  
+                  if (cairo_status(context) != CAIRO_STATUS_SUCCESS)
+                  {
+                    NSWarnMLog(@"cairo expose error - status: _surface: %s window: %s windowCtxt: %s",
+                               cairo_status_to_string(cairo_surface_status(_surface)),
+                               cairo_status_to_string(cairo_surface_status(window)),
+                               cairo_status_to_string(cairo_status(context)));
+                  }
+
+                  // Cleanup...
+                  cairo_destroy(context);
+
+                  // Restore device offset
+                  cairo_surface_set_device_offset(_surface, backupOffsetX, backupOffsetY);
+                }
+            }
           
-          // Need to save the device offset context...
-          cairo_surface_get_device_offset(_surface, &backupOffsetX, &backupOffsetY);
-          cairo_surface_set_device_offset(_surface, 0, 0);
-
-          cairo_rectangle(context, msRect.left, msRect.top, rect.size.width, rect.size.height);
-          cairo_clip(context);
-          cairo_set_source_surface(context, _surface, 0, 0);
-          cairo_set_operator(context, CAIRO_OPERATOR_SOURCE);
-          cairo_paint(context);
-          
-          if (cairo_status(context) != CAIRO_STATUS_SUCCESS)
-          {
-            NSWarnMLog(@"cairo expose error - status: _surface: %s window: %s windowCtxt: %s",
-                       cairo_status_to_string(cairo_surface_status(_surface)),
-                       cairo_status_to_string(cairo_surface_status(window)),
-                       cairo_status_to_string(cairo_status(context)));
-          }
-
-          // Cleanup...
-          cairo_destroy(context);
-
-          // Restore device offset
-          cairo_surface_set_device_offset(_surface, backupOffsetX, backupOffsetY);
+          // Destroy the surface...
+          cairo_surface_destroy(window);
         }
+
+      // Release the aquired HDC...
+      ReleaseDC(GSWINDEVICE, hdc);
     }
 }
 
