@@ -79,7 +79,6 @@
       else
         {
           NSSize csize = [self size];
-          NSWarnMLog(@"HWND: %p csize: %@\n", GSWINDEVICE, NSStringFromSize(csize));
           
           // This is the raw DC surface...
           cairo_surface_t *window = cairo_win32_surface_create(hDC);
