@@ -122,10 +122,10 @@
           
           // Destroy the initial surface created...
           cairo_surface_destroy(window);
+          
+          // Release the device context...
+          ReleaseDC(GSWINDEVICE, hDC);
         }
-      
-      // Release the device context...
-      ReleaseDC(GSWINDEVICE, hDC);
 
       if (self)
         {
