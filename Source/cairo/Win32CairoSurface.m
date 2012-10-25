@@ -228,7 +228,6 @@
                   double  backupOffsetX = 0;
                   double  backupOffsetY = 0;
                   RECT    msRect        = GSWindowRectToMS((WIN32Server*)GSCurrentServer(), GSWINDEVICE, rect);
-                  NSWarnMLog(@"selfSize: %@ rsize: %@\n", NSStringFromSize([self size]), NSStringFromSize(rect.size));
 
                   // Need to save the device offset context...
                   cairo_surface_get_device_offset(_surface, &backupOffsetX, &backupOffsetY);
