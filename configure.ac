@@ -354,6 +354,10 @@ AC_CHECK_LIB(msimg32, main, have_msimg32=yes, have_msimg32=no)
 if test "$have_msimg32" = yes; then
   WIN32_LIBS="${WIN32_LIBS} -lmsimg32"
 fi
+AC_CHECK_LIB(imm32, main, have_imm32=yes, have_imm32=no)
+if test "$have_imm32" = yes; then
+  WIN32_LIBS="${WIN32_LIBS} -limm32"
+fi
 
 #--------------------------------------------------------------------
 # WGL support

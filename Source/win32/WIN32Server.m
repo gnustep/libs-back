@@ -62,6 +62,17 @@
 
 #include <math.h>
 
+
+
+#define IMEDebugLog(format, args...) \
+do { NSWarnMLog(format , ## args); } while (0)
+#undef IMEDebugLog
+#define IMEDebugLog(format, args...) do {} while(0)
+
+
+// Forward declarations...
+static unsigned int mask_for_keystate(BYTE *keyState);
+
 @interface W32DisplayMonitorInfo : NSObject
 {
   HMONITOR _hMonitor;
@@ -190,9 +201,11 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
         }
       else
         {
-          // Don't translate messages, as this would give
-          // extra character messages.
-          DispatchMessage(&msg); 
+          // Original author disregarded a translate message call here stating
+          // that it would give extra character messages - BUT THIS KILLS IME
+          // MESSAGE PROCESSING!!!!!
+          TranslateMessage(&msg);
+          DispatchMessage(&msg);
         } 
     } 
 }
@@ -223,6 +236,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
         }
       else
         {
+          TranslateMessage(m);
           DispatchMessage(m); 
         } 
     } 
@@ -263,7 +277,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
 - (void) _initWin32Context
 {
-  WNDCLASSEX wc; 
+  WNDCLASSEXW wc;
   hinstance = (HINSTANCE)GetModuleHandle(NULL);
 
   // Register the main window class. 
@@ -278,11 +292,11 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   wc.hCursor = LoadCursor(NULL, IDC_ARROW);
   wc.hbrBackground = GetStockObject(WHITE_BRUSH); 
   wc.lpszMenuName =  NULL; 
-  wc.lpszClassName = "GNUstepWindowClass"; 
+  wc.lpszClassName = L"GNUstepWindowClass";
   wc.hIconSm = NULL;//currentAppIcon;
 
-  if (!RegisterClassEx(&wc)) 
-       return; 
+  if (!RegisterClassExW(&wc))
+       return;
 
   // FIXME We should use GetSysColor to get standard colours from MS Window and 
   // use them in NSColor
@@ -686,16 +700,403 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   // future house keeping can go here
 }
 
-- (LRESULT) windowEventProc: (HWND)hwnd : (UINT)uMsg 
+- (void) freeCompositionStringForWindow: (HWND)hwnd
+{
+  IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+
+  // Free any buffer(s)...
+  if (imeInfo->compString)
+    free(imeInfo->compString);
+  imeInfo->compString       = NULL;
+  imeInfo->compStringLength = 0;
+}
+
+- (void) freeReadStringForWindow: (HWND)hwnd
+{
+  IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+  
+  // Free any buffer(s)...
+  if (imeInfo->readString)
+    free(imeInfo->readString);
+  imeInfo->readString       = NULL;
+  imeInfo->readStringLength = 0;
+}
+
+- (void) freeCompositionInfoForWindow: (HWND)hwnd
+{
+  // Clear information...
+  [self freeCompositionStringForWindow: hwnd];
+  [self freeReadStringForWindow: hwnd];
+}
+
+- (void) getCompositionStringForWindow: (HWND)hwnd
+{
+  IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+  HIMC        immc    = ImmGetContext(hwnd);
+  
+  // Current composition string...
+  imeInfo->compStringLength = ImmGetCompositionStringW(immc, GCS_COMPSTR, NULL, 0);
+  imeInfo->compString       = malloc(imeInfo->compStringLength+sizeof(TCHAR));
+  ImmGetCompositionStringW(immc, GCS_COMPSTR, imeInfo->compString, imeInfo->compStringLength);
+  
+  // Cleanup...
+  ImmReleaseContext(hwnd, immc);
+}
+
+- (void) getReadStringForWindow: (HWND)hwnd
+{
+  IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+  HIMC        immc    = ImmGetContext(hwnd);
+  
+  // Current read string...
+  imeInfo->readStringLength = ImmGetCompositionStringW(immc, GCS_COMPREADSTR, NULL, 0);
+  imeInfo->readString       = malloc(imeInfo->readStringLength+sizeof(TCHAR));
+  ImmGetCompositionStringW(immc, GCS_COMPREADSTR, imeInfo->readString, imeInfo->readStringLength);
+  
+  // Cleanup...
+  ImmReleaseContext(hwnd, immc);
+}
+
+- (void) saveCompositionInfoForWindow: (HWND)hwnd
+{
+  // First, ensure we've cleared out any saved information...
+  [self freeCompositionInfoForWindow: hwnd];
+  
+  // Current composition string...
+  [self getCompositionStringForWindow: hwnd];
+  
+  // Current read string...
+  [self getReadStringForWindow: hwnd];
+}
+
+- (void) setCompositionStringForWindow: (HWND)hwnd
+{
+  IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+  HIMC        immc    = ImmGetContext(hwnd);
+  
+  // Restore the state...
+  ImmSetCompositionStringW(immc, SCS_SETSTR, imeInfo->compString, imeInfo->compStringLength, NULL, 0);
+  
+  // Clear out any saved information...
+  [self freeCompositionInfoForWindow: hwnd];
+
+  // Cleanup...
+  ImmReleaseContext(hwnd, immc);
+}
+
+- (void) setReadStringForWindow: (HWND)hwnd
+{
+  IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+  HIMC        immc    = ImmGetContext(hwnd);
+  
+  // Restore the state...
+  ImmSetCompositionStringW(immc, SCS_SETSTR, NULL, 0, imeInfo->readString, imeInfo->readStringLength);
+  
+  // Clear out any saved information...
+  [self freeReadStringForWindow: hwnd];
+  
+  // Cleanup...
+  ImmReleaseContext(hwnd, immc);
+}
+
+- (void) restoreCompositionInfoForWindow: (HWND)hwnd
+{
+  // Restore the state...
+  [self setCompositionStringForWindow: hwnd];
+  
+  // Restore the read string...
+  [self setReadStringForWindow: hwnd];
+}
+
+- (LRESULT) imnMessage: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
+{
+  HIMC immc = ImmGetContext(hwnd);
+  switch (wParam)
+  {
+    case IMN_CLOSESTATUSWINDOW:
+    {
+      IMEDebugLog(@"IMN_CLOSESTATUSWINDOW: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+                  hwnd, wParam, lParam, immc);
+      if (immc)
+      {
+        ImmNotifyIME(immc, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
+        HideCaret(hwnd);
+        DestroyCaret();
+      }
+      break;
+    }
+
+    case IMN_SETOPENSTATUS:
+    {
+      IMEDebugLog(@"IMN_SETOPENSTATUS: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+                  hwnd, wParam, lParam, immc);
+      if (immc)
+      {
+        IMEDebugLog(@"IMN_SETOPENSTATUS: openstatus: %d\n", ImmGetOpenStatus(immc));
+        
+        IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+        if (imeInfo == NULL)
+        {
+          IMEDebugLog(@"IMN_SETOPENSTATUS: IME info pointer is NULL\n");
+        }
+        else
+        {
+          if (ImmGetOpenStatus(immc))
+          {
+            if (imeInfo->isOpened == NO)
+            {
+              // Restore previous information...
+#if defined(IME_SAVERESTORE_COMPOSITIONINFO)
+              [self restoreCompositionInfoForWindow: hwnd];
+#else
+              ImmNotifyIME(immc, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
+#endif
+            }
+          }
+          else if (imeInfo->isOpened == YES)
+          {
+            // Save current information...
+            [self saveCompositionInfoForWindow: hwnd];
+          }
+          
+          // Save state...
+          imeInfo->isOpened = ImmGetOpenStatus(immc);
+        }
+        
+#if defined(USE_SYSTEM_CARET)
+        if (ImmGetOpenStatus(immc))
+          ShowCaret(hwnd);
+        else
+          HideCaret(hwnd);
+#endif
+
+#if defined(IME_SETCOMPOSITIONFONT)
+        {
+          LOGFONT logFont;
+          ImmGetCompositionFont(immc, &logFont);
+          LOGFONT newFont = logFont;
+          newFont.lfCharSet = ((logFont.lfCharSet == DEFAULT_CHARSET) ? OEM_CHARSET : DEFAULT_CHARSET);
+          ImmSetCompositionFont(immc, &newFont);
+          IMEDebugLog(@"IMN_SETOPENSTATUS: changing logfont from: %d to: %d\n", logFont.lfCharSet, newFont.lfCharSet);
+        }
+#endif
+      }
+      break;
+    }
+
+    case IMN_OPENSTATUSWINDOW:
+    {
+      IMEDebugLog(@"IMN_OPENSTATUSWINDOW: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+                 hwnd, wParam, lParam, immc);
+      if (immc)
+      {
+        IMEDebugLog(@"IMN_OPENSTATUSWINDOW: openstatus: %d\n", ImmGetOpenStatus(immc));
+        LOGFONT logFont;
+        {
+          ImmGetCompositionFont(immc, &logFont);
+          IMEDebugLog(@"IMN_OPENSTATUSWINDOW: logfont - width: %d height: %d\n",
+                      logFont.lfWidth, logFont.lfHeight);
+        }
+#if defined(USE_SYSTEM_CARET)
+        CreateCaret(hwnd, NULL, logFont.lfWidth, logFont.lfHeight);
+        if (ImmGetOpenStatus(immc))
+          ShowCaret(hwnd);
+        else
+          HideCaret(hwnd);
+#endif
+      }
+      break;
+    }
+
+    case IMN_CHANGECANDIDATE:
+      IMEDebugLog(@"IMN_CHANGECANDIDATE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+
+    case IMN_CLOSECANDIDATE:
+      IMEDebugLog(@"IMN_CLOSECANDIDATE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+
+    case IMN_OPENCANDIDATE:
+      IMEDebugLog(@"IMN_OPENCANDIDATE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+
+    case IMN_SETCONVERSIONMODE:
+    {
+      IMEDebugLog(@"IMN_SETCONVERSIONMODE: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+                 hwnd, wParam, lParam, immc);
+      if (immc)
+      {
+        DWORD conversion;
+        DWORD sentence;
+        if (ImmGetConversionStatus(immc, &conversion, &sentence) == 0)
+          IMEDebugLog(@"IMN_SETCONVERSIONMODE: error getting conversion status: %d\n", GetLastError());
+        else
+          IMEDebugLog(@"IMN_SETCONVERSIONMODE: conversion: %p sentence: %p\n", conversion, sentence);
+      }
+      break;
+    }
+
+    case IMN_SETSENTENCEMODE:
+    {
+      IMEDebugLog(@"IMN_SETSENTENCEMODE: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+                 hwnd, wParam, lParam, immc);
+      if (immc)
+      {
+        DWORD conversion;
+        DWORD sentence;
+        if (ImmGetConversionStatus(immc, &conversion, &sentence) == 0)
+          IMEDebugLog(@"IMN_SETSENTENCEMODE: error getting conversion status: %d\n", GetLastError());
+        else
+          IMEDebugLog(@"IMN_SETSENTENCEMODE: conversion: %p sentence: %p\n", conversion, sentence);
+      }
+      break;
+    }
+
+    case IMN_SETCANDIDATEPOS:
+      IMEDebugLog(@"IMN_SETCANDIDATEPOS: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+
+    case IMN_SETCOMPOSITIONFONT:
+    {
+      IMEDebugLog(@"IMN_SETCOMPOSITIONFONT: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+                 hwnd, wParam, lParam, immc);
+      if (immc)
+      {
+#if defined(IME_SETCOMPOSITIONFONT)
+        {
+          LOGFONT logFont;
+          ImmGetCompositionFont(immc, &logFont);
+          IMEDebugLog(@"IMN_SETCOMPOSITIONFONT: new character set: %d\n", logFont.lfCharSet);
+        }
+#endif
+      }
+      break;
+    }
+      
+    case IMN_SETCOMPOSITIONWINDOW:
+      IMEDebugLog(@"IMN_SETCOMPOSITIONWINDOW: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+
+    case IMN_SETSTATUSWINDOWPOS:
+      IMEDebugLog(@"IMN_SETSTATUSWINDOWPOS: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+
+    case IMN_GUIDELINE:
+      IMEDebugLog(@"IMN_GUIDELINE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    case IMN_PRIVATE:
+      IMEDebugLog(@"IMN_PRIVATE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    default:
+      IMEDebugLog(@"Unknown IMN message: %p hwnd: %p\n", wParam, hwnd);
+      break;
+  }
+  
+  // Release the IME context...
+  ImmReleaseContext(hwnd, immc);
+  
+  return 0;
+}
+
+- (NSEvent*)imeCompositionMessage: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
+{
+  IMEDebugLog(@"WM_IME_COMPOSITION: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+  HIMC immc = ImmGetContext(hwnd);
+  if (immc == 0)
+  {
+    NSWarnMLog(@"IMMContext is NULL\n");
+  }
+  else if (lParam & GCS_RESULTSTR)
+  {
+    // Update our composition string information...
+    LONG length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, NULL, 0);
+    IMEDebugLog(@"length: %d\n", length);
+    if (length)
+    {
+      TCHAR composition[length+sizeof(TCHAR)];
+      length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, &composition, length);
+      NSString *uKeys = [NSString stringWithCharacters: (unichar*)composition length: length];
+      {
+        int index;
+        for (index = 0; index < length; ++index)
+          IMEDebugLog(@"%2.2X ", composition[index]);
+      }
+      IMEDebugLog(@"composition (uKeys): %@\n", uKeys);
+    }
+    ImmReleaseContext(hwnd, immc);
+  }
+  
+  return 0;
+}
+
+- (LRESULT) imeCharacter: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
+{
+  BYTE keyState[256];
+  
+  // Get the current key states...
+  GetKeyboardState(keyState);
+  
+  // key events should go to the key window if we have one (Windows' focus window isn't always appropriate)
+  int windowNumber = [[NSApp keyWindow] windowNumber];
+  if (windowNumber == 0)
+    windowNumber = (int)hwnd;
+  
+  /* FIXME: How do you guarentee a context is associated with an event? */
+  NSGraphicsContext *gcontext      = GSCurrentContext();
+  LONG               ltime         = GetMessageTime();
+  NSTimeInterval     time          = ltime / 1000.0f;
+  BOOL               repeat        = (lParam & 0xFFFF) != 0;
+  unsigned int       eventFlags    = mask_for_keystate(keyState);
+  DWORD              pos           = GetMessagePos();
+  NSPoint            eventLocation = MSWindowPointToGS(self, hwnd,  GET_X_LPARAM(pos), GET_Y_LPARAM(pos));
+  NSString          *keys          = [NSString  stringWithCharacters: (unichar*)&wParam length: 1];
+  NSString          *ukeys         = [NSString  stringWithCharacters: (unichar*)&wParam  length: 1];
+  
+  // Create a NSKeyDown message...
+  NSEvent *ev = [NSEvent keyEventWithType: NSKeyDown
+                                 location: eventLocation
+                            modifierFlags: eventFlags
+                                timestamp: time
+                             windowNumber: windowNumber
+                                  context: gcontext
+                               characters: keys
+              charactersIgnoringModifiers: ukeys
+                                isARepeat: repeat
+                                  keyCode: wParam];
+  
+  // Post it...
+  [GSCurrentServer() postEvent: ev atStart: NO];
+  
+  // then an associated NSKeyUp message...
+  ev = [NSEvent keyEventWithType: NSKeyUp
+                        location: eventLocation
+                   modifierFlags: eventFlags
+                       timestamp: time
+                    windowNumber: windowNumber
+                         context: gcontext
+                      characters: keys
+     charactersIgnoringModifiers: ukeys
+                       isARepeat: repeat
+                         keyCode: wParam];
+  
+  // Post it...
+  [GSCurrentServer() postEvent: ev atStart: NO];
+  
+  return 0;
+}
+
+- (LRESULT) windowEventProc: (HWND)hwnd : (UINT)uMsg
 		       : (WPARAM)wParam : (LPARAM)lParam
-{ 
+{
   NSEvent *ev = nil;
 
   [self setFlagsforEventLoop: hwnd];
  
   switch (uMsg)
-    { 
-      case WM_SIZING: 
+    {
+      case WM_SIZING:
         return [self decodeWM_SIZINGParams: hwnd : wParam : lParam];
         break;
       case WM_NCCREATE:
@@ -902,12 +1303,89 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEWHEEL", hwnd);
         ev = process_mouse_event(self, hwnd, wParam, lParam, NSScrollWheel, uMsg);
         break;
-	
+
+      // WINDOWS IME PROCESSING MESSAGES...
+      case WM_IME_NOTIFY:
+        [self imnMessage: hwnd : wParam : lParam];
+        break;
+      case WM_IME_REQUEST:
+        IMEDebugLog(@"WM_IME_REQUEST: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+      case WM_IME_SELECT:
+        IMEDebugLog(@"WM_IME_SELECT: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+      case WM_IME_SETCONTEXT:
+        IMEDebugLog(@"WM_IME_SETCONTEXT: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+      case WM_IME_STARTCOMPOSITION:
+      {
+        IMEDebugLog(@"WM_IME_STARTCOMPOSITION: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+        if (imeInfo)
+          imeInfo->isComposing = YES;
+        break;
+      }
+      case WM_IME_ENDCOMPOSITION:
+      {
+        IMEDebugLog(@"WM_IME_ENDCOMPOSITION: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+        if (imeInfo)
+          imeInfo->isComposing = NO;
+        break;
+      }
+      case WM_IME_COMPOSITION:
+      {
+        IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+        if (imeInfo && imeInfo->isComposing)
+          ev = [self imeCompositionMessage: hwnd : wParam : lParam];
+        break;
+      }
+      case WM_IME_COMPOSITIONFULL:
+        IMEDebugLog(@"WM_IME_COMPOSITIONFULL: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+      case WM_IME_KEYDOWN:
+        IMEDebugLog(@"WM_IME_KEYDOWN: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        if (wParam == 0xd) // Carriage return...
+        {
+          HIMC immc = ImmGetContext(hwnd);
+          if (immc)
+          {
+            // If currently in a composition sequence in the IMM...
+            ImmNotifyIME(immc, NI_COMPOSITIONSTR, CPS_COMPLETE, 0);
+            
+            // Release the context...
+            ImmReleaseContext(hwnd, immc);
+          }
+        }
+        
+        // Don't pass this message on for processing...
+        flags._eventHandled = YES;
+        break;
+      case WM_IME_KEYUP:
+        IMEDebugLog(@"WM_IME_KEYUP: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+      case WM_IME_CHAR:
+        return [self imeCharacter: hwnd : wParam : lParam];
+        break;
+        
+      case WM_CHAR:
+        IMEDebugLog(@"WM_CHAR: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+        
+      case WM_INPUTLANGCHANGEREQUEST:
+        IMEDebugLog(@"WM_INPUTLANGCHANGEREQUEST: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+      case WM_INPUTLANGCHANGE:
+        IMEDebugLog(@"WM_INPUTLANGCHANGE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+        
       case WM_KEYDOWN:  //KEYBOARD
+        IMEDebugLog(@"WM_KEYDOWN: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KEYDOWN", hwnd);
         ev = process_key_event(self, hwnd, wParam, lParam, NSKeyDown);
         break;
       case WM_KEYUP:  //KEYBOARD
+        IMEDebugLog(@"WM_KEYUP: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KEYUP", hwnd);
         ev = process_key_event(self, hwnd, wParam, lParam, NSKeyUp);
         break;
@@ -946,7 +1424,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
    * We did not care about the event, return it back to the windows
    * event handler 
    */
-  return DefWindowProc(hwnd, uMsg, wParam, lParam); 
+  return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 }
 
 - glContextClass
@@ -1032,9 +1510,9 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
               type, style, screen);
   NSDebugLLog(@"WTrace", @"         device frame: %d, %d, %d, %d", 
               r.left, r.top, r.right - r.left, r.bottom - r.top);
-  hwnd = CreateWindowEx(estyle | WS_EX_LAYERED, 
-                        "GNUstepWindowClass", 
-                        "GNUstepWindow", 
+  hwnd = CreateWindowEx(estyle | WS_EX_LAYERED,
+                        "GNUstepWindowClass",
+                        "GNUstepWindow",
 #if (BUILD_GRAPHICS==GRAPHICS_cairo)
                         ((wstyle & WS_POPUP) ? ((wstyle & ~WS_POPUP) | WS_OVERLAPPED) : wstyle),
 #else
@@ -1964,8 +2442,7 @@ mask_for_keystate(BYTE *keyState)
 }
 
 static NSEvent*
-process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam, 
-		  NSEventType eventType)
+process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam, NSEventType eventType)
 {
   NSEvent *event;
   BOOL repeat;
@@ -1980,7 +2457,7 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
   BYTE keyState[256];
   NSString *keys, *ukeys;
   NSGraphicsContext *gcontext;
-  unichar uChar;
+  unichar uChar = 0;
 
   /* FIXME: How do you guarentee a context is associated with an event? */
   gcontext = GSCurrentContext();
@@ -2023,8 +2500,20 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	break;
     }
 
-
-  uChar = process_char(wParam, &eventFlags);
+  if (wParam == VK_PROCESSKEY)
+  {
+    // Ignore VK_PROCESSKEY for IME processing...
+    return 0;
+  }
+  else
+  {
+    // Ignore if currently in IME composition processing...
+    IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+    if (imeInfo && (imeInfo->isComposing))
+      return 0;
+    uChar = process_char(wParam, &eventFlags);
+  }
+  
   if (uChar)
     {
       keys = [NSString  stringWithCharacters: &uChar  length: 1];
@@ -2037,31 +2526,30 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 
       // initialize blank key state array....
       for(i = 0; i < 256; i++)
-	blankKeyState[i] = 0;
+        blankKeyState[i] = 0;
 
       scan = ((lParam >> 16) & 0xFF);
-      //NSLog(@"Got key code %d %d", scan, wParam);
-      result = ToUnicode(wParam, scan, keyState, unicode, 5, 0);
-      //NSLog(@"To Unicode resulted in %d with %d", result, unicode[0]);
+      result = ToUnicodeEx(wParam, scan, keyState, unicode, 5, 0, GetKeyboardLayout(0));
       if (result == -1)
-	{
-	  // A non spacing accent key was found, we still try to use the result 
-	  result = 1;
-	}
+        {
+          // A non spacing accent key was found, we still try to use the result 
+          result = 1;
+        }
       keys = [NSString  stringWithCharacters: unicode length: result];
 
       // Now get the characters with a blank keyboard state so that
       // no modifiers are applied.
-      result = ToUnicode(wParam, scan, blankKeyState, unicode, 5, 0);
+      result = ToUnicodeEx(wParam, scan, blankKeyState, unicode, 5, 0, GetKeyboardLayout(0));
       //NSLog(@"To Unicode resulted in %d with %d", result, unicode[0]);
       if (result == -1)
-	{
-	  // A non spacing accent key was found, we still try to use the result 
-	  result = 1;
-	}
-      
+        {
+          // A non spacing accent key was found, we still try to use the result 
+          result = 1;
+          NSWarnMLog(@"To Unicode resulted in -1 with: 0x%4.4X\n", unicode[0]);
+        }
       ukeys = [NSString  stringWithCharacters: unicode  length: result];
     }
+  
   if (eventFlags & NSShiftKeyMask)
     ukeys = [ukeys uppercaseString];
   

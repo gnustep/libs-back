@@ -188,9 +188,31 @@ typedef struct w32serverFlags {
 
 // Extra window data accessed via GetWindowLong
 
-#define OFF_LEVEL	0
-#define OFF_ORDERED	sizeof(DWORD)
-#define WIN_EXTRABYTES (2*sizeof(DWORD))
+enum _WIN_EXTRA_BYTES
+{
+  OFF_LEVEL       = 0,
+  OFF_ORDERED     = OFF_LEVEL + sizeof(DWORD),
+  IME_INFO        = OFF_ORDERED + sizeof(DWORD),
+  WIN_EXTRABYTES  = IME_INFO + sizeof(DWORD)
+};
+
+
+// Pointer to this struct set in IME_INFO extra bytes space for
+// handling IME composition processing between various windows...
+typedef struct IME_INFO_S
+{
+  DWORD   isOpened;
+  BOOL    isComposing;
+  
+  LPVOID  readString;
+  DWORD   readStringLength;
+  LPVOID  compString;
+  DWORD   compStringLength;
+  
+  DWORD   compositionMode;
+  DWORD   sentenceMode;
+} IME_INFO_T;
+
 
 // Extra window data allocated using objc_malloc in WM_CREATE and accessed via
 // the GWL_USERDATA pointer

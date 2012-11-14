@@ -47,6 +47,7 @@
                                  : (HWND)hwnd
 {
   WIN_INTERN *win;
+  IME_INFO_T *ime;
   NSBackingStoreType type = (NSBackingStoreType)((LPCREATESTRUCT)lParam)->lpCreateParams;
   NSBundle *bundle = [NSBundle mainBundle];
   NSString *iconName = nil;
@@ -58,15 +59,18 @@
 	   is stored in the extra fields for this window. Drawing operations 
 	   work on this buffer. */
   win = malloc(sizeof(WIN_INTERN));
+  ime = malloc(sizeof(IME_INFO_T));
   
   // Initialize win internals structure...
   memset(win, 0, sizeof(WIN_INTERN));
+  memset(ime, 0, sizeof(IME_INFO_T));
   win->type = type;
   win->useHDC = NO;
 
   // Save win internals structure pointer for window handle...
   SetWindowLong(hwnd, GWL_USERDATA, (int)win);
-  
+  SetWindowLongPtr(hwnd, IME_INFO, (LONG)ime);
+
  #if (BUILD_GRAPHICS==GRAPHICS_winlib)
   if (type != NSBackingStoreNonretained)
     {
