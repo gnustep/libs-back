@@ -319,6 +319,14 @@ fpfloat(FILE *stream, float f)
     }
 }
 
+- (void) GSShowGlyphsWithAdvances: (const NSGlyph *)glyphs
+                                 : (const NSSize *)advances
+                                 : (size_t)length
+{
+  // FIXME: Currently advances is ignored
+  [self GSShowGlyphs: glyphs : length];
+}
+
 
 /* ----------------------------------------------------------------------- */
 /* Gstate Handling */

@@ -1260,7 +1260,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   cairo_pattern_t *cpattern;
   cairo_matrix_t source_matrix;
 
-  NSDebugLLog(@"CairoGState", @"%s:self: %@\n", __PRETTY_FUNCTION__, self);
+  NSDebugMLLog(@"CairoGState", @"%self: %@\n", self);
 
   if (!_ct || !source->_ct)
     {
@@ -1384,10 +1384,10 @@ doesn't support to use the receiver cairo target as the source. */
   cairo_matrix_t local_matrix;
   cairo_matrix_t source_matrix;
 
-  NSDebugLLog(@"CairoGState", @"%s - source: %@ fromRect: %@ toPoint: %@\n", __PRETTY_FUNCTION__,
-              source,
-              NSStringFromRect(aRect),
-              NSStringFromPoint(aPoint));
+  NSDebugMLLog(@"CairoGState", @"source: %@ fromRect: %@ toPoint: %@\n",
+               source,
+               NSStringFromRect(aRect),
+               NSStringFromPoint(aPoint));
   
   if (!_ct || !source->_ct)
     {

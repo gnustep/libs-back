@@ -44,6 +44,8 @@
 
 - (void) handleExposeRect: (NSRect)rect;
 
+- (BOOL) isDrawingToScreen;
+
 @end
 
 #endif

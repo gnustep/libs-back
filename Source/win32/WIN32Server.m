@@ -1017,13 +1017,13 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
     {
       TCHAR composition[length+sizeof(TCHAR)];
       length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, &composition, length);
-      NSString *uKeys = [NSString stringWithCharacters: (unichar*)composition length: length];
       {
         int index;
         for (index = 0; index < length; ++index)
           IMEDebugLog(@"%2.2X ", composition[index]);
       }
-      IMEDebugLog(@"composition (uKeys): %@\n", uKeys);
+      IMEDebugLog(@"composition (uKeys): %@\n",
+                  [NSString stringWithCharacters: (unichar*)composition length: length]);
     }
     ImmReleaseContext(hwnd, immc);
   }

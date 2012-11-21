@@ -71,39 +71,19 @@
   SetWindowLong(hwnd, GWL_USERDATA, (int)win);
   SetWindowLongPtr(hwnd, IME_INFO, (LONG)ime);
 
- #if (BUILD_GRAPHICS==GRAPHICS_winlib)
-  if (type != NSBackingStoreNonretained)
-    {
-      HDC hdc, hdc2;
-      HBITMAP hbitmap;
-      RECT r;
-
-      GetClientRect((HWND)hwnd, &r);
-      hdc = GetDC(hwnd);
-      hdc2 = CreateCompatibleDC(hdc);
-      hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, 
-                                       r.bottom - r.top);
-      win->old = SelectObject(hdc2, hbitmap);
-
-      win->hdc = hdc2;
-
-      win->useHDC = YES;
-	    
-      ReleaseDC(hwnd, hdc);
-    }
-#endif
+  [self windowbacking: type : (int)hwnd];
 
   // Find the icon file, assume it has the same name as the "icon" which
   // was specified in the bundle's dictionary...
   iconName = [[bundle infoDictionary] objectForKey: @"NSIcon"];
-  if(iconName == nil)
+  if (iconName == nil)
     {
       iconName = [[bundle infoDictionary] 
 		    objectForKey: @"CFBundleIconFile"];
     }
 
   // If the icon name is set, get the path...
-  if(iconName != nil)
+  if (iconName != nil)
     {
       iconName = [iconName stringByDeletingPathExtension];
       iconPath = [[NSBundle mainBundle] pathForResource: iconName 
@@ -113,7 +93,7 @@
   
   // If the path is set, load the icon file and set it as the
   // icon on the window.
-  if(iconPath != nil)
+  if (iconPath != nil)
     {
       HICON icon = NULL;
       const char *cpath = [iconPath cString];
