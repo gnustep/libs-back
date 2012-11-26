@@ -33,34 +33,37 @@
 
 - (LRESULT) decodeWM_MOVEParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
 {
-  NSPoint eventLocation;
-  NSRect rect;
-  RECT r;
-  NSEvent *ev = nil;
-
-  GetWindowRect(hwnd, &r);
-  rect = MSScreenRectToGS(r);
-  eventLocation = rect.origin;
-        
-  ev = [NSEvent otherEventWithType: NSAppKitDefined
-			          location: eventLocation
-			     modifierFlags: 0
-			         timestamp: 0
-			      windowNumber: (int)hwnd
-			           context: GSCurrentContext()
-			           subtype: GSAppKitWindowMoved
-			             data1: rect.origin.x
-                   data2: rect.origin.y];                   
-         
-
-  //need native code here?
-  [EVENT_WINDOW(hwnd) sendEvent: ev];
-		  
+  if (flags.HOLD_MINI_FOR_SIZE == FALSE)
+    {
+      NSPoint eventLocation;
+      NSRect rect;
+      RECT r;
+      NSEvent *ev = nil;
+      
+      GetWindowRect(hwnd, &r);
+      rect = MSScreenRectToGS(r);
+      eventLocation = rect.origin;
+      
+      ev = [NSEvent otherEventWithType: NSAppKitDefined
+			      location: eventLocation
+			 modifierFlags: 0
+			     timestamp: 0
+			  windowNumber: (int)hwnd
+			       context: GSCurrentContext()
+			       subtype: GSAppKitWindowMoved
+				 data1: rect.origin.x
+				 data2: rect.origin.y];                   
+      
+      
+      //need native code here?
+      [EVENT_WINDOW(hwnd) sendEvent: ev];
+    }
+  
   return 0;
 }
 
 - (LRESULT) decodeWM_SIZEParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
-{ 
+{
   switch ((int)wParam)
     {
       case SIZE_MAXHIDE:
@@ -92,22 +95,22 @@
           NSRect rect;
           RECT r;
           NSEvent *ev =nil;
-  
+          
           GetWindowRect(hwnd, &r);
           rect = MSScreenRectToGS(r);
           eventLocation = rect.origin;
-
+          
           // make event
           ev = [NSEvent otherEventWithType: NSAppKitDefined
-                        location: eventLocation
-                        modifierFlags: 0
-                        timestamp: 0
-                        windowNumber: (int)hwnd
-                        context: GSCurrentContext()
-                        subtype: GSAppKitWindowResized
-                        data1: rect.size.width
-                        data2: rect.size.height];
-		 
+                                  location: eventLocation
+                             modifierFlags: 0
+                                 timestamp: 0
+                              windowNumber: (int)hwnd
+                                   context: GSCurrentContext()
+                                   subtype: GSAppKitWindowResized
+                                     data1: rect.size.width
+                                     data2: rect.size.height];
+                    
           [EVENT_WINDOW(hwnd) sendEvent: ev];
           [self resizeBackingStoreFor: hwnd];
           // fixes part one of bug [5, 25] see notes
@@ -125,61 +128,13 @@
   return 0;
 }
 
-- (void) decodeWM_NCCALCSIZEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd 
+- (void) decodeWM_NCCALCSIZEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-  // stub for future dev
-
-    /*NCCALCSIZE_PARAMS * newRects;
-
-   NSPoint eventLocation;
-   NSRect rect;
-   RECT drect;
-   NSEvent *ev =nil;
-
-   if (wParam == TRUE)
-   {
-      // get first rect from NCCALCSIZE_PARAMS Structure
-      newRects=(NCCALCSIZE_PARAMS *)lParam;
-      // get rect 1 from array
-      drect=newRects->rgrc[1];
-
-        //create a size event and send it to the window
-        rect = MSScreenRectToGS(drect);
-        eventLocation = rect.origin;
-
-        // make event
-          ev = [NSEvent otherEventWithType: NSAppKitDefined
-			          location: eventLocation
-			     modifierFlags: 0
-			         timestamp: 0
-			      windowNumber: (int)hwnd
-			           context: GSCurrentContext()
-			           subtype: GSAppKitWindowResized
-			             data1: rect.size.width
-                   data2: rect.size.height];
-
-                   [EVENT_WINDOW(hwnd) sendEvent:ev];*/
-                   //[[EVENT_WINDOW(hwnd)  contentView] display];
-		            //[self resizeBackingStoreFor:hwnd];
-
-
-		           /* ev = [NSEvent otherEventWithType: NSAppKitDefined
-			          location: eventLocation
-			     modifierFlags: 0
-			         timestamp: 0
-			      windowNumber: (int)hwnd
-			           context: GSCurrentContext()
-			           subtype: GSAppKitWindowMoved
-			             data1: rect.origin.x
-                   data2: rect.origin.y]; 
-
-		            [EVENT_WINDOW(hwnd) sendEvent:ev];
-
-        //printf(" Rect 1 =\n%s", [[self MSRectDetails:drect] cString]);
-
-   }
-
-   //printf("wParam is %s\n", wParam ? "TRUE" : "FALSE");*/
+#if 0
+  DefWindowProc(hwnd, WM_NCCALCSIZE, wParam, lParam);
+  flags._eventHandled = YES;
+#endif
+  return;
 }
 
 - (void) decodeWM_WINDOWPOSCHANGEDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
@@ -196,34 +151,34 @@
       /* For debugging, log current window stack.
        */
       if (GSDebugSet(@"WTrace") == YES)
-	{
-	  NSString	*s = @"Window list:\n";
+        {
+          NSString	*s = @"Window list:\n";
 
-	  hi = GetDesktopWindow();
-	  hi = GetWindow(hi, GW_CHILD);
-	  if (hi > 0)
-	    {
-	      hi = GetWindow(hi, GW_HWNDLAST);
-	    }
-	  while (hi > 0)
-	    {
-	      TCHAR	buf[32];
+          hi = GetDesktopWindow();
+          hi = GetWindow(hi, GW_CHILD);
+          if (hi > 0)
+            {
+              hi = GetWindow(hi, GW_HWNDLAST);
+            }
+          while (hi > 0)
+            {
+              TCHAR	buf[32];
 
-	      hi = GetNextWindow(hi, GW_HWNDPREV);
+              hi = GetNextWindow(hi, GW_HWNDPREV);
 
-	      if (hi > 0
-		&& GetClassName(hi, buf, 32) == 18
-		&& strncmp(buf, "GNUstepWindowClass", 18) == 0)
-		{
-		  if (GetWindowLong(hi, OFF_ORDERED) == 1)
-		    {
-		      hl = GetWindowLong(hi, OFF_LEVEL);
-		      s = [s stringByAppendingFormat: @"%d (%d)\n", hi, hl];
-		    }
-		}
-	    }
-	  NSLog(@"window pos changed: %@", s);
-	}
+              if (hi > 0
+                  && GetClassName(hi, buf, 32) == 18
+                  && strncmp(buf, "GNUstepWindowClass", 18) == 0)
+                {
+                  if (GetWindowLong(hi, OFF_ORDERED) == 1)
+                    {
+                      hl = GetWindowLong(hi, OFF_LEVEL);
+                      s = [s stringByAppendingFormat: @"%d (%d)\n", hi, hl];
+                    }
+                }
+            }
+          NSLog(@"window pos changed: %@", s);
+        }
 
       /* This window has changed its z-order, so we take the opportunity
        * to check that all the GNUstep windows are in the correct order
@@ -236,76 +191,76 @@
       hi = GetDesktopWindow();
       hi = GetWindow(hi, GW_CHILD);
       while (hi > 0)
-	{
-	  TCHAR	buf[32];
+        {
+          TCHAR	buf[32];
 
-	  /* Find a GNUstep window which is ordered in and above desktop
-	   */
-	  while (hi > 0)
-	    {
-	      if (GetClassName(hi, buf, 32) == 18
-		&& strncmp(buf, "GNUstepWindowClass", 18) == 0
-		&& GetWindowLong(hi, OFF_ORDERED) == 1
-		&& (hl = GetWindowLong(hi, OFF_LEVEL))
-		  > NSDesktopWindowLevel)
-		{
-		  break;
-		}
-	      hi = GetNextWindow(hi, GW_HWNDNEXT);
-	    }
-	
-	  if (hi > 0)
-	    {
-	      NSDebugLLog(@"WTrace", @"sort hi %d (%d)", hi, hl);
-	      /* Find the next (lower in z-order) GNUstep window which
-	       * is ordered in and above desktop
-	       */
-	      lo = GetNextWindow(hi, GW_HWNDNEXT);
-	      while (lo > 0)
-		{
-		  if (GetClassName(lo, buf, 32) == 18
-		    && strncmp(buf, "GNUstepWindowClass", 18) == 0
-		    && GetWindowLong(lo, OFF_ORDERED) == 1
-		    && (ll = GetWindowLong(lo, OFF_LEVEL))
-		      > NSDesktopWindowLevel)
-		    {
-		      break;
-		    }
-		  lo = GetNextWindow(lo, GW_HWNDNEXT);
-		}
+          /* Find a GNUstep window which is ordered in and above desktop
+           */
+          while (hi > 0)
+            {
+              if (GetClassName(hi, buf, 32) == 18
+                  && strncmp(buf, "GNUstepWindowClass", 18) == 0
+                  && GetWindowLong(hi, OFF_ORDERED) == 1
+                  && (hl = GetWindowLong(hi, OFF_LEVEL))
+                  > NSDesktopWindowLevel)
+                {
+                  break;
+                }
+              hi = GetNextWindow(hi, GW_HWNDNEXT);
+            }
+        
+          if (hi > 0)
+            {
+              NSDebugLLog(@"WTrace", @"sort hi %d (%d)", hi, hl);
+              /* Find the next (lower in z-order) GNUstep window which
+               * is ordered in and above desktop
+               */
+              lo = GetNextWindow(hi, GW_HWNDNEXT);
+              while (lo > 0)
+                {
+                  if (GetClassName(lo, buf, 32) == 18
+                      && strncmp(buf, "GNUstepWindowClass", 18) == 0
+                      && GetWindowLong(lo, OFF_ORDERED) == 1
+                      && (ll = GetWindowLong(lo, OFF_LEVEL))
+                      > NSDesktopWindowLevel)
+                    {
+                      break;
+                    }
+                  lo = GetNextWindow(lo, GW_HWNDNEXT);
+                }
 
-	      if (lo > 0)
-		{
-		  NSDebugLLog(@"WTrace", @"sort lo %d (%d)", lo, ll);
-		  /* Check to see if the higher of the two windows should
-		   * actually be lower.
-		   */
-		  if (hl < ll)
-		    {
-		      HWND	higher;
+              if (lo > 0)
+                {
+                  NSDebugLLog(@"WTrace", @"sort lo %d (%d)", lo, ll);
+                  /* Check to see if the higher of the two windows should
+                   * actually be lower.
+                   */
+                  if (hl < ll)
+                    {
+                      HWND	higher;
 
-		      /* Insert the low window before the high one.
-		       * ie after the window preceding the high one.
-		       */
-		      higher = GetNextWindow(hi, GW_HWNDPREV);
-		      if (higher == 0)
-			{
-			  higher = HWND_TOP;
-			}
-NSDebugLLog(@"WTrace", @"swap %d (%d) with %d (%d)", hi, hl, lo, ll);
-		      SetWindowPos(lo, higher, 0, 0, 0, 0, 
-			SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+                      /* Insert the low window before the high one.
+                       * ie after the window preceding the high one.
+                       */
+                      higher = GetNextWindow(hi, GW_HWNDPREV);
+                      if (higher == 0)
+                        {
+                          higher = HWND_TOP;
+                        }
+                      NSDebugLLog(@"WTrace", @"swap %d (%d) with %d (%d)", hi, hl, lo, ll);
+                      SetWindowPos(lo, higher, 0, 0, 0, 0,
+                                   SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
 
-		      /* Done  this iteration of the sort ... the next
-		       * iteration takes place when we get notified
-		       * that the swap we have just donew is complete.
-		       */
-		      break;
-		    }
-		}
-	      hi = lo;
-	    }
-	}
+                      /* Done  this iteration of the sort ... the next
+                       * iteration takes place when we get notified
+                       * that the swap we have just donew is complete.
+                       */
+                      break;
+                    }
+                }
+              hi = lo;
+            }
+        }
     }
 }
 
@@ -321,9 +276,9 @@ NSDebugLLog(@"WTrace", @"swap %d (%d) with %d (%d)", hi, hl, lo, ll);
        * desktop level window is inserted below them.
        */
       if (GetWindowLong(hwnd, OFF_LEVEL) <= NSDesktopWindowLevel)
-	{
-	  inf->hwndInsertAfter = HWND_BOTTOM;
-	}
+        {
+          inf->hwndInsertAfter = HWND_BOTTOM;
+        }
     }
 }
 
@@ -344,6 +299,11 @@ NSDebugLLog(@"WTrace", @"swap %d (%d) with %d (%d)", hi, hl, lo, ll);
   return 0; 
 }
 
+- (LRESULT) decodeWM_ENTERSIZEMOVEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
+{
+  return DefWindowProc(hwnd, WM_ENTERSIZEMOVE, wParam, lParam);
+}
+
 - (LRESULT) decodeWM_EXITSIZEMOVEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
   // may have a small bug here note it for follow up
@@ -352,11 +312,11 @@ NSDebugLLog(@"WTrace", @"swap %d (%d) with %d (%d)", hi, hl, lo, ll);
         no posting is needed.
     */
   [self resizeBackingStoreFor: hwnd];
-  [self decodeWM_MOVEParams:hwnd :wParam :lParam];
-  [self decodeWM_SIZEParams:hwnd :wParam :lParam];
-      
+//  [self decodeWM_MOVEParams:hwnd :wParam :lParam];
+//  [self decodeWM_SIZEParams:hwnd :wParam :lParam];
+
   //Make sure DefWindowProc gets called
-  return 0;
+  return DefWindowProc(hwnd, WM_EXITSIZEMOVE, wParam, lParam);
 }
 
 - (LRESULT) decodeWM_SIZINGParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
@@ -367,10 +327,10 @@ NSDebugLLog(@"WTrace", @"swap %d (%d) with %d (%d)", hi, hl, lo, ll);
 
 - (LRESULT) decodeWM_MOVINGParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
 {
-  // stub for future dev
-   [self decodeWM_MOVEParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam];
+//  [self decodeWM_MOVEParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam];
+  [EVENT_WINDOW(hwnd) display];
 
-   return TRUE;
+  return TRUE;
 }
 
 @end

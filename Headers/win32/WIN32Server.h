@@ -53,7 +53,7 @@
 #include <AppKit/NSImage.h>
 
 #include <GNUstepGUI/GSDisplayServer.h>
-
+#include <config.h>
 #include <windows.h>
 
 /*
@@ -76,10 +76,11 @@
 
 DWORD windowStyleForGSStyle(unsigned int style);
    
-typedef struct w32serverFlags {
-    BOOL HOLD_MINI_FOR_SIZE;        // override GS size event on miniturize
-    BOOL _eventHandled;             // did we handle the event?
-  } serverFlags;
+typedef struct w32serverFlags 
+{
+  BOOL HOLD_MINI_FOR_SIZE;        // override GS size event on miniturize
+  BOOL _eventHandled;             // did we handle the event?
+} serverFlags;
 
 @interface WIN32Server : GSDisplayServer
 {
@@ -136,6 +137,7 @@ typedef struct w32serverFlags {
 - (void) decodeWM_WINDOWPOSCHANGINGParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_WINDOWPOSCHANGEDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (LRESULT) decodeWM_GETMINMAXINFOParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
+- (LRESULT) decodeWM_ENTERSIZEMOVEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (LRESULT) decodeWM_EXITSIZEMOVEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (LRESULT) decodeWM_MOVINGParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam;
 - (LRESULT) decodeWM_SIZINGParams: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam;
@@ -187,9 +189,31 @@ typedef struct w32serverFlags {
 
 // Extra window data accessed via GetWindowLong
 
-#define OFF_LEVEL	0
-#define OFF_ORDERED	sizeof(DWORD)
-#define WIN_EXTRABYTES (2*sizeof(DWORD))
+enum _WIN_EXTRA_BYTES
+{
+  OFF_LEVEL       = 0,
+  OFF_ORDERED     = OFF_LEVEL + sizeof(DWORD),
+  IME_INFO        = OFF_ORDERED + sizeof(DWORD),
+  WIN_EXTRABYTES  = IME_INFO + sizeof(DWORD)
+};
+
+
+// Pointer to this struct set in IME_INFO extra bytes space for
+// handling IME composition processing between various windows...
+typedef struct IME_INFO_S
+{
+  DWORD   isOpened;
+  BOOL    isComposing;
+  
+  LPVOID  readString;
+  DWORD   readStringLength;
+  LPVOID  compString;
+  DWORD   compStringLength;
+  
+  DWORD   compositionMode;
+  DWORD   sentenceMode;
+} IME_INFO_T;
+
 
 // Extra window data allocated using objc_malloc in WM_CREATE and accessed via
 // the GWL_USERDATA pointer
@@ -200,7 +224,10 @@ typedef struct _win_intern {
   HDC hdc; 
   HGDIOBJ old;
   MINMAXINFO minmax;
+  NSBackingStoreType type;
+#if (BUILD_GRAPHICS==GRAPHICS_cairo)
+  void *surface;
+#endif
 } WIN_INTERN;
-
 
 #endif /* _WIN32Server_h_INCLUDE */

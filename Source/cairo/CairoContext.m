@@ -31,7 +31,6 @@
 #include <AppKit/NSPrintOperation.h>
 
 #include "cairo/CairoContext.h"
-#include "cairo/CairoGState.h"
 #include "cairo/CairoSurface.h"
 #include "cairo/CairoPSSurface.h"
 #include "cairo/CairoPDFSurface.h"
@@ -42,7 +41,9 @@
 #define CGSTATE ((CairoGState *)gstate)
 
 #if BUILD_SERVER == SERVER_x11
+#  include "cairo/CairoGState.h"
 #  include "x11/XGServer.h"
+#  define _CAIRO_GSTATE_CLASSNAME CairoGState
 #  ifdef USE_GLITZ
 #    define _CAIRO_SURFACE_CLASSNAME XGCairoGlitzSurface
 #    include "cairo/XGCairoGlitzSurface.h"
@@ -57,7 +58,9 @@
 #  include "x11/XGServerWindow.h"
 #  include "x11/XWindowBuffer.h"
 #elif BUILD_SERVER == SERVER_win32
+#  include "cairo/Win32CairoGState.h"
 #  include <windows.h>
+#  define _CAIRO_GSTATE_CLASSNAME Win32CairoGState
 #  ifdef USE_GLITZ
 #    define _CAIRO_SURFACE_CLASSNAME Win32CairoGlitzSurface
 #    include "cairo/Win32CairoGlitzSurface.h"
@@ -92,7 +95,7 @@
 
 + (Class) GStateClass
 {
-  return [CairoGState class];
+  return [_CAIRO_GSTATE_CLASSNAME class];
 }
 
 + (BOOL) handlesPS
@@ -120,22 +123,26 @@
 #endif // BUILD_SERVER = SERVER_x11
 }
 
-#if BUILD_SERVER == SERVER_x11
 
 /* Private backend methods */
 + (void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
 {
+#if BUILD_SERVER == SERVER_x11
   if ([(id)driver isKindOfClass: [XWindowBuffer class]])
     {
       // For XGCairoXImageSurface
       [(XWindowBuffer *)driver _exposeRect: rect];
     }
-  else if ([(id)driver isKindOfClass: [CairoSurface class]])
+  else
+#endif
+  if ([(id)driver isKindOfClass: [CairoSurface class]])
     {
       // For XGCairoModernSurface
       [(CairoSurface *)driver handleExposeRect: rect];
     }
 }
+
+#if BUILD_SERVER == SERVER_x11
 
 #ifdef XSHM
 
@@ -292,3 +299,5 @@
 @end
 
 #undef _CAIRO_SURFACE_CLASSNAME
+#undef _CAIRO_GSTATE_CLASSNAME
+

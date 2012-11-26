@@ -55,6 +55,7 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
       win->backingStoreEmpty = NO;
     }
 
+#if (BUILD_GRAPHICS==GRAPHICS_winlib)
   if (win->useHDC)
     {
       HDC hdc = GetDC((HWND)hwnd);
@@ -65,10 +66,11 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 		      win->hdc, rect.left, rect.top, SRCCOPY);
       if (!result)
         {
-          NSLog(@"validateWindow failed %d", GetLastError());
+          NSWarnMLog(@"validateWindow failed %d", GetLastError());
         }
       ReleaseDC((HWND)hwnd, hdc);
     }
+#endif
 }
 
 @implementation WIN32Server (w32_windowdisplay)

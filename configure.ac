@@ -354,6 +354,10 @@ AC_CHECK_LIB(msimg32, main, have_msimg32=yes, have_msimg32=no)
 if test "$have_msimg32" = yes; then
   WIN32_LIBS="${WIN32_LIBS} -lmsimg32"
 fi
+AC_CHECK_LIB(imm32, main, have_imm32=yes, have_imm32=no)
+if test "$have_imm32" = yes; then
+  WIN32_LIBS="${WIN32_LIBS} -limm32"
+fi
 
 #--------------------------------------------------------------------
 # WGL support
@@ -423,6 +427,8 @@ PKG_CAIRO_WIN32=no
 PKG_CHECK_MODULES(CAIRO_WIN32, cairo-win32, have_cairo_win32=yes, have_cairo_win32=no)
 PKG_CAIRO_GLITZ=no
 PKG_CHECK_MODULES(CAIRO_GLITZ, cairo-glitz, have_cairo_glitz=yes, have_cairo_glitz=no)
+PKG_FONTCONFIG=no
+PKG_CHECK_MODULES(FONTCONFIG, fontconfig, have_fontconfig=yes, have_fontconfig=no)
 
 if test "$have_cairo" = no; then
   AC_CHECK_LIB(cairo, cairo_create, have_cairo=yes)
@@ -551,11 +557,19 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
       BUILD_GRAPHICS=art
     fi
     AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
+  elif test $BUILD_SERVER = win32 -a "$have_fontconfig" = no ; then
+    AC_MSG_WARN([can't find fontconfig, required for graphics=cairo!])
+    BUILD_GRAPHICS=winlib
+    AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
   else
     AC_MSG_CHECKING(Cairo backend)
     CAIRO_LIBS="$CAIRO_FT_LIBS"
     CAIRO_CFLAGS="$CAIRO_FT_CFLAGS"
-
+    if test $BUILD_SERVER = win32; then
+      CAIRO_LIBS="$CAIRO_LIBS $FONTCONFIG_LIBS"
+      CAIRO_CFLAGS="$CAIRO_CFLAGS $FONTCONFIG_CFLAGS"
+    fi
+    
     if test "$have_xrender" = yes; then
       if test $BUILD_SERVER = x11 -a "x$have_cairo_xlib" = "xyes"; then
         AC_DEFINE(XRENDER,1,[Define if you have X11 XRender extension])
@@ -583,8 +597,8 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
       CAIRO_LIBS="$CAIRO_LIBS $CAIRO_WIN32_LIBS $WIN32_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_WIN32_CFLAGS"
       AC_MSG_RESULT(winlib)
-      AC_MSG_WARN([**** Cairo backend on win32 is experimental and is not supported.])
-      AC_MSG_WARN([**** Are you a backend developer ?])
+      #AC_MSG_WARN([**** Cairo backend on win32 is experimental and is not supported.])
+      #AC_MSG_WARN([**** Are you a backend developer ?])
     elif test $BUILD_SERVER = x11 -a "x$have_cairo_xlib" = "xyes"; then
       CAIRO_LIBS="$CAIRO_LIBS $CAIRO_XLIB_LIBS $XFT_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS"
@@ -667,12 +681,17 @@ if test $BUILD_SERVER = win32; then
 fi
 
 AH_TOP([
-#define SERVER_x11   1
-#define SERVER_win32 2
+#define SERVER_x11      1
+#define SERVER_win32    2
+#define GRAPHICS_xdps   0
+#define GRAPHICS_art    1
+#define GRAPHICS_xlib   2
+#define GRAPHICS_winlib 3
+#define GRAPHICS_cairo  4
 ])
 AC_DEFINE_UNQUOTED(BUILD_SERVER,SERVER_$BUILD_SERVER,
 	[Define to type of window server to build])
-AC_DEFINE_UNQUOTED(BUILD_GRAPHICS,$BUILD_GRAPHICS,
+AC_DEFINE_UNQUOTED(BUILD_GRAPHICS,GRAPHICS_$BUILD_GRAPHICS,
 	[Define to type of graphics context to build])
 AC_SUBST(BUILD_GRAPHICS)
 AC_SUBST(BUILD_SERVER)
