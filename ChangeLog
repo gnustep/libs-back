@@ -1,3 +1,8 @@
+2012-11-26 12:56-EST Gregory John Casamento <greg.casamento@gmail.com>
+
+	* Headers/cairo/Win32CairoGState.h
+	* Source/cairo/Win32CairoGState.m: Add missing files for windows.
+
 2012-11-26 00:37-EST Gregory John Casamento <greg.casamento@gmail.com>
 
 	* ChangeLog
