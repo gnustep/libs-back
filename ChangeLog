@@ -1,3 +1,32 @@
+2012-11-26 00:37-EST Gregory John Casamento <greg.casamento@gmail.com>
+
+	* ChangeLog
+	* config.h.in
+	* configure
+	* configure.ac
+	* Headers/win32/WIN32Server.h
+	* Source/cairo/CairoContext.m
+	* Source/cairo/CairoGState.m
+	* Source/cairo/CairoPDFSurface.m
+	* Source/cairo/GNUmakefile
+	* Source/cairo/Win32CairoSurface.m
+	* Source/GSBackend.m
+	* Source/gsc/GSGState.m
+	* Source/win32/w32_create.m
+	* Source/win32/w32_general.m
+	* Source/win32/w32_GLcontext.m
+	* Source/win32/w32_movesize.m
+	* Source/win32/w32_windowdisplay.m
+	* Source/win32/WIN32Server.m
+	* Source/winlib/GNUmakefile.preamble: Merge of all testplant
+	branch changes to trunk for Cairo changes.  Did code cleanup to
+	make the code conform to coding standards.
+
+2012-10-24  Doug Simons <doug.simons@testplant.com>
+
+	* Source/win32/WIN32Server.m : Fix findWindowAt:windowRef:excluding:
+	to skip windows with the ignoresMouseEvents property set.
+
 2012-10-14  Fred Kiefer  <FredKiefer@gmx.de>
 
 	* Source/win32/w32_create.m (-decodeWM_CREATEParams:::): Call
@@ -14,6 +43,11 @@
 	GDI functions to look up multiple screen/monitor information
 	* Source/gsc/GSGState.m: Fix compiler warnings
 	Patch by Marcian Lytwyn <marcian.lytwyn@advcsi.com>
+
+2012-10-10  Jonathan Gillaspie <jonathan.gillaspie@testplant.com>
+
+	* Source/win32/WIN32Server.m : Fix for fatal exceptions when a
+	nil mouse event tried to post
 
 2012-09-28  Fred Kiefer  <FredKiefer@gmx.de>
 
@@ -45,6 +79,30 @@
 	* Source/x11/XGGLContext.m: Implement 10.6 methods to get/set the
 	CGLContextObj.
 
+2012-08-08  Marcian Lytwyn <marcian.lytwyn@advcsi.com>
+
+	*** Modifications/fixes for cairo support on win32 ***
+	* Headers/win32/Win32CairoGState.h - NEW
+	* Source/win32/Win32CairoGState.m - NEW
+	* Headers/win32/WIN32Server.h
+	* Source/gsc/GSGState.m: Fix compiler warnings
+	* Source/win32/WIN32Server.m
+	* Source/win32/w32_create.m
+	* Source/win32/Win32CairoSurface.m
+	* Source/cairo/GNUmakefile
+	* Source/cairo/CairoContext.m
+	* configure
+	* configure.ac
+
+2012-06-27  Marcian Lytwyn <marcian.lytwyn@advcsi.com>
+
+	*** Modifications to Win32 server backend to support multiple
+	    monitors.
+	* Headers/win32/WIN32Server.h - Added a mutable array for storing
+	  multiple screen information from GDI screen lookup
+	* Source/win32/WIN32Server.m - Added startup sequence to invoke
+	  GDI functions to look up multiple screen/monitor information
+
 2012-06-21  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* configure.ac: use AC_CHECK_LIB to check for cairo if pkg-config
@@ -53,13 +111,13 @@
 
 2012-05-14  Quentin Mathe  <quentin.mathe@gmail.com>
 
-	* Source/gsc/GSContext.m (+initialize): Protected +initialize from being 
-	called multiple times because of subclasses. As a result, this 
-	eliminates a gtable memory leak (e.g. +initialize sent to both GSContext 
-	and CairoContext at backend initialization time), and prevents the 
-	gstate stack to be reset while still in use (e.g. the program enumerates 
-	classes at runtime and sends messages to them... +initialize might be 
-	sent to GSStreamContext in such a case). 
+	* Source/gsc/GSContext.m (+initialize): Protected +initialize from being
+	called multiple times because of subclasses. As a result, this
+	eliminates a gtable memory leak (e.g. +initialize sent to both GSContext
+	and CairoContext at backend initialization time), and prevents the
+	gstate stack to be reset while still in use (e.g. the program enumerates
+	classes at runtime and sends messages to them... +initialize might be
+	sent to GSStreamContext in such a case).
 
 2012-05-12  Eric Wasylishen  <ewasylishen@gmail.com>
 

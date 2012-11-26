@@ -1,3 +1,4 @@
+
 /*
    CairoGState.m
 
@@ -124,8 +125,10 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
 
 - (NSString*) description
 {
-  return [NSString stringWithFormat: @"%@  surface: %@  context: %p",
-                   [super description], _surface, _ct];
+  NSMutableString *description = [[[super description] mutableCopy] autorelease];
+  [description appendFormat: @" surface: %@",_surface];
+  [description appendFormat: @" context: %p",_ct];
+  return [[description copy] autorelease];
 }
 
 - (id) copyWithZone: (NSZone *)zone
@@ -1257,6 +1260,8 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   cairo_pattern_t *cpattern;
   cairo_matrix_t source_matrix;
 
+  NSDebugMLLog(@"CairoGState", @"%self: %@\n", self);
+
   if (!_ct || !source->_ct)
     {
       return;
@@ -1379,6 +1384,11 @@ doesn't support to use the receiver cairo target as the source. */
   cairo_matrix_t local_matrix;
   cairo_matrix_t source_matrix;
 
+  NSDebugMLLog(@"CairoGState", @"source: %@ fromRect: %@ toPoint: %@\n",
+               source,
+               NSStringFromRect(aRect),
+               NSStringFromPoint(aPoint));
+  
   if (!_ct || !source->_ct)
     {
       NSLog(@"WARNING: -drawGState called with a NULL target context (%p) or source context (%p)",

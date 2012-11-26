@@ -49,7 +49,7 @@ else
     ifeq ($(WITH_GLITZ),yes)
       cairo_OBJC_FILES += Win32CairoGlitzSurface.m
     else
-      cairo_OBJC_FILES += Win32CairoSurface.m
+      cairo_OBJC_FILES += Win32CairoSurface.m Win32CairoGState.m
       # Win32CairoXImageSurface.m 
     endif
   endif

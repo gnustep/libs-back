@@ -51,7 +51,7 @@
 
 /* Designated initializer. */
 - initWithDrawContext: (GSContext *)drawContext
-{
+{  
   self = [super init];
   if (!self)
     return nil;
@@ -103,8 +103,10 @@
 
 - (NSString*) description
 {
-  return [NSString stringWithFormat: @"%@  drawcontext: %@  ctm: %@",
-                   [super description], drawcontext, ctm];
+  NSMutableString *description = [[super description] mutableCopy];
+  [description appendFormat: @" drawcontext: %@",drawcontext];
+  [description appendFormat: @" ctm: %@",ctm];
+  return [description copy];
 }
 
 - copyWithZone: (NSZone *)zone

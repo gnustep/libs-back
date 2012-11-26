@@ -58,13 +58,13 @@
   cairo_pdf_surface_set_size(_surface, size.width, size.height);
 }
 
-- (void) writeComment: (NSString *)comment
-{
-}
-
 - (BOOL) isDrawingToScreen
 {
   return NO;
+}
+
+- (void) writeComment: (NSString *)comment
+{
 }
 
 @end

@@ -62,18 +62,8 @@
 
 #include <math.h>
 
-static BOOL _enableCallbacks = YES;
-
-static NSEvent *process_key_event(WIN32Server *svr, 
-                                  HWND hwnd, WPARAM wParam, 
-                                  LPARAM lParam, NSEventType eventType);
-static NSEvent *process_mouse_event(WIN32Server *svr, 
-                                    HWND hwnd, WPARAM wParam, 
-                                    LPARAM lParam, NSEventType eventType,
-                                    UINT uMsg);
-
-LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, 
-                             WPARAM wParam, LPARAM lParam);
+// Forward declarations...
+static unsigned int mask_for_keystate(BYTE *keyState);
 
 @interface W32DisplayMonitorInfo : NSObject
 {
@@ -92,54 +82,66 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
 @implementation W32DisplayMonitorInfo
 
-- (id) initWithHMonitor: (HMONITOR)hMonitor rect: (LPRECT)lprcMonitor
+- (id)initWithHMonitor:(HMONITOR)hMonitor rect:(LPRECT)lprcMonitor
 {
   self = [self init];
   if (self)
-  {
-    CGFloat w = lprcMonitor->right - lprcMonitor->left;
-    CGFloat h = lprcMonitor->bottom - lprcMonitor->top;
-    CGFloat x = lprcMonitor->left;
-    CGFloat y = h - lprcMonitor->bottom;
-    _frame = NSMakeRect(x, y, w, h);
-    memcpy(&_rect, lprcMonitor, sizeof(RECT));
-  }
+    {
+      CGFloat w = lprcMonitor->right - lprcMonitor->left;
+      CGFloat h = lprcMonitor->bottom - lprcMonitor->top;
+      CGFloat x = lprcMonitor->left;
+      CGFloat y = h - lprcMonitor->bottom;
+      _frame = NSMakeRect(x, y, w, h);
+      memcpy(&_rect, lprcMonitor, sizeof(RECT));
+    }
   return self;
 }
 
-- (HMONITOR) hMonitor
+- (HMONITOR)hMonitor
 {
   return _hMonitor;
 }
 
-- (RECT) rect
+- (RECT)rect
 {
   return _rect;
 }
 
-- (NSRect) frame
+- (NSRect)frame
 {
   return _frame;
 }
 
-- (void) setFrame: (NSRect)frame
+- (void)setFrame:(NSRect)frame
 {
   _frame = frame;
 }
 
 @end
 
+
+static BOOL _enableCallbacks = YES;
+
+static NSEvent *process_key_event(WIN32Server *svr, 
+                                  HWND hwnd, WPARAM wParam, 
+                                  LPARAM lParam, NSEventType eventType);
+static NSEvent *process_mouse_event(WIN32Server *svr, 
+                                    HWND hwnd, WPARAM wParam, 
+                                    LPARAM lParam, NSEventType eventType,
+                                    UINT uMsg);
+
+LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, 
+                             WPARAM wParam, LPARAM lParam);
+
 BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
-                                     HDC hdcMonitor,
-                                     LPRECT lprcMonitor,
-                                     LPARAM dwData)
+                                    HDC hdcMonitor,
+                                    LPRECT lprcMonitor,
+                                    LPARAM dwData)
 {
-  NSMutableArray *monitors = (NSMutableArray*)dwData;
-  W32DisplayMonitorInfo *info = [[W32DisplayMonitorInfo alloc]
-                                  initWithHMonitor: hMonitor
-                                              rect: lprcMonitor];
+  NSMutableArray        *monitors = (NSMutableArray*)dwData;
+  W32DisplayMonitorInfo *info = [[W32DisplayMonitorInfo alloc] initWithHMonitor:hMonitor rect:lprcMonitor];
   
-  NSDebugLog(@"screen %ld:hdc: %ld frame:top:%ld left:%ld right:%ld bottom:%ld  frame:x:%f y:%f w:%f h:%f\n",
+  NSLog(@"screen %ld:hdc: %ld frame:top:%ld left:%ld right:%ld bottom:%ld  frame:x:%f y:%f w:%f h:%f\n",
         [monitors count], (long)hMonitor,
         lprcMonitor->top, lprcMonitor->left,
         lprcMonitor->right, lprcMonitor->bottom,
@@ -149,6 +151,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   
   return TRUE;
 }
+
 
 @implementation WIN32Server
 
@@ -190,9 +193,11 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
         }
       else
         {
-          // Don't translate messages, as this would give
-          // extra character messages.
-          DispatchMessage(&msg); 
+          // Original author disregarded a translate message call here stating
+          // that it would give extra character messages - BUT THIS KILLS IME
+          // MESSAGE PROCESSING!!!!!
+          TranslateMessage(&msg);
+          DispatchMessage(&msg);
         } 
     } 
 }
@@ -223,6 +228,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
         }
       else
         {
+          TranslateMessage(m);
           DispatchMessage(m); 
         } 
     } 
@@ -263,14 +269,13 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
 - (void) _initWin32Context
 {
-  WNDCLASSEX wc; 
+  WNDCLASSEXW wc;
   hinstance = (HINSTANCE)GetModuleHandle(NULL);
 
   // Register the main window class. 
   wc.cbSize = sizeof(wc);          
-  //wc.style = CS_OWNDC; // | CS_HREDRAW | CS_VREDRAW; 
-  wc.style = CS_HREDRAW | CS_VREDRAW; 
-  wc.lpfnWndProc = (WNDPROC) MainWndProc; 
+  wc.style = 0;
+  wc.lpfnWndProc = (WNDPROC) MainWndProc;
   wc.cbClsExtra = 0; 
   // Keep extra space for each window, for OFF_LEVEL and OFF_ORDERED
   wc.cbWndExtra = WIN_EXTRABYTES; 
@@ -279,11 +284,11 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   wc.hCursor = LoadCursor(NULL, IDC_ARROW);
   wc.hbrBackground = GetStockObject(WHITE_BRUSH); 
   wc.lpszMenuName =  NULL; 
-  wc.lpszClassName = "GNUstepWindowClass"; 
+  wc.lpszClassName = L"GNUstepWindowClass";
   wc.hIconSm = NULL;//currentAppIcon;
 
-  if (!RegisterClassEx(&wc)) 
-       return; 
+  if (!RegisterClassExW(&wc))
+       return;
 
   // FIXME We should use GetSysColor to get standard colours from MS Window and 
   // use them in NSColor
@@ -332,7 +337,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
     {
       [self _initWin32Context];
       [super initWithAttributes: info];
-
+  
       monitorInfo = [NSMutableArray array];
       EnumDisplayMonitors(NULL, NULL, (MONITORENUMPROC)LoadDisplayMonitorInfo, (LPARAM)monitorInfo);
 
@@ -395,6 +400,26 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   //TODO [self subclassResponsibility: _cmd];
 }
 
+static HWND foundWindowHwnd = 0;
+static POINT findWindowAtPoint;
+
+LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
+{
+	if (foundWindowHwnd == 0 && hwnd != (HWND)lParam)
+		{
+          RECT	r;
+          GetWindowRect(hwnd, &r);
+		  
+          if (PtInRect(&r,findWindowAtPoint) && IsWindowVisible(hwnd))
+            {
+				NSWindow *window = GSWindowWithNumber((int)hwnd);
+				if (![window ignoresMouseEvents])
+					foundWindowHwnd = hwnd;
+            }
+        }
+	return true;
+}
+
 - (int) findWindowAt: (NSPoint)screenLocation 
            windowRef: (int*)windowRef 
            excluding: (int)win
@@ -403,26 +428,20 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   POINT p;
 
   p = GSScreenPointToMS(screenLocation);
-  hwnd = WindowFromPoint(p);
-  if ((int)hwnd == win)
-    {
-      /*
-       * If the window at the point we want is excluded, 
-       * we must look through ALL windows at a lower level
-       * until we find one which contains the same point.
-       */
-      while (hwnd != 0)
-        {
-          RECT	r;
-
-          hwnd = GetWindow(hwnd, GW_HWNDNEXT);
-          GetWindowRect(hwnd, &r);
-          if (PtInRect(&r, p) && IsWindowVisible(hwnd))
-            {
-              break;
-            }
-        }
-    }
+  /*
+   * This is insufficient: hwnd = WindowFromPoint(p);
+   *
+   * We must look through all windows until we find one
+   * which contains the specified point, does not have
+   * the ignoresMouseEvents property set, and is not
+   * the excluded window. This is done through the
+   * EnumWindows function which makes a call back to us
+   * for each window.
+   */
+    foundWindowHwnd = 0;
+    findWindowAtPoint = p;
+	EnumWindows((WNDENUMPROC)windowEnumCallback, win);
+	hwnd = foundWindowHwnd;
 
   *windowRef = (int)hwnd;	// Any windows
 
@@ -462,27 +481,25 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
 - (NSWindowDepth) windowDepthForScreen: (int)screen
 {
-  HDC hdc = 0;
+  HDC hdc  = 0;
   int bits = 0;
   //int planes;
-      
+  
   if (screen < [monitorInfo count])
     {
       MONITORINFOEX mix = { 0 };
       mix.cbSize        = sizeof(MONITORINFOEX);
-      HMONITOR hMonitor = [[monitorInfo objectAtIndex: screen] hMonitor];
+      HMONITOR hMonitor = [[monitorInfo objectAtIndex:screen] hMonitor];
       
       if (GetMonitorInfo(hMonitor, (LPMONITORINFO)&mix))
-        {
-          hdc  = CreateDC("DISPLAY", mix.szDevice, NULL, NULL);
-          bits = GetDeviceCaps(hdc, BITSPIXEL) / 3;
-          //planes = GetDeviceCaps(hdc, PLANES);
-          //NSLog(@"bits %d planes %d", bits, planes);
-          ReleaseDC(NULL, hdc);
-        }
+	{
+	  hdc  = CreateDC("DISPLAY", mix.szDevice, NULL, NULL);
+	  bits = GetDeviceCaps(hdc, BITSPIXEL) / 3;
+	  //planes = GetDeviceCaps(hdc, PLANES);
+	  //NSLog(@"bits %d planes %d", bits, planes);
+	  ReleaseDC(NULL, hdc);
+	}
     }
-
-  ReleaseDC(NULL, hdc);
   
   return (_GSRGBBitValue | bits);
 }
@@ -505,12 +522,9 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 {
   NSInteger       index;
   NSInteger       nMonitors  = [monitorInfo count];
-  NSMutableArray *screenList = [NSMutableArray arrayWithCapacity: nMonitors];
-
+  NSMutableArray *screenList = [NSMutableArray arrayWithCapacity:nMonitors];
   for (index = 0; index < nMonitors; ++index)
-    {
-      [screenList addObject: [NSNumber numberWithInt: index]];
-    }
+    [screenList addObject:[NSNumber numberWithInt:index]];
   return [[screenList copy] autorelease];
 }
 
@@ -554,28 +568,30 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
     return WS_POPUP | WS_CLIPCHILDREN;
         
   if (style == 0)
-    wstyle = WS_POPUP;
+    {
+      wstyle = WS_POPUP;
+    }
   else
     {
       if ((style & NSTitledWindowMask) == NSTitledWindowMask)
         wstyle |= WS_CAPTION;
 
       if ((style & NSClosableWindowMask) == NSClosableWindowMask)
-        wstyle |= WS_CAPTION + WS_SYSMENU;
+        wstyle |= WS_CAPTION | WS_SYSMENU;
       
       if ((style & NSMiniaturizableWindowMask) == NSMiniaturizableWindowMask)
-        wstyle |= WS_MINIMIZEBOX + WS_SYSMENU;
+        wstyle |= WS_MINIMIZEBOX | WS_SYSMENU;
 
       if ((style & NSResizableWindowMask) == NSResizableWindowMask)
-        wstyle |= WS_SIZEBOX + WS_MAXIMIZEBOX;
+        wstyle |= WS_SIZEBOX | WS_MAXIMIZEBOX;
 
       if (((style & NSMiniWindowMask) == NSMiniWindowMask)
           || ((style & NSIconWindowMask) == NSIconWindowMask))
         wstyle |= WS_ICONIC;
 
       if (wstyle == 0)
-        wstyle = WS_POPUP; //WS_CAPTION+WS_SYSMENU;
-   }
+        wstyle = WS_POPUP;
+    }
 
    //NSLog(@"Window wstyle %d for style %d", wstyle, style);
    return wstyle | WS_CLIPCHILDREN;
@@ -625,7 +641,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
 - (void) resizeBackingStoreFor: (HWND)hwnd
 {
-  RECT r;
+#if (BUILD_GRAPHICS==GRAPHICS_winlib)
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
   
   // FIXME: We should check if the size really did change.
@@ -634,6 +650,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       HDC hdc, hdc2;
       HBITMAP hbitmap;
       HGDIOBJ old;
+      RECT r;
       
       old = SelectObject(win->hdc, win->old);
       DeleteObject(old);
@@ -649,10 +666,11 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       win->hdc = hdc2;
       
       ReleaseDC((HWND)hwnd, hdc);
-
+        
       // After resizing the backing store, we need to redraw the window
       win->backingStoreEmpty = YES;
     }
+#endif
 }
 
 - (BOOL) displayEvent: (unsigned int)uMsg;   // diagnotic filter
@@ -674,20 +692,406 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   // future house keeping can go here
 }
 
-- (LRESULT) windowEventProc: (HWND)hwnd : (UINT)uMsg 
+- (void) freeCompositionStringForWindow: (HWND)hwnd
+{
+  IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+
+  // Free any buffer(s)...
+  if (imeInfo->compString)
+    free(imeInfo->compString);
+  imeInfo->compString       = NULL;
+  imeInfo->compStringLength = 0;
+}
+
+- (void) freeReadStringForWindow: (HWND)hwnd
+{
+  IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+  
+  // Free any buffer(s)...
+  if (imeInfo->readString)
+    free(imeInfo->readString);
+  imeInfo->readString       = NULL;
+  imeInfo->readStringLength = 0;
+}
+
+- (void) freeCompositionInfoForWindow: (HWND)hwnd
+{
+  // Clear information...
+  [self freeCompositionStringForWindow: hwnd];
+  [self freeReadStringForWindow: hwnd];
+}
+
+- (void) getCompositionStringForWindow: (HWND)hwnd
+{
+  IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+  HIMC        immc    = ImmGetContext(hwnd);
+  
+  // Current composition string...
+  imeInfo->compStringLength = ImmGetCompositionStringW(immc, GCS_COMPSTR, NULL, 0);
+  imeInfo->compString       = malloc(imeInfo->compStringLength+sizeof(TCHAR));
+  ImmGetCompositionStringW(immc, GCS_COMPSTR, imeInfo->compString, imeInfo->compStringLength);
+  
+  // Cleanup...
+  ImmReleaseContext(hwnd, immc);
+}
+
+- (void) getReadStringForWindow: (HWND)hwnd
+{
+  IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+  HIMC        immc    = ImmGetContext(hwnd);
+  
+  // Current read string...
+  imeInfo->readStringLength = ImmGetCompositionStringW(immc, GCS_COMPREADSTR, NULL, 0);
+  imeInfo->readString       = malloc(imeInfo->readStringLength+sizeof(TCHAR));
+  ImmGetCompositionStringW(immc, GCS_COMPREADSTR, imeInfo->readString, imeInfo->readStringLength);
+  
+  // Cleanup...
+  ImmReleaseContext(hwnd, immc);
+}
+
+- (void) saveCompositionInfoForWindow: (HWND)hwnd
+{
+  // First, ensure we've cleared out any saved information...
+  [self freeCompositionInfoForWindow: hwnd];
+  
+  // Current composition string...
+  [self getCompositionStringForWindow: hwnd];
+  
+  // Current read string...
+  [self getReadStringForWindow: hwnd];
+}
+
+- (void) setCompositionStringForWindow: (HWND)hwnd
+{
+  IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+  HIMC        immc    = ImmGetContext(hwnd);
+  
+  // Restore the state...
+  ImmSetCompositionStringW(immc, SCS_SETSTR, imeInfo->compString, imeInfo->compStringLength, NULL, 0);
+  
+  // Clear out any saved information...
+  [self freeCompositionInfoForWindow: hwnd];
+
+  // Cleanup...
+  ImmReleaseContext(hwnd, immc);
+}
+
+- (void) setReadStringForWindow: (HWND)hwnd
+{
+  IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+  HIMC        immc    = ImmGetContext(hwnd);
+  
+  // Restore the state...
+  ImmSetCompositionStringW(immc, SCS_SETSTR, NULL, 0, imeInfo->readString, imeInfo->readStringLength);
+  
+  // Clear out any saved information...
+  [self freeReadStringForWindow: hwnd];
+  
+  // Cleanup...
+  ImmReleaseContext(hwnd, immc);
+}
+
+- (void) restoreCompositionInfoForWindow: (HWND)hwnd
+{
+  // Restore the state...
+  [self setCompositionStringForWindow: hwnd];
+  
+  // Restore the read string...
+  [self setReadStringForWindow: hwnd];
+}
+
+- (LRESULT) imnMessage: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
+{
+  HIMC immc = ImmGetContext(hwnd);
+  switch (wParam)
+    {
+    case IMN_CLOSESTATUSWINDOW:
+      {
+	NSDebugLog(@"IMN_CLOSESTATUSWINDOW: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+		    hwnd, wParam, lParam, immc);
+	if (immc)
+	  {
+	    ImmNotifyIME(immc, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
+	    HideCaret(hwnd);
+	    DestroyCaret();
+	  }
+	break;
+      }
+      
+    case IMN_SETOPENSTATUS:
+      {
+	NSDebugLog(@"IMN_SETOPENSTATUS: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+		    hwnd, wParam, lParam, immc);
+	if (immc)
+	  {
+	    NSDebugLog(@"IMN_SETOPENSTATUS: openstatus: %d\n", ImmGetOpenStatus(immc));
+	    
+	    IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+	    if (imeInfo == NULL)
+	      {
+		NSDebugLog(@"IMN_SETOPENSTATUS: IME info pointer is NULL\n");
+	      }
+	    else
+	      {
+		if (ImmGetOpenStatus(immc))
+		  {
+		    if (imeInfo->isOpened == NO)
+		      {
+			// Restore previous information...
+#if defined(IME_SAVERESTORE_COMPOSITIONINFO)
+			[self restoreCompositionInfoForWindow: hwnd];
+#else
+			ImmNotifyIME(immc, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
+#endif
+		      }
+		  }
+		else if (imeInfo->isOpened == YES)
+		  {
+		    // Save current information...
+		    [self saveCompositionInfoForWindow: hwnd];
+		  }
+		
+		// Save state...
+		imeInfo->isOpened = ImmGetOpenStatus(immc);
+	      }
+	    
+#if defined(USE_SYSTEM_CARET)
+	    if (ImmGetOpenStatus(immc))
+	      ShowCaret(hwnd);
+	    else
+	      HideCaret(hwnd);
+#endif
+	    
+#if defined(IME_SETCOMPOSITIONFONT)
+	    {
+	      LOGFONT logFont;
+	      ImmGetCompositionFont(immc, &logFont);
+	      LOGFONT newFont = logFont;
+	      newFont.lfCharSet = ((logFont.lfCharSet == DEFAULT_CHARSET) ? OEM_CHARSET : DEFAULT_CHARSET);
+	      ImmSetCompositionFont(immc, &newFont);
+	      NSDebugLog(@"IMN_SETOPENSTATUS: changing logfont from: %d to: %d\n", logFont.lfCharSet, newFont.lfCharSet);
+	    }
+#endif
+	  }
+	break;
+      }
+      
+    case IMN_OPENSTATUSWINDOW:
+      {
+	NSDebugLog(@"IMN_OPENSTATUSWINDOW: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+		    hwnd, wParam, lParam, immc);
+	if (immc)
+	  {
+	    NSDebugLog(@"IMN_OPENSTATUSWINDOW: openstatus: %d\n", ImmGetOpenStatus(immc));
+	    LOGFONT logFont;
+	    {
+	      ImmGetCompositionFont(immc, &logFont);
+	      NSDebugLog(@"IMN_OPENSTATUSWINDOW: logfont - width: %d height: %d\n",
+			  logFont.lfWidth, logFont.lfHeight);
+	    }
+#if defined(USE_SYSTEM_CARET)
+	    CreateCaret(hwnd, NULL, logFont.lfWidth, logFont.lfHeight);
+	    if (ImmGetOpenStatus(immc))
+	      ShowCaret(hwnd);
+	    else
+	      HideCaret(hwnd);
+#endif
+	  }
+	break;
+      }
+      
+    case IMN_CHANGECANDIDATE:
+      NSDebugLog(@"IMN_CHANGECANDIDATE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    case IMN_CLOSECANDIDATE:
+      NSDebugLog(@"IMN_CLOSECANDIDATE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    case IMN_OPENCANDIDATE:
+      NSDebugLog(@"IMN_OPENCANDIDATE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    case IMN_SETCONVERSIONMODE:
+      {
+	NSDebugLog(@"IMN_SETCONVERSIONMODE: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+		    hwnd, wParam, lParam, immc);
+	if (immc)
+	  {
+	    DWORD conversion;
+	    DWORD sentence;
+	    if (ImmGetConversionStatus(immc, &conversion, &sentence) == 0)
+	      NSDebugLog(@"IMN_SETCONVERSIONMODE: error getting conversion status: %d\n", GetLastError());
+	    else
+	      NSDebugLog(@"IMN_SETCONVERSIONMODE: conversion: %p sentence: %p\n", conversion, sentence);
+	  }
+	break;
+      }
+      
+    case IMN_SETSENTENCEMODE:
+      {
+	NSDebugLog(@"IMN_SETSENTENCEMODE: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+		    hwnd, wParam, lParam, immc);
+	if (immc)
+	  {
+	    DWORD conversion;
+	    DWORD sentence;
+	    if (ImmGetConversionStatus(immc, &conversion, &sentence) == 0)
+	      NSDebugLog(@"IMN_SETSENTENCEMODE: error getting conversion status: %d\n", GetLastError());
+	    else
+	      NSDebugLog(@"IMN_SETSENTENCEMODE: conversion: %p sentence: %p\n", conversion, sentence);
+	  }
+	break;
+      }
+      
+    case IMN_SETCANDIDATEPOS:
+      NSDebugLog(@"IMN_SETCANDIDATEPOS: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    case IMN_SETCOMPOSITIONFONT:
+      {
+	NSDebugLog(@"IMN_SETCOMPOSITIONFONT: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+		    hwnd, wParam, lParam, immc);
+	if (immc)
+	  {
+#if defined(IME_SETCOMPOSITIONFONT)
+	    {
+	      LOGFONT logFont;
+	      ImmGetCompositionFont(immc, &logFont);
+	      NSDebugLog(@"IMN_SETCOMPOSITIONFONT: new character set: %d\n", logFont.lfCharSet);
+	    }
+#endif
+	  }
+	break;
+      }
+      
+    case IMN_SETCOMPOSITIONWINDOW:
+      NSDebugLog(@"IMN_SETCOMPOSITIONWINDOW: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    case IMN_SETSTATUSWINDOWPOS:
+      NSDebugLog(@"IMN_SETSTATUSWINDOWPOS: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    case IMN_GUIDELINE:
+      NSDebugLog(@"IMN_GUIDELINE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    case IMN_PRIVATE:
+      NSDebugLog(@"IMN_PRIVATE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    default:
+      NSDebugLog(@"Unknown IMN message: %p hwnd: %p\n", wParam, hwnd);
+      break;
+    }
+  
+  // Release the IME context...
+  ImmReleaseContext(hwnd, immc);
+  
+  return 0;
+}
+
+- (NSEvent*)imeCompositionMessage: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
+{
+  NSDebugLog(@"WM_IME_COMPOSITION: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+  HIMC immc = ImmGetContext(hwnd);
+  if (immc == 0)
+    {
+      NSWarnMLog(@"IMMContext is NULL\n");
+    }
+  else if (lParam & GCS_RESULTSTR)
+    {
+      // Update our composition string information...
+      LONG length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, NULL, 0);
+      NSDebugLog(@"length: %d\n", length);
+      if (length)
+	{
+	  TCHAR composition[length+sizeof(TCHAR)];
+	  length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, &composition, length);
+	  {
+	    int index;
+	    for (index = 0; index < length; ++index)
+	      NSDebugLog(@"%2.2X ", composition[index]);
+	  }
+	  NSDebugLog(@"composition (uKeys): %@\n",
+		      [NSString stringWithCharacters: (unichar*)composition length: length]);
+	}
+      ImmReleaseContext(hwnd, immc);
+    }
+  
+  return 0;
+}
+
+- (LRESULT) imeCharacter: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
+{
+  BYTE keyState[256];
+  
+  // Get the current key states...
+  GetKeyboardState(keyState);
+  
+  // key events should go to the key window if we have one (Windows' focus window isn't always appropriate)
+  int windowNumber = [[NSApp keyWindow] windowNumber];
+  if (windowNumber == 0)
+    windowNumber = (int)hwnd;
+  
+  /* FIXME: How do you guarentee a context is associated with an event? */
+  NSGraphicsContext *gcontext      = GSCurrentContext();
+  LONG               ltime         = GetMessageTime();
+  NSTimeInterval     time          = ltime / 1000.0f;
+  BOOL               repeat        = (lParam & 0xFFFF) != 0;
+  unsigned int       eventFlags    = mask_for_keystate(keyState);
+  DWORD              pos           = GetMessagePos();
+  NSPoint            eventLocation = MSWindowPointToGS(self, hwnd,  GET_X_LPARAM(pos), GET_Y_LPARAM(pos));
+  NSString          *keys          = [NSString  stringWithCharacters: (unichar*)&wParam length: 1];
+  NSString          *ukeys         = [NSString  stringWithCharacters: (unichar*)&wParam  length: 1];
+  
+  // Create a NSKeyDown message...
+  NSEvent *ev = [NSEvent keyEventWithType: NSKeyDown
+                                 location: eventLocation
+                            modifierFlags: eventFlags
+                                timestamp: time
+                             windowNumber: windowNumber
+                                  context: gcontext
+                               characters: keys
+              charactersIgnoringModifiers: ukeys
+                                isARepeat: repeat
+                                  keyCode: wParam];
+  
+  // Post it...
+  [GSCurrentServer() postEvent: ev atStart: NO];
+  
+  // then an associated NSKeyUp message...
+  ev = [NSEvent keyEventWithType: NSKeyUp
+                        location: eventLocation
+                   modifierFlags: eventFlags
+                       timestamp: time
+                    windowNumber: windowNumber
+                         context: gcontext
+                      characters: keys
+     charactersIgnoringModifiers: ukeys
+                       isARepeat: repeat
+                         keyCode: wParam];
+  
+  // Post it...
+  [GSCurrentServer() postEvent: ev atStart: NO];
+  
+  return 0;
+}
+
+- (LRESULT) windowEventProc: (HWND)hwnd : (UINT)uMsg
 		       : (WPARAM)wParam : (LPARAM)lParam
-{ 
+{
   NSEvent *ev = nil;
 
   [self setFlagsforEventLoop: hwnd];
  
-//NSLog(@"event %u", uMsg);
-  switch (uMsg) 
-    { 
-      case WM_SIZING: 
+  switch (uMsg)
+    {
+      case WM_SIZING:
         return [self decodeWM_SIZINGParams: hwnd : wParam : lParam];
-	break;
-      case WM_NCCREATE: 
+        break;
+      case WM_NCCREATE:
         return [self decodeWM_NCCREATEParams: wParam : lParam : hwnd];
         break;
       case WM_NCCALCSIZE: 
@@ -735,10 +1139,10 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
         return [self decodeWM_SIZEParams: hwnd : wParam : lParam];
         break;
       case WM_ENTERSIZEMOVE: 
+        return [self decodeWM_ENTERSIZEMOVEParams: wParam : lParam : hwnd];
         break;
       case WM_EXITSIZEMOVE: 
-        //return [self decodeWM_EXITSIZEMOVEParams: wParam : lParam : hwnd];
-        return DefWindowProc(hwnd, uMsg, wParam, lParam); 
+        return [self decodeWM_EXITSIZEMOVEParams: wParam : lParam : hwnd];
         break; 
       case WM_ACTIVATE: 
         if ((int)lParam !=0)
@@ -891,12 +1295,89 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEWHEEL", hwnd);
         ev = process_mouse_event(self, hwnd, wParam, lParam, NSScrollWheel, uMsg);
         break;
-	
+
+      // WINDOWS IME PROCESSING MESSAGES...
+      case WM_IME_NOTIFY:
+        [self imnMessage: hwnd : wParam : lParam];
+        break;
+      case WM_IME_REQUEST:
+        NSDebugLog(@"WM_IME_REQUEST: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+      case WM_IME_SELECT:
+        NSDebugLog(@"WM_IME_SELECT: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+      case WM_IME_SETCONTEXT:
+        NSDebugLog(@"WM_IME_SETCONTEXT: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+      case WM_IME_STARTCOMPOSITION:
+      {
+        NSDebugLog(@"WM_IME_STARTCOMPOSITION: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+        if (imeInfo)
+          imeInfo->isComposing = YES;
+        break;
+      }
+      case WM_IME_ENDCOMPOSITION:
+      {
+        NSDebugLog(@"WM_IME_ENDCOMPOSITION: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+        if (imeInfo)
+          imeInfo->isComposing = NO;
+        break;
+      }
+      case WM_IME_COMPOSITION:
+      {
+        IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+        if (imeInfo && imeInfo->isComposing)
+          ev = [self imeCompositionMessage: hwnd : wParam : lParam];
+        break;
+      }
+      case WM_IME_COMPOSITIONFULL:
+        NSDebugLog(@"WM_IME_COMPOSITIONFULL: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+      case WM_IME_KEYDOWN:
+        NSDebugLog(@"WM_IME_KEYDOWN: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        if (wParam == 0xd) // Carriage return...
+        {
+          HIMC immc = ImmGetContext(hwnd);
+          if (immc)
+          {
+            // If currently in a composition sequence in the IMM...
+            ImmNotifyIME(immc, NI_COMPOSITIONSTR, CPS_COMPLETE, 0);
+            
+            // Release the context...
+            ImmReleaseContext(hwnd, immc);
+          }
+        }
+        
+        // Don't pass this message on for processing...
+        flags._eventHandled = YES;
+        break;
+      case WM_IME_KEYUP:
+        NSDebugLog(@"WM_IME_KEYUP: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+      case WM_IME_CHAR:
+        return [self imeCharacter: hwnd : wParam : lParam];
+        break;
+        
+      case WM_CHAR:
+        NSDebugLog(@"WM_CHAR: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+        
+      case WM_INPUTLANGCHANGEREQUEST:
+        NSDebugLog(@"WM_INPUTLANGCHANGEREQUEST: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+      case WM_INPUTLANGCHANGE:
+        NSDebugLog(@"WM_INPUTLANGCHANGE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+        
       case WM_KEYDOWN:  //KEYBOARD
+        NSDebugLog(@"WM_KEYDOWN: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KEYDOWN", hwnd);
         ev = process_key_event(self, hwnd, wParam, lParam, NSKeyDown);
         break;
       case WM_KEYUP:  //KEYBOARD
+        NSDebugLog(@"WM_KEYUP: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KEYUP", hwnd);
         ev = process_key_event(self, hwnd, wParam, lParam, NSKeyUp);
         break;
@@ -935,7 +1416,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
    * We did not care about the event, return it back to the windows
    * event handler 
    */
-  return DefWindowProc(hwnd, uMsg, wParam, lParam); 
+  return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 }
 
 - glContextClass
@@ -1021,12 +1502,16 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
               type, style, screen);
   NSDebugLLog(@"WTrace", @"         device frame: %d, %d, %d, %d", 
               r.left, r.top, r.right - r.left, r.bottom - r.top);
-  hwnd = CreateWindowEx(estyle | WS_EX_LAYERED, 
-                        "GNUstepWindowClass", 
-                        "GNUstepWindow", 
-                        wstyle, 
-                        r.left, 
-                        r.top, 
+  hwnd = CreateWindowEx(estyle | WS_EX_LAYERED,
+                        "GNUstepWindowClass",
+                        "GNUstepWindow",
+#if (BUILD_GRAPHICS==GRAPHICS_cairo)
+                        ((wstyle & WS_POPUP) ? ((wstyle & ~WS_POPUP) | WS_OVERLAPPED) : wstyle),
+#else
+                        wstyle,
+#endif
+                        r.left,
+                        r.top,
                         r.right - r.left, 
                         r.bottom - r.top, 
                         (HWND)NULL, 
@@ -1034,13 +1519,39 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
                         hinstance, 
                         (void*)type);
   NSDebugLLog(@"WCTrace", @"         num/handle: %d", hwnd);
-  if (!hwnd) {
-    NSLog(@"CreateWindowEx Failed %d", GetLastError());
-  }
-  
-  SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
+  if (hwnd == NULL)
+    {
+      NSLog(@"CreateWindowEx Failed %d", GetLastError());
+    }
+  else
+    {
+#if (BUILD_GRAPHICS==GRAPHICS_cairo)
+      // Borderless window request...
+      if (wstyle & WS_POPUP)
+      {
+        LONG    wstyleOld  = GetWindowLong(hwnd, GWL_STYLE);
+        LONG    estyleOld  = GetWindowLong(hwnd, GWL_EXSTYLE);
+        LONG    wstyleNew  = (wstyleOld & ~WS_OVERLAPPEDWINDOW);
+        LONG    estyleNew  = estyleOld | WS_EX_TOOLWINDOW;
+        
+        NSDebugMLLog(@"WCTrace", @"wstyles - old: %8.8X new: %8.8X\n",
+                    wstyleOld, wstyleNew);
+        NSDebugMLLog(@"WCTrace", @"estyles - old: %8.8X new: %8.8X\n",
+                    estyleOld, estyleNew);
+        
+        // Modify window style parameters and update the window information...
+        SetWindowLong(hwnd, GWL_STYLE, wstyleNew);
+        SetWindowLong(hwnd, GWL_EXSTYLE, estyleNew);
+        SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
+                     SWP_FRAMECHANGED | SWP_NOSENDCHANGING | SWP_NOREPOSITION |
+                     SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+      }
+#endif
 
-  [self _setWindowOwnedByServer: (int)hwnd];
+      SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
+
+      [self _setWindowOwnedByServer: (int)hwnd];
+    }
   return (int)hwnd;
 }
 
@@ -1075,6 +1586,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
 
   NSDebugLLog(@"WTrace", @"windowbacking: %d : %d", type, winNum);
+#if (BUILD_GRAPHICS==GRAPHICS_winlib)
   if (win->useHDC)
     {
       HGDIOBJ old;
@@ -1105,10 +1617,14 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       ReleaseDC((HWND)winNum, hdc);
     }
   else
+#endif
     {
       win->useHDC = NO;
       win->hdc = NULL;
     }
+    
+  // Save updated window backing store type...
+  win->type = type;
 }
 
 - (void) titlewindow: (NSString*)window_title : (int) winNum
@@ -1121,7 +1637,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 - (void) miniwindow: (int) winNum
 {
   NSDebugLLog(@"WTrace", @"miniwindow: %d", winNum);
-  ShowWindow((HWND)winNum, SW_MINIMIZE); 
+  ShowWindow((HWND)winNum, SW_MINIMIZE);
 }
 
 /** Returns NO as we don't provide mini windows on MS Windows */ 
@@ -1148,12 +1664,12 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
 - (void) orderwindow: (int) op : (int) otherWin : (int) winNum
 {
-  int		flag;
+  int		flag = 0;
   int		foreground = 0;
   int		otherLevel;
   int		level;
   NSWindow *window = GSWindowWithNumber(winNum);
-
+  
   NSDebugLLog(@"WTrace", @"orderwindow: %d : %d : %d", op, otherWin, winNum);
 
   if ([self usesNativeTaskbar])
@@ -1181,44 +1697,43 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   if (op == NSWindowOut)
     {
       SetWindowLong((HWND)winNum, OFF_ORDERED, 0);
-      SetWindowPos((HWND)winNum, NULL, 0, 0, 0, 0, 
-        SWP_HIDEWINDOW | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+      ShowWindow((HWND)winNum, SW_HIDE);
       return;
     }
 
-  if (![window canBecomeMainWindow] && ![window canBecomeKeyWindow]) 
-    {   // Bring front, but do not activate, eg - tooltips
-    flag = SW_SHOWNA; 
-    ShowWindow((HWND)winNum, flag);
-    }
-  else 
+  if (![window canBecomeMainWindow] && ![window canBecomeKeyWindow])
     {
-    flag = SW_SHOW;
-    
-    if (IsIconic((HWND)winNum))
-      flag = SW_RESTORE;
-    
-    ShowWindow((HWND)winNum, flag); 
+      // Bring front, but do not activate, eg - tooltips
+      flag = SW_SHOWNA;
+    }
+  else
+    {
+      flag = SW_SHOW;
+      if (IsIconic((HWND)winNum))
+        flag = SW_RESTORE;
     }
 
+  ShowWindow((HWND)winNum, flag);
   SetWindowLong((HWND)winNum, OFF_ORDERED, 1);
+  
+  // Process window leveling...
   level = GetWindowLong((HWND)winNum, OFF_LEVEL);
 
   if (otherWin <= 0)
     {
       if (otherWin == 0 && op == NSWindowAbove)
-	{
-	  /* This combination means we should move to the top of the current
-	   * window level but stay below the key window, so if we have a key
-	   * window (other than the current window), we store it's id for
-	   * testing later.
-	   */
-	  foreground = (int)GetForegroundWindow();
-	  if (foreground < 0 || foreground == winNum)
-	    {
-	      foreground = 0;
-	    }
-	}
+        {
+          /* This combination means we should move to the top of the current
+           * window level but stay below the key window, so if we have a key
+           * window (other than the current window), we store it's id for
+           * testing later.
+           */
+          foreground = (int)GetForegroundWindow();
+          if (foreground < 0 || foreground == winNum)
+            {
+              foreground = 0;
+            }
+        }
       otherWin = 0;
     }
 
@@ -1229,13 +1744,13 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
        */
       otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
       if (level != otherLevel)
-	{
-	  NSDebugLLog(@"WTrace",
-	    @"orderwindow: implicitly set level of %d (%d) to that of %d (%d)",
-	    winNum, level, otherWin, otherLevel);
-          level = otherLevel;
-	  SetWindowLong((HWND)winNum, OFF_LEVEL, level);
-	}
+        {
+          NSDebugLLog(@"WTrace",
+            @"orderwindow: implicitly set level of %d (%d) to that of %d (%d)",
+            winNum, level, otherWin, otherLevel);
+                level = otherLevel;
+          SetWindowLong((HWND)winNum, OFF_LEVEL, level);
+        }
     }
 
   if (level <= NSDesktopWindowLevel)
@@ -1245,108 +1760,103 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       // For desktop level, put this at the bottom of the z-order
       SetParent((HWND)winNum, desktop);
       otherWin = (int)HWND_BOTTOM;
-      NSDebugLLog(@"WTrace",
-	@"orderwindow: set %i (%i) to bottom", winNum, level);
+      NSDebugLLog(@"WTrace", @"orderwindow: set %i (%i) to bottom", winNum, level);
     }
   else if (otherWin == 0 || op == NSWindowAbove)
     {
       if (otherWin == 0)
-	{
-	  /* Start searching from bottom of window list...
-	   * The last child of the desktop.
-	   */
-	  otherWin = (int)GetDesktopWindow();
-	  otherWin = (int)GetWindow((HWND)otherWin, GW_CHILD);
-	  if (otherWin > 0)
-	    {
-	      otherWin = (int)GetWindow((HWND)otherWin, GW_HWNDLAST);
-	    }
-	}
-      NSDebugLLog(@"WTrace",
-	@"orderwindow: traverse for %d (%d) starting at %d",
-	winNum, level, otherWin);
+        {
+          /* Start searching from bottom of window list...
+           * The last child of the desktop.
+           */
+          otherWin = (int)GetDesktopWindow();
+          otherWin = (int)GetWindow((HWND)otherWin, GW_CHILD);
+          if (otherWin > 0)
+            {
+              otherWin = (int)GetWindow((HWND)otherWin, GW_HWNDLAST);
+            }
+        }
+      NSDebugLLog(@"WTrace", @"orderwindow: traverse for %d (%d) starting at %d",
+                  winNum, level, otherWin);
       while (otherWin > 0)
         {
-	  TCHAR	buf[32];
+          TCHAR	buf[32];
 
-	  otherWin = (int)GetNextWindow((HWND)otherWin, GW_HWNDPREV);
+          otherWin = (int)GetNextWindow((HWND)otherWin, GW_HWNDPREV);
 
-	  /* We only look at gnustep windows (other than the one being
-	   * ordered) to decide where to place our window.
-	   * The assumption is, that if we are ordering a window in,
-	   * we want it to be above any non-gnustep window.
-	   * FIXME ... perhaps we should move all non-gnustep windows
-	   * to be lower than the lowest (excluding gnustep desktop
-	   * level windows I suppose) gnustep window.
-	   */
-	  if (otherWin > 0 && otherWin != winNum
-	    && GetClassName((HWND)otherWin, buf, 32) == 18
-	    && strncmp(buf, "GNUstepWindowClass", 18) == 0)
-	    {
-	      if (GetWindowLong((HWND)otherWin, OFF_ORDERED) == 1)
-		{
-		  otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
-		  NSDebugLLog(@"WTrace",
-		    @"orderwindow: found gnustep window %d (%d)",
-		    otherWin, otherLevel);
-		  if (otherLevel >= level)
-		    {
-		      if (otherLevel > level)
-			{
-			  /* On windows, there is no notion of levels, so
-			   * native apps will automatically move to the
-		           * very top of the stack (above our alert panels etc)
-			   *
-			   * So to cope with this, when we move to the top
-			   * of a level, we assume there may be native apps
-			   * above us and we set otherWin=0 to move to the
-			   * very top of the stack past them.
-			   * 
-			   * We rely on the fact that we have code in the
-			   * window positioning notification to rearrange
-			   * (sort) all the windows into level order if
-			   * moving this window to the top messes up the
-			   * level ordering.
-			   */
-			  otherWin = 0;
-			  break;
-			}
-		      if (op == NSWindowBelow || foreground == otherWin)
-			{
-			  break;
-			}
-		    }
-		}
-	    }
-	}
+          /* We only look at gnustep windows (other than the one being
+           * ordered) to decide where to place our window.
+           * The assumption is, that if we are ordering a window in,
+           * we want it to be above any non-gnustep window.
+           * FIXME ... perhaps we should move all non-gnustep windows
+           * to be lower than the lowest (excluding gnustep desktop
+           * level windows I suppose) gnustep window.
+           */
+          if (otherWin > 0 && otherWin != winNum
+            && GetClassName((HWND)otherWin, buf, 32) == 18
+            && strncmp(buf, "GNUstepWindowClass", 18) == 0)
+            {
+              if (GetWindowLong((HWND)otherWin, OFF_ORDERED) == 1)
+                {
+                  otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
+                  NSDebugLLog(@"WTrace", @"orderwindow: found gnustep window %d (%d)",
+                              otherWin, otherLevel);
+                  if (otherLevel >= level)
+                    {
+                      if (otherLevel > level)
+                        {
+                          /* On windows, there is no notion of levels, so
+                           * native apps will automatically move to the
+                                 * very top of the stack (above our alert panels etc)
+                           *
+                           * So to cope with this, when we move to the top
+                           * of a level, we assume there may be native apps
+                           * above us and we set otherWin=0 to move to the
+                           * very top of the stack past them.
+                           * 
+                           * We rely on the fact that we have code in the
+                           * window positioning notification to rearrange
+                           * (sort) all the windows into level order if
+                           * moving this window to the top messes up the
+                           * level ordering.
+                           */
+                          otherWin = 0;
+                          break;
+                        }
+                      if (op == NSWindowBelow || foreground == otherWin)
+                        {
+                          break;
+                        }
+                    }
+                }
+            }
+        }
     }
 
   if (otherWin == 0)
     {
       otherWin = (int)HWND_TOP;
-      NSDebugLLog(@"WTrace",
-	@"orderwindow: set %i (%i) to top", winNum, level);
+      NSDebugLLog(@"WTrace", @"orderwindow: set %i (%i) to top", winNum, level);
     }
   else if (otherWin == (int)HWND_BOTTOM)
     {
-      NSDebugLLog(@"WTrace",
-	@"orderwindow: set %i (%i) to bottom", winNum, level);
+      NSDebugLLog(@"WTrace", @"orderwindow: set %i (%i) to bottom", winNum, level);
     }
   else
     {
-      NSDebugLLog(@"WTrace",
-	@"orderwindow: set %i (%i) below %d", winNum, level, otherWin);
+      NSDebugLLog(@"WTrace", @"orderwindow: set %i (%i) below %d", winNum, level, otherWin);
     }
 
   SetWindowPos((HWND)winNum, (HWND)otherWin, 0, 0, 0, 0, 
-    SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+               SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
 
   if (otherWin == (int)HWND_TOP)
     {
       _enableCallbacks = NO;
-	  SetForegroundWindow((HWND)winNum);
+      if (SetForegroundWindow((HWND)winNum) == 0)
+        NSDebugMLLog(@"WError", @"SetForegroundWindow error for HWND: %p\n", winNum);
       _enableCallbacks = YES;
-	}
+    }
   /* For debug log window stack.
    */
   if (GSDebugSet(@"WTrace") == YES)
@@ -1356,27 +1866,27 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       otherWin = (int)GetDesktopWindow();
       otherWin = (int)GetWindow((HWND)otherWin, GW_CHILD);
       if (otherWin > 0)
-	{
-	  otherWin = (int)GetWindow((HWND)otherWin, GW_HWNDLAST);
-	}
+        {
+          otherWin = (int)GetWindow((HWND)otherWin, GW_HWNDLAST);
+        }
       while (otherWin > 0)
-	{
-	  TCHAR	buf[32];
+        {
+          TCHAR	buf[32];
 
-	  otherWin = (int)GetNextWindow((HWND)otherWin, GW_HWNDPREV);
+          otherWin = (int)GetNextWindow((HWND)otherWin, GW_HWNDPREV);
 
-	  if (otherWin > 0
-	    && GetClassName((HWND)otherWin, buf, 32) == 18
-	    && strncmp(buf, "GNUstepWindowClass", 18) == 0)
-	    {
-	      if (GetWindowLong((HWND)otherWin, OFF_ORDERED) == 1)
-		{
-		  otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
-		  s = [s stringByAppendingFormat:
-		    @"%d (%d)\n", otherWin, otherLevel];
-		}
-	    }
-	}
+          if (otherWin > 0
+            && GetClassName((HWND)otherWin, buf, 32) == 18
+            && strncmp(buf, "GNUstepWindowClass", 18) == 0)
+            {
+              if (GetWindowLong((HWND)otherWin, OFF_ORDERED) == 1)
+                {
+                  otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
+                  s = [s stringByAppendingFormat:
+                    @"%d (%d)\n", otherWin, otherLevel];
+                }
+            }
+        }
       NSDebugLLog(@"WTrace", @"orderwindow: %@", s);
     }
 }
@@ -1390,23 +1900,25 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   p = GSWindowOriginToMS((HWND)winNum, loc);
 
   SetWindowPos((HWND)winNum, NULL, p.x, p.y, 0, 0, 
-               SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+               SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
 }
 
 - (void) placewindow: (NSRect)frame : (int) winNum
 {
   RECT r;
   RECT r2;
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
 
   NSDebugLLog(@"WTrace", @"placewindow: %@ : %d", NSStringFromRect(frame), 
               winNum);
   r = GSScreenRectToMS(frame);
   GetWindowRect((HWND)winNum, &r2);
-
+  
   SetWindowPos((HWND)winNum, NULL, 
                r.left, r.top, r.right - r.left, r.bottom - r.top, 
-               SWP_NOZORDER | SWP_NOACTIVATE); 
+               SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
+  
+#if (BUILD_GRAPHICS==GRAPHICS_winlib)
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
 
   if ((win->useHDC)
       && (r.right - r.left != r2.right - r2.left)
@@ -1431,6 +1943,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       
       ReleaseDC((HWND)winNum, hdc);
     }
+#endif
 }
 
 - (BOOL) findwindow: (NSPoint)loc : (int) op : (int) otherWin 
@@ -1549,24 +2062,40 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 - (void) flushwindowrect: (NSRect)rect : (int)winNum
 {
   HWND hwnd = (HWND)winNum;
-  RECT r = GSWindowRectToMS(self, hwnd, rect);
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
 
-  if (win->useHDC)
+  if (win)
     {
-      HDC hdc = GetDC(hwnd);
-      WINBOOL result;
-
-      result = BitBlt(hdc, r.left, r.top, 
-                      (r.right - r.left), (r.bottom - r.top), 
-                      win->hdc, r.left, r.top, SRCCOPY);
-      if (!result)
+#if (BUILD_GRAPHICS==GRAPHICS_winlib)
+      if (win->useHDC)
         {
-          NSLog(@"Flush window %d %@", hwnd, 
-                NSStringFromRect(MSWindowRectToGS(self, hwnd, r)));
-          NSLog(@"Flush window failed with %d", GetLastError());
+          HDC     hdc = GetDC(hwnd);
+          RECT    r   = GSWindowRectToMS(self, hwnd, rect);
+          WINBOOL result;
+
+          result = BitBlt(hdc, r.left, r.top, 
+                          (r.right - r.left), (r.bottom - r.top), 
+                          win->hdc, r.left, r.top, SRCCOPY);
+          if (!result)
+            {
+              NSLog(@"Flush window %d %@", hwnd, 
+                    NSStringFromRect(MSWindowRectToGS(self, hwnd, r)));
+              NSLog(@"Flush window failed with %d", GetLastError());
+            }
+          ReleaseDC(hwnd, hdc);
         }
-      ReleaseDC(hwnd, hdc);
+#elif (BUILD_GRAPHICS==GRAPHICS_cairo)
+        if (win->surface == NULL)
+          {
+            NSWarnMLog(@"NULL surface for window %p", hwnd);
+          }
+        else
+          {
+            [[GSCurrentContext() class] handleExposeRect: rect forDriver: (void*)win->surface];
+          }
+#else
+#error INVALID build graphics type
+#endif
     }
 }
 
@@ -1585,7 +2114,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       *r = rect.right - 200;
       *t = 100 - rect.top;
       *b = rect.bottom - 200;
-      //NSLog(@"Style %d offset %f %f %f %f", wstyle, *l, *r, *t, *b);
+      //NSLog(@"Style 0x%X offset %f %f %f %f", wstyle, *l, *r, *t, *b);
     }
   else
     {
@@ -1905,8 +2434,7 @@ mask_for_keystate(BYTE *keyState)
 }
 
 static NSEvent*
-process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam, 
-		  NSEventType eventType)
+process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam, NSEventType eventType)
 {
   NSEvent *event;
   BOOL repeat;
@@ -1921,7 +2449,7 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
   BYTE keyState[256];
   NSString *keys, *ukeys;
   NSGraphicsContext *gcontext;
-  unichar uChar;
+  unichar uChar = 0;
 
   /* FIXME: How do you guarentee a context is associated with an event? */
   gcontext = GSCurrentContext();
@@ -1964,8 +2492,20 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	break;
     }
 
-
-  uChar = process_char(wParam, &eventFlags);
+  if (wParam == VK_PROCESSKEY)
+  {
+    // Ignore VK_PROCESSKEY for IME processing...
+    return 0;
+  }
+  else
+  {
+    // Ignore if currently in IME composition processing...
+    IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+    if (imeInfo && (imeInfo->isComposing))
+      return 0;
+    uChar = process_char(wParam, &eventFlags);
+  }
+  
   if (uChar)
     {
       keys = [NSString  stringWithCharacters: &uChar  length: 1];
@@ -1978,31 +2518,30 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 
       // initialize blank key state array....
       for(i = 0; i < 256; i++)
-	blankKeyState[i] = 0;
+        blankKeyState[i] = 0;
 
       scan = ((lParam >> 16) & 0xFF);
-      //NSLog(@"Got key code %d %d", scan, wParam);
-      result = ToUnicode(wParam, scan, keyState, unicode, 5, 0);
-      //NSLog(@"To Unicode resulted in %d with %d", result, unicode[0]);
+      result = ToUnicodeEx(wParam, scan, keyState, unicode, 5, 0, GetKeyboardLayout(0));
       if (result == -1)
-	{
-	  // A non spacing accent key was found, we still try to use the result 
-	  result = 1;
-	}
+        {
+          // A non spacing accent key was found, we still try to use the result 
+          result = 1;
+        }
       keys = [NSString  stringWithCharacters: unicode length: result];
 
       // Now get the characters with a blank keyboard state so that
       // no modifiers are applied.
-      result = ToUnicode(wParam, scan, blankKeyState, unicode, 5, 0);
+      result = ToUnicodeEx(wParam, scan, blankKeyState, unicode, 5, 0, GetKeyboardLayout(0));
       //NSLog(@"To Unicode resulted in %d with %d", result, unicode[0]);
       if (result == -1)
-	{
-	  // A non spacing accent key was found, we still try to use the result 
-	  result = 1;
-	}
-      
+        {
+          // A non spacing accent key was found, we still try to use the result 
+          result = 1;
+          NSWarnMLog(@"To Unicode resulted in -1 with: 0x%4.4X\n", unicode[0]);
+        }
       ukeys = [NSString  stringWithCharacters: unicode  length: result];
     }
+  
   if (eventFlags & NSShiftKeyMask)
     ukeys = [ukeys uppercaseString];
   
@@ -2115,8 +2654,8 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSLeftMouseDown, uMsg);
-              if (e != nil)
-                [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
           eventType = NSLeftMouseDragged;
         }
@@ -2126,15 +2665,15 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSLeftMouseUp, uMsg);
-              if (e != nil)
-                [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (rDown == NO)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSRightMouseDown, uMsg);
-              if (e != nil)
-                [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
           eventType = NSRightMouseDragged;
         }
@@ -2144,22 +2683,22 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSLeftMouseUp, uMsg);
-              if (e != nil)
-                [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (rDown == YES)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSRightMouseUp, uMsg);
-              if (e != nil)
-                [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (oDown == NO)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSOtherMouseDown, uMsg);
-              if (e != nil)
-                [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
           eventType = NSOtherMouseDragged;
         }
@@ -2169,22 +2708,22 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSLeftMouseUp, uMsg);
-              if (e != nil)
-                [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (rDown == YES)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSRightMouseUp, uMsg);
-              if (e != nil)
-                [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	  if (oDown == YES)
 	    {
 	      e = process_mouse_event(svr, hwnd, wParam, lParam,
 		NSOtherMouseUp, uMsg);
-              if (e != nil)
-                [GSCurrentServer() postEvent: e atStart: NO];
+		  if (e != nil)
+	        [GSCurrentServer() postEvent: e atStart: NO];
 	    }
 	}
     }
@@ -2268,3 +2807,4 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
   return [ctxt windowEventProc: hwnd : uMsg : wParam : lParam];
 }
+
