@@ -93,7 +93,7 @@
   /* setting GSFontInfo:
    * xHeight, pix_width, pix_height
    */
-  cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
+  cairo_matrix_init(&font_matrix, matrix[0], matrix[1], -matrix[2],
                     matrix[3], matrix[4], matrix[5]);
   //cairo_matrix_scale(&font_matrix, 0.9, 0.9);
   cairo_matrix_init_identity(&ctm);
@@ -494,7 +494,7 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
       return;
     }
 
-  cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
+  cairo_matrix_init(&font_matrix, matrix[0], matrix[1], -matrix[2],
                     matrix[3], matrix[4], matrix[5]);
   cairo_set_font_matrix(ct, &font_matrix);
   if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
