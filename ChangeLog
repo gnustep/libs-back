@@ -1,3 +1,12 @@
+2013-01-05 00:54-EST Gregory John Casamento <greg.casamento@gmail.com>
+	Merging changes made by Marcian Lytwyn
+
+	* Tools/win32pbs.m: (+ownerByOsPb:) compare against name
+	instead of pasteboard object to prevent condition where
+	paste works only once as observed on Windows.
+	(MainWindowProc) Add code to handle WM_RENDERALLFORMATS as documented
+	on MSDN here: http://msdn.microsoft.com/en-us/library/windows/desktop/ms649029(v=vs.85).aspx
+
 2012-12-31  Fred Kiefer  <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoFntInfo.m (-drawGlyphs:..., -setupAttributes):
