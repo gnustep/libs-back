@@ -1,3 +1,8 @@
+2013-01-10  Doug Simons <doug.simons@testplant.com>
+
+	* Source/win32/w32_general.m : Fix a bug that could cause a modal run loop to
+	lock up if the modal window is closed by clicking the close button.
+
 2012-10-24  Doug Simons <doug.simons@testplant.com>
 
 	* Source/win32/WIN32Server.m : Fix findWindowAt:windowRef:excluding:

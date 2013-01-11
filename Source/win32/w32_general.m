@@ -50,7 +50,10 @@
 		      data2: 0];
 		    
   // need to send the event... or handle it directly.
-  [EVENT_WINDOW(hwnd) sendEvent:ev];
+  // Sending the event directly to the window bypasses the event queue, which can cause a modal loop to lock up
+  //[EVENT_WINDOW(hwnd) sendEvent:ev];
+  // So we'll post it to the queue like any other event, which will get it to the window in the usual way
+  [GSCurrentServer() postEvent:ev atStart:NO];
   
   ev=nil;
   flags._eventHandled=YES;
