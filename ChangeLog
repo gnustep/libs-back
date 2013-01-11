@@ -1,3 +1,9 @@
+2013-01-11  Fred Kiefer  <FredKiefer@gmx.de>
+
+	* Source/win32/w32_general.m (-decodeWM_CLOSEParams:::): Post the
+	close event instead of sending it directly to the window.
+	Patch by Doug Simons <doug.simons@testplant.com>
+
 2013-01-05 00:54-EST Gregory John Casamento <greg.casamento@gmail.com>
 	Merging changes made by Marcian Lytwyn
 
