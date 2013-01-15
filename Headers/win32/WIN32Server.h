@@ -203,6 +203,8 @@ typedef struct IME_INFO_S
 {
   DWORD   isOpened;
   BOOL    isComposing;
+  UINT    inProgress;
+  BOOL    useCompositionWindow;
   
   LPVOID  readString;
   DWORD   readStringLength;
