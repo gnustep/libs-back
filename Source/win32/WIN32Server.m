@@ -1058,49 +1058,89 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   return 0;
 }
 
-- (NSEvent*)imeCompositionMessage: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
+- (void)startImeComposition: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
 {
-  HIMC immc = ImmGetContext(hwnd);
-  if (immc == 0)
+  // Setup for handling the IME composition sequence...
+  NSUserDefaults *defaults             = [NSUserDefaults standardUserDefaults];
+  BOOL            useCompositionWindow = [defaults boolForKey: @"GSUsesDefaultImeComposition"];
+  IME_INFO_T     *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+  IMEDebugLog(@"WM_IME_STARTCOMPOSITION: hwnd: %p wParam: %p lParam: %p USE: %d\n", hwnd, wParam, lParam, useCompositionWindow);
+  if (imeInfo)
   {
-    NSWarnMLog(@"IMMContext is NULL\n");
+    imeInfo->isComposing          = YES;
+    imeInfo->useCompositionWindow = useCompositionWindow;
   }
-#if 0
-  else if (lParam & GCS_RESULTSTR)
+  flags._eventHandled = (useCompositionWindow == NO);
+}
+
+- (void)endImeComposition: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
+{
+  // Terminate the IME composition sequence...
+  IMEDebugLog(@"WM_IME_ENDCOMPOSITION: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+  IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+  if (imeInfo)
   {
-    // Update our composition string information...
-    LONG length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, NULL, 0);
-    if (length)
-    {
-      TCHAR composition[length+sizeof(TCHAR)];
-      length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, &composition, length);
-      composition[ length ] = '\0';
-      IMEDebugLog(@"result (size): %d\n", length);
-    }
-    ImmReleaseContext(hwnd, immc);
+    imeInfo->isComposing          = NO;
+    imeInfo->useCompositionWindow = NO;
+    HIMC immc = ImmGetContext(hwnd);
+    if (ImmGetCompositionStringW(immc, GCS_RESULTSTR, NULL, 0) == 0)
+      imeInfo->inProgress = 0;
   }
-#endif
-  else if (lParam & GCS_COMPSTR)
-  {
-    // Update our composition string information...
-    LONG length = ImmGetCompositionStringW(immc, GCS_COMPSTR, NULL, 0);
-    if (length && (length == 2))
+}
+
+- (void)imeCompositionMessage: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
+{
+  // Process the IME composition sequence...
+  IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+  if (imeInfo && imeInfo->isComposing && (imeInfo->useCompositionWindow == NO))
     {
-      TCHAR composition[length+sizeof(TCHAR)];
-      length = ImmGetCompositionStringW(immc, GCS_COMPSTR, &composition, length);
-      composition[length] = '\0';
-      IMEDebugLog(@"result (size): %d\n", length);
+    HIMC immc = ImmGetContext(hwnd);
+    if (immc == 0)
       {
-        IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-        if (imeInfo && imeInfo->inProgress++)
-          [self sendDeleteCharacter: hwnd];
+        NSWarnMLog(@"IMMContext is NULL\n");
       }
-      [self imeCharacter: hwnd : *(unichar*)composition : 1];
+#if 0
+    else if (lParam & GCS_RESULTSTR)
+      {
+        // Update our composition string information...
+        LONG length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, NULL, 0);
+        if (length)
+          {
+            TCHAR composition[length+sizeof(TCHAR)];
+            length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, &composition, length);
+            composition[ length ] = '\0';
+            IMEDebugLog(@"result (size): %d\n", length);
+            IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+            if (imeInfo && imeInfo->inProgress)
+            {
+              [self sendDeleteCharacter: hwnd];
+            }
+            imeInfo->inProgress = 0;
+            [self imeCharacter: hwnd : wParam : lParam];
+          }
+        ImmReleaseContext(hwnd, immc);
+      }
+#endif
+    else if (lParam & GCS_COMPSTR)
+      {
+        // Update our composition string information...
+        LONG length = ImmGetCompositionStringW(immc, GCS_COMPSTR, NULL, 0);
+        if (length && (length == 2))
+          {
+            TCHAR composition[length+sizeof(TCHAR)];
+            length = ImmGetCompositionStringW(immc, GCS_COMPSTR, &composition, length);
+            composition[length] = '\0';
+            IMEDebugLog(@"result (size): %d\n", length);
+            {
+              IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+              if (imeInfo && imeInfo->inProgress++)
+                [self sendDeleteCharacter: hwnd];
+            }
+            [self imeCharacter: hwnd : *(unichar*)composition : 1];
+          }
+        ImmReleaseContext(hwnd, immc);
+      }
     }
-    ImmReleaseContext(hwnd, immc);
-  }
-  
-  return 0;
 }
 
 - (LRESULT) windowEventProc: (HWND)hwnd : (UINT)uMsg
@@ -1334,39 +1374,19 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       case WM_IME_STARTCOMPOSITION:
       {
         // Setup for handling the IME composition sequence...
-        NSUserDefaults *defaults             = [NSUserDefaults standardUserDefaults];
-        BOOL            useCompositionWindow = [defaults boolForKey: @"GSUsesDefaultImeComposition"];
-        IMEDebugLog(@"WM_IME_STARTCOMPOSITION: hwnd: %p wParam: %p lParam: %p USE: %d\n", hwnd, wParam, lParam, useCompositionWindow);
-        IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-        if (imeInfo)
-          {
-            imeInfo->isComposing          = YES;
-            imeInfo->useCompositionWindow = useCompositionWindow;
-          }
-        flags._eventHandled = (useCompositionWindow == NO);
+        [self startImeComposition: hwnd : wParam : lParam];
         break;
       }
       case WM_IME_ENDCOMPOSITION:
       {
-        IMEDebugLog(@"WM_IME_ENDCOMPOSITION: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
-        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        BOOL useCompositionWindow = [defaults boolForKey: @"GSUsesDefaultImeComposition"];
-        IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-        if (imeInfo)
-          {
-            imeInfo->isComposing          = NO;
-            useCompositionWindow          = imeInfo->useCompositionWindow;
-            imeInfo->useCompositionWindow = NO;
-          }
-        flags._eventHandled = (useCompositionWindow == NO);
+        // Terminate the IME composition sequence...
+        [self endImeComposition: hwnd : wParam : lParam];
         break;
       }
       case WM_IME_COMPOSITION:
       {
-        // If we are in the middle of a IME composition...
-        IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-        if (imeInfo && imeInfo->isComposing && (imeInfo->useCompositionWindow == NO))
-          ev = [self imeCompositionMessage: hwnd : wParam : lParam];
+        // Process the IME composition sequence...
+        [self imeCompositionMessage: hwnd : wParam : lParam];
         break;
       }
         
@@ -1374,11 +1394,11 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         break;
         
       case WM_IME_KEYDOWN:
+      {
         // Handle the IME keystroke input...
         IMEDebugLog(@"WM_IME_KEYDOWN: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
-        NSUserDefaults *defaults             = [NSUserDefaults standardUserDefaults];
-        BOOL            useCompositionWindow = [defaults boolForKey: @"GSUsesDefaultImeComposition"];
-        if (useCompositionWindow && (wParam == 0xd)) // Carriage return...
+        IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+        if (imeInfo->useCompositionWindow && (wParam == 0xd)) // Carriage return...
           {
             HIMC immc = ImmGetContext(hwnd);
             if (immc)
@@ -1394,10 +1414,12 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         // Don't pass this message on for processing...
         flags._eventHandled = YES;
         break;
+      }
       case WM_IME_KEYUP:
         IMEDebugLog(@"WM_IME_KEYUP: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         break;
       case WM_IME_CHAR:
+      {
         // IME character completed...if we are handling the composition window duties
         // in-window then delete the last composition character sent (if sent), and send
         // completed composed character...
@@ -1410,6 +1432,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
           }
         return [self imeCharacter: hwnd : wParam : lParam];
         break;
+      }
         
       case WM_CHAR:
         break;
