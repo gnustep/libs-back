@@ -1409,10 +1409,10 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
                 // Release the context...
                 ImmReleaseContext(hwnd, immc);
               }
+            flags._eventHandled = YES;
           }
         
         // Don't pass this message on for processing...
-        flags._eventHandled = YES;
         break;
       }
       case WM_IME_KEYUP:
