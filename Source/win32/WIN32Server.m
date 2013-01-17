@@ -29,6 +29,7 @@
 
 #include "config.h"
 #include <Foundation/NSDebug.h>
+#include <Foundation/NSData.h>
 #include <Foundation/NSString.h>
 #include <Foundation/NSArray.h>
 #include <Foundation/NSValue.h>
@@ -88,6 +89,61 @@ static unsigned int mask_for_keystate(BYTE *keyState);
 
 @end
 
+
+@interface NSBitmapImageRep (GSPrivate)
+- (NSBitmapImageRep *) _convertToFormatBitsPerSample: (int)bps
+                                     samplesPerPixel: (int)spp
+                                            hasAlpha: (BOOL)alpha
+                                            isPlanar: (BOOL)isPlanar
+                                      colorSpaceName: (NSString*)colorSpaceName
+                                        bitmapFormat: (NSBitmapFormat)bitmapFormat
+                                         bytesPerRow: (int)rowBytes
+                                        bitsPerPixel: (int)pixelBits;
+@end
+
+static NSBitmapImageRep *getStandardBitmap(NSImage *image)
+{
+  NSBitmapImageRep *rep;
+  
+  if (image == nil)
+  {
+    return nil;
+  }
+  
+  /*
+   We should rather convert the image to a bitmap representation here via
+   the following code, but this is currently not supported by the libart backend
+   
+   {
+   NSSize size = [image size];
+   
+   [image lockFocus];
+   rep = [[NSBitmapImageRep alloc] initWithFocusedViewRect:
+   NSMakeRect(0, 0, size.width, size.height)];
+   AUTORELEASE(rep);
+   [image unlockFocus];
+   }
+   */
+  
+  rep = (NSBitmapImageRep *)[image bestRepresentationForDevice: nil];
+  if (!rep || ![rep respondsToSelector: @selector(samplesPerPixel)])
+  {
+    return nil;
+  }
+  else
+  {
+    // Convert into something usable by the backend
+    return [rep _convertToFormatBitsPerSample: 8
+                              samplesPerPixel: [rep hasAlpha] ? 4 : 3
+                                     hasAlpha: [rep hasAlpha]
+                                     isPlanar: NO
+                               colorSpaceName: NSCalibratedRGBColorSpace
+                                 bitmapFormat: 0
+                                  bytesPerRow: 0
+                                 bitsPerPixel: 0];
+  }
+}
+
 @implementation W32DisplayMonitorInfo
 
 - (id)initWithHMonitor:(HMONITOR)hMonitor rect:(LPRECT)lprcMonitor
@@ -99,6 +155,7 @@ static unsigned int mask_for_keystate(BYTE *keyState);
     CGFloat h = lprcMonitor->bottom - lprcMonitor->top;
     CGFloat x = lprcMonitor->left;
     CGFloat y = h - lprcMonitor->bottom;
+    _hMonitor = hMonitor;
     _frame = NSMakeRect(x, y, w, h);
     memcpy(&_rect, lprcMonitor, sizeof(RECT));
   }
@@ -142,15 +199,15 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
                              WPARAM wParam, LPARAM lParam);
 
 BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
-                                    HDC hdcMonitor,
-                                    LPRECT lprcMonitor,
-                                    LPARAM dwData)
+                                     HDC hdcMonitor,
+                                     LPRECT lprcMonitor,
+                                     LPARAM dwData)
 {
   NSMutableArray        *monitors = (NSMutableArray*)dwData;
   W32DisplayMonitorInfo *info = [[W32DisplayMonitorInfo alloc] initWithHMonitor:hMonitor rect:lprcMonitor];
   
-  NSLog(@"screen %ld:hdc: %ld frame:top:%ld left:%ld right:%ld bottom:%ld  frame:x:%f y:%f w:%f h:%f\n",
-        [monitors count], (long)hMonitor,
+  NSLog(@"screen %ld - hMon: %ld hdc: %p frame:top:%ld left:%ld right:%ld bottom:%ld  frame:x:%f y:%f w:%f h:%f\n",
+        [monitors count], (long)hMonitor, hdcMonitor,
         lprcMonitor->top, lprcMonitor->left,
         lprcMonitor->right, lprcMonitor->bottom,
         [info frame].origin.x, [info frame].origin.y,
@@ -346,7 +403,8 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       [self _initWin32Context];
       [super initWithAttributes: info];
   
-      monitorInfo = [NSMutableArray array];
+      systemCursors = RETAIN([NSMutableDictionary dictionary]);
+      monitorInfo   = RETAIN([NSMutableArray array]);
       EnumDisplayMonitors(NULL, NULL, (MONITORENUMPROC)LoadDisplayMonitorInfo, (LPARAM)monitorInfo);
 
       [self setupRunLoopInputSourcesForMode: NSDefaultRunLoopMode]; 
@@ -400,6 +458,18 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 - (void) dealloc
 {
   [self _destroyWin32Context];
+  RELEASE(monitorInfo);
+  if ([systemCursors count])
+  {
+    NSMutableArray *values = [[systemCursors allValues] mutableCopy];
+    while ([values count])
+    {
+      HCURSOR cursorId = [[values objectAtIndex:0] pointerValue];
+      [values removeObjectAtIndex:0];
+      [self freecursor:cursorId];
+    }
+  }
+  RELEASE(systemCursors);
   [super dealloc];
 }
 
@@ -414,21 +484,21 @@ static POINT findWindowAtPoint;
 LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 {
 	if (foundWindowHwnd == 0 && hwnd != (HWND)lParam)
-		{
-          RECT	r;
-          GetWindowRect(hwnd, &r);
-		  
-          if (PtInRect(&r,findWindowAtPoint) && IsWindowVisible(hwnd))
-            {
-				NSWindow *window = GSWindowWithNumber((int)hwnd);
-				if (![window ignoresMouseEvents])
-					foundWindowHwnd = hwnd;
-            }
+    {
+      RECT	r;
+      GetWindowRect(hwnd, &r);
+      
+      if (PtInRect(&r,findWindowAtPoint) && IsWindowVisible(hwnd))
+        {
+          NSWindow *window = GSWindowWithNumber((int)hwnd);
+          if (![window ignoresMouseEvents])
+            foundWindowHwnd = hwnd;
         }
+    }
 	return true;
 }
 
-- (int) findWindowAt: (NSPoint)screenLocation 
+- (int) findWindowAt: (NSPoint)screenLocation
            windowRef: (int*)windowRef 
            excluding: (int)win
 {
@@ -487,26 +557,60 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   return NSZeroRect;
 }
 
+- (HMONITOR) monitorHandleForScreen: (int)screen
+{
+  if (screen < [monitorInfo count])
+    return [[monitorInfo objectAtIndex:screen] hMonitor];
+  NSWarnMLog(@"invalid screen number: %d", screen);
+  return NULL;
+}
+
+- (HDC) createHdcForScreen: (int)screen
+{
+  HDC      hdc      = NULL;
+  HMONITOR hMonitor = [self monitorHandleForScreen:screen];
+  if (hMonitor == NULL)
+    {
+      NSWarnMLog(@"error obtaining monitor handle for screen: %d status: %d", screen, GetLastError());
+    }
+  else
+    {
+      MONITORINFOEX mix = { 0 };
+      mix.cbSize        = sizeof(MONITORINFOEX);
+      
+      if (GetMonitorInfo(hMonitor, (LPMONITORINFO)&mix) == 0)
+        {
+          NSWarnMLog(@"error obtaining monitor info for screen: %d status: %d", screen, GetLastError());
+        }
+      else
+        {
+          hdc = CreateDC("DISPLAY", mix.szDevice, NULL, NULL);
+          if (hdc == NULL)
+            NSWarnMLog(@"error creating HDC for screen: %d - status: %d", screen, GetLastError());
+        }
+    }
+  return hdc;
+}
+
+- (void) deleteScreenHdc: (HDC)hdc
+{
+  if (hdc == NULL)
+    NSWarnMLog(@"HDC is NULL");
+  else
+    DeleteDC(hdc);
+}
+
 - (NSWindowDepth) windowDepthForScreen: (int)screen
 {
-  HDC hdc  = 0;
+  HDC hdc  = [self createHdcForScreen:screen];
   int bits = 0;
-  //int planes;
-  
-  if (screen < [monitorInfo count])
+
+  if (hdc)
   {
-    MONITORINFOEX mix = { 0 };
-    mix.cbSize        = sizeof(MONITORINFOEX);
-    HMONITOR hMonitor = [[monitorInfo objectAtIndex:screen] hMonitor];
-    
-    if (GetMonitorInfo(hMonitor, (LPMONITORINFO)&mix))
-    {
-      hdc  = CreateDC("DISPLAY", mix.szDevice, NULL, NULL);
-      bits = GetDeviceCaps(hdc, BITSPIXEL) / 3;
-      //planes = GetDeviceCaps(hdc, PLANES);
-      //NSLog(@"bits %d planes %d", bits, planes);
-      ReleaseDC(NULL, hdc);
-    }
+    bits = GetDeviceCaps(hdc, BITSPIXEL) / 3;
+    //planes = GetDeviceCaps(hdc, PLANES);
+    //NSLog(@"bits %d planes %d", bits, planes);
+    [self deleteScreenHdc:hdc];
   }
   
   return (_GSRGBBitValue | bits);
@@ -2332,16 +2436,111 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
 - (void) imagecursor: (NSPoint)hotp : (NSImage *)image : (void **)cid
 {
-  /*
-    HCURSOR cur;
-    BYTE *and;
-    BYTE *xor;
-    int w, h;
+  if (cid)
+    {
+      // Default the return cursur ID to NULL...
+      *cid = NULL;
+      
+      NSBitmapImageRep *rep = getStandardBitmap(image);
+      if (rep == nil)
+        {
+          /* FIXME: We might create a blank cursor here? */
+          NSWarnMLog(@"Could not convert cursor bitmap data");
+        }
+      else
+        {
+          if (hotp.x >= [rep pixelsWide])
+            hotp.x = [rep pixelsWide]-1;
+          
+          if (hotp.y >= [rep pixelsHigh])
+            hotp.y = [rep pixelsHigh]-1;
+          
+          int w = [rep pixelsWide];
+          int h = [rep pixelsHigh];
+          
+          // Create a windows bitmap from the image representation's bitmap...
+          if ((w > 0) && (h > 0))
+            {
+              BITMAP    bm;
+              HDC       hDC             = GetDC(NULL);
+              HDC       hMainDC         = CreateCompatibleDC(hDC);
+              HDC       hAndMaskDC      = CreateCompatibleDC(hDC);
+              HDC       hXorMaskDC      = CreateCompatibleDC(hDC);      
+              HBITMAP   hAndMaskBitmap  = NULL;
+              HBITMAP   hXorMaskBitmap  = NULL;
+              
+              // Create the source bitmap...
+              HBITMAP hSourceBitmap = CreateBitmap(w, h, [rep numberOfPlanes], [rep bitsPerPixel], [rep bitmapData]);
+              
+              // Get the dimensions of the source bitmap
+              GetObject(hSourceBitmap, sizeof(BITMAP), &bm);
+              
+              // Create compatible bitmaps for the device context...
+              hAndMaskBitmap = CreateCompatibleBitmap(hDC, bm.bmWidth, bm.bmHeight);
+              hXorMaskBitmap = CreateCompatibleBitmap(hDC, bm.bmWidth, bm.bmHeight);
+              
+              // Select the bitmaps to DC
+              HBITMAP hOldMainBitmap    = (HBITMAP)SelectObject(hMainDC, hSourceBitmap);
+              HBITMAP hOldAndMaskBitmap = (HBITMAP)SelectObject(hAndMaskDC, hAndMaskBitmap);
+              HBITMAP hOldXorMaskBitmap = (HBITMAP)SelectObject(hXorMaskDC, hXorMaskBitmap);
+              
+              //S can each pixel of the souce bitmap and create the masks
+              int x;
+              for(x = 0; x < bm.bmWidth; ++x)
+                {
+                  int y;
+                  for (y = 0; y < bm.bmHeight; ++y)
+                    {
+                      COLORREF MainBitPixel = GetPixel(hMainDC, x, y);
+                      if (MainBitPixel == RGB(0, 0, 0))
+                        {
+                          SetPixel(hAndMaskDC, x, y, RGB(255, 255, 255));
+                          SetPixel(hXorMaskDC, x, y, RGB(0, 0, 0));
+                        }
+                      else
+                        {
+                          SetPixel(hAndMaskDC, x, y, RGB(0, 0, 0));
+                          SetPixel(hXorMaskDC, x, y, MainBitPixel);
+                        }
+                    }
+                }
+              
+              SelectObject(hMainDC, hOldMainBitmap);
+              SelectObject(hAndMaskDC, hOldAndMaskBitmap);
+              SelectObject(hXorMaskDC, hOldXorMaskBitmap);
+              
+              // Create the cursor from the generated and/xor data...
+              ICONINFO iconinfo = { 0 };
+              iconinfo.fIcon    = FALSE;
+              iconinfo.xHotspot = hotp.x;
+              iconinfo.yHotspot = hotp.y;
+              iconinfo.hbmMask  = hAndMaskBitmap;
+              iconinfo.hbmColor = hXorMaskBitmap;
+              
+              // Finally, try to create the cursor...
+              *cid = CreateIconIndirect(&iconinfo);
 
-    xor = image;
-    cur = CreateCursor(hinstance, (int)hotp.x, (int)hotp.y,  (int)w, (int)h, and, xor);
-    *cid = (void*)hCursor;
-    */
+              // Cleanup the DC's...
+              DeleteDC(hXorMaskDC);
+              DeleteDC(hAndMaskDC);
+              DeleteDC(hMainDC);
+              
+              // Cleanup the bitmaps...
+              DeleteObject(hOldXorMaskBitmap);
+              DeleteObject(hOldAndMaskBitmap);
+              DeleteObject(hOldMainBitmap);
+              
+              // Release the screen HDC...
+              ReleaseDC(NULL,hDC);
+              
+              // Need to save these created cursors to remove later...
+              [systemCursors setObject:[NSValue valueWithPointer:*cid] forKey:[NSValue valueWithPointer:*cid]];
+            }
+          
+          if (*cid == NULL)
+            NSWarnMLog(@"error creating cursor - status: %p", GetLastError());
+        }
+    }
 }
 
 - (void) recolorcursor: (NSColor *)fg : (NSColor *)bg : (void*) cid
@@ -2367,7 +2566,11 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 - (void) freecursor: (void*) cid
 {
   // This is only allowed on non-shared cursors and we have no way of knowing that.
-  //DestroyCursor((HCURSOR)cid);
+  HCURSOR cursorId = [[systemCursors objectForKey:[NSValue valueWithPointer:(HCURSOR)cid]] pointerValue];
+  if ((cursorId == NULL) || (cursorId != (HCURSOR)cid))
+    NSWarnMLog(@"trying to free a cursor not created by us: %p", cid);
+  else
+    DestroyCursor((HCURSOR)cid);
 }
 
 - (void) setParentWindow: (int)parentWin 

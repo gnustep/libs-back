@@ -28,9 +28,118 @@
 
 #include "cairo/Win32CairoSurface.h"
 #include "win32/WIN32Geometry.h"
+#include "win32/WIN32Server.h"
 #include <cairo-win32.h>
 
 #define GSWINDEVICE ((HWND)gsDevice)
+
+@implementation WIN32Server (ScreenCapture)
+- (NSImage *) contentsOfScreen: (int)screen inRect: (NSRect)rect
+{
+  NSImage *result = nil;
+  HDC      hdc    = [self createHdcForScreen:screen];
+  
+  // We need a screen device context for this to work...
+  if (hdc == NULL)
+    {
+      NSWarnMLog(@"invalid screen request: %d", screen);
+    }
+  else
+    {
+      // Convert rect to flipped coordinates
+      NSRect    boundsForScreen = [self boundsForScreen:screen];
+      rect.origin.y             = boundsForScreen.size.height - NSMaxY(rect);
+      NSInteger width           = rect.size.width;
+      NSInteger height          = rect.size.height;
+      
+      // Create a bitmap representation for capturing the screen area...
+      NSBitmapImageRep *bmp = [[[NSBitmapImageRep alloc] initWithBitmapDataPlanes: NULL
+                                                                       pixelsWide: width
+                                                                       pixelsHigh: height
+                                                                    bitsPerSample: 8
+                                                                  samplesPerPixel: 4
+                                                                         hasAlpha: YES
+                                                                         isPlanar: NO
+                                                                   colorSpaceName: NSDeviceRGBColorSpace
+                                                                     bitmapFormat: 0
+                                                                      bytesPerRow: 0
+                                                                     bitsPerPixel: 32] autorelease];
+
+      // Create the required surfaces...
+      cairo_surface_t *src = cairo_win32_surface_create(hdc);
+      cairo_surface_t *dst = cairo_image_surface_create_for_data([bmp bitmapData],
+                                                                 CAIRO_FORMAT_ARGB32,
+                                                                 width, height,
+                                                                 [bmp bytesPerRow]);
+      
+      // Ensure we were able to generate the required surfaces...
+      if (cairo_surface_status(src) != CAIRO_STATUS_SUCCESS)
+      {
+        NSWarnMLog(@"cairo screen surface error status: %s\n",
+                   cairo_status_to_string(cairo_surface_status(src)));
+      }
+      else if (cairo_surface_status(dst) != CAIRO_STATUS_SUCCESS)
+      {
+        NSWarnMLog(@"cairo screen surface error status: %s\n",
+                   cairo_status_to_string(cairo_surface_status(dst)));
+        cairo_surface_destroy(src);
+      }
+      else
+      {
+        // Capture the requested screen rectangle...
+        cairo_t *cr = cairo_create(dst);
+        cairo_set_source_surface(cr, src, -1 * rect.origin.x, -1 * rect.origin.y);
+        cairo_paint(cr);
+        cairo_destroy(cr);
+
+        // Cleanup the cairo surfaces...
+        cairo_surface_destroy(src);
+        cairo_surface_destroy(dst);
+        [self deleteScreenHdc:hdc];
+        
+        // Convert BGRA to RGBA
+        // Original code located in XGCairSurface.m
+        {
+          NSInteger stride;
+          NSInteger x, y;
+          unsigned char *cdata;
+          
+          stride = [bmp bytesPerRow];
+          cdata = [bmp bitmapData];
+          
+          for (y = 0; y < height; y++)
+            {
+              for (x = 0; x < width; x++)
+                {
+                  NSInteger i = (y * stride) + (x * 4);
+                  unsigned char d = cdata[i];
+                  
+#if GS_WORDS_BIGENDIAN
+                  cdata[i + 0] = cdata[i + 1];
+                  cdata[i + 1] = cdata[i + 2];
+                  cdata[i + 2] = cdata[i + 3];
+                  cdata[i + 3] = d;
+#else
+                  cdata[i + 0] = cdata[i + 2];
+                  //cdata[i + 1] = cdata[i + 1];
+                  cdata[i + 2] = d;
+                  //cdata[i + 3] = cdata[i + 3];
+#endif 
+                }
+            }
+        }
+
+        // Create the image and add the bitmap representation...
+        result = [[[NSImage alloc] initWithSize: NSMakeSize(width, height)] autorelease];
+        [result addRepresentation: bmp];
+      }
+    }
+  
+  // Return whatever we got...
+  return result;
+}
+@end
+
 
 @implementation Win32CairoSurface
 

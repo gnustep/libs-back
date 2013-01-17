@@ -94,6 +94,7 @@ typedef struct w32serverFlags {
   HWND currentActive;
   HICON  currentAppIcon;
   NSMutableArray *monitorInfo;
+  NSMutableDictionary *systemCursors;
 }
 
 - (BOOL) handlesWindowDecorations;
@@ -112,6 +113,9 @@ typedef struct w32serverFlags {
 - (DWORD) windowStyleForGSStyle: (unsigned int) style;
 
 - (void) resizeBackingStoreFor: (HWND)hwnd;
+
+- (HDC) createHdcForScreen: (int)screen;
+- (void) deleteScreenHdc: (HDC)hdc;
 
 @end
 
