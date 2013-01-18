@@ -2484,15 +2484,16 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
               HBITMAP hOldAndMaskBitmap = (HBITMAP)SelectObject(hAndMaskDC, hAndMaskBitmap);
               HBITMAP hOldXorMaskBitmap = (HBITMAP)SelectObject(hXorMaskDC, hXorMaskBitmap);
               
-              //S can each pixel of the souce bitmap and create the masks
+              // Scan each pixel of the souce bitmap and create the masks
               int x;
+              int *pixel = [rep bitmapData];
               for(x = 0; x < bm.bmWidth; ++x)
                 {
                   int y;
                   for (y = 0; y < bm.bmHeight; ++y)
                     {
                       COLORREF MainBitPixel = GetPixel(hMainDC, x, y);
-                      if (MainBitPixel == RGB(0, 0, 0))
+                      if (*pixel++ == 0x00000000)
                         {
                           SetPixel(hAndMaskDC, x, y, RGB(255, 255, 255));
                           SetPixel(hXorMaskDC, x, y, RGB(0, 0, 0));
@@ -2505,6 +2506,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
                     }
                 }
               
+              // Reselect the old bitmap objects...
               SelectObject(hMainDC, hOldMainBitmap);
               SelectObject(hAndMaskDC, hOldAndMaskBitmap);
               SelectObject(hXorMaskDC, hOldXorMaskBitmap);
@@ -2526,9 +2528,9 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
               DeleteDC(hMainDC);
               
               // Cleanup the bitmaps...
-              DeleteObject(hOldXorMaskBitmap);
-              DeleteObject(hOldAndMaskBitmap);
-              DeleteObject(hOldMainBitmap);
+              DeleteObject(hXorMaskBitmap);
+              DeleteObject(hAndMaskBitmap);
+              DeleteObject(hSourceBitmap);
               
               // Release the screen HDC...
               ReleaseDC(NULL,hDC);
@@ -2565,12 +2567,19 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
 - (void) freecursor: (void*) cid
 {
-  // This is only allowed on non-shared cursors and we have no way of knowing that.
-  HCURSOR cursorId = [[systemCursors objectForKey:[NSValue valueWithPointer:(HCURSOR)cid]] pointerValue];
-  if ((cursorId == NULL) || (cursorId != (HCURSOR)cid))
-    NSWarnMLog(@"trying to free a cursor not created by us: %p", cid);
+  // This is only allowed on non-shared cursors - currently limited to ones
+  // that we create upon request...
+  HCURSOR cursorId = [systemCursors objectForKey:[NSValue valueWithPointer:(HCURSOR)cid]];
+  if (cursorId == NULL)
+    {
+      NSWarnMLog(@"trying to free a cursor not created by us: %p", cid);
+    }
   else
-    DestroyCursor((HCURSOR)cid);
+    {
+      // Remove the entry and destroy the cursor...
+      [systemCursors removeObjectForKey:[NSValue valueWithPointer:(HCURSOR)cid]];
+      DestroyCursor((HCURSOR)cid);
+    }
 }
 
 - (void) setParentWindow: (int)parentWin 
