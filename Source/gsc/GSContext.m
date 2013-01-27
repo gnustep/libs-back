@@ -29,6 +29,7 @@
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBitmapImageRep.h>
 #include <AppKit/NSColor.h>
+#include <AppKit/NSGraphics.h>
 #include <AppKit/NSView.h>
 #include <AppKit/NSWindow.h>
 #include <GNUstepGUI/GSDisplayServer.h>
@@ -114,6 +115,17 @@ static NSMapTable *gtable;
 - (void)DPSexch;
 - (void)DPSindex: (int)i;
 - (void)DPSpop;
+@end
+
+@interface NSBitmapImageRep (GSPrivate)
+- (NSBitmapImageRep *) _convertToFormatBitsPerSample: (int)bps
+                                     samplesPerPixel: (int)spp
+                                            hasAlpha: (BOOL)alpha
+                                            isPlanar: (BOOL)isPlanar
+                                      colorSpaceName: (NSString*)colorSpaceName
+                                        bitmapFormat: (NSBitmapFormat)bitmapFormat 
+                                         bytesPerRow: (int)rowBytes
+                                        bitsPerPixel: (int)pixelBits;
 @end
 
 
@@ -850,12 +862,42 @@ static NSMapTable *gtable;
             fraction: delta];
 }
 
+- (BOOL) isCompatibleBitmap: (NSBitmapImageRep*)bitmap
+{
+  return ([bitmap bitmapFormat] == 0);
+}
+
 - (void) GSDrawImage: (NSRect) rect: (void *) imageref
 {
   NSBitmapImageRep *bitmap;
   unsigned char *data[5];
 
   bitmap = (NSBitmapImageRep*)imageref;
+  if (![self isCompatibleBitmap: bitmap])
+    {
+      int bitsPerSample = 8;
+      BOOL isPlanar = NO;
+      int samplesPerPixel = [bitmap hasAlpha] ? 4 : 3;
+      NSString *colorSpaceName = NSCalibratedRGBColorSpace;
+      NSBitmapImageRep *new;
+
+     new = [bitmap _convertToFormatBitsPerSample: bitsPerSample
+                    samplesPerPixel: samplesPerPixel
+                    hasAlpha: [bitmap hasAlpha]
+                    isPlanar: isPlanar
+                    colorSpaceName: colorSpaceName
+                    bitmapFormat: 0
+                    bytesPerRow: 0
+                    bitsPerPixel: 0];
+            
+      if (new == nil)
+        {
+          NSLog(@"Could not convert bitmap data");
+          return;
+        }
+      bitmap = new;
+    }
+
   [bitmap getBitmapDataPlanes: data];
   [self NSDrawBitmap: rect : [bitmap pixelsWide] : [bitmap pixelsHigh]
         : [bitmap bitsPerSample] : [bitmap samplesPerPixel]

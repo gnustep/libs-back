@@ -1,3 +1,15 @@
+2013-01-27  Fred Kiefer  <FredKiefer@gmx.de>
+
+	* back/Source/gsc/GSContext.m
+	* back/Source/cairo/CairoContext.m
+	* back/Source/art/ARTContext.m
+	* back/Source/xlib/XGContext.m
+	* back/Source/winlib/WIN32Context.m: Move the bitmap conversion
+	code from cairo to the gsc class. Add a new method to detect
+	incompatible image formats and implement that for all backends.
+	* back/Source/winlib/WIN32GState.m (GSCreateBitmap): Improve the
+	handling of device black/white colour space.
+
 2013-01-11  Fred Kiefer  <FredKiefer@gmx.de>
 
 	* Source/win32/w32_general.m (-decodeWM_CLOSEParams:::): Post the
