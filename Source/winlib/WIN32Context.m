@@ -26,6 +26,8 @@
 
 #include <Foundation/NSDebug.h>
 #include <Foundation/NSString.h>
+#include <AppKit/NSBitmapImageRep.h>
+#include <AppKit/NSGraphics.h>
 
 #include "winlib/WIN32GState.h"
 #include "winlib/WIN32FontEnumerator.h"
@@ -53,6 +55,49 @@
 - (void)flushGraphics
 {
 }
+
+// Try to match restrictions in GSCreateBitmap()
+- (BOOL) isCompatibleBitmap: (NSBitmapImageRep*)bitmap
+{
+  NSString *colorSpaceName;
+
+  if ([bitmap bitmapFormat] != 0)
+    {
+      return NO;
+    }
+
+  if ([bitmap isPlanar])
+    {
+      return NO;
+    }
+
+  if ([bitmap bitsPerSample] != 8)
+    {
+      return NO;
+    }
+
+  numColors = [bitmap samplesPerPixel] - ([bitmap hasAlpha] ? 1 : 0);
+   colorSpaceName = [bitmap colorSpaceName];
+  if ([colorSpaceName isEqualToString: NSDeviceRGBColorSpace] ||
+      [colorSpaceName isEqualToString: NSCalibratedRGBColorSpace])
+    {
+      return (numColors == 3);
+    }
+  else if ([colorSpaceName isEqualToString: NSDeviceWhiteColorSpace] ||
+      [colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace])
+    {
+      return (numColors == 1);
+    }
+  else if ([colorSpaceName isEqualToString: NSDeviceBlackColorSpace] ||
+      [colorSpaceName isEqualToString: NSCalibratedBlackColorSpace])
+    {
+      return (numColors == 1);
+    }
+  else
+    {
+      return NO;
+    }
+ }
 
 @end
 

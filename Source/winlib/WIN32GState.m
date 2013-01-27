@@ -584,10 +584,12 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   UINT fuColorUse;
 
   if (isPlanar
-    || !([colorSpaceName isEqualToString: NSDeviceRGBColorSpace]
-    || ![colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace]
-    || ![colorSpaceName isEqualToString: NSCalibratedBlackColorSpace]
-    || [colorSpaceName isEqualToString: NSCalibratedRGBColorSpace]))
+      || (![colorSpaceName isEqualToString: NSDeviceRGBColorSpace]
+          && ![colorSpaceName isEqualToString: NSCalibratedRGBColorSpace]
+          && ![colorSpaceName isEqualToString: NSDeviceWhiteColorSpace]
+          && ![colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace]
+          && ![colorSpaceName isEqualToString: NSDeviceBlackColorSpace]
+          && ![colorSpaceName isEqualToString: NSCalibratedBlackColorSpace]))
     {
       NSLog(@"Bitmap type currently not supported %d %@",
 	isPlanar, colorSpaceName);
@@ -680,7 +682,8 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
           return NULL;
         }
 
-      if ([colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace])
+      if ([colorSpaceName isEqualToString: NSDeviceWhiteColorSpace] ||
+          [colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace])
         {
           while (i < (pixels*4))
             {
@@ -694,7 +697,8 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
               j++;
             }
 	  }
-      else if ([colorSpaceName isEqualToString: NSCalibratedBlackColorSpace])
+      else if ([colorSpaceName isEqualToString: NSDeviceBlackColorSpace] ||
+               [colorSpaceName isEqualToString: NSCalibratedBlackColorSpace])
         {
           while (i < (pixels*4))
             {
@@ -710,7 +714,74 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 	  }
       else
         {
-          NSLog(@"Unexpected condition, greyscale which is neither white nor black calibrated");
+          NSLog(@"Unexpected condition, greyscale which is neither white nor black");
+          free(tmp);
+          free(bitmap);
+          DeleteObject(hbitmap);
+          return NULL;
+        }
+      bits = tmp;
+    }
+  else if (bitsPerPixel == 16 && samplesPerPixel == 2) // 8 bit greyscale 8 bit alpha
+    {
+      BITMAPV4HEADER	*bmih;
+      unsigned char	*tmp;
+      unsigned int	pixels = pixelsHigh * pixelsWide;
+      unsigned int	i = 0;
+      unsigned int	j = 0;
+
+      ((BITMAPINFOHEADER*)bitmap)->biBitCount = 32;
+
+      bmih = (BITMAPV4HEADER*)bitmap;
+      bmih->bV4Size = sizeof(BITMAPV4HEADER);
+      bmih->bV4V4Compression = BI_BITFIELDS;
+      bmih->bV4BlueMask = 0x000000FF;
+      bmih->bV4GreenMask = 0x0000FF00;
+      bmih->bV4RedMask = 0x00FF0000;
+      bmih->bV4AlphaMask = 0xFF000000;
+      tmp = malloc(pixels * 4);
+      if (!tmp)
+        {
+          NSLog(@"Failed to allocate temporary memory for bitmap. Error %d", 
+                GetLastError());
+          free(bitmap);
+          DeleteObject(hbitmap);
+          return NULL;
+        }
+
+      if ([colorSpaceName isEqualToString: NSDeviceWhiteColorSpace] ||
+          [colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace])
+        {
+          while (i < (pixels*4))
+            {
+	      unsigned char pix;
+	      pix = bits[j];
+              tmp[i+0] = pix;
+              tmp[i+1] = pix;
+              tmp[i+2] = pix;
+              tmp[i+3] = bits[j + 1];
+	      i += 4;
+              j += 2;
+            }
+	  }
+      else if ([colorSpaceName isEqualToString: NSDeviceBlackColorSpace] ||
+               [colorSpaceName isEqualToString: NSCalibratedBlackColorSpace])
+        {
+          while (i < (pixels*4))
+            {
+	      unsigned char pix;
+	      pix = UCHAR_MAX - bits[j];
+              tmp[i+0] = pix;
+              tmp[i+1] = pix;
+              tmp[i+2] = pix;
+              tmp[i+3] = bits[j + 1];
+	      i += 4;
+              j += 2;
+            }
+	  }
+      else
+        {
+          NSLog(@"Unexpected condition, greyscale which is neither white nor black");
           free(tmp);
           free(bitmap);
           DeleteObject(hbitmap);
@@ -749,43 +820,6 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 	  tmp[i+2] = bits[i+0];
 	  tmp[i+3] = bits[i+3];
 	  i += 4;
-	}
-      bits = tmp;
-    }
-  else if (bitsPerPixel == 16 && samplesPerPixel == 2) // 8 bit greyscale 8 bit alpha
-    {
-      BITMAPV4HEADER	*bmih;
-      unsigned char	*tmp;
-      unsigned int	pixels = pixelsHigh * pixelsWide;
-      unsigned int	i = 0, j = 0;
-
-      ((BITMAPINFOHEADER*)bitmap)->biBitCount = 32;
-
-      bmih = (BITMAPV4HEADER*)bitmap;
-      bmih->bV4Size = sizeof(BITMAPV4HEADER);
-      bmih->bV4V4Compression = BI_BITFIELDS;
-      bmih->bV4BlueMask = 0x000000FF;
-      bmih->bV4GreenMask = 0x0000FF00;
-      bmih->bV4RedMask = 0x00FF0000;
-      bmih->bV4AlphaMask = 0xFF000000;
-      tmp = malloc(pixels * 4);
-      if (!tmp)
-        {
-          NSLog(@"Failed to allocate temporary memory for bitmap. Error %d", 
-                GetLastError());
-          free(bitmap);
-          DeleteObject(hbitmap);
-          return NULL;
-        }
-
-      while (i < pixels*4)
-	{
-	  tmp[i+0] = bits[j];
-	  tmp[i+1] = bits[j];
-	  tmp[i+2] = bits[j];
-	  tmp[i+3] = bits[j + 1];
-	  i += 4;
-	  j += 2;
 	}
       bits = tmp;
     }
