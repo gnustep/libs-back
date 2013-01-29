@@ -26,6 +26,7 @@
    Free Software Foundation, 51 Franklin Street, Fifth Floor, 
    Boston, MA 02110-1301, USA.
 */
+#define OEMRESOURCE
 
 #include "config.h"
 #include <Foundation/NSDebug.h>
@@ -64,11 +65,7 @@
 #include <math.h>
 
 
-
-#define IMEDebugLog(format, args...) \
-do { NSWarnMLog(format , ## args); } while (0)
-#undef IMEDebugLog
-#define IMEDebugLog(format, args...) do {} while(0)
+#define CHANGE_GLOBAL_CURSORS
 
 
 // Forward declarations...
@@ -216,7 +213,6 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   
   return TRUE;
 }
-
 
 @implementation WIN32Server
 
@@ -392,17 +388,236 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 /**
 
 */
+static HCURSOR  g_cursorId          = NULL;
+static HCURSOR  g_arrowCursorId     = NULL;
+static HCURSOR  g_ibeamCursorId     = NULL;
+static HCURSOR  g_handCursorId      = NULL;
+static HCURSOR  g_sizeweCursorId    = NULL;
+static HCURSOR  g_sizensCursorId    = NULL;
+static HCURSOR  g_sizeneswCursorId  = NULL;
+static HCURSOR  g_sizenwseCursorId  = NULL;
+
+static HANDLE   g_handleDLL         = NULL;
+static HWND     g_hwnd_mouse        = NULL;
+static HHOOK    g_hhook_mouse       = NULL;
+static HHOOK    g_hhook_mouse_ll    = NULL;
+static HHOOK    g_hhook_message     = NULL;
+//static HWND   g_hwnd_message        = NULL;
+
+void loadsystemcursors(void)
+{
+  g_arrowCursorId     = CopyCursor(LoadCursor(NULL, IDC_ARROW));
+  g_ibeamCursorId     = CopyCursor(LoadCursor(NULL, IDC_IBEAM));
+  g_handCursorId      = CopyCursor(LoadCursor(NULL, IDC_HAND));
+  g_sizeweCursorId    = CopyCursor(LoadCursor(NULL, IDC_SIZEWE));
+  g_sizensCursorId    = CopyCursor(LoadCursor(NULL, IDC_SIZENS));
+  g_sizeneswCursorId  = CopyCursor(LoadCursor(NULL, IDC_SIZENESW));
+  g_sizenwseCursorId  = CopyCursor(LoadCursor(NULL, IDC_SIZENWSE));
+}
+
+void setsystemcursors(HCURSOR cursorId)
+{
+#if defined(CHANGE_GLOBAL_CURSORS)
+  SetSystemCursor(CopyCursor(cursorId), OCR_NORMAL);
+  SetSystemCursor(CopyCursor(cursorId), OCR_IBEAM);
+//  SetSystemCursor(CopyCursor(cursorId), OCR_HAND);
+  SetSystemCursor(CopyCursor(cursorId), OCR_SIZEWE);
+  SetSystemCursor(CopyCursor(cursorId), OCR_SIZENS);
+  SetSystemCursor(CopyCursor(cursorId), OCR_SIZENESW);
+  SetSystemCursor(CopyCursor(cursorId), OCR_SIZENWSE);
+#endif
+}
+
+void restoresystemcursors(void)
+{
+#if defined(CHANGE_GLOBAL_CURSORS)
+  SetSystemCursor(CopyCursor(g_arrowCursorId), OCR_NORMAL);
+  SetSystemCursor(CopyCursor(g_ibeamCursorId), OCR_IBEAM);
+//  SetSystemCursor(CopyCursor(g_handCursorId), OCR_HAND);
+  SetSystemCursor(CopyCursor(g_sizeweCursorId), OCR_SIZEWE);
+  SetSystemCursor(CopyCursor(g_sizensCursorId), OCR_SIZENS);
+  SetSystemCursor(CopyCursor(g_sizeneswCursorId), OCR_SIZENESW);
+  SetSystemCursor(CopyCursor(g_sizenwseCursorId), OCR_SIZENWSE);
+#endif
+}
+
+int istrackingmouse(void)
+{
+  return(g_hwnd_mouse != NULL);
+}
+
+LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+  // We need to restrict normal mouse messages during a system capture mouse
+  // sequence since we also capture the low level mouse events for global
+  // screen mouse tracking...
+  return(TRUE);
+}
+
+LRESULT CALLBACK MouseProc_LL(int nCode, WPARAM wParam, LPARAM lParam)
+{
+  // If we are doing system mouse level tracking then just send ALL low level
+  // mouse events to the tracking window...
+  if (g_hwnd_mouse)
+  {
+    if (wParam == WM_MOUSEMOVE)
+    {
+      PMSLLHOOKSTRUCT msllstruct = (PMSLLHOOKSTRUCT)lParam;
+      if (PostMessage(g_hwnd_mouse, wParam, 0, MAKELONG(msllstruct->pt.x, msllstruct->pt.y)) == 0)
+        NSWarnMLog(@"error posting mouse move message - status: %ld\n", GetLastError());
+      //      else
+      //        return(TRUE);
+    }
+    else if (wParam == WM_LBUTTONDOWN)
+    {
+      PMSLLHOOKSTRUCT msllstruct = (PMSLLHOOKSTRUCT)lParam;
+      if (PostMessage(g_hwnd_mouse, wParam, MK_LBUTTON, MAKELONG(msllstruct->pt.x, msllstruct->pt.y)) == 0)
+        NSWarnMLog(@"error posting mouse move message - status: %ld\n", GetLastError());
+      else
+        return(TRUE);
+    }
+    else if (wParam == WM_LBUTTONUP)
+    {
+      PMSLLHOOKSTRUCT msllstruct = (PMSLLHOOKSTRUCT)lParam;
+      if (PostMessage(g_hwnd_mouse, wParam, 0, MAKELONG(msllstruct->pt.x, msllstruct->pt.y)) == 0)
+        NSWarnMLog(@"error posting mouse move message - status: %ld\n", GetLastError());
+      else
+        return(TRUE);
+    }
+  }
+  return(CallNextHookEx(0, nCode, wParam, lParam));
+}
+
+
+// CURRENTLY UNUSED...
+LRESULT CALLBACK CallWndProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+  PCWPSTRUCT cwpinfo = (PCWPSTRUCT)lParam;
+  if (istrackingmouse())
+  {
+    NSWarnMLog(@"CallWndProc:ncode: %d wparam: %p lparam: %p :cwpinfo:lparam: %p wparam: %p msg: %d hwnd: %p\n",
+               nCode, (void*)wParam, (void*)lParam,
+               (void*)cwpinfo->lParam, (void*)cwpinfo->wParam, cwpinfo->message, cwpinfo->hwnd);
+//    if (cwpinfo->message == WM_SETCURSOR)
+//    {
+//      NSWarnMLog(@"ignoring WM_SETCURSOR message\n");
+//      SetCursor(g_cursorId);
+//      return(0);
+//    }
+//    return(0);
+  }
+  return(CallNextHookEx(0, nCode, wParam, lParam));
+}
+
+int mousetracking_register(HWND hwnd)
+{
+  int status = 0;
+	if ((g_hwnd_mouse == NULL) && (g_hhook_mouse == NULL))
+  {
+    if ((g_hhook_mouse = SetWindowsHookEx(WH_MOUSE, MouseProc, g_handleDLL, 0)) == NULL)
+    {
+      status = GetLastError();
+      NSWarnMLog(@"error registering WH_MOUSE for hwnd: %p status: %d\n", hwnd, status);
+    }
+    else if ((g_hhook_mouse_ll = SetWindowsHookEx(WH_MOUSE_LL, MouseProc_LL, g_handleDLL, 0)) == NULL)
+    {
+      status = GetLastError();
+      NSWarnMLog(@"error registering WH_MOUSE_LL for hwnd: %p status: %d\n", hwnd, status);
+      UnhookWindowsHookEx(g_hhook_mouse);
+    }
+#if 0
+    else if ((g_hhook_message = SetWindowsHookEx(WH_CALLWNDPROC, CallWndProc, g_handleDLL, 0)) == NULL)
+    {
+      status = GetLastError();
+      NSWarnMLog(@"error registering WH_CALLWNDPROC for hwnd: %p status: %d\n", hwnd, status);
+      UnhookWindowsHookEx(g_hhook_mouse);
+      UnhookWindowsHookEx(g_hhook_mouse_ll);
+    }
+#endif
+    else
+    {
+      NSWarnMLog(@"sucessfully registered mouse tracking for hwnd: %p\n", hwnd);
+      g_hwnd_mouse = hwnd;
+      if (g_cursorId)
+        setsystemcursors(g_cursorId);
+    }
+	}
+  NSWarnMLog(@"mousetracking_register status: %d\n", status);
+  return(status);
+}
+
+int mousetracking_unregister(void)
+{
+  int status = 0;
+  NSWarnMLog(@"unregistering mouse tracking for hwnd: %p\n", g_hwnd_mouse);
+  if (g_hhook_mouse)
+  {
+    if (UnhookWindowsHookEx(g_hhook_mouse) == 0)
+    {
+      int tmp = GetLastError();
+      NSWarnMLog(@"UnhookWindowsHookEx(g_hhook_mouse) status: %d\n", tmp);
+      if (status == 0)
+        status = tmp;
+    }
+  }
+  if (g_hhook_mouse_ll)
+  {
+    if (UnhookWindowsHookEx(g_hhook_mouse_ll) == 0)
+    {
+      int tmp = GetLastError();
+      NSWarnMLog(@"UnhookWindowsHookEx(g_hhook_mouse_ll) status: %d\n", tmp);
+      if (status == 0)
+        status = tmp;
+    }
+  }
+  if (g_hhook_message)
+  {
+    if (UnhookWindowsHookEx(g_hhook_message) == 0)
+    {
+      int tmp = GetLastError();
+      NSWarnMLog(@"UnhookWindowsHookEx(g_hhook_message) status: %d\n", tmp);
+      if (status == 0)
+        status = tmp;
+    }
+  }
+  if (g_cursorId)
+    restoresystemcursors();
+  g_hwnd_mouse     = NULL;
+  g_hhook_mouse    = NULL;
+  g_hhook_mouse_ll = NULL;
+  g_hhook_message  = NULL;
+  printf("mousetracking_unregister status: %d\n", status);
+  return(status);
+}
+
+// Need to capture the DLL instance handle....
+BOOL WINAPI DllMain(HANDLE hinstDLL, DWORD dwReason, LPVOID lpvReserved)
+{
+	switch (dwReason)
+  {
+    case DLL_PROCESS_ATTACH:
+      g_handleDLL = hinstDLL;
+      break;
+    case DLL_PROCESS_DETACH:
+//      mousetracking_unregister();
+      break;
+	}
+	return TRUE;
+}
+
 - (id) initWithAttributes: (NSDictionary *)info
 {
-//  NSNotificationCenter	*nc = [NSNotificationCenter defaultCenter];
-
   self = [super initWithAttributes: info];
 
   if (self)
     {
       [self _initWin32Context];
       [super initWithAttributes: info];
-  
+
+      // Load system cursor resources for overriding system level cursors on
+      // capture and release mouse sequences...
+      loadsystemcursors();
+
       systemCursors = RETAIN([NSMutableDictionary dictionary]);
       monitorInfo   = RETAIN([NSMutableArray array]);
       EnumDisplayMonitors(NULL, NULL, (MONITORENUMPROC)LoadDisplayMonitorInfo, (LPARAM)monitorInfo);
@@ -417,34 +632,34 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
       [GSTheme theme];
       { // Check user defaults
-	NSUserDefaults	*defs;
-	defs = [NSUserDefaults standardUserDefaults];
-   
-	if ([defs objectForKey: @"GSUseWMStyles"])
-	  {
-	    NSWarnLog(@"Usage of 'GSUseWMStyles' as user default option is deprecated. "
-		      @"This option will be ignored in future versions. "
-		      @"You should use 'GSBackHandlesWindowDecorations' option.");
-	    [self setHandlesWindowDecorations: ![defs boolForKey: @"GSUseWMStyles"]];
-	  }
-	if ([defs objectForKey: @"GSUsesWMTaskbar"])
-	  {
-	    NSWarnLog(@"Usage of 'GSUseWMTaskbar' as user default option is deprecated. "
-		      @"This option will be ignored in future versions. "
-		      @"You should use 'GSBackUsesNativeTaskbar' option.");
-	    [self setUsesNativeTaskbar: [defs boolForKey: @"GSUseWMTaskbar"]];
-	  }
-
-	if ([defs objectForKey: @"GSBackHandlesWindowDecorations"])
-	  {
-	    [self setHandlesWindowDecorations:
-	      [defs boolForKey: @"GSBackHandlesWindowDecorations"]];
-	  } 
-	if ([defs objectForKey: @"GSBackUsesNativeTaskbar"])
-	  {
-	    [self setUsesNativeTaskbar:
-	      [defs boolForKey: @"GSBackUsesNativeTaskbar"]];
-	  }
+        NSUserDefaults	*defs;
+        defs = [NSUserDefaults standardUserDefaults];
+        
+        if ([defs objectForKey: @"GSUseWMStyles"])
+          {
+            NSWarnLog(@"Usage of 'GSUseWMStyles' as user default option is deprecated. "
+                      @"This option will be ignored in future versions. "
+                      @"You should use 'GSBackHandlesWindowDecorations' option.");
+            [self setHandlesWindowDecorations: ![defs boolForKey: @"GSUseWMStyles"]];
+          }
+        if ([defs objectForKey: @"GSUsesWMTaskbar"])
+          {
+            NSWarnLog(@"Usage of 'GSUseWMTaskbar' as user default option is deprecated. "
+                      @"This option will be ignored in future versions. "
+                      @"You should use 'GSBackUsesNativeTaskbar' option.");
+            [self setUsesNativeTaskbar: [defs boolForKey: @"GSUseWMTaskbar"]];
+          }
+        
+        if ([defs objectForKey: @"GSBackHandlesWindowDecorations"])
+          {
+            [self setHandlesWindowDecorations:
+             [defs boolForKey: @"GSBackHandlesWindowDecorations"]];
+          }
+        if ([defs objectForKey: @"GSBackUsesNativeTaskbar"])
+          {
+            [self setUsesNativeTaskbar:
+             [defs boolForKey: @"GSBackUsesNativeTaskbar"]];
+          }
       }
     }
   return self;
@@ -1168,7 +1383,6 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   NSUserDefaults *defaults             = [NSUserDefaults standardUserDefaults];
   BOOL            useCompositionWindow = [defaults boolForKey: @"GSUsesDefaultImeComposition"];
   IME_INFO_T     *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-  IMEDebugLog(@"WM_IME_STARTCOMPOSITION: hwnd: %p wParam: %p lParam: %p USE: %d\n", hwnd, wParam, lParam, useCompositionWindow);
   if (imeInfo)
   {
     imeInfo->isComposing          = YES;
@@ -1180,7 +1394,6 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 - (void)endImeComposition: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
 {
   // Terminate the IME composition sequence...
-  IMEDebugLog(@"WM_IME_ENDCOMPOSITION: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
   IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
   if (imeInfo)
   {
@@ -1213,7 +1426,6 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
             TCHAR composition[length+sizeof(TCHAR)];
             length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, &composition, length);
             composition[ length ] = '\0';
-            IMEDebugLog(@"result (size): %d\n", length);
             IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
             if (imeInfo && imeInfo->inProgress)
             {
@@ -1234,7 +1446,6 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
             TCHAR composition[length+sizeof(TCHAR)];
             length = ImmGetCompositionStringW(immc, GCS_COMPSTR, &composition, length);
             composition[length] = '\0';
-            IMEDebugLog(@"result (size): %d\n", length);
             {
               IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
               if (imeInfo && imeInfo->inProgress++)
@@ -1328,7 +1539,13 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         else
           [self decodeWM_KILLFOCUSParams: wParam : lParam : hwnd]; 
         break;
-      case WM_SETCURSOR: 
+      case WM_SETCURSOR:
+        if (istrackingmouse() && g_cursorId)
+        {
+          NSWarnMLog(@"overriding cursor with id: %p", g_cursorId);
+          [self setcursor:g_cursorId];
+          return TRUE;
+        }
         break;
       case WM_QUERYOPEN: 
         [self decodeWM_QUERYOPENParams: wParam : lParam : hwnd]; 
@@ -1398,7 +1615,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       case WM_ENABLE: 
       case WM_CHILDACTIVATE: 
         break;
-      case WM_NULL: 
+      case WM_NULL:
         break; 
 	
       case WM_NCHITTEST: //MOUSE
@@ -1418,11 +1635,15 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         break;
       case WM_MOUSEMOVE: //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "MOUSEMOVE", hwnd);
+//        if ((*istrackingmouse)())
+//          NSWarnMLog(@"WM_MOUSEMOVE: hwnd: %p wparam: %p lparam: %p", hwnd, wParam, lParam);
         ev = process_mouse_event(self, hwnd, wParam, lParam, NSMouseMoved, uMsg);
         break;
       case WM_LBUTTONDOWN: //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONDOWN", hwnd);
         //[self decodeWM_LBUTTONDOWNParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd];
+        if ((*istrackingmouse)())
+          NSWarnMLog(@"WM_LBUTTONDOWN: hwnd: %p wparam: %p lparam: %p", hwnd, wParam, lParam);
         ev = process_mouse_event(self, hwnd, wParam, lParam, NSLeftMouseDown, uMsg);
         break;
       case WM_LBUTTONUP: //MOUSE
@@ -1500,7 +1721,6 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       case WM_IME_KEYDOWN:
       {
         // Handle the IME keystroke input...
-        IMEDebugLog(@"WM_IME_KEYDOWN: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
         if (imeInfo->useCompositionWindow && (wParam == 0xd)) // Carriage return...
           {
@@ -1515,19 +1735,15 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
               }
             flags._eventHandled = YES;
           }
-        
-        // Don't pass this message on for processing...
         break;
       }
       case WM_IME_KEYUP:
-        IMEDebugLog(@"WM_IME_KEYUP: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         break;
       case WM_IME_CHAR:
       {
         // IME character completed...if we are handling the composition window duties
         // in-window then delete the last composition character sent (if sent), and send
         // completed composed character...
-        IMEDebugLog(@"WM_IME_CHAR: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
         if (imeInfo && imeInfo->inProgress)
           {
@@ -2361,14 +2577,14 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
   if (!GetCursorPos(&p))
     { 
-	  // Try using cursorInfo which should work in more situations
-	  CURSORINFO cursorInfo;
-	  cursorInfo.cbSize = sizeof(CURSORINFO); 
-	  if (!GetCursorInfo(&cursorInfo)) {
-		NSLog(@"GetCursorInfo failed with %d", GetLastError());
-        return NSZeroPoint;
-      }
-	  p = cursorInfo.ptScreenPos;
+      // Try using cursorInfo which should work in more situations
+      CURSORINFO cursorInfo;
+      cursorInfo.cbSize = sizeof(CURSORINFO); 
+      if (!GetCursorInfo(&cursorInfo)) {
+      NSLog(@"GetCursorInfo failed with %d", GetLastError());
+          return NSZeroPoint;
+        }
+      p = cursorInfo.ptScreenPos;
     }
 
   return MSScreenPointToGS(p.x, p.y);
@@ -2381,15 +2597,24 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
 - (BOOL) capturemouse: (int) winNum
 {
+  HWND hwnd = (HWND)winNum;
   NSDebugLLog(@"WTrace", @"capturemouse: %d", winNum);
-  SetCapture((HWND)winNum);
-  return YES;
+  [self releasemouse];
+  SetCapture(hwnd);
+  int status = mousetracking_register(hwnd);
+  if (status != 0)
+    NSWarnMLog(@"error registering mouse tracking - status: %d", status);
+  return (status == 0);
 }
 
 - (void) releasemouse
 {
   NSDebugLLog(@"WTrace", @"releasemouse");
   ReleaseCapture();
+  int status = mousetracking_unregister();
+  if (status != 0)
+    NSWarnMLog(@"error unregistering mouse tracking - status: %d", status);
+  SetCursor(NULL);
 }
 
 - (void) hidecursor
@@ -2486,13 +2711,12 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
               
               // Scan each pixel of the souce bitmap and create the masks
               int x;
-              int *pixel = [rep bitmapData];
+              int *pixel = (int*)[rep bitmapData];
               for(x = 0; x < bm.bmWidth; ++x)
                 {
                   int y;
                   for (y = 0; y < bm.bmHeight; ++y)
                     {
-                      COLORREF MainBitPixel = GetPixel(hMainDC, x, y);
                       if (*pixel++ == 0x00000000)
                         {
                           SetPixel(hAndMaskDC, x, y, RGB(255, 255, 255));
@@ -2501,7 +2725,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
                       else
                         {
                           SetPixel(hAndMaskDC, x, y, RGB(0, 0, 0));
-                          SetPixel(hXorMaskDC, x, y, MainBitPixel);
+                          SetPixel(hXorMaskDC, x, y, GetPixel(hMainDC, x, y));
                         }
                     }
                 }
@@ -2562,14 +2786,21 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
 - (void) setcursor: (void*) cid
 {
+  g_cursorId = cid;
+  if (cid == NULL)
+    cid = LoadCursor(NULL, IDC_ARROW);
   SetCursor((HCURSOR)cid);
+  if (istrackingmouse() && g_cursorId)
+    setsystemcursors(g_cursorId);
+  else
+    restoresystemcursors();
 }
 
 - (void) freecursor: (void*) cid
 {
   // This is only allowed on non-shared cursors - currently limited to ones
   // that we create upon request...
-  HCURSOR cursorId = [systemCursors objectForKey:[NSValue valueWithPointer:(HCURSOR)cid]];
+  HCURSOR cursorId = (HCURSOR)[systemCursors objectForKey:[NSValue valueWithPointer:(HCURSOR)cid]];
   if (cursorId == NULL)
     {
       NSWarnMLog(@"trying to free a cursor not created by us: %p", cid);
@@ -2578,6 +2809,8 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
     {
       // Remove the entry and destroy the cursor...
       [systemCursors removeObjectForKey:[NSValue valueWithPointer:(HCURSOR)cid]];
+      if (GetCursor() == cid)
+        SetCursor(NULL);
       DestroyCursor((HCURSOR)cid);
     }
 }
