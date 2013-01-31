@@ -126,7 +126,7 @@ void loadsystemcursors(void)
 void setsystemcursors(HCURSOR cursorId)
 {
   NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-  if ([defaults objectForKey: @"GSDoesNotChangeSystemMouseCursors"] == NO)
+  if ([defaults boolForKey: @"GSDoesNotChangeSystemMouseCursors"] == NO)
     {
       SetSystemCursor(CopyCursor(cursorId), OCR_NORMAL);
       SetSystemCursor(CopyCursor(cursorId), OCR_IBEAM);
@@ -140,7 +140,7 @@ void setsystemcursors(HCURSOR cursorId)
 void restoresystemcursors(void)
 {
   NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-  if ([defaults objectForKey: @"GSDoesNotChangeSystemMouseCursors"] == NO)
+  if ([defaults boolForKey: @"GSDoesNotChangeSystemMouseCursors"] == NO)
     {
       SetSystemCursor(CopyCursor(g_arrowCursorId), OCR_NORMAL);
       SetSystemCursor(CopyCursor(g_ibeamCursorId), OCR_IBEAM);
