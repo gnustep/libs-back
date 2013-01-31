@@ -109,6 +109,7 @@ static HANDLE   g_handleDLL         = NULL;
 static HWND     g_hwnd_mouse        = NULL;
 static HHOOK    g_hhook_mouse       = NULL;
 static HHOOK    g_hhook_mouse_ll    = NULL;
+static HHOOK    g_hhook_keyboard_ll = NULL;
 
 void loadsystemcursors(void)
 {
@@ -159,11 +160,6 @@ BOOL WINAPI DllMain(HANDLE hinstDLL, DWORD dwReason, LPVOID lpvReserved)
     case DLL_PROCESS_ATTACH:
       // Save the DLL instance handle...
       g_handleDLL = hinstDLL;
-      
-      // Load system cursor resources for overriding system level cursors on
-      // capture and release mouse sequences...
-      loadsystemcursors();
-      
       break;
       
     case DLL_PROCESS_DETACH:
@@ -224,6 +220,14 @@ LRESULT CALLBACK MouseProc_LL(int nCode, WPARAM wParam, LPARAM lParam)
   return(CallNextHookEx(0, nCode, wParam, lParam));
 }
 
+LRESULT CALLBACK KeyboardProc_LL(int nCode, WPARAM wParam, LPARAM lParam)
+{
+  // We need to restrict normal keyboard messages during a system capture mouse
+  // sequence to avoid allowing the user to change windows and potentially start
+  // another GNUstep app before capture mouse sequence is completed...
+  return(TRUE);
+}
+
 int mousetracking_register(HWND hwnd)
 {
   int status = 0;
@@ -240,6 +244,13 @@ int mousetracking_register(HWND hwnd)
           NSWarnMLog(@"error registering WH_MOUSE_LL for hwnd: %p status: %d\n", hwnd, status);
           UnhookWindowsHookEx(g_hhook_mouse);
         }
+      else if ((g_hhook_keyboard_ll = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc_LL, g_handleDLL, 0)) == NULL)
+        {
+          status = GetLastError();
+          NSWarnMLog(@"error registering WH_KEYBOARD_LL for hwnd: %p status: %d\n", hwnd, status);
+          UnhookWindowsHookEx(g_hhook_mouse);
+          UnhookWindowsHookEx(g_hhook_mouse_ll);
+        }
       else
         {
           g_hwnd_mouse = hwnd;
@@ -250,40 +261,52 @@ int mousetracking_register(HWND hwnd)
   return(status);
 }
 
+
 int mousetracking_unregister(void)
 {
   int status = 0;
   
   // Remove the system hooks...
   if (g_hhook_mouse)
-  {
-    if (UnhookWindowsHookEx(g_hhook_mouse) == 0)
     {
-      int tmp = GetLastError();
-      NSWarnMLog(@"UnhookWindowsHookEx(g_hhook_mouse) status: %d\n", tmp);
-      if (status == 0)
-        status = tmp;
+      if (UnhookWindowsHookEx(g_hhook_mouse) == 0)
+        {
+          int tmp = GetLastError();
+          NSWarnMLog(@"UnhookWindowsHookEx(g_hhook_mouse) status: %d\n", tmp);
+          if (status == 0)
+            status = tmp;
+        }
     }
-  }
   if (g_hhook_mouse_ll)
-  {
-    if (UnhookWindowsHookEx(g_hhook_mouse_ll) == 0)
     {
-      int tmp = GetLastError();
-      NSWarnMLog(@"UnhookWindowsHookEx(g_hhook_mouse_ll) status: %d\n", tmp);
-      if (status == 0)
-        status = tmp;
+      if (UnhookWindowsHookEx(g_hhook_mouse_ll) == 0)
+        {
+          int tmp = GetLastError();
+          NSWarnMLog(@"UnhookWindowsHookEx(g_hhook_mouse_ll) status: %d\n", tmp);
+          if (status == 0)
+            status = tmp;
+        }
     }
-  }
-  
+  if (g_hhook_keyboard_ll)
+    {
+      if (UnhookWindowsHookEx(g_hhook_keyboard_ll) == 0)
+        {
+          int tmp = GetLastError();
+          NSWarnMLog(@"UnhookWindowsHookEx(g_hhook_keyboard_ll) status: %d\n", tmp);
+          if (status == 0)
+            status = tmp;
+        }
+    }
+
   // If the cursor was changed for the mouse capture then restore the system cursors...
   if (g_cursorId)
     restoresystemcursors();
   
   // Reset...
-  g_hwnd_mouse     = NULL;
-  g_hhook_mouse    = NULL;
-  g_hhook_mouse_ll = NULL;
+  g_hwnd_mouse        = NULL;
+  g_hhook_mouse       = NULL;
+  g_hhook_mouse_ll    = NULL;
+  g_hhook_keyboard_ll = NULL;
   
   return(status);
 }
@@ -572,6 +595,10 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
     {
       [self _initWin32Context];
       [super initWithAttributes: info];
+      
+      // Load system cursor resources for overriding system level cursors on
+      // capture and release mouse sequences...
+      loadsystemcursors();
 
       systemCursors = RETAIN([NSMutableDictionary dictionary]);
       monitorInfo   = RETAIN([NSMutableArray array]);
@@ -1588,8 +1615,6 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       case WM_LBUTTONDOWN: //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "LBUTTONDOWN", hwnd);
         //[self decodeWM_LBUTTONDOWNParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd];
-        if ((*istrackingmouse)())
-          NSWarnMLog(@"WM_LBUTTONDOWN: hwnd: %p wparam: %p lparam: %p", hwnd, wParam, lParam);
         ev = process_mouse_event(self, hwnd, wParam, lParam, NSLeftMouseDown, uMsg);
         break;
       case WM_LBUTTONUP: //MOUSE
