@@ -65,9 +65,6 @@
 #include <math.h>
 
 
-#define CHANGE_GLOBAL_CURSORS
-
-
 // Forward declarations...
 static unsigned int mask_for_keystate(BYTE *keyState);
 
@@ -128,26 +125,51 @@ void loadsystemcursors(void)
 
 void setsystemcursors(HCURSOR cursorId)
 {
-#if defined(CHANGE_GLOBAL_CURSORS)
-  SetSystemCursor(CopyCursor(cursorId), OCR_NORMAL);
-  SetSystemCursor(CopyCursor(cursorId), OCR_IBEAM);
-  SetSystemCursor(CopyCursor(cursorId), OCR_SIZEWE);
-  SetSystemCursor(CopyCursor(cursorId), OCR_SIZENS);
-  SetSystemCursor(CopyCursor(cursorId), OCR_SIZENESW);
-  SetSystemCursor(CopyCursor(cursorId), OCR_SIZENWSE);
-#endif
+  NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+  if ([defaults objectForKey: @"GSDoesNotChangeSystemMouseCursors"] == NO)
+    {
+      SetSystemCursor(CopyCursor(cursorId), OCR_NORMAL);
+      SetSystemCursor(CopyCursor(cursorId), OCR_IBEAM);
+      SetSystemCursor(CopyCursor(cursorId), OCR_SIZEWE);
+      SetSystemCursor(CopyCursor(cursorId), OCR_SIZENS);
+      SetSystemCursor(CopyCursor(cursorId), OCR_SIZENESW);
+      SetSystemCursor(CopyCursor(cursorId), OCR_SIZENWSE);
+    }
 }
 
 void restoresystemcursors(void)
 {
-#if defined(CHANGE_GLOBAL_CURSORS)
-  SetSystemCursor(CopyCursor(g_arrowCursorId), OCR_NORMAL);
-  SetSystemCursor(CopyCursor(g_ibeamCursorId), OCR_IBEAM);
-  SetSystemCursor(CopyCursor(g_sizeweCursorId), OCR_SIZEWE);
-  SetSystemCursor(CopyCursor(g_sizensCursorId), OCR_SIZENS);
-  SetSystemCursor(CopyCursor(g_sizeneswCursorId), OCR_SIZENESW);
-  SetSystemCursor(CopyCursor(g_sizenwseCursorId), OCR_SIZENWSE);
-#endif
+  NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+  if ([defaults objectForKey: @"GSDoesNotChangeSystemMouseCursors"] == NO)
+    {
+      SetSystemCursor(CopyCursor(g_arrowCursorId), OCR_NORMAL);
+      SetSystemCursor(CopyCursor(g_ibeamCursorId), OCR_IBEAM);
+      SetSystemCursor(CopyCursor(g_sizeweCursorId), OCR_SIZEWE);
+      SetSystemCursor(CopyCursor(g_sizensCursorId), OCR_SIZENS);
+      SetSystemCursor(CopyCursor(g_sizeneswCursorId), OCR_SIZENESW);
+      SetSystemCursor(CopyCursor(g_sizenwseCursorId), OCR_SIZENWSE);
+    }
+}
+
+// Need to capture the DLL instance handle....
+BOOL WINAPI DllMain(HANDLE hinstDLL, DWORD dwReason, LPVOID lpvReserved)
+{
+	switch (dwReason)
+  {
+    case DLL_PROCESS_ATTACH:
+      // Save the DLL instance handle...
+      g_handleDLL = hinstDLL;
+      
+      // Load system cursor resources for overriding system level cursors on
+      // capture and release mouse sequences...
+      loadsystemcursors();
+      
+      break;
+      
+    case DLL_PROCESS_DETACH:
+      break;
+	}
+	return TRUE;
 }
 
 int istrackingmouse(void)
@@ -542,20 +564,6 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
 */
 
-// Need to capture the DLL instance handle....
-BOOL WINAPI DllMain(HANDLE hinstDLL, DWORD dwReason, LPVOID lpvReserved)
-{
-	switch (dwReason)
-  {
-    case DLL_PROCESS_ATTACH:
-      g_handleDLL = hinstDLL;
-      break;
-    case DLL_PROCESS_DETACH:
-      break;
-	}
-	return TRUE;
-}
-
 - (id) initWithAttributes: (NSDictionary *)info
 {
   self = [super initWithAttributes: info];
@@ -564,10 +572,6 @@ BOOL WINAPI DllMain(HANDLE hinstDLL, DWORD dwReason, LPVOID lpvReserved)
     {
       [self _initWin32Context];
       [super initWithAttributes: info];
-
-      // Load system cursor resources for overriding system level cursors on
-      // capture and release mouse sequences...
-      loadsystemcursors();
 
       systemCursors = RETAIN([NSMutableDictionary dictionary]);
       monitorInfo   = RETAIN([NSMutableArray array]);
