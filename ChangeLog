@@ -1,3 +1,10 @@
+2013-02-01  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m
+	* Source/gsc/GSGState.m
+	* Source/gsc/GSStreamContext.m
+	* Source/winlib/WIN32GState.m: Adopt to CGFloat changes on NSBezierPath.
+
 2013-01-27  Fred Kiefer  <FredKiefer@gmx.de>
 
 	* back/Source/gsc/GSContext.m

@@ -1083,9 +1083,11 @@ typedef enum {
 
 - (void) GSSendBezierPath: (NSBezierPath *)newpath
 {
-  int count = 10;
-  float dash_pattern[10];
-  float phase;
+  NSInteger count = 10;
+  CGFloat dash_pattern[10];
+  CGFloat phase;
+  float fpattern[10];
+  NSInteger i;
 
   // Appending to the current path is a lot faster than copying!
   //ASSIGNCOPY(path, newpath);
@@ -1102,7 +1104,12 @@ typedef enum {
   [self DPSsetflat: [newpath flatness]];
 
   [newpath getLineDash: dash_pattern count: &count phase: &phase];
-  [self DPSsetdash: dash_pattern : count : phase];
+  // Convert from CGFloat to float
+  for (i = 0; i < count; i++)
+    {
+      fpattern[i] = dash_pattern[i];
+    }
+  [self DPSsetdash: fpattern : count : phase];
 }
 
 - (void) GSRectClipList: (const NSRect *)rects : (int) count
