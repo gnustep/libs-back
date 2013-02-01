@@ -1383,6 +1383,27 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
     }
 }
 
+// composition is expected as a pointer to UNICHARs
+// length is expected as size in BYTES not UNICHAR
+// deleteLength is expected as number of characters to delete
+- (void)updateImeCompositionToHWnd: (HWND)hwnd
+                       composition: (PTCHAR)composition
+                            length: (int)length
+                      deleteLength: (int)deleteLength
+{
+  // We need to delete the last character sent for the current comosition...
+  while (deleteLength--)
+    [self sendDeleteCharacter: hwnd];
+  
+  // Send updated composition character...
+  {
+    int      index = 0;
+    unichar *ptr   = (unichar*)composition;
+    for (index = 0; index < (length/2); ++index, ++ptr)
+      [self imeCharacter: hwnd : *ptr : 1];
+  }
+}
+
 - (void)imeCompositionMessage: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
 {
   // Process the IME composition sequence...
@@ -1394,8 +1415,6 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       {
         NSWarnMLog(@"IMMContext is NULL\n");
       }
-#if 0
-    // IME result character now handled by the WM_IME_CHAR message event...
     else if (lParam & GCS_RESULTSTR)
       {
         // Update our composition string information...
@@ -1405,22 +1424,30 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
             TCHAR composition[length+sizeof(TCHAR)];
             length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, &composition, length);
             composition[ length ] = '\0';
+
             IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-            if (imeInfo && imeInfo->inProgress)
+            if (imeInfo == NULL)
             {
-              [self sendDeleteCharacter: hwnd];
+              NSWarnMLog(@"imeInfo is missing!!!");
             }
-            imeInfo->inProgress = 0;
-            [self imeCharacter: hwnd : wParam : lParam];
+            else
+            {
+              // Update with resulting composition...
+              [self updateImeCompositionToHWnd: hwnd composition:composition
+                                        length: length
+                                  deleteLength: imeInfo->inProgress];
+              
+              // Update our in progress indicator to show that we finished...
+              imeInfo->inProgress = 0;
+            }
           }
         ImmReleaseContext(hwnd, immc);
       }
-#endif
     else if (lParam & GCS_COMPSTR)
       {
         // Update our composition string information...
         LONG length = ImmGetCompositionStringW(immc, GCS_COMPSTR, NULL, 0);
-        if (length && (length == 2))
+        if (length) // && (length == 2))
           {
             TCHAR composition[length+sizeof(TCHAR)];
             length = ImmGetCompositionStringW(immc, GCS_COMPSTR, &composition, length);
@@ -1428,11 +1455,21 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
             
             // We need to delete the last character sent for the current comosition...
             IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-            if (imeInfo && imeInfo->inProgress++)
-              [self sendDeleteCharacter: hwnd];
-
-            // Send updated composition character...
-            [self imeCharacter: hwnd : *(unichar*)composition : 1];
+            if (imeInfo == NULL)
+            {
+              NSWarnMLog(@"imeInfo is missing!!!");
+            }
+            else
+            {
+              // Update with in progress composition...
+              [self updateImeCompositionToHWnd: hwnd
+                                   composition: composition
+                                        length: length
+                                  deleteLength: imeInfo->inProgress];
+              
+              // Update our in progress indicator...
+              imeInfo->inProgress = length / 2;
+            }
           }
         ImmReleaseContext(hwnd, immc);
       }
@@ -1715,12 +1752,9 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         // in-window then delete the last composition character sent (if sent), and send
         // completed composed character...
         IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-        if (imeInfo && imeInfo->inProgress)
-          {
-            [self sendDeleteCharacter: hwnd];
-            imeInfo->inProgress = 0;
-          }
-        return [self imeCharacter: hwnd : wParam : lParam];
+        if (imeInfo)
+          imeInfo->inProgress = 0;
+        return 0;
         break;
       }
         
