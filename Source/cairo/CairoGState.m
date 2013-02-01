@@ -686,10 +686,11 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
 
 - (void) _setPath
 {
-  unsigned count = [path elementCount];
-  unsigned i;
+  NSInteger count = [path elementCount];
+  NSInteger i;
   SEL elmsel = @selector(elementAtIndex:associatedPoints:);
-  IMP elmidx = [path methodForSelector: elmsel];
+  NSBezierPathElement (*elmidx)(id, SEL, NSInteger, NSPoint*) =
+    (NSBezierPathElement (*)(id, SEL, NSInteger, NSPoint*))[path methodForSelector: elmsel];
 
   // reset current cairo path
   cairo_new_path(_ct);

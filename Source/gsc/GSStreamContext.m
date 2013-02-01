@@ -696,9 +696,10 @@ fpfloat(FILE *stream, float f)
 {
   NSBezierPathElement type;
   NSPoint pts[3];
-  int i, count = 10;
-  float pattern[10];
-  float phase = 0.0;
+  NSInteger i, count = 10;
+  CGFloat pattern[10];
+  CGFloat phase = 0.0;
+  float fpattern[10];
 
   [self DPSnewpath];
   [self DPSsetlinewidth: [path lineWidth]];
@@ -708,8 +709,13 @@ fpfloat(FILE *stream, float f)
   [self DPSsetflat: [path flatness]];
 
   [path getLineDash: pattern count: &count phase: &phase];
+  // Convert from CGFloat to float
+  for (i = 0; i < count; i++)
+    {
+      fpattern[i] = pattern[i];
+    }
   // Always sent the dash pattern. When NULL this will reset to a solid line.
-  [self DPSsetdash: pattern : count : phase];
+  [self DPSsetdash: fpattern : count : phase];
 
   count = [path elementCount];
   for (i = 0; i < count; i++)

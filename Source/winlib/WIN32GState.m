@@ -1251,13 +1251,20 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 
 - (void) DPSsetdash: (const float*)thePattern : (int)count : (float)phase
 {
+  CGFloat pattern[count];
+
   if (!path)
     {
       path = [NSBezierPath new];
     }
 
+  // Convert from float to CGFloat
+  for (i = 0; i < count; i++)
+    {
+      pattern[i] = thePattern[i];
+    }
   // FIXME: Convert to ctm first
-  [path setLineDash: thePattern count: count phase: phase];
+  [path setLineDash: pattern count: count phase: phase];
 }
 
 - (void)DPScurrentmiterlimit: (float *)limit 
@@ -1324,10 +1331,8 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   DWORD penStyle;
 
   // Temporary variables for gathering pen information
-  float* thePattern = NULL;
   DWORD* iPattern = NULL;
-  int patternCount = 0;
-  float phase = 0.0;
+  NSInteger patternCount = 0;
   
   SetBkMode(hDC, TRANSPARENT);
   br.lbStyle = BS_SOLID;
@@ -1376,20 +1381,22 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   
   if (patternCount > 0)
     {
+      NSInteger i = 0;
+      CGFloat* thePattern[patternCount];
+      CGFloat phase = 0.0;
+
       penStyle = PS_GEOMETRIC | PS_USERSTYLE;
 
       // The user has defined a dash pattern for stroking on
       // the path. Note that we lose the floating point information
       // here, as windows only supports DWORD elements, not float.
-      thePattern = malloc(sizeof(float) * patternCount);
       [path getLineDash: thePattern count: &patternCount phase: &phase];
 
       iPattern = malloc(sizeof(DWORD) * patternCount);
-      int i  = 0;
       for (i = 0 ; i < patternCount; i ++)
-	iPattern[i] = (DWORD)thePattern[i];
-      free(thePattern);
-      thePattern = NULL;
+        {
+          iPattern[i] = (DWORD)thePattern[i];
+        }
     }
   else
     {
