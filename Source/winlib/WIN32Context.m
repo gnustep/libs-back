@@ -60,6 +60,7 @@
 - (BOOL) isCompatibleBitmap: (NSBitmapImageRep*)bitmap
 {
   NSString *colorSpaceName;
+  NSInteger numColors;
 
   if ([bitmap bitmapFormat] != 0)
     {
