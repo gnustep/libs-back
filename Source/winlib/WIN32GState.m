@@ -164,7 +164,7 @@ BOOL alpha_blend_source_over(HDC destDC,
 			     HDC srcDC, 
 			     RECT rectFrom, 
 			     int x, int y, int w, int h, 
-			     float delta)
+			     CGFloat delta)
 {
   BOOL success = YES;
 
@@ -302,7 +302,7 @@ BOOL alpha_blend_source_over(HDC destDC,
 		fromRect: (NSRect)sourceRect
 		 toPoint: (NSPoint)destPoint
 		      op: (NSCompositingOperation)op
-		fraction: (float)delta
+		fraction: (CGFloat)delta
 {
   HDC sourceDC;
   HDC hDC;
@@ -408,7 +408,7 @@ BOOL alpha_blend_source_over(HDC destDC,
 - (void) compositerect: (NSRect)aRect
                     op: (NSCompositingOperation)op
 {
-  float gray;
+  CGFloat gray;
 
   // FIXME: This is taken from the xlib backend
   [self DPScurrentgray: &gray];
@@ -462,7 +462,7 @@ BOOL alpha_blend_source_over(HDC destDC,
            fromRect: (NSRect)aRect 
             toPoint: (NSPoint)aPoint 
                  op: (NSCompositingOperation)op
-           fraction: (float)delta
+           fraction: (CGFloat)delta
 {
   HDC sourceDC;
   HDC hDC;
@@ -569,9 +569,9 @@ BOOL alpha_blend_source_over(HDC destDC,
 }
 
 static
-HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
-		       int bitsPerSample, int samplesPerPixel,
-		       int bitsPerPixel, int bytesPerRow,
+HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
+		       NSInteger bitsPerSample, NSInteger samplesPerPixel,
+		       NSInteger bitsPerPixel, NSInteger bytesPerRow,
 		       BOOL isPlanar, BOOL hasAlpha,
 		       NSString *colorSpaceName,
 		       const unsigned char *const data[5])
@@ -902,9 +902,9 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 // -DPSimage: can cause images to be drawn with a 1px horizontal line cut at 
 // the top. That's why -DPSimage we still use the GDI top left coordinates.
 - (void)DPSimage: (NSAffineTransform*) matrix 
-		: (int) pixelsWide : (int) pixelsHigh
-		: (int) bitsPerSample : (int) samplesPerPixel 
-		: (int) bitsPerPixel : (int) bytesPerRow : (BOOL) isPlanar
+		: (NSInteger) pixelsWide : (NSInteger) pixelsHigh
+		: (NSInteger) bitsPerSample : (NSInteger) samplesPerPixel 
+		: (NSInteger) bitsPerPixel : (NSInteger) bytesPerRow : (BOOL) isPlanar
 		: (BOOL) hasAlpha : (NSString *) colorSpaceName
 		: (const unsigned char *const [5]) data
 {
@@ -1249,30 +1249,23 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 }
 
 
-- (void) DPSsetdash: (const float*)thePattern : (int)count : (float)phase
+- (void) DPSsetdash: (const CGFloat*)thePattern : (NSInteger)count : (CGFloat)phase
 {
-  CGFloat pattern[count];
-
   if (!path)
     {
       path = [NSBezierPath new];
     }
 
-  // Convert from float to CGFloat
-  for (i = 0; i < count; i++)
-    {
-      pattern[i] = thePattern[i];
-    }
   // FIXME: Convert to ctm first
-  [path setLineDash: pattern count: count phase: phase];
+  [path setLineDash: thePattern count: count phase: phase];
 }
 
-- (void)DPScurrentmiterlimit: (float *)limit 
+- (void)DPScurrentmiterlimit: (CGFloat *)limit 
 {
   *limit = miterlimit;
 }
 
-- (void)DPSsetmiterlimit: (float)limit 
+- (void)DPSsetmiterlimit: (CGFloat)limit 
 {
   // FIXME: Convert to ctm first
   miterlimit = limit;
@@ -1298,12 +1291,12 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   joinStyle = linejoin;
 }
 
-- (void)DPScurrentlinewidth: (float *)width 
+- (void)DPScurrentlinewidth: (CGFloat *)width 
 {
   *width = lineWidth;
 }
 
-- (void)DPSsetlinewidth: (float)width 
+- (void)DPSsetlinewidth: (CGFloat)width 
 {
   // FIXME: Convert to ctm first
   lineWidth = width;

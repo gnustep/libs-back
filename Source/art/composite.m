@@ -834,7 +834,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
 - (void) dissolveGState: (GSGState *)source
                fromRect: (NSRect)aRect
                 toPoint: (NSPoint)aPoint
-                  delta: (float)fraction
+                  delta: (CGFloat)fraction
 {
 /* much setup code shared with compositeGState:... */
   ARTGState *ags = (ARTGState *)source;
@@ -1209,7 +1209,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
                 fromRect: (NSRect)aRect
                  toPoint: (NSPoint)aPoint
                       op: (NSCompositingOperation)op
-                fraction: (float)delta
+                fraction: (CGFloat)delta
 {
   if (op == NSCompositeSourceOver)
     {

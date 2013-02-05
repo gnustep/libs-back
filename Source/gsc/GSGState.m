@@ -161,7 +161,7 @@
 - (void) dissolveGState: (GSGState *)source
                fromRect: (NSRect)aRect
                 toPoint: (NSPoint)aPoint
-                  delta: (float)delta
+                  delta: (CGFloat)delta
 {
   [self compositeGState: source 
         fromRect: aRect 
@@ -174,7 +174,7 @@
                 fromRect: (NSRect)aRect
                  toPoint: (NSPoint)aPoint
                       op: (NSCompositingOperation)op
-                fraction: (float)delta
+                fraction: (CGFloat)delta
 {
   [self subclassResponsibility: _cmd];
 }
@@ -207,12 +207,12 @@
 /* ----------------------------------------------------------------------- */
 /* Color operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPScurrentalpha: (float*)a
+- (void) DPScurrentalpha: (CGFloat*)a
 {
   *a = fillColor.field[AINDEX];
 }
 
-- (void) DPScurrentcmykcolor: (float*)c : (float*)m : (float*)y : (float*)k
+- (void) DPScurrentcmykcolor: (CGFloat*)c : (CGFloat*)m : (CGFloat*)y : (CGFloat*)k
 {
   device_color_t new = fillColor;
   gsColorToCMYK(&new);
@@ -222,21 +222,21 @@
   *k = new.field[3];
 }
 
-- (void) DPScurrentgray: (float*)gray
+- (void) DPScurrentgray: (CGFloat*)gray
 {
   device_color_t gcolor = fillColor;
   gsColorToGray(&gcolor);
   *gray = gcolor.field[0];
 }
 
-- (void) DPScurrenthsbcolor: (float*)h : (float*)s : (float*)b
+- (void) DPScurrenthsbcolor: (CGFloat*)h : (CGFloat*)s : (CGFloat*)b
 {
   device_color_t gcolor = fillColor;
   gsColorToHSB(&gcolor);
   *h = gcolor.field[0]; *s = gcolor.field[1]; *b = gcolor.field[2];
 }
 
-- (void) DPScurrentrgbcolor: (float*)r : (float*)g : (float*)b
+- (void) DPScurrentrgbcolor: (CGFloat*)r : (CGFloat*)g : (CGFloat*)b
 {
   device_color_t gcolor = fillColor;
   gsColorToRGB(&gcolor);
@@ -247,7 +247,7 @@
   if (x < 0.0) x = 0.0; \
   if (x > 1.0) x = 1.0;
 
-- (void) DPSsetalpha: (float)a
+- (void) DPSsetalpha: (CGFloat)a
 {
   CLAMP(a)
   fillColor.field[AINDEX] = strokeColor.field[AINDEX] = a;
@@ -255,7 +255,7 @@
   [self setColor: &strokeColor state: COLOR_STROKE];
 }
 
-- (void) DPSsetcmykcolor: (float)c : (float)m : (float)y : (float)k
+- (void) DPSsetcmykcolor: (CGFloat)c : (CGFloat)m : (CGFloat)y : (CGFloat)k
 {
   device_color_t col;
   CLAMP(c)
@@ -268,7 +268,7 @@
   [self setColor: &col state: COLOR_BOTH];
 }
 
-- (void) DPSsetgray: (float)gray
+- (void) DPSsetgray: (CGFloat)gray
 {
   device_color_t col;
   CLAMP(gray)
@@ -278,7 +278,7 @@
   [self setColor: &col  state: COLOR_BOTH];
 }
 
-- (void) DPSsethsbcolor: (float)h : (float)s : (float)b
+- (void) DPSsethsbcolor: (CGFloat)h : (CGFloat)s : (CGFloat)b
 {
   device_color_t col;
   CLAMP(h)
@@ -290,7 +290,7 @@
   [self setColor: &col state: COLOR_BOTH];
 }
 
-- (void) DPSsetrgbcolor: (float)r : (float)g : (float)b
+- (void) DPSsetrgbcolor: (CGFloat)r : (CGFloat)g : (CGFloat)b
 {
   device_color_t col;
   CLAMP(r)
@@ -402,10 +402,10 @@ typedef enum {
 /* Omnibus show string routine that combines that characteristics of
    ashow, awidthshow, widthshow, xshow, xyshow, and yshow */
 - (void) _showString: (const char *)s
-	    xCharAdj: (float)cx
-	    yCharAdj: (float)cy
+	    xCharAdj: (CGFloat)cx
+	    yCharAdj: (CGFloat)cy
 		char: (char)c
-	    adjArray: (const float *)arr
+	    adjArray: (const CGFloat *)arr
 	     arrType: (show_array_t)type
 	  isRelative: (BOOL)relative;
 {
@@ -478,9 +478,9 @@ typedef enum {
   free(uch);
 }
 
-- (void) DPSashow: (float)x : (float)y : (const char*)s
+- (void) DPSashow: (CGFloat)x : (CGFloat)y : (const char*)s
 {
-  float arr[2];
+  CGFloat arr[2];
 
   arr[0] = x; arr[1] = y;
   [self _showString: s
@@ -488,10 +488,10 @@ typedef enum {
     isRelative: YES];
 }
 
-- (void) DPSawidthshow: (float)cx : (float)cy : (int)c : (float)ax : (float)ay 
+- (void) DPSawidthshow: (CGFloat)cx : (CGFloat)cy : (int)c : (CGFloat)ax : (CGFloat)ay 
 		      : (const char*)s
 {
-  float arr[2];
+  CGFloat arr[2];
 
   arr[0] = ax; arr[1] = ay;
   [self _showString: s
@@ -571,9 +571,9 @@ typedef enum {
   [self subclassResponsibility: _cmd];
 }
 
-- (void) DPSwidthshow: (float)x : (float)y : (int)c : (const char*)s
+- (void) DPSwidthshow: (CGFloat)x : (CGFloat)y : (int)c : (const char*)s
 {
-  float arr[2];
+  CGFloat arr[2];
 
   arr[0] = 0; arr[1] = 0;
   [self _showString: s
@@ -581,28 +581,28 @@ typedef enum {
     isRelative: YES];
 }
 
-- (void) DPSxshow: (const char*)s : (const float*)numarray : (int)size
+- (void) DPSxshow: (const char*)s : (const CGFloat*)numarray : (int)size
 {
   [self _showString: s
     xCharAdj: 0 yCharAdj: 0 char: 0 adjArray: numarray arrType: show_array_x
     isRelative: NO];
 }
 
-- (void) DPSxyshow: (const char*)s : (const float*)numarray : (int)size
+- (void) DPSxyshow: (const char*)s : (const CGFloat*)numarray : (int)size
 {
   [self _showString: s
     xCharAdj: 0 yCharAdj: 0 char: 0 adjArray: numarray arrType: show_array_xy
     isRelative: NO];
 }
 
-- (void) DPSyshow: (const char*)s : (const float*)numarray : (int)size
+- (void) DPSyshow: (const char*)s : (const CGFloat*)numarray : (int)size
 {
   [self _showString: s
     xCharAdj: 0 yCharAdj: 0 char: 0 adjArray: numarray arrType: show_array_y
     isRelative: NO];
 }
 
-- (void) GSSetCharacterSpacing: (float)extra
+- (void) GSSetCharacterSpacing: (CGFloat)extra
 {
   charSpacing = extra;
 }
@@ -614,7 +614,7 @@ typedef enum {
   ASSIGN(font, fontref);
 }
 
-- (void) GSSetFontSize: (float)size
+- (void) GSSetFontSize: (CGFloat)size
 {
 }
 
@@ -694,7 +694,7 @@ typedef enum {
     textCtm = [[NSAffineTransform allocWithZone: [self zone]] init];
 }
 
-- (void)DPScurrentflat: (float *)flatness 
+- (void)DPScurrentflat: (CGFloat *)flatness 
 {
   if (path)
     *flatness = [path flatness];
@@ -712,12 +712,12 @@ typedef enum {
   [self subclassResponsibility: _cmd];
 }
 
-- (void) DPScurrentlinewidth: (float*)width
+- (void) DPScurrentlinewidth: (CGFloat*)width
 {
   [self subclassResponsibility: _cmd];
 }
 
-- (void) DPScurrentmiterlimit: (float*)limit
+- (void) DPScurrentmiterlimit: (CGFloat*)limit
 {
   [self subclassResponsibility: _cmd];
 }
@@ -740,7 +740,7 @@ typedef enum {
   return user;
 }
 
-- (void)DPScurrentpoint: (float *)x : (float *)y 
+- (void)DPScurrentpoint: (CGFloat *)x : (CGFloat *)y 
 {
   NSPoint user;
 
@@ -754,12 +754,12 @@ typedef enum {
   [self subclassResponsibility: _cmd];
 }
 
-- (void) DPSsetdash: (const float*)pat : (int)size : (float)offset
+- (void) DPSsetdash: (const CGFloat*)pat : (NSInteger)size : (CGFloat)offset
 {
   [self subclassResponsibility: _cmd];
 }
 
-- (void)DPSsetflat: (float)flatness 
+- (void)DPSsetflat: (CGFloat)flatness 
 {
   if (path)
     [path setFlatness: flatness];
@@ -775,12 +775,12 @@ typedef enum {
   [self subclassResponsibility: _cmd];
 }
 
-- (void) DPSsetlinewidth: (float)width
+- (void) DPSsetlinewidth: (CGFloat)width
 {
   [self subclassResponsibility: _cmd];
 }
 
-- (void) DPSsetmiterlimit: (float)limit
+- (void) DPSsetmiterlimit: (CGFloat)limit
 {
   [self subclassResponsibility: _cmd];
 }
@@ -793,7 +793,7 @@ typedef enum {
 /* ----------------------------------------------------------------------- */
 /* Matrix operations */
 /* ----------------------------------------------------------------------- */
-- (void)DPSconcat: (const float *)m
+- (void)DPSconcat: (const CGFloat *)m
 {
   NSAffineTransformStruct matrix;
   NSAffineTransform *new_ctm = [NSAffineTransform new];
@@ -815,17 +815,17 @@ typedef enum {
   [ctm makeIdentityMatrix];
 }
 
-- (void)DPSrotate: (float)angle 
+- (void)DPSrotate: (CGFloat)angle 
 {
   [ctm rotateByDegrees: angle];
 }
 
-- (void)DPSscale: (float)x : (float)y 
+- (void)DPSscale: (CGFloat)x : (CGFloat)y 
 {
   [ctm scaleXBy: x  yBy: y];
 }
 
-- (void)DPStranslate: (float)x : (float)y 
+- (void)DPStranslate: (CGFloat)x : (CGFloat)y 
 {
   [ctm translateToPoint: NSMakePoint(x, y)];
 }
@@ -848,7 +848,7 @@ typedef enum {
 /* ----------------------------------------------------------------------- */
 /* Paint operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPSarc: (float)x : (float)y : (float)r : (float)angle1 : (float)angle2 
+- (void) DPSarc: (CGFloat)x : (CGFloat)y : (CGFloat)r : (CGFloat)angle1 : (CGFloat)angle2 
 {
   NSBezierPath *newPath;
 
@@ -868,7 +868,7 @@ typedef enum {
   RELEASE(newPath);
 }
 
-- (void) DPSarcn: (float)x : (float)y : (float)r : (float)angle1 : (float)angle2 
+- (void) DPSarcn: (CGFloat)x : (CGFloat)y : (CGFloat)r : (CGFloat)angle1 : (CGFloat)angle2 
 {
   NSBezierPath *newPath;
 
@@ -888,7 +888,7 @@ typedef enum {
   RELEASE(newPath);
 }
 
-- (void)DPSarct: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)r 
+- (void)DPSarct: (CGFloat)x1 : (CGFloat)y1 : (CGFloat)x2 : (CGFloat)y2 : (CGFloat)r 
 {
   NSBezierPath *newPath;
 
@@ -917,8 +917,8 @@ typedef enum {
   [path closePath];
 }
 
-- (void)DPScurveto: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)x3 
-		  : (float)y3 
+- (void)DPScurveto: (CGFloat)x1 : (CGFloat)y1 : (CGFloat)x2 : (CGFloat)y2 : (CGFloat)x3 
+		  : (CGFloat)y3 
 {
   NSPoint p1 = [ctm transformPoint: NSMakePoint(x1, y1)];
   NSPoint p2 = [ctm transformPoint: NSMakePoint(x2, y2)];
@@ -954,7 +954,7 @@ typedef enum {
   [self subclassResponsibility: _cmd];
 }
 
-- (void)DPSlineto: (float)x : (float)y 
+- (void)DPSlineto: (CGFloat)x : (CGFloat)y 
 {
   NSPoint p = [ctm transformPoint: NSMakePoint(x, y)];
 
@@ -962,7 +962,7 @@ typedef enum {
   [path lineToPoint: p];
 }
 
-- (void)DPSmoveto: (float)x : (float)y 
+- (void)DPSmoveto: (CGFloat)x : (CGFloat)y 
 {
   NSPoint p = [ctm transformPoint: NSMakePoint(x, y)];
 
@@ -988,7 +988,7 @@ typedef enum {
   return AUTORELEASE(newPath);
 }
 
-- (void)DPSpathbbox: (float *)llx : (float *)lly : (float *)urx : (float *)ury 
+- (void)DPSpathbbox: (CGFloat *)llx : (CGFloat *)lly : (CGFloat *)urx : (CGFloat *)ury 
 {
   NSBezierPath *bpath = [self bezierPath];
   NSRect rect = [bpath controlPointBounds];
@@ -1003,8 +1003,8 @@ typedef enum {
     *ury = NSMaxY(rect);
 }
 
-- (void)DPSrcurveto: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)x3 
-		   : (float)y3 
+- (void)DPSrcurveto: (CGFloat)x1 : (CGFloat)y1 : (CGFloat)x2 : (CGFloat)y2 : (CGFloat)x3 
+		   : (CGFloat)y3 
 {
   NSPoint p1 = [ctm deltaPointInMatrixSpace: NSMakePoint(x1, y1)];
   NSPoint p2 = [ctm deltaPointInMatrixSpace: NSMakePoint(x2, y2)];
@@ -1016,7 +1016,7 @@ typedef enum {
 	controlPoint2: p2];
 }
 
-- (void) DPSrectclip: (float)x : (float)y : (float)w : (float)h
+- (void) DPSrectclip: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
 {
   NSBezierPath *oldPath = path;
 
@@ -1030,7 +1030,7 @@ typedef enum {
     [path removeAllPoints];
 }
 
-- (void) DPSrectfill: (float)x : (float)y : (float)w : (float)h
+- (void) DPSrectfill: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
 {
   NSBezierPath *oldPath = path;
 
@@ -1042,7 +1042,7 @@ typedef enum {
   path = oldPath;
 }
 
-- (void) DPSrectstroke: (float)x : (float)y : (float)w : (float)h
+- (void) DPSrectstroke: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
 {
   NSBezierPath *oldPath = path;
 
@@ -1060,7 +1060,7 @@ typedef enum {
     ASSIGN(path, [path bezierPathByReversingPath]);
 }
 
-- (void)DPSrlineto: (float)x : (float)y 
+- (void)DPSrlineto: (CGFloat)x : (CGFloat)y 
 {
   NSPoint p = [ctm deltaPointInMatrixSpace: NSMakePoint(x, y)];
  
@@ -1068,7 +1068,7 @@ typedef enum {
   [path relativeLineToPoint: p];
 }
 
-- (void)DPSrmoveto: (float)x : (float)y 
+- (void)DPSrmoveto: (CGFloat)x : (CGFloat)y 
 {
   NSPoint p = [ctm deltaPointInMatrixSpace: NSMakePoint(x, y)];
  
@@ -1086,8 +1086,6 @@ typedef enum {
   NSInteger count = 10;
   CGFloat dash_pattern[10];
   CGFloat phase;
-  float fpattern[10];
-  NSInteger i;
 
   // Appending to the current path is a lot faster than copying!
   //ASSIGNCOPY(path, newpath);
@@ -1104,12 +1102,7 @@ typedef enum {
   [self DPSsetflat: [newpath flatness]];
 
   [newpath getLineDash: dash_pattern count: &count phase: &phase];
-  // Convert from CGFloat to float
-  for (i = 0; i < count; i++)
-    {
-      fpattern[i] = dash_pattern[i];
-    }
-  [self DPSsetdash: fpattern : count : phase];
+  [self DPSsetdash: dash_pattern : count : phase];
 }
 
 - (void) GSRectClipList: (const NSRect *)rects : (int) count
@@ -1148,9 +1141,9 @@ typedef enum {
 }
 
 - (void)DPSimage: (NSAffineTransform*) matrix 
-		: (int) pixelsWide : (int) pixelsHigh
-		: (int) bitsPerSample : (int) samplesPerPixel 
-		: (int) bitsPerPixel : (int) bytesPerRow : (BOOL) isPlanar
+		: (NSInteger) pixelsWide : (NSInteger) pixelsHigh
+		: (NSInteger) bitsPerSample : (NSInteger) samplesPerPixel 
+		: (NSInteger) bitsPerPixel : (NSInteger) bytesPerRow : (BOOL) isPlanar
 		: (BOOL) hasAlpha : (NSString *) colorSpaceName
 		: (const unsigned char *const [5]) data
 {
@@ -1283,8 +1276,8 @@ typedef enum {
 - (void) _fillRect: (NSRect)rect withPattern: (NSImage*)color_pattern
 {
   NSSize size;
-  float x;
-  float y;
+  CGFloat x;
+  CGFloat y;
   NSAffineTransform *ictm;
 
   // The coordinates we get here are already in device space,

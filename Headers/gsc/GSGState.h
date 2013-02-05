@@ -65,7 +65,7 @@ typedef enum {
   color_state_t  cstate;        /* state last time color was set */
   NSImage *pattern;             /* If set, image to draw with */   
 
-  float   charSpacing;
+  CGFloat   charSpacing;
   NSAffineTransform *textCtm;   /* Text transform - concat with ctm */
   GSTextDrawingMode textMode;
   BOOL viewIsFlipped;
@@ -88,13 +88,13 @@ typedef enum {
 - (void) dissolveGState: (GSGState *)source
                fromRect: (NSRect)aRect
                 toPoint: (NSPoint)aPoint
-                  delta: (float)delta;
+                  delta: (CGFloat)delta;
 
 - (void) compositeGState: (GSGState *)source
                 fromRect: (NSRect)aRect
                  toPoint: (NSPoint)aPoint
                       op: (NSCompositingOperation)op
-                fraction: (float)delta;
+                fraction: (CGFloat)delta;
 
 - (void) compositerect: (NSRect)aRect
                     op: (NSCompositingOperation)op;
@@ -112,7 +112,7 @@ graphics state with arbitrary transforms on the current graphics context. */
            fromRect: (NSRect)aRect 
             toPoint: (NSPoint)aPoint 
                  op: (NSCompositingOperation)op
-           fraction: (float)delta;
+           fraction: (CGFloat)delta;
 @end
 
 #include "GSGStateOps.h"

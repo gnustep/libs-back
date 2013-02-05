@@ -74,7 +74,7 @@
     NSZoneFree(NSDefaultMallocZone(), _base); \
   }
 
-static inline double doubleFromUserSpace(NSAffineTransform *ctm, double d)
+static inline double doubleFromUserSpace(NSAffineTransform *ctm, CGFloat d)
 {
   if (ctm)
     {
@@ -87,7 +87,7 @@ static inline double doubleFromUserSpace(NSAffineTransform *ctm, double d)
   return d;
 }
 
-static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
+static inline CGFloat floatToUserSpace(NSAffineTransform *ctm, double d)
 {
   if (ctm)
     {
@@ -98,7 +98,7 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
       d = doubleFromUserSpace(ictm, d);
       RELEASE(ictm);
     }
-  return (float)d;
+  return (CGFloat)d;
 }
 
 
@@ -416,7 +416,7 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
     }
 }
 
-- (void) GSSetFontSize: (float)size
+- (void) GSSetFontSize: (CGFloat)size
 {
   if (_ct)
     {
@@ -529,11 +529,11 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
   cairo_new_path(_ct);
 }
 
-- (void) DPScurrentflat: (float *)flatness
+- (void) DPScurrentflat: (CGFloat *)flatness
 {
   if (_ct)
     {
-      *flatness = (float)cairo_get_tolerance(_ct) * 2;
+      *flatness = (CGFloat)cairo_get_tolerance(_ct) * 2;
     }
 }
 
@@ -593,7 +593,7 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
    */
 }
 
-- (void) DPScurrentlinewidth: (float *)width
+- (void) DPScurrentlinewidth: (CGFloat *)width
 {
   if (_ct)
     {
@@ -601,7 +601,7 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
     }
 }
 
-- (void) DPScurrentmiterlimit: (float *)limit
+- (void) DPScurrentmiterlimit: (CGFloat *)limit
 {
   if (_ct)
     {
@@ -613,7 +613,7 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
 {
 }
 
-- (void) DPSsetdash: (const float *)pat : (int)size : (float)foffset
+- (void) DPSsetdash: (const CGFloat *)pat : (NSInteger)size : (CGFloat)foffset
 {
   if (_ct)
     {
@@ -633,7 +633,7 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
     }
 }
 
-- (void) DPSsetflat: (float)flatness
+- (void) DPSsetflat: (CGFloat)flatness
 {
   [super DPSsetflat: flatness];
   if (_ct)
@@ -660,7 +660,7 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
     }
 }
 
-- (void) DPSsetlinewidth: (float)width
+- (void) DPSsetlinewidth: (CGFloat)width
 {
   if (_ct)
     {
@@ -668,7 +668,7 @@ static inline float floatToUserSpace(NSAffineTransform *ctm, double d)
     }
 }
 
-- (void) DPSsetmiterlimit: (float)limit
+- (void) DPSsetmiterlimit: (CGFloat)limit
 {
   if (_ct)
     {
@@ -1003,10 +1003,10 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   cairo_fill(_ct);
 }
 
-- (void) DPSimage: (NSAffineTransform *)matrix : (int)pixelsWide
-		 : (int)pixelsHigh : (int)bitsPerSample 
-		 : (int)samplesPerPixel : (int)bitsPerPixel
-		 : (int)bytesPerRow : (BOOL)isPlanar
+- (void) DPSimage: (NSAffineTransform *)matrix : (NSInteger)pixelsWide
+		 : (NSInteger)pixelsHigh : (NSInteger)bitsPerSample 
+		 : (NSInteger)samplesPerPixel : (NSInteger)bitsPerPixel
+		 : (NSInteger)bytesPerRow : (BOOL)isPlanar
 		 : (BOOL)hasAlpha : (NSString *)colorSpaceName
 		 : (const unsigned char *const[5])data
 {
@@ -1233,7 +1233,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
                 fromRect: (NSRect)srcRect 
                  toPoint: (NSPoint)destPoint 
                       op: (NSCompositingOperation)op
-                fraction: (float)delta
+                fraction: (CGFloat)delta
 {
   cairo_surface_t *src;
   NSSize ssize = NSZeroSize;
@@ -1375,7 +1375,7 @@ doesn't support to use the receiver cairo target as the source. */
            fromRect: (NSRect)aRect 
             toPoint: (NSPoint)aPoint 
                  op: (NSCompositingOperation)op
-           fraction: (float)delta
+           fraction: (CGFloat)delta
 {
   NSAffineTransformStruct tstruct =  [ctm transformStruct];
   cairo_surface_t *src;

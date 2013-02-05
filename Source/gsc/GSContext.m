@@ -106,8 +106,8 @@ static NSMapTable *gtable;
 
 @interface GSContext (PrivateOps)
 - (void)DPSdefineuserobject;
-- (void)DPSexecuserobject: (int)index;
-- (void)DPSundefineuserobject: (int)index;
+- (void)DPSexecuserobject: (NSInteger)index;
+- (void)DPSundefineuserobject: (NSInteger)index;
 - (void)DPSclear;
 - (void)DPScopy: (int)n;
 - (void)DPScount: (int *)n;
@@ -261,23 +261,23 @@ static NSMapTable *gtable;
 /* ----------------------------------------------------------------------- */
 /* Color operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPScurrentalpha: (float *)a
+- (void) DPScurrentalpha: (CGFloat *)a
 {
   [gstate DPScurrentalpha: a];
 }
 
-- (void) DPScurrentcmykcolor: (float*)c : (float*)m : (float*)y : (float*)k 
+- (void) DPScurrentcmykcolor: (CGFloat*)c : (CGFloat*)m : (CGFloat*)y : (CGFloat*)k 
 {
   [gstate DPScurrentcmykcolor:c :m :y :k];
 }
 
-- (void) DPScurrentgray: (float*)gray 
+- (void) DPScurrentgray: (CGFloat*)gray 
 {
   CHECK_NULL_OUTPUT(gray);
   [gstate DPScurrentgray: gray];
 }
 
-- (void) DPScurrenthsbcolor: (float*)h : (float*)s : (float*)b 
+- (void) DPScurrenthsbcolor: (CGFloat*)h : (CGFloat*)s : (CGFloat*)b 
 {
   CHECK_NULL_OUTPUT(h);
   CHECK_NULL_OUTPUT(s);
@@ -285,7 +285,7 @@ static NSMapTable *gtable;
   [gstate DPScurrenthsbcolor:h :s :b];
 }
 
-- (void) DPScurrentrgbcolor: (float*)r : (float*)g : (float*)b 
+- (void) DPScurrentrgbcolor: (CGFloat*)r : (CGFloat*)g : (CGFloat*)b 
 {
   CHECK_NULL_OUTPUT(r);
   CHECK_NULL_OUTPUT(g);
@@ -293,27 +293,27 @@ static NSMapTable *gtable;
   [gstate DPScurrentrgbcolor:r :g :b];
 }
 
-- (void) DPSsetalpha: (float)a
+- (void) DPSsetalpha: (CGFloat)a
 {
   [gstate DPSsetalpha: a];
 }
 
-- (void) DPSsetcmykcolor: (float)c : (float)m : (float)y : (float)k 
+- (void) DPSsetcmykcolor: (CGFloat)c : (CGFloat)m : (CGFloat)y : (CGFloat)k 
 {
   [gstate DPSsetcmykcolor:c :m :y :k];
 }
 
-- (void) DPSsetgray: (float)gray 
+- (void) DPSsetgray: (CGFloat)gray 
 {
   [gstate DPSsetgray: gray];
 }
 
-- (void) DPSsethsbcolor: (float)h : (float)s : (float)b 
+- (void) DPSsethsbcolor: (CGFloat)h : (CGFloat)s : (CGFloat)b 
 {
   [gstate DPSsethsbcolor:h :s :b];
 }
 
-- (void) DPSsetrgbcolor: (float)r : (float)g : (float)b 
+- (void) DPSsetrgbcolor: (CGFloat)r : (CGFloat)g : (CGFloat)b 
 {
   [gstate DPSsetrgbcolor:r :g :b];
 }
@@ -346,12 +346,12 @@ static NSMapTable *gtable;
 /* ----------------------------------------------------------------------- */
 /* Text operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPSashow: (float)x : (float)y : (const char *)s 
+- (void) DPSashow: (CGFloat)x : (CGFloat)y : (const char *)s 
 {
   [gstate DPSashow: x : y : s];
 }
 
-- (void) DPSawidthshow: (float)cx : (float)cy : (int)c : (float)ax : (float)ay : (const char *)s 
+- (void) DPSawidthshow: (CGFloat)cx : (CGFloat)cy : (int)c : (CGFloat)ax : (CGFloat)ay : (const char *)s 
 {
   [gstate DPSawidthshow: cx : cy : c : ax : ay : s];
 }
@@ -372,27 +372,27 @@ static NSMapTable *gtable;
   [gstate DPSshow: s];
 }
 
-- (void) DPSwidthshow: (float)x : (float)y : (int)c : (const char *)s 
+- (void) DPSwidthshow: (CGFloat)x : (CGFloat)y : (int)c : (const char *)s 
 {
   [gstate DPSwidthshow: x : y : c : s];
 }
 
-- (void) DPSxshow: (const char *)s : (const float*)numarray : (int)size 
+- (void) DPSxshow: (const char *)s : (const CGFloat*)numarray : (int)size 
 {
   [gstate DPSxshow: s : numarray : size];
 }
 
-- (void) DPSxyshow: (const char *)s : (const float*)numarray : (int)size 
+- (void) DPSxyshow: (const char *)s : (const CGFloat*)numarray : (int)size 
 {
   [gstate DPSxyshow: s : numarray : size];
 }
 
-- (void) DPSyshow: (const char *)s : (const float*)numarray : (int)size 
+- (void) DPSyshow: (const char *)s : (const CGFloat*)numarray : (int)size 
 {
   [gstate DPSyshow: s : numarray : size];
 }
 
-- (void) GSSetCharacterSpacing: (float)extra
+- (void) GSSetCharacterSpacing: (CGFloat)extra
 {
   [gstate GSSetCharacterSpacing: extra];
 }
@@ -402,7 +402,7 @@ static NSMapTable *gtable;
   [gstate GSSetFont: fontref];
 }
 
-- (void) GSSetFontSize: (float)size
+- (void) GSSetFontSize: (CGFloat)size
 {
   [gstate GSSetFontSize: size];
 }
@@ -473,7 +473,7 @@ static NSMapTable *gtable;
   [gstate DPSinitgraphics];
 }
 
-- (void) DPSsetgstate: (int)gst
+- (void) DPSsetgstate: (NSInteger)gst
 {
   if (gst)
     {
@@ -486,35 +486,35 @@ static NSMapTable *gtable;
     DESTROY(gstate);
 }
 
-- (int) GSDefineGState
+- (NSInteger) GSDefineGState
 {
   if (gstate == nil)
     {
       DPS_ERROR(DPSundefined, @"No gstate");
       return 0;
     }
-	[isa insertObject: AUTORELEASE([gstate copy]) forKey: ++unique_index];
+  [isa insertObject: AUTORELEASE([gstate copy]) forKey: ++unique_index];
 
   return unique_index;
 }
 
-- (void) GSUndefineGState: (int)gst
+- (void) GSUndefineGState: (NSInteger)gst
 {
   [self DPSundefineuserobject: gst];
 }
 
-- (void) GSReplaceGState: (int)gst
+- (void) GSReplaceGState: (NSInteger)gst
 {
   if (gst <= 0)
     return;
 
-	[isa insertObject: AUTORELEASE([gstate copy]) forKey: gst];
+  [isa insertObject: AUTORELEASE([gstate copy]) forKey: gst];
 }
 
 /* ----------------------------------------------------------------------- */
 /* Gstate operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPScurrentflat: (float*)flatness
+- (void) DPScurrentflat: (CGFloat*)flatness
 {
   CHECK_NULL_OUTPUT(flatness);
   [gstate DPScurrentflat: flatness];
@@ -530,18 +530,18 @@ static NSMapTable *gtable;
   [gstate DPScurrentlinejoin: linejoin];
 }
 
-- (void) DPScurrentlinewidth: (float*)width
+- (void) DPScurrentlinewidth: (CGFloat*)width
 {
   [gstate DPScurrentlinewidth: width];
 }
 
-- (void) DPScurrentmiterlimit: (float*)limit
+- (void) DPScurrentmiterlimit: (CGFloat*)limit
 {
   CHECK_NULL_OUTPUT(limit);
   [gstate DPScurrentmiterlimit: limit];
 }
 
-- (void) DPScurrentpoint: (float*)x : (float*)y
+- (void) DPScurrentpoint: (CGFloat*)x : (CGFloat*)y
 {
   CHECK_NULL_OUTPUT(x);
   CHECK_NULL_OUTPUT(y);
@@ -554,17 +554,17 @@ static NSMapTable *gtable;
   [gstate DPScurrentstrokeadjust: b];
 }
 
-- (void) DPSsetdash: (const float*)pat : (int)size : (float)offset
+- (void) DPSsetdash: (const CGFloat*)pat : (NSInteger)size : (CGFloat)offset
 {
   [gstate DPSsetdash: pat : size : offset]; 
 }
 
-- (void) DPSsetflat: (float)flatness
+- (void) DPSsetflat: (CGFloat)flatness
 {
   [gstate DPSsetflat: flatness];
 }
 
-- (void) DPSsethalftonephase: (float)x : (float)y
+- (void) DPSsethalftonephase: (CGFloat)x : (CGFloat)y
 {
   [self notImplemented: _cmd];
 }
@@ -579,12 +579,12 @@ static NSMapTable *gtable;
   [gstate DPSsetlinejoin: linejoin];
 }
 
-- (void) DPSsetlinewidth: (float)width
+- (void) DPSsetlinewidth: (CGFloat)width
 {
   [gstate DPSsetlinewidth: width];
 }
 
-- (void) DPSsetmiterlimit: (float)limit
+- (void) DPSsetmiterlimit: (CGFloat)limit
 {
   [gstate DPSsetmiterlimit: limit];
 }
@@ -597,7 +597,7 @@ static NSMapTable *gtable;
 /* ----------------------------------------------------------------------- */
 /* Matrix operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPSconcat: (const float*)m
+- (void) DPSconcat: (const CGFloat*)m
 {
   [gstate DPSconcat: m];
 }
@@ -607,17 +607,17 @@ static NSMapTable *gtable;
   [gstate DPSinitmatrix];
 }
 
-- (void) DPSrotate: (float)angle
+- (void) DPSrotate: (CGFloat)angle
 {
   [gstate DPSrotate: angle];
 }
 
-- (void) DPSscale: (float)x : (float)y
+- (void) DPSscale: (CGFloat)x : (CGFloat)y
 {
   [gstate DPSscale:x :y];
 }
 
-- (void) DPStranslate: (float)x : (float)y
+- (void) DPStranslate: (CGFloat)x : (CGFloat)y
 {
   [gstate DPStranslate:x :y];
 }
@@ -640,19 +640,19 @@ static NSMapTable *gtable;
 /* ----------------------------------------------------------------------- */
 /* Paint operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPSarc: (float)x : (float)y : (float)r : (float)angle1 
-	       : (float)angle2
+- (void) DPSarc: (CGFloat)x : (CGFloat)y : (CGFloat)r : (CGFloat)angle1 
+	       : (CGFloat)angle2
 {
   [gstate DPSarc: x : y : r : angle1 : angle2];
 }
 
-- (void) DPSarcn: (float)x : (float)y : (float)r : (float)angle1 
-		: (float)angle2
+- (void) DPSarcn: (CGFloat)x : (CGFloat)y : (CGFloat)r : (CGFloat)angle1 
+		: (CGFloat)angle2
 {
   [gstate DPSarcn: x : y : r : angle1 : angle2];
 }
 
-- (void) DPSarct: (float)x1 : (float)y1 : (float)x2 : (float)y2 : (float)r;
+- (void) DPSarct: (CGFloat)x1 : (CGFloat)y1 : (CGFloat)x2 : (CGFloat)y2 : (CGFloat)r;
 {
   [gstate DPSarct: x1 : y1 : x2 : y2 : r];
 }
@@ -667,8 +667,8 @@ static NSMapTable *gtable;
   [gstate DPSclosepath];
 }
 
-- (void) DPScurveto: (float)x1 : (float)y1 : (float)x2 : (float)y2 
-		   : (float)x3 : (float)y3
+- (void) DPScurveto: (CGFloat)x1 : (CGFloat)y1 : (CGFloat)x2 : (CGFloat)y2 
+		   : (CGFloat)x3 : (CGFloat)y3
 {
   [gstate DPScurveto: x1 : y1 : x2 : y2 : x3 : y3];
 }
@@ -698,12 +698,12 @@ static NSMapTable *gtable;
   [gstate DPSinitclip];
 }
 
-- (void) DPSlineto: (float)x : (float)y
+- (void) DPSlineto: (CGFloat)x : (CGFloat)y
 {
   [gstate DPSlineto: x : y];
 }
 
-- (void) DPSmoveto: (float)x : (float)y
+- (void) DPSmoveto: (CGFloat)x : (CGFloat)y
 {
   [gstate DPSmoveto: x : y];
 }
@@ -713,28 +713,28 @@ static NSMapTable *gtable;
   [gstate DPSnewpath];
 }
 
-- (void) DPSpathbbox: (float*)llx : (float*)lly : (float*)urx : (float*)ury
+- (void) DPSpathbbox: (CGFloat*)llx : (CGFloat*)lly : (CGFloat*)urx : (CGFloat*)ury
 {
   [gstate DPSpathbbox: llx : lly : urx : ury];
 }
 
-- (void) DPSrcurveto: (float)x1 : (float)y1 : (float)x2 : (float)y2 
-		    : (float)x3 : (float)y3
+- (void) DPSrcurveto: (CGFloat)x1 : (CGFloat)y1 : (CGFloat)x2 : (CGFloat)y2 
+		    : (CGFloat)x3 : (CGFloat)y3
 {
   [gstate DPSrcurveto: x1 : y1 : x2 : y2 : x3 : y3];
 }
 
-- (void) DPSrectclip: (float)x : (float)y : (float)w : (float)h
+- (void) DPSrectclip: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
 {
   [gstate DPSrectclip: x : y : w : h];
 }
 
-- (void) DPSrectfill: (float)x : (float)y : (float)w : (float)h
+- (void) DPSrectfill: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
 {
   [gstate DPSrectfill:x :y :w :h];
 }
 
-- (void) DPSrectstroke: (float)x : (float)y : (float)w : (float)h
+- (void) DPSrectstroke: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
 {
   [gstate DPSrectstroke:x :y :w :h];
 }
@@ -744,12 +744,12 @@ static NSMapTable *gtable;
   [gstate DPSreversepath];
 }
 
-- (void) DPSrlineto: (float)x : (float)y
+- (void) DPSrlineto: (CGFloat)x : (CGFloat)y
 {
   [gstate DPSrlineto: x : y];
 }
 
-- (void) DPSrmoveto: (float)x : (float)y
+- (void) DPSrmoveto: (CGFloat)x : (CGFloat)y
 {
   [gstate DPSrmoveto: x : y];
 }
@@ -795,8 +795,8 @@ static NSMapTable *gtable;
 /*-------------------------------------------------------------------------*/
 /* Graphics Extension Ops */
 /*-------------------------------------------------------------------------*/
-- (void) DPScomposite: (float)x : (float)y : (float)w : (float)h 
-		     : (int)gstateNum : (float)dx : (float)dy : (int)op
+- (void) DPScomposite: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h 
+		     : (NSInteger)gstateNum : (CGFloat)dx : (CGFloat)dy : (NSCompositingOperation)op
 {
   [self GScomposite: gstateNum
         toPoint: NSMakePoint(dx, dy)
@@ -805,13 +805,13 @@ static NSMapTable *gtable;
         fraction: 1.0];
 }
 
-- (void) DPScompositerect: (float)x : (float)y : (float)w : (float)h : (int)op
+- (void) DPScompositerect: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h : (NSCompositingOperation)op
 {
-  [gstate  compositerect: NSMakeRect(x, y, w, h) op: op];
+  [gstate compositerect: NSMakeRect(x, y, w, h) op: op];
 }
 
-- (void) DPSdissolve: (float)x : (float)y : (float)w : (float)h 
-		    : (int)gstateNum : (float)dx : (float)dy : (float)delta
+- (void) DPSdissolve: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h 
+		    : (NSInteger)gstateNum : (CGFloat)dx : (CGFloat)dy : (CGFloat)delta
 {
   [self GScomposite: gstateNum
         toPoint: NSMakePoint(dx, dy)
@@ -820,11 +820,11 @@ static NSMapTable *gtable;
         fraction: delta];
 }
 
-- (void) GScomposite: (int)gstateNum
+- (void) GScomposite: (NSInteger)gstateNum
 	     toPoint: (NSPoint)aPoint
 	    fromRect: (NSRect)srcRect
 	   operation: (NSCompositingOperation)op
-	    fraction: (float)delta
+	    fraction: (CGFloat)delta
 {
   GSGState *g = gstate;
 
@@ -841,11 +841,11 @@ static NSMapTable *gtable;
                  fraction: delta];
 }
 
-- (void) GSdraw: (int)gstateNum
+- (void) GSdraw: (NSInteger)gstateNum
 	toPoint: (NSPoint)aPoint
        fromRect: (NSRect)srcRect
       operation: (NSCompositingOperation)op
-       fraction: (float)delta
+       fraction: (CGFloat)delta
 {
   GSGState *g = gstate;
 
@@ -934,9 +934,9 @@ static NSMapTable *gtable;
 /*
  * Render Bitmap Images
  */
-- (void) NSDrawBitmap: (NSRect) rect : (int) pixelsWide : (int) pixelsHigh
-		     : (int) bitsPerSample : (int) samplesPerPixel 
-		     : (int) bitsPerPixel : (int) bytesPerRow : (BOOL) isPlanar
+- (void) NSDrawBitmap: (NSRect) rect : (NSInteger) pixelsWide : (NSInteger) pixelsHigh
+		     : (NSInteger) bitsPerSample : (NSInteger) samplesPerPixel 
+		     : (NSInteger) bitsPerPixel : (NSInteger) bytesPerRow : (BOOL) isPlanar
 		     : (BOOL) hasAlpha : (NSString *) colorSpaceName
 		     : (const unsigned char *const [5]) data
 {
@@ -981,16 +981,17 @@ static NSMapTable *gtable;
   int n;
   id obj;
   NSNumber *number;
+
   ctxt_pop(obj, opstack, NSObject);
   ctxt_pop(number, opstack, NSNumber);
   n = [number intValue];
   if (n < 0)
     DPS_ERROR(DPSinvalidparam, @"Invalid userobject index");
   else 
-		[isa insertObject: obj forKey: n];
+    [isa insertObject: obj forKey: n];
 }
 
-- (void)DPSexecuserobject: (int)index
+- (void)DPSexecuserobject: (NSInteger)index
 {
   id obj;
 
@@ -1002,7 +1003,7 @@ static NSMapTable *gtable;
   ctxt_push(obj, opstack);
 }
 
-- (void)DPSundefineuserobject: (int)index
+- (void)DPSundefineuserobject: (NSInteger)index
 {
   if (index < 0 || [isa getObjectForKey: index] == nil)
     {

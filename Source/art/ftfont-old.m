@@ -363,7 +363,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, FT_Pointer data, FT_
 	: (unsigned char *)abuf : (int)abpl
 	color:(unsigned char)r : (unsigned char)g : (unsigned char)b : (unsigned char)alpha
 	transform: (NSAffineTransform *)transform
-	deltas: (const float *)delta_data : (int)delta_size : (int)delta_flags
+	deltas: (const CGFloat *)delta_data : (int)delta_size : (int)delta_flags
         widthChar: (int) wch
 	drawinfo: (draw_info_t *)di
 {
@@ -2129,7 +2129,7 @@ delta:0,
 /* TODO: sometimes gets 'glyph transformation failed', probably need to
 add code to avoid loading bitmaps for glyphs */
 -(void) outlineString: (const char *)s
-		   at: (float)x : (float)y
+		   at: (CGFloat)x : (CGFloat)y
 	       gstate: (void *)func_param
 {
   unichar *c;
