@@ -33,8 +33,8 @@
 {
 @public
   int clinecap, clinejoin;
-  float clinewidth, cmiterlimit;
-  float cstrokeadjust;
+  CGFloat clinewidth, cmiterlimit;
+  CGFloat cstrokeadjust;
 }
 
 @end

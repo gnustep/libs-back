@@ -1,5 +1,24 @@
 2013-02-01  Fred Kiefer <FredKiefer@gmx.de>
 
+	* Headers/gsc/GSGState.h
+	* Headers/gsc/GSGStateOps.h
+	* Headers/gsc/GSStreamGState.h
+	* Source/art/ARTGState.m
+	* Source/art/composite.m
+	* Source/art/ftfont-old.m
+	* Source/art/ftfont.h
+	* Source/art/ftfont.m
+	* Source/art/path.m
+	* Source/cairo/CairoGState.m
+	* Source/gsc/GSContext.m
+	* Source/gsc/GSGState.m
+	* Source/gsc/GSStreamContext.m
+	* Source/winlib/WIN32GState.m
+	* Source/xlib/XGGState.m: Adopt to CGFloat changes in DPS/PS
+	functions of gui.
+
+2013-02-01  Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/cairo/CairoGState.m
 	* Source/gsc/GSGState.m
 	* Source/gsc/GSStreamContext.m
