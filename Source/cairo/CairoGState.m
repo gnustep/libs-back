@@ -267,7 +267,7 @@ static inline CGFloat floatToUserSpace(NSAffineTransform *ctm, double d)
   return copy;
 }
 
-- (void) GSCurrentSurface: (CairoSurface **)surface: (int *)x : (int *)y
+- (void) GSCurrentSurface: (CairoSurface **)surface : (int *)x : (int *)y
 {
   if (x)
     *x = offset.x;

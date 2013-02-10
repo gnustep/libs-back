@@ -38,7 +38,7 @@
     CairoSurface *_surface;
 }
 
-- (void) GSCurrentSurface: (CairoSurface **)surface: (int *)x : (int *)y;
+- (void) GSCurrentSurface: (CairoSurface **)surface : (int *)x : (int *)y;
 - (void) GSSetSurface: (CairoSurface *)surface : (int)x : (int)y;
 
 - (void) showPage;

@@ -736,7 +736,7 @@ fpfloat(FILE *stream, float f)
     }
 }
 
-- (void) GSRectClipList: (const NSRect *)rects: (int)count
+- (void) GSRectClipList: (const NSRect *)rects : (int)count
 {
   int i;
   NSRect union_rect;
@@ -757,7 +757,7 @@ fpfloat(FILE *stream, float f)
 	  : NSWidth(union_rect) : NSHeight(union_rect)];
 }
 
-- (void) GSRectFillList: (const NSRect *)rects: (int)count
+- (void) GSRectFillList: (const NSRect *)rects : (int)count
 {
   int i;
   for (i = 0; i < count; i++)
