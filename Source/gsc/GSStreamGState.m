@@ -62,13 +62,13 @@
     *linejoin = clinejoin;
 }
 
-- (void) DPScurrentlinewidth: (float*)width
+- (void) DPScurrentlinewidth: (CGFloat*)width
 {
   if (width)
     *width = clinewidth;
 }
 
-- (void) DPScurrentmiterlimit: (float*)limit
+- (void) DPScurrentmiterlimit: (CGFloat*)limit
 {
   if (limit)
     *limit = cmiterlimit;
@@ -90,12 +90,12 @@
   clinejoin = linejoin;
 }
 
-- (void) DPSsetlinewidth: (float)width
+- (void) DPSsetlinewidth: (CGFloat)width
 {
   clinewidth = width;
 }
 
-- (void) DPSsetmiterlimit: (float)limit
+- (void) DPSsetmiterlimit: (CGFloat)limit
 {
   cmiterlimit = limit;
 }
@@ -106,5 +106,3 @@
 }
 
 @end
-
-

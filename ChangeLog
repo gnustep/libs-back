@@ -1,3 +1,15 @@
+2013-02-10  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/cairo/CairoGState.h
+	* Source/cairo/CairoGState.m
+	* Source/cairo/XGCairoXImageSurface.m
+	* Source/gsc/GSContext.m
+	* Source/gsc/GSStreamContext.m
+	* Source/gsc/GSStreamGState.m
+	* Source/x11/XGServerWindow.m
+	* Source/x11/XGDragView.m:
+	Silence warnings from clang.
+
 2013-02-01  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/winlib/WIN32Context.m(-isCompatibleBitmap): Add

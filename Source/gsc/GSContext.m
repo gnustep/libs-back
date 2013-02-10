@@ -867,7 +867,7 @@ static NSMapTable *gtable;
   return ([bitmap bitmapFormat] == 0);
 }
 
-- (void) GSDrawImage: (NSRect) rect: (void *) imageref
+- (void) GSDrawImage: (NSRect) rect : (void *) imageref
 {
   NSBitmapImageRep *bitmap;
   unsigned char *data[5];
