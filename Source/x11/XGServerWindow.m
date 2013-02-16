@@ -99,14 +99,14 @@ static int		last_win_num = 0;
 @end
 
 @interface NSBitmapImageRep (GSPrivate)
-- (NSBitmapImageRep *) _convertToFormatBitsPerSample: (int)bps
-                                     samplesPerPixel: (int)spp
+- (NSBitmapImageRep *) _convertToFormatBitsPerSample: (NSInteger)bps
+                                     samplesPerPixel: (NSInteger)spp
                                             hasAlpha: (BOOL)alpha
                                             isPlanar: (BOOL)isPlanar
                                       colorSpaceName: (NSString*)colorSpaceName
                                         bitmapFormat: (NSBitmapFormat)bitmapFormat 
-                                         bytesPerRow: (int)rowBytes
-                                        bitsPerPixel: (int)pixelBits;
+                                         bytesPerRow: (NSInteger)rowBytes
+                                        bitsPerPixel: (NSInteger)pixelBits;
 @end
 
 static NSBitmapImageRep *getStandardBitmap(NSImage *image)
