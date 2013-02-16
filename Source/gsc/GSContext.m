@@ -118,14 +118,14 @@ static NSMapTable *gtable;
 @end
 
 @interface NSBitmapImageRep (GSPrivate)
-- (NSBitmapImageRep *) _convertToFormatBitsPerSample: (int)bps
-                                     samplesPerPixel: (int)spp
+- (NSBitmapImageRep *) _convertToFormatBitsPerSample: (NSInteger)bps
+                                     samplesPerPixel: (NSInteger)spp
                                             hasAlpha: (BOOL)alpha
                                             isPlanar: (BOOL)isPlanar
                                       colorSpaceName: (NSString*)colorSpaceName
                                         bitmapFormat: (NSBitmapFormat)bitmapFormat 
-                                         bytesPerRow: (int)rowBytes
-                                        bitsPerPixel: (int)pixelBits;
+                                         bytesPerRow: (NSInteger)rowBytes
+                                        bitsPerPixel: (NSInteger)pixelBits;
 @end
 
 
@@ -875,9 +875,9 @@ static NSMapTable *gtable;
   bitmap = (NSBitmapImageRep*)imageref;
   if (![self isCompatibleBitmap: bitmap])
     {
-      int bitsPerSample = 8;
+      NSInteger bitsPerSample = 8;
       BOOL isPlanar = NO;
-      int samplesPerPixel = [bitmap hasAlpha] ? 4 : 3;
+      NSInteger samplesPerPixel = [bitmap hasAlpha] ? 4 : 3;
       NSString *colorSpaceName = NSCalibratedRGBColorSpace;
       NSBitmapImageRep *new;
 
