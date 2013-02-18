@@ -1970,7 +1970,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   XClassHint		classhint;
   RContext              *context;
 
-  NSDebugLLog(@"XGTrace", @"DPSwindow: %@ %d", NSStringFromRect(frame), type);
+  NSDebugLLog(@"XGTrace", @"DPSwindow: %@ %d", NSStringFromRect(frame), (int)type);
   root = [self _rootWindowForScreen: screen];
   context = [self xrContextForScreen: screen];
 
@@ -2536,7 +2536,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
   if (!window)
     return;
 
-  NSDebugLLog(@"XGTrace", @"DPSwindowbacking: %d : %d", type, win);
+  NSDebugLLog(@"XGTrace", @"DPSwindowbacking: %d : %d", (int)type, win);
 
   if ((window->gdriverProtocol & GDriverHandlesBacking))
     {
