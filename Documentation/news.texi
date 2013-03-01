@@ -7,13 +7,19 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.23.0}
+
+Added cairo support for ms-windows.
+
+Updated for NSInteger/CGFloat support
+
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.22.0}
 
 Added new user defaults to make app icons and mini windows sticky (omnipresent)
 
 Many improvements to Cairo rendering, including buffering, glyphs and DPI scaling.
-
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.20.0}
 
