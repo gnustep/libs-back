@@ -1,3 +1,12 @@
+2013-04-24 23:10-EDT Gregory John Casamento <greg.casamento@gmail.com>
+
+	* Source/cairo/CairoGState.m: Added code in -drawGradient:
+	fromPoint:toPoint:options: to handle gradients for colorspaces
+	other than NSCalibratedRGBColorSpace, NSDeviceRGBColorSpace,
+	NSCalibratedWhiteColorSpace, NSDeviceWhiteColorSpace,
+	NSCalibratedBlackColorSpace, NSDeviceBlackColorSpace.  The
+	previous implementation assumed RGB based colorspaces only.
+
 2012-03-01  Richard Frith-Macdonald <rfm@gnu.org>
 
         * Version ... bump subminor number in preparation for next release.
