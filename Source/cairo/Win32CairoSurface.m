@@ -152,8 +152,8 @@
       gsDevice = device;
       _surface = NULL;
       
-      WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(GSWINDEVICE, GWL_USERDATA);
-      HDC         hDC = GetDC(GSWINDEVICE);
+      WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(device, GWL_USERDATA);
+      HDC         hDC = GetDC(device);
 
       if (hDC == NULL)
         {
@@ -235,7 +235,7 @@
               cairo_surface_destroy(window);
               
               // Release the device context...
-              ReleaseDC(GSWINDEVICE, hDC);
+              ReleaseDC(device, hDC);
             }
 
           if (self)
