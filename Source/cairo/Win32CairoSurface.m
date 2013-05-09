@@ -146,100 +146,103 @@
 
 - (id) initWithDevice: (void *)device
 {
-  // Save/set initial state...
-  gsDevice = device;
-  _surface = NULL;
-  
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(GSWINDEVICE, GWL_USERDATA);
-  HDC         hDC = GetDC(GSWINDEVICE);
-
-  if (hDC == NULL)
+  if (self)
     {
-      NSWarnMLog(@"Win32CairoSurface line: %d : no device context", __LINE__);
+      // Save/set initial state...
+      gsDevice = device;
+      _surface = NULL;
       
-      // And deallocate ourselves...
-      DESTROY(self);
-    }
-  else
-    {
-      // Create the cairo surfaces...
-      // NSBackingStoreRetained works like Buffered since 10.5 (See apple docs)...
-      // NOTE: According to Apple docs NSBackingStoreBuffered should be the only one
-      //       ever used anymore....others are NOT recommended...
-      if (win && (win->type == NSBackingStoreNonretained))
-        {
-          // This is the raw DC surface...
-          _surface = cairo_win32_surface_create(hDC);
+      WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(GSWINDEVICE, GWL_USERDATA);
+      HDC         hDC = GetDC(GSWINDEVICE);
 
-          // Check for error...
-          if (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS)
-            {
-              // Output the surface create error...
-              cairo_status_t status = cairo_surface_status(_surface);
-              NSWarnMLog(@"surface create FAILED - status: %s\n", cairo_status_to_string(status));
-              
-              // Destroy the initial surface created...
-              cairo_surface_destroy(_surface);
-              
-              // And deallocate ourselves...
-              DESTROY(self);
-            }
+      if (hDC == NULL)
+        {
+          NSWarnMLog(@"Win32CairoSurface line: %d : no device context", __LINE__);
+          
+          // And deallocate ourselves...
+          DESTROY(self);
         }
       else
         {
-          NSSize csize = [self size];
-          
-          // This is the raw DC surface...
-          cairo_surface_t *window = cairo_win32_surface_create(hDC);
-          
-          // Check for error...
-          if (cairo_surface_status(window) != CAIRO_STATUS_SUCCESS)
+          // Create the cairo surfaces...
+          // NSBackingStoreRetained works like Buffered since 10.5 (See apple docs)...
+          // NOTE: According to Apple docs NSBackingStoreBuffered should be the only one
+          //       ever used anymore....others are NOT recommended...
+          if (win && (win->type == NSBackingStoreNonretained))
             {
-              // Output the surface create error...
-              cairo_status_t status = cairo_surface_status(window);
-              NSWarnMLog(@"surface create FAILED - status: %s\n",  cairo_status_to_string(status));
-              
-              // And deallocate ourselves...
-              DESTROY(self);
-            }
-          else
-            {
-              // and this is the in-memory DC surface...surface owns its DC...
-              // NOTE: For some reason we get an init sequence with zero width/height,
-              //       which creates problems in the cairo layer.  It tries to clear
-              //       the 'similar' surface it's creating, and with a zero width/height
-              //       it incorrectly thinks the clear failed...so we will init with
-              //       a minimum size of 1 for width/height...
-              _surface = cairo_surface_create_similar(window, CAIRO_CONTENT_COLOR_ALPHA,
-                                                      MAX(1, csize.width),
-                                                      MAX(1, csize.height));
+              // This is the raw DC surface...
+              _surface = cairo_win32_surface_create(hDC);
 
               // Check for error...
               if (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS)
                 {
                   // Output the surface create error...
                   cairo_status_t status = cairo_surface_status(_surface);
-                  NSWarnMLog(@"surface create FAILED - status: %s\n",  cairo_status_to_string(status));
+                  NSWarnMLog(@"surface create FAILED - status: %s\n", cairo_status_to_string(status));
                   
-                  // Destroy the surface created...
+                  // Destroy the initial surface created...
                   cairo_surface_destroy(_surface);
                   
                   // And deallocate ourselves...
                   DESTROY(self);
                 }
             }
-          
-          // Destroy the initial surface created...
-          cairo_surface_destroy(window);
-          
-          // Release the device context...
-          ReleaseDC(GSWINDEVICE, hDC);
-        }
+          else
+            {
+              NSSize csize = [self size];
+              
+              // This is the raw DC surface...
+              cairo_surface_t *window = cairo_win32_surface_create(hDC);
+              
+              // Check for error...
+              if (cairo_surface_status(window) != CAIRO_STATUS_SUCCESS)
+                {
+                  // Output the surface create error...
+                  cairo_status_t status = cairo_surface_status(window);
+                  NSWarnMLog(@"surface create FAILED - status: %s\n",  cairo_status_to_string(status));
+                  
+                  // And deallocate ourselves...
+                  DESTROY(self);
+                }
+              else
+                {
+                  // and this is the in-memory DC surface...surface owns its DC...
+                  // NOTE: For some reason we get an init sequence with zero width/height,
+                  //       which creates problems in the cairo layer.  It tries to clear
+                  //       the 'similar' surface it's creating, and with a zero width/height
+                  //       it incorrectly thinks the clear failed...so we will init with
+                  //       a minimum size of 1 for width/height...
+                  _surface = cairo_surface_create_similar(window, CAIRO_CONTENT_COLOR_ALPHA,
+                                                          MAX(1, csize.width),
+                                                          MAX(1, csize.height));
 
-      if (self)
-        {
-          // We need this for handleExposeEvent in WIN32Server...
-          win->surface = (void*)self;
+                  // Check for error...
+                  if (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS)
+                    {
+                      // Output the surface create error...
+                      cairo_status_t status = cairo_surface_status(_surface);
+                      NSWarnMLog(@"surface create FAILED - status: %s\n",  cairo_status_to_string(status));
+                      
+                      // Destroy the surface created...
+                      cairo_surface_destroy(_surface);
+                      
+                      // And deallocate ourselves...
+                      DESTROY(self);
+                    }
+                }
+              
+              // Destroy the initial surface created...
+              cairo_surface_destroy(window);
+              
+              // Release the device context...
+              ReleaseDC(GSWINDEVICE, hDC);
+            }
+
+          if (self)
+            {
+              // We need this for handleExposeEvent in WIN32Server...
+              win->surface = (void*)self;
+            }
         }
     }
   return self;
