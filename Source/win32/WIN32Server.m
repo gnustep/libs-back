@@ -39,6 +39,7 @@
 #include <Foundation/NSTimer.h>
 #include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSException.h>
+#include <Foundation/NSAutoreleasePool.h>
 #include <AppKit/AppKitExceptions.h>
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSGraphics.h>
@@ -457,7 +458,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
           // MESSAGE PROCESSING!!!!!
           TranslateMessage(&msg);
           DispatchMessage(&msg);
-        } 
+        }
     } 
 }
 
@@ -3319,6 +3320,9 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
       return (LRESULT)NULL;
     }
 
-  return [ctxt windowEventProc: hwnd : uMsg : wParam : lParam];
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  LRESULT            status = [ctxt windowEventProc: hwnd : uMsg : wParam : lParam];
+  [pool release];
+  return status;
 }
 
