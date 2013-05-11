@@ -91,6 +91,8 @@ static unsigned int mask_for_keystate(BYTE *keyState);
       CGFloat h = lprcMonitor->bottom - lprcMonitor->top;
       CGFloat x = lprcMonitor->left;
       CGFloat y = h - lprcMonitor->bottom;
+
+      _hMonitor = hMonitor;
       _frame = NSMakeRect(x, y, w, h);
       memcpy(&_rect, lprcMonitor, sizeof(RECT));
     }
@@ -338,7 +340,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       [self _initWin32Context];
       [super initWithAttributes: info];
   
-      monitorInfo = [NSMutableArray array];
+      monitorInfo = [[NSMutableArray alloc] init];
       EnumDisplayMonitors(NULL, NULL, (MONITORENUMPROC)LoadDisplayMonitorInfo, (LPARAM)monitorInfo);
 
       [self setupRunLoopInputSourcesForMode: NSDefaultRunLoopMode]; 
@@ -392,6 +394,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 - (void) dealloc
 {
   [self _destroyWin32Context];
+  RELEASE(monitorInfo);
   [super dealloc];
 }
 
@@ -474,33 +477,81 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 {
   if (screen < [monitorInfo count])
     {
-      return [[monitorInfo objectAtIndex:screen] frame];
+      return [[monitorInfo objectAtIndex: screen] frame];
     }
   return NSZeroRect;
 }
 
-- (NSWindowDepth) windowDepthForScreen: (int)screen
+- (HMONITOR) monitorHandleForScreen: (int)screen
 {
-  HDC hdc  = 0;
-  int bits = 0;
-  //int planes;
-  
   if (screen < [monitorInfo count])
     {
-      MONITORINFOEX mix = { 0 };
-      mix.cbSize        = sizeof(MONITORINFOEX);
-      HMONITOR hMonitor = [[monitorInfo objectAtIndex:screen] hMonitor];
-      
-      if (GetMonitorInfo(hMonitor, (LPMONITORINFO)&mix))
-	{
-	  hdc  = CreateDC("DISPLAY", mix.szDevice, NULL, NULL);
-	  bits = GetDeviceCaps(hdc, BITSPIXEL) / 3;
-	  //planes = GetDeviceCaps(hdc, PLANES);
-	  //NSLog(@"bits %d planes %d", bits, planes);
-	  ReleaseDC(NULL, hdc);
-	}
+      return [[monitorInfo objectAtIndex: screen] hMonitor];
     }
-  
+  else
+    {
+      NSWarnMLog(@"invalid screen number: %d", screen);
+      return NULL;
+    }
+}
+
+- (HDC) createHdcForScreen: (int)screen
+{
+  HDC hdc = NULL;
+  HMONITOR hMonitor = [self monitorHandleForScreen: screen];
+
+  if (hMonitor == NULL)
+    {
+      NSWarnMLog(@"error obtaining monitor handle for screen: %d", screen);
+    }
+  else
+    {
+      MONITORINFOEX mix = { 0 };
+      mix.cbSize = sizeof(MONITORINFOEX);
+
+      if (GetMonitorInfo(hMonitor, (LPMONITORINFO)&mix) == 0)
+	{
+          NSWarnMLog(@"error obtaining monitor info for screen: %d status: %d",
+                     screen, GetLastError());
+ 	}
+      else
+ 	{
+          hdc = CreateDC("DISPLAY", mix.szDevice, NULL, NULL);
+          if (hdc == NULL)
+            {
+              NSWarnMLog(@"error creating HDC for screen: %d - status: %d",
+                         screen, GetLastError());
+            }
+ 	}
+    }
+
+  return hdc;
+}
+	
+- (void) deleteScreenHdc: (HDC)hdc
+{
+  if (hdc == NULL)
+    {
+      NSWarnMLog(@"HDC is NULL");
+    }
+  else
+    {
+      DeleteDC(hdc);
+    }
+}
+
+- (NSWindowDepth) windowDepthForScreen: (int)screen
+{
+  HDC hdc  = [self createHdcForScreen:screen];
+  int bits = 0;
+	  	 
+  if (hdc)
+    {
+      bits = GetDeviceCaps(hdc, BITSPIXEL) / 3;
+      //planes = GetDeviceCaps(hdc, PLANES);
+      //NSLog(@"bits %d planes %d", bits, planes);
+      [self deleteScreenHdc:hdc];
+    }
   return (_GSRGBBitValue | bits);
 }
 
