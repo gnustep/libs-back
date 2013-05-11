@@ -1,3 +1,14 @@
+2013-05-11  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/Win32CairoSurface.m (-initWithDevice:): Make safer
+	against the surface being deallocated during this method.
+	* Source/cairo/Win32CairoSurface.m
+	(WIN32Server-contentsOfScreen:inRect:): Screen grabbing code.
+	* Headers/win32/WIN32Server.h,
+	* Source/win32/WIN32Server.m (-monitorHandleForScreen:,
+	-createHdcForScreen:, deleteScreenHdc:): Add helper methods for screen grabbing.
+	Patch by Marcian Lytwyn <marcian.lytwyn@advcsi.com>
+
 2013-04-24 23:10-EDT Gregory John Casamento <greg.casamento@gmail.com>
 
 	* Source/cairo/CairoGState.m: Added code in -drawGradient:

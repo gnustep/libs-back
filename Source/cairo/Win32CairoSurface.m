@@ -28,22 +28,22 @@
 
 #include "cairo/Win32CairoSurface.h"
 #include "win32/WIN32Geometry.h"
+#include "win32/WIN32Server.h"
 #include <cairo-win32.h>
 
 #define GSWINDEVICE ((HWND)gsDevice)
 
 @implementation Win32CairoSurface
 
-
 - (id) initWithDevice: (void *)device
 {
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)device, GWL_USERDATA);
+  HDC         hDC = GetDC((HWND)device);
+
   // Save/set initial state...
   gsDevice = device;
   _surface = NULL;
   
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(GSWINDEVICE, GWL_USERDATA);
-  HDC         hDC = GetDC(GSWINDEVICE);
-
   if (hDC == NULL)
     {
       NSWarnMLog(@"Win32CairoSurface line: %d : no device context", __LINE__);
@@ -124,15 +124,16 @@
           cairo_surface_destroy(window);
           
           // Release the device context...
-          ReleaseDC(GSWINDEVICE, hDC);
+          ReleaseDC((HWND)device, hDC);
         }
 
-      if (self)
+      if (win && self)
         {
           // We need this for handleExposeEvent in WIN32Server...
           win->surface = (void*)self;
         }
     }
+
   return self;
 }
 
@@ -158,11 +159,12 @@
 
 - (NSString*) description
 {
-  HDC              shdc   = NULL;
+  HDC shdc = NULL;
+
   if (_surface)
-  {
-    shdc   = cairo_win32_surface_get_dc(_surface);
-  }
+    {
+      shdc = cairo_win32_surface_get_dc(_surface);
+    }
   NSMutableString *description = AUTORELEASE([[super description] mutableCopy]);
   [description appendFormat: @" size: %@",NSStringFromSize([self size])];
   [description appendFormat: @" _surface: %p",_surface];
@@ -239,12 +241,12 @@
                   cairo_paint(context);
                   
                   if (cairo_status(context) != CAIRO_STATUS_SUCCESS)
-                  {
-                    NSWarnMLog(@"cairo expose error - status: _surface: %s window: %s windowCtxt: %s",
-                               cairo_status_to_string(cairo_surface_status(_surface)),
-                               cairo_status_to_string(cairo_surface_status(window)),
-                               cairo_status_to_string(cairo_status(context)));
-                  }
+                    {
+                      NSWarnMLog(@"cairo expose error - status: _surface: %s window: %s windowCtxt: %s",
+                                 cairo_status_to_string(cairo_surface_status(_surface)),
+                                 cairo_status_to_string(cairo_surface_status(window)),
+                                 cairo_status_to_string(cairo_status(context)));
+                    }
 
                   // Cleanup...
                   cairo_destroy(context);
@@ -261,6 +263,118 @@
       // Release the aquired HDC...
       ReleaseDC(GSWINDEVICE, hdc);
     }
+}
+
+@end
+
+@implementation WIN32Server (ScreenCapture)
+
+- (NSImage *) contentsOfScreen: (int)screen inRect: (NSRect)rect
+{
+  NSImage *result = nil;
+  HDC hdc = [self createHdcForScreen: screen];
+
+  // We need a screen device context for this to work...
+  if (hdc == NULL)
+    {
+      NSWarnMLog(@"invalid screen request: %d", screen);
+    }
+  else
+    {
+      // Convert rect to flipped coordinates
+      NSRect boundsForScreen = [self boundsForScreen: screen];
+      NSInteger width = rect.size.width;
+      NSInteger height = rect.size.height;
+      NSBitmapImageRep *bmp;
+      cairo_surface_t *src, *dest;
+
+      rect.origin.y = boundsForScreen.size.height - NSMaxY(rect);
+      
+      // Create a bitmap representation for capturing the screen area...
+      bmp = [[[NSBitmapImageRep alloc] initWithBitmapDataPlanes: NULL
+                                                     pixelsWide: width
+                                                     pixelsHigh: height
+                                                  bitsPerSample: 8
+                                                samplesPerPixel: 4
+                                                       hasAlpha: YES
+                                                       isPlanar: NO
+                                                 colorSpaceName: NSDeviceRGBColorSpace
+                                                   bitmapFormat: 0
+                                                    bytesPerRow: 0
+                                                   bitsPerPixel: 32] autorelease];
+	
+      // Create the required surfaces...
+      src = cairo_win32_surface_create(hdc);
+      dst = cairo_image_surface_create_for_data([bmp bitmapData],
+                                                CAIRO_FORMAT_ARGB32,
+                                                width, height,
+                                                [bmp bytesPerRow]);
+
+      // Ensure we were able to generate the required surfaces...
+      if (cairo_surface_status(src) != CAIRO_STATUS_SUCCESS)
+ 	{
+          NSWarnMLog(@"cairo screen surface error status: %s\n",
+                     cairo_status_to_string(cairo_surface_status(src)));
+ 	}
+      else if (cairo_surface_status(dst) != CAIRO_STATUS_SUCCESS)
+ 	{
+          NSWarnMLog(@"cairo screen surface error status: %s\n",
+                     cairo_status_to_string(cairo_surface_status(dst)));
+          cairo_surface_destroy(src);
+ 	}
+      else
+ 	{
+          // Capture the requested screen rectangle...
+          cairo_t *cr = cairo_create(dst);
+          cairo_set_source_surface(cr, src, -1 * rect.origin.x, -1 * rect.origin.y);
+          cairo_paint(cr);
+          cairo_destroy(cr);
+
+          // Cleanup the cairo surfaces...
+          cairo_surface_destroy(src);
+          cairo_surface_destroy(dst);
+          [self deleteScreenHdc: hdc];
+	
+          // Convert BGRA to RGBA
+          // Original code located in XGCairSurface.m
+          {
+            NSInteger stride;
+            NSInteger x, y;
+            unsigned char *cdata;
+	
+            stride = [bmp bytesPerRow];
+            cdata = [bmp bitmapData];
+
+            for (y = 0; y < height; y++)
+              {
+                for (x = 0; x < width; x++)
+                  {
+                    NSInteger i = (y * stride) + (x * 4);
+                    unsigned char d = cdata[i];
+
+#if GS_WORDS_BIGENDIAN
+                    cdata[i + 0] = cdata[i + 1];
+                    cdata[i + 1] = cdata[i + 2];
+                    cdata[i + 2] = cdata[i + 3];
+                    cdata[i + 3] = d;
+#else
+                    cdata[i + 0] = cdata[i + 2];
+                    //cdata[i + 1] = cdata[i + 1];
+                    cdata[i + 2] = d;
+                    //cdata[i + 3] = cdata[i + 3];
+#endif
+                  }
+              }
+          }
+
+          // Create the image and add the bitmap representation...
+          result = [[[NSImage alloc] initWithSize: NSMakeSize(width, height)] autorelease];
+          [result addRepresentation: bmp];
+ 	}
+    }
+
+  // Return whatever we got...
+  return result;
 }
 
 @end

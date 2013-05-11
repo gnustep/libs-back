@@ -114,6 +114,9 @@ typedef struct w32serverFlags
 
 - (void) resizeBackingStoreFor: (HWND)hwnd;
 
+- (HDC) createHdcForScreen: (int)screen;
+- (void) deleteScreenHdc: (HDC)hdc;
+
 @end
 
 @interface WIN32Server (w32_activate)
