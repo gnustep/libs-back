@@ -31,7 +31,6 @@
 #include "win32/WIN32Server.h"
 #include <cairo-win32.h>
 
-#define GSWINDEVICE ((HWND)gsDevice)
 
 @implementation WIN32Server (ScreenCapture)
 - (NSImage *) contentsOfScreen: (int)screen inRect: (NSRect)rect
@@ -143,6 +142,10 @@
 
 @implementation Win32CairoSurface
 
+- (HWND)gsDevice
+{
+  return (HWND)gsDevice;
+}
 
 - (id) initWithDevice: (void *)device
 {
@@ -185,6 +188,9 @@
                   
                   // And deallocate ourselves...
                   DESTROY(self);
+                  
+                  // Release the device context...
+                  ReleaseDC(device, hDC);
                 }
             }
           else
@@ -262,7 +268,7 @@
         }
       else
         {
-          ReleaseDC(GSWINDEVICE, cairo_win32_surface_get_dc(_surface));
+          ReleaseDC([self gsDevice], cairo_win32_surface_get_dc(_surface));
         }
     }
   [super dealloc];
@@ -286,7 +292,7 @@
 {
   RECT csize;
 
-  GetClientRect(GSWINDEVICE, &csize);
+  GetClientRect([self gsDevice], &csize);
   return NSMakeSize(csize.right - csize.left, csize.bottom - csize.top);
 }
 
@@ -298,7 +304,7 @@
 - (void) handleExposeRect: (NSRect)rect
 {
   // If the surface is buffered then we will have been invoked...
-  HDC hdc = GetDC(GSWINDEVICE);
+  HDC hdc = GetDC([self gsDevice]);
   
   // Make sure we got a HDC...
   if (hdc == NULL)
@@ -338,7 +344,7 @@
                 {
                   double  backupOffsetX = 0;
                   double  backupOffsetY = 0;
-                  RECT    msRect        = GSWindowRectToMS((WIN32Server*)GSCurrentServer(), GSWINDEVICE, rect);
+                  RECT    msRect        = GSWindowRectToMS((WIN32Server*)GSCurrentServer(), [self gsDevice], rect);
 
                   // Need to save the device offset context...
                   cairo_surface_get_device_offset(_surface, &backupOffsetX, &backupOffsetY);
@@ -371,7 +377,7 @@
         }
 
       // Release the aquired HDC...
-      ReleaseDC(GSWINDEVICE, hdc);
+      ReleaseDC([self gsDevice], hdc);
     }
 }
 
