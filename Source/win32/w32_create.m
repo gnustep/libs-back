@@ -102,7 +102,9 @@
 		       cpath,
 		       IMAGE_ICON,0,0,
 		       LR_DEFAULTSIZE|LR_LOADFROMFILE);
-      SetClassLongPtr(hwnd,GCLP_HICON,(LONG_PTR)icon);
+      HICON oldIcon = SetClassLongPtr(hwnd,GCLP_HICON,(LONG_PTR)icon);
+      if (oldIcon != NULL)
+        DestroyIcon(oldIcon);
     }
 
   return 0;
