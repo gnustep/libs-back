@@ -40,6 +40,7 @@
 #include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSException.h>
 #include <Foundation/NSAutoreleasePool.h>
+#include <Foundation/NSNotification.h>
 #include <AppKit/AppKitExceptions.h>
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSGraphics.h>
@@ -350,7 +351,7 @@ static NSBitmapImageRep *getStandardBitmap(NSImage *image)
     CGFloat w = lprcMonitor->right - lprcMonitor->left;
     CGFloat h = lprcMonitor->bottom - lprcMonitor->top;
     CGFloat x = lprcMonitor->left;
-    CGFloat y = h - lprcMonitor->bottom;
+    CGFloat y = ((lprcMonitor->top == 0) ? 0 : lprcMonitor->top - lprcMonitor->bottom);
     _hMonitor = hMonitor;
     _frame = NSMakeRect(x, y, w, h);
     memcpy(&_rect, lprcMonitor, sizeof(RECT));
@@ -400,15 +401,29 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
                                      LPARAM dwData)
 {
   NSMutableArray        *monitors = (NSMutableArray*)dwData;
-  W32DisplayMonitorInfo *info = [[W32DisplayMonitorInfo alloc] initWithHMonitor:hMonitor rect:lprcMonitor];
+  W32DisplayMonitorInfo *infoMon  = [[W32DisplayMonitorInfo alloc] initWithHMonitor:hMonitor
+                                                                               rect:lprcMonitor];
+  
+  // Check for main monitor - additional monitors need to be offset correctly
+  // from this one...
+  if (monitors && [monitors count])
+    {
+      // If main exists offset the additional ones..
+      W32DisplayMonitorInfo *mainMon    = [monitors objectAtIndex:0];
+      RECT                   mainRect   = [mainMon rect];
+      RECT                   infoRect   = [infoMon rect];
+      NSRect                 infoFrame  = [infoMon frame];
+      infoFrame.origin.y                = mainRect.bottom - infoRect.bottom;
+      [infoMon setFrame:infoFrame];
+    }
   
   NSLog(@"screen %ld - hMon: %ld hdc: %p frame:top:%ld left:%ld right:%ld bottom:%ld  frame:x:%f y:%f w:%f h:%f\n",
         [monitors count], (long)hMonitor, hdcMonitor,
         lprcMonitor->top, lprcMonitor->left,
         lprcMonitor->right, lprcMonitor->bottom,
-        [info frame].origin.x, [info frame].origin.y,
-        [info frame].size.width, [info frame].size.height);
-  [monitors addObject:info];
+        [infoMon frame].origin.x, [infoMon frame].origin.y,
+        [infoMon frame].size.width, [infoMon frame].size.height);
+  [monitors addObject:infoMon];
   
   return TRUE;
 }
@@ -588,6 +603,20 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
 */
 
+- (void) _resetMonitors
+{
+  // Dump our current configuration...
+  [monitorInfo removeAllObjects];
+  
+  // Process the updated configuration...
+  EnumDisplayMonitors(NULL, NULL, (MONITORENUMPROC)LoadDisplayMonitorInfo, (LPARAM)monitorInfo);
+  
+  // Notify the world...
+  NSNotificationCenter *notifCenter = [NSNotificationCenter defaultCenter];
+  [notifCenter postNotificationName: NSApplicationDidChangeScreenParametersNotification
+                             object: [NSApplication sharedApplication]];
+}
+
 - (id) initWithAttributes: (NSDictionary *)info
 {
   self = [super initWithAttributes: info];
@@ -603,8 +632,8 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
       systemCursors = RETAIN([NSMutableDictionary dictionary]);
       monitorInfo   = RETAIN([NSMutableArray array]);
-      EnumDisplayMonitors(NULL, NULL, (MONITORENUMPROC)LoadDisplayMonitorInfo, (LPARAM)monitorInfo);
 
+      [self _resetMonitors];
       [self setupRunLoopInputSourcesForMode: NSDefaultRunLoopMode]; 
       [self setupRunLoopInputSourcesForMode: NSConnectionReplyMode]; 
       [self setupRunLoopInputSourcesForMode: NSModalPanelRunLoopMode]; 
@@ -1786,6 +1815,10 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "DEVICECHANGE", hwnd);
         break;
 	
+      case WM_DISPLAYCHANGE:
+        [self _resetMonitors];
+        break;
+        
       default: 
         // Process all other messages.
           NSDebugLLog(@"NSEvent", @"Got unhandled Message %d for %d", uMsg, hwnd);
