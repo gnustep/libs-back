@@ -8,6 +8,7 @@
 #define GRAPHICS_xlib   2
 #define GRAPHICS_winlib 3
 #define GRAPHICS_cairo  4
+#define GRAPHICS_opal   5
 
 
 /* Define to type of graphics context to build */

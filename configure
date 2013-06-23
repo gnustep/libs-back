@@ -1349,7 +1349,7 @@ Optional Features:
   --disable-wgl           Disable WGL support
   --enable-glitz          Enable Glitz support
   --enable-server=SRV     Build server type: x11, win32
-  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo
+  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -7156,6 +7156,8 @@ $as_echo "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
 elif test x"$BUILD_GRAPHICS" = "xxlib"; then
  : # Nothing to do
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
+ : # Nothing to do
+elif test x"$BUILD_GRAPHICS" = "xopal"; then
  : # Nothing to do
 else
   as_fn_error $? "Invalid graphics backend $BUILD_GRAPHICS" "$LINENO" 5
