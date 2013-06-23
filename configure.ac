@@ -529,7 +529,7 @@ AC_ARG_ENABLE(server,
   [  --enable-server=SRV     Build server type: x11, win32],,
   enable_server=$BUILD_SERVER)
 AC_ARG_ENABLE(graphics, 
-  [  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo],,
+  [  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal],,
   enable_graphics="$BUILD_GRAPHICS")
 
 BUILD_SERVER=$enable_server
@@ -641,6 +641,8 @@ elif test x"$BUILD_GRAPHICS" = "xxlib"; then
  : # Nothing to do
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
  : # Nothing to do
+elif test x"$BUILD_GRAPHICS" = "xopal"; then
+ : # Nothing to do
 else
   AC_MSG_ERROR([Invalid graphics backend $BUILD_GRAPHICS])
 fi
@@ -688,6 +690,7 @@ AH_TOP([
 #define GRAPHICS_xlib   2
 #define GRAPHICS_winlib 3
 #define GRAPHICS_cairo  4
+#define GRAPHICS_opal   5
 ])
 AC_DEFINE_UNQUOTED(BUILD_SERVER,SERVER_$BUILD_SERVER,
 	[Define to type of window server to build])

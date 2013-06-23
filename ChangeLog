@@ -1,3 +1,23 @@
+2013-06-23  Ivan Vucica <ivan@vucica.net>
+
+	* config.h.in:
+	* configure.ac:
+	* configure:
+	* Source/GSBackend.m:
+	Added Opal backend to appropriate places (avoiding rebuild of
+	configure and config.h.in).
+
+	* Source/opal/OpalPSSurface.m:
+	* Source/opal/GNUmakefile:
+	* Source/opal/OpalFontInfo.m:
+	* Source/opal/OpalPDFSurface.m:
+	* Source/opal/OpalContext.m:
+	* Source/opal/OpalGState.m:
+	* Source/opal/OpalFontEnumerator.m:
+	* Source/opal/OpalSurface.m:
+	* Source/opal/OpalFaceInfo.m:
+	Added dummy files for the Opal backend.
+
 2013-05-11  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/Win32CairoSurface.m (-initWithDevice:): Make safer
