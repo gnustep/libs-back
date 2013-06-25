@@ -1,5 +1,5 @@
 /*
-   OpalGState.m
+   OpalGState.h
 
    Copyright (C) 2013 Free Software Foundation, Inc.
 
@@ -25,53 +25,12 @@
    Boston, MA 02110-1301, USA.
 */
 
-#import "opal/OpalGState.h"
+#import "gsc/GSGState.h"
 
-@implementation OpalGState
-
-- (void) DPSinitclip
+@interface OpalGState : GSGState
 {
-
 }
 
-- (void) DPSclip
-{
-
-}
-
-- (void) DPSfill
-{
-
-}
-
-- (void) DPSimage: (NSAffineTransform *)matrix
-                 : (NSInteger)pixelsWide
-		 : (NSInteger)pixelsHigh
-                 : (NSInteger)bitsPerSample 
-		 : (NSInteger)samplesPerPixel
-                 : (NSInteger)bitsPerPixel
-		 : (NSInteger)bytesPerRow
-                 : (BOOL)isPlanar
-		 : (BOOL)hasAlpha
-                 : (NSString *)colorSpaceName
-		 : (const unsigned char *const[5])data
-{
-
-}
-
-- (void) compositeGState: (OpalGState *)source
-                fromRect: (NSRect)srcRect 
-                 toPoint: (NSPoint)destPoint 
-                      op: (NSCompositingOperation)op
-                fraction: (CGFloat)delta
-{
-
-}
-
-- (void) compositerect: (NSRect)aRect
-                    op: (NSCompositingOperation)op
-{
-
-}
+- (void) DPSinitclip;
 
 @end

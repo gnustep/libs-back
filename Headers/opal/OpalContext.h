@@ -1,5 +1,5 @@
 /*
-   OpalGState.m
+   OpalContext.h
 
    Copyright (C) 2013 Free Software Foundation, Inc.
 
@@ -25,53 +25,21 @@
    Boston, MA 02110-1301, USA.
 */
 
-#import "opal/OpalGState.h"
+#ifndef OpalContext_h_defined
+#define OpalContext_h_defined
 
-@implementation OpalGState
+#import "gsc/GSContext.h"
 
-- (void) DPSinitclip
+@interface OpalContext : GSContext
 {
-
 }
-
-- (void) DPSclip
-{
-
-}
-
-- (void) DPSfill
-{
-
-}
-
-- (void) DPSimage: (NSAffineTransform *)matrix
-                 : (NSInteger)pixelsWide
-		 : (NSInteger)pixelsHigh
-                 : (NSInteger)bitsPerSample 
-		 : (NSInteger)samplesPerPixel
-                 : (NSInteger)bitsPerPixel
-		 : (NSInteger)bytesPerRow
-                 : (BOOL)isPlanar
-		 : (BOOL)hasAlpha
-                 : (NSString *)colorSpaceName
-		 : (const unsigned char *const[5])data
-{
-
-}
-
-- (void) compositeGState: (OpalGState *)source
-                fromRect: (NSRect)srcRect 
-                 toPoint: (NSPoint)destPoint 
-                      op: (NSCompositingOperation)op
-                fraction: (CGFloat)delta
-{
-
-}
-
-- (void) compositerect: (NSRect)aRect
-                    op: (NSCompositingOperation)op
-{
-
-}
++ (void) initializeBackend;
++ (Class) GStateClass;
+- (void) GSSetDevice: (void *)device
+                    : (int)x
+                    : (int)y;
 
 @end
+
+#endif
+
