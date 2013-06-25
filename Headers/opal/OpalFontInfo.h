@@ -1,5 +1,5 @@
 /*
-   OpalGState.m
+   OpalFontInfo.h
 
    Copyright (C) 2013 Free Software Foundation, Inc.
 
@@ -25,53 +25,21 @@
    Boston, MA 02110-1301, USA.
 */
 
-#import "opal/OpalGState.h"
+#ifndef OpalFontInfo_h_defined
+#define OpalFontInfo_h_defined
 
-@implementation OpalGState
+#import <GNUstepGUI/GSFontInfo.h>
 
-- (void) DPSinitclip
+@interface OpalFontInfo : GSFontInfo
 {
-
 }
 
-- (void) DPSclip
-{
-
-}
-
-- (void) DPSfill
-{
-
-}
-
-- (void) DPSimage: (NSAffineTransform *)matrix
-                 : (NSInteger)pixelsWide
-		 : (NSInteger)pixelsHigh
-                 : (NSInteger)bitsPerSample 
-		 : (NSInteger)samplesPerPixel
-                 : (NSInteger)bitsPerPixel
-		 : (NSInteger)bytesPerRow
-                 : (BOOL)isPlanar
-		 : (BOOL)hasAlpha
-                 : (NSString *)colorSpaceName
-		 : (const unsigned char *const[5])data
-{
-
-}
-
-- (void) compositeGState: (OpalGState *)source
-                fromRect: (NSRect)srcRect 
-                 toPoint: (NSPoint)destPoint 
-                      op: (NSCompositingOperation)op
-                fraction: (CGFloat)delta
-{
-
-}
-
-- (void) compositerect: (NSRect)aRect
-                    op: (NSCompositingOperation)op
-{
-
-}
+- (id) initWithFontName: (NSString *)name 
+                 matrix: (const CGFloat *)fmatrix 
+             screenFont: (BOOL)p_screenFont;
 
 @end
+
+#endif
+
+

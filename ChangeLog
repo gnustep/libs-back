@@ -1,3 +1,18 @@
+2013-06-25  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalFontInfo.m:
+	* Source/opal/OpalContext.m:
+	* Source/opal/OpalGState.m:
+	* Source/opal/OpalFontEnumerator.m:
+	* Source/opal/OpalSurface.m:
+	* Headers/opal/OpalFontInfo.h:
+	* Headers/opal/OpalContext.h:
+	* Headers/opal/OpalGState.h:
+	* Headers/opal/OpalFontEnumerator.h:
+	* Headers/opal/OpalSurface.h:
+	Minimal code for dummy graphics backend now implemented for
+	Opal backend.
+
 2013-06-23  Ivan Vucica <ivan@vucica.net>
 
 	* config.h.in:
