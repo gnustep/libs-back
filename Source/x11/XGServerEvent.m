@@ -890,10 +890,12 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
              */
             if (!NSEqualSizes(r.size, x.size))
               {
+		NSEvent *r;
+
                 /* Resize events move the origin. There's no good
                    place to pass this info back, so we put it in
                    the event location field */
-                e = [NSEvent otherEventWithType: NSAppKitDefined
+                r = [NSEvent otherEventWithType: NSAppKitDefined
                              location: n.origin
                              modifierFlags: eventFlags
                              timestamp: ts / 1000.0
@@ -902,14 +904,19 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                              subtype: GSAppKitWindowResized
                              data1: n.size.width
                              data2: n.size.height];
+
+		/* We don't add this event in event_queue, to don't delay
+		 * its sent. Instead, send it directly to the window. If not,
+		 * the programa can move/resize the window while we send
+		 * this event, causing a confusion.
+		 */
+		[[NSApp windowWithWindowNumber: cWin->number] sendEvent: r];
               }
             if (!NSEqualPoints(r.origin, x.origin))
               {
-                if (e != nil)
-                  {
-                    [event_queue addObject: e];
-                  }
-                e = [NSEvent otherEventWithType: NSAppKitDefined
+		NSEvent *r;
+
+                r = [NSEvent otherEventWithType: NSAppKitDefined
                              location: eventLocation
                              modifierFlags: eventFlags
                              timestamp: ts / 1000.0
@@ -918,6 +925,13 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                              subtype: GSAppKitWindowMoved
                              data1: n.origin.x
                              data2: n.origin.y];
+
+		/* We don't add this event in event_queue, to don't delay
+		 * its sent. Instead, send it directly to the window. If not,
+		 * the programa can move/resize the window while we send
+		 * this event, causing a confusion.
+		 */
+		[[NSApp windowWithWindowNumber: cWin->number] sendEvent: r];
               }
           }	
         break;
