@@ -1,5 +1,12 @@
 2013-07-03  Ivan Vucica <ivan@vucica.net>
 
+	* Source/x11/XGGLFormat.m:
+	* Headers/x11/XGOpenGL.h:
+	ARGB visual is only picked if NSOpenGLPFAAlphaSize is
+	specified in the pixel format.	
+
+2013-07-03  Ivan Vucica <ivan@vucica.net>
+
 	* Source/x11/XGGLContext.m:
 	* Source/x11/XGGLFormat.m:
 	* Headers/x11/XGOpenGL.h:

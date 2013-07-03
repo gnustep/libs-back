@@ -108,6 +108,8 @@
   int AccumSize;
   NSOpenGLPixelFormatAttribute *ptr = pixelFormatAttributes;
   NSMutableData *data = [NSMutableData data];
+  
+  shouldRequestARGBVisual = NO;
 
 #define append(a, b) \
 do \
@@ -180,6 +182,8 @@ do \
             {
                 ptr++;
                 append(GLX_ALPHA_SIZE, *ptr);
+                if (*ptr > 0)
+                  shouldRequestARGBVisual = YES;
                 break;
             }
           case NSOpenGLPFADepthSize:
@@ -348,15 +352,17 @@ do \
                         [glxAttributes mutableBytes],
                         &configurationCount);
 
-      #if defined(XRENDER) && 0
+      #if defined(XRENDER)
       int i; 
       for (i = 0; i < configurationCount; i++)
         {
           XVisualInfo * vinfo = glXGetVisualFromFBConfig(display, fbconfig[i]);
           XRenderPictFormat* pictFormat = XRenderFindVisualFormat (display, vinfo->visual);
-	  if (NULL != pictFormat
-              && (pictFormat->type == PictTypeDirect)
-              && (pictFormat->direct.alphaMask))
+	  if ((NULL != pictFormat
+               && (pictFormat->type == PictTypeDirect)
+               && (pictFormat->direct.alphaMask))
+              ||
+              !shouldRequestARGBVisual)
 	    {
               pickedFBConfig = i;
               visualinfo = vinfo;
