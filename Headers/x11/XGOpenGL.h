@@ -58,8 +58,8 @@
 {
   Display * display;
   long int glxminorversion;
-  GLXFBConfig  *fbconfig;
-  XVisualInfo  *visualinfo;  
+  GLXFBConfig  *fbconfig; int pickedFBConfig;
+  XVisualInfo  *visualinfo;
   int configurationCount;
 }
 

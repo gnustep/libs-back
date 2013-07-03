@@ -1,3 +1,12 @@
+2013-07-03  Ivan Vucica <ivan@vucica.net>
+
+	* Source/x11/XGGLContext.m:
+	* Source/x11/XGGLFormat.m:
+	* Headers/x11/XGOpenGL.h:
+	OpenGL context under X11 now picks up the best possible
+	framebuffer that includes an alpha mask in the X visual info.
+	The code is currently disabled as it needs more debugging.
+
 2013-06-27  German A. Arias <german@xelalug.org>
 
 	* Source/x11/XGServerEvent.m (-processEvent:): Don't add events

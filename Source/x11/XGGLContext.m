@@ -282,7 +282,7 @@ static XGGLContext *currentGLContext;
       MAKE_DISPLAY(dpy);
 
       if (currentGLContext == self)
-	    {
+        {
           [XGGLContext clearCurrentContext];
         }
 
