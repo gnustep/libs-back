@@ -39,6 +39,10 @@
 #include <X11/Xlib.h>
 #include <math.h>
 
+#ifdef XRENDER
+#include <X11/extensions/Xrender.h>
+#endif
+
 @implementation XGGLPixelFormat
 
 + (int) glxMinorVersion
@@ -85,7 +89,7 @@
 
   if (glxminorversion >= 3)
     {
-      error = glXGetFBConfigAttrib(display, fbconfig[0], attrib, vals);
+      error = glXGetFBConfigAttrib(display, fbconfig[pickedFBConfig], attrib, vals);
       if ( error != 0 )
           NSDebugMLLog( @"GLX", @"Can not get FB attribute for pixel format %@ - Error %u",
                                 self, error );
@@ -344,7 +348,28 @@ do \
                         [glxAttributes mutableBytes],
                         &configurationCount);
 
-      visualinfo = glXGetVisualFromFBConfig(display,fbconfig[0]);
+      #if defined(XRENDER) && 0
+      int i; 
+      for (i = 0; i < configurationCount; i++)
+        {
+          XVisualInfo * vinfo = glXGetVisualFromFBConfig(display, fbconfig[i]);
+          XRenderPictFormat* pictFormat = XRenderFindVisualFormat (display, vinfo->visual);
+	  if (NULL != pictFormat
+              && (pictFormat->type == PictTypeDirect)
+              && (pictFormat->direct.alphaMask))
+	    {
+              pickedFBConfig = i;
+              visualinfo = vinfo;
+              break;
+            }
+        }
+      #endif
+
+      if(!visualinfo && configurationCount > 0)
+      {
+        visualinfo = glXGetVisualFromFBConfig(display,fbconfig[0]);
+        pickedFBConfig = 0;
+      }
     }
   else
     {
@@ -384,7 +409,7 @@ do \
 
   if (glxminorversion >= 3)
     {
-      context = glXCreateNewContext(display, fbconfig[0], 
+      context = glXCreateNewContext(display, fbconfig[pickedFBConfig], 
                                  GLX_RGBA_TYPE, [share glxcontext], YES);
     }
   else
@@ -410,7 +435,7 @@ do \
 
   if (glxminorversion >= 3)
     {
-      win = glXCreateWindow(display, fbconfig[0], xwindowid, NULL);
+      win = glXCreateWindow(display, fbconfig[pickedFBConfig], xwindowid, NULL);
     }
   else
     {
