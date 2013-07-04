@@ -37,14 +37,15 @@ ADDITIONAL_CPPFLAGS += -Wall
 ADDITIONAL_CFLAGS += 
 
 # Additional include directories the compiler should search
-ADDITIONAL_INCLUDE_DIRS += -I../Headers \
-	-I$(GNUSTEP_TARGET_DIR) $(GRAPHIC_CFLAGS)
+ADDITIONAL_INCLUDE_DIRS += -I../Headers -I$(GNUSTEP_TARGET_DIR)
+CONFIG_SYSTEM_INCL += $(GRAPHIC_CFLAGS)
 
 # Additional LDFLAGS to pass to the linker
 #ADDITIONAL_LDFLAGS +=
 
 # Additional library directories the linker should search
-ADDITIONAL_LIB_DIRS += $(GRAPHIC_LFLAGS)
+#ADDITIONAL_LIB_DIRS +=
+CONFIG_SYSTEM_LIB_DIR += $(GRAPHIC_LFLAGS)
 
 #
 # Flags for compiling as a bundle or library (if the system depends
