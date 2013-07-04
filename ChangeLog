@@ -1,3 +1,9 @@
+2013-07-04  Richard Frith-Macdonald <rfm@gnu.org>
+
+        * Tools/GNUmakefile.preamble:
+        * Source/GNUmakefile.preamble:
+        Fix order of use of library and header directories.
+
 2013-07-03  Ivan Vucica <ivan@vucica.net>
 
 	* Source/x11/XGGLFormat.m:
