@@ -658,6 +658,47 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   return NO;
 }
 
+static void
+select_input(Display *display, Window w, BOOL ignoreMouse)
+{
+  long event_mask;
+
+  if (!ignoreMouse)
+    {
+      event_mask = ExposureMask
+        | KeyPressMask
+        | KeyReleaseMask
+        | ButtonPressMask
+        | ButtonReleaseMask
+        | ButtonMotionMask
+        | StructureNotifyMask
+        | PointerMotionMask
+        | EnterWindowMask
+        | LeaveWindowMask
+        | FocusChangeMask
+        /* enable property notifications to detect window (de)miniaturization */
+        | PropertyChangeMask
+        //    | ColormapChangeMask
+        | KeymapStateMask
+        | VisibilityChangeMask;
+    }
+  else
+    {
+      event_mask = ExposureMask
+        | KeyPressMask
+        | KeyReleaseMask
+        | StructureNotifyMask
+        | FocusChangeMask
+        /* enable property notifications to detect window (de)miniaturization */
+        | PropertyChangeMask
+        //    | ColormapChangeMask
+        | KeymapStateMask
+        | VisibilityChangeMask;
+    }
+
+  XSelectInput(display, w, event_mask);
+}
+
 Bool
 _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 {
@@ -819,24 +860,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   valuemask = (GCForeground | GCBackground | GCFunction);
   window->gc = XCreateGC(dpy, window->ident, valuemask, &values);
 
-  /* Set the X event mask
-   */
-  XSelectInput(dpy, window->ident, ExposureMask
-    | KeyPressMask
-    | KeyReleaseMask
-    | ButtonPressMask
-    | ButtonReleaseMask
-    | ButtonMotionMask
-    | StructureNotifyMask
-    | PointerMotionMask
-    | EnterWindowMask
-    | LeaveWindowMask
-    | FocusChangeMask
-    | PropertyChangeMask
-//    | ColormapChangeMask
-    | KeymapStateMask
-    | VisibilityChangeMask
-    );
+  /* Set the X event mask */
+  select_input(dpy, window->ident, YES);
 
   /*
    * Initial attributes for any GNUstep window tell Window Maker not to
@@ -2044,25 +2069,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   valuemask = (GCForeground | GCBackground | GCFunction);
   window->gc = XCreateGC(dpy, window->ident, valuemask, &values);
 
-  /* Set the X event mask
-   */
-  XSelectInput(dpy, window->ident, ExposureMask
-    | KeyPressMask
-    | KeyReleaseMask
-    | ButtonPressMask
-    | ButtonReleaseMask
-    | ButtonMotionMask
-    | StructureNotifyMask
-    | PointerMotionMask
-    | EnterWindowMask
-    | LeaveWindowMask
-    | FocusChangeMask
-    /* enable property notifications to detect window (de)miniaturization */
-    | PropertyChangeMask
-//    | ColormapChangeMask
-    | KeymapStateMask
-    | VisibilityChangeMask
-    );
+  /* Set the X event mask */
+  select_input(dpy, window->ident, NO);
 
   /*
    * Initial attributes for any GNUstep window tell Window Maker not to
@@ -5005,6 +5013,17 @@ _computeDepth(int class, int bpp)
     p = pwindow->ident;
 
   XSetTransientForHint(dpy, cwindow->ident, p);
+}
+
+- (void) setIgnoreMouse: (BOOL)ignoreMouse : (int)win
+{
+  gswindow_device_t *window;
+
+  window = WINDOW_WITH_TAG(win);
+  if (!window)
+    return;
+
+  select_input(dpy, window->ident, ignoreMouse);
 }
 
 @end

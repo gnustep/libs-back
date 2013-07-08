@@ -1,3 +1,8 @@
+2013-07-08  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-setIgnoreMouse::): New method that
+	allows to ignore mouse events for a window.
+
 2013-07-04  Richard Frith-Macdonald <rfm@gnu.org>
 
         * Tools/GNUmakefile.preamble:
@@ -9,7 +14,7 @@
 	* Source/x11/XGGLFormat.m:
 	* Headers/x11/XGOpenGL.h:
 	ARGB visual is only picked if NSOpenGLPFAAlphaSize is
-	specified in the pixel format.	
+	specified in the pixel format.
 
 2013-07-03  Ivan Vucica <ivan@vucica.net>
 
@@ -6341,4 +6346,3 @@ Thu Apr 11 22:24:01 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 2002-03-27  Adam Fedor  <fedor@gnu.org>
 
 	* Version: Initial version (most code extracted from xgps).
-
