@@ -63,6 +63,9 @@
 #ifdef HAVE_XSHAPE
 #include <X11/extensions/shape.h>
 #endif
+#if HAVE_XFIXES
+#include <X11/extensions/Xfixes.h>
+#endif
 
 #include "x11/XGDragView.h"
 #include "x11/XGInputServer.h"
@@ -5017,13 +5020,42 @@ _computeDepth(int class, int bpp)
 
 - (void) setIgnoreMouse: (BOOL)ignoreMouse : (int)win
 {
+#if HAVE_XFIXES
   gswindow_device_t *window;
+  XserverRegion region;
+  int error;
+  int xFixesEventBase;
+
+  if (!XFixesQueryExtension(dpy, &xFixesEventBase, &error))
+    {
+      return;
+    } 
 
   window = WINDOW_WITH_TAG(win);
   if (!window)
-    return;
+    {
+      return;
+    }
 
-  select_input(dpy, window->ident, ignoreMouse);
+  if (ignoreMouse)
+    {
+      region = XFixesCreateRegion(dpy, NULL, 0);
+    }
+  else
+    {
+      region = None;
+    }
+
+  
+  XFixesSetWindowShapeRegion(dpy,
+                             window->ident,
+                             ShapeInput,
+                             0, 0, region);
+  if (region != None)
+    {
+      XFixesDestroyRegion(dpy, region);
+    }
+#endif
 }
 
 @end

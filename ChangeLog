@@ -1,5 +1,12 @@
 2013-07-08  Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/x11/XGServerWindow.m (-setIgnoreMouse::): Completely
+	rewrite this method to use Xfixes.
+	* Source/win32/WIN32Server.m (-setIgnoreMouse::): Implement a
+	Windows version of this method.
+
+2013-07-08  Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/x11/XGServerWindow.m (-setIgnoreMouse::): New method that
 	allows to ignore mouse events for a window.
 
