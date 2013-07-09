@@ -2358,6 +2358,20 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   //SetParent((HWND)childWin, (HWND)parentWin);
 }
 
+- (void) setIgnoreMouse: (BOOL)ignoreMouse : (int)win
+{
+  int extendedStyle = GetWindowLong((HWND)win, GWL_EXSTYLE);
+
+  if (ignoreMouse)
+    {
+      SetWindowLong((HWND)win, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT);
+    }
+  else
+    {
+      SetWindowLong((HWND)win, GWL_EXSTYLE, extendedStyle & ~WS_EX_TRANSPARENT);
+    }
+}
+
 @end
 
 static unichar 
