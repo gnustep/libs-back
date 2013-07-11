@@ -56,11 +56,10 @@
 
   surface = [[OpalSurface alloc] initWithDevice: device];
 
-/*
   [OGSTATE GSSetSurface: surface
                        : x
                        : y];
-*/
+
   [surface release];
 }
 @end

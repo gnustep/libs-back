@@ -26,11 +26,15 @@
 */
 
 #import <Foundation/Foundation.h>
+#import <CoreGraphics/CoreGraphics.h>
 
 @interface OpalSurface : NSObject
 {
+  struct _gswindow_device_t * _gsWindowDevice;
+  CGContextRef _cgContext;
 }
 
 - (id) initWithDevice: (void *)device;
+- (struct _gswindow_device_t *) device;
 
 @end

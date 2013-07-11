@@ -1,3 +1,23 @@
+2013-07-11  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalContext.m:
+	Once the surface is created in context, it's also set as
+	the active surface of the GState.
+
+	* Source/opal/OpalGState.m:
+	Blocked some superclass methods from running. Added debug
+	output. Added call to dummy paint method in OpalSurface.
+
+	* Source/opal/OpalSurface.m:
+	* Headers/opal/OpalSurface.h:
+	* Headers/opal/OpalGState.h:
+	Opal context is now created in the surface. Added a dummy
+	draw method.
+
+	* configure.ac:
+	* configure:
+	Ensured linking with the Opal library.
+
 2013-07-08  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-setIgnoreMouse::): Completely

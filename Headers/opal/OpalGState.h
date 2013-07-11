@@ -27,10 +27,36 @@
 
 #import "gsc/GSGState.h"
 
+@class OpalSurface;
+
 @interface OpalGState : GSGState
 {
+  OpalSurface * _opalSurface;
 }
 
 - (void) DPSinitclip;
-
+- (void) DPSinitgraphics;
+- (void) DPSclip;
+- (void) DPSfill;
+- (void) DPSimage: (NSAffineTransform *)matrix
+                 : (NSInteger)pixelsWide
+		 : (NSInteger)pixelsHigh
+                 : (NSInteger)bitsPerSample 
+		 : (NSInteger)samplesPerPixel
+                 : (NSInteger)bitsPerPixel
+		 : (NSInteger)bytesPerRow
+                 : (BOOL)isPlanar
+		 : (BOOL)hasAlpha
+                 : (NSString *)colorSpaceName
+		 : (const unsigned char *const[5])data;
+- (void) compositeGState: (OpalGState *)source
+                fromRect: (NSRect)srcRect 
+                 toPoint: (NSPoint)destPoint 
+                      op: (NSCompositingOperation)op
+                fraction: (CGFloat)delta;
+- (void) compositerect: (NSRect)aRect
+                    op: (NSCompositingOperation)op;
+- (void) GSSetSurface: (OpalSurface *)opalSurface
+                     : (int)x
+                     : (int)y;
 @end
