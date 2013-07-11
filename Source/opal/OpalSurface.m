@@ -26,12 +26,50 @@
 */
 
 #import "opal/OpalSurface.h"
+#import "x11/XGServerWindow.h"
+
+/* TODO: expose these from within opal */
+extern CGContextRef OPX11ContextCreate(Display *display, Drawable drawable);
+extern void OPContextSetSize(CGContextRef ctx, CGSize s);
 
 @implementation OpalSurface
 
 - (id) initWithDevice: (void *)device
 {
-  return [super init];
+  self = [super init];
+  if (!self)
+    return nil;
+
+  // FIXME: this method and class presumes we are being passed
+  // a window device.
+  _gsWindowDevice = (gswindow_device_t *) device;
+
+  Display * display = _gsWindowDevice->display;
+  Window window = _gsWindowDevice->ident;
+
+  _cgContext = OPX11ContextCreate(display, window);
+  
+  return self;
+}
+
+- (gswindow_device_t *) device
+{
+  return _gsWindowDevice;
+}
+
+- (void) dummyDraw
+{
+
+  NSLog(@"performing dummy draw");
+  
+  CGContextSaveGState(_cgContext);
+
+  CGRect r = CGRectMake(0, 0, 1024, 1024);
+  CGContextSetRGBFillColor(_cgContext, 1, 0, 0, 1);
+  CGContextFillRect(_cgContext, r);
+
+  CGContextRestoreGState(_cgContext);
+
 }
 
 @end

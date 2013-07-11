@@ -7158,7 +7158,7 @@ elif test x"$BUILD_GRAPHICS" = "xxlib"; then
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
  : # Nothing to do
 elif test x"$BUILD_GRAPHICS" = "xopal"; then
- : # Nothing to do
+ LIBS="-lopal $LIBS"
 else
   as_fn_error $? "Invalid graphics backend $BUILD_GRAPHICS" "$LINENO" 5
 fi
