@@ -1,3 +1,18 @@
+2013-07-15  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalFontEnumerator.m:
+	* Source/opal/OpalFontInfo.m:
+	More dummy font code, trying to get wider menu items et al.
+
+	* Source/opal/OpalSurface.m:
+	* Source/opal/OpalContext.m:
+	* Headers/opal/OpalSurface.h:
+	Work on getting backing store support to work.
+
+	* Source/opal/OpalGState.m:
+	* Headers/opal/OpalGState.h:
+	Implementation of a lot of drawing and matrix methods.
+
 2013-07-11  Ivan Vucica <ivan@vucica.net>
 
 	* Source/opal/OpalContext.m:

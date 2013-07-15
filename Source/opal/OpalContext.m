@@ -62,5 +62,40 @@
 
   [surface release];
 }
+
+- (BOOL) isDrawingToScreen
+{
+  OpalSurface *surface = nil;
+  [OGSTATE GSCurrentSurface: &surface : NULL : NULL];
+  return [surface isDrawingToScreen];
+}
+
+/**
+  This handles 'expose' event notifications that arrive from
+  X11.
+ */
++ (void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
+{
+  if ([(id)driver isKindOfClass: [OpalSurface class]])
+    {
+      [(OpalSurface *)driver handleExposeRect: rect];
+    }
+}
+
+
+#if BUILD_SERVER == SERVER_x11
+#ifdef XSHM
++ (void) _gotShmCompletion: (Drawable)d
+{
+  [XWindowBuffer _gotShmCompletion: d];
+}
+
+- (void) gotShmCompletion: (Drawable)d
+{
+  [XWindowBuffer _gotShmCompletion: d];
+}
+#endif // XSHM
+#endif // BUILD_SERVER = SERVER_x11
+
 @end
 

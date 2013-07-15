@@ -60,3 +60,7 @@
                      : (int)x
                      : (int)y;
 @end
+
+@interface OpalGState (Accessors)
+- (CGContextRef) cgContext;
+@end

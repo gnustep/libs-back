@@ -31,10 +31,18 @@
 @interface OpalSurface : NSObject
 {
   struct _gswindow_device_t * _gsWindowDevice;
-  CGContextRef _cgContext;
+  CGContextRef _backingCGContext;
+  CGContextRef _x11CGContext;
 }
 
 - (id) initWithDevice: (void *)device;
 - (struct _gswindow_device_t *) device;
+- (CGContextRef) cgContext;
+
+@end
+
+@interface OpalSurface (DebugExtensions)
+
+- (void) dummyDraw;
 
 @end

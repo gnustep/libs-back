@@ -35,5 +35,13 @@
 {
   return [super init];
 }
-
+- (NSRect) boundingRectForGlyph: (NSGlyph)glyph
+{
+  return NSMakeRect(0, 0, 10, 10);
+}
+- (CGFloat) widthOfString: (NSString *)string
+{
+  NSLog(@"WIDTH OF %@", string);
+  return [string length] * 10;
+}
 @end
