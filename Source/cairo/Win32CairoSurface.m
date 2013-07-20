@@ -171,11 +171,15 @@
           // NSBackingStoreRetained works like Buffered since 10.5 (See apple docs)...
           // NOTE: According to Apple docs NSBackingStoreBuffered should be the only one
           //       ever used anymore....others are NOT recommended...
+#if 0     // FIXME:
+          // Non-retained backing store type on windows doesn't re-display correctly
+          // after first time (see additional comments in method -[CairoContext flushGraphics])
+          // Currently handling such windows as buffered store types until a fix can be resolved.
           if (win && (win->type == NSBackingStoreNonretained))
             {
               // This is the raw DC surface...
               _surface = cairo_win32_surface_create(hDC);
-
+              
               // Check for error...
               if (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS)
                 {
@@ -194,6 +198,7 @@
                 }
             }
           else
+#endif
             {
               NSSize csize = [self size];
               
@@ -256,30 +261,17 @@
 
 - (void) dealloc
 {
-  if ((_surface == NULL) || (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS))
-    {
-      NSWarnMLog(@"null surface or bad status\n");
-    }
-  else
-    {
-      if (cairo_win32_surface_get_dc(_surface) == NULL)
-        {
-          NSWarnMLog(@"HDC is NULL for surface: %@\n", self);
-        }
-      else
-        {
-          ReleaseDC([self gsDevice], cairo_win32_surface_get_dc(_surface));
-        }
-    }
+  // After further testing and monitoring USER/GDI object counts found
+  // that releasing the HDC is redundant and unnecessary...
   [super dealloc];
 }
 
 - (NSString*) description
 {
-  HDC              shdc   = NULL;
+  HDC shdc = NULL;
   if (_surface)
   {
-    shdc   = cairo_win32_surface_get_dc(_surface);
+    shdc = cairo_win32_surface_get_dc(_surface);
   }
   NSMutableString *description = AUTORELEASE([[super description] mutableCopy]);
   [description appendFormat: @" size: %@",NSStringFromSize([self size])];
