@@ -104,8 +104,19 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
   // a window device.
   _gsWindowDevice = (gswindow_device_t *) device;
 
+  [self createCGContexts];
+  
+  return self;
+}
+
+- (void) createCGContexts
+{
+  // FIXME: this method and class presumes we are being passed
+  // a window device.
+
   Display * display = _gsWindowDevice->display;
   Window window = _gsWindowDevice->ident;
+
   _x11CGContext = OPX11ContextCreate(display, window);
   
   if (_gsWindowDevice->type == NSBackingStoreNonretained)
@@ -123,16 +134,13 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
       _gsWindowDevice->gdriverProtocol |= GDriverHandlesExpose | GDriverHandlesBacking;
       _gsWindowDevice->gdriver = self;
 
-#if 0
-      // Disabled because when the content is blitted onto the screen,
-      // we get just yellow blots instead of actual content.
       _backingCGContext = createCGBitmapContext(
                        _gsWindowDevice->buffer_width, 
                        _gsWindowDevice->buffer_height);
-#endif
     }
   
-  return self;
+  
+  
 }
 
 - (gswindow_device_t *) device
@@ -162,8 +170,8 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
   CGImageDestinationRef outfile = CGImageDestinationCreateWithURL(fileUrl, @"public.jpeg"/*kUTTypeJPEG*/, 1, NULL);
   CGImageDestinationAddImage(outfile, backingImage, NULL);
   CGImageDestinationFinalize(outfile);
-  CFRelease(fileUrl);
-  CFRelease(outfile);
+  //CFRelease(fileUrl);
+  //CFRelease(outfile);
   
   
   CGImageRelease(backingImage);

@@ -71,8 +71,13 @@
                  : (NSString *)colorSpaceName
 		 : (const unsigned char *const[5])data
 {
-
   NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  
+  CGContextSaveGState(CGCTX);
+  CGContextSetRGBFillColor(CGCTX, 1, 0, 0, 1);
+  CGContextConcatCTM(CGCTX, *(CGAffineTransform*)matrix);
+  CGContextFillRect(CGCTX, CGRectMake(0, 0, pixelsWide, pixelsHigh));
+  CGContextRestoreGState(CGCTX);
 }
 
 - (void) compositeGState: (OpalGState *)source
@@ -82,15 +87,34 @@
                 fraction: (CGFloat)delta
 {
   NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+#if 1
+  CGContextSaveGState(CGCTX);
+  CGContextSetRGBFillColor(CGCTX, 1, 1, 0, 1);
+  CGContextFillRect(CGCTX, CGRectMake(destPoint.x, destPoint.y, srcRect.size.width, srcRect.size.height));
+  CGContextRestoreGState(CGCTX);
+#else
+  CGRect srcCGRect = CGRectMake(srcRect.origin.x, srcRect.origin.y, 
+                    srcRect.size.width, srcRect.size.height);
+
+  // FIXME: this presumes that the backing cgContext of 'source' is
+  // an OpalSurface with a backing CGBitmapContext
+  CGImageRef backingImage = CGBitmapContextCreateImage([source cgContext]);
+  CGContextMoveToPoint(CGCTX, destPoint.x, destPoint.y);
+  // TODO: this ignores op
+  // TODO: this ignores delta
+  CGContextDrawImage(CGCTX, srcCGRect, backingImage);
+  CGImageRelease(backingImage);
+#endif
 }
 
 - (void) compositerect: (NSRect)aRect
                     op: (NSCompositingOperation)op
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSLog(@"%p (%@): %s - %@", self, [self class], __PRETTY_FUNCTION__, NSStringFromRect(aRect));
   
   CGContextSaveGState(CGCTX);
-  CGContextFillRect(CGCTX, CGRectMake(aRect.origin.x, aRect.origin.y, 
+  [self DPSinitmatrix];
+  CGContextFillRect(CGCTX, CGRectMake(aRect.origin.x,  [_opalSurface device]->buffer_height -  aRect.origin.y, 
     aRect.size.width, aRect.size.height));
   CGContextRestoreGState(CGCTX); 
 }
@@ -134,21 +158,23 @@
 
 /**
   Makes the specified surface active in the current graphics state,
-  ready for use in methods such as -DPSinitgraphics. Also, sets the
-  device offset to specified coordinates.
+  ready for use. Also, sets the device offset to specified coordinates.
  **/
-
 - (void) GSSetSurface: (OpalSurface *)opalSurface
                      : (int)x
                      : (int)y
 {
   NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
-  // FIXME: improper setter
-  [_opalSurface release];
-  _opalSurface = [opalSurface retain];
-
-  // TODO: apply offset using [self setOffset:]
+  if(_opalSurface != opalSurface)
+    {
+      id old = _opalSurface;
+      _opalSurface = [opalSurface retain];
+      [old release];
+    }
+  
+  [self setOffset: NSMakePoint(x, y)];
+  [self DPSinitgraphics];  
 }
 - (id) GSCurrentSurface: (OpalSurface **)surface
                           : (int *)x
@@ -169,7 +195,7 @@
 
   [super DPSinitgraphics];
 
-  [_opalSurface dummyDraw];
+  [_opalSurface createCGContexts];
 
 }
 
@@ -197,20 +223,21 @@ static CGFloat theAlpha = 1.; // TODO: removeme
   NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
   const CGFloat alpha = 1; // TODO: is this correct?
+  if(!CGCTX)
+    return;
   CGContextSetRGBFillColor(CGCTX, r, g, b, alpha);
 }
 - (void) DPSrectfill: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
 {
   NSLog(@"%p (%@): %s - rect %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, x, y, w, h);
-  
-  if (theAlpha == 0)
-    return;
+
   CGContextFillRect(CGCTX, CGRectMake(x, y, w, h));
 }
 - (void) DPSrectclip: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSLog(@"%p (%@): %s - %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, x, y, w, h);
   
+  [self DPSinitclip];
   CGContextClipToRect(CGCTX, CGRectMake(x, y, w, h));
 }
 - (void) DPSsetgray: (CGFloat)gray
@@ -232,44 +259,79 @@ static CGFloat theAlpha = 1.; // TODO: removeme
   NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
   OPContextSetIdentityCTM(CGCTX);
+  #if 0
+  // Flipping the coordinate system is NOT required
+  CGContextTranslateCTM(CGCTX, 0, [_opalSurface device]->buffer_height);
+  CGContextScaleCTM(CGCTX, 1, -1);
+  #endif
+  [super DPSinitmatrix];
 }
 - (void)DPSconcat: (const CGFloat *)m
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSLog(@"%p (%@): %s - %g %g %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, m[0], m[1], m[2], m[3], m[4], m[5]);
 
   CGContextConcatCTM(CGCTX, CGAffineTransformMake(
                      m[0], m[1], m[2],
                      m[3], m[4], m[5]));
+  [super DPSconcat:m];
 }
 - (void)DPSscale: (CGFloat)x
                 : (CGFloat)y 
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSLog(@"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
   
   CGContextScaleCTM(CGCTX, x, y);
 }
 - (void)DPStranslate: (CGFloat)x
                     : (CGFloat)y 
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSLog(@"%p (%@): %s - x %g y %g", self, [self class], __PRETTY_FUNCTION__, x, y);
   
   CGContextTranslateCTM(CGCTX, x, y);
+  [super DPStranslate:x:y];
 }
 - (void) DPSmoveto: (CGFloat) x
                   : (CGFloat) y
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSLog(@"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
 
   CGContextMoveToPoint(CGCTX, x, y);
 }
 - (void) DPSlineto: (CGFloat) x
                   : (CGFloat) y
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSLog(@"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
 
   CGContextAddLineToPoint(CGCTX, x, y);
 }
+- (void) setOffset: (NSPoint)theOffset
+{
+  NSLog(@"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, theOffset.x, theOffset.y);
 
+#if 1
+  if (CGCTX != nil)
+    {
+#if 1
+      OPContextSetCairoDeviceOffset(CGCTX, -theOffset.x, 
+          theOffset.y - [_opalSurface device]->buffer_height);
+#else
+      OPContextSetCairoDeviceOffset(CGCTX, theOffset.x, 
+          theOffset.y);
+#endif
+    }
+#else
+  // This is a BAD hack using transform matrix.
+  // It'll break horribly when Opal state is saved and restored.
+  static NSPoint OFFSET = { 0, 0 };
+  //CGContextTranslateCTM(CGCTX, -(-OFFSET.x), 
+  //        -(OFFSET.y - [_opalSurface device]->buffer_height));
+  CGContextTranslateCTM(CGCTX, -theOffset.x, 
+          theOffset.y - [_opalSurface device]->buffer_height);
+  
+  OFFSET = theOffset;
+#endif
+  [super setOffset: theOffset];
+}
 /*
 - (void) setColor: (device_color_t *)color state: (color_state_t)cState
 {
