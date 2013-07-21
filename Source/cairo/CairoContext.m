@@ -38,9 +38,6 @@
 #include "cairo/CairoFontEnumerator.h"
 #include "config.h"
 
-#include "win32/WIN32Server.h"
-#include "win32/WIN32Geometry.h"
-
 #define CGSTATE ((CairoGState *)gstate)
 
 #if BUILD_SERVER == SERVER_x11
@@ -63,6 +60,8 @@
 #elif BUILD_SERVER == SERVER_win32
 #  include "cairo/Win32CairoGState.h"
 #  include <windows.h>
+#  include "win32/WIN32Server.h"
+#  include "win32/WIN32Geometry.h"
 #  define _CAIRO_GSTATE_CLASSNAME Win32CairoGState
 #  ifdef USE_GLITZ
 #    define _CAIRO_SURFACE_CLASSNAME Win32CairoGlitzSurface
