@@ -1,3 +1,19 @@
+2013-07-21  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalFontInfo.m:
+	* Source/opal/OpalFontEnumerator.m:
+	Some hacks to figure out how NSMenuItem's width is determined,
+	and how the supported glyphs are determined.
+
+	* Source/opal/OpalGState.m:
+	Various method implementations and fixes. 
+
+	* Source/opal/OpalSurface.m:
+	Enabled doublebuffered code path, now that Opal's endianess
+	problem is fixed. Creation of CGContext factored out of 
+	initializer into a method that can be called whenever needed
+	to recreate the context.
+
 2013-07-15  Ivan Vucica <ivan@vucica.net>
 
 	* Source/opal/OpalFontEnumerator.m:

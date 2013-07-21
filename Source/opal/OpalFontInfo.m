@@ -33,15 +33,44 @@
                  matrix: (const CGFloat *)fmatrix 
              screenFont: (BOOL)p_screenFont
 {
+  NSLog(@"OpalFontInfo: FONT INFO FOR %@", name);
   return [super init];
 }
 - (NSRect) boundingRectForGlyph: (NSGlyph)glyph
 {
+  NSLog(@"OpalFontInfo: BOUNDING RECT FOR GLYPTH %c", glyph);
   return NSMakeRect(0, 0, 10, 10);
 }
 - (CGFloat) widthOfString: (NSString *)string
 {
-  NSLog(@"WIDTH OF %@", string);
+  NSLog(@"OpalFontInfo: WIDTH OF %@", string);
   return [string length] * 10;
+}
+- (NSSize) advancementForGlyph: (NSGlyph)glyph
+{
+  NSLog(@"OpalFontInfo: ADVANCEMENT FOR %d", glyph);
+  return NSMakeSize(100,100);
+}
+- (NSGlyph) glyphWithName: (NSString *) glyphName
+{
+  NSLog(@"OpalFontInfo: GLYPH WITH NAME %s", glyphName);
+
+  // FIXME: incorrect
+  NSGlyph g = [glyphName cString][0];
+  return g;
+}
+- (NSGlyph) glyphForCharacter: (unichar)c
+{
+  // FIXME: default in 'gui' uses -glyphIsEncoded: or otherwise
+  // returns null glyph. the default should be sufficient, and is
+  // sufficient for cairo backend.
+   
+  return c;
+}
+- (void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs 
+                              count: (int)length 
+                       toBezierPath: (NSBezierPath *)path
+{
+  [path lineToPoint: NSMakePoint(length*10, 10)];
 }
 @end
