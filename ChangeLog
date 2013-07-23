@@ -1,3 +1,26 @@
+2013-07-24  Ivan Vucica <ivan@vucica.net>
+
+	* configure.ac:
+	* configure:
+	Opal backend depends on both Opal and CoreBase. Added 
+	CoreBase to list of libraries we link with.
+	
+	* Source/opal/OpalFontInfo.m:
+	* Source/opal/OpalFontEnumerator.m:
+	Switched to NSDebugLLog().
+
+	* Source/opal/OpalGState.m:
+	-Switched to NSDebugLLog().
+	-Fixed DPSimage method's conversion of NSAffineTransform to
+	 CGAffineTransform
+	-Implemented GSCurrentCTM
+	-Implemented flushGraphics
+	-Implemented DPSsavegstate and DPSrestoregstate
+	
+	* Source/opal/OpalSurface.m:
+	-Switched to NSDebugLLog().
+	-Fixed section that is supposed to write out the debug image.
+
 2013-07-21  Ivan Vucica <ivan@vucica.net>
 
 	* Source/opal/OpalFontInfo.m:

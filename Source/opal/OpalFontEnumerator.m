@@ -68,14 +68,14 @@
   
   return self;
 }
-- (int) weight { NSLog(@"OpalFontEnumerator: Weight %d", _weight); return _weight; }
+- (int) weight { NSDebugLLog(@"OpalFaceInfo", @"OpalFaceInfo: Weight %d", _weight); return _weight; }
 - (void) setWeight: (int)weight { _weight = weight; }
 - (unsigned int) traits { return _traits; }
 - (void) setTraits: (unsigned int)traits { _traits = traits; }
 - (NSString *)familyName { return _familyName; }
 - (void) setFamilyName: (NSString *)name { [_familyName release]; _familyName = [name retain]; }
 
-- (NSCharacterSet *) characterSet {  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+- (NSCharacterSet *) characterSet {  NSDebugLLog(@"OpalFaceInfo", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
  return [NSCharacterSet alphanumericCharacterSet]; }
 @end
 
@@ -85,42 +85,40 @@
 
 + (OpalFaceInfo *) fontWithName: (NSString *) name
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalFontEnumerator", @"%p (%@): %s - %@", self, [self class], __PRETTY_FUNCTION__, name);
 
-  NSLog(@"Font with name %@", name);
   return [[[OpalFaceInfo alloc] initWithFamilyName:name weight:1 traits:0] autorelease];
 }
 
 - (void) enumerateFontsAndFamilies
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalFontEnumerator", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   allFontNames = [[NSArray arrayWithObjects: @"FreeSans", 
                    @"FreeSans-Bold", @"FreeMono", nil] retain];
   allFontFamilies = [[NSDictionary dictionaryWithObjectsAndKeys:
                       @"FreeSans", @"FreeSans",
                       @"FreeMono", @"FreeMono",
                       nil] retain];
-  
 }
 
 - (NSString *) defaultSystemFontName
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalFontEnumerator", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   return @"FreeSans";
 }
 - (NSString *) defaultBoldSystemFontName
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalFontEnumerator", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   return @"FreeSans-Bold";
 }
 - (NSString *) defaultFixedPitchFontName
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalFontEnumerator", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   return @"FreeMono";
 }
 - (NSArray *) matchingFontDescriptorsFor: (NSDictionary *)attributes
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalFontEnumerator", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   return [NSArray arrayWithObject:[NSFontDescriptor fontDescriptorWithName:@"FreeSans" size: 10]];
 }
 @end

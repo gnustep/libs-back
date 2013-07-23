@@ -25,6 +25,7 @@
    Boston, MA 02110-1301, USA.
 */
 
+#import <Foundation/Foundation.h>
 #import "opal/OpalFontInfo.h"
 
 @implementation OpalFontInfo
@@ -33,27 +34,27 @@
                  matrix: (const CGFloat *)fmatrix 
              screenFont: (BOOL)p_screenFont
 {
-  NSLog(@"OpalFontInfo: FONT INFO FOR %@", name);
+  NSDebugLLog(@"OpalFontInfo", @"OpalFontInfo: instantiating font info for %@", name);
   return [super init];
 }
 - (NSRect) boundingRectForGlyph: (NSGlyph)glyph
 {
-  NSLog(@"OpalFontInfo: BOUNDING RECT FOR GLYPTH %c", glyph);
+  NSDebugLLog(@"OpalFontInfo", @"OpalFontInfo: %s - %c", __PRETTY_FUNCTION__, glyph);
   return NSMakeRect(0, 0, 10, 10);
 }
 - (CGFloat) widthOfString: (NSString *)string
 {
-  NSLog(@"OpalFontInfo: WIDTH OF %@", string);
+  NSDebugLLog(@"OpalFontInfo", @"OpalFontInfo: %s - %@", __PRETTY_FUNCTION__, string);
   return [string length] * 10;
 }
 - (NSSize) advancementForGlyph: (NSGlyph)glyph
 {
-  NSLog(@"OpalFontInfo: ADVANCEMENT FOR %d", glyph);
+  NSDebugLLog(@"OpalFontInfo", @"OpalFontInfo: %s - %c", __PRETTY_FUNCTION__, glyph);
   return NSMakeSize(100,100);
 }
 - (NSGlyph) glyphWithName: (NSString *) glyphName
 {
-  NSLog(@"OpalFontInfo: GLYPH WITH NAME %s", glyphName);
+  NSDebugLLog(@"OpalFontInfo", @"OpalFontInfo: %s - %@", __PRETTY_FUNCTION__, glyphName);
 
   // FIXME: incorrect
   NSGlyph g = [glyphName cString][0];

@@ -642,7 +642,7 @@ elif test x"$BUILD_GRAPHICS" = "xxlib"; then
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
  : # Nothing to do
 elif test x"$BUILD_GRAPHICS" = "xopal"; then
- LIBS="-lopal $LIBS"
+ LIBS="-lopal -lgnustep-corebase $LIBS"
 else
   AC_MSG_ERROR([Invalid graphics backend $BUILD_GRAPHICS])
 fi
