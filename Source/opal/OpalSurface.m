@@ -155,26 +155,34 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
 
 - (void) handleExposeRect: (NSRect)rect
 {
+  NSDebugLLog(@"OpalSurface", @"handleExposeRect %@", NSStringFromRect(rect));
+
   CGRect cgRect = CGRectMake(rect.origin.x, rect.origin.y, 
                       rect.size.width, rect.size.height);
   
   CGImageRef backingImage = CGBitmapContextCreateImage(_backingCGContext);
   if (!backingImage) // FIXME: writing a nil image fails with Opal
     return;
-    
+
+  CGContextSaveGState(_x11CGContext);
+  OPContextResetClip(_x11CGContext);
+  OPContextSetIdentityCTM(_x11CGContext);
+
   CGContextDrawImage(_x11CGContext, cgRect, backingImage);
   
   // FIXME: Opal tries to access -path from CFURLRef
   //CFURLRef fileUrl = CFURLCreateWithFileSystemPath(NULL, @"/tmp/opalback.jpg", kCFURLPOSIXPathStyle, NO);
   CFURLRef fileUrl = (CFURLRef)[[NSURL fileURLWithPath: @"/tmp/opalback.jpg"] retain];
+  NSLog(@"FileURL %@", fileUrl);
   CGImageDestinationRef outfile = CGImageDestinationCreateWithURL(fileUrl, @"public.jpeg"/*kUTTypeJPEG*/, 1, NULL);
   CGImageDestinationAddImage(outfile, backingImage, NULL);
   CGImageDestinationFinalize(outfile);
-  //CFRelease(fileUrl);
-  //CFRelease(outfile);
-  
+  CFRelease(fileUrl);
+  CFRelease(outfile);
   
   CGImageRelease(backingImage);
+
+  CGContextRestoreGState(_x11CGContext);
 }
 
 - (BOOL) isDrawingToScreen
@@ -186,7 +194,7 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
 - (void) dummyDraw
 {
 
-  NSLog(@"performing dummy draw");
+  NSDebugLLog(@"OpalSurface", @"performing dummy draw");
   
   CGContextSaveGState([self cgContext]);
 

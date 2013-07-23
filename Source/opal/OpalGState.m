@@ -33,6 +33,7 @@
 
 #define CGCTX [self cgContext]
 
+
 @implementation OpalGState
 
 // MARK: Minimum required methods
@@ -40,21 +41,21 @@
 
 - (void) DPSinitclip
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
   OPContextResetClip(CGCTX);
 }
 
 - (void) DPSclip
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
   CGContextClip(CGCTX);
 }
 
 - (void) DPSfill
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
   //CGContextFillPath(CGCTX);
 }
@@ -71,11 +72,19 @@
                  : (NSString *)colorSpaceName
 		 : (const unsigned char *const[5])data
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+ 
+  // This depends on CGAffineTransform and NSAffineTransformStruct having 
+  // the same in-memory layout.
+  // Here's an elementary check if that is true.
+  // We should probably check this in -back's "configure" script.
+  assert(sizeof(CGAffineTransform) == sizeof(NSAffineTransformStruct));
+  NSAffineTransformStruct nsAT = [matrix transformStruct];
+  CGAffineTransform cgAT = *(CGAffineTransform *)&nsAT;
+
   CGContextSaveGState(CGCTX);
   CGContextSetRGBFillColor(CGCTX, 1, 0, 0, 1);
-  CGContextConcatCTM(CGCTX, *(CGAffineTransform*)matrix);
+  CGContextConcatCTM(CGCTX, cgAT);
   CGContextFillRect(CGCTX, CGRectMake(0, 0, pixelsWide, pixelsHigh));
   CGContextRestoreGState(CGCTX);
 }
@@ -86,7 +95,7 @@
                       op: (NSCompositingOperation)op
                 fraction: (CGFloat)delta
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 #if 1
   CGContextSaveGState(CGCTX);
   CGContextSetRGBFillColor(CGCTX, 1, 1, 0, 1);
@@ -110,7 +119,7 @@
 - (void) compositerect: (NSRect)aRect
                     op: (NSCompositingOperation)op
 {
-  NSLog(@"%p (%@): %s - %@", self, [self class], __PRETTY_FUNCTION__, NSStringFromRect(aRect));
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %@", self, [self class], __PRETTY_FUNCTION__, NSStringFromRect(aRect));
   
   CGContextSaveGState(CGCTX);
   [self DPSinitmatrix];
@@ -123,13 +132,13 @@
                    : (NSInteger)size
                    : (CGFloat)offset
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
   // TODO: stub
 }
 - (void) DPSstroke
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
   CGContextStrokePath(CGCTX);
 }
@@ -164,7 +173,7 @@
                      : (int)x
                      : (int)y
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
   if(_opalSurface != opalSurface)
     {
@@ -180,18 +189,16 @@
                           : (int *)x
                           : (int *)y
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
   return _opalSurface;
 }
 /**
   Sets up a new CG*Context() for drawing content.
-  
-  TODO: tell _opalSurface to create a new context
  **/
 - (void) DPSinitgraphics
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
   [super DPSinitgraphics];
 
@@ -208,6 +215,10 @@
 
 - (CGContextRef) cgContext
 {
+  if (!_opalSurface)
+    NSDebugMLLog(@"OpalGState", @"No OpalSurface");
+  else if (![_opalSurface cgContext])
+    NSDebugMLLog(@"OpalGState", @"No OpalSurface CGContext");
   return [_opalSurface cgContext];
 }
 
@@ -220,7 +231,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 
 - (void) DPSsetrgbcolor: (CGFloat)r : (CGFloat)g : (CGFloat)b
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
   const CGFloat alpha = 1; // TODO: is this correct?
   if(!CGCTX)
@@ -229,34 +240,34 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 }
 - (void) DPSrectfill: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
 {
-  NSLog(@"%p (%@): %s - rect %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, x, y, w, h);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - rect %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, x, y, w, h);
 
   CGContextFillRect(CGCTX, CGRectMake(x, y, w, h));
 }
 - (void) DPSrectclip: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
 {
-  NSLog(@"%p (%@): %s - %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, x, y, w, h);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, x, y, w, h);
   
   [self DPSinitclip];
   CGContextClipToRect(CGCTX, CGRectMake(x, y, w, h));
 }
 - (void) DPSsetgray: (CGFloat)gray
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
   const CGFloat alpha = 1; // TODO: is this correct?
   CGContextSetGrayFillColor(CGCTX, gray, alpha);
 }
 - (void) DPSsetalpha: (CGFloat)a
 {
-  NSLog(@"%p (%@): %s - alpha %g", self, [self class], __PRETTY_FUNCTION__, a);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - alpha %g", self, [self class], __PRETTY_FUNCTION__, a);
   
   CGContextSetAlpha(CGCTX, a);
   theAlpha = a;
 }
 - (void)DPSinitmatrix 
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
   OPContextSetIdentityCTM(CGCTX);
   #if 0
@@ -268,7 +279,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 }
 - (void)DPSconcat: (const CGFloat *)m
 {
-  NSLog(@"%p (%@): %s - %g %g %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, m[0], m[1], m[2], m[3], m[4], m[5]);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, m[0], m[1], m[2], m[3], m[4], m[5]);
 
   CGContextConcatCTM(CGCTX, CGAffineTransformMake(
                      m[0], m[1], m[2],
@@ -278,14 +289,14 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 - (void)DPSscale: (CGFloat)x
                 : (CGFloat)y 
 {
-  NSLog(@"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
   
   CGContextScaleCTM(CGCTX, x, y);
 }
 - (void)DPStranslate: (CGFloat)x
                     : (CGFloat)y 
 {
-  NSLog(@"%p (%@): %s - x %g y %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - x %g y %g", self, [self class], __PRETTY_FUNCTION__, x, y);
   
   CGContextTranslateCTM(CGCTX, x, y);
   [super DPStranslate:x:y];
@@ -293,20 +304,20 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 - (void) DPSmoveto: (CGFloat) x
                   : (CGFloat) y
 {
-  NSLog(@"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
 
   CGContextMoveToPoint(CGCTX, x, y);
 }
 - (void) DPSlineto: (CGFloat) x
                   : (CGFloat) y
 {
-  NSLog(@"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
 
   CGContextAddLineToPoint(CGCTX, x, y);
 }
 - (void) setOffset: (NSPoint)theOffset
 {
-  NSLog(@"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, theOffset.x, theOffset.y);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, theOffset.x, theOffset.y);
 
 #if 1
   if (CGCTX != nil)
@@ -335,7 +346,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 /*
 - (void) setColor: (device_color_t *)color state: (color_state_t)cState
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
   [super setColor: color
             state: cState];
@@ -353,6 +364,42 @@ static CGFloat theAlpha = 1.; // TODO: removeme
     }
 }
 */
+- (NSAffineTransform *) GSCurrentCTM
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  
+  CGAffineTransform cgCTM = CGContextGetCTM(CGCTX);
+  NSAffineTransform * affineTransform = [NSAffineTransform transform];
+
+  // This depends on CGAffineTransform and NSAffineTransformStruct having 
+  // the same in-memory layout.
+  // Here's an elementary check if that is true.
+  // We should probably check this in -back's "configure" script.
+  assert(sizeof(CGAffineTransform) == sizeof(NSAffineTransformStruct));
+
+  NSAffineTransformStruct nsCTM = *(NSAffineTransformStruct *)&cgCTM;
+  [affineTransform setTransformStruct: nsCTM];
+  
+  return affineTransform;
+}
+- (void) flushGraphics
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  CGContextFlush(CGCTX);
+  [_opalSurface handleExpose:CGRectMake(0, 0, 1024, 1024)];
+}
+- (void) DPSsavegstate
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  [super DPSsavegstate];
+  CGContextSaveGState(CGCTX);
+}
+- (void) DPSrestoregstate
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  [super DPSrestoregstate];
+  CGContextRestoreGState(CGCTX);
+}
 @end
 
 // MARK: Non-required unimplemented methods
@@ -372,15 +419,8 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 
 - (void) DPSsetlinewidth: (CGFloat) width
 {
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 }
-/*
-- (NSAffineTransform *) GSCurrentCTM
-{
-  NSLog(@"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  return nil;
-}
-*/
 
 @end
 
