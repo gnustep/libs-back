@@ -109,6 +109,14 @@
   // FIXME: Why is this here? When is it called?
 #if BUILD_SERVER == SERVER_x11
   XFlush([(XGServer *)server xDisplay]);
+#elif BUILD_SERVER == SERVER_win32
+  CairoSurface *surface = nil;
+
+  [CGSTATE GSCurrentSurface: &surface : NULL : NULL];
+  if ((surface != nil) && ([surface surface] != NULL))
+    {
+      cairo_surface_flush([surface surface]);
+    }
 #endif // BUILD_SERVER = SERVER_x11
 }
 

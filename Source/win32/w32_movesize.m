@@ -266,7 +266,7 @@
 
 - (void) decodeWM_WINDOWPOSCHANGINGParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-  WINDOWPOS	*inf = (WINDOWPOS*)lParam;
+  WINDOWPOS *inf = (WINDOWPOS*)lParam;
 
   if ((inf->flags & SWP_NOZORDER) == 0)
     {
@@ -284,7 +284,6 @@
 
 - (LRESULT) decodeWM_GETMINMAXINFOParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-  // reused from original author (added debug code)
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
   MINMAXINFO *mm;
 
@@ -306,16 +305,6 @@
 
 - (LRESULT) decodeWM_EXITSIZEMOVEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-  // may have a small bug here note it for follow up
-  /*
-        decodeWM_MOVE and decodeWM_SIZE will send event if they have one.
-        no posting is needed.
-    */
-  [self resizeBackingStoreFor: hwnd];
-//  [self decodeWM_MOVEParams:hwnd :wParam :lParam];
-//  [self decodeWM_SIZEParams:hwnd :wParam :lParam];
-
-  //Make sure DefWindowProc gets called
   return DefWindowProc(hwnd, WM_EXITSIZEMOVE, wParam, lParam);
 }
 
@@ -327,13 +316,8 @@
 
 - (LRESULT) decodeWM_MOVINGParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
 {
-//  [self decodeWM_MOVEParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam];
   [EVENT_WINDOW(hwnd) display];
-
   return TRUE;
 }
 
 @end
-
-
-
