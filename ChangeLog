@@ -1,10 +1,19 @@
+2013-07-24  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/w32_movesize.m (-decodeWM_EXITSIZEMOVEParams:::):
+	Remove code that caused missing windows content.
+	* Source/cairo/CairoContext.m (-flushGraphics): Add experimental
+	flush code for Windows.
+	* Source/cairo/Win32CairoSurface.m (-initWithDevice:, -dealloc):
+	Clean up HDC handling. Based on patch by Marcian Lytwyn <marcian.lytwyn@advcsi.com>
+
 2013-07-24  Ivan Vucica <ivan@vucica.net>
 
 	* configure.ac:
 	* configure:
-	Opal backend depends on both Opal and CoreBase. Added 
+	Opal backend depends on both Opal and CoreBase. Added
 	CoreBase to list of libraries we link with.
-	
+
 	* Source/opal/OpalFontInfo.m:
 	* Source/opal/OpalFontEnumerator.m:
 	Switched to NSDebugLLog().
@@ -16,7 +25,7 @@
 	-Implemented GSCurrentCTM
 	-Implemented flushGraphics
 	-Implemented DPSsavegstate and DPSrestoregstate
-	
+
 	* Source/opal/OpalSurface.m:
 	-Switched to NSDebugLLog().
 	-Fixed section that is supposed to write out the debug image.
@@ -29,11 +38,11 @@
 	and how the supported glyphs are determined.
 
 	* Source/opal/OpalGState.m:
-	Various method implementations and fixes. 
+	Various method implementations and fixes.
 
 	* Source/opal/OpalSurface.m:
 	Enabled doublebuffered code path, now that Opal's endianess
-	problem is fixed. Creation of CGContext factored out of 
+	problem is fixed. Creation of CGContext factored out of
 	initializer into a method that can be called whenever needed
 	to recreate the context.
 

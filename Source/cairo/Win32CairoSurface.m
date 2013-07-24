@@ -82,12 +82,12 @@
           
           // This is the raw DC surface...
           cairo_surface_t *window = cairo_win32_surface_create(hDC);
+          cairo_status_t status = cairo_surface_status(window);
           
           // Check for error...
-          if (cairo_surface_status(window) != CAIRO_STATUS_SUCCESS)
+          if (status != CAIRO_STATUS_SUCCESS)
             {
               // Output the surface create error...
-              cairo_status_t status = cairo_surface_status(window);
               NSWarnMLog(@"surface create FAILED - status: %s\n",  cairo_status_to_string(status));
               
               // And deallocate ourselves...
@@ -104,12 +104,12 @@
               _surface = cairo_surface_create_similar(window, CAIRO_CONTENT_COLOR_ALPHA,
                                                       MAX(1, csize.width),
                                                       MAX(1, csize.height));
+              status = cairo_surface_status(_surface);
 
               // Check for error...
-              if (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS)
+              if (status != CAIRO_STATUS_SUCCESS)
                 {
                   // Output the surface create error...
-                  cairo_status_t status = cairo_surface_status(_surface);
                   NSWarnMLog(@"surface create FAILED - status: %s\n",  cairo_status_to_string(status));
                   
                   // Destroy the surface created...
@@ -122,10 +122,10 @@
           
           // Destroy the initial surface created...
           cairo_surface_destroy(window);
-          
-          // Release the device context...
-          ReleaseDC((HWND)device, hDC);
         }
+          
+      // Release the device context...
+      ReleaseDC((HWND)device, hDC);
 
       if (win && self)
         {
@@ -139,37 +139,24 @@
 
 - (void) dealloc
 {
-  if ((_surface == NULL) || (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS))
-    {
-      NSWarnMLog(@"null surface or bad status\n");
-    }
-  else
-    {
-      if (cairo_win32_surface_get_dc(_surface) == NULL)
-        {
-          NSWarnMLog(@"HDC is NULL for surface: %@\n", self);
-        }
-      else
-        {
-          ReleaseDC(GSWINDEVICE, cairo_win32_surface_get_dc(_surface));
-        }
-    }
+  // After further testing and monitoring USER/GDI object counts found
+  // that releasing the HDC is redundant and unnecessary...
   [super dealloc];
 }
 
 - (NSString*) description
 {
+  NSMutableString *description = AUTORELEASE([[super description] mutableCopy]);
   HDC shdc = NULL;
 
   if (_surface)
     {
       shdc = cairo_win32_surface_get_dc(_surface);
     }
-  NSMutableString *description = AUTORELEASE([[super description] mutableCopy]);
   [description appendFormat: @" size: %@",NSStringFromSize([self size])];
   [description appendFormat: @" _surface: %p",_surface];
   [description appendFormat: @" surfDC: %p",shdc];
-  return AUTORELEASE([description copy]);
+  return AUTORELEASE(description);
 }
 
 - (NSSize) size
