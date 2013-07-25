@@ -57,7 +57,7 @@
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
-  //CGContextFillPath(CGCTX);
+  CGContextFillPath(CGCTX);
 }
 
 - (void) DPSimage: (NSAffineTransform *)matrix
@@ -203,7 +203,13 @@
   [super DPSinitgraphics];
 
   [_opalSurface createCGContexts];
-
+/*
+  if ([_opalSurface device])
+    {
+      CGContextTranslateCTM(CGCTX, 0, [_opalSurface device]->buffer_height);
+      CGContextScaleCTM(CGCTX, 1, -1);
+    }
+*/
 }
 
 @end
@@ -236,6 +242,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
   const CGFloat alpha = 1; // TODO: is this correct?
   if(!CGCTX)
     return;
+  CGContextSetRGBStrokeColor(CGCTX, r, g, b, alpha);
   CGContextSetRGBFillColor(CGCTX, r, g, b, alpha);
 }
 - (void) DPSrectfill: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
@@ -388,17 +395,96 @@ static CGFloat theAlpha = 1.; // TODO: removeme
   CGContextFlush(CGCTX);
   [_opalSurface handleExpose:CGRectMake(0, 0, 1024, 1024)];
 }
-- (void) DPSsavegstate
+- (void) DPSgsave
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  [super DPSsavegstate];
-  CGContextSaveGState(CGCTX);
+#warning Opal bug: nil ctx should 'only' print a warning instead of crashing
+  if (CGCTX)
+    CGContextSaveGState(CGCTX);
 }
-- (void) DPSrestoregstate
+- (void) DPSgrestore
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  [super DPSrestoregstate];
+#warning Opal bug: nil ctx should 'only' print a warning instead of crashing
+  if (CGCTX)
+    CGContextRestoreGState(CGCTX);
+}
+- (void *) saveClip
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  CGRect * r = calloc(sizeof(CGRect), 1);
+  *r = CGContextGetClipBoundingBox(CGCTX);
+  return r;
+}
+- (void) restoreClip: (void *)savedClip
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  OPContextResetClip(CGCTX);
+  CGContextClipToRect(CGCTX, *(CGRect *)savedClip);
+  free(savedClip);
+}
+- (void) DPSeoclip
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  
+  CGContextEOClip(CGCTX);
+}
+- (void) DPSeofill
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  
+  CGContextEOFillPath(CGCTX);
+}
+- (void) DPSshow: (const char *)s
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  CGContextSaveGState(CGCTX);
+  CGContextSetRGBFillColor(CGCTX, 0, 1, 0, 1);
+  CGContextFillRect(CGCTX, CGRectMake(0, 0, 12, strlen(s) * 12));
   CGContextRestoreGState(CGCTX);
+}
+- (void) GSShowText: (const char *)s  : (size_t) length
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+ /* 
+  const char * s2 = calloc(s, length+1);
+  strcpy(s2, s);
+*/
+  CGContextSaveGState(CGCTX);
+  CGContextSetRGBFillColor(CGCTX, 0, 1, 0, 1);
+  CGContextFillRect(CGCTX, CGRectMake(0, 0, 12, length * 12));
+  CGContextRestoreGState(CGCTX);
+//  free(s2);
+}
+- (void) GSShowGlyphsWithAdvances: (const NSGlyph *)glyphs : (const NSSize *)advances : (size_t) length
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  CGContextSaveGState(CGCTX);
+  CGContextSetRGBFillColor(CGCTX, 0, 1, 0, 1);
+  CGContextFillRect(CGCTX, CGRectMake(0, 0, 12, length * 12));
+  CGContextRestoreGState(CGCTX);
+  
+}
+#if 0
+- (void) DPSrlineto: (CGFloat) x
+                   : (CGFloat) y
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+
+  CGContextAddRelativeLine(CGCTX, x, y);
+}
+#else
+#warning -DPSrlineto:: not implemented directly
+#endif
+- (void) DPScurrentpoint: (CGFloat *)x
+                        : (CGFloat *)y
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+  
+  CGPoint currentPoint = CGContextGetPathCurrentPoint(CGCTX);
+  *x = currentPoint.x;
+  *y = currentPoint.y;
 }
 @end
 
@@ -420,6 +506,11 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 - (void) DPSsetlinewidth: (CGFloat) width
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+}
+- (void) DPSsetgstate: (NSInteger) gst
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  abort();
 }
 
 @end

@@ -38,7 +38,7 @@
 - (id) initWithDevice: (void *)device;
 - (struct _gswindow_device_t *) device;
 - (CGContextRef) cgContext;
-
+- (void) createCGContexts;
 @end
 
 @interface OpalSurface (DebugExtensions)

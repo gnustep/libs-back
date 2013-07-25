@@ -1,3 +1,27 @@
+2013-07-25  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalContext.m:
+	Pushing -DPSgsave: and -DPSgrestore: to OpalGState.
+
+	* Source/opal/OpalSurface.m:
+	-Disabled doublebuffering temporarily.
+	-Work on fixing doublebuffering, including creating subimage
+	 properly.
+	-Richer debug image output code, plus saving as PNGs.
+
+	* Source/opal/OpalGState.m:
+	-DPSfill
+	-Setting color now also sets stroke color.
+	-Corrected name for -DPSgsave and -DPSgrestore.
+	-Implemented -saveClip, -restoreClip.
+	-Implemented -DPSeoclip and -DPSeofill.
+	-Added dummy DPSshow:, GSShowText:: etc.
+	-Implemented -DPScurrentpoint:: so that superclass's
+	 DPSrlineto:: works.
+
+	* Headers/opal/OpalSurface.h:
+	Added -createCGContexts to header to fix a warning.
+
 2013-07-24  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/w32_movesize.m (-decodeWM_EXITSIZEMOVEParams:::):

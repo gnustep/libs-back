@@ -70,6 +70,17 @@
   return [surface isDrawingToScreen];
 }
 
+- (void) DPSgsave
+{
+  [super DPSgsave];
+  [OGSTATE DPSgsave];
+}
+- (void) DPSgrestore
+{
+  [super DPSgrestore];
+  [OGSTATE DPSgrestore];
+}
+
 /**
   This handles 'expose' event notifications that arrive from
   X11.
@@ -81,7 +92,6 @@
       [(OpalSurface *)driver handleExposeRect: rect];
     }
 }
-
 
 #if BUILD_SERVER == SERVER_x11
 #ifdef XSHM
