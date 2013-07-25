@@ -111,6 +111,7 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
 
 - (void) createCGContexts
 {
+
   // FIXME: this method and class presumes we are being passed
   // a window device.
 
@@ -134,9 +135,13 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
       _gsWindowDevice->gdriverProtocol |= GDriverHandlesExpose | GDriverHandlesBacking;
       _gsWindowDevice->gdriver = self;
 
+#if 0
       _backingCGContext = createCGBitmapContext(
                        _gsWindowDevice->buffer_width, 
                        _gsWindowDevice->buffer_height);
+#else
+#warning NOTE! Doublebuffering disabled.
+#endif
     }
   
   
@@ -157,32 +162,82 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
 {
   NSDebugLLog(@"OpalSurface", @"handleExposeRect %@", NSStringFromRect(rect));
 
-  CGRect cgRect = CGRectMake(rect.origin.x, rect.origin.y, 
-                      rect.size.width, rect.size.height);
-  
   CGImageRef backingImage = CGBitmapContextCreateImage(_backingCGContext);
   if (!backingImage) // FIXME: writing a nil image fails with Opal
     return;
 
+#if 1
+  CGRect cgRect = CGRectMake(rect.origin.x, rect.origin.y, 
+                      rect.size.width, rect.size.height);
+ 
+  CGRect subimageCGRect = cgRect; 
+  //subimageCGRect.origin.y = CGImageGetHeight(backingImage) - cgRect.origin.y - cgRect.size.height;
+
+  // TODO: opal might be able to provide a variant of DrawImage that does
+  // not require creating a subimage
+  CGImageRef subImage = CGImageCreateWithImageInRect(backingImage, subimageCGRect);
+
   CGContextSaveGState(_x11CGContext);
   OPContextResetClip(_x11CGContext);
   OPContextSetIdentityCTM(_x11CGContext);
-
-  CGContextDrawImage(_x11CGContext, cgRect, backingImage);
   
+  cgRect.origin.y = [self device]->buffer_height - cgRect.origin.y - cgRect.size.height;
+  NSDebugLLog(@"OpalSurface, "@"Painting from %@ to %@", NSStringFromRect(*(NSRect *)&subimageCGRect), NSStringFromRect(*(NSRect *)&cgRect));
+
+  CGContextDrawImage(_x11CGContext, cgRect, subImage);
+
+  CGContextSetRGBFillColor(_x11CGContext, 0, (rand() % 255) / 255., 1, 0.7);
+  CGContextSetRGBStrokeColor(_x11CGContext, 1, 0, 0, 1);
+  CGContextSetLineWidth(_x11CGContext, 2);
+  //CGContextFillRect(_x11CGContext, cgRect);
+//  CGContextStrokeRect(_x11CGContext, cgRect);i
+#else
+  CGContextSaveGState(_x11CGContext);
+  OPContextResetClip(_x11CGContext);
+  OPContextSetIdentityCTM(_x11CGContext);
+  
+  CGContextDrawImage(_x11CGContext, CGRectMake(0, 0, [self device]->buffer_width, [self device]->buffer_height), backingImage);
+#endif
+ 
+  [self _saveImage: backingImage withPrefix:@"/tmp/opalback-backing-" size: CGSizeZero];
+  [self _saveImage: subImage withPrefix:@"/tmp/opalback-subimage-" size: subimageCGRect.size ];
+
+  CGImageRelease(backingImage);
+  CGImageRelease(subImage);
+
+  CGContextRestoreGState(_x11CGContext);
+
+}
+
+- (void) _saveImage: (CGImageRef) img withPrefix: (NSString *) prefix size: (CGSize) size
+{
+#if 0
+
+#warning Saving debug images
+#if 1
+#warning Opal bug: cannot properly save subimage created with CGImageCreateWithImageInRect()
+  if (size.width != 0 || size.height != 0)
+    {
+      CGContextRef tmp = createCGBitmapContext(size.width, size.height);
+      CGContextDrawImage(tmp, CGRectMake(0, 0, size.width, size.height), img);
+      img = CGBitmapContextCreateImage(tmp);
+      [(id)img autorelease];
+    }
+#endif
+
   // FIXME: Opal tries to access -path from CFURLRef
   //CFURLRef fileUrl = CFURLCreateWithFileSystemPath(NULL, @"/tmp/opalback.jpg", kCFURLPOSIXPathStyle, NO);
-  CFURLRef fileUrl = (CFURLRef)[[NSURL fileURLWithPath: @"/tmp/opalback.jpg"] retain];
+  NSString * path = [NSString stringWithFormat: @"%@%dx%d.png", prefix, CGImageGetWidth(img), CGImageGetHeight(img)];
+  CFURLRef fileUrl = (CFURLRef)[[NSURL fileURLWithPath: path] retain];
   NSLog(@"FileURL %@", fileUrl);
-  CGImageDestinationRef outfile = CGImageDestinationCreateWithURL(fileUrl, @"public.jpeg"/*kUTTypeJPEG*/, 1, NULL);
-  CGImageDestinationAddImage(outfile, backingImage, NULL);
+  //CGImageDestinationRef outfile = CGImageDestinationCreateWithURL(fileUrl, @"public.jpeg"/*kUTTypeJPEG*/, 1, NULL);
+  CGImageDestinationRef outfile = CGImageDestinationCreateWithURL(fileUrl, @"public.png"/*kUTTypePNG*/, 1, NULL);
+  CGImageDestinationAddImage(outfile, img, NULL);
   CGImageDestinationFinalize(outfile);
   CFRelease(fileUrl);
   CFRelease(outfile);
   
-  CGImageRelease(backingImage);
-
-  CGContextRestoreGState(_x11CGContext);
+#endif
 }
 
 - (BOOL) isDrawingToScreen
