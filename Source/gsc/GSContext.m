@@ -187,7 +187,7 @@ static NSMapTable *gtable;
 
   contextType = [info objectForKey: 
 		  NSGraphicsContextRepresentationFormatAttributeName];
-  if (([isa handlesPS] == NO) && contextType 
+  if (([object_getClass(self) handlesPS] == NO) && contextType 
       && [contextType isEqual: NSGraphicsContextPSFormat])
     {
       /* Don't call self, since we aren't initialized */
@@ -206,7 +206,7 @@ static NSMapTable *gtable;
       gstack =  NSZoneMalloc(z, sizeof(GSIArray_t));
       GSIArrayInitWithZoneAndCapacity((GSIArray)gstack, z, 2);
       /* Create a default gstate */
-      gstate = [[[isa GStateClass] allocWithZone: z] 
+      gstate = [[[object_getClass(self) GStateClass] allocWithZone: z] 
                    initWithDrawContext: self];
 
       // Special handling for window drawing
@@ -493,7 +493,7 @@ static NSMapTable *gtable;
       DPS_ERROR(DPSundefined, @"No gstate");
       return 0;
     }
-  [isa insertObject: AUTORELEASE([gstate copy]) forKey: ++unique_index];
+  [object_getClass(self) insertObject: AUTORELEASE([gstate copy]) forKey: ++unique_index];
 
   return unique_index;
 }
@@ -508,7 +508,7 @@ static NSMapTable *gtable;
   if (gst <= 0)
     return;
 
-  [isa insertObject: AUTORELEASE([gstate copy]) forKey: gst];
+  [object_getClass(self) insertObject: AUTORELEASE([gstate copy]) forKey: gst];
 }
 
 /* ----------------------------------------------------------------------- */
@@ -988,14 +988,14 @@ static NSMapTable *gtable;
   if (n < 0)
     DPS_ERROR(DPSinvalidparam, @"Invalid userobject index");
   else 
-    [isa insertObject: obj forKey: n];
+    [object_getClass(self) insertObject: obj forKey: n];
 }
 
 - (void)DPSexecuserobject: (NSInteger)index
 {
   id obj;
 
-  if (index < 0 || (obj = [isa getObjectForKey: index]) == nil)
+  if (index < 0 || (obj = [object_getClass(self) getObjectForKey: index]) == nil)
     {
       DPS_ERROR(DPSinvalidparam, @"Invalid userobject index");
       return;
@@ -1005,12 +1005,12 @@ static NSMapTable *gtable;
 
 - (void)DPSundefineuserobject: (NSInteger)index
 {
-  if (index < 0 || [isa getObjectForKey: index] == nil)
+  if (index < 0 || [object_getClass(self) getObjectForKey: index] == nil)
     {
       DPS_ERROR(DPSinvalidparam, @"Invalid gstate index");
       return;
     }
-  [isa removeObjectForKey: index];
+  [object_getClass(self) removeObjectForKey: index];
 }
 
 - (void)DPSclear 
