@@ -1,3 +1,7 @@
+2013-07-29  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSContext.m: Replace isa with object_getClass().
+
 2013-07-25  Ivan Vucica <ivan@vucica.net>
 
 	* Source/opal/OpalContext.m:
