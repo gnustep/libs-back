@@ -93,6 +93,13 @@
     }
 }
 
+- (void *) graphicsPort
+{
+  OpalSurface * surface;
+  [OGSTATE GSCurrentSurface: &surface : NULL : NULL];
+  return [surface cgContext];
+}
+
 #if BUILD_SERVER == SERVER_x11
 #ifdef XSHM
 + (void) _gotShmCompletion: (Drawable)d
