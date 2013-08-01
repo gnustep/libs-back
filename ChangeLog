@@ -1,3 +1,12 @@
+2013-08-02  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalContext.m:
+	Implementation of -graphicsPort that returns a CGContext
+	
+	* Source/opal/OpalGState.m:
+	-Stubs for -DPSsetlinejoin:, -DPSsetlinecap:, -DPSsetmiterlimit:
+	-Implementation of -DPSimage::::::::::: for 32-bit RGB colorspaces
+
 2013-07-29  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSContext.m: Replace isa with object_getClass().

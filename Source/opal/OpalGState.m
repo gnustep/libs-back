@@ -27,6 +27,7 @@
 
 #import <CoreGraphics/CoreGraphics.h>
 #import <X11/Xlib.h>
+#import <AppKit/NSGraphics.h> // NS*ColorSpace
 #import "opal/OpalGState.h"
 #import "opal/OpalSurface.h"
 #import "x11/XGServerWindow.h"
@@ -63,12 +64,12 @@
 - (void) DPSimage: (NSAffineTransform *)matrix
                  : (NSInteger)pixelsWide
 		 : (NSInteger)pixelsHigh
-                 : (NSInteger)bitsPerSample 
-		 : (NSInteger)samplesPerPixel
+                 : (NSInteger)bitsPerSample // is this used correctly ?
+		 : (NSInteger)samplesPerPixel // < unused
                  : (NSInteger)bitsPerPixel
 		 : (NSInteger)bytesPerRow
-                 : (BOOL)isPlanar
-		 : (BOOL)hasAlpha
+                 : (BOOL)isPlanar // < unused
+		 : (BOOL)hasAlpha // < unused
                  : (NSString *)colorSpaceName
 		 : (const unsigned char *const[5])data
 {
@@ -83,9 +84,64 @@
   CGAffineTransform cgAT = *(CGAffineTransform *)&nsAT;
 
   CGContextSaveGState(CGCTX);
-  CGContextSetRGBFillColor(CGCTX, 1, 0, 0, 1);
+//  CGContextSetRGBFillColor(CGCTX, 1, 0, 0, 1);
   CGContextConcatCTM(CGCTX, cgAT);
-  CGContextFillRect(CGCTX, CGRectMake(0, 0, pixelsWide, pixelsHigh));
+//  CGContextFillRect(CGCTX, CGRectMake(0, 0, pixelsWide, pixelsHigh));
+
+  // TODO:
+  // We may want to normalize colorspace names between Opal and -gui,
+  // to avoid this conversion?
+  NSLog(@"Colorspace %@", colorSpaceName);
+  if ([colorSpaceName isEqualToString:NSCalibratedRGBColorSpace])
+    colorSpaceName = kCGColorSpaceGenericRGB; // SRGB?
+  else if ([colorSpaceName isEqualToString:NSDeviceRGBColorSpace])
+    colorSpaceName = kCGColorSpaceGenericRGB;
+
+  // TODO: bitsPerComponent (in variable bitsPerSample) is not
+  // liked combined with bitsBerPixel
+  else if ([colorSpaceName isEqualToString:NSCalibratedWhiteColorSpace])
+    colorSpaceName = kCGColorSpaceGenericGray;
+  else if ([colorSpaceName isEqualToString:NSDeviceWhiteColorSpace])
+    colorSpaceName = kCGColorSpaceGenericGray;
+
+  else
+    {
+      NSLog(@"Opal backend: Unhandled colorspace: %@", colorSpaceName);
+      CGContextRestoreGState(CGCTX);
+      return;
+    }
+
+  if (bitsPerPixel != 32)
+    {
+      NSLog(@"Bits per pixel: %d - the only verified combination is 32", bitsPerPixel);
+      CGContextRestoreGState(CGCTX);
+      return;
+    }
+  //CGColorSpaceRef colorSpace = CGColorSpaceCreateWithName(colorSpaceName);
+  CGColorSpaceRef colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
+#if 0
+  NSData * nsData = [NSData dataWithBytesNoCopy: *data
+                                         length: pixelsHigh * bytesPerRow];
+#else
+  #warning Using suboptimal '-dataWithBytes:length:' because NoCopy variant breaks down
+  NSData * nsData = [NSData dataWithBytes: *data
+                                   length: pixelsHigh * bytesPerRow];
+#endif
+
+  CGDataProviderRef dataProvider = CGDataProviderCreateWithCFData(nsData);
+NSLog(@"Bits per component : bitspersample = %d", bitsPerSample);
+NSLog(@"Bits per pixel     : bitsperpixel = %d", bitsPerPixel);
+NSLog(@"                   : samplesperpixel = %d", samplesPerPixel);
+  CGImageRef img = CGImageCreate(pixelsWide, pixelsHigh, bitsPerSample,
+                                 bitsPerPixel, bytesPerRow, colorSpace,
+                                 hasAlpha ? kCGImageAlphaPremultipliedLast : 0 /* correct? */,
+                                 dataProvider,
+                                 NULL /* const CGFloat decode[] is what? */,
+                                 false, /* shouldInterpolate? */
+                                 kCGRenderingIntentDefault );
+  CGContextDrawImage(CGCTX, CGRectMake(0, 0, pixelsWide, pixelsHigh), img);
+  CGDataProviderRelease(dataProvider);
+  CGImageRelease(img);
   CGContextRestoreGState(CGCTX);
 }
 
@@ -143,6 +199,24 @@
   CGContextStrokePath(CGCTX);
 }
 
+- (void) DPSsetlinejoin: (int)linejoin
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  // TODO: stub
+}
+- (void) DPSsetlinecap: (int)linecap
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  // TODO: stub
+}
+- (void) DPSsetmiterlimit: (CGFloat)miterlimit
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  // TODO: stub
+}
 @end
 
 // MARK: Initialization methods
