@@ -31,8 +31,8 @@ SUBPROJECT_NAME=opal
 # The Objective-C source files to be compiled
 opal_OBJC_FILES = OpalSurface.m \
   OpalFontInfo.m \
-  OpalGState.m \
   OpalContext.m \
+  OpalContext+Drawing.m \
   OpalFontEnumerator.m \
   OpalFaceInfo.m \
   OpalPSSurface.m \

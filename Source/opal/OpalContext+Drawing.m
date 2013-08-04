@@ -1,5 +1,5 @@
 /*
-   OpalGState.m
+   OpalContext+Drawing.m
 
    Copyright (C) 2013 Free Software Foundation, Inc.
 
@@ -28,35 +28,47 @@
 #import <CoreGraphics/CoreGraphics.h>
 #import <X11/Xlib.h>
 #import <AppKit/NSGraphics.h> // NS*ColorSpace
-#import "opal/OpalGState.h"
+#import <AppKit/NSBitmapImageRep.h> // NSBitmapImageRep
+#import "opal/OpalContext+Drawing.h"
 #import "opal/OpalSurface.h"
 #import "x11/XGServerWindow.h"
 
 #define CGCTX [self cgContext]
+#define NULL_CGCTX_CHECK(what) \
+  if(![_opalSurface cgContext]) \
+    { \
+      NSLog(@"%p: No CG context while in %s", self, __PRETTY_FUNCTION__); \
+      return what; \
+    }
 
-
-@implementation OpalGState
+@implementation OpalContext(Drawing)
 
 // MARK: Minimum required methods
 // MARK: -
 
 - (void) DPSinitclip
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
+  NULL_CGCTX_CHECK();
+
   OPContextResetClip(CGCTX);
 }
 
 - (void) DPSclip
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
+  NULL_CGCTX_CHECK();
+
   CGContextClip(CGCTX);
 }
 
 - (void) DPSfill
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  NULL_CGCTX_CHECK();
 
   CGContextFillPath(CGCTX);
 }
@@ -73,8 +85,9 @@
                  : (NSString *)colorSpaceName
 		 : (const unsigned char *const[5])data
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
  
+  NULL_CGCTX_CHECK();
   // This depends on CGAffineTransform and NSAffineTransformStruct having 
   // the same in-memory layout.
   // Here's an elementary check if that is true.
@@ -144,14 +157,14 @@ NSLog(@"                   : samplesperpixel = %d", samplesPerPixel);
   CGImageRelease(img);
   CGContextRestoreGState(CGCTX);
 }
-
+/*
 - (void) compositeGState: (OpalGState *)source
                 fromRect: (NSRect)srcRect 
                  toPoint: (NSPoint)destPoint 
                       op: (NSCompositingOperation)op
                 fraction: (CGFloat)delta
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 #if 1
   CGContextSaveGState(CGCTX);
   CGContextSetRGBFillColor(CGCTX, 1, 1, 0, 1);
@@ -171,14 +184,22 @@ NSLog(@"                   : samplesperpixel = %d", samplesPerPixel);
   CGImageRelease(backingImage);
 #endif
 }
-
-- (void) compositerect: (NSRect)aRect
-                    op: (NSCompositingOperation)op
+*/
+- (void) DPScompositerect: (CGFloat)x
+                         : (CGFloat)y
+                         : (CGFloat)w
+                         : (CGFloat)h
+                         : (NSCompositingOperation)op
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %@", self, [self class], __PRETTY_FUNCTION__, NSStringFromRect(aRect));
-  
+  NSRect aRect = NSMakeRect(x, y, w, h);
+
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s - %@", self, [self class], __PRETTY_FUNCTION__, NSStringFromRect(aRect));
+
+  NULL_CGCTX_CHECK();
+
   CGContextSaveGState(CGCTX);
-  [self DPSinitmatrix];
+  //[self DPSinitmatrix];
+
   CGContextFillRect(CGCTX, CGRectMake(aRect.origin.x,  [_opalSurface device]->buffer_height -  aRect.origin.y, 
     aRect.size.width, aRect.size.height));
   CGContextRestoreGState(CGCTX); 
@@ -188,56 +209,35 @@ NSLog(@"                   : samplesperpixel = %d", samplesPerPixel);
                    : (NSInteger)size
                    : (CGFloat)offset
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
   // TODO: stub
 }
 - (void) DPSstroke
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
   CGContextStrokePath(CGCTX);
 }
 
 - (void) DPSsetlinejoin: (int)linejoin
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
   // TODO: stub
 }
 - (void) DPSsetlinecap: (int)linecap
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
   // TODO: stub
 }
 - (void) DPSsetmiterlimit: (CGFloat)miterlimit
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
   // TODO: stub
 }
-@end
-
-// MARK: Initialization methods
-// MARK: -
-
-@implementation OpalGState (InitializationMethods)
-
-/* SOME NOTES:
-   - GState approximates a cairo context: a drawing state.
-   - Surface approximates a cairo surface: a place to draw things.
-
-   - CGContext seems to be a mix of these two: surface + state.
-
-   Should we unite these two somehow? Can we unite these two somehow?
-   Possibly not. We still need to support bitmap contexts, pdf contexts
-   etc which contain both state and contents.
-
-   So, we will still need surfaces (containing CGContexts, hence including
-   state) and GState as a wrapper around whatever context happens to be
-   the current one.
- */
 
 /**
   Makes the specified surface active in the current graphics state,
@@ -247,7 +247,7 @@ NSLog(@"                   : samplesperpixel = %d", samplesPerPixel);
                      : (int)x
                      : (int)y
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
   if(_opalSurface != opalSurface)
     {
@@ -256,6 +256,7 @@ NSLog(@"                   : samplesperpixel = %d", samplesPerPixel);
       [old release];
     }
   
+  NSLog(@"Set surface to %p", _opalSurface);
   [self setOffset: NSMakePoint(x, y)];
   [self DPSinitgraphics];  
 }
@@ -263,7 +264,7 @@ NSLog(@"                   : samplesperpixel = %d", samplesPerPixel);
                           : (int *)x
                           : (int *)y
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
   return _opalSurface;
 }
@@ -272,9 +273,7 @@ NSLog(@"                   : samplesperpixel = %d", samplesPerPixel);
  **/
 - (void) DPSinitgraphics
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-
-  [super DPSinitgraphics];
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
   [_opalSurface createCGContexts];
 /*
@@ -291,14 +290,14 @@ NSLog(@"                   : samplesperpixel = %d", samplesPerPixel);
 // MARK: Accessors
 // MARK: -
 
-@implementation OpalGState (Accessors)
+@implementation OpalContext (DrawingAccessors)
 
 - (CGContextRef) cgContext
 {
   if (!_opalSurface)
-    NSDebugMLLog(@"OpalGState", @"No OpalSurface");
+    NSDebugMLLog(@"OpalContextDrawing", @"No OpalSurface");
   else if (![_opalSurface cgContext])
-    NSDebugMLLog(@"OpalGState", @"No OpalSurface CGContext");
+    NSDebugMLLog(@"OpalContextDrawing", @"No OpalSurface CGContext");
   return [_opalSurface cgContext];
 }
 
@@ -307,11 +306,11 @@ NSLog(@"                   : samplesperpixel = %d", samplesPerPixel);
 // MARK: Non-required methods
 // MARK: -
 static CGFloat theAlpha = 1.; // TODO: removeme
-@implementation OpalGState (NonrequiredMethods)
+@implementation OpalContext (DrawingNonrequiredMethods)
 
 - (void) DPSsetrgbcolor: (CGFloat)r : (CGFloat)g : (CGFloat)b
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
   const CGFloat alpha = 1; // TODO: is this correct?
   if(!CGCTX)
@@ -321,34 +320,44 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 }
 - (void) DPSrectfill: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - rect %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, x, y, w, h);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s - rect %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, x, y, w, h);
+
+  NULL_CGCTX_CHECK();
 
   CGContextFillRect(CGCTX, CGRectMake(x, y, w, h));
 }
 - (void) DPSrectclip: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, x, y, w, h);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s - %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, x, y, w, h);
   
+  NULL_CGCTX_CHECK();
+
   [self DPSinitclip];
   CGContextClipToRect(CGCTX, CGRectMake(x, y, w, h));
 }
 - (void) DPSsetgray: (CGFloat)gray
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  NULL_CGCTX_CHECK();
 
   const CGFloat alpha = 1; // TODO: is this correct?
   CGContextSetGrayFillColor(CGCTX, gray, alpha);
 }
 - (void) DPSsetalpha: (CGFloat)a
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - alpha %g", self, [self class], __PRETTY_FUNCTION__, a);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s - alpha %g", self, [self class], __PRETTY_FUNCTION__, a);
   
+  NULL_CGCTX_CHECK();
+
   CGContextSetAlpha(CGCTX, a);
   theAlpha = a;
 }
 - (void)DPSinitmatrix 
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  
+  NULL_CGCTX_CHECK();
   
   OPContextSetIdentityCTM(CGCTX);
   #if 0
@@ -356,49 +365,56 @@ static CGFloat theAlpha = 1.; // TODO: removeme
   CGContextTranslateCTM(CGCTX, 0, [_opalSurface device]->buffer_height);
   CGContextScaleCTM(CGCTX, 1, -1);
   #endif
-  [super DPSinitmatrix];
 }
 - (void)DPSconcat: (const CGFloat *)m
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, m[0], m[1], m[2], m[3], m[4], m[5]);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s - %g %g %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, m[0], m[1], m[2], m[3], m[4], m[5]);
 
   CGContextConcatCTM(CGCTX, CGAffineTransformMake(
                      m[0], m[1], m[2],
                      m[3], m[4], m[5]));
-  [super DPSconcat:m];
 }
 - (void)DPSscale: (CGFloat)x
                 : (CGFloat)y 
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
   
+  NULL_CGCTX_CHECK();
+
   CGContextScaleCTM(CGCTX, x, y);
 }
 - (void)DPStranslate: (CGFloat)x
                     : (CGFloat)y 
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - x %g y %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s - x %g y %g", self, [self class], __PRETTY_FUNCTION__, x, y);
   
+  NULL_CGCTX_CHECK();
+
   CGContextTranslateCTM(CGCTX, x, y);
-  [super DPStranslate:x:y];
 }
 - (void) DPSmoveto: (CGFloat) x
                   : (CGFloat) y
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+
+  NULL_CGCTX_CHECK();
 
   CGContextMoveToPoint(CGCTX, x, y);
 }
 - (void) DPSlineto: (CGFloat) x
                   : (CGFloat) y
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+
+  NULL_CGCTX_CHECK();
 
   CGContextAddLineToPoint(CGCTX, x, y);
 }
 - (void) setOffset: (NSPoint)theOffset
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, theOffset.x, theOffset.y);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, theOffset.x, theOffset.y);
+
+  NULL_CGCTX_CHECK();
 
 #if 1
   if (CGCTX != nil)
@@ -427,7 +443,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 /*
 - (void) setColor: (device_color_t *)color state: (color_state_t)cState
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
   [super setColor: color
             state: cState];
@@ -447,8 +463,10 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 */
 - (NSAffineTransform *) GSCurrentCTM
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
+  NULL_CGCTX_CHECK(nil);
+
   CGAffineTransform cgCTM = CGContextGetCTM(CGCTX);
   NSAffineTransform * affineTransform = [NSAffineTransform transform];
 
@@ -465,53 +483,53 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 }
 - (void) flushGraphics
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   CGContextFlush(CGCTX);
   [_opalSurface handleExpose:CGRectMake(0, 0, 1024, 1024)];
 }
 - (void) DPSgsave
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 #warning Opal bug: nil ctx should 'only' print a warning instead of crashing
   if (CGCTX)
     CGContextSaveGState(CGCTX);
 }
 - (void) DPSgrestore
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 #warning Opal bug: nil ctx should 'only' print a warning instead of crashing
   if (CGCTX)
     CGContextRestoreGState(CGCTX);
 }
 - (void *) saveClip
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   CGRect * r = calloc(sizeof(CGRect), 1);
   *r = CGContextGetClipBoundingBox(CGCTX);
   return r;
 }
 - (void) restoreClip: (void *)savedClip
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   OPContextResetClip(CGCTX);
   CGContextClipToRect(CGCTX, *(CGRect *)savedClip);
   free(savedClip);
 }
 - (void) DPSeoclip
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
   CGContextEOClip(CGCTX);
 }
 - (void) DPSeofill
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
   CGContextEOFillPath(CGCTX);
 }
 - (void) DPSshow: (const char *)s
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
   CGContextSaveGState(CGCTX);
   CGContextSetRGBFillColor(CGCTX, 0, 1, 0, 1);
@@ -520,7 +538,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 }
 - (void) GSShowText: (const char *)s  : (size_t) length
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
  /* 
   const char * s2 = calloc(s, length+1);
   strcpy(s2, s);
@@ -533,7 +551,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 }
 - (void) GSShowGlyphsWithAdvances: (const NSGlyph *)glyphs : (const NSSize *)advances : (size_t) length
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   CGContextSaveGState(CGCTX);
   CGContextSetRGBFillColor(CGCTX, 0, 1, 0, 1);
   CGContextFillRect(CGCTX, CGRectMake(0, 0, 12, length * 12));
@@ -544,7 +562,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 - (void) DPSrlineto: (CGFloat) x
                    : (CGFloat) y
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
 
   CGContextAddRelativeLine(CGCTX, x, y);
 }
@@ -554,9 +572,10 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 - (void) DPScurrentpoint: (CGFloat *)x
                         : (CGFloat *)y
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
-  
   CGPoint currentPoint = CGContextGetPathCurrentPoint(CGCTX);
+
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, currentPoint.x, currentPoint.y);
+
   *x = currentPoint.x;
   *y = currentPoint.y;
 }
@@ -565,7 +584,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 // MARK: Non-required unimplemented methods
 // MARK: -
 
-@implementation OpalGState (NonrequiredUnimplementedMethods)
+@implementation OpalContext (DrawingNonrequiredUnimplementedMethods)
 
 /*
  Methods that follow have not been implemented.
@@ -579,17 +598,17 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 
 - (void) DPSsetlinewidth: (CGFloat) width
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 }
 - (void) DPSsetgstate: (NSInteger) gst
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  abort();
+  NSDebugLLog(@"OpalContextDrawing", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSLog(@"Warning: application tried to set gstate directly");
 }
 
 @end
 
-@implementation OpalGState (Unused)
+@implementation OpalContext (DrawingUnused)
 
 - (void) _setPath
 {
@@ -632,4 +651,81 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 }
 
 
+@end
+
+@implementation OpalContext (DrawingGSCReplicas)
+- (void) GSDrawImage: (NSRect) rect : (void *) imageref
+{
+  NSBitmapImageRep *bitmap;
+  unsigned char *data[5];
+
+  bitmap = (NSBitmapImageRep*)imageref;
+  if (![self isCompatibleBitmap: bitmap])
+    {
+      NSInteger bitsPerSample = 8;
+      BOOL isPlanar = NO;
+      NSInteger samplesPerPixel = [bitmap hasAlpha] ? 4 : 3;
+      NSString *colorSpaceName = NSCalibratedRGBColorSpace;
+      NSBitmapImageRep *new;
+
+     new = [bitmap _convertToFormatBitsPerSample: bitsPerSample
+                    samplesPerPixel: samplesPerPixel
+                    hasAlpha: [bitmap hasAlpha]
+                    isPlanar: isPlanar
+                    colorSpaceName: colorSpaceName
+                    bitmapFormat: 0
+                    bytesPerRow: 0
+                    bitsPerPixel: 0];
+
+      if (new == nil)
+        {
+          NSLog(@"Could not convert bitmap data");
+          return;
+        }
+      bitmap = new;
+    }
+
+  [bitmap getBitmapDataPlanes: data];
+  [self NSDrawBitmap: rect : [bitmap pixelsWide] : [bitmap pixelsHigh]
+        : [bitmap bitsPerSample] : [bitmap samplesPerPixel]
+        : [bitmap bitsPerPixel] : [bitmap bytesPerRow] : [bitmap isPlanar]
+        : [bitmap hasAlpha] :  [bitmap colorSpaceName]
+        : (const unsigned char**)data];
+}
+
+- (void) NSDrawBitmap: (NSRect) rect : (NSInteger) pixelsWide : (NSInteger) pixelsHigh
+                     : (NSInteger) bitsPerSample : (NSInteger) samplesPerPixel
+                     : (NSInteger) bitsPerPixel : (NSInteger) bytesPerRow : (BOOL) isPlanar
+                     : (BOOL) hasAlpha : (NSString *) colorSpaceName
+                     : (const unsigned char *const [5]) data
+{
+  NSAffineTransform *trans;
+  NSSize scale;
+
+  // Compute the transformation matrix
+  scale = NSMakeSize(NSWidth(rect) / pixelsWide,
+                     NSHeight(rect) / pixelsHigh);
+  trans = [NSAffineTransform transform];
+  [trans translateToPoint: rect.origin];
+  [trans scaleXBy: scale.width  yBy: scale.height];
+
+  /* This does essentially what the DPS...image operators do, so
+     as to avoid an extra method call */
+  [self   DPSimage: trans
+                  : pixelsWide : pixelsHigh
+                  : bitsPerSample : samplesPerPixel
+                  : bitsPerPixel : bytesPerRow
+                  : isPlanar
+                  : hasAlpha : colorSpaceName
+                  : data];
+}
+- (BOOL) isCompatibleBitmap: (NSBitmapImageRep*)bitmap
+{
+  return ([bitmap bitmapFormat] == 0);
+}
+
+- (void) GSSetCTM: (NSAffineTransform *)ctm
+{
+  /* TODO: unimplemented */
+}
 @end

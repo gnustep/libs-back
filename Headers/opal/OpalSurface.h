@@ -39,6 +39,7 @@
 - (struct _gswindow_device_t *) device;
 - (CGContextRef) cgContext;
 - (void) createCGContexts;
+- (BOOL) isDrawingToScreen;
 @end
 
 @interface OpalSurface (DebugExtensions)

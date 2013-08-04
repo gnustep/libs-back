@@ -1,5 +1,5 @@
 /*
-   OpalGState.h
+   OpalContext+Drawing.h
 
    Copyright (C) 2013 Free Software Foundation, Inc.
 
@@ -25,17 +25,11 @@
    Boston, MA 02110-1301, USA.
 */
 
-#import "gsc/GSGState.h"
+#import "opal/OpalContext.h"
 
-@class OpalSurface;
-
-@interface OpalGState : GSGState
-{
-  OpalSurface * _opalSurface;
-}
+@interface OpalContext(Drawing)
 
 - (void) DPSinitclip;
-- (void) DPSinitgraphics;
 - (void) DPSclip;
 - (void) DPSfill;
 - (void) DPSimage: (NSAffineTransform *)matrix
@@ -49,11 +43,13 @@
 		 : (BOOL)hasAlpha
                  : (NSString *)colorSpaceName
 		 : (const unsigned char *const[5])data;
+/*
 - (void) compositeGState: (OpalGState *)source
                 fromRect: (NSRect)srcRect 
                  toPoint: (NSPoint)destPoint 
                       op: (NSCompositingOperation)op
                 fraction: (CGFloat)delta;
+*/
 - (void) compositerect: (NSRect)aRect
                     op: (NSCompositingOperation)op;
 - (void) GSSetSurface: (OpalSurface *)opalSurface
@@ -61,6 +57,7 @@
                      : (int)y;
 @end
 
-@interface OpalGState (Accessors)
+@interface OpalContext (DrawingAccessors)
 - (CGContextRef) cgContext;
 @end
+

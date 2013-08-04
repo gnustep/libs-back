@@ -30,11 +30,18 @@
 
 #import "gsc/GSContext.h"
 
-@interface OpalContext : GSContext
+@class GSDisplayServer;
+@class OpalSurface;
+
+@interface OpalContext : NSGraphicsContext
 {
+  GSDisplayServer * _server;
+  OpalSurface * _opalSurface;
+  int _backGStateStackHeight;
+  BOOL _isScreen; // TODO: probably belongs in OpalSurface
 }
 + (void) initializeBackend;
-+ (Class) GStateClass;
+//+ (Class) GStateClass;
 - (void) GSSetDevice: (void *)device
                     : (int)x
                     : (int)y;

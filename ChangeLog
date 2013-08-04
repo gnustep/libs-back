@@ -1,3 +1,24 @@
+2013-08-04  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/GNUmakefile:
+	* Source/opal/OpalContext+Drawing.m:
+	* Headers/opal/OpalContext+Drawing.h:
+	* Source/opal/OpalGState.m:
+	* Headers/opal/OpalGState.h:
+	Moved core from separate class OpalGState to class category
+	OpalContext(Drawing).
+	Added NULL_CGCTX_CHECK().
+	Implementing -DPScompositerect::::: in place of -compositerect:op:.
+	Copied a few methods from GSContext into DrawingGSCReplicas class.
+
+	* Source/opal/OpalContext.m:
+	* Headers/opal/OpalContext.h:
+	OpalContext now subclasses NSGraphicsContext and not GSContext.
+	ADded relevant initialization methods.
+	
+	* Headers/opal/OpalSurface.h:
+	Fixed a warning.
+
 2013-08-02  Ivan Vucica <ivan@vucica.net>
 
 	* Source/opal/OpalContext.m:

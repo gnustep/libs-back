@@ -29,29 +29,78 @@
 #import "opal/OpalFontInfo.h"
 #import "opal/OpalFontEnumerator.h"
 #import "opal/OpalSurface.h"
-#import "opal/OpalGState.h"
+#import "gsc/GSStreamContext.h"
 
-#define OGSTATE ((OpalGState *)gstate)
+#define OGSTATE self //((OpalGState *)gstate)
 
 @implementation OpalContext
 
 + (void) initializeBackend
 {
+  NSDebugLLog(@"OpalContext", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   [NSGraphicsContext setDefaultContextClass: self];
 
   [GSFontEnumerator setDefaultClass: [OpalFontEnumerator class]];
   [GSFontInfo setDefaultClass: [OpalFontInfo class]];
 }
 
-+ (Class) GStateClass
+- (id) initWithContextInfo: (NSDictionary *)info
 {
-  return [OpalGState class];
+  NSDebugLLog(@"OpalContext", @"%p (%@): %s - info %@", self, [self class], __PRETTY_FUNCTION__, info);
+  NSString *contextType;
+  NSZone   *z = [self zone];
+
+  contextType = [info objectForKey:
+                  NSGraphicsContextRepresentationFormatAttributeName];
+
+  if (([object_getClass(self) handlesPS] == NO) && contextType
+      && [contextType isEqual: NSGraphicsContextPSFormat])
+    {
+      /* Don't call self, since we aren't initialized */
+      [super dealloc];
+      return [[GSStreamContext allocWithZone: z] initWithContextInfo: info];
+    }
+
+  self = [super initWithContextInfo: info];
+  if (!self)
+    return nil;
+
+  // Special handling for window drawing
+  id dest;
+  dest = [info objectForKey: NSGraphicsContextDestinationAttributeName];
+  if ((dest != nil) && [dest isKindOfClass: [NSWindow class]])
+    {
+      /* A context is only associated with one server. Do not retain
+         the server, however */
+      _server = GSCurrentServer();
+      [_server setWindowdevice: [(NSWindow*)dest windowNumber]
+                    forContext: self];
+    }
+
+  if ([[info objectForKey: NSDeviceIsScreen] boolValue])
+    {
+      _isScreen = YES;
+    }
+
+  // TODO: we may want to create a default OpalSurface, in case GSSetDevice is not called
+
+  [self DPSinitgraphics];
+  [self DPSinitclip];
+
+  return self;
+}
+
++ (BOOL) handlesPS
+{
+  // TODO
+  return NO;
 }
 
 - (void) GSSetDevice: (void *)device
                     : (int)x
                     : (int)y
 {
+  NSDebugLLog(@"OpalContext", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   OpalSurface *surface;
 
   surface = [[OpalSurface alloc] initWithDevice: device];
@@ -65,20 +114,12 @@
 
 - (BOOL) isDrawingToScreen
 {
+  if (_isScreen) // TODO: should not be needed
+    return YES;
+
   OpalSurface *surface = nil;
   [OGSTATE GSCurrentSurface: &surface : NULL : NULL];
   return [surface isDrawingToScreen];
-}
-
-- (void) DPSgsave
-{
-  [super DPSgsave];
-  [OGSTATE DPSgsave];
-}
-- (void) DPSgrestore
-{
-  [super DPSgrestore];
-  [OGSTATE DPSgrestore];
 }
 
 /**
@@ -87,6 +128,7 @@
  */
 + (void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
 {
+  NSDebugLLog(@"OpalContext", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   if ([(id)driver isKindOfClass: [OpalSurface class]])
     {
       [(OpalSurface *)driver handleExposeRect: rect];
@@ -116,3 +158,29 @@
 
 @end
 
+@implementation OpalContext(GSCReplicas)
+/* This section includes replicas of methods implemented in GSContext. */
+- (NSInteger) GSDefineGState
+{
+  /* TODO: in GSContext this inserts a new graphics state on top of a stack. */
+  return _backGStateStackHeight++;
+}
+- (void) GSUndefineGState: (NSInteger)gst
+{
+  /* TODO: in GSContext this pops a graphics state from the stack. 
+     Sadly, it might also pop gstate from elsewhere on the stack. */
+  if(_backGStateStackHeight-1 != gst)
+    NSLog(@"%s: trying to pop something apart from the top of the gstate stack", __PRETTY_FUNCTION__);
+  _backGStateStackHeight--;
+}
+- (void) GSReplaceGState: (NSInteger)gst
+{
+  /* In GSContext, this allows replacing a graphics state from a stack.
+     We can't do this in Opal. */
+  NSLog(@"Warning: App or library performed a call to %s.", 
+        __PRETTY_FUNCTION__);
+  if(_backGStateStackHeight-1 != gst)
+    NSLog(@"%s: trying to replace gstate not on top of the stack", __PRETTY_FUNCTION__);
+}
+
+@end
