@@ -35,10 +35,11 @@
 
 @implementation WIN32Server (w32_General)
 
-- (void) decodeWM_CLOSEParams:(WPARAM)wParam :(LPARAM)lParam :(HWND)hwnd;
+- (void) decodeWM_CLOSEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-  NSEvent * ev;
+  NSEvent *ev;
   NSPoint eventLocation = NSMakePoint(0, 0);
+
   ev = [NSEvent otherEventWithType: NSAppKitDefined
 		      location: eventLocation
 		      modifierFlags: 0
@@ -49,14 +50,11 @@
 		      data1: 0
 		      data2: 0];
 		    
-  // need to send the event... or handle it directly.
-  // Sending the event directly to the window bypasses the event queue, which can cause a modal loop to lock up
-  //[EVENT_WINDOW(hwnd) sendEvent:ev];
-  // So we'll post it to the queue like any other event, which will get it to the window in the usual way
-  [GSCurrentServer() postEvent:ev atStart:NO];
+  // Sending the event directly to the window bypasses the event queue,
+  // which can cause a modal loop to lock up.
+  [GSCurrentServer() postEvent: ev atStart: NO];
   
-  ev=nil;
-  flags._eventHandled=YES;
+  flags._eventHandled = YES;
 }
       
 - (void) decodeWM_NCDESTROYParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
@@ -80,7 +78,6 @@
   free(win);
   free((IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO));
   flags._eventHandled=YES;
-
 }
 
 - (void) decodeWM_QUERYOPENParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd

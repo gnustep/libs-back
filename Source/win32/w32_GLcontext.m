@@ -337,11 +337,10 @@ static Win32GLContext *currentGLContext;
 - (id)initWithCGLContextObj: (void *)context
 {
   self = [super init];
-  
   if (!self)
-  {
-    return nil;
-  }
+    {
+      return nil;
+    }
   
   // FIXME: Need to set the pixelFormat ivar
   wgl_context = context;

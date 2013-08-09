@@ -76,10 +76,11 @@
 
 DWORD windowStyleForGSStyle(unsigned int style);
    
-typedef struct w32serverFlags {
-    BOOL HOLD_MINI_FOR_SIZE;        // override GS size event on miniturize
-    BOOL _eventHandled;             // did we handle the event?
-  } serverFlags;
+typedef struct w32serverFlags 
+{
+  BOOL HOLD_MINI_FOR_SIZE;        // override GS size event on miniturize
+  BOOL _eventHandled;             // did we handle the event?
+} serverFlags;
 
 @interface WIN32Server : GSDisplayServer
 {

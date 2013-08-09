@@ -164,7 +164,7 @@ BOOL alpha_blend_source_over(HDC destDC,
 			     HDC srcDC, 
 			     RECT rectFrom, 
 			     int x, int y, int w, int h, 
-			     float delta)
+			     CGFloat delta)
 {
   BOOL success = YES;
 
@@ -302,7 +302,7 @@ BOOL alpha_blend_source_over(HDC destDC,
 		fromRect: (NSRect)sourceRect
 		 toPoint: (NSPoint)destPoint
 		      op: (NSCompositingOperation)op
-		fraction: (float)delta
+		fraction: (CGFloat)delta
 {
   HDC sourceDC;
   HDC hDC;
@@ -408,7 +408,7 @@ BOOL alpha_blend_source_over(HDC destDC,
 - (void) compositerect: (NSRect)aRect
                     op: (NSCompositingOperation)op
 {
-  float gray;
+  CGFloat gray;
 
   // FIXME: This is taken from the xlib backend
   [self DPScurrentgray: &gray];
@@ -462,7 +462,7 @@ BOOL alpha_blend_source_over(HDC destDC,
            fromRect: (NSRect)aRect 
             toPoint: (NSPoint)aPoint 
                  op: (NSCompositingOperation)op
-           fraction: (float)delta
+           fraction: (CGFloat)delta
 {
   HDC sourceDC;
   HDC hDC;
@@ -569,9 +569,9 @@ BOOL alpha_blend_source_over(HDC destDC,
 }
 
 static
-HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
-		       int bitsPerSample, int samplesPerPixel,
-		       int bitsPerPixel, int bytesPerRow,
+HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
+		       NSInteger bitsPerSample, NSInteger samplesPerPixel,
+		       NSInteger bitsPerPixel, NSInteger bytesPerRow,
 		       BOOL isPlanar, BOOL hasAlpha,
 		       NSString *colorSpaceName,
 		       const unsigned char *const data[5])
@@ -584,10 +584,12 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   UINT fuColorUse;
 
   if (isPlanar
-    || !([colorSpaceName isEqualToString: NSDeviceRGBColorSpace]
-    || ![colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace]
-    || ![colorSpaceName isEqualToString: NSCalibratedBlackColorSpace]
-    || [colorSpaceName isEqualToString: NSCalibratedRGBColorSpace]))
+      || (![colorSpaceName isEqualToString: NSDeviceRGBColorSpace]
+          && ![colorSpaceName isEqualToString: NSCalibratedRGBColorSpace]
+          && ![colorSpaceName isEqualToString: NSDeviceWhiteColorSpace]
+          && ![colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace]
+          && ![colorSpaceName isEqualToString: NSDeviceBlackColorSpace]
+          && ![colorSpaceName isEqualToString: NSCalibratedBlackColorSpace]))
     {
       NSLog(@"Bitmap type currently not supported %d %@",
 	isPlanar, colorSpaceName);
@@ -680,7 +682,8 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
           return NULL;
         }
 
-      if ([colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace])
+      if ([colorSpaceName isEqualToString: NSDeviceWhiteColorSpace] ||
+          [colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace])
         {
           while (i < (pixels*4))
             {
@@ -694,7 +697,8 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
               j++;
             }
 	  }
-      else if ([colorSpaceName isEqualToString: NSCalibratedBlackColorSpace])
+      else if ([colorSpaceName isEqualToString: NSDeviceBlackColorSpace] ||
+               [colorSpaceName isEqualToString: NSCalibratedBlackColorSpace])
         {
           while (i < (pixels*4))
             {
@@ -710,7 +714,74 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 	  }
       else
         {
-          NSLog(@"Unexpected condition, greyscale which is neither white nor black calibrated");
+          NSLog(@"Unexpected condition, greyscale which is neither white nor black");
+          free(tmp);
+          free(bitmap);
+          DeleteObject(hbitmap);
+          return NULL;
+        }
+      bits = tmp;
+    }
+  else if (bitsPerPixel == 16 && samplesPerPixel == 2) // 8 bit greyscale 8 bit alpha
+    {
+      BITMAPV4HEADER	*bmih;
+      unsigned char	*tmp;
+      unsigned int	pixels = pixelsHigh * pixelsWide;
+      unsigned int	i = 0;
+      unsigned int	j = 0;
+
+      ((BITMAPINFOHEADER*)bitmap)->biBitCount = 32;
+
+      bmih = (BITMAPV4HEADER*)bitmap;
+      bmih->bV4Size = sizeof(BITMAPV4HEADER);
+      bmih->bV4V4Compression = BI_BITFIELDS;
+      bmih->bV4BlueMask = 0x000000FF;
+      bmih->bV4GreenMask = 0x0000FF00;
+      bmih->bV4RedMask = 0x00FF0000;
+      bmih->bV4AlphaMask = 0xFF000000;
+      tmp = malloc(pixels * 4);
+      if (!tmp)
+        {
+          NSLog(@"Failed to allocate temporary memory for bitmap. Error %d", 
+                GetLastError());
+          free(bitmap);
+          DeleteObject(hbitmap);
+          return NULL;
+        }
+
+      if ([colorSpaceName isEqualToString: NSDeviceWhiteColorSpace] ||
+          [colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace])
+        {
+          while (i < (pixels*4))
+            {
+	      unsigned char pix;
+	      pix = bits[j];
+              tmp[i+0] = pix;
+              tmp[i+1] = pix;
+              tmp[i+2] = pix;
+              tmp[i+3] = bits[j + 1];
+	      i += 4;
+              j += 2;
+            }
+	  }
+      else if ([colorSpaceName isEqualToString: NSDeviceBlackColorSpace] ||
+               [colorSpaceName isEqualToString: NSCalibratedBlackColorSpace])
+        {
+          while (i < (pixels*4))
+            {
+	      unsigned char pix;
+	      pix = UCHAR_MAX - bits[j];
+              tmp[i+0] = pix;
+              tmp[i+1] = pix;
+              tmp[i+2] = pix;
+              tmp[i+3] = bits[j + 1];
+	      i += 4;
+              j += 2;
+            }
+	  }
+      else
+        {
+          NSLog(@"Unexpected condition, greyscale which is neither white nor black");
           free(tmp);
           free(bitmap);
           DeleteObject(hbitmap);
@@ -749,43 +820,6 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 	  tmp[i+2] = bits[i+0];
 	  tmp[i+3] = bits[i+3];
 	  i += 4;
-	}
-      bits = tmp;
-    }
-  else if (bitsPerPixel == 16 && samplesPerPixel == 2) // 8 bit greyscale 8 bit alpha
-    {
-      BITMAPV4HEADER	*bmih;
-      unsigned char	*tmp;
-      unsigned int	pixels = pixelsHigh * pixelsWide;
-      unsigned int	i = 0, j = 0;
-
-      ((BITMAPINFOHEADER*)bitmap)->biBitCount = 32;
-
-      bmih = (BITMAPV4HEADER*)bitmap;
-      bmih->bV4Size = sizeof(BITMAPV4HEADER);
-      bmih->bV4V4Compression = BI_BITFIELDS;
-      bmih->bV4BlueMask = 0x000000FF;
-      bmih->bV4GreenMask = 0x0000FF00;
-      bmih->bV4RedMask = 0x00FF0000;
-      bmih->bV4AlphaMask = 0xFF000000;
-      tmp = malloc(pixels * 4);
-      if (!tmp)
-        {
-          NSLog(@"Failed to allocate temporary memory for bitmap. Error %d", 
-                GetLastError());
-          free(bitmap);
-          DeleteObject(hbitmap);
-          return NULL;
-        }
-
-      while (i < pixels*4)
-	{
-	  tmp[i+0] = bits[j];
-	  tmp[i+1] = bits[j];
-	  tmp[i+2] = bits[j];
-	  tmp[i+3] = bits[j + 1];
-	  i += 4;
-	  j += 2;
 	}
       bits = tmp;
     }
@@ -868,9 +902,9 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 // -DPSimage: can cause images to be drawn with a 1px horizontal line cut at 
 // the top. That's why -DPSimage we still use the GDI top left coordinates.
 - (void)DPSimage: (NSAffineTransform*) matrix 
-		: (int) pixelsWide : (int) pixelsHigh
-		: (int) bitsPerSample : (int) samplesPerPixel 
-		: (int) bitsPerPixel : (int) bytesPerRow : (BOOL) isPlanar
+		: (NSInteger) pixelsWide : (NSInteger) pixelsHigh
+		: (NSInteger) bitsPerSample : (NSInteger) samplesPerPixel 
+		: (NSInteger) bitsPerPixel : (NSInteger) bytesPerRow : (BOOL) isPlanar
 		: (BOOL) hasAlpha : (NSString *) colorSpaceName
 		: (const unsigned char *const [5]) data
 {
@@ -1215,7 +1249,7 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
 }
 
 
-- (void) DPSsetdash: (const float*)thePattern : (int)count : (float)phase
+- (void) DPSsetdash: (const CGFloat*)thePattern : (NSInteger)count : (CGFloat)phase
 {
   if (!path)
     {
@@ -1226,12 +1260,12 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   [path setLineDash: thePattern count: count phase: phase];
 }
 
-- (void)DPScurrentmiterlimit: (float *)limit 
+- (void)DPScurrentmiterlimit: (CGFloat *)limit 
 {
   *limit = miterlimit;
 }
 
-- (void)DPSsetmiterlimit: (float)limit 
+- (void)DPSsetmiterlimit: (CGFloat)limit 
 {
   // FIXME: Convert to ctm first
   miterlimit = limit;
@@ -1257,12 +1291,12 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   joinStyle = linejoin;
 }
 
-- (void)DPScurrentlinewidth: (float *)width 
+- (void)DPScurrentlinewidth: (CGFloat *)width 
 {
   *width = lineWidth;
 }
 
-- (void)DPSsetlinewidth: (float)width 
+- (void)DPSsetlinewidth: (CGFloat)width 
 {
   // FIXME: Convert to ctm first
   lineWidth = width;
@@ -1290,10 +1324,8 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   DWORD penStyle;
 
   // Temporary variables for gathering pen information
-  float* thePattern = NULL;
   DWORD* iPattern = NULL;
-  int patternCount = 0;
-  float phase = 0.0;
+  NSInteger patternCount = 0;
   
   SetBkMode(hDC, TRANSPARENT);
   br.lbStyle = BS_SOLID;
@@ -1342,20 +1374,22 @@ HBITMAP GSCreateBitmap(HDC hDC, int pixelsWide, int pixelsHigh,
   
   if (patternCount > 0)
     {
+      NSInteger i = 0;
+      CGFloat* thePattern[patternCount];
+      CGFloat phase = 0.0;
+
       penStyle = PS_GEOMETRIC | PS_USERSTYLE;
 
       // The user has defined a dash pattern for stroking on
       // the path. Note that we lose the floating point information
       // here, as windows only supports DWORD elements, not float.
-      thePattern = malloc(sizeof(float) * patternCount);
       [path getLineDash: thePattern count: &patternCount phase: &phase];
 
       iPattern = malloc(sizeof(DWORD) * patternCount);
-      int i  = 0;
       for (i = 0 ; i < patternCount; i ++)
-	iPattern[i] = (DWORD)thePattern[i];
-      free(thePattern);
-      thePattern = NULL;
+        {
+          iPattern[i] = (DWORD)thePattern[i];
+        }
     }
   else
     {

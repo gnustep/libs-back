@@ -44,7 +44,7 @@
       // I see no reason, why it isn't working, as the code is identical
       // to the one in the art backend.
       RELEASE(self);
-      return [[XGCairoSurface alloc] initWithDevice: device];
+      return (XGCairoXImageSurface*)[[XGCairoSurface alloc] initWithDevice: device];
     }
 
   di.drawing_depth = GSWINDEVICE->depth;

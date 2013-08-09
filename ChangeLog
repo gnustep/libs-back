@@ -1,3 +1,10 @@
+2013-08-08  Frank Le Grand <frank.legrand@testplant.com>
+
+    Merged changes from Trunk (since rev 35217) to TestPlant branch.
+    Some files were partially merged to pull changes from Trunk and
+    remain with large numbers of diffs (Source/win32/WIN32Server.m,
+    Source/cairo/Win32CairoSurface.m, Source/cairo/CairoContext.m)
+
 2013-01-10  Doug Simons <doug.simons@testplant.com>
 
 	* Source/win32/w32_general.m : Fix a bug that could cause a modal run loop to

@@ -1,5 +1,10 @@
 /*
-   Copyright (C) 2004 Free Software Foundation, Inc.
+   OpalFontEnumerator.h
+
+   Copyright (C) 2013 Free Software Foundation, Inc.
+
+   Author: Ivan Vucica <ivan@vucica.net>
+   Date: June 2013
 
    This file is part of GNUstep.
 
@@ -20,19 +25,19 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef Win32CairoGState_h
-#define Win32CairoGState_h
+#ifndef OpalFontEnumerator_h_defined
+#define OpalFontEnumerator_h_defined
 
-#include "cairo/CairoGState.h"
+#import <GNUstepGUI/GSFontInfo.h>
 
-
-@interface Win32CairoGState : CairoGState
+@interface OpalFontEnumerator : GSFontEnumerator
 {
 }
 
-- (HDC) getHDC;
-- (void) releaseHDC: (HDC)hdc;
+- (void) enumerateFontsAndFamilies;
 
 @end
 
 #endif
+
+

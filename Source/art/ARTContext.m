@@ -26,6 +26,8 @@
 #include <Foundation/NSDebug.h>
 #include <Foundation/NSDictionary.h>
 #include <Foundation/NSUserDefaults.h>
+#include <AppKit/NSBitmapImageRep.h>
+#include <AppKit/NSGraphics.h>
 
 #include "ARTGState.h"
 #include "blit.h"
@@ -98,6 +100,49 @@
 + (void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
 {
   [(XWindowBuffer *)driver _exposeRect: rect];
+}
+
+- (BOOL) isCompatibleBitmap: (NSBitmapImageRep*)bitmap
+{
+  NSString *colorSpaceName;
+  int numColors;
+
+  if ([bitmap bitmapFormat] != 0)
+    {
+      return NO;
+    }
+
+  if (([bitmap bitsPerSample] > 8) &&
+      ([bitmap bitsPerSample] != 16))
+    {
+      return NO;
+    }
+
+  numColors = [bitmap samplesPerPixel] - ([bitmap hasAlpha] ? 1 : 0);
+  colorSpaceName = [bitmap colorSpaceName];
+  if ([colorSpaceName isEqualToString: NSDeviceRGBColorSpace] ||
+      [colorSpaceName isEqualToString: NSCalibratedRGBColorSpace])
+    {
+      return (numColors == 3);
+    }
+  else if ([colorSpaceName isEqualToString: NSDeviceCMYKColorSpace])
+    {
+      return (numColors == 4);
+    }
+  else if ([colorSpaceName isEqualToString: NSDeviceWhiteColorSpace] ||
+      [colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace])
+    {
+      return (numColors == 1);
+    }
+  else if ([colorSpaceName isEqualToString: NSDeviceBlackColorSpace] ||
+      [colorSpaceName isEqualToString: NSCalibratedBlackColorSpace])
+    {
+      return (numColors == 1);
+    }
+  else
+    {
+      return NO;
+    }
 }
 
 @end

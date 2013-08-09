@@ -43,7 +43,6 @@ ADDITIONAL_OBJCFLAGS += -Wall
 # Additional include directories the compiler should search
 ADDITIONAL_INCLUDE_DIRS += -I../Headers -I../Source/$(GNUSTEP_TARGET_DIR)
 
-
 # Additional LDFLAGS to pass to the linker
 # ADDITIONAL_LDFLAGS += 
 
@@ -63,8 +62,8 @@ ADDITIONAL_INSTALL_DIRS +=
 # Flags for when the backend is compiled as a bundle 
 ifneq ($(BACKEND_BUNDLE),)
 ADDITIONAL_TOOL_LIBS += $(GUI_LIBS) $(GRAPHIC_LIBS) $(SYSTEM_LIBS)
-ADDITIONAL_INCLUDE_DIRS += $(GRAPHIC_CFLAGS)
-ADDITIONAL_LIB_DIRS += $(GRAPHIC_LFLAGS)
+CONFIG_SYSTEM_INCL += $(GRAPHIC_CFLAGS)
+CONFIG_SYSTEM_LIB_DIR += $(GRAPHIC_LFLAGS)
 else
 ADDITIONAL_TOOL_LIBS += -lgnustep-gui -lgnustep-back $(SYSTEM_LIBS)
 endif

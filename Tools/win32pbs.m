@@ -399,23 +399,23 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
  
     case WM_RENDERALLFORMATS:
       if (!OpenClipboard(hwnd))
-      {
-        NSWarnMLog(@"Failed to get the Win32 clipboard. %d", GetLastError());
-      }
+	{
+	  NSWarnMLog(@"Failed to get the Win32 clipboard. %d", GetLastError());
+	}
       else if (GetClipboardOwner() == hwnd)
-      {
-        if (!EmptyClipboard())
-        {
-          NSWarnMLog(@"Failed to get the Win32 clipboard. %d", GetLastError());
-        }
-        else
-        {
-          SendMessage(hwnd, WM_RENDERFORMAT, CF_UNICODETEXT, 0);
-          CloseClipboard();
-        }
-      }
+	{
+	  if (!EmptyClipboard())
+	    {
+	      NSWarnMLog(@"Failed to get the Win32 clipboard. %d", GetLastError());
+	    }
+	  else
+	    {
+	      SendMessage(hwnd, WM_RENDERFORMAT, CF_UNICODETEXT, 0);
+	      CloseClipboard();
+	    }
+	}
       break;
-
+      
     default:
       return DefWindowProc(hwnd, uMsg, wParam, lParam);
     } 

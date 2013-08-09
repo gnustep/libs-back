@@ -149,7 +149,7 @@
       GetClientRect(hwnd, &rect);
       NSRect  frame = MSWindowRectToGS((WIN32Server*)GSCurrentServer(), hwnd, rect);
       [[self class] handleExposeRect: frame forDriver: surface];
-    }
+}
 #endif
 }
 
@@ -194,6 +194,37 @@
 
 @implementation CairoContext (Ops) 
 
+- (BOOL) isCompatibleBitmap: (NSBitmapImageRep*)bitmap
+{
+  NSString *colorSpaceName;
+
+  if ([bitmap bitmapFormat] != 0)
+    {
+      return NO;
+    }
+
+  if ([bitmap isPlanar])
+    {
+      return NO;
+    }
+
+  if ([bitmap bitsPerSample] != 8)
+    {
+      return NO;
+    }
+
+  colorSpaceName = [bitmap colorSpaceName];
+  if (![colorSpaceName isEqualToString: NSDeviceRGBColorSpace] &&
+      ![colorSpaceName isEqualToString: NSCalibratedRGBColorSpace])
+    {
+      return NO;
+    }
+  else
+    {
+      return YES;
+    }
+}
+
 - (void) GSDrawImage: (NSRect)rect: (void *)imageref
 {
   NSBitmapImageRep *bitmap;
@@ -221,12 +252,12 @@
                     bitmapFormat: 0
                     bytesPerRow: 0
                     bitsPerPixel: 0];
-            
+
       if (new == nil)
-        {
+    {
           NSLog(@"Could not convert bitmap data");
           return;
-        }
+    }
       bitmap = new;
     }
 
@@ -236,7 +267,7 @@
         : [bitmap bitsPerPixel] : [bitmap bytesPerRow] : [bitmap isPlanar]
         : [bitmap hasAlpha] :  [bitmap colorSpaceName]
         : data];
-}
+    }
 
 - (void) GSCurrentDevice: (void **)device : (int *)x : (int *)y
 {

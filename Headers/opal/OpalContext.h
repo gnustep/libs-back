@@ -1,11 +1,12 @@
-/* GSGStreamState - Implements graphic state drawing for PS stream
+/*
+   OpalContext.h
 
-   Copyright (C) 2002 Free Software Foundation, Inc.
+   Copyright (C) 2013 Free Software Foundation, Inc.
 
-   Written by: Adam Fedor <fedor@gnu.org>
-   Date: Sep 2002
-   
-   This file is part of the GNU Objective C User Interface Library.
+   Author: Ivan Vucica <ivan@vucica.net>
+   Date: June 2013
+
+   This file is part of GNUstep.
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -24,20 +25,21 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef _GSStreamGState_h_INCLUDE
-#define _GSStreamGState_h_INCLUDE
+#ifndef OpalContext_h_defined
+#define OpalContext_h_defined
 
-#include <gsc/GSGState.h>
+#import "gsc/GSContext.h"
 
-@interface GSStreamGState : GSGState
+@interface OpalContext : GSContext
 {
-@public
-  int clinecap, clinejoin;
-  CGFloat clinewidth, cmiterlimit;
-  CGFloat cstrokeadjust;
 }
++ (void) initializeBackend;
++ (Class) GStateClass;
+- (void) GSSetDevice: (void *)device
+                    : (int)x
+                    : (int)y;
 
 @end
 
-#endif /* _GSStreamGState_h_INCLUDE */
+#endif
 

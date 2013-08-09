@@ -34,30 +34,30 @@
 - (LRESULT) decodeWM_MOVEParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
 {
   if (flags.HOLD_MINI_FOR_SIZE == FALSE)
-  {
-    NSPoint eventLocation;
-    NSRect rect;
-    RECT r;
-    NSEvent *ev = nil;
-
-    GetWindowRect(hwnd, &r);
-    rect = MSScreenRectToGS(r);
-    eventLocation = rect.origin;
-
-    ev = [NSEvent otherEventWithType: NSAppKitDefined
-                  location: eventLocation
-             modifierFlags: 0
-                 timestamp: 0
-              windowNumber: (int)hwnd
-                   context: GSCurrentContext()
-                   subtype: GSAppKitWindowMoved
-                     data1: rect.origin.x
-                     data2: rect.origin.y];                   
-           
-
-    //need native code here?
-    [EVENT_WINDOW(hwnd) sendEvent: ev];
-  }
+    {
+      NSPoint eventLocation;
+      NSRect rect;
+      RECT r;
+      NSEvent *ev = nil;
+      
+      GetWindowRect(hwnd, &r);
+      rect = MSScreenRectToGS(r);
+      eventLocation = rect.origin;
+      
+      ev = [NSEvent otherEventWithType: NSAppKitDefined
+			      location: eventLocation
+			 modifierFlags: 0
+			     timestamp: 0
+			  windowNumber: (int)hwnd
+			       context: GSCurrentContext()
+			       subtype: GSAppKitWindowMoved
+				 data1: rect.origin.x
+				 data2: rect.origin.y];                   
+      
+      
+      //need native code here?
+      [EVENT_WINDOW(hwnd) sendEvent: ev];
+    }
   
   return 0;
 }
@@ -266,7 +266,7 @@
 
 - (void) decodeWM_WINDOWPOSCHANGINGParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-  WINDOWPOS	*inf = (WINDOWPOS*)lParam;
+  WINDOWPOS *inf = (WINDOWPOS*)lParam;
 
   if ((inf->flags & SWP_NOZORDER) == 0)
     {
@@ -284,7 +284,6 @@
 
 - (LRESULT) decodeWM_GETMINMAXINFOParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-  // reused from original author (added debug code)
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
   MINMAXINFO *mm;
 
@@ -327,13 +326,8 @@
 
 - (LRESULT) decodeWM_MOVINGParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
 {
-//  [self decodeWM_MOVEParams:(HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam];
   [EVENT_WINDOW(hwnd) display];
-
   return TRUE;
 }
 
 @end
-
-
-

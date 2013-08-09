@@ -398,7 +398,7 @@ static void artcontext_render_svp(const ArtSVP *svp, int x0, int y0, int x1, int
 also fills in the axis coordinates (x0/y0 is min) and returns 1. Otherwise
 returns 0. (Actually, if pixel is NO, it's enough that the edges remain
 within one pixel.) */
-- (int) _axis_rectangle: (float)x : (float)y : (float)w : (float)h
+- (int) _axis_rectangle: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
 		 vpath: (ArtVpath *)vp
 		  axis: (int *)px0 : (int *)py0 : (int *)px1 : (int *)py1
 		 pixel: (BOOL)pixel
@@ -834,7 +834,7 @@ static void clip_svp_callback(void *data, int y, int start,
   [self _clip: ART_WIND_RULE_ODDEVEN];
 }
 
-- (void) DPSrectclip: (float)x : (float)y : (float)w : (float)h
+- (void) DPSrectclip: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
 {
   ArtVpath vp[6];
   ArtSVP *svp;
@@ -972,7 +972,7 @@ static void clip_svp_callback(void *data, int y, int start,
   [self _fill: ART_WIND_RULE_NONZERO];
 }
 
-- (void) DPSrectfill: (float)x : (float)y : (float)w : (float)h
+- (void) DPSrectfill: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
 {
   ArtVpath vp[6];
   ArtSVP *svp;
@@ -1303,7 +1303,7 @@ static void clip_svp_callback(void *data, int y, int start,
   UPDATE_UNBUFFERED
 }
 
-- (void) DPSrectstroke: (float)x : (float)y : (float)w : (float)h
+- (void) DPSrectstroke: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
 {
   ArtVpath *vp, *vp2;
   double matrix[6];

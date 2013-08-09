@@ -471,7 +471,7 @@ static Region emptyRegion;
                                              dest_win->depth);
       
      /* Fill alpha also (opaque by default) */
-      [self setAlphaColor: 1];
+      [self setAlphaColor: 1.0];
       XFillRectangle(XDPY, dest_win->alpha_buffer, agcntxt, 0, 0,
                      NSWidth(dest_win->xframe), NSHeight(dest_win->xframe));
     }
@@ -486,7 +486,7 @@ static Region emptyRegion;
                  fromRect: (NSRect) fromRect
                   toPoint: (NSPoint) toPoint
                        op: (NSCompositingOperation) op
-                 fraction: (float)delta
+                 fraction: (CGFloat)delta
 {
   XRectangle srect;    
   XRectangle drect;    
@@ -639,7 +639,7 @@ static Region emptyRegion;
                 fromRect: (NSRect)aRect
                  toPoint: (NSPoint)aPoint
                       op: (NSCompositingOperation)op
-                fraction: (float)delta
+                fraction: (CGFloat)delta
 {
   BOOL do_copy, source_alpha;
   XGCValues comp_gcv;
@@ -780,7 +780,7 @@ static Region emptyRegion;
 - (void) compositerect: (NSRect)aRect
                     op: (NSCompositingOperation)op
 {
-  float gray;
+  CGFloat gray;
 
   [self DPScurrentgray: &gray];
   if (fabs(gray - 0.667) < 0.005)
@@ -1234,7 +1234,7 @@ static Region emptyRegion;
 
 @implementation XGGState (Ops)
 
-- (void) DPSsetalpha: (float)a
+- (void) DPSsetalpha: (CGFloat)a
 {
   gswindow_device_t *gs_win;
   [super DPSsetalpha: a];
@@ -1373,7 +1373,7 @@ static Region emptyRegion;
   *linejoin = gcv.join_style - JoinMiter;
 }
 
-- (void)DPScurrentlinewidth: (float *)width 
+- (void)DPScurrentlinewidth: (CGFloat *)width 
 {
   *width = gcv.line_width;
 }
@@ -1386,7 +1386,7 @@ static Region emptyRegion;
   clipregion = 0;
 }
 
-- (void)DPSsetdash: (const float *)pat : (int)size : (float)pat_offset 
+- (void)DPSsetdash: (const CGFloat *)pat : (NSInteger)size : (CGFloat)pat_offset 
 {
   int dash_offset;
   char dash_list[size];
@@ -1427,7 +1427,7 @@ static Region emptyRegion;
   [self setGCValues: gcv withMask: GCJoinStyle];
 }
 
-- (void)DPSsetlinewidth: (float)width 
+- (void)DPSsetlinewidth: (CGFloat)width 
 {
   int w;
   NSSize ws;
@@ -1451,7 +1451,7 @@ static Region emptyRegion;
     }
 }
 
-- (void) DPSsetmiterlimit: (float)limit
+- (void) DPSsetmiterlimit: (CGFloat)limit
 {
   /* Do nothing. X11 does its own thing and doesn't give us a choice */
 }
@@ -1505,7 +1505,7 @@ static Region emptyRegion;
   [self setClipMask];
 }
 
-- (void)DPSrectclip: (float)x : (float)y : (float)w : (float)h 
+- (void)DPSrectclip: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h 
 {
   XRectangle xrect;
   NSRect orect;
@@ -1532,7 +1532,7 @@ static Region emptyRegion;
   [self DPSnewpath];
 }
 
-- (void)DPSrectfill: (float)x : (float)y : (float)w : (float)h 
+- (void)DPSrectfill: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h 
 {
   XRectangle bounds;
   
@@ -1578,7 +1578,7 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
     }
 }
 
-- (void)DPSrectstroke: (float)x : (float)y : (float)w : (float)h 
+- (void)DPSrectstroke: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h 
 {
   XRectangle bounds;
   
@@ -1620,9 +1620,9 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
 /* ----------------------------------------------------------------------- */
 /* NSGraphics Ops */
 /* ----------------------------------------------------------------------- */
-- (void)DPSimage: (NSAffineTransform*) matrix : (int) pixelsWide : (int) pixelsHigh
-                : (int) bitsPerSample : (int) samplesPerPixel 
-                : (int) bitsPerPixel : (int) bytesPerRow : (BOOL) isPlanar
+- (void)DPSimage: (NSAffineTransform*) matrix : (NSInteger) pixelsWide : (NSInteger) pixelsHigh
+                : (NSInteger) bitsPerSample : (NSInteger) samplesPerPixel 
+                : (NSInteger) bitsPerPixel : (NSInteger) bytesPerRow : (BOOL) isPlanar
                 : (BOOL) hasAlpha : (NSString *) colorSpaceName
                 : (const unsigned char *const [5]) data
 {
@@ -1640,8 +1640,8 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
   rect = NSZeroRect;
   one_is_black = NO;
   cspace = rgb_colorspace;
-  rect.size.width = (float) pixelsWide;
-  rect.size.height = (float) pixelsHigh;
+  rect.size.width = (CGFloat) pixelsWide;
+  rect.size.height = (CGFloat) pixelsHigh;
 
   // default is 8 bit grayscale 
   if (!bitsPerSample)

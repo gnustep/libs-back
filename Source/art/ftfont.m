@@ -449,7 +449,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
   : (unsigned char)b
   : (unsigned char)alpha
   transform: (NSAffineTransform *)transform
-  deltas: (const float *)delta_data : (int)delta_size : (int)delta_flags
+  deltas: (const CGFloat *)delta_data : (int)delta_size : (int)delta_flags
   widthChar: (int) wch
   drawinfo: (draw_info_t *)di
 {
@@ -2032,7 +2032,7 @@ static FT_Outline_Funcs bezierpath_funcs = {
 /* TODO: sometimes gets 'glyph transformation failed', probably need to
 add code to avoid loading bitmaps for glyphs */
 - (void) outlineString: (const char *)s
-                   at: (float)x : (float)y
+                   at: (CGFloat)x : (CGFloat)y
                gstate: (void *)func_param
 {
 #if 0

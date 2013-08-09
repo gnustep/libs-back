@@ -95,7 +95,7 @@ draw_info_t ART_DI;
 }
 
 /* specially optimized versions (since these are common and simple) */
--(void) DPSsetgray: (float)gray
+-(void) DPSsetgray: (CGFloat)gray
 {
   if (gray < 0.0) gray = 0.0;
   if (gray > 1.0) gray = 1.0;
@@ -108,7 +108,7 @@ draw_info_t ART_DI;
     fill_color[0] = fill_color[1] = fill_color[2] = gray * 255;
 }
 
--(void) DPSsetalpha: (float)a
+-(void) DPSsetalpha: (CGFloat)a
 {
   if (a < 0.0) a = 0.0;
   if (a > 1.0) a = 1.0;
@@ -116,7 +116,7 @@ draw_info_t ART_DI;
   stroke_color[3] = fill_color[3] = a * 255;
 }
 
-- (void) DPSsetrgbcolor: (float)r : (float)g : (float)b
+- (void) DPSsetrgbcolor: (CGFloat)r : (CGFloat)g : (CGFloat)b
 {
   if (r < 0.0) r = 0.0; if (r > 1.0) r = 1.0;
   if (g < 0.0) g = 0.0; if (g > 1.0) g = 1.0;
@@ -137,11 +137,11 @@ draw_info_t ART_DI;
 /* ----------------------------------------------------------------------- */
 /* Text operations */
 /* ----------------------------------------------------------------------- */
-- (void) DPSashow: (float)ax : (float)ay : (const char*)s
+- (void) DPSashow: (CGFloat)ax : (CGFloat)ay : (const char*)s
 { /* adds (ax,ay) in user space to each glyph's x/y advancement */
   NSPoint p;
   int x, y;
-  float numarray[2];
+  CGFloat numarray[2];
 
   if (!wi || !wi->data) return;
   if (all_clipped)
@@ -168,13 +168,13 @@ draw_info_t ART_DI;
   UPDATE_UNBUFFERED
 }
 
-- (void) DPSawidthshow: (float)cx : (float)cy : (int)c : (float)ax : (float)ay 
+- (void) DPSawidthshow: (CGFloat)cx : (CGFloat)cy : (int)c : (CGFloat)ax : (CGFloat)ay 
 		      : (const char*)s
 { /* adds (ax,ay) in user space to every glyph's advancement and (cx,cy)
      to character c's x/y advancement */
   NSPoint p;
   int x, y;
-  float numarray[4];
+  CGFloat numarray[4];
 
   if (!wi || !wi->data) return;
   if (all_clipped)
@@ -244,11 +244,11 @@ draw_info_t ART_DI;
   UPDATE_UNBUFFERED
 }
 
-- (void) DPSwidthshow: (float)cx : (float)cy : (int)c : (const char*)s
+- (void) DPSwidthshow: (CGFloat)cx : (CGFloat)cy : (int)c : (const char*)s
 { /* adds (x,y) in user space to character c's x/y advancement */
   NSPoint p;
   int x, y;
-  float numarray[2];
+  CGFloat numarray[2];
 
   if (!wi || !wi->data) return;
   if (all_clipped)
@@ -274,7 +274,7 @@ draw_info_t ART_DI;
   UPDATE_UNBUFFERED
 }
 
-- (void) DPSxshow: (const char*)s : (const float*)numarray : (int)size
+- (void) DPSxshow: (const char*)s : (const CGFloat*)numarray : (int)size
 {
   NSPoint p;
   int x, y;
@@ -301,7 +301,7 @@ draw_info_t ART_DI;
   UPDATE_UNBUFFERED
 }
 
-- (void) DPSxyshow: (const char*)s : (const float*)numarray : (int)size
+- (void) DPSxyshow: (const char*)s : (const CGFloat*)numarray : (int)size
 {
   NSPoint p;
   int x, y;
@@ -328,7 +328,7 @@ draw_info_t ART_DI;
   UPDATE_UNBUFFERED
 }
 
-- (void) DPSyshow: (const char*)s : (const float*)numarray : (int)size
+- (void) DPSyshow: (const char*)s : (const CGFloat*)numarray : (int)size
 {
   NSPoint p;
   int x, y;
@@ -453,19 +453,19 @@ draw_info_t ART_DI;
     }
 }
 
-- (void) DPScurrentlinewidth: (float*)width
+- (void) DPScurrentlinewidth: (CGFloat*)width
 {
   *width = line_width;
 }
 
-- (void) DPScurrentmiterlimit: (float*)limit
+- (void) DPScurrentmiterlimit: (CGFloat*)limit
 {
   *limit = miter_limit;
 }
 
-- (void) DPSsetdash: (const float*)pat : (int)size : (float)offs
+- (void) DPSsetdash: (const CGFloat*)pat : (NSInteger)size : (CGFloat)offs
 {
-  int i;
+  NSInteger i;
 
   if (dash.n_dash)
     {
@@ -530,14 +530,14 @@ draw_info_t ART_DI;
     }
 }
 
-- (void) DPSsetlinewidth: (float)width
+- (void) DPSsetlinewidth: (CGFloat)width
 {
   line_width = width;
   /* TODO? handle line_width=0 properly */
   if (line_width <= 0) line_width = 1;
 }
 
-- (void) DPSsetmiterlimit: (float)limit
+- (void) DPSsetmiterlimit: (CGFloat)limit
 {
   miter_limit=limit;
 }

@@ -473,7 +473,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
           // MESSAGE PROCESSING!!!!!
           TranslateMessage(&msg);
           DispatchMessage(&msg);
-        }
+        } 
     } 
 }
 
@@ -625,7 +625,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
     {
       [self _initWin32Context];
       [super initWithAttributes: info];
-      
+  
       // Load system cursor resources for overriding system level cursors on
       // capture and release mouse sequences...
       loadsystemcursors();
@@ -644,34 +644,34 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
       [GSTheme theme];
       { // Check user defaults
-        NSUserDefaults	*defs;
-        defs = [NSUserDefaults standardUserDefaults];
-        
-        if ([defs objectForKey: @"GSUseWMStyles"])
-          {
-            NSWarnLog(@"Usage of 'GSUseWMStyles' as user default option is deprecated. "
-                      @"This option will be ignored in future versions. "
-                      @"You should use 'GSBackHandlesWindowDecorations' option.");
-            [self setHandlesWindowDecorations: ![defs boolForKey: @"GSUseWMStyles"]];
-          }
-        if ([defs objectForKey: @"GSUsesWMTaskbar"])
-          {
-            NSWarnLog(@"Usage of 'GSUseWMTaskbar' as user default option is deprecated. "
-                      @"This option will be ignored in future versions. "
-                      @"You should use 'GSBackUsesNativeTaskbar' option.");
-            [self setUsesNativeTaskbar: [defs boolForKey: @"GSUseWMTaskbar"]];
-          }
-        
-        if ([defs objectForKey: @"GSBackHandlesWindowDecorations"])
-          {
-            [self setHandlesWindowDecorations:
-             [defs boolForKey: @"GSBackHandlesWindowDecorations"]];
-          }
-        if ([defs objectForKey: @"GSBackUsesNativeTaskbar"])
-          {
-            [self setUsesNativeTaskbar:
-             [defs boolForKey: @"GSBackUsesNativeTaskbar"]];
-          }
+	NSUserDefaults	*defs;
+	defs = [NSUserDefaults standardUserDefaults];
+   
+	if ([defs objectForKey: @"GSUseWMStyles"])
+	  {
+	    NSWarnLog(@"Usage of 'GSUseWMStyles' as user default option is deprecated. "
+		      @"This option will be ignored in future versions. "
+		      @"You should use 'GSBackHandlesWindowDecorations' option.");
+	    [self setHandlesWindowDecorations: ![defs boolForKey: @"GSUseWMStyles"]];
+	  }
+	if ([defs objectForKey: @"GSUsesWMTaskbar"])
+	  {
+	    NSWarnLog(@"Usage of 'GSUseWMTaskbar' as user default option is deprecated. "
+		      @"This option will be ignored in future versions. "
+		      @"You should use 'GSBackUsesNativeTaskbar' option.");
+	    [self setUsesNativeTaskbar: [defs boolForKey: @"GSUseWMTaskbar"]];
+	  }
+
+	if ([defs objectForKey: @"GSBackHandlesWindowDecorations"])
+	  {
+	    [self setHandlesWindowDecorations:
+	      [defs boolForKey: @"GSBackHandlesWindowDecorations"]];
+	  } 
+	if ([defs objectForKey: @"GSBackUsesNativeTaskbar"])
+	  {
+	    [self setUsesNativeTaskbar:
+	      [defs boolForKey: @"GSBackUsesNativeTaskbar"]];
+	  }
       }
     }
   return self;
@@ -711,21 +711,21 @@ static POINT findWindowAtPoint;
 LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 {
 	if (foundWindowHwnd == 0 && hwnd != (HWND)lParam)
-    {
-      RECT	r;
-      GetWindowRect(hwnd, &r);
-      
-      if (PtInRect(&r,findWindowAtPoint) && IsWindowVisible(hwnd))
-        {
-          NSWindow *window = GSWindowWithNumber((int)hwnd);
-          if (![window ignoresMouseEvents])
-            foundWindowHwnd = hwnd;
+		{
+          RECT	r;
+          GetWindowRect(hwnd, &r);
+		  
+          if (PtInRect(&r,findWindowAtPoint) && IsWindowVisible(hwnd))
+            {
+				NSWindow *window = GSWindowWithNumber((int)hwnd);
+				if (![window ignoresMouseEvents])
+					foundWindowHwnd = hwnd;
+            }
         }
-    }
 	return true;
 }
 
-- (int) findWindowAt: (NSPoint)screenLocation
+- (int) findWindowAt: (NSPoint)screenLocation 
            windowRef: (int*)windowRef 
            excluding: (int)win
 {
@@ -778,9 +778,9 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 - (NSRect) boundsForScreen: (int)screen
 {
   if (screen < [monitorInfo count])
-  {
-    return [[monitorInfo objectAtIndex:screen] frame];
-  }
+    {
+      return [[monitorInfo objectAtIndex: screen] frame];
+    }
   return NSZeroRect;
 }
 
@@ -831,15 +831,14 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 {
   HDC hdc  = [self createHdcForScreen:screen];
   int bits = 0;
-
+	  	 
   if (hdc)
-  {
-    bits = GetDeviceCaps(hdc, BITSPIXEL) / 3;
-    //planes = GetDeviceCaps(hdc, PLANES);
-    //NSLog(@"bits %d planes %d", bits, planes);
-    [self deleteScreenHdc:hdc];
-  }
-  
+    {
+      bits = GetDeviceCaps(hdc, BITSPIXEL) / 3;
+      //planes = GetDeviceCaps(hdc, PLANES);
+      //NSLog(@"bits %d planes %d", bits, planes);
+      [self deleteScreenHdc:hdc];
+    }
   return (_GSRGBBitValue | bits);
 }
 
@@ -1587,7 +1586,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         else
           [self decodeWM_KILLFOCUSParams: wParam : lParam : hwnd]; 
         break;
-      case WM_SETCURSOR:
+      case WM_SETCURSOR: 
         break;
       case WM_QUERYOPEN: 
         [self decodeWM_QUERYOPENParams: wParam : lParam : hwnd]; 
@@ -1657,7 +1656,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       case WM_ENABLE: 
       case WM_CHILDACTIVATE: 
         break;
-      case WM_NULL:
+      case WM_NULL: 
         break; 
 	
       case WM_NCHITTEST: //MOUSE
@@ -2615,14 +2614,14 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
   if (!GetCursorPos(&p))
     { 
-      // Try using cursorInfo which should work in more situations
-      CURSORINFO cursorInfo;
-      cursorInfo.cbSize = sizeof(CURSORINFO); 
-      if (!GetCursorInfo(&cursorInfo)) {
-      NSLog(@"GetCursorInfo failed with %d", GetLastError());
-          return NSZeroPoint;
-        }
-      p = cursorInfo.ptScreenPos;
+	  // Try using cursorInfo which should work in more situations
+	  CURSORINFO cursorInfo;
+	  cursorInfo.cbSize = sizeof(CURSORINFO); 
+	  if (!GetCursorInfo(&cursorInfo)) {
+		NSLog(@"GetCursorInfo failed with %d", GetLastError());
+        return NSZeroPoint;
+      }
+	  p = cursorInfo.ptScreenPos;
     }
 
   return MSScreenPointToGS(p.x, p.y);
@@ -2699,18 +2698,18 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
     {
       // Default the return cursur ID to NULL...
       *cid = NULL;
-      
+
       NSBitmapImageRep *rep = getStandardBitmap(image);
       if (rep == nil)
         {
           /* FIXME: We might create a blank cursor here? */
           NSWarnMLog(@"Could not convert cursor bitmap data");
-        }
+}
       else
         {
           if (hotp.x >= [rep pixelsWide])
             hotp.x = [rep pixelsWide]-1;
-          
+
           if (hotp.y >= [rep pixelsHigh])
             hotp.y = [rep pixelsHigh]-1;
           
@@ -2838,7 +2837,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   if (cursorId == NULL)
     {
       NSWarnMLog(@"trying to free a cursor not created by us: %p", cid);
-    }
+}
   else
     {
       // Remove the entry and destroy the cursor...
@@ -2853,6 +2852,20 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
           forChildWindow: (int)childWin
 {
   //SetParent((HWND)childWin, (HWND)parentWin);
+}
+
+- (void) setIgnoreMouse: (BOOL)ignoreMouse : (int)win
+{
+  int extendedStyle = GetWindowLong((HWND)win, GWL_EXSTYLE);
+
+  if (ignoreMouse)
+    {
+      SetWindowLong((HWND)win, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT);
+    }
+  else
+    {
+      SetWindowLong((HWND)win, GWL_EXSTYLE, extendedStyle & ~WS_EX_TRANSPARENT);
+    }
 }
 
 @end
@@ -3099,15 +3112,15 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam, NSE
     windowNumber  = (int)hwnd;
 	
   event = [NSEvent keyEventWithType: eventType
-                           location: eventLocation
-                      modifierFlags: eventFlags
-                          timestamp: time
-                       windowNumber: windowNumber
-                            context: gcontext
-                         characters: keys
-        charactersIgnoringModifiers: ukeys
-                          isARepeat: repeat
-                            keyCode: wParam];
+			   location: eventLocation
+		      modifierFlags: eventFlags
+			  timestamp: time
+		       windowNumber: windowNumber
+			    context: gcontext
+			 characters: keys
+		   charactersIgnoringModifiers: ukeys
+			  isARepeat: repeat
+			    keyCode: wParam];
 
   return event;
 }

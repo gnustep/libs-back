@@ -1,10 +1,11 @@
 /*
-   Win32CairoGState.m
+   OpalSurface.h
 
-   Copyright (C) 2003 Free Software Foundation, Inc.
+   Copyright (C) 2013 Free Software Foundation, Inc.
 
-   August 8, 2012
- 
+   Author: Ivan Vucica <ivan@vucica.net>
+   Date: June 2013
+
    This file is part of GNUstep.
 
    This library is free software; you can redistribute it and/or
@@ -24,37 +25,24 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "cairo/Win32CairoGState.h"
-#include "cairo/CairoSurface.h"
-#include <cairo-win32.h>
+#import <Foundation/Foundation.h>
+#import <CoreGraphics/CoreGraphics.h>
 
-@implementation Win32CairoGState 
-
-+ (void) initialize
+@interface OpalSurface : NSObject
 {
-  if (self == [Win32CairoGState class])
-    {
-    }
+  struct _gswindow_device_t * _gsWindowDevice;
+  CGContextRef _backingCGContext;
+  CGContextRef _x11CGContext;
 }
 
-- (HDC) getHDC
-{
-  if (_surface)
-    {
-      cairo_surface_flush([_surface surface]);
-      NSDebugLLog(@"CairoGState",
-                  @"%s:_surface: %p hdc: %p\n", __PRETTY_FUNCTION__,
-                  _surface, cairo_win32_surface_get_dc([_surface surface]));
-      return cairo_win32_surface_get_dc([_surface surface]);
-    }
-  NSLog(@"%s:_surface is NULL\n", __PRETTY_FUNCTION__);
-  return NULL;
-}
+- (id) initWithDevice: (void *)device;
+- (struct _gswindow_device_t *) device;
+- (CGContextRef) cgContext;
+- (void) createCGContexts;
+@end
 
-- (void) releaseHDC: (HDC)hdc
-{
-  if (hdc && _surface)
-    cairo_surface_mark_dirty([_surface surface]);
-}
+@interface OpalSurface (DebugExtensions)
+
+- (void) dummyDraw;
 
 @end

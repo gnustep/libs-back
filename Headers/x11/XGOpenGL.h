@@ -58,9 +58,14 @@
 {
   Display * display;
   long int glxminorversion;
+
   GLXFBConfig  *fbconfig;
-  XVisualInfo  *visualinfo;  
+  int pickedFBConfig;
   int configurationCount;
+  BOOL shouldRequestARGBVisual;
+
+  XVisualInfo  *visualinfo;
+
 }
 
 + (int) glxMinorVersion;

@@ -28,6 +28,8 @@
 #include "config.h"
 #include <AppKit/AppKitExceptions.h>
 #include <AppKit/NSAffineTransform.h>
+#include <AppKit/NSBitmapImageRep.h>
+#include <AppKit/NSGraphics.h>
 #include <AppKit/NSColor.h>
 #include <AppKit/NSView.h>
 #include <AppKit/NSWindow.h>
@@ -139,6 +141,49 @@
 - (void) flushGraphics
 {
   XFlush([(XGServer *)server xDisplay]);
+}
+
+// Try to match the restrictions in XGBitmap
+- (BOOL) isCompatibleBitmap: (NSBitmapImageRep*)bitmap
+{
+  NSString *colorSpaceName;
+  int numColors;
+
+  if ([bitmap bitmapFormat] != 0)
+    {
+      return NO;
+    }
+
+  if ([bitmap bitsPerSample] > 8)
+    {
+      return NO;
+    }
+
+  numColors = [bitmap samplesPerPixel] - ([bitmap hasAlpha] ? 1 : 0);
+  colorSpaceName = [bitmap colorSpaceName];
+  if ([colorSpaceName isEqualToString: NSDeviceRGBColorSpace] ||
+      [colorSpaceName isEqualToString: NSCalibratedRGBColorSpace])
+    {
+      return (numColors == 3);
+    }
+  else if ([colorSpaceName isEqualToString: NSDeviceCMYKColorSpace])
+    {
+      return (numColors == 4);
+    }
+  else if ([colorSpaceName isEqualToString: NSDeviceWhiteColorSpace] ||
+           [colorSpaceName isEqualToString: NSCalibratedWhiteColorSpace])
+    {
+      return (numColors == 1);
+    }
+  else if ([colorSpaceName isEqualToString: NSDeviceBlackColorSpace] ||
+           [colorSpaceName isEqualToString: NSCalibratedBlackColorSpace])
+    {
+      return (numColors == 1);
+    }
+  else
+    {
+      return NO;
+    }
 }
 
 @end

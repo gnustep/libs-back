@@ -87,6 +87,8 @@
     context = @"WIN32Context";
 #elif (BUILD_GRAPHICS==GRAPHICS_cairo)
     context = @"CairoContext";
+#elif (BUILD_GRAPHICS==GRAPHICS_opal)
+    context = @"OpalContext";
 #else
 #error INVALID build graphics type
 #endif

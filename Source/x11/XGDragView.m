@@ -485,7 +485,7 @@ static	XGDragView	*sharedDragView = nil;
   [self setExcludedFromWindowsMenu: YES];
 }
 
-- (void) orderWindow: (NSWindowOrderingMode)place relativeTo: (int)otherWin
+- (void) orderWindow: (NSWindowOrderingMode)place relativeTo: (NSInteger)otherWin
 {
   XSetWindowAttributes winattrs;
   unsigned long valuemask;

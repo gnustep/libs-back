@@ -63,6 +63,9 @@
 #ifdef HAVE_XSHAPE
 #include <X11/extensions/shape.h>
 #endif
+#if HAVE_XFIXES
+#include <X11/extensions/Xfixes.h>
+#endif
 
 #include "x11/XGDragView.h"
 #include "x11/XGInputServer.h"
@@ -99,14 +102,14 @@ static int		last_win_num = 0;
 @end
 
 @interface NSBitmapImageRep (GSPrivate)
-- (NSBitmapImageRep *) _convertToFormatBitsPerSample: (int)bps
-                                     samplesPerPixel: (int)spp
+- (NSBitmapImageRep *) _convertToFormatBitsPerSample: (NSInteger)bps
+                                     samplesPerPixel: (NSInteger)spp
                                             hasAlpha: (BOOL)alpha
                                             isPlanar: (BOOL)isPlanar
                                       colorSpaceName: (NSString*)colorSpaceName
                                         bitmapFormat: (NSBitmapFormat)bitmapFormat 
-                                         bytesPerRow: (int)rowBytes
-                                        bitsPerPixel: (int)pixelBits;
+                                         bytesPerRow: (NSInteger)rowBytes
+                                        bitsPerPixel: (NSInteger)pixelBits;
 @end
 
 static NSBitmapImageRep *getStandardBitmap(NSImage *image)
@@ -658,6 +661,47 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   return NO;
 }
 
+static void
+select_input(Display *display, Window w, BOOL ignoreMouse)
+{
+  long event_mask;
+
+  if (!ignoreMouse)
+    {
+      event_mask = ExposureMask
+        | KeyPressMask
+        | KeyReleaseMask
+        | ButtonPressMask
+        | ButtonReleaseMask
+        | ButtonMotionMask
+        | StructureNotifyMask
+        | PointerMotionMask
+        | EnterWindowMask
+        | LeaveWindowMask
+        | FocusChangeMask
+        /* enable property notifications to detect window (de)miniaturization */
+        | PropertyChangeMask
+        //    | ColormapChangeMask
+        | KeymapStateMask
+        | VisibilityChangeMask;
+    }
+  else
+    {
+      event_mask = ExposureMask
+        | KeyPressMask
+        | KeyReleaseMask
+        | StructureNotifyMask
+        | FocusChangeMask
+        /* enable property notifications to detect window (de)miniaturization */
+        | PropertyChangeMask
+        //    | ColormapChangeMask
+        | KeymapStateMask
+        | VisibilityChangeMask;
+    }
+
+  XSelectInput(display, w, event_mask);
+}
+
 Bool
 _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 {
@@ -819,24 +863,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   valuemask = (GCForeground | GCBackground | GCFunction);
   window->gc = XCreateGC(dpy, window->ident, valuemask, &values);
 
-  /* Set the X event mask
-   */
-  XSelectInput(dpy, window->ident, ExposureMask
-    | KeyPressMask
-    | KeyReleaseMask
-    | ButtonPressMask
-    | ButtonReleaseMask
-    | ButtonMotionMask
-    | StructureNotifyMask
-    | PointerMotionMask
-    | EnterWindowMask
-    | LeaveWindowMask
-    | FocusChangeMask
-    | PropertyChangeMask
-//    | ColormapChangeMask
-    | KeymapStateMask
-    | VisibilityChangeMask
-    );
+  /* Set the X event mask */
+  select_input(dpy, window->ident, YES);
 
   /*
    * Initial attributes for any GNUstep window tell Window Maker not to
@@ -1345,9 +1373,19 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   window->visibility = -1;
   window->wm_state = NormalState;
   if (window->ident)
-    XGetGeometry(dpy, window->ident, &window->root, 
-		 &x, &y, &width, &height,
-		 &window->border, &window->depth);
+    {
+      XGetGeometry(dpy, window->ident, &window->root, 
+                   &x, &y, &width, &height,
+                   &window->border, &window->depth);
+    }
+  else
+    {
+      NSLog(@"Failed to get root window");
+      x = 0;
+      y = 0;
+      width = 0;
+      height = 0;
+    }
 
   window->xframe = NSMakeRect(x, y, width, height);
   NSMapInsert (windowtags, (void*)(uintptr_t)window->number, window);
@@ -1960,7 +1998,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   XClassHint		classhint;
   RContext              *context;
 
-  NSDebugLLog(@"XGTrace", @"DPSwindow: %@ %d", NSStringFromRect(frame), type);
+  NSDebugLLog(@"XGTrace", @"DPSwindow: %@ %d", NSStringFromRect(frame), (int)type);
   root = [self _rootWindowForScreen: screen];
   context = [self xrContextForScreen: screen];
 
@@ -2034,25 +2072,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   valuemask = (GCForeground | GCBackground | GCFunction);
   window->gc = XCreateGC(dpy, window->ident, valuemask, &values);
 
-  /* Set the X event mask
-   */
-  XSelectInput(dpy, window->ident, ExposureMask
-    | KeyPressMask
-    | KeyReleaseMask
-    | ButtonPressMask
-    | ButtonReleaseMask
-    | ButtonMotionMask
-    | StructureNotifyMask
-    | PointerMotionMask
-    | EnterWindowMask
-    | LeaveWindowMask
-    | FocusChangeMask
-    /* enable property notifications to detect window (de)miniaturization */
-    | PropertyChangeMask
-//    | ColormapChangeMask
-    | KeymapStateMask
-    | VisibilityChangeMask
-    );
+  /* Set the X event mask */
+  select_input(dpy, window->ident, NO);
 
   /*
    * Initial attributes for any GNUstep window tell Window Maker not to
@@ -2526,7 +2547,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
   if (!window)
     return;
 
-  NSDebugLLog(@"XGTrace", @"DPSwindowbacking: %@ : %d", type, win);
+  NSDebugLLog(@"XGTrace", @"DPSwindowbacking: %d : %d", (int)type, win);
 
   if ((window->gdriverProtocol & GDriverHandlesBacking))
     {
@@ -3908,7 +3929,7 @@ static BOOL didCreatePixmaps;
 }
 
 /** Sets the transparancy value for the whole window */
-- (void) setalpha: (float)alpha: (int) win
+- (void) setalpha: (float)alpha : (int) win
 {
   gswindow_device_t *window = WINDOW_WITH_TAG(win);
   static Atom opacity_atom = None;
@@ -4995,6 +5016,46 @@ _computeDepth(int class, int bpp)
     p = pwindow->ident;
 
   XSetTransientForHint(dpy, cwindow->ident, p);
+}
+
+- (void) setIgnoreMouse: (BOOL)ignoreMouse : (int)win
+{
+#if HAVE_XFIXES
+  gswindow_device_t *window;
+  XserverRegion region;
+  int error;
+  int xFixesEventBase;
+
+  if (!XFixesQueryExtension(dpy, &xFixesEventBase, &error))
+    {
+      return;
+    } 
+
+  window = WINDOW_WITH_TAG(win);
+  if (!window)
+    {
+      return;
+    }
+
+  if (ignoreMouse)
+    {
+      region = XFixesCreateRegion(dpy, NULL, 0);
+    }
+  else
+    {
+      region = None;
+    }
+
+  
+  XFixesSetWindowShapeRegion(dpy,
+                             window->ident,
+                             ShapeInput,
+                             0, 0, region);
+  if (region != None)
+    {
+      XFixesDestroyRegion(dpy, region);
+    }
+#endif
 }
 
 @end
