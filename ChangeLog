@@ -1,3 +1,9 @@
+2013-08-18  Frank Le Grand <frank.legrand@testplant.com>
+
+    * Source/win32/WIN32Server.m : We're now processing the Windows
+	  event WM_SETCURSOR to prevent Windows from resetting the mouse
+	  cursor after a mouse move.
+	  
 2013-08-08  Frank Le Grand <frank.legrand@testplant.com>
 
     Merged changes from Trunk (since rev 35217) to TestPlant branch.

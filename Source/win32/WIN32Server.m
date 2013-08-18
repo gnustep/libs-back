@@ -1587,6 +1587,11 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
           [self decodeWM_KILLFOCUSParams: wParam : lParam : hwnd]; 
         break;
       case WM_SETCURSOR: 
+		if (g_cursorId)
+		  {
+	        SetCursor((HCURSOR)g_cursorId);
+			flags._eventHandled = YES;
+		  }
         break;
       case WM_QUERYOPEN: 
         [self decodeWM_QUERYOPENParams: wParam : lParam : hwnd]; 
