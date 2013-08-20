@@ -1587,11 +1587,17 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
           [self decodeWM_KILLFOCUSParams: wParam : lParam : hwnd]; 
         break;
       case WM_SETCURSOR: 
-		if (g_cursorId)
-		  {
-	        SetCursor((HCURSOR)g_cursorId);
-			flags._eventHandled = YES;
-		  }
+	    // This was a fix where our cursor was reset to the default arrow
+		// after the first mouse move after we had set it to something
+		// else according to a view's cursorRects.
+		// Unfortunately this is not enough, as it now makes the default
+		// cursor show when we expect a resizing cursor on a Window's
+		// edges (among other issues).
+		// if (g_cursorId)
+		//  {
+	    //    SetCursor((HCURSOR)g_cursorId);
+		//	flags._eventHandled = YES;
+		//  }
         break;
       case WM_QUERYOPEN: 
         [self decodeWM_QUERYOPENParams: wParam : lParam : hwnd]; 
