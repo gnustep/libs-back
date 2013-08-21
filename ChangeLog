@@ -1,3 +1,13 @@
+2013-08-21  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/x11/XIMInputServer.m: Add the setlocale(LC_CTYPE, "") call
+	back that I removed last year (r35152).
+
+	I tested the fcitx input method, and without the setlocale call,
+	XOpenIM would fail. I'm not sure what the best plan is in the long
+	term, I wanted to avoid calling setlocale from the core frameworks
+	but in this case xlib seems to require it.
+
 2013-08-02  Ivan Vucica <ivan@vucica.net>
 
 	* Source/opal/OpalContext.m:

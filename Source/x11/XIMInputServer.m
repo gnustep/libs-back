@@ -68,8 +68,18 @@
 		display: (Display *)dpy
 		   name: (NSString *)name
 {
+  char *locale;
   delegate = aDelegate;
   ASSIGN(server_name, name);
+
+  locale = setlocale(LC_CTYPE, "");
+
+  if (XSupportsLocale() != True) 
+    {
+      NSLog(@"Xlib does not support locale setting %s", locale);
+      /* FIXME: Should we reset the locale or just hope that X 
+	 can deal with it? */
+    }
 
 #ifdef USE_XIM
   if ([self ximInit: dpy] == NO)
