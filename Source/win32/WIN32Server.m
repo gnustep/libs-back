@@ -2697,6 +2697,12 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       case GSResizeUpDownCursor: 
         hCursor = LoadCursor(NULL, IDC_SIZENS);
         break;
+      case GSResizeNWSECursor: 
+        hCursor = LoadCursor(NULL, IDC_SIZENWSE);
+        break;
+      case GSResizeNESWCursor: 
+        hCursor = LoadCursor(NULL, IDC_SIZENESW);
+        break;
       default: 
         return;
     }
