@@ -250,20 +250,20 @@ static XGGLContext *currentGLContext;
 
   if ([XGGLPixelFormat glxMinorVersion] >= 3)
     {
-      if ( !glXMakeContextCurrent(dpy, None, None, NULL) )
+      if (!glXMakeContextCurrent(dpy, None, None, NULL))
         {
-          NSDebugMLLog( @"GLX", 
-                        @"Can not clear current GL context - Errror %u",
-                        glGetError() );
+          NSDebugMLLog(@"GLX", 
+                       @"Cannot clear current GL context - Error %s",
+                       glGetString(glGetError()));
         }
     }
   else
     {
-      if ( !glXMakeCurrent(dpy, None, NULL) )
+      if (!glXMakeCurrent(dpy, None, NULL))
         {
-          NSDebugMLLog( @"GLX", 
-                        @"Can not clear current GL context - Errror %u",
-                        glGetError() );
+          NSDebugMLLog(@"GLX", 
+                       @"Can not clear current GL context - Error %s",
+                       glGetString(glGetError()));
         }
     }
 
@@ -279,8 +279,6 @@ static XGGLContext *currentGLContext;
 {
   if (xSubWindow)
     {
-      MAKE_DISPLAY(dpy);
-
       if (currentGLContext == self)
         {
           [XGGLContext clearCurrentContext];
@@ -288,6 +286,8 @@ static XGGLContext *currentGLContext;
 
       if ( glx_drawable != xSubWindow->xwindowid )
         {
+          MAKE_DISPLAY(dpy);
+
           glXDestroyWindow(dpy, glx_drawable);
           glx_drawable = None;
         }
@@ -316,7 +316,7 @@ static XGGLContext *currentGLContext;
 - (void)copyAttributesFromContext:(NSOpenGLContext *)context 
 			 withMask:(unsigned long)mask
 {
-  GLint error;
+  GLenum error;
   MAKE_DISPLAY(dpy);
 
   if (context == nil || ![context isKindOfClass: [XGGLContext class]])
@@ -329,12 +329,11 @@ static XGGLContext *currentGLContext;
                  glx_context, mask);
 
   error = glGetError();
-
-  if ( error != GL_NO_ERROR )
+  if (error != GL_NO_ERROR)
     {
-      NSDebugMLLog( @"GLX", 
-                    @"Can not copy GL context %@ from context %@ - Error %u",
-                    self, context, error );
+      NSDebugMLLog(@"GLX", 
+                   @"Cannot copy GL context %@ from context %@ - Error %s",
+                   self, context, glGetString(error));
     }
 }
 
@@ -382,7 +381,7 @@ static XGGLContext *currentGLContext;
 }
 
 - (id)initWithFormat: (NSOpenGLPixelFormat *)_format 
-	    shareContext: (NSOpenGLContext *)share
+        shareContext: (NSOpenGLContext *)share
 {
   self = [super init];
 
@@ -440,18 +439,18 @@ static XGGLContext *currentGLContext;
 
   if ([XGGLPixelFormat glxMinorVersion] >= 3)
     {
-      if ( !glXMakeContextCurrent(dpy, glx_drawable, glx_drawable, glx_context) )
+      if (!glXMakeContextCurrent(dpy, glx_drawable, glx_drawable, glx_context) )
         {
-          NSDebugMLLog( @"GLX", @"Cannot make GL context %@ current - Error %u",
-                        self, glGetError() );
+          NSDebugMLLog(@"GLX", @"Cannot make GL context %@ current - Error %s",
+                       self, glGetString(glGetError()));
         }
     }
   else
     {
-      if ( !glXMakeCurrent(dpy, glx_drawable, glx_context) )
+      if (!glXMakeCurrent(dpy, glx_drawable, glx_context) )
         {
-          NSDebugMLLog( @"GLX", @"Cannot make GL context %@ current - Error %u",
-                        self, glGetError() );
+          NSDebugMLLog(@"GLX", @"Cannot make GL context %@ current - Error %s",
+                       self, glGetString(glGetError()));
         }
     }
 
