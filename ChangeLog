@@ -1,3 +1,9 @@
+2013-09-08  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGGLContext.m,
+	* Source/x11/XGGLFormat.m: Better error reporting by converting
+	glGetError() to a string.
+
 2013-08-21  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/x11/XIMInputServer.m: Add the setlocale(LC_CTYPE, "") call
@@ -12,7 +18,7 @@
 
 	* Source/opal/OpalContext.m:
 	Implementation of -graphicsPort that returns a CGContext
-	
+
 	* Source/opal/OpalGState.m:
 	-Stubs for -DPSsetlinejoin:, -DPSsetlinecap:, -DPSsetmiterlimit:
 	-Implementation of -DPSimage::::::::::: for 32-bit RGB colorspaces
