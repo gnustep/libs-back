@@ -50,7 +50,7 @@
 - (NSSize) advancementForGlyph: (NSGlyph)glyph
 {
   NSDebugLLog(@"OpalFontInfo", @"OpalFontInfo: %s - %c", __PRETTY_FUNCTION__, glyph);
-  return NSMakeSize(100,100);
+  return NSMakeSize(10,10);
 }
 - (NSGlyph) glyphWithName: (NSString *) glyphName
 {
@@ -73,5 +73,11 @@
                        toBezierPath: (NSBezierPath *)path
 {
   [path lineToPoint: NSMakePoint(length*10, 10)];
+}
+- (CGFloat) defaultLineHeightForFont
+{
+  // required for textcontainer->linefrags calculation to work
+  // without which information supplied in advancementForGlyph: is also not used.
+  return 10;
 }
 @end

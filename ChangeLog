@@ -1,3 +1,13 @@
+2013-09-09  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalFontInfo.m:
+	Implemented -defaultLineHeightForFont, the key to getting
+	GNUstep layouting system to use information provided in
+	-advancementForGlyph:. 
+
+	Without that, the textcontainer->linefrags does not get
+	created.
+
 2013-09-08  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGGLContext.m,
