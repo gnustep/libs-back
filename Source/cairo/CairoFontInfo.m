@@ -37,29 +37,6 @@
 
 @implementation CairoFontInfo 
 
-- (void) setCacheSize: (unsigned int)size
-{
-  _cacheSize = size;
-  if (_cachedSizes)
-    {
-      free(_cachedSizes);
-    }
-  if (_cachedGlyphs)
-    {
-      free(_cachedGlyphs);
-    }
-  _cachedSizes = malloc(sizeof(NSSize) * size);
-  if (_cachedSizes)
-    {
-      memset(_cachedSizes, 0, sizeof(NSSize) * size);
-    }
-  _cachedGlyphs = malloc(sizeof(unsigned int) * size);
-  if (_cachedGlyphs)
-    {
-      memset(_cachedGlyphs, 0, sizeof(unsigned int) * size);
-    }
-}
-
 - (BOOL) setupAttributes
 {
   cairo_font_extents_t font_extents;
@@ -68,27 +45,10 @@
   cairo_matrix_t ctm;
   cairo_font_options_t *options;
 
-  ASSIGN(_faceInfo, [CairoFontEnumerator fontWithName: fontName]);
-  if (!_faceInfo)
+  if (![super setupAttributes])
     {
       return NO;
     }
-
-  // check for font specific cache size from face info
-  [self setCacheSize: [_faceInfo cacheSize]];
-
-  /* setting GSFontInfo:
-   * weight, traits, familyName,
-   * mostCompatibleStringEncoding, encodingScheme, coveredCharacterSet
-   */
-
-  weight = [_faceInfo weight];
-  traits = [_faceInfo traits];
-  familyName = [[_faceInfo familyName] copy];
-  mostCompatibleStringEncoding = NSUTF8StringEncoding;
-  encodingScheme = @"iso10646-1";
-  coveredCharacterSet = [[_faceInfo characterSet] retain];
-
 
   /* setting GSFontInfo:
    * xHeight, pix_width, pix_height
@@ -190,21 +150,11 @@
 
 - (void) dealloc
 {
-  RELEASE(_faceInfo);
   if (_scaled)
     {
       cairo_scaled_font_destroy(_scaled);
     }
-  if (_cachedSizes)
-    free(_cachedSizes);
-  if (_cachedGlyphs)
-    free(_cachedGlyphs);
   [super dealloc];
-}
-
-- (CGFloat) defaultLineHeightForFont
-{
-  return lineHeight;
 }
 
 - (BOOL) glyphIsEncoded: (NSGlyph)glyph
@@ -307,15 +257,6 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
     }
 
   return 0.0;
-}
-
-- (NSGlyph) glyphWithName: (NSString *) glyphName
-{
-  /* subclass should override */
-  /* terrible! FIXME */
-  NSGlyph g = [glyphName cString][0];
-
-  return g;
 }
 
 - (void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs 

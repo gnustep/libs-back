@@ -1,7 +1,40 @@
+2013-09-10  Ivan Vucica <ivan@vucica.net>
+
+	* Source/fontconfig/FCFontInfo.m:
+	* Source/fontconfig/FCFontEnumerator.m:
+	* Source/fontconfig/FCFaceInfo.m:
+	* Headers/fontconfig/FCFontInfo.h:
+	* Headers/fontconfig/FCFontEnumerator.h:
+	* Headers/fontconfig/FCFaceInfo.h:
+	* Source/cairo/CairoFontEnumerator.m:
+	* Source/cairo/CairoFaceInfo.m:
+	* Source/cairo/CairoFontInfo.m:
+	* Headers/cairo/CairoFontInfo.h:
+	* Headers/cairo/CairoFontEnumerator.h:
+	* Headers/cairo/CairoFaceInfo.h:
+	In preparation for reusing this code in the Opal backend,
+	moved fontconfig code to a dedicated set of classes that are now
+	superclasses of Cairo backend's font classes.
+
+	* Source/cairo/GNUmakefile:
+	Added fontconfig font classes directly to GNUmakefile for Cairo
+	backend. 
+
+	It would be better if these had something like their own distinct
+	GNUmakefile that produces a static library which would then be
+	linked into Cairo. But the only backends that will use this are,
+	for now, Cairo and Opal. So the ugliness and extra maintenance
+	in case more classes are added should be, for now, acceptable.
+
+	* Source/cairo/CairoGState.m:
+	Fixed a mistake in a NSDebugMLLog() call's format. A percentage
+	symbol was placed before word "self", resulting in compiler's
+	interpretation as "%s".
+
 2013-09-10  Eric Wasylishen  <ewasylishen@gmail.com>
 
-	* Source/x11/XIMInputServer.m: If the requested XIM style
-	(the GSXIMInputMethodStyle user default) is not available,
+	* Source/x11/XIMInputServer.m: If the requested XIM
+	style (the GSXIMInputMethodStyle user default) is not available,
 	fall back to using a stlye that both the X server and
 	GNUstep support, if any. Also, add support for NoneStyle, which
 	is for simple input methods that don't have any visualization.
