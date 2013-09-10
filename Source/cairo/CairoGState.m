@@ -1261,7 +1261,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   cairo_pattern_t *cpattern;
   cairo_matrix_t source_matrix;
 
-  NSDebugMLLog(@"CairoGState", @"%self: %@\n", self);
+  NSDebugMLLog(@"CairoGState", @"self: %@\n", self);
 
   if (!_ct || !source->_ct)
     {

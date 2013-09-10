@@ -31,44 +31,17 @@
 #ifndef CAIROFACEINFO_H
 #define CAIROFACEINFO_H
 
-#include <Foundation/Foundation.h>
-#include <ft2build.h>  
-#include FT_FREETYPE_H
+#include "fontconfig/FCFaceInfo.h"
 #define id cairo_id
 #include <cairo-ft.h>
 #undef id
 
-@interface CairoFaceInfo : NSObject
+@interface CairoFaceInfo : FCFaceInfo
 {
-	int _weight;
-	unsigned int _traits;
-
 	cairo_font_face_t *_fontFace; 
-  FcPattern *_pattern;
-
-	NSString *_familyName;
-	NSCharacterSet *_characterSet;
-	BOOL _hasNoCharacterSet;
 }
 
-- (id) initWithfamilyName: (NSString *)familyName 
-                   weight: (int)weight 
-                   traits: (unsigned int)traits 
-                  pattern: (FcPattern *)pattern;
-
-- (unsigned int) cacheSize;
-
-- (int) weight;
-- (void) setWeight: (int)weight;
-- (unsigned int) traits;
-- (void) setTraits: (unsigned int)traits;
-
-- (NSString *) familyName;
-- (void) setFamilyName: (NSString *)name;
-
-- (cairo_font_face_t *)fontFace;
-
-- (NSCharacterSet*)characterSet;
+- (void *)fontFace;
 
 @end
 #endif

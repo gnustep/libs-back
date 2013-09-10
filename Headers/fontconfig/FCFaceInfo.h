@@ -1,11 +1,11 @@
 /*
-   CairoFaceInfo.m
- 
+   FCFaceInfo.h
+
    Copyright (C) 2003 Free Software Foundation, Inc.
 
    August 31, 2003
    Written by Banlu Kemiyatorn <object at gmail dot com>
-   Base on original code of Alex Malmberg
+   Base on code by Alexander Malmberg <alexander@malmberg.org>
    Rewrite: Fred Kiefer <fredkiefer@gmx.de>
    Date: Jan 2006
  
@@ -28,41 +28,45 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "cairo/CairoFaceInfo.h"
-#include <cairo-ft.h>
+#ifndef FCFACEINFO_H
+#define FCFACEINFO_H
 
-@implementation CairoFaceInfo 
+#include <Foundation/Foundation.h>
+#include <ft2build.h>  
+#include FT_FREETYPE_H
+#include <fontconfig/fontconfig.h>
 
-- (void) dealloc
+@interface FCFaceInfo : NSObject
 {
-  if (_fontFace)
-    {
-      cairo_font_face_destroy(_fontFace);
-    }
-  [super dealloc];
+	int _weight;
+	unsigned int _traits;
+
+	FcPattern *_pattern;
+
+	NSString *_familyName;
+	NSCharacterSet *_characterSet;
+	BOOL _hasNoCharacterSet;
 }
 
-- (void *)fontFace
-{
-  if (!_fontFace)
-    {
-      FcPattern *resolved;
+- (id) initWithfamilyName: (NSString *)familyName 
+                   weight: (int)weight 
+                   traits: (unsigned int)traits 
+                  pattern: (FcPattern *)pattern;
 
-      resolved = [self matchedPattern];
+- (unsigned int) cacheSize;
 
-      _fontFace = cairo_ft_font_face_create_for_pattern(resolved);
-      FcPatternDestroy(resolved);
+- (int) weight;
+- (void) setWeight: (int)weight;
+- (unsigned int) traits;
+- (void) setTraits: (unsigned int)traits;
 
-      if (cairo_font_face_status(_fontFace) != CAIRO_STATUS_SUCCESS)
-        {
-          NSLog(@"Creating a font face failed %@", _familyName);
-          cairo_font_face_destroy(_fontFace);
-          _fontFace = NULL;
-          return NULL;
-        }
-    }
+- (NSString *) familyName;
+- (void) setFamilyName: (NSString *)name;
 
-  return _fontFace;
-}
+- (void *) fontFace;
+- (FcPattern *) matchedPattern;
+
+- (NSCharacterSet*)characterSet;
 
 @end
+#endif

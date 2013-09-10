@@ -1,14 +1,11 @@
 /*
-   CairoFaceInfo.m
- 
+   FCFontInfo.h
+
    Copyright (C) 2003 Free Software Foundation, Inc.
 
    August 31, 2003
    Written by Banlu Kemiyatorn <object at gmail dot com>
-   Base on original code of Alex Malmberg
-   Rewrite: Fred Kiefer <fredkiefer@gmx.de>
-   Date: Jan 2006
- 
+
    This file is part of GNUstep.
 
    This library is free software; you can redistribute it and/or
@@ -28,41 +25,27 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "cairo/CairoFaceInfo.h"
-#include <cairo-ft.h>
+#ifndef FCFontInfo_h
+#define FCFontInfo_h
 
-@implementation CairoFaceInfo 
+#include <GNUstepGUI/GSFontInfo.h>
+#include "fontconfig/FCFaceInfo.h"
+#include <cairo.h>
 
-- (void) dealloc
+@interface FCFontInfo : GSFontInfo
 {
-  if (_fontFace)
-    {
-      cairo_font_face_destroy(_fontFace);
-    }
-  [super dealloc];
+@public
+	FCFaceInfo *_faceInfo;
+	BOOL _screenFont;
+	CGFloat lineHeight;
+
+	unsigned int _cacheSize;
+	unsigned int *_cachedGlyphs;
+	NSSize *_cachedSizes;
 }
 
-- (void *)fontFace
-{
-  if (!_fontFace)
-    {
-      FcPattern *resolved;
-
-      resolved = [self matchedPattern];
-
-      _fontFace = cairo_ft_font_face_create_for_pattern(resolved);
-      FcPatternDestroy(resolved);
-
-      if (cairo_font_face_status(_fontFace) != CAIRO_STATUS_SUCCESS)
-        {
-          NSLog(@"Creating a font face failed %@", _familyName);
-          cairo_font_face_destroy(_fontFace);
-          _fontFace = NULL;
-          return NULL;
-        }
-    }
-
-  return _fontFace;
-}
-
+- (void) setCacheSize:(unsigned int)size;
+- (BOOL) setupAttributes;
 @end
+
+#endif
