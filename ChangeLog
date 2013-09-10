@@ -1,3 +1,12 @@
+2013-09-10  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/x11/XIMInputServer.m: If the requested XIM style
+	(the GSXIMInputMethodStyle user default) is not available,
+	fall back to using a stlye that both the X server and
+	GNUstep support, if any. Also, add support for NoneStyle, which
+	is for simple input methods that don't have any visualization.
+	Problem reported and tested by Riccardo.
+
 2013-09-09  Ivan Vucica <ivan@vucica.net>
 
 	* Source/opal/OpalFontInfo.m:
