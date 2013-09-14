@@ -1,3 +1,13 @@
+2013-09-14  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalContext+Drawing.m:
+	* Source/opal/OpalContext.m:
+	Small experimental changes on GState-less branch, from August 2013.
+
+	* configure:
+	* configure.ac:
+	Added Xrender for Opal. Was needed under Cygwin.
+
 2013-08-04  Ivan Vucica <ivan@vucica.net>
 
 	* Source/opal/GNUmakefile:

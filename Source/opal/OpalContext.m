@@ -30,6 +30,7 @@
 #import "opal/OpalFontEnumerator.h"
 #import "opal/OpalSurface.h"
 #import "gsc/GSStreamContext.h"
+#import <AppKit/NSGraphics.h> // NSDeviceIsScreen
 
 #define OGSTATE self //((OpalGState *)gstate)
 
@@ -65,9 +66,11 @@
   if (!self)
     return nil;
 
+  _backGStateStackHeight = 1;
   // Special handling for window drawing
   id dest;
   dest = [info objectForKey: NSGraphicsContextDestinationAttributeName];
+  NSLog(@"Dest: %@", dest);
   if ((dest != nil) && [dest isKindOfClass: [NSWindow class]])
     {
       /* A context is only associated with one server. Do not retain
@@ -84,6 +87,8 @@
 
   // TODO: we may want to create a default OpalSurface, in case GSSetDevice is not called
 
+
+  // -[GState initWithDrawContext] would call DPSinitgraphics
   [self DPSinitgraphics];
   [self DPSinitclip];
 
@@ -142,6 +147,15 @@
   return [surface cgContext];
 }
 
+- (BOOL) supportsDrawGState
+{
+  // required to get NSImageRep to use -[NSImageRep nativeDrawInRect:...]
+
+  // TODO: determine other uses for this
+
+  return YES;
+}
+
 #if BUILD_SERVER == SERVER_x11
 #ifdef XSHM
 + (void) _gotShmCompletion: (Drawable)d
@@ -183,4 +197,26 @@
     NSLog(@"%s: trying to replace gstate not on top of the stack", __PRETTY_FUNCTION__);
 }
 
+- (void) GSdraw: (NSInteger)gstateNum
+	toPoint: (NSPoint)aPoint
+       fromRect: (NSRect)srcRect
+      operation: (NSCompositingOperation)op
+       fraction: (CGFloat)delta
+{
+/*
+  GSGState *g = gstate;
+
+  if (gstateNum)
+    {
+      [self DPSexecuserobject: gstateNum];
+      ctxt_pop(g, opstack, GSGState);
+    }
+
+  [gstate drawGState: g
+	    fromRect: srcRect
+             toPoint: aPoint
+                  op: op
+            fraction: delta];
+*/
+}
 @end

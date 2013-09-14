@@ -38,6 +38,7 @@
   if(![_opalSurface cgContext]) \
     { \
       NSLog(@"%p: No CG context while in %s", self, __PRETTY_FUNCTION__); \
+      /*raise(SIGSTOP);*/ \
       return what; \
     }
 
@@ -438,7 +439,6 @@ static CGFloat theAlpha = 1.; // TODO: removeme
   
   OFFSET = theOffset;
 #endif
-  [super setOffset: theOffset];
 }
 /*
 - (void) setColor: (device_color_t *)color state: (color_state_t)cState
