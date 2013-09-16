@@ -28,14 +28,15 @@
 #ifndef OpalFontEnumerator_h_defined
 #define OpalFontEnumerator_h_defined
 
-#import <GNUstepGUI/GSFontInfo.h>
+#import "fontconfig/FCFontEnumerator.h"
 
-@interface OpalFontEnumerator : GSFontEnumerator
+@class OpalFaceInfo;
+
+@interface OpalFontEnumerator : FCFontEnumerator
 {
 }
-
-- (void) enumerateFontsAndFamilies;
-
++ (Class) faceInfoClass;
++ (OpalFaceInfo *) fontWithName: (NSString *)name;
 @end
 
 #endif

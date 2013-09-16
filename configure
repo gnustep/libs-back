@@ -7158,7 +7158,8 @@ elif test x"$BUILD_GRAPHICS" = "xxlib"; then
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
  : # Nothing to do
 elif test x"$BUILD_GRAPHICS" = "xopal"; then
- LIBS="-lopal -lgnustep-corebase $LIBS"
+ LIBS="-lopal -lgnustep-corebase $FONTCONFIG_LIBS $FREETYPE_LIBS $LIBS"
+ CPPFLAGS="$FONTCONFIG_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
 else
   as_fn_error $? "Invalid graphics backend $BUILD_GRAPHICS" "$LINENO" 5
 fi

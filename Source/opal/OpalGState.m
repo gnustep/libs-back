@@ -540,25 +540,45 @@ static CGFloat theAlpha = 1.; // TODO: removeme
   CGContextRestoreGState(CGCTX);
   
 }
-#if 0
+#if 1
 - (void) DPSrlineto: (CGFloat) x
                    : (CGFloat) y
 {
+  CGFloat x2, y2;
   NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
 
-  CGContextAddRelativeLine(CGCTX, x, y);
+  [self DPScurrentpoint: &x2 : &y2];
+  x2 += x;
+  y2 += y;
+  CGContextAddLineToPoint(CGCTX, x, y);
 }
 #else
 #warning -DPSrlineto:: not implemented directly
 #endif
+#if 1
+- (void) DPSrmoveto: (CGFloat) x
+                   : (CGFloat) y
+{
+  CGFloat x2, y2;
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+
+  [self DPScurrentpoint: &x2 : &y2];
+  x2 += x;
+  y2 += y;
+  CGContextMoveToPoint(CGCTX, x2, y2);
+}
+#else
+#warning -DPSrmoveto:: not implemented directly
+#endif
 - (void) DPScurrentpoint: (CGFloat *)x
                         : (CGFloat *)y
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
   CGPoint currentPoint = CGContextGetPathCurrentPoint(CGCTX);
   *x = currentPoint.x;
   *y = currentPoint.y;
+  NSDebugLLog(@"OpalGState", @"  %p (%@): %s (returning: %f %f)", self, [self class], __PRETTY_FUNCTION__, *x, *y);
 }
 @end
 

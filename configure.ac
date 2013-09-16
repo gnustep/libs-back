@@ -642,7 +642,26 @@ elif test x"$BUILD_GRAPHICS" = "xxlib"; then
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
  : # Nothing to do
 elif test x"$BUILD_GRAPHICS" = "xopal"; then
+ CPPFLAGS="$FONTCONFIG_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
  LIBS="-lopal -lgnustep-corebase $LIBS"
+ LIBS="$FONTCONFIG_LIBS $FREETYPE_LIBS $LIBS"
+ if test "$have_freetype" = no ; then # FCFaceInfo requires this
+    AC_MSG_WARN([can't find freetype, required for graphics=opal!])
+    if test $BUILD_SERVER = win32; then
+      BUILD_GRAPHICS=winlib
+    else
+      BUILD_GRAPHICS=xlib
+    fi
+    AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
+ elif test "$have_fontconfig" = no ; then
+    AC_MSG_WARN([can't find fontconfig, required for graphics=opal!])
+    if test $BUILD_SERVER = win32; then
+      BUILD_GRAPHICS=winlib
+    else
+      BUILD_GRAPHICS=xlib
+    fi
+    AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
+  fi
 else
   AC_MSG_ERROR([Invalid graphics backend $BUILD_GRAPHICS])
 fi

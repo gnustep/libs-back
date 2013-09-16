@@ -1,3 +1,37 @@
+2013-09-17  Ivan Vucica <ivan@vucica.net>
+
+	* configure:
+	* configure.ac:
+	Added fontconfig and freetype as dependencies for Opal. configure
+	script is not actually regenerated from configure.ac and contains
+	a simplified piece of code which just appends relevant options to
+	CPPFLAGS and LIBS.
+
+	* Source/opal/GNUmakefile:
+	Added fontconfig/ implementation files, like it was done in cairo
+	backend.
+
+	* Headers/opal/OpalFaceInfo.h:
+	* Source/opal/OpalFaceInfo.m:
+	Now copied from CairoFaceInfo and modified to use Core Graphics.
+
+	* Headers/opal/OpalFontInfo.h:
+	* Source/opal/OpalFontInfo.m:
+	Now copied from CairoFontInfo. Starting modifying to use the Core
+	Graphics. Currently font metrics are not correctly scaled.
+
+	* Source/opal/OpalFontEnumerator.m:
+	* Headers/opal/OpalFontEnumerator.h:
+	Now copied from CairoFaceInfo. Modified to use the classes in the
+	Opal backend.
+
+	* Source/opal/OpalGState.m:
+	Added DPSrlineto:: and DPSrmoveto::.
+
+	* Source/fontconfig/FCFontInfo.m:
+	* Headers/fontconfig/FCFontInfo.h:
+	Removed a cairo-backend-specific method.
+
 2013-09-10  Ivan Vucica <ivan@vucica.net>
 
 	* Source/fontconfig/FCFontInfo.m:

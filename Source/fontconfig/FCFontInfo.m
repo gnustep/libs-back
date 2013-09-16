@@ -171,11 +171,4 @@
   [self subclassResponsibility: _cmd];
 }
 
-- (void) drawGlyphs: (const NSGlyph*)glyphs
-             length: (int)length 
-                 on: (cairo_t*)ct
-{
-  [self subclassResponsibility: _cmd];
-}
-
 @end

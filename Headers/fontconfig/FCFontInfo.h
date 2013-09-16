@@ -30,7 +30,6 @@
 
 #include <GNUstepGUI/GSFontInfo.h>
 #include "fontconfig/FCFaceInfo.h"
-#include <cairo.h>
 
 @interface FCFontInfo : GSFontInfo
 {
