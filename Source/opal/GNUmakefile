@@ -37,6 +37,9 @@ opal_OBJC_FILES = OpalSurface.m \
   OpalFaceInfo.m \
   OpalPSSurface.m \
   OpalPDFSurface.m \
+  ../fontconfig/FCFaceInfo.m \
+  ../fontconfig/FCFontEnumerator.m \
+  ../fontconfig/FCFontInfo.m \
 
 ifeq ($(BUILD_SERVER),x11DISABLED)
   ifeq ($(WITH_GLITZ),yes)
