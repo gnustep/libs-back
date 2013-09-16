@@ -50,6 +50,8 @@
   CGFontRef face;
   CGSize maximumAdvancementCG;
   CGRect fontBBoxCG;
+  CGFloat unitsPerEm;
+  CGFloat pointSize;
 
   if (![super setupAttributes])
     {
@@ -94,16 +96,18 @@
   // (internal discussion between ivucica and ericwa, 2013-09-17)
   lineHeight = CGFontGetLeading(face) + CGFontGetAscent(face) - CGFontGetDescent(face);
 
-  CGFloat pointSize = matrix[0]; // from GSFontInfo
-  ascender /= pointSize;
-  descender /= pointSize;
-  xHeight /= pointSize;
-  fontBBox.origin.x /= pointSize;
-  fontBBox.origin.y /= pointSize;
-  fontBBox.size.width /= pointSize;
-  fontBBox.size.height /= pointSize;
-  maximumAdvancement.width /= pointSize;
-  maximumAdvancement.height /= pointSize;
+  pointSize = matrix[0]; // from GSFontInfo
+  unitsPerEm = CGFontGetUnitsPerEm(face);
+#define ratio pointSize / unitsPerEm
+  ascender *= ratio; // ascender = scaleEmToUnits(ascender) * pointSize;
+  descender *= ratio;
+  xHeight *= ratio;
+  fontBBox.origin.x *= ratio;
+  fontBBox.origin.y *= ratio;
+  fontBBox.size.width *= ratio;
+  fontBBox.size.height *= ratio;
+  maximumAdvancement.width *= ratio;
+  maximumAdvancement.height *= ratio;
 
 #if 0
   // Get default font options
