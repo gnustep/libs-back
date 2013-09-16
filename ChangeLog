@@ -1,5 +1,10 @@
 2013-09-17  Ivan Vucica <ivan@vucica.net>
 
+	* Source/opal/OpalFontInfo.m:
+	Fixed scale of metrics by using unitsPerEm and pointSize.
+
+2013-09-17  Ivan Vucica <ivan@vucica.net>
+
 	* configure:
 	* configure.ac:
 	Added fontconfig and freetype as dependencies for Opal. configure
