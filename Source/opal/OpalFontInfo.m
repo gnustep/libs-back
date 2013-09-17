@@ -38,6 +38,16 @@
 
 @implementation OpalFontInfo 
 
+- (CGFloat) _fontUnitToUserSpace: (CGFloat)fontDimension
+{
+  CGFontRef face = [_faceInfo fontFace];
+  CGFloat unitsPerEm = CGFontGetUnitsPerEm(face);
+
+  CGFloat pointSize = matrix[0]; // from GSFontInfo
+
+  return (fontDimension / unitsPerEm) * pointSize;
+}
+
 - (BOOL) setupAttributes
 {
 /*
@@ -50,8 +60,6 @@
   CGFontRef face;
   CGSize maximumAdvancementCG;
   CGRect fontBBoxCG;
-  CGFloat unitsPerEm;
-  CGFloat pointSize;
 
   if (![super setupAttributes])
     {
@@ -72,17 +80,23 @@
       return NO;
     }
 
-  ascender = CGFontGetAscent(face);
-  descender = CGFontGetDescent(face);
-  xHeight = CGFontGetXHeight(face);
+  ascender = [self _fontUnitToUserSpace: CGFontGetAscent(face)];
+  descender = [self _fontUnitToUserSpace: CGFontGetDescent(face)];
+  xHeight = [self _fontUnitToUserSpace: CGFontGetXHeight(face)];
+
+  CGFloat pointSize = matrix[0];
 
   maximumAdvancementCG = OPFontGetMaximumAdvancement(face);
-  maximumAdvancement = NSMakeSize(maximumAdvancementCG.width,
-                                  maximumAdvancementCG.height);
+  maximumAdvancement = NSMakeSize(maximumAdvancementCG.width * pointSize,
+                                  maximumAdvancementCG.height * pointSize);
   
   fontBBoxCG = CGFontGetFontBBox(face);
-  fontBBox = NSMakeRect(fontBBoxCG.origin.x, fontBBoxCG.origin.y,
-                        fontBBoxCG.size.width, fontBBoxCG.size.height);
+  fontBBox = NSMakeRect([self _fontUnitToUserSpace: fontBBoxCG.origin.x],
+			[self _fontUnitToUserSpace: fontBBoxCG.origin.y],
+                        [self _fontUnitToUserSpace: fontBBoxCG.size.width],
+			[self _fontUnitToUserSpace: fontBBoxCG.size.height]);
+
+  CGFloat leading = [self _fontUnitToUserSpace: CGFontGetLeading(face)];
 
   if (xHeight == 0.0)
     xHeight = ascender * 0.6;
@@ -94,20 +108,7 @@
   //   lineHeight = font_extents.height
   // alternatively: line spacing = (ascent + descent + "external leading")
   // (internal discussion between ivucica and ericwa, 2013-09-17)
-  lineHeight = CGFontGetLeading(face) + CGFontGetAscent(face) - CGFontGetDescent(face);
-
-  pointSize = matrix[0]; // from GSFontInfo
-  unitsPerEm = CGFontGetUnitsPerEm(face);
-#define ratio pointSize / unitsPerEm
-  ascender *= ratio; // ascender = scaleEmToUnits(ascender) * pointSize;
-  descender *= ratio;
-  xHeight *= ratio;
-  fontBBox.origin.x *= ratio;
-  fontBBox.origin.y *= ratio;
-  fontBBox.size.width *= ratio;
-  fontBBox.size.height *= ratio;
-  maximumAdvancement.width *= ratio;
-  maximumAdvancement.height *= ratio;
+  lineHeight = leading + ascender - descender;
 
 #if 0
   // Get default font options
@@ -207,6 +208,12 @@
 
 - (BOOL) glyphIsEncoded: (NSGlyph)glyph
 {
+  CGFontRef face = [_faceInfo fontFace];
+  size_t numGlyphs = CGFontGetNumberOfGlyphs(face);
+
+  return glyph < numGlyphs;
+
+#if 0
   /* FIXME: There is no proper way to determine with the toy font API,
      whether a glyph is supported or not. We will just ignore ligatures 
      and report all other glyph as existing.
@@ -216,6 +223,7 @@
     return NO;
   else
     return YES;
+#endif
 }
 #if 0
 static
@@ -244,8 +252,17 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
   return cairo_scaled_font_status(scaled_font) == CAIRO_STATUS_SUCCESS;
 }
 #endif
+
 - (NSSize) advancementForGlyph: (NSGlyph)glyph
 {
+  CGFontRef face = [_faceInfo fontFace];
+  int advance = 0;
+  CGFontGetGlyphAdvances(face, &glyph, 1, &advance);
+
+  CGFloat advanceUserSpace = [self _fontUnitToUserSpace: advance];
+
+  return NSMakeSize(advanceUserSpace, 0);
+
 #if 0
   cairo_text_extents_t ctext;
 
@@ -277,6 +294,22 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
   return NSZeroSize;
 }
 
+- (NSGlyph) glyphForCharacter: (unichar)theChar
+{
+  CGFontRef face = [_faceInfo fontFace];
+  CGGlyph result = CGFontGetGlyphWithGlyphName(face, [NSString stringWithCharacters: &theChar length: 1]);
+  //  NSLog(@"%s: Mapped '%x' to glyph # %d", __PRETTY_FUNCTION__, (int)theChar, (int)result);
+  return result;
+}
+
+- (NSGlyph) glyphWithName: (NSString *) glyphName
+{
+  CGFontRef face = [_faceInfo fontFace];
+  CGGlyph result = CGFontGetGlyphWithGlyphName(face, glyphName);
+  //  NSLog(@"%s: Mapped '%@' to glyph # %d", __PRETTY_FUNCTION__, glyphName, (int)result);
+  return result;
+}
+
 - (NSRect) boundingRectForGlyph: (NSGlyph)glyph
 {
 #if 0
@@ -288,7 +321,7 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
                         ctext.width, ctext.height);
     }
 #endif
-  return NSZeroRect;
+  return NSMakeRect(0,0,10,10);
 }
 
 - (CGFloat) widthOfString: (NSString *)string
@@ -307,7 +340,7 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
       return ctext.width;
     }
 #endif
-  return 0.0;
+  return 100.0;
 }
 
 - (void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs 

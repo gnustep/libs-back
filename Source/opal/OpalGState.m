@@ -30,6 +30,7 @@
 #import <AppKit/NSGraphics.h> // NS*ColorSpace
 #import "opal/OpalGState.h"
 #import "opal/OpalSurface.h"
+#import "opal/OpalFontInfo.h"
 #import "x11/XGServerWindow.h"
 
 #define CGCTX [self cgContext]
@@ -531,14 +532,36 @@ static CGFloat theAlpha = 1.; // TODO: removeme
   CGContextRestoreGState(CGCTX);
 //  free(s2);
 }
+- (void) GSSetFont: (GSFontInfo *)fontref
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  [super GSSetFont: fontref];
+
+  CGFontRef opalFont = (CGFontRef)[((OpalFontInfo *)fontref)->_faceInfo fontFace];
+  CGContextSetFont(CGCTX, opalFont); 
+
+  CGContextSetFontSize(CGCTX, [fontref matrix][0]);
+}
 - (void) GSShowGlyphsWithAdvances: (const NSGlyph *)glyphs : (const NSSize *)advances : (size_t) length
 {
+  size_t i;
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   CGContextSaveGState(CGCTX);
   CGContextSetRGBFillColor(CGCTX, 0, 1, 0, 1);
   CGContextFillRect(CGCTX, CGRectMake(0, 0, 12, length * 12));
   CGContextRestoreGState(CGCTX);
-  
+
+  // NSGlyph = unsigned int, CGGlyph = unsigned short
+
+  CGGlyph cgglyphs[length];
+  for (i=0; i<length; i++)
+    {
+      cgglyphs[i] = glyphs[i];
+    }
+
+  CGPoint pt = CGContextGetPathCurrentPoint(CGCTX);
+  CGContextSetTextPosition(CGCTX, pt.x, pt.y);
+  CGContextShowGlyphsWithAdvances(CGCTX, cgglyphs, (const CGSize *)advances, length);
 }
 #if 1
 - (void) DPSrlineto: (CGFloat) x

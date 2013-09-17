@@ -65,8 +65,11 @@
 
 - (BOOL) isDrawingToScreen
 {
-  OpalSurface *surface = nil;
-  [OGSTATE GSCurrentSurface: &surface : NULL : NULL];
+  // NOTE: This was returning NO because it was not looking at the
+  // return value of GSCurrentSurface. Now it returns YES, which
+  // seems to have broken image drawing (yellow rectangles are drawn instead)
+  OpalSurface *surface = [OGSTATE GSCurrentSurface: NULL : NULL : NULL];
+
   return [surface isDrawingToScreen];
 }
 

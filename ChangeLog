@@ -1,3 +1,22 @@
+2013-09-17  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/opal/OpalFontInfo.m: Move font space to user space conversion
+	to a separate method. Implement -glyphIsEncoded:, -advancementForGlyph:,
+	-glyphForCharacter:, -glyphWithName:.
+
+	For -boundingRectForGlyph:, and -widthOfString:, return fake, fixed
+	values.
+	* Source/opal/OpalContext.m: Fix -isDrawingToScreen implementation;
+	it now returns YES. This has the unfortunate side effect of breaking
+	image drawing... but, on the positive side, causes NSLayoutManager
+	to make calls to GSShowGlyphsWithAdvances in batches of up to
+	16 glyphs, instead of one at a time...!
+	* Source/opal/OpalGState.m: Implement -GSSetFont:, and make
+	-GSShowGlyphsWithAdvances: call CGContextShowGlyphsWithAdvances
+
+	Overall state is glyphs are drawn.. they appear upside down,
+	and the glyph runs only seem to draw at (0, 0).
+
 2013-09-17  Ivan Vucica <ivan@vucica.net>
 
 	* Source/opal/OpalFontInfo.m:
