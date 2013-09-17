@@ -212,18 +212,6 @@
   size_t numGlyphs = CGFontGetNumberOfGlyphs(face);
 
   return glyph < numGlyphs;
-
-#if 0
-  /* FIXME: There is no proper way to determine with the toy font API,
-     whether a glyph is supported or not. We will just ignore ligatures 
-     and report all other glyph as existing.
-  return !NSEqualSizes([self advancementForGlyph: glyph], NSZeroSize);
-  */
-  if ((glyph >= 0xFB00) && (glyph <= 0xFB05))
-    return NO;
-  else
-    return YES;
-#endif
 }
 #if 0
 static
