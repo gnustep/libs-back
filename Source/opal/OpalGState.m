@@ -534,6 +534,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 }
 - (void) GSSetFont: (GSFontInfo *)fontref
 {
+  const CGFloat * matrix;
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   [super GSSetFont: fontref];
 
@@ -541,7 +542,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
   CGContextSetFont(CGCTX, opalFont); 
 
   CGContextSetFontSize(CGCTX, 1);
-  float * matrix = [fontref matrix];
+  matrix = [fontref matrix];
   CGAffineTransform cgAT = CGAffineTransformMake(matrix[0], matrix[1],
                                                  matrix[2], matrix[3],
                                                  matrix[4], matrix[5]);
@@ -561,7 +562,8 @@ static CGFloat theAlpha = 1.; // TODO: removeme
     }
 
   CGPoint pt = CGContextGetPathCurrentPoint(CGCTX);
-
+  // FIXME: why * 0.66?
+  pt.y += [self->font defaultLineHeightForFont] * 0.66;
   CGContextSetTextPosition(CGCTX, pt.x, pt.y);
   CGContextShowGlyphsWithAdvances(CGCTX, cgglyphs, (const CGSize *)advances, length);
 }
