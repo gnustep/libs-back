@@ -1,3 +1,14 @@
+2013-09-17  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalContext.m:
+	Added note that -supportsDrawGState should be implemented.
+
+	* Source/opal/OpalGState.m:
+	Fixed temporary code for painting colored rectangles in place of text.
+	Partially fixed -GSShowGlyphsWithAdvances::: by removing temporary code
+	for painting colored rectangles, and by setting text matrix in
+	GSSetFont:.
+
 2013-09-17  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/opal/OpalFontInfo.m: Move font space to user space conversion
