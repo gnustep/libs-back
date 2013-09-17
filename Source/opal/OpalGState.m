@@ -516,7 +516,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 
   CGContextSaveGState(CGCTX);
   CGContextSetRGBFillColor(CGCTX, 0, 1, 0, 1);
-  CGContextFillRect(CGCTX, CGRectMake(0, 0, 12, strlen(s) * 12));
+  CGContextFillRect(CGCTX, CGRectMake(0, 0, strlen(s) * 12, 12));
   CGContextRestoreGState(CGCTX);
 }
 - (void) GSShowText: (const char *)s  : (size_t) length
@@ -528,7 +528,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 */
   CGContextSaveGState(CGCTX);
   CGContextSetRGBFillColor(CGCTX, 0, 1, 0, 1);
-  CGContextFillRect(CGCTX, CGRectMake(0, 0, 12, length * 12));
+  CGContextFillRect(CGCTX, CGRectMake(0, 0, length * 12, 12));
   CGContextRestoreGState(CGCTX);
 //  free(s2);
 }
@@ -540,16 +540,17 @@ static CGFloat theAlpha = 1.; // TODO: removeme
   CGFontRef opalFont = (CGFontRef)[((OpalFontInfo *)fontref)->_faceInfo fontFace];
   CGContextSetFont(CGCTX, opalFont); 
 
-  CGContextSetFontSize(CGCTX, [fontref matrix][0]);
+  CGContextSetFontSize(CGCTX, 1);
+  float * matrix = [fontref matrix];
+  CGAffineTransform cgAT = CGAffineTransformMake(matrix[0], matrix[1],
+                                                 matrix[2], matrix[3],
+                                                 matrix[4], matrix[5]);
+  CGContextSetTextMatrix(CGCTX, cgAT);
 }
 - (void) GSShowGlyphsWithAdvances: (const NSGlyph *)glyphs : (const NSSize *)advances : (size_t) length
 {
   size_t i;
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  CGContextSaveGState(CGCTX);
-  CGContextSetRGBFillColor(CGCTX, 0, 1, 0, 1);
-  CGContextFillRect(CGCTX, CGRectMake(0, 0, 12, length * 12));
-  CGContextRestoreGState(CGCTX);
 
   // NSGlyph = unsigned int, CGGlyph = unsigned short
 
@@ -560,10 +561,11 @@ static CGFloat theAlpha = 1.; // TODO: removeme
     }
 
   CGPoint pt = CGContextGetPathCurrentPoint(CGCTX);
+
   CGContextSetTextPosition(CGCTX, pt.x, pt.y);
   CGContextShowGlyphsWithAdvances(CGCTX, cgglyphs, (const CGSize *)advances, length);
 }
-#if 1
+
 - (void) DPSrlineto: (CGFloat) x
                    : (CGFloat) y
 {
@@ -575,10 +577,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
   y2 += y;
   CGContextAddLineToPoint(CGCTX, x, y);
 }
-#else
-#warning -DPSrlineto:: not implemented directly
-#endif
-#if 1
+
 - (void) DPSrmoveto: (CGFloat) x
                    : (CGFloat) y
 {
@@ -590,9 +589,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
   y2 += y;
   CGContextMoveToPoint(CGCTX, x2, y2);
 }
-#else
-#warning -DPSrmoveto:: not implemented directly
-#endif
+
 - (void) DPScurrentpoint: (CGFloat *)x
                         : (CGFloat *)y
 {

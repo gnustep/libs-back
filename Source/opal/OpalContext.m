@@ -84,6 +84,14 @@
   [OGSTATE DPSgrestore];
 }
 
+/*
+// FIXME: we should add this as soon as we implement -drawGState:...
+- (BOOL) supportsDrawGState
+{
+  return YES;
+}
+*/
+
 /**
   This handles 'expose' event notifications that arrive from
   X11.
