@@ -1,5 +1,12 @@
 2013-09-17  Ivan Vucica <ivan@vucica.net>
 
+	* Source/opal/OpalGState.m:
+	Fixed erroneous offset of glyphs by taking -defaultLineHeightForFont,
+	multiplying by 0.66, and adding that to pt.y. No idea why 0.66
+	is the right number.
+
+2013-09-17  Ivan Vucica <ivan@vucica.net>
+
 	* Source/opal/OpalContext.m:
 	Added note that -supportsDrawGState should be implemented.
 
