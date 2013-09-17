@@ -285,8 +285,9 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
 - (NSGlyph) glyphForCharacter: (unichar)theChar
 {
   CGFontRef face = [_faceInfo fontFace];
-  CGGlyph result = CGFontGetGlyphWithGlyphName(face, [NSString stringWithCharacters: &theChar length: 1]);
-  //  NSLog(@"%s: Mapped '%x' to glyph # %d", __PRETTY_FUNCTION__, (int)theChar, (int)result);
+
+  CGGlyph result = OPFontGetGlyphWithCharacter(face, theChar);
+  //NSLog(@"%s: Mapped '%@' to glyph # %d", __PRETTY_FUNCTION__, str, (int)result);
   return result;
 }
 

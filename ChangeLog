@@ -1,3 +1,8 @@
+2013-09-17  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/opal/OpalFontInfo.m: Use new OPFontGetGlyphWithCharacter to
+	properly look up the glyph for a character.
+
 2013-09-17  Ivan Vucica <ivan@vucica.net>
 
 	* Source/opal/OpalGState.m:
