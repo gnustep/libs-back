@@ -135,7 +135,7 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
       _gsWindowDevice->gdriverProtocol |= GDriverHandlesExpose | GDriverHandlesBacking;
       _gsWindowDevice->gdriver = self;
 
-#if 0
+#if 1
       _backingCGContext = createCGBitmapContext(
                        _gsWindowDevice->buffer_width, 
                        _gsWindowDevice->buffer_height);
@@ -182,15 +182,16 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
   OPContextSetIdentityCTM(_x11CGContext);
   
   cgRect.origin.y = [self device]->buffer_height - cgRect.origin.y - cgRect.size.height;
-  NSDebugLLog(@"OpalSurface, "@"Painting from %@ to %@", NSStringFromRect(*(NSRect *)&subimageCGRect), NSStringFromRect(*(NSRect *)&cgRect));
+  NSDebugLLog(@"OpalSurface", @"Painting from %@ to %@", NSStringFromRect(*(NSRect *)&subimageCGRect), NSStringFromRect(*(NSRect *)&cgRect));
 
   CGContextDrawImage(_x11CGContext, cgRect, subImage);
 
-  CGContextSetRGBFillColor(_x11CGContext, 0, (rand() % 255) / 255., 1, 0.7);
-  CGContextSetRGBStrokeColor(_x11CGContext, 1, 0, 0, 1);
-  CGContextSetLineWidth(_x11CGContext, 2);
+  //CGContextSetRGBFillColor(_x11CGContext, 0, (rand() % 255) / 255., 1, 0.7);
+  //CGContextSetRGBStrokeColor(_x11CGContext, 1, 0, 0, 1);
+  //CGContextSetLineWidth(_x11CGContext, 2);
   //CGContextFillRect(_x11CGContext, cgRect);
-//  CGContextStrokeRect(_x11CGContext, cgRect);i
+  //CGContextStrokeRect(_x11CGContext, cgRect);
+  //CGContextStrokeRect(_x11CGContext, subimageCGRect);
 #else
   CGContextSaveGState(_x11CGContext);
   OPContextResetClip(_x11CGContext);
