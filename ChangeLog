@@ -1,9 +1,18 @@
+2013-09-18  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalSurface.m:
+	Enabled doublebuffering. Fixed some debug code, disabled some other
+	debug code.
+
 2013-09-17  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/opal/OpalFontInfo.m: Use new OPFontGetGlyphWithCharacter to
 	properly look up the glyph for a character.
 
 2013-09-17  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalFontInfo.m:
+	Removed some dead code.
 
 	* Source/opal/OpalGState.m:
 	Fixed erroneous offset of glyphs by taking -defaultLineHeightForFont,
