@@ -1,3 +1,26 @@
+2013-09-19  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalContext.m:
+	Added GState switcher -DPSsetgstate:. See description of 
+	_opGState in OpalGState.h. 
+
+	* Headers/opal/OpalGState.h:
+	Added _opGState i-var and relevant accessors.
+
+	* Source/opal/OpalGState.m:
+	Instead of yellow rectangle, -compositeGState:... method *should*
+	now be painting doublebuffered content from the 'other' GState,
+	but sadly does not. This needs debugging.
+
+	Implemented -copyWithZone:. See description of _opGState in
+	OpalGState.h to see how and why is _opGState used in this class,
+	how it is being copied and why it's alright to keep it nil during
+	-init and even after -DPSinitgraphics, but needs to be set in
+	-copyWithZone:.
+
+	Added -setOPGState: and -OPGState accessors for the _opGState
+	field.
+
 2013-09-18  Ivan Vucica <ivan@vucica.net>
 
 	* Source/opal/OpalSurface.m:

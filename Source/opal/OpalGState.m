@@ -153,7 +153,7 @@ NSLog(@"                   : samplesperpixel = %d", samplesPerPixel);
                 fraction: (CGFloat)delta
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-#if 1
+#if 0
   CGContextSaveGState(CGCTX);
   CGContextSetRGBFillColor(CGCTX, 1, 1, 0, 1);
   CGContextFillRect(CGCTX, CGRectMake(destPoint.x, destPoint.y, srcRect.size.width, srcRect.size.height));
@@ -224,6 +224,16 @@ NSLog(@"                   : samplesperpixel = %d", samplesPerPixel);
 // MARK: -
 
 @implementation OpalGState (InitializationMethods)
+
+- (id)copyWithZone: (NSZone *)zone
+{
+  OpalGState * theCopy = (OpalGState *) [super copyWithZone: zone];
+
+  [_opalSurface retain];
+  theCopy->_opGState = OPContextCopyGState(CGCTX);
+
+  return theCopy;
+}
 
 /* SOME NOTES:
    - GState approximates a cairo context: a drawing state.
@@ -301,6 +311,20 @@ NSLog(@"                   : samplesperpixel = %d", samplesPerPixel);
   else if (![_opalSurface cgContext])
     NSDebugMLLog(@"OpalGState", @"No OpalSurface CGContext");
   return [_opalSurface cgContext];
+}
+
+- (OPGStateRef) OPGState
+{
+  return _opGState;
+}
+- (void) setOPGState: (OPGStateRef)opGState
+{
+  if (opGState == _opGState)
+    return;
+
+  [opGState retain];
+  [_opGState release];
+  _opGState = opGState;
 }
 
 @end
@@ -468,7 +492,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   CGContextFlush(CGCTX);
-  [_opalSurface handleExpose:CGRectMake(0, 0, 1024, 1024)];
+  [_opalSurface handleExpose:CGRectMake(0, 0, 1024, 1024)]; // FIXME
 }
 - (void) DPSgsave
 {

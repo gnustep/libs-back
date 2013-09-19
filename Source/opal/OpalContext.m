@@ -84,6 +84,25 @@
   [OGSTATE DPSgrestore];
 }
 
+/** For information about this method, please see description of
+    i-var '_opGState' in OpalGState.h.
+ **/
+- (void) DPSsetgstate: (int)gstateID
+{
+  
+  OPGStateRef previousGState = OPContextCopyGState([OGSTATE cgContext]);
+  [OGSTATE setOPGState: previousGState];
+  [previousGState release]; // FIXME
+  
+  [super DPSsetgstate: gstateID];
+
+  OPGStateRef newGState = [OGSTATE OPGState];
+  if (newGState)
+    {
+      OPContextSetGState([OGSTATE cgContext], newGState);
+      [OGSTATE setOPGState: nil];
+    }
+}
 /*
 // FIXME: we should add this as soon as we implement -drawGState:...
 - (BOOL) supportsDrawGState

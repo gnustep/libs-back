@@ -25,6 +25,7 @@
    Boston, MA 02110-1301, USA.
 */
 
+#import <CoreGraphics/CoreGraphics.h>
 #import "gsc/GSGState.h"
 
 @class OpalSurface;
@@ -32,6 +33,30 @@
 @interface OpalGState : GSGState
 {
   OpalSurface * _opalSurface;
+
+  /** When a surface's gstate is being switched away from,
+      we store the current gstate in _opGState.
+
+      When a surface's gstate is being switched back to,
+      if _opGState is not nil, we apply the stored gstate.
+
+      To facilitate OpalGState class instance copying, we 
+      also store a copy of the gstate inside _opGState when
+      gstate's -copyWithZone: is being run. This is because
+      the same _opalSurface should be used in both new and
+      old OpalGState. 
+
+      The same is done in Cairo backend, with one key 
+      difference: since all graphics state operations in 
+      Cairo are done directly on cairo_t and are unrelated
+      to the surface, Opal mixes the concepts of a gstate
+      and a surface into a context. Hence, when gstate is
+      switched, it's OpalContext's duty to apply the stored
+      copy of a gstate from _opGState. No such trickery
+      is needed with Cairo, as Cairo backend can simply
+      have a different cairo_t with the same surface.
+   **/
+  OPGStateRef _opGState;
 }
 
 - (void) DPSinitclip;
@@ -63,4 +88,6 @@
 
 @interface OpalGState (Accessors)
 - (CGContextRef) cgContext;
+- (OPGStateRef) OPGState;
+- (void) setOPGState: (OPGStateRef) opGState;
 @end
