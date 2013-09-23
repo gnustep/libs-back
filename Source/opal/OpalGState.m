@@ -97,21 +97,11 @@ static inline CGRect _CGRectFromNSRect(NSRect nsrect)
 
   NSDebugLLog(@"OpalGState", @"tf: %@ x %@", matrix, [self GSCurrentCTM]);
   CGContextSaveGState(CGCTX);
-  //OPContextSetIdentityCTM(CGCTX);
   CGContextConcatCTM(CGCTX, cgAT);
-  //OPContextSetCairoDeviceOffset(CGCTX, 0, 0);
-	  //CGContextMoveToPoint(CGCTX, 0, 0);
-#if 0
-  CGContextSetRGBFillColor(CGCTX, 1, 0, 0, 1);
-  CGContextFillRect(CGCTX, CGRectMake(-512, -512, 1024, 1024 /*pixelsWide, pixelsHigh*/ ));
-#endif
-//  CGContextRestoreGState(CGCTX);
-//  return;
 
   // TODO:
   // We may want to normalize colorspace names between Opal and -gui,
   // to avoid this conversion?
-  NSLog(@"Colorspace %@", colorSpaceName);
   if ([colorSpaceName isEqualToString:NSCalibratedRGBColorSpace])
     colorSpaceName = kCGColorSpaceGenericRGB; // SRGB?
   else if ([colorSpaceName isEqualToString:NSDeviceRGBColorSpace])
@@ -149,9 +139,9 @@ static inline CGRect _CGRectFromNSRect(NSRect nsrect)
 #endif
 
   CGDataProviderRef dataProvider = CGDataProviderCreateWithCFData(nsData);
-NSLog(@"Bits per component : bitspersample = %d", bitsPerSample);
-NSLog(@"Bits per pixel     : bitsperpixel = %d", bitsPerPixel);
-NSLog(@"                   : samplesperpixel = %d", samplesPerPixel);
+NSDebugLLog(@"OpalGState", @"Bits per component : bitspersample = %d", bitsPerSample);
+NSDebugLLog(@"OpalGState", @"Bits per pixel     : bitsperpixel = %d", bitsPerPixel);
+NSDebugLLog(@"OpalGState", @"                   : samplesperpixel = %d", samplesPerPixel);
   CGImageRef img = CGImageCreate(pixelsWide, pixelsHigh, bitsPerSample,
                                  bitsPerPixel, bytesPerRow, colorSpace,
                                  hasAlpha ? kCGImageAlphaPremultipliedLast : 0 /* correct? */,
@@ -227,13 +217,7 @@ NSLog(@"                   : samplesperpixel = %d", samplesPerPixel);
   // NOTE: This method seems to need to paint to X11 context, too.
 
   NSDebugLLog(@"OpalGState", @"%p (%@): %s - from %@ of gstate %p (cgctx %p) to %@ of %p (cgctx %p)", self, [self class], __PRETTY_FUNCTION__, NSStringFromRect(srcRect), source, [source CGContext], NSStringFromPoint(destPoint), self, [self CGContext]);
-#if 0
-  CGContextSaveGState(destCGContext);
-  CGContextSetRGBFillColor(destCGContext, 1, 1, 0, 1);
-  CGContextFillRect(destCGContext, CGRectMake(destPoint.x, destPoint.y, srcRect.size.width, srcRect.size.height));
-  CGContextRestoreGState(destCGContext);
-#else
-#if 1
+
   NSSize ssize = [source->_opalSurface size];
   srcRect = [[source GSCurrentCTM] rectInMatrixSpace: srcRect];
   destPoint = [[self GSCurrentCTM] pointInMatrixSpace: destPoint];
@@ -264,136 +248,6 @@ NSLog(@"                   : samplesperpixel = %d", samplesPerPixel);
 
   CGImageRelease(subImage);
   CGImageRelease(backingImage);
-#else
-  CGImageRef src;
-  NSSize ssize = NSZeroSize;
-  BOOL copyOnSelf;
-  /* The source rect in the source base coordinate space.
-     This rect is the minimum bounding rect of srcRect. */
-  NSRect srcRectInBase = NSZeroRect;
-  /* The destination point in the target base coordinate space */
-  NSPoint destPointInBase = NSZeroPoint;
-  /* The origin of srcRectInBase */
-  double minx, miny;
-  /* The composited content size */
-  double width, height;
-  /* The adjusted destination point in the target base coordinate space */
-  double x, y;
-  /* Alternative source rect origin in the source current CTM */
-  NSPoint srcRectAltOrigin;
-  /* Alternative source rect origin in the source base coordinate space */
-  NSPoint srcRectAltOriginInBase;
-  /* The source rect origin in the source base coordinate space */
-  NSPoint srcRectOriginInBase;
-  BOOL originFlippedBetweenBaseAndSource = NO;
-  /* The delta between the origins of srcRect and srcRectInBase */
-  double dx, dy;
-  
-  if (![source CGContext] || !destCGContext)
-    return;
-	 
-  src = CGBitmapContextCreateImage([source CGContext]);
-  copyOnSelf = ([source CGContext] == destCGContext);
-  srcRectAltOrigin = NSMakePoint(srcRect.origin.x, srcRect.origin.y + srcRect.size.height);
-  srcRectAltOriginInBase =  [[source GSCurrentCTM] transformPoint: srcRectAltOrigin];
-  srcRectOriginInBase = [[source GSCurrentCTM] transformPoint: srcRect.origin];
-
-  CGContextSaveGState(destCGContext);
-
-  /* When the target and source are the same surface, we use the group tricks */
-  /* // ?
-  if (copyOnSelf) cairo_push_group(_ct);
-
-  cairo_new_path(_ct);
-  _set_op(_ct, op); 
-  */
-
-  /* Scales and/or rotates the local destination point with the current AppKit CTM */
-  destPointInBase = [ctm transformPoint: destPoint];
-
-  /* Scales and/or rotates the source rect and retrieves the minimum bounding
-     rectangle that encloses it and makes it our source area */
-  [[source GSCurrentCTM] boundingRectFor: srcRect result: &srcRectInBase];
-
-  /* Find whether the source rect origin in the base is the same than in the 
-     source current CTM.
-     We need to know the origin in the base to compute how much the source 
-     bounding rect origin is shifted relatively to the closest source rect corner.
-     We use this delta (dx, dy) to correctly composite from a rotated source. */
-  originFlippedBetweenBaseAndSource = 
-    ((srcRect.origin.y < srcRectAltOrigin.y && srcRectOriginInBase.y > srcRectAltOriginInBase.y)
-    || (srcRect.origin.y > srcRectAltOrigin.y && srcRectOriginInBase.y < srcRectAltOriginInBase.y));
-  if (originFlippedBetweenBaseAndSource)
-    {
-      srcRectOriginInBase = srcRectAltOriginInBase;
-    }
-  dx = srcRectOriginInBase.x - srcRectInBase.origin.x;
-  dy = srcRectOriginInBase.y - srcRectInBase.origin.y;
-  
-  if (source->_opalSurface != nil)
-    {
-      ssize = [source->_opalSurface size];
-    }
-
-  /*
-  // ?
-  if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 8, 0))
-    {      
-      // For cairo > 1.8 we seem to need this adjustment
-      srcRectInBase.origin.y -= 2 * (source->offset.y - ssize.height);
-    }
-  */
-
-  x = destPointInBase.x;
-  y = destPointInBase.y;
-  minx = NSMinX(srcRectInBase);
-  miny = NSMinY(srcRectInBase);
-  width = NSWidth(srcRectInBase);
-  height = NSHeight(srcRectInBase);
- 
-
-  /* Comment from cairo backend:
-     -----8<---- */
-  /* We respect the AppKit CTM effect on the origin 'aPoint' (see 
-     -[ctm transformPoint:]), but we ignore the scaling and rotation effect on 
-     the composited content and size. Which means we never rotate or scale the 
-     content we composite.
-     We use a pattern as a trick to simulate a target CTM change, this way we 
-     don't touch the source CTM even when both source and target are identical 
-     (e.g. scrolling case).
-     We must use a pattern matrix that matches the AppKit base CTM set up in 
-     -DPSinitgraphics to ensure no transform is applied to the source content, 
-     translation adjustements related to destination point and source rect put 
-     aside. */
-  /* -----8<----
-     We don't have patterns with their own matrices at our disposal, so the
-     relevant code is NOT here. Instead we directly use srcRectInBase
-  */
-
-  NSLog(@"dy: %d", (int)dy);
-  CGRect srcCGRect = CGRectMake(srcRect.origin.x, srcRect.origin.y, srcRect.size.width, srcRect.size.height); 
-  srcCGRect = CGRectMake(minx, miny, width, height);
-  CGImageRef srcSubImage = CGImageCreateWithImageInRect(src, srcCGRect);
-  //OPContextSetIdentityCTM(destCGContext);
-  //CGContextScaleCTM(destCGContext, 1, -1);
-  //CGContextTranslateCTM(destCGContext, -(minx - x + dx), miny - y + dy - ssize.height);
-  //OPContextResetClip(destCGContext);
-  //CGContextAddRect(destCGContext, CGRectMake(x, y, width, height));
-  //CGContextClip(destCGContext);
-  // TODO: this ignores op
-  // TODO: this ignores delta
-  // (delta == opacity, in cairo backend)
-  CGRect destCGRect = CGRectMake(x, y, width, height);
-  CGContextDrawImage(destCGContext, destCGRect, srcSubImage);
-  CGContextSetRGBFillColor(destCGContext, 0.6, 1.0, 0.2, 0.2);
-  CGContextFillRect(destCGContext, destCGRect);
-//  NSLog(@" --> compsoiting subimage %@", srcSubImage);
-//[source->_opalSurface _saveImage: srcSubImage withPrefix:[NSString stringWithFormat: @"/tmp/opalback-compositing-subimage-%p-", [source CGContext]] size: srcCGRect.size ];
-//[source->_opalSurface _saveImage: src withPrefix:[NSString stringWithFormat: @"/tmp/opalback-compositing-image-%p-", [source CGContext]] size: NSZeroSize ];
-  CGImageRelease(src);
-
-  CGContextRestoreGState(destCGContext);
-#endif
 #endif
 }
 
@@ -412,9 +266,7 @@ doesn't support to use the receiver cairo target as the source. */
   // with the fact that CTM is not respected.
 
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-#if 0
-  [self compositeGState: source fromRect: srcRect toPoint: destPoint op: op fraction: delta destCGContext: destCGContext];
-#else
+
   CGRect srcCGRect = CGRectMake(srcRect.origin.x, srcRect.origin.y, 
                                 srcRect.size.width, srcRect.size.height);
   CGRect destCGRect = CGRectMake(destPoint.x, destPoint.y,
@@ -426,7 +278,6 @@ doesn't support to use the receiver cairo target as the source. */
   CGContextDrawImage(destCGContext, destCGRect, subImage);
   CGImageRelease(subImage);
   CGImageRelease(backingImage);
-#endif
 }
 
 - (void) compositerect: (NSRect)aRect
@@ -435,7 +286,7 @@ doesn't support to use the receiver cairo target as the source. */
   NSDebugLLog(@"OpalGState", @"%p (%@): %s - %@", self, [self class], __PRETTY_FUNCTION__, NSStringFromRect(aRect));
   
   CGContextSaveGState(CGCTX);
-  [self DPSinitmatrix];
+  OPContextSetIdentityCTM(CGCTX);
   CGContextFillRect(CGCTX, CGRectMake(aRect.origin.x,  [_opalSurface device]->buffer_height -  aRect.origin.y, 
     aRect.size.width, aRect.size.height));
   CGContextRestoreGState(CGCTX); 
@@ -577,18 +428,9 @@ doesn't support to use the receiver cairo target as the source. */
 
   while (_CGContextSaveGStatesOnContextCreation > 0)
     {
-      NSLog(@"%d more times", _CGContextSaveGStatesOnContextCreation);
       CGContextSaveGState(CGCTX);
       _CGContextSaveGStatesOnContextCreation--;
     }
-
-/*
-  if ([_opalSurface device])
-    {
-      CGContextTranslateCTM(CGCTX, 0, [_opalSurface device]->buffer_height);
-      CGContextScaleCTM(CGCTX, 1, -1);
-    }
-*/
 }
 
 @end
@@ -670,11 +512,6 @@ static CGFloat theAlpha = 1.; // TODO: removeme
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
   OPContextSetIdentityCTM(CGCTX);
-  #if 0
-  // Flipping the coordinate system is NOT required
-  CGContextTranslateCTM(CGCTX, 0, [_opalSurface device]->buffer_height);
-  CGContextScaleCTM(CGCTX, 1, -1);
-  #endif
   [super DPSinitmatrix];
 }
 - (void)DPSconcat: (const CGFloat *)m
@@ -719,51 +556,13 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, theOffset.x, theOffset.y);
 
-#if 1
   if (CGCTX != nil)
     {
-#if 1
       OPContextSetCairoDeviceOffset(CGCTX, -theOffset.x, 
           theOffset.y - [_opalSurface device]->buffer_height);
-#else
-      OPContextSetCairoDeviceOffset(CGCTX, theOffset.x, 
-          theOffset.y);
-#endif
     }
-#else
-  // This is a BAD hack using transform matrix.
-  // It'll break horribly when Opal state is saved and restored.
-  static NSPoint OFFSET = { 0, 0 };
-  //CGContextTranslateCTM(CGCTX, -(-OFFSET.x), 
-  //        -(OFFSET.y - [_opalSurface device]->buffer_height));
-  CGContextTranslateCTM(CGCTX, -theOffset.x, 
-          theOffset.y - [_opalSurface device]->buffer_height);
-  
-  OFFSET = theOffset;
-#endif
   [super setOffset: theOffset];
 }
-/*
-- (void) setColor: (device_color_t *)color state: (color_state_t)cState
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  
-  [super setColor: color
-            state: cState];
-  
-  switch (color->space)
-    {
-    case rgb_colorspace:
-      if (cState & COLOR_STROKE)
-        CGContextSetRGBStrokeColor(CGCTX, color->field[0],
-          color->field[1], color->field[2], color->field[3]);
-      if (cState & COLOR_FILL)
-        CGContextSetRGBFillColor(CGCTX, color->field[0],
-          color->field[1], color->field[2], color->field[3]);
-      break;
-    }
-}
-*/
 - (NSAffineTransform *) GSCurrentCTM
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
@@ -871,15 +670,12 @@ static CGFloat theAlpha = 1.; // TODO: removeme
 - (void) GSShowText: (const char *)s  : (size_t) length
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
- /* 
-  const char * s2 = calloc(s, length+1);
-  strcpy(s2, s);
-*/
   CGContextSaveGState(CGCTX);
   CGContextSetRGBFillColor(CGCTX, 0, 1, 0, 1);
   CGContextFillRect(CGCTX, CGRectMake(0, 0, length * 12, 12));
   CGContextRestoreGState(CGCTX);
-//  free(s2);
+
+  // TODO: implement!
 }
 - (void) GSSetFont: (GSFontInfo *)fontref
 {

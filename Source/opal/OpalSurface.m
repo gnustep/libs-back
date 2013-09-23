@@ -146,21 +146,11 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
       _gsWindowDevice->gdriverProtocol |= GDriverHandlesExpose | GDriverHandlesBacking;
       _gsWindowDevice->gdriver = self;
 
-#if 1
       _backingCGContext = createCGBitmapContext(
                        _gsWindowDevice->buffer_width, 
                        _gsWindowDevice->buffer_height);
-#else
-#warning NOTE! Doublebuffering disabled.
-#endif
     }
  
-#if 0 
-  CGContextSaveGState(_backingCGContext);
-  CGContextSetRGBFillColor(_backingCGContext, (rand() % 255) / 255., (rand() % 255) / 255., (rand() % 255) / 255., 1);
-  CGContextFillRect(_backingCGContext, CGRectMake(-512, -512, 1024, 1024 /*pixelsWide, pixelsHigh*/ ));
-  CGContextRestoreGState(_backingCGContext);
-#endif
   NSDebugLLog(@"OpalSurface", @"Created CGContexts: X11=%p, backing=%p", _x11CGContext, _backingCGContext);  
 
 }
@@ -192,7 +182,6 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
   if (!backingImage) // FIXME: writing a nil image fails with Opal
     return;
 
-#if 1
   CGRect cgRect = CGRectMake(rect.origin.x, rect.origin.y, 
                       rect.size.width, rect.size.height);
 
@@ -212,22 +201,7 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
   NSDebugLLog(@"OpalSurface", @" ... actually from %@ to %@", NSStringFromRect(*(NSRect *)&subimageCGRect), NSStringFromRect(*(NSRect *)&cgRect));
 
 
-  CGContextDrawImage(_x11CGContext, cgRect, subImage);
-
-  //CGContextSetRGBFillColor(_x11CGContext, 0, (rand() % 255) / 255., 1, 0.7);
-  //CGContextSetRGBStrokeColor(_x11CGContext, 1, 0, 0, 1);
-  //CGContextSetLineWidth(_x11CGContext, 2);
-  //CGContextFillRect(_x11CGContext, cgRect);
-  //CGContextStrokeRect(_x11CGContext, cgRect);
-  //CGContextStrokeRect(_x11CGContext, subimageCGRect);
-#else
-  CGContextSaveGState(_x11CGContext);
-  OPContextResetClip(_x11CGContext);
-  OPContextSetIdentityCTM(_x11CGContext);
-  
-  CGContextDrawImage(_x11CGContext, CGRectMake(0, 0, [self device]->buffer_width, [self device]->buffer_height), backingImage);
-#endif
- 
+  CGContextDrawImage(_x11CGContext, cgRect, subImage); 
 
 #if 0
   [self _saveImage: backingImage withPrefix:@"/tmp/opalback-backing-" size: CGSizeZero];
