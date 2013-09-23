@@ -57,6 +57,15 @@
       have a different cairo_t with the same surface.
    **/
   OPGStateRef _opGState;
+
+  /**
+   Sometimes, -DPSgsave may get called before context has
+   been created.
+
+   We need a counter for how many times CGContextSaveGState()
+   needs to be called in first -DPSinitgraphics that gets called.
+   **/
+  int _CGContextSaveGStatesOnContextCreation;
 }
 
 - (void) DPSinitclip;
@@ -84,10 +93,13 @@
 - (void) GSSetSurface: (OpalSurface *)opalSurface
                      : (int)x
                      : (int)y;
+
+- (void) DPSgsave;
+- (void) DPSgrestore;
 @end
 
 @interface OpalGState (Accessors)
-- (CGContextRef) cgContext;
+- (CGContextRef) CGContext;
 - (OPGStateRef) OPGState;
 - (void) setOPGState: (OPGStateRef) opGState;
 @end
