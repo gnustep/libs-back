@@ -1,6 +1,15 @@
 2013-09-23  Ivan Vucica <ivan@vucica.net>
 
 	* Source/opal/OpalGState.m:
+	Fixed a compile error (extra #endif).
+
+	Added -DPSsetdash:::.
+
+	Added stub -DPSsetstrokeadjust:.
+
+2013-09-23  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalGState.m:
 	* Source/opal/OpalSurface.m:
 	Cutting down on junk code and unneeded output.
 

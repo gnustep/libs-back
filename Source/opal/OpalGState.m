@@ -248,7 +248,6 @@ NSDebugLLog(@"OpalGState", @"                   : samplesperpixel = %d", samples
 
   CGImageRelease(subImage);
   CGImageRelease(backingImage);
-#endif
 }
 
 /** Unlike -compositeGState, -drawGSstate fully respects the AppKit CTM but 
@@ -298,7 +297,15 @@ doesn't support to use the receiver cairo target as the source. */
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
-  // TODO: stub
+  if (!pat && size != 0)
+    {
+      NSLog(@"%s: null 'pat' passed with size %d. Fixing by setting size to 0.", pat, (int)size);
+      size = 0;
+      // TODO: looking at opal, it does not seem to have a tolerance for
+      // pat=NULL although CGContextSetLineDash() explicitly specifies that
+      // as a possible argument
+    }
+  CGContextSetLineDash(CGCTX, offset, pat, size);
 }
 - (void) DPSstroke
 {
@@ -753,6 +760,13 @@ static CGFloat theAlpha = 1.; // TODO: removeme
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
   CGContextSetLineWidth(CGCTX, width);
+}
+
+- (void) DPSsetstrokeadjust: (int) b
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  // TODO: Opal doesn't implement this private API of Core Graphics
 }
 @end
 
