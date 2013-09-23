@@ -194,8 +194,9 @@ NSDebugLLog(@"OpalGState", @"                   : samplesperpixel = %d", samples
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   CGContextRef destContexts[2] = { [_opalSurface backingCGContext], [_opalSurface x11CGContext] };
+  int i;
 
-  for (int i = 0; i < 1; i++)
+  for (i = 0; i < 1; i++)
     {
       CGContextRef ctx = destContexts[i];
 
