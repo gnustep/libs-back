@@ -1,3 +1,8 @@
+2013-09-23  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/opal/OpalGState.m: move variable declaration outside
+	of for loop
+
 2013-09-23  Ivan Vucica <ivan@vucica.net>
 
 	* Source/opal/OpalGState.m:

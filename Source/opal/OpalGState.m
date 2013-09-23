@@ -172,7 +172,8 @@ NSDebugLLog(@"OpalGState", @"                   : samplesperpixel = %d", samples
   OPContextSetIdentityCTM([_opalSurface x11CGContext]);
   CGContextConcatCTM([_opalSurface x11CGContext], CGContextGetCTM([_opalSurface backingCGContext]));
 
-  for (int i = 0; i < 1; i++) // not drawing into x11cgctx after all.
+  int i;
+  for (i = 0; i < 1; i++) // not drawing into x11cgctx after all.
     {
       CGContextRef ctx = destContexts[i];
 
