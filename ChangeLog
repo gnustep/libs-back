@@ -1,3 +1,69 @@
+2013-09-23  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalContext.m:
+	Once again pretending we're not drawing on screen. This is a temporary
+	fix for -DPSimage:.
+
+	-DPSgsave is now passed on to current gstate before GSContext is given
+	chance to replace it.
+
+	Changes relating to rename of OpalSurface and OpalGState methods
+	-cgContext to -CGContext.
+
+	* Source/opal/OpalGState.m:
+	Apparently mostly functional -compositeGState:. Includes disabled
+	modification of code from CairoGState.
+
+	Apparently functional -drawGState.
+
+	-DPSsetlinecap: stub (need to match linecap constants.)
+	-DPSsetmiterlimit:.
+
+	Extended -copyWithZone: to assign a 'default' OpalGStateRef to the
+	newly copied gstate in case we currently have no context. This is
+	done by creating a context and copying whatever's in that context
+	onto the new OpalGState.
+
+	Improved -DPSinitgraphics by setting the device offset that was
+	set here and calling CGContextSaveGState() as many times as it
+	was supposed to be called while CGContext did not exist. Noted
+	that we should, instead of recreating contexts, just reset the
+	internal GState of Opal.
+
+	Added -GSSetCTM:.
+
+	-flushGraphics no longer 'flushes' rect 0,0,1024,1024. Now it instead
+	queries surface for its size.
+
+	In case surface exists but not the CGContext, -DPSgsave creates it.
+	Otherwise, it records that gsave should be run upon context
+	creation.
+
+	Added -DPSsetlinewidth:.
+
+	Changes relating to rename of OpalSurface and OpalGState methods
+	-cgContext to -CGContext.
+
+	* Source/opal/OpalSurface.m:
+	Added reminder of how we should handle recreation of CGContexts.
+	
+	Disabled non-doublebuffered windows. (We always need a backing
+	CGBitmapContext so we can implement -compositeGState: and -drawGState:.
+	
+	Added accessors -x11CGContext and -backingCGContext.
+
+	Fixed bug where sometimes we'd get incorrect expose values and would
+	try to incorrectly copy the backing image, stretching the resulting
+	on-screen image.
+
+	Added -size accessor.
+
+	* Headers/opal/OpalGState.h:
+	Some accessors. _CGContextSaveGStatesOnContextCreation ivar.
+
+	* Headers/opal/OpalSurface.h:
+	New and renamed accessors.
+
 2013-09-19  Ivan Vucica <ivan@vucica.net>
 
 	* Source/opal/OpalContext.m:

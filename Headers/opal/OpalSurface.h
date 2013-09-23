@@ -37,8 +37,12 @@
 
 - (id) initWithDevice: (void *)device;
 - (struct _gswindow_device_t *) device;
-- (CGContextRef) cgContext;
+- (CGContextRef) CGContext;
 - (void) createCGContexts;
+- (NSSize) size;
+
+- (CGContextRef) backingCGContext;
+- (CGContextRef) x11CGContext;
 @end
 
 @interface OpalSurface (DebugExtensions)

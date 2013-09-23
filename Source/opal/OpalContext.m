@@ -65,6 +65,9 @@
 
 - (BOOL) isDrawingToScreen
 {
+#warning isDrawingToScreen returning NO to fix DPSimage
+  return NO;
+
   // NOTE: This was returning NO because it was not looking at the
   // return value of GSCurrentSurface. Now it returns YES, which
   // seems to have broken image drawing (yellow rectangles are drawn instead)
@@ -75,8 +78,8 @@
 
 - (void) DPSgsave
 {
-  [super DPSgsave];
   [OGSTATE DPSgsave];
+  [super DPSgsave];
 }
 - (void) DPSgrestore
 {
@@ -90,7 +93,7 @@
 - (void) DPSsetgstate: (int)gstateID
 {
   
-  OPGStateRef previousGState = OPContextCopyGState([OGSTATE cgContext]);
+  OPGStateRef previousGState = OPContextCopyGState([OGSTATE CGContext]);
   [OGSTATE setOPGState: previousGState];
   [previousGState release]; // FIXME
   
@@ -99,17 +102,15 @@
   OPGStateRef newGState = [OGSTATE OPGState];
   if (newGState)
     {
-      OPContextSetGState([OGSTATE cgContext], newGState);
+      OPContextSetGState([OGSTATE CGContext], newGState);
       [OGSTATE setOPGState: nil];
     }
 }
-/*
-// FIXME: we should add this as soon as we implement -drawGState:...
+
 - (BOOL) supportsDrawGState
 {
   return YES;
 }
-*/
 
 /**
   This handles 'expose' event notifications that arrive from
@@ -127,7 +128,7 @@
 {
   OpalSurface * surface;
   [OGSTATE GSCurrentSurface: &surface : NULL : NULL];
-  return [surface cgContext];
+  return [surface CGContext];
 }
 
 #if BUILD_SERVER == SERVER_x11
