@@ -1,5 +1,11 @@
 2013-09-23  Ivan Vucica <ivan@vucica.net>
 
+	* Source/opal/OpalGState.m:
+	* Source/opal/OpalSurface.m:
+	Cutting down on junk code and unneeded output.
+
+2013-09-23  Ivan Vucica <ivan@vucica.net>
+
 	* Source/opal/OpalContext.m:
 	Once again pretending we're not drawing on screen. This is a temporary
 	fix for -DPSimage:.
