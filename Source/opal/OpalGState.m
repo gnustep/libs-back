@@ -28,6 +28,7 @@
 #import <CoreGraphics/CoreGraphics.h>
 #import <X11/Xlib.h>
 #import <AppKit/NSGraphics.h> // NS*ColorSpace
+#import <AppKit/NSAffineTransform.h>
 #import "opal/OpalGState.h"
 #import "opal/OpalSurface.h"
 #import "opal/OpalFontInfo.h"
