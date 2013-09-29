@@ -36,6 +36,7 @@
 }
 
 - (id) initWithDevice: (void *)device;
+- (void *)device;
 - (CGContextRef) CGContext;
 - (NSSize) size;
 

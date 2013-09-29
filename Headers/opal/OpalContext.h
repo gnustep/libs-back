@@ -33,12 +33,6 @@
 @interface OpalContext : GSContext
 {
 }
-+ (void) initializeBackend;
-+ (Class) GStateClass;
-- (void) GSSetDevice: (void *)device
-                    : (int)x
-                    : (int)y;
-
 @end
 
 #endif

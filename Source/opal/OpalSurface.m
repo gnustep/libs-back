@@ -128,7 +128,7 @@ static CGContextRef createCGBitmapContext(int pixelsWide,
   return self;
 }
 
-- (gswindow_device_t *) device
+- (void *) device
 {
   return _gsWindowDevice;
 }
