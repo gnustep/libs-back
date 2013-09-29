@@ -26,13 +26,12 @@
 */
 
 #import <CoreGraphics/CoreGraphics.h>
-#import <X11/Xlib.h>
 #import <AppKit/NSGraphics.h> // NS*ColorSpace
 #import <AppKit/NSAffineTransform.h>
+#import <AppKit/NSBezierPath.h>
 #import "opal/OpalGState.h"
 #import "opal/OpalSurface.h"
 #import "opal/OpalFontInfo.h"
-#import "x11/XGServerWindow.h"
 
 #define CGCTX [self CGContext]
 
@@ -42,6 +41,7 @@ static inline NSString * _CGRectRepr(CGRect rect)
           rect.origin.x, rect.origin.y,
           rect.size.width, rect.size.height];
 }
+
 static inline CGRect _CGRectFromNSRect(NSRect nsrect)
 {
   return CGRectMake(nsrect.origin.x, nsrect.origin.y,
@@ -50,8 +50,363 @@ static inline CGRect _CGRectFromNSRect(NSRect nsrect)
 
 @implementation OpalGState
 
-// MARK: Minimum required methods
+- (id)copyWithZone: (NSZone *)zone
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  OpalGState * theCopy = (OpalGState *) [super copyWithZone: zone];
+
+  [_opalSurface retain];
+  if (CGCTX)
+    {
+      theCopy->_opGState = OPContextCopyGState(CGCTX);
+    }
+  else
+    {
+      // FIXME: perhaps Opal could provide an API for getting the default
+      // gstate?
+      CGColorSpaceRef colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
+      CGContextRef ctx = CGBitmapContextCreate(NULL, 1, 1, 8, 32, colorSpace, kCGImageAlphaPremultipliedFirst);
+      CGColorSpaceRelease(colorSpace);
+      theCopy->_opGState = OPContextCopyGState(ctx);
+      CGContextRelease(ctx);
+      NSDebugLLog(@"OpalGState", @"Included default gstate %p", theCopy->_opGState);
+    }
+
+  return theCopy;
+}
+
+- (void) setOffset: (NSPoint)theOffset
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, theOffset.x, theOffset.y);
+
+  if (CGCTX != nil)
+    {
+      OPContextSetCairoDeviceOffset(CGCTX, -theOffset.x, 
+          theOffset.y - [_opalSurface size].height);
+    }
+  [super setOffset: theOffset];
+}
+
+@end
+
+@implementation OpalGState (Ops)
+
+- (void) DPSsetalpha: (CGFloat)a
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - alpha %g", self, [self class], __PRETTY_FUNCTION__, a);
+  
+  if (CGCTX)
+    {
+      CGContextSetAlpha(CGCTX, a);
+    }
+  [super DPSsetalpha: a];
+}
+
+- (void) DPSsetgray: (CGFloat)gray
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  const CGFloat alpha = 1; // TODO: is this correct?
+  if (CGCTX)
+    {
+      CGContextSetGrayFillColor(CGCTX, gray, alpha);
+    }
+  [super DPSsetgray: gray];
+}
+
+- (void) DPSsetrgbcolor: (CGFloat)r : (CGFloat)g : (CGFloat)b
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  
+  const CGFloat alpha = 1; // TODO: is this correct?
+  if (CGCTX)
+    {
+      CGContextSetRGBStrokeColor(CGCTX, r, g, b, alpha);
+      CGContextSetRGBFillColor(CGCTX, r, g, b, alpha);
+    }
+  [super DPSsetrgbcolor: r : g : b];
+}
+
+
+- (void) DPSshow: (const char *)s
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  CGContextSaveGState(CGCTX);
+  CGContextSetRGBFillColor(CGCTX, 0, 1, 0, 1);
+  CGContextFillRect(CGCTX, CGRectMake(0, 0, strlen(s) * 12, 12));
+  CGContextRestoreGState(CGCTX);
+}
+
+- (void) GSShowText: (const char *)s  : (size_t) length
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  CGContextSaveGState(CGCTX);
+  CGContextSetRGBFillColor(CGCTX, 0, 1, 0, 1);
+  CGContextFillRect(CGCTX, CGRectMake(0, 0, length * 12, 12));
+  CGContextRestoreGState(CGCTX);
+
+  // TODO: implement!
+}
+
+- (void) GSSetFont: (GSFontInfo *)fontref
+{
+  const CGFloat * matrix;
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  [super GSSetFont: fontref];
+
+  CGFontRef opalFont = (CGFontRef)[((OpalFontInfo *)fontref)->_faceInfo fontFace];
+  CGContextSetFont(CGCTX, opalFont); 
+
+  CGContextSetFontSize(CGCTX, 1);
+  matrix = [fontref matrix];
+  CGAffineTransform cgAT = CGAffineTransformMake(matrix[0], matrix[1],
+                                                 matrix[2], matrix[3],
+                                                 matrix[4], matrix[5]);
+  CGContextSetTextMatrix(CGCTX, cgAT);
+}
+
+- (void) GSShowGlyphsWithAdvances: (const NSGlyph *)glyphs : (const NSSize *)advances : (size_t) length
+{
+  size_t i;
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  // NSGlyph = unsigned int, CGGlyph = unsigned short
+
+  CGGlyph cgglyphs[length];
+  for (i=0; i<length; i++)
+    {
+      cgglyphs[i] = glyphs[i];
+    }
+
+  CGPoint pt = CGContextGetPathCurrentPoint(CGCTX);
+  // FIXME: why * 0.66?
+  pt.y += [self->font defaultLineHeightForFont] * 0.66;
+  CGContextSetTextPosition(CGCTX, pt.x, pt.y);
+  CGContextShowGlyphsWithAdvances(CGCTX, cgglyphs, (const CGSize *)advances, length);
+}
+
+- (NSPoint) currentPoint
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  CGPoint pt = CGContextGetPathCurrentPoint(CGCTX);
+  return NSMakePoint(pt.x, pt.y);
+}
+
+- (void) DPSsetdash: (const CGFloat*)pat
+                   : (NSInteger)size
+                   : (CGFloat)dashOffset
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  if (!pat && size != 0)
+    {
+      NSLog(@"%s: null 'pat' passed with size %d. Fixing by setting size to 0.", pat, (int)size);
+      size = 0;
+      // TODO: looking at opal, it does not seem to have a tolerance for
+      // pat=NULL although CGContextSetLineDash() explicitly specifies that
+      // as a possible argument
+    }
+  CGContextSetLineDash(CGCTX, dashOffset, pat, size);
+}
+
+- (void) DPSsetlinecap: (int)linecap
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  // TODO: ensure match of linecap constants between Opal and DPS
+  CGContextSetLineCap(CGCTX, linecap);
+}
+
+- (void) DPSsetlinejoin: (int)linejoin
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  CGContextSetLineJoin(CGCTX, linejoin);
+}
+
+- (void) DPSsetlinewidth: (CGFloat) width
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  CGContextSetLineWidth(CGCTX, width);
+}
+
+- (void) DPSsetmiterlimit: (CGFloat)miterlimit
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  CGContextSetMiterLimit(CGCTX, miterlimit);
+}
+
+- (void) DPSsetstrokeadjust: (int) b
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  // TODO: Opal doesn't implement this private API of Core Graphics
+}
+
+/* Matrix operations */
+- (void)DPSconcat: (const CGFloat *)m
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g %g %g %g %g", self, 
+              [self class], __PRETTY_FUNCTION__, 
+              m[0], m[1], m[2], m[3], m[4], m[5]);
+
+  CGContextConcatCTM(CGCTX, CGAffineTransformMake(
+                     m[0], m[1], m[2],
+                     m[3], m[4], m[5]));
+  [super DPSconcat: m];
+}
+
+- (void)DPSinitmatrix 
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  
+  OPContextSetIdentityCTM(CGCTX);
+  [super DPSinitmatrix];
+}
+
+- (void)DPSrotate: (CGFloat)angle 
+{
+  CGContextRotateCTM(CGCTX, angle);
+  [super DPSrotate: angle];
+}
+
+- (void)DPSscale: (CGFloat)x
+                : (CGFloat)y 
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+  
+  CGContextScaleCTM(CGCTX, x, y);
+  [super DPSscale: x : y];
+}
+
+- (void)DPStranslate: (CGFloat)x
+                    : (CGFloat)y 
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - x %g y %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+  
+  CGContextTranslateCTM(CGCTX, x, y);
+  [super DPStranslate: x: y];
+}
+
+- (NSAffineTransform *) GSCurrentCTM
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  return [super GSCurrentCTM];
+
+  /*
+  CGAffineTransform cgCTM = CGContextGetCTM(CGCTX);
+  NSAffineTransform * affineTransform = [NSAffineTransform transform];
+
+  // This depends on CGAffineTransform and NSAffineTransformStruct having 
+  // the same in-memory layout.
+  // Here's an elementary check if that is true.
+  // We should probably check this in -back's "configure" script.
+  assert(sizeof(CGAffineTransform) == sizeof(NSAffineTransformStruct));
+
+  NSAffineTransformStruct nsCTM = *(NSAffineTransformStruct *)&cgCTM;
+  [affineTransform setTransformStruct: nsCTM];
+  
+  return affineTransform;
+  */
+}
+
+- (void) GSSetCTM: (NSAffineTransform *)newCTM
+{
+  // This depends on CGAffineTransform and NSAffineTransformStruct having 
+  // the same in-memory layout.
+  // Here's an elementary check if that is true.
+  // We should probably check this in -back's "configure" script.
+  assert(sizeof(CGAffineTransform) == sizeof(NSAffineTransformStruct));
+  NSAffineTransformStruct nsAT = [newCTM transformStruct];
+  CGAffineTransform cgAT = *(CGAffineTransform *)&nsAT;
+
+  OPContextSetIdentityCTM(CGCTX);
+  CGContextConcatCTM(CGCTX, cgAT);
+
+  [super GSSetCTM: newCTM];
+}
+
+- (void) GSConcatCTM: (NSAffineTransform *)newCTM
+{
+  assert(sizeof(CGAffineTransform) == sizeof(NSAffineTransformStruct));
+  NSAffineTransformStruct nsAT = [newCTM transformStruct];
+  CGAffineTransform cgAT = *(CGAffineTransform *)&nsAT;
+
+  CGContextConcatCTM(CGCTX, cgAT);
+
+  [super GSConcatCTM: newCTM];
+}
+
+
+// MARK: Path operations
 // MARK: -
+
+- (void) DPSarc: (CGFloat)x : (CGFloat)y : (CGFloat)r : (CGFloat)angle1 : (CGFloat)angle2 
+{
+  CGContextAddArc(CGCTX, x, y, r, angle1, angle2, YES);
+  [super DPSarc: x : y : r : angle1 : angle2];
+}
+
+- (void) DPSarcn: (CGFloat)x : (CGFloat)y : (CGFloat)r : (CGFloat)angle1 : (CGFloat)angle2 
+{
+  CGContextAddArc(CGCTX, x, y, r, angle1, angle2, NO);
+  [super DPSarcn: x : y : r : angle1 : angle2];
+}
+
+- (void)DPSarct: (CGFloat)x1 : (CGFloat)y1 : (CGFloat)x2 : (CGFloat)y2 : (CGFloat)r 
+{
+  CGContextAddArcToPoint(CGCTX, x1, y1, x1, y2, r);
+  [super DPSarct: x1 : y1 : x2 : y2 : r];
+}
+
+- (void) DPSclip
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  
+  CGContextClip(CGCTX);
+  [super DPSnewpath];
+}
+
+- (void)DPSclosepath 
+{
+  CGContextClosePath(CGCTX);
+  [super DPSclosepath];
+}
+
+- (void)DPScurveto: (CGFloat)x1 : (CGFloat)y1 : (CGFloat)x2 : (CGFloat)y2
+                  : (CGFloat)x3 : (CGFloat)y3 
+{
+  CGContextAddCurveToPoint(CGCTX, x1, y1, x2, y2, x3, y3);
+  [super DPScurveto: x1 : y1 : x2 : y2 : x3 : y3];
+}
+
+- (void) DPSeoclip
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  
+  CGContextEOClip(CGCTX);
+  [super DPSnewpath];
+}
+
+- (void) DPSeofill
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  
+  CGContextEOFillPath(CGCTX);
+  [super DPSnewpath];
+}
+
+- (void) DPSfill
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  CGContextFillPath(CGCTX);
+  [super DPSnewpath];
+}
 
 - (void) DPSinitclip
 {
@@ -60,19 +415,137 @@ static inline CGRect _CGRectFromNSRect(NSRect nsrect)
   OPContextResetClip(CGCTX);
 }
 
-- (void) DPSclip
+- (void) DPSlineto: (CGFloat) x
+                  : (CGFloat) y
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+
+  CGContextAddLineToPoint(CGCTX, x, y);
+  [super DPSlineto: x : y];
+}
+
+- (void) DPSmoveto: (CGFloat) x
+                  : (CGFloat) y
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+
+  CGContextMoveToPoint(CGCTX, x, y);
+  [super DPSmoveto: x : y];
+}
+
+- (void)DPSnewpath 
+{
+  CGContextBeginPath(CGCTX);
+  [super DPSnewpath];
+}
+
+- (void)DPSrcurveto: (CGFloat)x1 : (CGFloat)y1 : (CGFloat)x2 : (CGFloat)y2
+                   : (CGFloat)x3 : (CGFloat)y3 
+{
+  CGFloat x, y;
+
+  [self DPScurrentpoint: &x : &y];
+  x1 += x;
+  y1 += y;
+  x2 += x;
+  y2 += y;
+  x3 += x;
+  y3 += y;
+  CGContextAddCurveToPoint(CGCTX, x1, y1, x2, y2, x3, y3);
+  [super DPSrcurveto: x1 : y1 : x2 : y2 : x3 : y3];
+}
+
+- (void) DPSrectclip: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, x, y, w, h);
+  
+  CGContextClipToRect(CGCTX, CGRectMake(x, y, w, h));
+}
+
+- (void) DPSrectfill: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - rect %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, x, y, w, h);
+
+  CGContextFillRect(CGCTX, CGRectMake(x, y, w, h));
+}
+
+- (void) DPSrectstroke: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
+{
+  CGContextStrokeRect(CGCTX, CGRectMake(x, y, w, h));
+}
+
+- (void) DPSrlineto: (CGFloat) x
+                   : (CGFloat) y
+{
+  CGFloat x2, y2;
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+
+  [self DPScurrentpoint: &x2 : &y2];
+  x2 += x;
+  y2 += y;
+  CGContextAddLineToPoint(CGCTX, x, y);
+  [super DPSrlineto: x : y];
+}
+
+- (void) DPSrmoveto: (CGFloat) x
+                   : (CGFloat) y
+{
+  CGFloat x2, y2;
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
+
+  [self DPScurrentpoint: &x2 : &y2];
+  x2 += x;
+  y2 += y;
+  CGContextMoveToPoint(CGCTX, x2, y2);
+  [super DPSrmoveto: x : y];
+}
+
+- (void) DPSstroke
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   
-  CGContextClip(CGCTX);
+  CGContextStrokePath(CGCTX);
+  [super DPSnewpath];
 }
 
-- (void) DPSfill
+- (void) GSSendBezierPath: (NSBezierPath *)newpath
 {
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  NSInteger count = [newpath elementCount];
+  NSInteger i;
+  SEL elmsel = @selector(elementAtIndex:associatedPoints:);
+  NSBezierPathElement (*elmidx)(id, SEL, NSInteger, NSPoint*) =
+    (NSBezierPathElement (*)(id, SEL, NSInteger, NSPoint*))[newpath methodForSelector: elmsel];
 
-  CGContextFillPath(CGCTX);
+  [super GSSendBezierPath: newpath];
+  CGContextBeginPath(CGCTX);
+  for (i = 0; i < count; i++) 
+    {
+      NSBezierPathElement type;
+      NSPoint points[3];
+
+      type = (NSBezierPathElement)(*elmidx)(newpath, elmsel, i, points);
+      switch(type) 
+        {
+          case NSMoveToBezierPathElement:
+            CGContextMoveToPoint(CGCTX, points[0].x, points[0].y);
+            break;
+          case NSLineToBezierPathElement:
+            CGContextAddLineToPoint(CGCTX, points[0].x, points[0].y);
+            break;
+          case NSCurveToBezierPathElement:
+            CGContextAddCurveToPoint(CGCTX, points[0].x, points[0].y, 
+                           points[1].x, points[1].y, 
+                           points[2].x, points[2].y);
+            break;
+          case NSClosePathBezierPathElement:
+            CGContextClosePath(CGCTX);
+            break;
+          default:
+            break;
+        }
+    }
 }
+
 
 - (void) DPSimage: (NSAffineTransform *)matrix
                  : (NSInteger)pixelsWide
@@ -188,6 +661,7 @@ NSDebugLLog(@"OpalGState", @"                   : samplesperpixel = %d", samples
   /* restore x11 context's previous state */
   CGContextRestoreGState([_opalSurface x11CGContext]);
 }
+
 - (void) drawGState: (OpalGState *)source 
            fromRect: (NSRect)srcRect 
             toPoint: (NSPoint)destPoint 
@@ -210,6 +684,7 @@ NSDebugLLog(@"OpalGState", @"                   : samplesperpixel = %d", samples
          destCGContext: ctx];
     }
 }
+
 - (void) compositeGState: (OpalGState *)source
                 fromRect: (NSRect)srcRect 
                  toPoint: (NSPoint)destPoint 
@@ -222,15 +697,15 @@ NSDebugLLog(@"OpalGState", @"                   : samplesperpixel = %d", samples
   NSDebugLLog(@"OpalGState", @"%p (%@): %s - from %@ of gstate %p (cgctx %p) to %@ of %p (cgctx %p)", self, [self class], __PRETTY_FUNCTION__, NSStringFromRect(srcRect), source, [source CGContext], NSStringFromPoint(destPoint), self, [self CGContext]);
 
   NSSize ssize = [source->_opalSurface size];
-  srcRect = [[source GSCurrentCTM] rectInMatrixSpace: srcRect];
-  destPoint = [[self GSCurrentCTM] pointInMatrixSpace: destPoint];
+  srcRect = [source rectInMatrixSpace: srcRect];
+  destPoint = [self pointInMatrixSpace: destPoint];
 
   srcRect.origin.y = ssize.height-srcRect.origin.y-srcRect.size.height;
 
   CGRect srcCGRect = _CGRectFromNSRect(srcRect);
   CGRect destCGRect = CGRectMake(destPoint.x, destPoint.y,
                                  srcRect.size.width, srcRect.size.height);
-  NSLog(@"Source cgctx: %p, self: %p - from %@ to %@ with ctm %@", [source CGContext], self, _CGRectRepr(srcCGRect), _CGRectRepr(destCGRect), [self GSCurrentCTM]);
+  NSDebugLLog(@"OpalGState", @"Source cgctx: %p, self: %p - from %@ to %@ with ctm %@", [source CGContext], self, _CGRectRepr(srcCGRect), _CGRectRepr(destCGRect), [self GSCurrentCTM]);
   // FIXME: this presumes that the backing CGContext of 'source' is
   // an OpalSurface with a backing CGBitmapContext
   CGImageRef backingImage = CGBitmapContextCreateImage([source CGContext]); 
@@ -245,7 +720,7 @@ NSDebugLLog(@"OpalGState", @"                   : samplesperpixel = %d", samples
   CGContextDrawImage(destCGContext, destCGRect, subImage);
 
   OPContextSetCairoDeviceOffset(CGCTX, -offset.x, 
-      offset.y - [_opalSurface device]->buffer_height);
+      offset.y - [_opalSurface size].height);
 
   CGContextRestoreGState(destCGContext);
 
@@ -289,53 +764,12 @@ doesn't support to use the receiver cairo target as the source. */
   
   CGContextSaveGState(CGCTX);
   OPContextSetIdentityCTM(CGCTX);
-  CGContextFillRect(CGCTX, CGRectMake(aRect.origin.x,  [_opalSurface device]->buffer_height -  aRect.origin.y, 
+  CGContextFillRect(CGCTX, CGRectMake(aRect.origin.x, 
+    [_opalSurface size].height -  aRect.origin.y, 
     aRect.size.width, aRect.size.height));
   CGContextRestoreGState(CGCTX); 
 }
 
-- (void) DPSsetdash: (const CGFloat*)pat
-                   : (NSInteger)size
-                   : (CGFloat)offset
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-
-  if (!pat && size != 0)
-    {
-      NSLog(@"%s: null 'pat' passed with size %d. Fixing by setting size to 0.", pat, (int)size);
-      size = 0;
-      // TODO: looking at opal, it does not seem to have a tolerance for
-      // pat=NULL although CGContextSetLineDash() explicitly specifies that
-      // as a possible argument
-    }
-  CGContextSetLineDash(CGCTX, offset, pat, size);
-}
-- (void) DPSstroke
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  
-  CGContextStrokePath(CGCTX);
-}
-
-- (void) DPSsetlinejoin: (int)linejoin
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-
-  CGContextSetLineJoin(CGCTX, linejoin);
-}
-- (void) DPSsetlinecap: (int)linecap
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-
-  // TODO: ensure match of linecap constants between Opal and DPS
-  CGContextSetLineCap(CGCTX, linecap);
-}
-- (void) DPSsetmiterlimit: (CGFloat)miterlimit
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-
-  CGContextSetMiterLimit(CGCTX, miterlimit);
-}
 @end
 
 // MARK: Initialization methods
@@ -343,29 +777,11 @@ doesn't support to use the receiver cairo target as the source. */
 
 @implementation OpalGState (InitializationMethods)
 
-- (id)copyWithZone: (NSZone *)zone
+- (void) DPSinitgraphics
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  OpalGState * theCopy = (OpalGState *) [super copyWithZone: zone];
 
-  [_opalSurface retain];
-  if (CGCTX)
-    {
-      theCopy->_opGState = OPContextCopyGState(CGCTX);
-    }
-  else
-    {
-      // FIXME: perhaps Opal could provide an API for getting the default
-      // gstate?
-      CGColorSpaceRef colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
-      CGContextRef ctx = CGBitmapContextCreate(NULL, 1, 1, 8, 32, colorSpace, kCGImageAlphaPremultipliedFirst);
-      CGColorSpaceRelease(colorSpace);
-      theCopy->_opGState = OPContextCopyGState(ctx);
-      CGContextRelease(ctx);
-      NSLog(@"Included default gstate %p", theCopy->_opGState);
-    }
-
-  return theCopy;
+  [super DPSinitgraphics];
 }
 
 /* SOME NOTES:
@@ -393,53 +809,24 @@ doesn't support to use the receiver cairo target as the source. */
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s - %@ %d %d", self, [self class], __PRETTY_FUNCTION__, opalSurface, x, y);
 
-  if(_opalSurface != opalSurface)
-    {
-      id old = _opalSurface;
-      _opalSurface = [opalSurface retain];
-      [old release];
-    }
-  
+  ASSIGN(_opalSurface, opalSurface);
   [self setOffset: NSMakePoint(x, y)];
   [self DPSinitgraphics];  
 }
-- (id) GSCurrentSurface: (OpalSurface **)surface
-                          : (int *)x
-                          : (int *)y
+
+- (void) GSCurrentSurface: (OpalSurface **)surface
+                         : (int *)x
+                         : (int *)y
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
-  return _opalSurface;
-}
-/**
-  Sets up a new CG*Context() for drawing content.
- **/
-- (void) DPSinitgraphics
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-
-  [super DPSinitgraphics];
-
-  if (!_opalSurface)
+  if (x)
+    *x = offset.x;
+  if (y)
+    *y = offset.y;
+  if (surface)
     {
-      NSLog(@"%s: called before GSSetSurface:::", __PRETTY_FUNCTION__);
-      return;
-    }
-
-  // TODO: instead of recreating contexts, we should only reset
-  // the gstate portion of the contexts. Add OPContextResetGState() which
-  // recreates _ct and resets _ctadditions. See DPSinitgraphics in
-  // CairoGState.
-  
-  [_opalSurface createCGContexts];
-
-  OPContextSetCairoDeviceOffset(CGCTX, -offset.x, 
-      offset.y - [_opalSurface device]->buffer_height);
-
-  while (_CGContextSaveGStatesOnContextCreation > 0)
-    {
-      CGContextSaveGState(CGCTX);
-      _CGContextSaveGStatesOnContextCreation--;
+      *surface = _opalSurface;
     }
 }
 
@@ -463,185 +850,47 @@ doesn't support to use the receiver cairo target as the source. */
 {
   return _opGState;
 }
+
 - (void) setOPGState: (OPGStateRef)opGState
 {
-  if (opGState == _opGState)
-    return;
-
-  [opGState retain];
-  [_opGState release];
-  _opGState = opGState;
+  ASSIGN(_opGState, opGState);
 }
 
 @end
 
 // MARK: Non-required methods
 // MARK: -
-static CGFloat theAlpha = 1.; // TODO: removeme
 @implementation OpalGState (NonrequiredMethods)
 
-- (void) DPSsetrgbcolor: (CGFloat)r : (CGFloat)g : (CGFloat)b
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  
-  const CGFloat alpha = 1; // TODO: is this correct?
-  if(!CGCTX)
-    return;
-  CGContextSetRGBStrokeColor(CGCTX, r, g, b, alpha);
-  CGContextSetRGBFillColor(CGCTX, r, g, b, alpha);
-}
-- (void) DPSrectfill: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - rect %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, x, y, w, h);
-
-  CGContextFillRect(CGCTX, CGRectMake(x, y, w, h));
-}
-- (void) DPSrectclip: (CGFloat)x : (CGFloat)y : (CGFloat)w : (CGFloat)h
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, x, y, w, h);
-  
-  [self DPSinitclip];
-  CGContextClipToRect(CGCTX, CGRectMake(x, y, w, h));
-}
-- (void) DPSsetgray: (CGFloat)gray
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-
-  const CGFloat alpha = 1; // TODO: is this correct?
-  CGContextSetGrayFillColor(CGCTX, gray, alpha);
-}
-- (void) DPSsetalpha: (CGFloat)a
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - alpha %g", self, [self class], __PRETTY_FUNCTION__, a);
-  
-  CGContextSetAlpha(CGCTX, a);
-  theAlpha = a;
-}
-- (void)DPSinitmatrix 
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  
-  OPContextSetIdentityCTM(CGCTX);
-  [super DPSinitmatrix];
-}
-- (void)DPSconcat: (const CGFloat *)m
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g %g %g %g %g", self, [self class], __PRETTY_FUNCTION__, m[0], m[1], m[2], m[3], m[4], m[5]);
-
-  CGContextConcatCTM(CGCTX, CGAffineTransformMake(
-                     m[0], m[1], m[2],
-                     m[3], m[4], m[5]));
-  [super DPSconcat:m];
-}
-- (void)DPSscale: (CGFloat)x
-                : (CGFloat)y 
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
-  
-  CGContextScaleCTM(CGCTX, x, y);
-}
-- (void)DPStranslate: (CGFloat)x
-                    : (CGFloat)y 
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - x %g y %g", self, [self class], __PRETTY_FUNCTION__, x, y);
-  
-  CGContextTranslateCTM(CGCTX, x, y);
-  [super DPStranslate:x:y];
-}
-- (void) DPSmoveto: (CGFloat) x
-                  : (CGFloat) y
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
-
-  CGContextMoveToPoint(CGCTX, x, y);
-}
-- (void) DPSlineto: (CGFloat) x
-                  : (CGFloat) y
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
-
-  CGContextAddLineToPoint(CGCTX, x, y);
-}
-- (void) setOffset: (NSPoint)theOffset
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, theOffset.x, theOffset.y);
-
-  if (CGCTX != nil)
-    {
-      OPContextSetCairoDeviceOffset(CGCTX, -theOffset.x, 
-          theOffset.y - [_opalSurface device]->buffer_height);
-    }
-  [super setOffset: theOffset];
-}
-- (NSAffineTransform *) GSCurrentCTM
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-
-  return ctm;
-
-  CGAffineTransform cgCTM = CGContextGetCTM(CGCTX);
-  NSAffineTransform * affineTransform = [NSAffineTransform transform];
-
-  // This depends on CGAffineTransform and NSAffineTransformStruct having 
-  // the same in-memory layout.
-  // Here's an elementary check if that is true.
-  // We should probably check this in -back's "configure" script.
-  assert(sizeof(CGAffineTransform) == sizeof(NSAffineTransformStruct));
-
-  NSAffineTransformStruct nsCTM = *(NSAffineTransformStruct *)&cgCTM;
-  [affineTransform setTransformStruct: nsCTM];
-  
-  return affineTransform;
-}
-- (void) GSSetCTM: (NSAffineTransform *)newCTM
-{
-  // This depends on CGAffineTransform and NSAffineTransformStruct having 
-  // the same in-memory layout.
-  // Here's an elementary check if that is true.
-  // We should probably check this in -back's "configure" script.
-  assert(sizeof(CGAffineTransform) == sizeof(NSAffineTransformStruct));
-  NSAffineTransformStruct nsAT = [newCTM transformStruct];
-  CGAffineTransform cgAT = *(CGAffineTransform *)&nsAT;
-
-  OPContextSetIdentityCTM(CGCTX);
-  CGContextConcatCTM(CGCTX, cgAT);
-
-  [super GSSetCTM: newCTM];
-}
 - (void) flushGraphics
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   CGContextFlush(CGCTX);
   [_opalSurface handleExpose: [_opalSurface size]]; 
 }
+
 - (void) DPSgsave
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  if (!CGCTX)
+  if (CGCTX)
     {
-      if (_opalSurface)
-        {
-          [_opalSurface createCGContexts];
-        }
-      else
-        {
-          NSLog(@"%s: called before CGContext was created; possible -gui bug?", __PRETTY_FUNCTION__);
-          _CGContextSaveGStatesOnContextCreation++;
-        }
+      CGContextSaveGState(CGCTX);
     }
-
-  CGContextSaveGState(CGCTX);
 }
+
 - (void) DPSgrestore
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  if (!CGCTX)
+  if (CGCTX)
     {
-      NSLog(@"%s: called before CGContext was created; possible -gui bug?", __PRETTY_FUNCTION__);
-      _CGContextSaveGStatesOnContextCreation--;
+      CGContextRestoreGState(CGCTX);
     }
-  CGContextRestoreGState(CGCTX);
 }
+
+@end
+
+@implementation OpalGState (PatternColor)
+
 - (void *) saveClip
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
@@ -649,6 +898,7 @@ static CGFloat theAlpha = 1.; // TODO: removeme
   *r = CGContextGetClipBoundingBox(CGCTX);
   return r;
 }
+
 - (void) restoreClip: (void *)savedClip
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
@@ -656,187 +906,5 @@ static CGFloat theAlpha = 1.; // TODO: removeme
   CGContextClipToRect(CGCTX, *(CGRect *)savedClip);
   free(savedClip);
 }
-- (void) DPSeoclip
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  
-  CGContextEOClip(CGCTX);
-}
-- (void) DPSeofill
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  
-  CGContextEOFillPath(CGCTX);
-}
-- (void) DPSshow: (const char *)s
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-
-  CGContextSaveGState(CGCTX);
-  CGContextSetRGBFillColor(CGCTX, 0, 1, 0, 1);
-  CGContextFillRect(CGCTX, CGRectMake(0, 0, strlen(s) * 12, 12));
-  CGContextRestoreGState(CGCTX);
-}
-- (void) GSShowText: (const char *)s  : (size_t) length
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  CGContextSaveGState(CGCTX);
-  CGContextSetRGBFillColor(CGCTX, 0, 1, 0, 1);
-  CGContextFillRect(CGCTX, CGRectMake(0, 0, length * 12, 12));
-  CGContextRestoreGState(CGCTX);
-
-  // TODO: implement!
-}
-- (void) GSSetFont: (GSFontInfo *)fontref
-{
-  const CGFloat * matrix;
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  [super GSSetFont: fontref];
-
-  CGFontRef opalFont = (CGFontRef)[((OpalFontInfo *)fontref)->_faceInfo fontFace];
-  CGContextSetFont(CGCTX, opalFont); 
-
-  CGContextSetFontSize(CGCTX, 1);
-  matrix = [fontref matrix];
-  CGAffineTransform cgAT = CGAffineTransformMake(matrix[0], matrix[1],
-                                                 matrix[2], matrix[3],
-                                                 matrix[4], matrix[5]);
-  CGContextSetTextMatrix(CGCTX, cgAT);
-}
-- (void) GSShowGlyphsWithAdvances: (const NSGlyph *)glyphs : (const NSSize *)advances : (size_t) length
-{
-  size_t i;
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-
-  // NSGlyph = unsigned int, CGGlyph = unsigned short
-
-  CGGlyph cgglyphs[length];
-  for (i=0; i<length; i++)
-    {
-      cgglyphs[i] = glyphs[i];
-    }
-
-  CGPoint pt = CGContextGetPathCurrentPoint(CGCTX);
-  // FIXME: why * 0.66?
-  pt.y += [self->font defaultLineHeightForFont] * 0.66;
-  CGContextSetTextPosition(CGCTX, pt.x, pt.y);
-  CGContextShowGlyphsWithAdvances(CGCTX, cgglyphs, (const CGSize *)advances, length);
-}
-
-- (void) DPSrlineto: (CGFloat) x
-                   : (CGFloat) y
-{
-  CGFloat x2, y2;
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
-
-  [self DPScurrentpoint: &x2 : &y2];
-  x2 += x;
-  y2 += y;
-  CGContextAddLineToPoint(CGCTX, x, y);
-}
-
-- (void) DPSrmoveto: (CGFloat) x
-                   : (CGFloat) y
-{
-  CGFloat x2, y2;
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - %g %g", self, [self class], __PRETTY_FUNCTION__, x, y);
-
-  [self DPScurrentpoint: &x2 : &y2];
-  x2 += x;
-  y2 += y;
-  CGContextMoveToPoint(CGCTX, x2, y2);
-}
-
-- (void) DPScurrentpoint: (CGFloat *)x
-                        : (CGFloat *)y
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  
-  CGPoint currentPoint = CGContextGetPathCurrentPoint(CGCTX);
-  *x = currentPoint.x;
-  *y = currentPoint.y;
-  NSDebugLLog(@"OpalGState", @"  %p (%@): %s (returning: %f %f)", self, [self class], __PRETTY_FUNCTION__, *x, *y);
-}
-
-- (void) DPSsetlinewidth: (CGFloat) width
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-
-  CGContextSetLineWidth(CGCTX, width);
-}
-
-- (void) DPSsetstrokeadjust: (int) b
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-
-  // TODO: Opal doesn't implement this private API of Core Graphics
-}
-@end
-
-// MARK: Non-required unimplemented methods
-// MARK: -
-
-@implementation OpalGState (NonrequiredUnimplementedMethods)
-
-/*
- Methods that follow have not been implemented.
- They are here to prevent GSGState implementations from
- executing.
- 
- Sole criteria for picking them is looking at what methods
- are called by a dummy AppKit application with a single
- empty NSWindow.
- */
-
-- (void) DPSsetgstate: (NSInteger) gst
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  abort();
-}
-
-@end
-
-@implementation OpalGState (Unused)
-
-- (void) _setPath
-{
-#if 0
-  NSInteger count = [path elementCount];
-  NSInteger i;
-  SEL elmsel = @selector(elementAtIndex:associatedPoints:);
-  NSBezierPathElement (*elmidx)(id, SEL, NSInteger, NSPoint*) =
-    (NSBezierPathElement (*)(id, SEL, NSInteger, NSPoint*))[path methodForSelector: elmsel];
-
-  // reset current cairo path
-  cairo_new_path(_ct);
-  for (i = 0; i < count; i++) 
-    {
-      NSBezierPathElement type;
-      NSPoint points[3];
-
-      type = (NSBezierPathElement)(*elmidx)(path, elmsel, i, points);
-      switch(type) 
-        {
-          case NSMoveToBezierPathElement:
-            cairo_move_to(_ct, points[0].x, points[0].y);
-            break;
-          case NSLineToBezierPathElement:
-            cairo_line_to(_ct, points[0].x, points[0].y);
-            break;
-          case NSCurveToBezierPathElement:
-            cairo_curve_to(_ct, points[0].x, points[0].y, 
-                           points[1].x, points[1].y, 
-                           points[2].x, points[2].y);
-            break;
-          case NSClosePathBezierPathElement:
-            cairo_close_path(_ct);
-            break;
-          default:
-            break;
-        }
-    }
-#endif
-}
-
 
 @end
