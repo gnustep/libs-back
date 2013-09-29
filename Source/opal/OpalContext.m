@@ -30,8 +30,14 @@
 #import "opal/OpalFontEnumerator.h"
 #import "opal/OpalSurface.h"
 #import "opal/OpalGState.h"
+#include "config.h"
 
 #define OGSTATE ((OpalGState *)gstate)
+
+#if BUILD_SERVER == SERVER_x11
+#  include "x11/XGServerWindow.h"
+#  include "x11/XWindowBuffer.h"
+#endif
 
 @implementation OpalContext
 
@@ -63,6 +69,11 @@
   [surface release];
 }
 
+- (BOOL) supportsDrawGState
+{
+  return YES;
+}
+
 - (BOOL) isDrawingToScreen
 {
 #warning isDrawingToScreen returning NO to fix DPSimage
@@ -71,7 +82,9 @@
   // NOTE: This was returning NO because it was not looking at the
   // return value of GSCurrentSurface. Now it returns YES, which
   // seems to have broken image drawing (yellow rectangles are drawn instead)
-  OpalSurface *surface = [OGSTATE GSCurrentSurface: NULL : NULL : NULL];
+  OpalSurface *surface;
+
+  [OGSTATE GSCurrentSurface: &surface : NULL : NULL];
 
   return [surface isDrawingToScreen];
 }
@@ -81,6 +94,7 @@
   [OGSTATE DPSgsave];
   [super DPSgsave];
 }
+
 - (void) DPSgrestore
 {
   [super DPSgrestore];
@@ -105,11 +119,6 @@
       OPContextSetGState([OGSTATE CGContext], newGState);
       [OGSTATE setOPGState: nil];
     }
-}
-
-- (BOOL) supportsDrawGState
-{
-  return YES;
 }
 
 /**

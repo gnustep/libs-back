@@ -1,3 +1,12 @@
+2013-09-29  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/opal/OpalGState.h: Clean up to reduce warnings.
+	* Source/opal/OpalGState.m: Add missing path and matrix methods.
+	Remove warnings. Remove unneeded code. Reorder code to allow for
+	easier comparison with GSGState.
+	* Source/opal/OpalContext.m: Add missing includes to get shm
+	completion working. Adjust to changes in OpalGState.
+
 2013-09-23  Eric Wasylishen  <ewasylishen@gmail.com>
 
 	* Source/opal/OpalGState.m: move variable declaration outside
@@ -66,10 +75,10 @@
 
 	* Source/opal/OpalSurface.m:
 	Added reminder of how we should handle recreation of CGContexts.
-	
+
 	Disabled non-doublebuffered windows. (We always need a backing
 	CGBitmapContext so we can implement -compositeGState: and -drawGState:.
-	
+
 	Added accessors -x11CGContext and -backingCGContext.
 
 	Fixed bug where sometimes we'd get incorrect expose values and would
@@ -87,8 +96,8 @@
 2013-09-19  Ivan Vucica <ivan@vucica.net>
 
 	* Source/opal/OpalContext.m:
-	Added GState switcher -DPSsetgstate:. See description of 
-	_opGState in OpalGState.h. 
+	Added GState switcher -DPSsetgstate:. See description of
+	_opGState in OpalGState.h.
 
 	* Headers/opal/OpalGState.h:
 	Added _opGState i-var and relevant accessors.
@@ -217,7 +226,7 @@
 
 	* Source/cairo/GNUmakefile:
 	Added fontconfig font classes directly to GNUmakefile for Cairo
-	backend. 
+	backend.
 
 	It would be better if these had something like their own distinct
 	GNUmakefile that produces a static library which would then be
@@ -244,7 +253,7 @@
 	* Source/opal/OpalFontInfo.m:
 	Implemented -defaultLineHeightForFont, the key to getting
 	GNUstep layouting system to use information provided in
-	-advancementForGlyph:. 
+	-advancementForGlyph:.
 
 	Without that, the textcontainer->linefrags does not get
 	created.

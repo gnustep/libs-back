@@ -57,49 +57,26 @@
       have a different cairo_t with the same surface.
    **/
   OPGStateRef _opGState;
-
-  /**
-   Sometimes, -DPSgsave may get called before context has
-   been created.
-
-   We need a counter for how many times CGContextSaveGState()
-   needs to be called in first -DPSinitgraphics that gets called.
-   **/
-  int _CGContextSaveGStatesOnContextCreation;
 }
+@end
 
-- (void) DPSinitclip;
+@interface OpalGState (InitializationMethods)
 - (void) DPSinitgraphics;
-- (void) DPSclip;
-- (void) DPSfill;
-- (void) DPSimage: (NSAffineTransform *)matrix
-                 : (NSInteger)pixelsWide
-		 : (NSInteger)pixelsHigh
-                 : (NSInteger)bitsPerSample 
-		 : (NSInteger)samplesPerPixel
-                 : (NSInteger)bitsPerPixel
-		 : (NSInteger)bytesPerRow
-                 : (BOOL)isPlanar
-		 : (BOOL)hasAlpha
-                 : (NSString *)colorSpaceName
-		 : (const unsigned char *const[5])data;
-- (void) compositeGState: (OpalGState *)source
-                fromRect: (NSRect)srcRect 
-                 toPoint: (NSPoint)destPoint 
-                      op: (NSCompositingOperation)op
-                fraction: (CGFloat)delta;
-- (void) compositerect: (NSRect)aRect
-                    op: (NSCompositingOperation)op;
 - (void) GSSetSurface: (OpalSurface *)opalSurface
                      : (int)x
                      : (int)y;
-
-- (void) DPSgsave;
-- (void) DPSgrestore;
+- (void) GSCurrentSurface: (OpalSurface **)surface
+                         : (int *)x
+                         : (int *)y;
 @end
 
 @interface OpalGState (Accessors)
 - (CGContextRef) CGContext;
 - (OPGStateRef) OPGState;
 - (void) setOPGState: (OPGStateRef) opGState;
+@end
+
+@interface OpalGState (NonrequiredMethods)
+- (void) DPSgsave;
+- (void) DPSgrestore;
 @end
