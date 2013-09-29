@@ -1,5 +1,13 @@
 2013-09-29  Fred Kiefer <FredKiefer@gmx.de>
 
+	* Headers/opal/OpalSurface.h
+	* Source/opal/OpalSurface.m: Remove compiler warnings.
+	* Source/opal/OpalContext.m: Move -flushGraphics method to here.
+	* Source/opal/OpalGState.m: Simplify -DPSimage. Evaluate CGCTX
+	only once per method.
+
+2013-09-29  Fred Kiefer <FredKiefer@gmx.de>
+
 	* Headers/opal/OpalGState.h: Clean up to reduce warnings.
 	* Source/opal/OpalGState.m: Add missing path and matrix methods.
 	Remove warnings. Remove unneeded code. Reorder code to allow for

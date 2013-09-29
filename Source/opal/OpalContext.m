@@ -20,8 +20,8 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
-   If not, see <http://www.gnu.org/licenses/> or write to the 
-   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   If not, see <http://www.gnu.org/licenses/> or write to the
+   Free Software Foundation, 51 Franklin Street, Fifth Floor,
    Boston, MA 02110-1301, USA.
 */
 
@@ -89,6 +89,17 @@
   return [surface isDrawingToScreen];
 }
 
+- (void) flushGraphics
+{
+  NSDebugLLog(@"OpalContext", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  OpalSurface *surface;
+
+  [OGSTATE GSCurrentSurface: &surface : NULL : NULL];
+
+  CGContextFlush([surface CGContext]);
+  //[surface handleExposeRect: [surface size]];
+}
+
 - (void) DPSgsave
 {
   [OGSTATE DPSgsave];
@@ -106,11 +117,11 @@
  **/
 - (void) DPSsetgstate: (int)gstateID
 {
-  
+
   OPGStateRef previousGState = OPContextCopyGState([OGSTATE CGContext]);
   [OGSTATE setOPGState: previousGState];
   [previousGState release]; // FIXME
-  
+
   [super DPSsetgstate: gstateID];
 
   OPGStateRef newGState = [OGSTATE OPGState];
@@ -155,4 +166,3 @@
 #endif // BUILD_SERVER = SERVER_x11
 
 @end
-

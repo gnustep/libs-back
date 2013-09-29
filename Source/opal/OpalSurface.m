@@ -20,8 +20,8 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
-   If not, see <http://www.gnu.org/licenses/> or write to the 
-   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   If not, see <http://www.gnu.org/licenses/> or write to the
+   Free Software Foundation, 51 Franklin Street, Fifth Floor,
    Boston, MA 02110-1301, USA.
 */
 
@@ -33,89 +33,47 @@ extern CGContextRef OPX11ContextCreate(Display *display, Drawable drawable);
 extern void OPContextSetSize(CGContextRef ctx, CGSize s);
 
 /* Taken from GSQuartzCore's CABackingStore */
-static CGContextRef createCGBitmapContext (int pixelsWide,
-                                             int pixelsHigh)
+static CGContextRef createCGBitmapContext(int pixelsWide,
+                                          int pixelsHigh)
 {
   CGContextRef    context = NULL;
   CGColorSpaceRef colorSpace;
-  void *          bitmapData;
-  int             bitmapByteCount;
   int             bitmapBytesPerRow;
-  
-  bitmapBytesPerRow   = (pixelsWide * 4);
-  bitmapByteCount     = (bitmapBytesPerRow * pixelsHigh);
-  
-  colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);// 2
+
+  bitmapBytesPerRow = (pixelsWide * 4);
+
+  colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
 
   // Let CGBitmapContextCreate() allocate the memory.
   // This should be good under Cocoa too.
-  bitmapData = NULL;
-
-  context = CGBitmapContextCreate (bitmapData,
-                                   pixelsWide,
-                                   pixelsHigh,
-                                   8,      // bits per component
-                                   bitmapBytesPerRow,
-                                   colorSpace,
-#if !GNUSTEP
-                                   kCGImageAlphaPremultipliedLast);
-#else
-  // Opal only supports kCGImageAlphaPremultipliedFirst.
-  // However, this is incorrect since it implies ARGB.
-                                  kCGImageAlphaPremultipliedFirst);
-#endif
+  context = CGBitmapContextCreate(NULL,
+                                  pixelsWide,
+                                  pixelsHigh,
+                                  8,      // bits per component
+                                  bitmapBytesPerRow,
+                                  colorSpace,
+                                  kCGImageAlphaPremultipliedLast);
 
   // Note: our use of premultiplied alpha means that we need to
   // do alpha blending using:
   //  GL_SRC_ALPHA, GL_ONE
 
   CGColorSpaceRelease(colorSpace);
-  if (context== NULL)
+  if (context == NULL)
     {
-      free (bitmapData);// 5
-      fprintf (stderr, "Context not created!");
+      NSLog(@"Context not created!");
       return NULL;
     }
-
-#if GNUSTEP
-#warning Opal bug: context should be cleared automatically
-
-#if 0
-  CGContextClearRect (context, CGRectInfinite);
-#else
-#warning Opal bug: CGContextClearRect() permanently whacks the context
-  memset (CGBitmapContextGetData (context), 
-          0, bitmapBytesPerRow * pixelsHigh);
-#endif
-#endif  
   return context;
 }
 
 
 @implementation OpalSurface
 
-- (id) initWithDevice: (void *)device
-{
-  self = [super init];
-  if (!self)
-    return nil;
-
-  // FIXME: this method and class presumes we are being passed
-  // a window device.
-  _gsWindowDevice = (gswindow_device_t *) device;
-
-  [self createCGContexts];
-  
-  return self;
-}
-
 - (void) createCGContexts
 {
-
   // FIXME: this method and class presumes we are being passed
   // a window device.
-  // FIXME: this method does not destroy existing contexts if
-  // needed, nor transfer Opal GState.
 
   if (_x11CGContext || _backingCGContext)
     {
@@ -126,7 +84,7 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
   Window window = _gsWindowDevice->ident;
 
   _x11CGContext = OPX11ContextCreate(display, window);
-  
+
 #if 0
   if (_gsWindowDevice->type == NSBackingStoreNonretained)
     {
@@ -147,12 +105,27 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
       _gsWindowDevice->gdriver = self;
 
       _backingCGContext = createCGBitmapContext(
-                       _gsWindowDevice->buffer_width, 
+                       _gsWindowDevice->buffer_width,
                        _gsWindowDevice->buffer_height);
     }
- 
-  NSDebugLLog(@"OpalSurface", @"Created CGContexts: X11=%p, backing=%p", _x11CGContext, _backingCGContext);  
 
+  NSDebugLLog(@"OpalSurface", @"Created CGContexts: X11=%p, backing=%p", _x11CGContext, _backingCGContext);
+
+}
+
+- (id) initWithDevice: (void *)device
+{
+  self = [super init];
+  if (!self)
+    return nil;
+
+  // FIXME: this method and class presumes we are being passed
+  // a window device.
+  _gsWindowDevice = (gswindow_device_t *) device;
+
+  [self createCGContexts];
+
+  return self;
 }
 
 - (gswindow_device_t *) device
@@ -164,15 +137,16 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
 {
   return _backingCGContext ? _backingCGContext : _x11CGContext;
 }
+
 - (CGContextRef) backingCGContext
 {
   return _backingCGContext;
 }
+
 - (CGContextRef) x11CGContext
 {
   return _x11CGContext;
 }
-
 
 - (void) handleExposeRect: (NSRect)rect
 {
@@ -182,44 +156,37 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
   if (!backingImage) // FIXME: writing a nil image fails with Opal
     return;
 
-  CGRect cgRect = CGRectMake(rect.origin.x, rect.origin.y, 
+  CGRect cgRect = CGRectMake(rect.origin.x, rect.origin.y,
                       rect.size.width, rect.size.height);
-
-  NSDebugLLog(@"OpalSurface", @"Exposing %@", NSStringFromRect(*(NSRect *)&cgRect));
-  
   cgRect = CGRectIntegral(cgRect);
   cgRect = CGRectIntersection(cgRect, CGRectMake(0, 0, CGImageGetWidth(backingImage), CGImageGetHeight(backingImage)));
- 
-  CGRect subimageCGRect = cgRect; 
+
+  CGRect subimageCGRect = cgRect;
   CGImageRef subImage = CGImageCreateWithImageInRect(backingImage, subimageCGRect);
 
   CGContextSaveGState(_x11CGContext);
   OPContextResetClip(_x11CGContext);
   OPContextSetIdentityCTM(_x11CGContext);
-  
-  cgRect.origin.y = [self device]->buffer_height - cgRect.origin.y - cgRect.size.height;
+
+  cgRect.origin.y = [self size].height - cgRect.origin.y - cgRect.size.height;
   NSDebugLLog(@"OpalSurface", @" ... actually from %@ to %@", NSStringFromRect(*(NSRect *)&subimageCGRect), NSStringFromRect(*(NSRect *)&cgRect));
 
 
-  CGContextDrawImage(_x11CGContext, cgRect, subImage); 
+  CGContextDrawImage(_x11CGContext, cgRect, subImage);
 
 #if 0
+#warning Saving debug images
   [self _saveImage: backingImage withPrefix:@"/tmp/opalback-backing-" size: CGSizeZero];
   [self _saveImage: subImage withPrefix:@"/tmp/opalback-subimage-" size: subimageCGRect.size ];
 #endif
 
   CGImageRelease(backingImage);
   CGImageRelease(subImage);
-
   CGContextRestoreGState(_x11CGContext);
-
 }
 
 - (void) _saveImage: (CGImageRef) img withPrefix: (NSString *) prefix size: (CGSize) size
 {
-#if 1
-
-#warning Saving debug images
 #if 1
 #warning Opal bug: cannot properly save subimage created with CGImageCreateWithImageInRect()
   if (size.width != 0 || size.height != 0)
@@ -242,8 +209,6 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
   CGImageDestinationFinalize(outfile);
   CFRelease(fileUrl);
   CFRelease(outfile);
-  
-#endif
 }
 
 - (BOOL) isDrawingToScreen
@@ -254,7 +219,7 @@ static CGContextRef createCGBitmapContext (int pixelsWide,
 
 - (NSSize) size
 {
-  return NSMakeSize(_gsWindowDevice->buffer_width, 
+  return NSMakeSize(_gsWindowDevice->buffer_width,
                     _gsWindowDevice->buffer_height);
 }
 
