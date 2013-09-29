@@ -36,17 +36,11 @@
 }
 
 - (id) initWithDevice: (void *)device;
-- (struct _gswindow_device_t *) device;
 - (CGContextRef) CGContext;
-- (void) createCGContexts;
 - (NSSize) size;
 
 - (CGContextRef) backingCGContext;
 - (CGContextRef) x11CGContext;
-@end
-
-@interface OpalSurface (DebugExtensions)
-
-- (void) dummyDraw;
-
+- (void) handleExposeRect: (NSRect)rect;
+- (BOOL) isDrawingToScreen;
 @end
