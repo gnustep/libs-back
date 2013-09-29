@@ -25,6 +25,8 @@
    Boston, MA 02110-1301, USA.
 */
 
+#import <AppKit/NSBitmapImageRep.h>
+#import <AppKit/NSGraphics.h>
 #import "opal/OpalContext.h"
 #import "opal/OpalFontInfo.h"
 #import "opal/OpalFontEnumerator.h"
@@ -35,8 +37,8 @@
 #define OGSTATE ((OpalGState *)gstate)
 
 #if BUILD_SERVER == SERVER_x11
-#  include "x11/XGServerWindow.h"
-#  include "x11/XWindowBuffer.h"
+#  import "x11/XGServerWindow.h"
+#  import "x11/XWindowBuffer.h"
 #endif
 
 @implementation OpalContext
@@ -52,21 +54,6 @@
 + (Class) GStateClass
 {
   return [OpalGState class];
-}
-
-- (void) GSSetDevice: (void *)device
-                    : (int)x
-                    : (int)y
-{
-  OpalSurface *surface;
-
-  surface = [[OpalSurface alloc] initWithDevice: device];
-
-  [OGSTATE GSSetSurface: surface
-                       : x
-                       : y];
-
-  [surface release];
 }
 
 - (BOOL) supportsDrawGState
@@ -100,6 +87,96 @@
   //[surface handleExposeRect: [surface size]];
 }
 
+/* Private backend methods */
+/**
+  This handles 'expose' event notifications that arrive from
+  X11.
+ */
++ (void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
+{
+  if ([(id)driver isKindOfClass: [OpalSurface class]])
+    {
+      [(OpalSurface *)driver handleExposeRect: rect];
+    }
+}
+
+
+#if BUILD_SERVER == SERVER_x11
+#ifdef XSHM
++ (void) _gotShmCompletion: (Drawable)d
+{
+  [XWindowBuffer _gotShmCompletion: d];
+}
+
+- (void) gotShmCompletion: (Drawable)d
+{
+  [XWindowBuffer _gotShmCompletion: d];
+}
+#endif // XSHM
+#endif // BUILD_SERVER = SERVER_x11
+
+@end 
+
+@implementation OpalContext (Ops) 
+
+- (BOOL) isCompatibleBitmap: (NSBitmapImageRep*)bitmap
+{
+  NSString *colorSpaceName;
+
+  if ([bitmap bitmapFormat] != 0)
+    {
+      return NO;
+    }
+
+  if ([bitmap isPlanar])
+    {
+      return NO;
+    }
+
+  if ([bitmap bitsPerSample] != 8)
+    {
+      return NO;
+    }
+
+  // FIXME: Allow more image types as soon as the Opal backend handles them correctly
+  colorSpaceName = [bitmap colorSpaceName];
+  if (![colorSpaceName isEqualToString: NSDeviceRGBColorSpace] &&
+      ![colorSpaceName isEqualToString: NSCalibratedRGBColorSpace])
+    {
+      return NO;
+    }
+  else
+    {
+      return YES;
+    }
+}
+
+- (void) GSCurrentDevice: (void **)device : (int *)x : (int *)y
+{
+  OpalSurface *surface;
+
+  [OGSTATE GSCurrentSurface: &surface : x : y];
+  if (device)
+    {
+      *device = [surface device];
+    }
+}
+
+- (void) GSSetDevice: (void *)device
+                    : (int)x
+                    : (int)y
+{
+  OpalSurface *surface;
+
+  surface = [[OpalSurface alloc] initWithDevice: device];
+
+  [OGSTATE GSSetSurface: surface
+                       : x
+                       : y];
+
+  [surface release];
+}
+
 - (void) DPSgsave
 {
   [OGSTATE DPSgsave];
@@ -117,7 +194,6 @@
  **/
 - (void) DPSsetgstate: (int)gstateID
 {
-
   OPGStateRef previousGState = OPContextCopyGState([OGSTATE CGContext]);
   [OGSTATE setOPGState: previousGState];
   [previousGState release]; // FIXME
@@ -132,37 +208,18 @@
     }
 }
 
-/**
-  This handles 'expose' event notifications that arrive from
-  X11.
- */
-+ (void) handleExposeRect: (NSRect)rect forDriver: (void *)driver
+- (NSInteger) GSDefineGState
 {
-  if ([(id)driver isKindOfClass: [OpalSurface class]])
-    {
-      [(OpalSurface *)driver handleExposeRect: rect];
-    }
+  // FIXME
+  return [super GSDefineGState];
 }
 
 - (void *) graphicsPort
 {
   OpalSurface * surface;
+
   [OGSTATE GSCurrentSurface: &surface : NULL : NULL];
   return [surface CGContext];
 }
-
-#if BUILD_SERVER == SERVER_x11
-#ifdef XSHM
-+ (void) _gotShmCompletion: (Drawable)d
-{
-  [XWindowBuffer _gotShmCompletion: d];
-}
-
-- (void) gotShmCompletion: (Drawable)d
-{
-  [XWindowBuffer _gotShmCompletion: d];
-}
-#endif // XSHM
-#endif // BUILD_SERVER = SERVER_x11
 
 @end
