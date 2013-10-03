@@ -186,6 +186,7 @@ typedef struct w32serverFlags
 - (void) decodeWM_SYSCOMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_COMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_THEMECHANGEDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
+- (void) decodeWM_SETCURSORParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 
 @end
 

@@ -1,3 +1,12 @@
+2013-10-03  Frank Le Grand <frank.legrand@testplant.com>
+
+    * Source/win32/WIN32Server.m 
+    * Source/win32/WIN32Server.h
+	* Source/win32/win32_general.m: Fixed processing of
+	WM_SETCURSOR: We now mark the event has handled in our
+	NSCursor stack is not empty, indicating that we're in a cursor
+	rectangle and we don't want Windows to set the cursor.
+	  
 2013-08-18  Frank Le Grand <frank.legrand@testplant.com>
 
     * Source/win32/WIN32Server.m : We're now processing the Windows
