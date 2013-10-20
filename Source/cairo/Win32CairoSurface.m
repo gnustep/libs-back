@@ -273,7 +273,7 @@
       NSInteger width = rect.size.width;
       NSInteger height = rect.size.height;
       NSBitmapImageRep *bmp;
-      cairo_surface_t *src, *dest;
+      cairo_surface_t *src, *dst;
 
       rect.origin.y = boundsForScreen.size.height - NSMaxY(rect);
       
