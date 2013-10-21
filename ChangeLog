@@ -1,9 +1,20 @@
+2013-10-21  Frank Le Grand <frank.legrand@testplant.com>
+
+    * Source/win32/WIN32Server.m 
+    * Source/win32/WIN32Server.h
+	* Source/win32/win32_general.m: Reset the cursors stack
+	  when we are on a non-client area of a window. This is 
+	  a workaround for an issue where we're not getting enough
+	  mouse move events when the mouse is moving very fast, 
+	  and therefore occasionally find ourselves stuck with a
+	  cursor set for a rectangle that we've left.
+
 2013-10-03  Frank Le Grand <frank.legrand@testplant.com>
 
     * Source/win32/WIN32Server.m 
     * Source/win32/WIN32Server.h
 	* Source/win32/win32_general.m: Fixed processing of
-	WM_SETCURSOR: We now mark the event has handled in our
+	WM_SETCURSOR: We now mark the event as handled in our
 	NSCursor stack is not empty, indicating that we're in a cursor
 	rectangle and we don't want Windows to set the cursor.
 	  

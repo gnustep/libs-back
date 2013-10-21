@@ -36,6 +36,7 @@
 @interface NSCursor (NSCursor_w32_General)
 
 + (NSMutableArray *) stack;
++ (void) resetStack;
 
 @end
 
@@ -159,6 +160,11 @@
 	  // e.g. to show the resizing cursors around a windows.
 	  flags._eventHandled = YES;
 	}
+}
+
+- (void) decodeWM_NCMOUSELEAVEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
+{
+  [NSCursor resetStack];
 }
 
 @end 

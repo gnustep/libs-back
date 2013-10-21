@@ -1508,12 +1508,27 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 - (LRESULT) windowEventProc: (HWND)hwnd : (UINT)uMsg
 		       : (WPARAM)wParam : (LPARAM)lParam
 {
+  //NSLog(@"Win32 Event: %x", uMsg);
   NSEvent *ev = nil;
 
   [self setFlagsforEventLoop: hwnd];
  
   switch (uMsg)
     {
+	case WM_MOUSELEAVE:
+	case WM_NCMOUSELEAVE:
+    case WM_NCMOUSEMOVE:
+	  // We have an issue where we're not getting enough
+	  // mouse move events when the mouse is moving very
+	  // fast, and therefore occasionally found ourselves
+	  // with a cursor set for a rectangle that we've left.
+	  // To get around that, we reset the cursor stack when
+	  // we hit the non-client area. It is not a good
+	  // permanent solution, but solves most of our issues
+	  // for now.
+      [self decodeWM_NCMOUSELEAVEParams: wParam : lParam : hwnd]; 
+      break;
+		
       case WM_SIZING:
         return [self decodeWM_SIZINGParams: hwnd : wParam : lParam];
         break;
@@ -1661,12 +1676,12 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       case WM_NULL: 
         break; 
 	
-      case WM_NCHITTEST: //MOUSE
-        NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCHITTEST", hwnd);
-        break;
-      case WM_NCMOUSEMOVE: //MOUSE
-        NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCMOUSEMOVE", hwnd);
-        break;
+//      case WM_NCHITTEST: //MOUSE
+//        NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCHITTEST", hwnd);
+//        break;
+//      case WM_NCMOUSEMOVE: //MOUSE
+//        NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCMOUSEMOVE", hwnd);
+//        break;
       case WM_NCLBUTTONDOWN:  //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCLBUTTONDOWN", hwnd);
         break;
