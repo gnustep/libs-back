@@ -69,13 +69,35 @@
 
 - (NSString *) displayName
 {
-	char	*fcstyle;
+  char *fcname;
 
-	if (FcPatternGetString(_pattern, FC_STYLE, 0, (FcChar8 **)&fcstyle) == FcResultMatch) {
-		return [NSString stringWithFormat: @"%@ %@", _familyName, 
-				[NSString stringWithUTF8String: fcstyle]];
-	}
-	return _familyName;
+#ifdef FC_POSTSCRIPT_NAME
+  char  *fcpsname;
+#endif
+
+  /*
+    If fullname && fullname != psname, use fullname as displayname.
+    This works around some weird Adobe OpenType fonts which contain their
+    PostScript name in their "human-readable name" field.
+
+    So, set the fullname as displayName (now AKA VisibleName) only
+    if it's not the same as whatever the postscript name is.
+  */
+  if (FcPatternGetString(_pattern, FC_FULLNAME, 0, (FcChar8 **)&fcname) == FcResultMatch
+#ifdef FC_POSTSCRIPT_NAME
+      && FcPatternGetString(_pattern, FC_POSTSCRIPT_NAME, 0, (FcChar8 **)&fcpsname) == FcResultMatch
+      && strcmp (fcpsname, fcname)
+#endif
+     )
+    {
+      return [NSString stringWithUTF8String: fcname];
+    }
+  else if (FcPatternGetString(_pattern, FC_STYLE, 0, (FcChar8 **)&fcname) == FcResultMatch)
+    {
+      return [NSString stringWithFormat: @"%@ %@", _familyName,
+              [NSString stringWithUTF8String: fcname]];
+    }
+  return _familyName;
 }
 
 - (int) weight
