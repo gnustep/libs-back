@@ -53,6 +53,51 @@
 #define FC_WEIGHT_ULTRABLACK FC_WEIGHT_BLACK
 #endif
 
+static NSComparisonResult
+sortFontFacesArray(id fontArr1, id fontArr2, void *context)
+{
+  /*
+    Order of array:
+      0: Font name
+      1: Font style
+      2: Font weight
+      3: Font traits
+  */
+  NSString *style1 = [fontArr1 objectAtIndex: 1];
+  NSString *style2 = [fontArr2 objectAtIndex: 1];
+  int weight1 = [[fontArr1 objectAtIndex: 2] intValue];
+  int weight2 = [[fontArr2 objectAtIndex: 2] intValue];
+  unsigned int traits1 = [[fontArr1 objectAtIndex: 3] unsignedIntValue];
+  unsigned int traits2 = [[fontArr2 objectAtIndex: 3] unsignedIntValue];
+
+  // order first by weight
+  if (weight1 > weight2)
+    return NSOrderedDescending;
+  if (weight1 < weight2)
+    return NSOrderedAscending;
+  if (traits1 < traits2)
+    return NSOrderedAscending;
+  if (traits1 > traits2)
+    return NSOrderedDescending;
+
+  // Special case: "Regular" sorts before non-Regular, for many reasons.
+  if ([style1 isEqualToString: @"Regular"] && ![style2 isEqualToString: @"Regular"])
+    return NSOrderedAscending;
+  if ([style2 isEqualToString: @"Regular"] && ![style1 isEqualToString: @"Regular"])
+    return NSOrderedDescending;
+  if ([style1 isEqualToString: @"Normal"] && ![style2 isEqualToString: @"Normal"])
+    return NSOrderedAscending;
+  if ([style2 isEqualToString: @"Normal"] && ![style1 isEqualToString: @"Normal"])
+    return NSOrderedDescending;
+  if ([style1 isEqualToString: @"Roman"] && ![style2 isEqualToString: @"Roman"])
+    return NSOrderedAscending;
+  if ([style2 isEqualToString: @"Roman"] && ![style1 isEqualToString: @"Roman"])
+    return NSOrderedDescending;
+
+  // Otherwise, alphabetize
+  return [style1 compare: style2];
+}
+
 @implementation FCFontEnumerator 
 
 NSMutableDictionary * __allFonts;
@@ -307,6 +352,17 @@ static NSArray *faFromFc(FcPattern *pat)
   allFontNames = fcxft_allFontNames;
   allFontFamilies = fcxft_allFontFamilies;
   __allFonts = fcxft_allFonts;
+
+  // Sort font families
+  {
+	NSComparisonResult (*fontSort) (id, id, void *) = sortFontFacesArray;
+    NSEnumerator *e = [allFontFamilies keyEnumerator];
+    id key;
+	while ((key = [e nextObject]))
+	  {
+		[[allFontFamilies objectForKey: key] sortUsingFunction:fontSort context:NULL];
+	  }
+  }
 }
 
 - (NSString *) defaultSystemFontName
