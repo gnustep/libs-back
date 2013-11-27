@@ -80,12 +80,15 @@ static NSArray *faFromFc(FcPattern *pat)
 {
   int weight, slant, spacing, width, nsweight;
   unsigned int nstraits = 0;
-  char *family, *fcstyle;
-  NSMutableString *name, *style;
+  char *fcfamily, *fcstyle;
+  NSMutableString *name, *family, *style;
+#ifdef FC_POSTSCRIPT_NAME
+  char *fcname;
+#endif
 
   if (FcPatternGetInteger(pat, FC_WEIGHT, 0, &weight) != FcResultMatch
     || FcPatternGetInteger(pat, FC_SLANT,  0, &slant) != FcResultMatch
-    || FcPatternGetString(pat, FC_FAMILY, 0, (FcChar8 **)&family)
+    || FcPatternGetString(pat, FC_FAMILY, 0, (FcChar8 **)&fcfamily)
       != FcResultMatch)
     return nil;
 
@@ -94,8 +97,13 @@ static NSArray *faFromFc(FcPattern *pat)
       nstraits |= NSFixedPitchFontMask;
 
   name = [NSMutableString stringWithCapacity: 100];
+#ifdef FC_POSTSCRIPT_NAME
+  if (FcPatternGetString(pat, FC_POSTSCRIPT_NAME,  0, (FcChar8 **)&fcname) == FcResultMatch)
+    [name appendString: [NSMutableString stringWithUTF8String: fcname]];
+#endif
+
+  family = [NSMutableString stringWithUTF8String: fcfamily];
   style = [NSMutableString stringWithCapacity: 100];
-  [name appendString: [NSString stringWithUTF8String: family]];
 
   switch (weight) 
     {
@@ -205,12 +213,18 @@ static NSArray *faFromFc(FcPattern *pat)
         break;
     }
 
-  if ([style length] > 0)
+  if (![name length])	// no psname
     {
-      [name appendString: @"-"];
-      [name appendString: style];
+      NSDebugLLog(@"NSFont", @"Warning: synthesizing PSName for '%@ %@'", family, style);
+      [name appendString: family];
+      if ([style length] > 0)
+        {
+          [name appendString: @"-"];
+          [name appendString: style];
+        }
     }
-  else
+
+  if (![style length])
     {
       [style setString: @"Regular"];
     }
@@ -236,6 +250,9 @@ static NSArray *faFromFc(FcPattern *pat)
 
   FcPattern *pat = FcPatternCreate();
   FcObjectSet *os = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FULLNAME,
+#ifdef FC_POSTSCRIPT_NAME
+                                     FC_POSTSCRIPT_NAME,
+#endif
                                      FC_SLANT, FC_WEIGHT, FC_WIDTH,
                                      FC_SPACING, NULL);
   FcFontSet *fs = FcFontList(NULL, pat, os);
@@ -261,23 +278,27 @@ static NSArray *faFromFc(FcPattern *pat)
 
               familyString = [NSString stringWithUTF8String: family];
               familyArray = [fcxft_allFontFamilies objectForKey: familyString];
+
               if (familyArray == nil)
                 {
                   NSDebugLLog(@"NSFont", @"Found font family %@", familyString);
-                  familyArray = [[NSMutableArray alloc] init];
+                  familyArray = [NSMutableArray array];
                   [fcxft_allFontFamilies setObject: familyArray
                                          forKey: familyString];
-                  RELEASE(familyArray);
                 }
-              NSDebugLLog(@"NSFont", @"fc enumerator: adding font: %@", name);
-              [familyArray addObject: fontArray];
-              [fcxft_allFontNames addObject: name];
-              aFont = [[faceInfoClass alloc] initWithfamilyName: familyString
-                                             weight: [[fontArray objectAtIndex: 2] intValue]
-                                             traits: [[fontArray objectAtIndex: 3] unsignedIntValue]
-                                             pattern: fs->fonts[i]];
-              [fcxft_allFonts setObject: aFont forKey: name];
-              RELEASE(aFont);
+
+              if (![fcxft_allFontNames containsObject: name])
+                {
+                  NSDebugLLog(@"NSFont", @"fc enumerator: adding font: %@", name);
+                  [familyArray addObject: fontArray];
+                  [fcxft_allFontNames addObject: name];
+                  aFont = [[faceInfoClass alloc] initWithfamilyName: familyString
+                              weight: [[fontArray objectAtIndex: 2] intValue]
+                              traits: [[fontArray objectAtIndex: 3] unsignedIntValue]
+                             pattern: fs->fonts[i]];
+                  [fcxft_allFonts setObject: aFont forKey: name];
+                  RELEASE(aFont);
+                }
             }
         }
     }
@@ -290,21 +311,13 @@ static NSArray *faFromFc(FcPattern *pat)
 
 - (NSString *) defaultSystemFontName
 {
-  if ([allFontNames containsObject: @"DejaVu Sans-Book"])
+  if ([allFontNames containsObject: @"DejaVuSans"])
     {
-      return @"DejaVu Sans-Book";
+      return @"DejaVuSans";
     }
-  if ([allFontNames containsObject: @"DejaVu Sans"])
+  if ([allFontNames containsObject: @"BitstreamVeraSans-Roman"])
     {
-      return @"DejaVu Sans";
-    }
-  if ([allFontNames containsObject: @"Bitstream Vera Sans-Roman"])
-    {
-      return @"Bitstream Vera Sans-Roman";
-    }
-  if ([allFontNames containsObject: @"Bitstream Vera Sans"])
-    {
-      return @"Bitstream Vera Sans";
+      return @"BitstreamVeraSans-Roman";
     }
   if ([allFontNames containsObject: @"FreeSans"])
     {
@@ -314,22 +327,22 @@ static NSArray *faFromFc(FcPattern *pat)
     {
       return @"Tahoma";
     }
-  if ([allFontNames containsObject: @"Arial"])
+  if ([allFontNames containsObject: @"ArialMT"])
     {
-      return @"Arial";
+      return @"ArialMT";
     }
   return @"Helvetica";
 }
 
 - (NSString *) defaultBoldSystemFontName
 {
-  if ([allFontNames containsObject: @"DejaVu Sans-Bold"])
+  if ([allFontNames containsObject: @"DejaVuSans-Bold"])
     {
-      return @"DejaVu Sans-Bold";
+      return @"DejaVuSans-Bold";
     }
-  if ([allFontNames containsObject: @"Bitstream Vera Sans-Bold"])
+  if ([allFontNames containsObject: @"BitstreamVeraSans-Bold"])
     {
-      return @"Bitstream Vera Sans-Bold";
+      return @"BitstreamVeraSans-Bold";
     }
   if ([allFontNames containsObject: @"FreeSans-Bold"])
     {
@@ -339,20 +352,20 @@ static NSArray *faFromFc(FcPattern *pat)
     {
       return @"Tahoma-Bold";
     }
-  if ([allFontNames containsObject: @"Arial-Bold"])
+  if ([allFontNames containsObject: @"Arial-BoldMT"])
     {
-      return @"Arial-Bold";
+      return @"Arial-BoldMT";
     }
   return @"Helvetica-Bold";
 }
 
 - (NSString *) defaultFixedPitchFontName
 {
-  if ([allFontNames containsObject: @"DejaVu Sans Mono"])
+  if ([allFontNames containsObject: @"DejaVuSansMono"])
     {
-      return @"DejaVu Sans Mono";
+      return @"DejaVuSansMono";
     }
-  if ([allFontNames containsObject: @"Bitstream Vera Sans Mono"])
+  if ([allFontNames containsObject: @"BitstreamVeraSansMono-Roman"])
     {
       return @"Bitstream Vera Sans Mono";
     }
@@ -360,9 +373,9 @@ static NSArray *faFromFc(FcPattern *pat)
     {
       return @"FreeMono";
     }
-  if ([allFontNames containsObject: @"Courier New"])
+  if ([allFontNames containsObject: @"CourierNewPSMT"])
     {
-      return @"Courier New";
+      return @"CourierNewPSMT";
     }
   return @"Courier";
 }
@@ -432,13 +445,15 @@ static NSArray *faFromFc(FcPattern *pat)
 
 - (void)addName: (NSString*)name
 {
+#ifdef FC_POSTSCRIPT_NAME
+  FcPatternAddString(_pat, FC_POSTSCRIPT_NAME, (const FcChar8 *)[name UTF8String]);
+#else
   // FIXME: Fontconfig ignores PostScript names of fonts; we need
   // https://bugs.freedesktop.org/show_bug.cgi?id=18095 fixed.
   
   // This is a heuristic to try to 'parse' a PostScript font name,
   // however, since they are just unique identifiers for fonts and
   // don't need to follow any naming convention, this may fail
-
   NSRange dash = [name rangeOfString: @"-"];
   if (dash.location == NSNotFound)
     {
@@ -490,6 +505,7 @@ static NSArray *faFromFc(FcPattern *pat)
 	  FcPatternAddInteger(_pat, FC_WIDTH, FC_WIDTH_EXPANDED);
 	}
     }
+#endif
 }
 
 - (void)addVisibleName: (NSString*)name
