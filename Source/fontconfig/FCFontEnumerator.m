@@ -619,7 +619,7 @@ static NSArray *faFromFc(FcPattern *pat)
 	}
       if (symTraits & NSFontVerticalTrait)
 	{
-	  // FIXME: What is this supposed to mean?
+	  // Fontconfig can't express this (it means sideways letters)
 	}
       if (symTraits & NSFontUIOptimizedTrait)
 	{
@@ -835,20 +835,27 @@ static NSArray *faFromFc(FcPattern *pat)
 
 - (NSString*)readNameFromPattern: (FcPattern*)pat
 {
-  // FIXME: Hack which generates a PostScript-style name from the
-  // family name and style
-
+#ifdef FC_POSTSCRIPT_NAME
+  NSString *name = [self readFontconfigString: FC_POSTSCRIPT_NAME fromPattern: pat];
+#endif
   NSString *family = [self readFontconfigString: FC_FAMILY fromPattern: pat];
   NSString *style = [self readFontconfigString: FC_STYLE fromPattern: pat];
-  if (style)
-    {
-      return [NSString stringWithFormat: @"%@-%@", family, style];
-    }
+
+#ifdef FC_POSTSCRIPT_NAME
+  if (name)
+    return name;
   else
-    {
-      return family;
-    }
+#endif
+    if (style)
+      {
+        return [NSString stringWithFormat: @"%@-%@", family, style];
+      }
+    else
+      {
+        return family;
+      }
 }
+
 - (NSString*)readVisibleNameFromPattern: (FcPattern*)pat
 {
   // FIXME: try to get the localized one
