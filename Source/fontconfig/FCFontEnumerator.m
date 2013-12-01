@@ -496,7 +496,6 @@ static NSArray *faFromFc(FcPattern *pat)
 @end
 
 
-
 @implementation FontconfigPatternGenerator
 
 - (void)addName: (NSString*)name
@@ -880,7 +879,7 @@ static NSArray *faFromFc(FcPattern *pat)
   int value;
   if (FcResultMatch == FcPatternGetInteger(pat, FC_SLANT, 0, &value))
     {
-      if (value == FC_SLANT_ITALIC)
+      if (value > FC_SLANT_ROMAN)
 	{
 	  symTraits |= NSFontItalicTrait;
 	}
