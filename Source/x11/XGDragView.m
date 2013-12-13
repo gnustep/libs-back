@@ -367,8 +367,12 @@ static	XGDragView	*sharedDragView = nil;
                                                  ignoring: ident
 						   underX: x
 							Y: y];
-          if (result != (Window)-1)
-            break;
+          // With window decoration there may be multiple windows
+          // at the same place. Try all of them.
+          if ((result != (Window)-1) && (result != (Window) None))
+            {
+              break;
+            }
         }
     }
 
