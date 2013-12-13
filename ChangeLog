@@ -1,3 +1,9 @@
+2013-12-13  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/xpbs.m (-xProvideSelection:): Leave enough space for all
+	possible types.
+	* Source/x11/XGDragView.m: Simplify D&D window detection code.
+
 2013-09-29  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/opal/OpalSurface.h

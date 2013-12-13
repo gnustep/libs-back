@@ -1156,7 +1156,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
   if (xEvent->target == XG_TARGETS)
     {
       unsigned	numTypes = 0;
-      Atom	xTypes[10];
+      // ATTENTION: Increase this array when adding more types
+      Atom	xTypes[16];
       
       /*
        * The requestor wants a list of the types we can supply it with.
