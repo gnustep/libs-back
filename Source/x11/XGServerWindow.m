@@ -1826,26 +1826,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
    only done if the Window is buffered or retained. */
 - (void) _createBuffer: (gswindow_device_t *)window
 {
-#if (BUILD_GRAPHICS == GRAPHICS_cairo)
-  /* The window->gdriverProtocol flag does not work as intended;
-     it doesn't get set until after _createBuffer is called,
-     so it's not a relaible way to tell whether we need to create
-     a backing pixmap here.
-
-     This method was causing a serious leak with the default
-     Cairo XGCairoModernSurface because we were erroneously
-     creating a pixmap, and then not releasing it in -termwindow:
-     because the GDriverHandlesBacking flag was set in between.
-
-     So this #if servers as a foolproof way of ensuring we
-     don't ever create window->buffer in the default configuration.
-   */
-  return;
-#else
-  if (window->type == NSBackingStoreNonretained
-      || (window->gdriverProtocol & GDriverHandlesBacking))
-    return;
-
   if (window->depth == 0)
     window->depth = DefaultDepth(dpy, window->screen);
   if (NSWidth(window->xframe) == 0 && NSHeight(window->xframe) == 0)
@@ -1871,7 +1851,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 		 0, 0, 
 		 NSWidth(window->xframe),
 		 NSHeight(window->xframe));
-#endif
 }
 
 /*
@@ -2344,10 +2323,9 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       NSMapRemove(windowmaps, (void*)window->ident);
     }
 
-  if (window->buffer && (window->gdriverProtocol & GDriverHandlesBacking) == 0)
+  if (window->buffer)
     XFreePixmap (dpy, window->buffer);
-  if (window->alpha_buffer 
-      && (window->gdriverProtocol & GDriverHandlesBacking) == 0)
+  if (window->alpha_buffer)
     XFreePixmap (dpy, window->alpha_buffer);
   if (window->region)
     XDestroyRegion (window->region);
@@ -2566,9 +2544,9 @@ NSLog(@"styleoffsets ... guessing offsets\n");
 
   NSDebugLLog(@"XGTrace", @"DPSwindowbacking: %d : %d", (int)type, win);
 
+  window->type = type;
   if ((window->gdriverProtocol & GDriverHandlesBacking))
     {
-      window->type = type;
       return;
     }
 
@@ -2577,8 +2555,10 @@ NSLog(@"styleoffsets ... guessing offsets\n");
       XFreePixmap (dpy, window->buffer);
       window->buffer = 0;
     }
-  window->type = type;
-  [self _createBuffer: window];
+  else if (window->buffer == 0)
+    {
+      [self _createBuffer: window];
+    }
 }
 
 - (void) titlewindow: (NSString *)window_title : (int) win
@@ -2779,10 +2759,26 @@ NSLog(@"styleoffsets ... guessing offsets\n");
   window->buffer_width = width;
   window->buffer_height = height;
 
-  if (window->buffer == 0)
+#if (BUILD_GRAPHICS == GRAPHICS_xlib)
+  /* The window->gdriverProtocol flag does not work as intended;
+     it doesn't get set until after _createBuffer is called,
+     so it's not a relaible way to tell whether we need to create
+     a backing pixmap here.
+
+     This method was causing a serious leak with the default
+     Cairo XGCairoModernSurface because we were erroneously
+     creating a pixmap, and then not releasing it in -termwindow:
+     because the GDriverHandlesBacking flag was set in between.
+
+     So this #if servers as a foolproof way of ensuring we
+     don't ever create window->buffer in the default configuration.
+   */
+  if ((window->buffer == 0) && (window->type != NSBackingStoreNonretained) &&
+      ((window->gdriverProtocol & GDriverHandlesBacking) == 0))
     {
       [self _createBuffer: window];
     }
+#endif
 
   [self styleoffsets: &l : &r : &t : &b
 		    : window->win_attrs.window_style : window->ident];
