@@ -1826,6 +1826,22 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
    only done if the Window is buffered or retained. */
 - (void) _createBuffer: (gswindow_device_t *)window
 {
+#if (BUILD_GRAPHICS == GRAPHICS_cairo)
+  /* The window->gdriverProtocol flag does not work as intended;
+     it doesn't get set until after _createBuffer is called,
+     so it's not a relaible way to tell whether we need to create
+     a backing pixmap here.
+
+     This method was causing a serious leak with the default
+     Cairo XGCairoModernSurface because we were erroneously
+     creating a pixmap, and then not releasing it in -termwindow:
+     because the GDriverHandlesBacking flag was set in between.
+
+     So this #if servers as a foolproof way of ensuring we
+     don't ever create window->buffer in the default configuration.
+   */
+  return;
+#else
   if (window->type == NSBackingStoreNonretained
       || (window->gdriverProtocol & GDriverHandlesBacking))
     return;
@@ -1855,6 +1871,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 		 0, 0, 
 		 NSWidth(window->xframe),
 		 NSHeight(window->xframe));
+#endif
 }
 
 /*
