@@ -7,13 +7,19 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.24.0}
+
+Added experimental Opal backend.
+
+Allow for ARGB visual for OpenGL.
+
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.23.0}
 
 Added cairo support for ms-windows.
 
 Updated for NSInteger/CGFloat support
-
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.22.0}
 
