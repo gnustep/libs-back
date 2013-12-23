@@ -1,3 +1,8 @@
+2013-12-23  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoFaceInfo.m (-fontFace): Warn about the usage
+	of non-scalable fonts.
+
 2013-12-18  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-_createBuffer, -windowbacking::,

@@ -47,8 +47,13 @@
   if (!_fontFace)
     {
       FcPattern *resolved;
+      FcBool scalable;
 
       resolved = [self matchedPattern];
+      FcPatternGetBool(resolved, FC_SCALABLE, 0, &scalable);
+      if (scalable != FcTrue) {
+        NSLog(@"Selected non-scalable font.");
+      }
 
       _fontFace = cairo_ft_font_face_create_for_pattern(resolved);
       FcPatternDestroy(resolved);
