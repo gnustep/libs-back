@@ -1,5 +1,9 @@
 2013-12-23  Fred Kiefer <FredKiefer@gmx.de>
 
+        * Update release notes to prepare for upcoming release.
+
+2013-12-23  Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/cairo/CairoFaceInfo.m (-fontFace): Warn about the usage
 	of non-scalable fonts.
 
