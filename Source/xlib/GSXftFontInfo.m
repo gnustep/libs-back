@@ -730,7 +730,6 @@ static FT_Outline_Funcs bezierpath_funcs = {
 {
   Display *xdpy = [XGServer currentXDisplay];
   int defaultScreen = DefaultScreen(xdpy);
-  NSString *weightString = nil;
 
 #ifdef HAVE_FC
   FcFont *realFont = [allFonts objectForKey: fontName];
@@ -775,28 +774,22 @@ static FT_Outline_Funcs bezierpath_funcs = {
         {
         case FC_WEIGHT_LIGHT:
             weight = 3;
-            weightString = @"light";
             break;
         case FC_WEIGHT_MEDIUM:
             weight = 6;
-            weightString = @"medium";
             break;
         case FC_WEIGHT_DEMIBOLD:
             weight = 7;
-            weightString = @"demibold";
             break;
         case FC_WEIGHT_BOLD:
             weight = 9;
-            weightString = @"bold";
             break;
         case FC_WEIGHT_BLACK:
             weight = 12;
-            weightString = @"black";
             break;
 	default:
           // Don't know
           weight = 6;
-          weightString = @"medium";
 	}
     }
 
@@ -875,23 +868,18 @@ static FT_Outline_Funcs bezierpath_funcs = {
         {
         case 0:
           weight = 3;
-          weightString = @"light";
           break;
         case 100:
           weight = 6;
-          weightString = @"medium";
           break;
         case 180:
           weight = 7;
-          weightString = @"demibold";
           break;
         case 200:
           weight = 9;
-          weightString = @"bold";
           break;
         case 210:
           weight = 12;
-          weightString = @"black";
           break;
         default:
           // Don't know
