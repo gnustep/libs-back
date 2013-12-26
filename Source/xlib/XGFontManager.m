@@ -49,6 +49,11 @@
 
 #define stringify_it(X) #X
 
+@interface NSBundle (Private)
+// Maybe we should rather use -pathForAuxiliaryExecutable:?
++ (NSString *) _absolutePathOfExecutable: (NSString *)path;
+@end
+
 static NSMutableDictionary* creationDictionary;
 
 // Fills in the size into an creation string to make it an X font name
