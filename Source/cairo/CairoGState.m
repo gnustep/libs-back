@@ -401,18 +401,11 @@ static inline CGFloat floatToUserSpace(NSAffineTransform *ctm, double d)
 
 - (void) GSSetFont: (GSFontInfo *)fontref
 {
-  cairo_matrix_t font_matrix;
-  const CGFloat *matrix; 
-
   [super GSSetFont: fontref];
 
   if (_ct)
     {
-      matrix = [font matrix];
-      cairo_set_font_face(_ct, [((CairoFontInfo *)font)->_faceInfo fontFace]);
-      cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
-			matrix[3], matrix[4], matrix[5]);
-      cairo_set_font_matrix(_ct, &font_matrix);
+      cairo_set_scaled_font(_ct, ((CairoFontInfo *)font)->_scaled);
     }
 }
 
