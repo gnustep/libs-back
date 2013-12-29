@@ -348,7 +348,8 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
 
   // Set font options from the scaled font
   // FIXME: Instead of setting the matrix, setting the face, and setting
-  // the options, we should be using cairo_set_scaled_font
+  // the options, we should be using cairo_set_scaled_font().
+  // But we have to deal with the flipped matrix here.
   {
     cairo_font_options_t *options = cairo_font_options_create();
     cairo_scaled_font_get_font_options(_scaled, options);
@@ -413,7 +414,6 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
              length: (int)length 
                  on: (cairo_t*)ct
 {
-  cairo_matrix_t font_matrix;
   unichar ustr[length+1];
   char str[3*length+1];
   unsigned char *b;
@@ -435,36 +435,10 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
       return;
     }
 
-  cairo_matrix_init(&font_matrix, matrix[0], matrix[1], -matrix[2],
-                    matrix[3], matrix[4], matrix[5]);
-  cairo_set_font_matrix(ct, &font_matrix);
+  cairo_set_scaled_font(ct, _scaled);
   if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
     {
-      NSLog(@"Error while setting font matrix: %s", 
-            cairo_status_to_string(cairo_status(ct)));
-      return;
-    }
-
-  cairo_set_font_face(ct, [_faceInfo fontFace]);
-  if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
-    {
-      NSLog(@"Error while setting font face: %s", 
-            cairo_status_to_string(cairo_status(ct)));
-      return;
-    }
-
-  // Set font options from the scaled font
-  // FIXME: Instead of setting the matrix, setting the face, and setting
-  // the options, we should be using cairo_set_scaled_font
-  {
-    cairo_font_options_t *options = cairo_font_options_create();
-    cairo_scaled_font_get_font_options(_scaled, options);
-    cairo_set_font_options(ct, options);
-    cairo_font_options_destroy(options);
-  }
-  if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
-    {
-      NSLog(@"Error while setting font options: %s", 
+      NSLog(@"Error while setting scaled font: %s", 
             cairo_status_to_string(cairo_status(ct)));
       return;
     }
