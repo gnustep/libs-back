@@ -1,3 +1,7 @@
+2014-01-01 Niels Grewe <niels.grewe@halbordnung.de>
+        * Source/x11/XGServerWindow.m: Implement method to get
+	the XWindow ID of the a window from its window number.
+
 2013-12-29  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-GSSetFont:),

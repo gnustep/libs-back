@@ -2291,6 +2291,17 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   return window->number;
 }
 
+- (void*)backendIdentifierForWindow: (int)win
+{
+  gswindow_device_t *window;
+  window = WINDOW_WITH_TAG(win);
+  if (!window)
+    {
+      return NULL;
+    }   
+  return (void*)(intptr_t)window->ident;
+}
+
 - (void) termwindow: (int)win
 {
   gswindow_device_t *window;
