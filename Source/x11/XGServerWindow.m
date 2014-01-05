@@ -1102,8 +1102,9 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
                   parent = new_parent;
                   repx = wattr.x;
                   repy = wattr.y;
-                  NSLog(@"QueryTree window is %lu (root %lu cwin root %lu)", 
-                        parent, root, window->root);
+                  NSDebugLLog(@"Offset", 
+                              @"QueryTree window is %lu (root %lu cwin root %lu)", 
+                              parent, root, window->root);
                   if (!XQueryTree(dpy, parent, &root, &new_parent, 
                                   &children, &nchildren))
                     {

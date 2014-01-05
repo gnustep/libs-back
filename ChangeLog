@@ -1,4 +1,9 @@
+2013-01-05  Fred Kiefer <FredKiefer@gmx.de>
+
+        * Source/x11/XGServerWindow.m(-_checkStyle:): Change NSLog into NSDebugLLog.
+
 2014-01-01 Niels Grewe <niels.grewe@halbordnung.de>
+
         * Source/x11/XGServerWindow.m: Implement method to get
 	the XWindow ID of the a window from its window number.
 
