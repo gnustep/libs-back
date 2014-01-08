@@ -173,7 +173,6 @@ if test $set_x_paths = yes; then
   if test $have_xshape = yes; then
   AC_CHECK_LIB(Xext, XShapeCombineMask,
     [
-      LIBS="-lXext $LIBS"
       AC_DEFINE(HAVE_XSHAPE, 1, [Define to enable Xshape support])
     ]
     ,)

@@ -1,3 +1,8 @@
+2013-01-08  Fred Kiefer <FredKiefer@gmx.de>
+
+	* configure: Remove duplicate addition of Xext.
+	* configure.ac: Regenerate.
+
 2013-01-05 Niels Grewe <niels.grewe@halbordnung.de>
 
 	* Source/x11/XGServerWindow.m: Remove redundant method.
