@@ -318,7 +318,7 @@ static void MPRE(run_opaque) (render_run_t *ri, int num)
 
   COPY_ASSEMBLE_PIXEL(v, ri->r, ri->g, ri->b)
   v = v + (v << 16);
-  if (((int)dst&2) && num)
+  if (((NSUInteger)dst&2) && num)
     {
       *dst++ = v;
       num--;
