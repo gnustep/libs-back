@@ -606,9 +606,9 @@ seem to cause edges to be off by a pixel
 
 
 - (void)DPSimage: (NSAffineTransform *) matrix
-                : (int) pixelsWide : (int) pixelsHigh
-                : (int) bitsPerSample : (int) samplesPerPixel 
-                : (int) bitsPerPixel : (int) bytesPerRow : (BOOL) isPlanar
+                : (NSInteger) pixelsWide : (NSInteger) pixelsHigh
+                : (NSInteger) bitsPerSample : (NSInteger) samplesPerPixel 
+                : (NSInteger) bitsPerPixel : (NSInteger) bytesPerRow : (BOOL) isPlanar
                 : (BOOL) hasAlpha : (NSString *) colorSpaceName
                 : (const unsigned char *const [5]) data
 {

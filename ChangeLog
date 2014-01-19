@@ -1,3 +1,9 @@
+2013-01-19  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/blit.m(MPRE): Remove compiler warning.
+	* Source/art/image.m(-DPSimage:::::::::::): Correct parameter
+	types. Fixes bug #41274.
+
 2013-01-08  Fred Kiefer <FredKiefer@gmx.de>
 
 	* configure: Remove duplicate addition of Xext.
