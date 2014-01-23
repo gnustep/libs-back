@@ -416,8 +416,9 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       infoFrame.origin.y                = mainRect.bottom - infoRect.bottom;
       [infoMon setFrame:infoFrame];
     }
-  
-  NSLog(@"screen %ld - hMon: %ld hdc: %p frame:top:%ld left:%ld right:%ld bottom:%ld  frame:x:%f y:%f w:%f h:%f\n",
+
+
+  NSDebugLog(@"screen %ld - hMon: %ld hdc: %p frame:top:%ld left:%ld right:%ld bottom:%ld  frame:x:%f y:%f w:%f h:%f\n",
         [monitors count], (long)hMonitor, hdcMonitor,
         lprcMonitor->top, lprcMonitor->left,
         lprcMonitor->right, lprcMonitor->bottom,
