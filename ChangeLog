@@ -1,3 +1,9 @@
+2013-01-27  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m (LoadDisplayMonitorInfo):
+	Switch monitor logging to Debug level.
+	Patch by Jonathan Gillaspie <jonathan.gillaspie@testplant.com>
+
 2013-01-19  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/art/blit.m(MPRE): Remove compiler warning.

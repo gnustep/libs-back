@@ -143,7 +143,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   NSMutableArray        *monitors = (NSMutableArray*)dwData;
   W32DisplayMonitorInfo *info = [[W32DisplayMonitorInfo alloc] initWithHMonitor:hMonitor rect:lprcMonitor];
   
-  NSLog(@"screen %ld:hdc: %ld frame:top:%ld left:%ld right:%ld bottom:%ld  frame:x:%f y:%f w:%f h:%f\n",
+  NSDebugLog(@"screen %ld:hdc: %ld frame:top:%ld left:%ld right:%ld bottom:%ld  frame:x:%f y:%f w:%f h:%f\n",
         [monitors count], (long)hMonitor,
         lprcMonitor->top, lprcMonitor->left,
         lprcMonitor->right, lprcMonitor->bottom,
