@@ -44,7 +44,7 @@
   if (self)
     {
       // Save/set initial state...
-  gsDevice = device;
+      gsDevice = device;
       _surface = NULL;
   
       WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(device, GWL_USERDATA);
@@ -57,7 +57,7 @@
           // And deallocate ourselves...
           DESTROY(self);
         }
-  else
+      else
         {
           // Create the cairo surfaces...
           // NSBackingStoreRetained works like Buffered since 10.5 (See apple docs)...
@@ -74,7 +74,7 @@
 
               // Check for error...
               if (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS)
-            {
+                {
                   // Output the surface create error...
                   cairo_status_t status = cairo_surface_status(_surface);
                   NSWarnMLog(@"surface create FAILED - status: %s\n", cairo_status_to_string(status));
@@ -87,7 +87,7 @@
                   
                   // Release the device context...
                   ReleaseDC(device, hDC);
-            }
+                }
             }
           else
 #endif
@@ -99,14 +99,14 @@
               
               // Check for error...
               if (cairo_surface_status(window) != CAIRO_STATUS_SUCCESS)
-            {
+                {
                   // Output the surface create error...
                   cairo_status_t status = cairo_surface_status(window);
                   NSWarnMLog(@"surface create FAILED - status: %s\n",  cairo_status_to_string(status));
                   
                   // And deallocate ourselves...
-              DESTROY(self);
-            }
+                  DESTROY(self);
+                }
               else
                 {
                   // and this is the in-memory DC surface...surface owns its DC...
@@ -170,7 +170,7 @@
   [description appendFormat: @" size: %@",NSStringFromSize([self size])];
   [description appendFormat: @" _surface: %p",_surface];
   [description appendFormat: @" surfDC: %p",shdc];
-  return AUTORELEASE(description);
+  return [NSString stringWithString:description];
 }
 
 - (NSSize) size
