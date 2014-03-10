@@ -2989,32 +2989,79 @@ mask_for_keystate(BYTE *keyState)
   if (keyState[VK_CAPITAL] & 128)
     eventFlags |= NSShiftKeyMask;
 
-  if (keyState[VK_MENU] & 128)
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"USE_ALTGR_FIX"])
     {
-      if([@"Alt_R" isEqualToString: firstControl] ||
-	 [@"Alt_R" isEqualToString: secondControl])
-	eventFlags |= NSControlKeyMask;
-      else if([@"Alt_R" isEqualToString: firstCommand] ||
-	      [@"Alt_R" isEqualToString: secondCommand])
-	eventFlags |= NSCommandKeyMask;
-      else
-	eventFlags |= NSAlternateKeyMask;
+      // Left ALT Key press???
+      if (keyState[VK_LMENU] & 128)
+      {
+        if([@"Alt_L" isEqualToString: firstControl] ||
+           [@"Alt_L" isEqualToString: secondControl])
+          eventFlags |= NSControlKeyMask;
+        else if([@"Alt_L" isEqualToString: firstCommand] ||
+                [@"Alt_L" isEqualToString: secondCommand])
+          eventFlags |= NSCommandKeyMask;
+        else
+          eventFlags |= NSAlternateKeyMask;
+      }
+      
+      // Right ALT Key press???
+      if (keyState[VK_RMENU] & 128)
+      {
+        if([@"Alt_R" isEqualToString: firstControl] ||
+           [@"Alt_R" isEqualToString: secondControl])
+          eventFlags |= NSControlKeyMask;
+        else if([@"Alt_R" isEqualToString: firstCommand] ||
+                [@"Alt_R" isEqualToString: secondCommand])
+          eventFlags |= NSCommandKeyMask;
+        else
+          eventFlags |= NSAlternateKeyMask;
+      }
+      
+      if ((keyState[VK_LCONTROL] & 128) && (keyState[VK_RMENU] & 128))
+      {
+        // IGNORED - ALtGr key pressed...
+      }
+      else if ((keyState[VK_LCONTROL] & 128) || (keyState[VK_RWIN] & 128))
+      {
+        if([@"Control_L" isEqualToString: firstAlt] ||
+           [@"Control_L" isEqualToString: secondAlt])
+          eventFlags |= NSAlternateKeyMask;
+        else if([@"Control_L" isEqualToString: firstControl] ||
+                [@"Control_L" isEqualToString: secondControl])
+          eventFlags |= NSControlKeyMask;
+        else
+          eventFlags |= NSCommandKeyMask;
+      }
     }
-
+  else
+    {
+      if (keyState[VK_MENU] & 128)
+        {
+          if([@"Alt_R" isEqualToString: firstControl] ||
+             [@"Alt_R" isEqualToString: secondControl])
+            eventFlags |= NSControlKeyMask;
+          else if([@"Alt_R" isEqualToString: firstCommand] ||
+                  [@"Alt_R" isEqualToString: secondCommand])
+            eventFlags |= NSCommandKeyMask;
+          else
+            eventFlags |= NSAlternateKeyMask;
+        }
+      
+      if ((keyState[VK_LCONTROL] & 128) || (keyState[VK_RWIN] & 128))
+        {
+          if([@"Control_L" isEqualToString: firstAlt] ||
+             [@"Control_L" isEqualToString: secondAlt])
+            eventFlags |= NSAlternateKeyMask;
+          else if([@"Control_L" isEqualToString: firstControl] ||
+                  [@"Control_L" isEqualToString: secondControl])
+            eventFlags |= NSControlKeyMask;
+          else
+            eventFlags |= NSCommandKeyMask;
+        }
+    }
+  
   if (keyState[VK_HELP] & 128)
     eventFlags |= NSHelpKeyMask;
-
-  if ((keyState[VK_LCONTROL] & 128) || (keyState[VK_RWIN] & 128))
-    {
-      if([@"Control_L" isEqualToString: firstAlt] ||
-	 [@"Control_L" isEqualToString: secondAlt])
-	eventFlags |= NSAlternateKeyMask;
-      else if([@"Control_L" isEqualToString: firstControl] ||
-	      [@"Control_L" isEqualToString: secondControl])
-	eventFlags |= NSControlKeyMask;
-      else
-	eventFlags |= NSCommandKeyMask;
-    }
   return eventFlags;
 }
 
