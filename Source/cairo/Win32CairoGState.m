@@ -41,11 +41,13 @@
 {
   if (_surface)
     {
-      cairo_surface_flush([_surface surface]);
+      HDC hdc = cairo_win32_surface_get_dc([_surface surface]);
       NSDebugLLog(@"CairoGState",
                   @"%s:_surface: %p hdc: %p\n", __PRETTY_FUNCTION__,
-                  _surface, cairo_win32_surface_get_dc([_surface surface]));
-      return cairo_win32_surface_get_dc([_surface surface]);
+                  _surface, hdc);
+      cairo_surface_flush([_surface surface]);
+      SaveDC(hdc);
+      return hdc;
     }
   NSLog(@"%s:_surface is NULL\n", __PRETTY_FUNCTION__);
   return NULL;
@@ -54,7 +56,17 @@
 - (void) releaseHDC: (HDC)hdc
 {
   if (hdc && _surface)
-    cairo_surface_mark_dirty([_surface surface]);
+    {
+      if (hdc != cairo_win32_surface_get_dc([_surface surface]))
+      {
+        NSLog(@"%s:expHDC: %p recHDC: %p", __PRETTY_FUNCTION__, cairo_win32_surface_get_dc([_surface surface]), hdc);
+      }
+      else
+      {
+        RestoreDC(hdc, -1);
+        cairo_surface_mark_dirty([_surface surface]);
+      }
+    }
 }
 
 @end
