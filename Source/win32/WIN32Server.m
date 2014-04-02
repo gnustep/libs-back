@@ -400,32 +400,53 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
                                      LPRECT lprcMonitor,
                                      LPARAM dwData)
 {
-  NSMutableArray        *monitors = (NSMutableArray*)dwData;
-  W32DisplayMonitorInfo *infoMon  = [[W32DisplayMonitorInfo alloc] initWithHMonitor:hMonitor
-                                                                               rect:lprcMonitor];
+  NSMutableArray        *monitors  = (NSMutableArray*)dwData;
+  W32DisplayMonitorInfo *infoMon   = [[W32DisplayMonitorInfo alloc] initWithHMonitor:hMonitor
+                                                                                rect:lprcMonitor];
+  NSUInteger             screenIdx = [monitors count];
   
-  // Check for main monitor - additional monitors need to be offset correctly
-  // from this one...
-  if (monitors && [monitors count])
+  // Monitor information may be in any particular order...check for the one
+  // at (x,y) = (0,0)...
+  if ((lprcMonitor->top == 0) && (lprcMonitor->left == 0))
     {
-      // If main exists offset the additional ones..
-      W32DisplayMonitorInfo *mainMon    = [monitors objectAtIndex:0];
-      RECT                   mainRect   = [mainMon rect];
-      RECT                   infoRect   = [infoMon rect];
-      NSRect                 infoFrame  = [infoMon frame];
-      infoFrame.origin.y                = mainRect.bottom - infoRect.bottom;
-      [infoMon setFrame:infoFrame];
+      // Insert this one first in the array...
+      screenIdx = 0;
+      
+      // and recalculate monitor frame(s)...
+      RECT  mainRect = [infoMon rect];
+      int   index    = 0;
+      for (index = 0; index < [monitors count]; ++index)
+        {
+          // If main exists offset the additional ones..
+          W32DisplayMonitorInfo *infoMon    = [monitors objectAtIndex:index];
+          RECT                   infoRect   = [infoMon rect];
+          NSRect                 infoFrame  = [infoMon frame];
+          infoFrame.origin.y                = mainRect.bottom - infoRect.bottom;
+          [infoMon setFrame:infoFrame];
+        }
+    }
+  else
+    {
+      // else check for main monitor - additional monitors need to be offset correctly
+      // offset from this one...
+      if (monitors && [monitors count])
+        {
+          W32DisplayMonitorInfo *mainMon  = [monitors objectAtIndex:0];
+          RECT                   mainRect = [mainMon rect];
+          
+          if ((mainRect.top == 0) && (mainRect.left == 0))
+            {
+              RECT    infoRect    = [infoMon rect];
+              NSRect  infoFrame   = [infoMon frame];
+              infoFrame.origin.y  = mainRect.bottom - infoRect.bottom;
+              [infoMon setFrame:infoFrame];
+            }
+        }
     }
 
+  // Insert this object at screen index...
+  [monitors insertObject:infoMon atIndex:screenIdx];
 
-  NSDebugLog(@"screen %ld - hMon: %ld hdc: %p frame:top:%ld left:%ld right:%ld bottom:%ld  frame:x:%f y:%f w:%f h:%f\n",
-        [monitors count], (long)hMonitor, hdcMonitor,
-        lprcMonitor->top, lprcMonitor->left,
-        lprcMonitor->right, lprcMonitor->bottom,
-        [infoMon frame].origin.x, [infoMon frame].origin.y,
-        [infoMon frame].size.width, [infoMon frame].size.height);
-  [monitors addObject:infoMon];
-  
   return TRUE;
 }
 
@@ -603,6 +624,20 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 /**
 
 */
+- (void) _dumpMonitors
+{
+  NSInteger index = 0;
+  for (index = 0; index < [monitorInfo count]; ++index)
+    {
+      W32DisplayMonitorInfo *infoMon    = [monitorInfo objectAtIndex:index];
+      RECT                   infoRect   = [infoMon rect];
+      NSRect                 infoFrame  = [infoMon frame];
+      NSLog(@"screen %ld - hMon: %ld frame:top:%ld left:%ld bottom:%ld right:%ld  frame: %@\n",
+            index, (long)[infoMon hMonitor],
+            infoRect.top, infoRect.left, infoRect.bottom, infoRect.right,
+            NSStringFromRect(infoFrame));
+    }
+}
 
 - (void) _resetMonitors
 {
@@ -611,6 +646,8 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   
   // Process the updated configuration...
   EnumDisplayMonitors(NULL, NULL, (MONITORENUMPROC)LoadDisplayMonitorInfo, (LPARAM)monitorInfo);
+  
+  [self _dumpMonitors];
   
   // Notify the world...
   NSNotificationCenter *notifCenter = [NSNotificationCenter defaultCenter];
@@ -749,7 +786,8 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 	EnumWindows((WNDENUMPROC)windowEnumCallback, win);
 	hwnd = foundWindowHwnd;
 
-  *windowRef = (int)hwnd;	// Any windows
+  if (windowRef)
+    *windowRef = (int)hwnd;	// Any windows
 
   return (int)hwnd;
 }
@@ -1834,6 +1872,9 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 	
       case WM_DISPLAYCHANGE:
         [self _resetMonitors];
+        NSWindow *window   = GSWindowWithNumber((NSInteger)hwnd);
+        NSString *autoname = [window frameAutosaveName];
+        [window setFrameUsingName:autoname];
         break;
         
       default: 
