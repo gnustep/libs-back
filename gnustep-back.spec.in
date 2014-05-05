@@ -5,6 +5,9 @@ Group: Development/Libraries
 Source: ftp://ftp.gnustep.org/pub/gnustep/core/%{gs_name}-%{gs_version}.tar.gz
 Requires: gnustep-gui
 Obsoletes: gnustep-xgps
+Packager: GNUstep Development <bug-gnustep@gnu.org>
+Vendor: The GNUstep Project
+URL: http://www.gnustep.org/
 
 %description 
 This is a backend for the GNUstep gui Library which allows you to use

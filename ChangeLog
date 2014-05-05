@@ -1,25 +1,32 @@
-2013-01-27  Fred Kiefer <FredKiefer@gmx.de>
+2014-05-05  Ivan Vucica <ivan@vucica.net>
+
+	* ChangeLog: Corrected year for some recent commits.
+	* GNUmakefile: Added use of Master/deb.make.
+	* gnustep-back.spec.in: Added some details needed for Debian
+	packaging.
+
+2014-01-27  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/win32/WIN32Server.m (LoadDisplayMonitorInfo):
 	Switch monitor logging to Debug level.
 	Patch by Jonathan Gillaspie <jonathan.gillaspie@testplant.com>
 
-2013-01-19  Fred Kiefer <FredKiefer@gmx.de>
+2014-01-19  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/art/blit.m(MPRE): Remove compiler warning.
 	* Source/art/image.m(-DPSimage:::::::::::): Correct parameter
 	types. Fixes bug #41274.
 
-2013-01-08  Fred Kiefer <FredKiefer@gmx.de>
+2014-01-08  Fred Kiefer <FredKiefer@gmx.de>
 
 	* configure: Remove duplicate addition of Xext.
 	* configure.ac: Regenerate.
 
-2013-01-05 Niels Grewe <niels.grewe@halbordnung.de>
+2014-01-05 Niels Grewe <niels.grewe@halbordnung.de>
 
 	* Source/x11/XGServerWindow.m: Remove redundant method.
 
-2013-01-05  Fred Kiefer <FredKiefer@gmx.de>
+2014-01-05  Fred Kiefer <FredKiefer@gmx.de>
 
         * Source/x11/XGServerWindow.m(-_checkStyle:): Change NSLog into NSDebugLLog.
 
