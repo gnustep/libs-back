@@ -41,7 +41,6 @@ SVN_BASE_URL = svn+ssh://svn.gna.org/svn/gnustep/libs
 
 GNUSTEP_LOCAL_ADDITIONAL_MAKEFILES=back.make
 include $(GNUSTEP_MAKEFILES)/common.make
-include $(GNUSTEP_MAKEFILES)/Master/deb.make
 
 include ./Version
 
@@ -57,5 +56,6 @@ endif
 -include GNUmakefile.preamble
 
 include $(GNUSTEP_MAKEFILES)/aggregate.make
+include $(GNUSTEP_MAKEFILES)/Master/deb.make
 
 -include GNUmakefile.postamble
