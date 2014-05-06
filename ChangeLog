@@ -1,8 +1,13 @@
+2014-05-07  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/gpbs.m: Revert last change and correct the implementation
+	and usage of gpbs_log.
+
 2014-05-06  Ivan Vucica <ivan@vucica.net>
 
 	* Tools/gpbs.m: Removed barely used, overly complex and almost
 	certainly buggy logging code.
-	
+
 2014-05-05  Ivan Vucica <ivan@vucica.net>
 
 	* ChangeLog: Corrected year for some recent commits.

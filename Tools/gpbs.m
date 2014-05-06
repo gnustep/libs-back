@@ -54,6 +54,77 @@ static BOOL	auto_stop = NO;		/* Stop when all connections closed. */
 
 static NSMutableArray	*connections = nil;
 
+#if defined(HAVE_SYSLOG) || defined(HAVE_SLOGF)
+#  if defined(HAVE_SLOGF)
+#    include <sys/slogcodes.h>
+#    include <sys/slog.h>
+#    define LOG_CRIT _SLOG_CRITICAL
+#    define LOG_DEBUG _SLOG_DEBUG1
+#    define LOG_ERR _SLOG_ERROR
+#    define LOG_INFO _SLOG_INFO
+#    define LOG_WARNING _SLOG_WARNING
+#    define syslog(prio, msg,...) slogf(_SLOG_SETCODE(_SLOG_SYSLOG, 0), prio, msg, __VA_ARGS__)
+#  endif
+static int	log_priority = LOG_DEBUG;
+
+static void
+gpbs_log (int prio, const char *ebuf)
+{
+  if (is_daemon)
+    {
+#   if defined(HAVE_SLOGF)
+	  // Let's not have 0 as the value for prio. It means "shutdown" on QNX
+      syslog (prio ? prio : log_priority, "%s", ebuf);
+#   else
+      syslog (log_priority | prio, "%s", ebuf);
+#   endif
+    }
+  else if (prio == LOG_INFO)
+    {
+      write (1, ebuf, strlen (ebuf));
+      write (1, "\n", 1);
+    }
+  else
+    {
+      write (2, ebuf, strlen (ebuf));
+      write (2, "\n", 1);
+    }
+
+  if (prio == LOG_CRIT)
+    {
+      if (is_daemon)
+	{
+	  syslog (LOG_CRIT, "%s", "exiting.");
+	}
+      else
+     	{
+	  fprintf (stderr, "exiting.\n");
+	  fflush (stderr);
+	}
+      exit(EXIT_FAILURE);
+    }
+}
+#else
+
+#define	LOG_CRIT	2
+#define LOG_DEBUG	0
+#define LOG_ERR		1
+#define LOG_INFO	0
+#define LOG_WARNING	0
+void
+gpbs_log (int prio, const char *ebuf)
+{
+  write (2, ebuf, strlen (ebuf));
+  write (2, "\n", 1);
+  if (prio == LOG_CRIT)
+    {
+      fprintf (stderr, "exiting.\n");
+      fflush (stderr);
+      exit(EXIT_FAILURE);
+    }
+}
+#endif
+
 @class PasteboardServer;
 @class PasteboardObject;
 
@@ -1056,6 +1127,7 @@ if (beenHere == YES)
 static void
 init(int argc, char** argv, char **env)
 {
+  NSUserDefaults	*defs;
   NSProcessInfo		*pInfo;
   NSMutableArray	*args;
   unsigned		count;
@@ -1150,13 +1222,19 @@ init(int argc, char** argv, char **env)
 	}
       NS_HANDLER
 	{
-          NSLog(@"An exception has ocurred.");
+	  gpbs_log(LOG_CRIT, [[localException description] UTF8String]);
 	  DESTROY(t);
 	}
       NS_ENDHANDLER
       exit(EXIT_FAILURE);
     }
 
+  /*
+   * Make gpbs logging go to syslog unless overridden by user.
+   */
+  defs = [NSUserDefaults standardUserDefaults];
+  [defs registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys:
+    @"YES", @"GSLogSyslog", nil]];
 }
 
 
