@@ -51,66 +51,8 @@
 
 static BOOL	is_daemon = NO;		/* Currently running as daemon.	 */
 static BOOL	auto_stop = NO;		/* Stop when all connections closed. */
-static char	ebuf[2048];
 
 static NSMutableArray	*connections = nil;
-
-#ifdef HAVE_SYSLOG
-
-static int	log_priority = LOG_DEBUG;
-
-static void
-gpbs_log (int prio)
-{
-  if (is_daemon)
-    {
-      syslog (log_priority | prio, ebuf);
-    }
-  else if (prio == LOG_INFO)
-    {
-      write (1, ebuf, strlen (ebuf));
-      write (1, "\n", 1);
-    }
-  else
-    {
-      write (2, ebuf, strlen (ebuf));
-      write (2, "\n", 1);
-    }
-
-  if (prio == LOG_CRIT)
-    {
-      if (is_daemon)
-	{
-	  syslog (LOG_CRIT, "exiting.");
-	}
-      else
-     	{
-	  fprintf (stderr, "exiting.\n");
-	  fflush (stderr);
-	}
-      exit(EXIT_FAILURE);
-    }
-}
-#else
-
-#define	LOG_CRIT	2
-#define LOG_DEBUG	0
-#define LOG_ERR		1
-#define LOG_INFO	0
-#define LOG_WARNING	0
-void
-gpbs_log (int prio)
-{
-  write (2, ebuf, strlen (ebuf));
-  write (2, "\n", 1);
-  if (prio == LOG_CRIT)
-    {
-      fprintf (stderr, "exiting.\n");
-      fflush (stderr);
-      exit(EXIT_FAILURE);
-    }
-}
-#endif
 
 @class PasteboardServer;
 @class PasteboardObject;
@@ -1114,7 +1056,6 @@ if (beenHere == YES)
 static void
 init(int argc, char** argv, char **env)
 {
-  NSUserDefaults	*defs;
   NSProcessInfo		*pInfo;
   NSMutableArray	*args;
   unsigned		count;
@@ -1209,19 +1150,13 @@ init(int argc, char** argv, char **env)
 	}
       NS_HANDLER
 	{
-	  gpbs_log(LOG_CRIT);
+          NSLog(@"An exception has ocurred.");
 	  DESTROY(t);
 	}
       NS_ENDHANDLER
       exit(EXIT_FAILURE);
     }
 
-  /*
-   * Make gpbs logging go to syslog unless overridden by user.
-   */
-  defs = [NSUserDefaults standardUserDefaults];
-  [defs registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys:
-    @"YES", @"GSLogSyslog", nil]];
 }
 
 
