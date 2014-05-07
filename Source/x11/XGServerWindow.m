@@ -149,7 +149,7 @@ static NSBitmapImageRep *getStandardBitmap(NSImage *image)
                                        hasAlpha: [rep hasAlpha]
                                        isPlanar: NO
                                  colorSpaceName: NSCalibratedRGBColorSpace
-                                   bitmapFormat: 0
+                                   bitmapFormat: NSAlphaNonpremultipliedBitmapFormat
                                     bytesPerRow: 0
                                    bitsPerPixel: 0];
     }
@@ -1912,28 +1912,14 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 	  // blue
 	  B = d[2];
 	  // alpha
-#if 0
-/*
-  For unclear reasons the alpha handling does not work, so we simulate it.
-*/
 	  if (samples == 4)
 	    {
-	      A = d[4];
+	      A = d[3];
 	    }
 	  else
 	    {
 	      A = 255;
 	    }
-#else
-	  if (R || G || B)
-	    {
-	      A = 255;
-	    }
-	  else
-	    {
-	      A = 0;
-	    }
-#endif
 
           iconPropertyData[index++] = A << 24 | R << 16 | G << 8 | B;
 	  d += samples;
