@@ -112,7 +112,7 @@ static int		last_win_num = 0;
                                         bitsPerPixel: (NSInteger)pixelBits;
 @end
 
-static NSBitmapImageRep *getStandardBitmap(NSImage *image)
+static NSBitmapImageRep *getStandardBitmapForBitmapFormat(NSImage *image, NSBitmapFormat bitmapFormat)
 {
   NSBitmapImageRep *rep;
 
@@ -149,12 +149,16 @@ static NSBitmapImageRep *getStandardBitmap(NSImage *image)
                                        hasAlpha: [rep hasAlpha]
                                        isPlanar: NO
                                  colorSpaceName: NSCalibratedRGBColorSpace
-                                   bitmapFormat: NSAlphaNonpremultipliedBitmapFormat
+                                   bitmapFormat: bitmapFormat
                                     bytesPerRow: 0
                                    bitsPerPixel: 0];
     }
 }
 
+static NSBitmapImageRep *getStandardBitmap(NSImage *image)
+{
+  return getStandardBitmapForBitmapFormat(image, 0);
+}
 
 void __objc_xgcontextwindow_linking (void)
 {
@@ -1872,7 +1876,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   long *iconPropertyData;
   int iconSize;
  
-  rep = getStandardBitmap(image);
+  rep = getStandardBitmapForBitmapFormat(image, NSAlphaNonpremultipliedBitmapFormat);
   if (rep == nil)
     {
       NSLog(@"Wrong image type for WM icon");
