@@ -3217,7 +3217,20 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam, NSE
   
   if (eventFlags & NSShiftKeyMask)
     ukeys = [ukeys uppercaseString];
-  
+
+  if ([keys length] == 0 && ((keyState[VK_CONTROL] & 128) || (keyState[VK_LCONTROL] & 128) || (keyState[VK_RCONTROL] & 128)))
+	{
+	  // a Control key is down, which may have caused ToUnicodeEx to return no key -- try without the control key(s)
+	  keyState[VK_CONTROL] = 0;
+	  keyState[VK_LCONTROL] = 0;
+	  keyState[VK_RCONTROL] = 0;
+	  result = ToUnicodeEx(wParam, scan, keyState, unicode, 5, 0, GetKeyboardLayout(0));
+	  keys = [NSString  stringWithCharacters: unicode length: result];
+	  ukeys = keys;
+	  if (eventFlags & NSShiftKeyMask)
+	    ukeys = [ukeys lowercaseString]; // set ukeys to unshifted version iff it's a letter
+	}
+	
   // key events should go to the key window if we have one (Windows' focus window isn't always appropriate)
   int windowNumber = [[NSApp keyWindow] windowNumber];
   if (windowNumber == 0)

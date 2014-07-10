@@ -1,3 +1,9 @@
+2014-07-09  Doug Simons <doug.simons@testplant.com>
+
+	* Source/win32/WIN32Server.m : Fix process_key_event to set
+	keys and ukeys correctly when control key is down so key
+	equivalents like Ctrl-(Shift)-+ will be recognized.
+
 2013-10-21  Frank Le Grand <frank.legrand@testplant.com>
 
     * Source/win32/WIN32Server.m 
