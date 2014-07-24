@@ -273,11 +273,7 @@ if test $WITH_XFT = yes; then
   AC_CHECK_LIB(fontconfig, FcPatternCreate, have_fc=yes, have_fc=no)
   AC_CHECK_HEADER(fontconfig/fontconfig.h)
   if test "$have_fc" = yes -a "$ac_cv_header_fontconfig_fontconfig_h" = yes; then
-    # fontconfig is likely to be included if we found xft via pkg-config, so 
-    # don't include it twice
-    if test $PKG_XFT = no; then
-      XFT_LIBS="${XFT_LIBS} -lfontconfig"
-    fi
+    XFT_LIBS="${XFT_LIBS} -lfontconfig"
     AC_DEFINE(HAVE_FC,1,[Define if you have FcPatternCreate])
   fi
   CPPFLAGS=${save_CPPFLAGS}
