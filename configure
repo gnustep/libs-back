@@ -5311,11 +5311,7 @@ fi
 
 
   if test "$have_fc" = yes -a "$ac_cv_header_fontconfig_fontconfig_h" = yes; then
-    # fontconfig is likely to be included if we found xft via pkg-config, so
-    # don't include it twice
-    if test $PKG_XFT = no; then
-      XFT_LIBS="${XFT_LIBS} -lfontconfig"
-    fi
+    XFT_LIBS="${XFT_LIBS} -lfontconfig"
 
 $as_echo "#define HAVE_FC 1" >>confdefs.h
 
