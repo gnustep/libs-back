@@ -1309,9 +1309,10 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       ssize = [source->_surface size];
     }
 
-  if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 8, 0))
+  if ((cairo_version() >= CAIRO_VERSION_ENCODE(1, 8, 0)) && 
+      (cairo_version() <= CAIRO_VERSION_ENCODE(1, 13, 0)))
     {      
-      // For cairo > 1.8 we seem to need this adjustment
+      // For cairo > 1.8 and < 1.13 we seem to need this adjustment
       srcRectInBase.origin.y -= 2 * (source->offset.y - ssize.height);
     }
 
