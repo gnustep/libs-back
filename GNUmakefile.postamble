@@ -62,10 +62,18 @@ after-distclean::
 	rm -f config.status config.log config.cache TAGS config.h config.make back.make
 
 back.make: back.make.in Version configure
-	./configure
+	if [ -x config.status ]; then \
+	  ./config.status --recheck; \
+	else \
+	  ./configure; \
+	fi
 
 config.mak: config.mak.in configure
-	./configure
+	if [ -x config.status ]; then \
+	  ./config.status --recheck; \
+	else \
+	  ./configure; \
+	fi
 
 # Things to do before checking
 # before-check::
