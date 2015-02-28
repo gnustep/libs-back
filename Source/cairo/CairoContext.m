@@ -60,6 +60,8 @@
 #elif BUILD_SERVER == SERVER_win32
 #  include "cairo/Win32CairoGState.h"
 #  include <windows.h>
+#  include "win32/WIN32Server.h"
+#  include "win32/WIN32Geometry.h"
 #  define _CAIRO_GSTATE_CLASSNAME Win32CairoGState
 #  ifdef USE_GLITZ
 #    define _CAIRO_SURFACE_CLASSNAME Win32CairoGlitzSurface
@@ -107,6 +109,20 @@
 - (void) flushGraphics
 {
   // FIXME: Why is this here? When is it called?
+  // Comments added 07/20/2013 to address the above question after
+  // further debugging cairo/MSwindows non-retained backing store type:
+  // This is called from NSWindow/flushWindow for the non-retained backing
+  // store case.  This code originally seems to have been added due to the 
+  // non-retained backing store type NOT showing up on XWindows/Cairo
+  // combination and added this XFlush call to handle this case.
+  
+  // For MSWindows a similar problem seems to occur. However, the only
+  // equivalent to XFlush on MSWindows is GdiFlush, which doesn't cause
+  // the window to re-display properly.  So, on MSWindows, the non-retained
+  // cairo backend surface is currently excluded from the build and we
+  // handle it as a buffered window expose event for now.
+  // FIXME:  Anyone know how this can be handled/fixed correctly...
+  
 #if BUILD_SERVER == SERVER_x11
   XFlush([(XGServer *)server xDisplay]);
 #elif BUILD_SERVER == SERVER_win32
@@ -115,9 +131,16 @@
   [CGSTATE GSCurrentSurface: &surface : NULL : NULL];
   if ((surface != nil) && ([surface surface] != NULL))
     {
-      cairo_surface_flush([surface surface]);
+      // Non-retained backing store types currently unsupported on MSWindows...
+      // Currently handling such windows as buffered and invoking the handle
+      // expose event processing...
+      RECT    rect;
+      HWND    hwnd  = surface->gsDevice;
+      GetClientRect(hwnd, &rect);
+      NSRect  frame = MSWindowRectToGS((WIN32Server*)GSCurrentServer(), hwnd, rect);
+      [[self class] handleExposeRect: frame forDriver: surface];
     }
-#endif // BUILD_SERVER = SERVER_x11
+#endif
 }
 
 

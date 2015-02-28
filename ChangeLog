@@ -1,3 +1,20 @@
+2015-02-27  Germán Arias <germanandre@gmx.es>
+
+	* Source/cairo/CairoContext.m (-flushGraphics:):
+	* Source/cairo/Win32CairoSurface.m (-initWithDevice:): Apply fix
+	from TestPlant branch to solve problem with windows with backing
+	store type NSBackingStoreRetained, which are not displayed correclty
+	on MS Windows. With this fix those windows are displayed as
+	buffered windows.
+	* Source/win32/WIN32Server.m (-setWindowdevice:forContext:): The
+	windows with autodisplay set to NO aren't displayed correctly on
+	Windows, no matter the backing store type used. And trying to
+	redisplay these windows here in the server not takes effect. So if
+	the window have set autodisplay to NO, we change it to YES before
+	create the window. This problem affects the tooltips, but this
+	solution is different to the one used in the TestPlant branch.
+	Because that solution involves changes in the side of GUI.
+
 2014-10-25  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-compositeGState:...fraction:):

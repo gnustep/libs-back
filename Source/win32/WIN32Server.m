@@ -1705,6 +1705,21 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
   NSDebugLLog(@"WTrace", @"windowdevice: %d", winNum);
   window = GSWindowWithNumber(winNum);
+
+  /* FIXME:
+   * The windows with autodisplay set to NO aren't displayed correctly on
+   * Windows, no matter the backing store type used. And trying to redisplay
+   * these windows here in the server not takes effect. So if the window
+   * have set autodisplay to NO, we change it to YES before create the window.
+   * This problem affects the tooltips, but this solution is different to
+   * the one used in the TestPlant branch. Because that solution involves
+   * changes in the side of GUI.
+   */
+  if (![window isAutodisplay])
+    {
+      [window setAutodisplay: YES];
+    }
+  
   GetClientRect((HWND)winNum, &rect);
   h = rect.bottom - rect.top;
   [self styleoffsets: &l : &r : &t : &b : [window styleMask]];
