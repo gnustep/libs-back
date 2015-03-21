@@ -1,3 +1,10 @@
+2015-03-21  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/x11/XGGeneric.h
+	* Source/x11/XGServerWindow.m: Correct name for atom
+	net_wm_state_modal_atom. Use this atom to try to set the sate for
+	dialog windows to modal.
+
 2015-02-27  Germán Arias <germanandre@gmx.es>
 
 	* Source/cairo/CairoContext.m (-flushGraphics:):

@@ -1308,7 +1308,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
           // Window state
           generic.netstates.net_wm_state_atom = 
 	    XInternAtom(dpy, "_NET_WM_STATE", False);
-	  generic.netstates.new_wm_state_modal_atom = 
+	  generic.netstates.net_wm_state_modal_atom = 
 	    XInternAtom(dpy, "_NET_WM_STATE_MODAL", False);
           generic.netstates.net_wm_state_sticky_atom = 
 	    XInternAtom(dpy, "_NET_WM_STATE_STICKY", False);
@@ -3115,6 +3115,17 @@ static BOOL didCreatePixmaps;
 		}
 	    }
 	}
+
+      if (window->win_attrs.window_level == NSModalPanelWindowLevel)
+        {
+          [self _sendRoot: window->root 
+                     type: generic.netstates.net_wm_state_atom
+                   window: window->ident
+                    data0: _NET_WM_STATE_ADD
+                    data1: generic.netstates.net_wm_state_modal_atom
+                    data2: 0
+                    data3: 1];
+        }
     }
   XFlush(dpy);
 }
