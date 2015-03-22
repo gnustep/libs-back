@@ -1065,7 +1065,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
               NSDebugLLog(@"NSEvent", @"Expose frame %d %d %d %d\n",
                           rectangle.x, rectangle.y,
                           rectangle.width, rectangle.height);
-#if 1
+#if 0
               // ignore backing if sub-window
               [self _addExposedRectangle: rectangle : cWin->number : isSubWindow];
 

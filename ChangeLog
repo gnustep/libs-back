@@ -1,3 +1,10 @@
+2015-03-22  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerEvent.m (-processEvent:): Reenable Richard's
+	frontend based expose code.
+	* Source/x11/XGServerWindow.m (-window::::, -_checkStyle:): Don't
+	use CWBackPixel, as the window background may be different.
+
 2015-03-21  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/x11/XGGeneric.h
