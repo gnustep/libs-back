@@ -842,7 +842,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 				context->depth,
 				CopyFromParent,
 				context->visual,
-				(CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect),
+				(CWColormap | CWBorderPixel | CWOverrideRedirect),
 				&window->xwn_attrs);
 
   /*
@@ -2048,7 +2048,9 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 				context->depth,
 				CopyFromParent,
 				context->visual,
-				(CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect),
+                                // Don't set the CWBackPixel, as the background of the
+                                // window may be different.
+				(CWColormap | CWBorderPixel | CWOverrideRedirect),
 				&window->xwn_attrs);
 
   /*
