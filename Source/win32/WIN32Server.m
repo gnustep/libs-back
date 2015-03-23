@@ -49,6 +49,7 @@
 #include <AppKit/NSTextField.h>
 #include <AppKit/DPSOperators.h>
 #include <GNUstepGUI/GSTheme.h>
+#include <GNUstepGUI/GSTrackingRect.h>
 
 #include "win32/WIN32Server.h"
 #include "win32/WIN32Geometry.h"
@@ -61,6 +62,12 @@
 #endif
 
 #include <math.h>
+
+// To update the cursor..
+static BOOL update_cursor = NO;
+static BOOL should_handle_cursor = NO;
+static NSCursor *current_cursor = nil;
+
 
 // Forward declarations...
 static unsigned int mask_for_keystate(BYTE *keyState);
@@ -1139,6 +1146,27 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
  
   switch (uMsg)
     {
+      case WM_MOUSELEAVE:
+	{
+	  /* If the cursor leave the window remove the GNUstep cursors, send
+	   * the appropriate message and tell GNUstep stop handling
+	   * the cursor.
+	   */
+	  NSEvent *e;
+	  [GSWindowWithNumber((int)hwnd) resetCursorRects];
+	  e = [NSEvent otherEventWithType: NSAppKitDefined
+				 location: NSMakePoint(-1,-1)
+			    modifierFlags: 0
+				timestamp: 0
+			     windowNumber: (int)hwnd
+				  context: GSCurrentContext()
+				  subtype: GSAppKitWindowLeave
+				    data1: 0
+				    data2: 0];
+	  [GSCurrentServer() postEvent: e atStart: YES];
+	  should_handle_cursor = NO;
+	}
+	break;
       case WM_SIZING:
         return [self decodeWM_SIZINGParams: hwnd : wParam : lParam];
         break;
@@ -1211,7 +1239,15 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         else
           [self decodeWM_KILLFOCUSParams: wParam : lParam : hwnd]; 
         break;
-      case WM_SETCURSOR: 
+      case WM_SETCURSOR:
+	if (wParam == (int)hwnd)
+	  {
+	    // Check if GNUstep should handle the cursor.
+	    if (should_handle_cursor)
+	      {
+		flags._eventHandled = YES;
+	      }
+	  }
         break;
       case WM_QUERYOPEN: 
         [self decodeWM_QUERYOPENParams: wParam : lParam : hwnd]; 
@@ -1241,9 +1277,29 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         break;
       case WM_APP: 
         break;  
-      case WM_ENTERMENULOOP: 
-        break;
-      case WM_EXITMENULOOP: 
+      case WM_ENTERMENULOOP:
+	/* If the user open a native contextual menu (a non GNUstep window)
+	 * send the appropriate message and tell GNUstep stop handling
+	 * the cursor.
+	 */
+	if (wParam)
+	  {
+	    NSEvent *e;
+	    [GSWindowWithNumber((int)hwnd) resetCursorRects];
+	    e = [NSEvent otherEventWithType: NSAppKitDefined
+				   location: NSMakePoint(-1,-1)
+			      modifierFlags: 0
+				  timestamp: 0
+			       windowNumber: (int)hwnd
+				    context: GSCurrentContext()
+				    subtype: GSAppKitWindowLeave
+				    data1: 0
+				      data2: 0];
+	    [GSCurrentServer() postEvent: e atStart: YES];
+	    should_handle_cursor = NO;
+	  }
+	break;
+      case WM_EXITMENULOOP:
         break;
       case WM_INITMENU: 
         break;
@@ -1288,8 +1344,12 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCHITTEST", hwnd);
         break;
       case WM_NCMOUSEMOVE: //MOUSE
-        NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCMOUSEMOVE", hwnd);
-        break;
+	/* If the user move the mouse over a nonclient area, tell GNUstep
+	 * that should stop handle the cursor.
+	 */
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCMOUSEMOVE", hwnd);
+	should_handle_cursor = NO;
+	break;
       case WM_NCLBUTTONDOWN:  //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCLBUTTONDOWN", hwnd);
         break;
@@ -2712,6 +2772,109 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
       eventFlags |= NSHelpKeyMask;
     }
   // What about other modifiers?
+
+  /* Currently GNUstep only proccess events inside the windows (contentview).
+   * So we should check if this is the first movement inside the window.
+   * And should consider also the case when this is the last movement inside
+   * the window.
+   */
+  if (!should_handle_cursor)
+    {
+      /* If this is the first movement inside the window, tell GNUstep
+       * that should handle the cursor and that should check if the
+       * cursor needs be updated. 
+       */
+      should_handle_cursor = YES;
+      update_cursor = YES;
+      
+      /* If there are a previous cursor available (maybe a cursor that
+       * represent a tool) set it as the cursor. If not, set an arrow
+       * cursor (this is necessary because if the cursor is updated to,
+       * for example, an I Beam cursor, there will not be a default cursor
+       * to display when the user moves the mouse over, for example, an
+       * scrollbar).
+       */
+      if (current_cursor != nil)
+	{
+	  [current_cursor set];
+	  current_cursor = nil;
+	}
+      else
+	{
+	  [[NSCursor arrowCursor] set];
+	}
+    }
+  else
+    {
+      /* If the cursor is not associated to a tracking rectangle, not in
+       * the push/pop stack, save this. We do this for the case when, for
+       * example, the user choose a tool in a Tools window which sets a
+       * cursor for the tool and this cursor should be preserved between
+       * different windows.
+       */
+      if ([NSCursor count] == 0 &&
+	  ![current_cursor isEqual: [NSCursor currentCursor]])
+	{
+	  ASSIGN(current_cursor, [NSCursor currentCursor]);
+	}
+    }
+
+  // Check if we need update the cursor.
+  if (update_cursor)
+    {
+      NSView *subview = nil;
+      NSWindow *gswin = GSWindowWithNumber((int)hwnd);
+
+      subview = [[gswin contentView] hitTest: eventLocation];
+      
+      if (subview != nil && subview->_rFlags.valid_rects)
+	{
+	  NSArray *tr = subview->_cursor_rects;
+	  NSUInteger count = [tr count];
+
+	  // Loop through cursor rectangles
+	  if (count > 0)
+	    {
+	      GSTrackingRect *rects[count];
+	      NSUInteger i;
+
+	      [tr getObjects: rects];
+
+	      for (i = 0; i < count; ++i)
+		{
+		  GSTrackingRect *r = rects[i];
+		  BOOL now;
+
+		  if ([r isValid] == NO)
+		    continue;
+
+		  /*
+		   * Check for presence of point in rectangle.
+		   */
+		  now = NSMouseInRect(eventLocation, r->rectangle, NO);
+
+		  // Mouse inside
+		  if (now)
+		    {
+		      NSEvent *e;
+
+		      e = [NSEvent enterExitEventWithType: NSCursorUpdate
+						 location: eventLocation
+					    modifierFlags: eventFlags
+						timestamp: 0
+					     windowNumber: (int)hwnd
+						  context: gcontext
+					      eventNumber: 0
+					   trackingNumber: (int)YES
+						 userData: (void*)r];
+		      [GSCurrentServer() postEvent: e atStart: YES];
+		      //NSLog(@"Add enter event %@ for view %@ rect %@", e, theView, NSStringFromRect(r->rectangle));
+		    }
+		}
+	    }
+	}
+      update_cursor = NO;
+    }
 
   if (eventType == NSScrollWheel)
     {

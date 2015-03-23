@@ -1,3 +1,14 @@
+2015-03-23  Germán Arias <germanandre@gmx.es>
+
+	* Source/win32/WIN32Server.m (-windowEventProc:, -process_mouse_event:):
+	Add code to handle the case when the mouse leave the window, move over
+	a nonclient area, update the cursor or when the user open a
+	contextual menu. Also handle the first mouse movement inside the
+	window and save the cursor if we should preserve it between different
+	windows. Sometimes there is a problem with the cursor if the user
+	open a contextual menu after resize the window. But this seems
+	other issue.
+
 2015-03-22  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerEvent.m (-processEvent:): Reenable Richard's
