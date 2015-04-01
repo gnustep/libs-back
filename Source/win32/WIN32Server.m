@@ -1153,7 +1153,6 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 	   * the cursor.
 	   */
 	  NSEvent *e;
-	  [GSWindowWithNumber((int)hwnd) resetCursorRects];
 	  e = [NSEvent otherEventWithType: NSAppKitDefined
 				 location: NSMakePoint(-1,-1)
 			    modifierFlags: 0
@@ -1344,11 +1343,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCHITTEST", hwnd);
         break;
       case WM_NCMOUSEMOVE: //MOUSE
-	/* If the user move the mouse over a nonclient area, tell GNUstep
-	 * that should stop handle the cursor.
-	 */
 	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCMOUSEMOVE", hwnd);
-	should_handle_cursor = NO;
 	break;
       case WM_NCLBUTTONDOWN:  //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCLBUTTONDOWN", hwnd);
@@ -2786,6 +2781,15 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
        */
       should_handle_cursor = YES;
       update_cursor = YES;
+
+      /* We also starts tracking the mouse, so we receive the
+       * message WM_MOUSELEAVE when the mouse leaves the client area.
+       */
+      TRACKMOUSEEVENT tme;
+      tme.cbSize = sizeof(tme);
+      tme.dwFlags = TME_LEAVE;
+      tme.hwndTrack = hwnd;
+      TrackMouseEvent(&tme);
       
       /* If there are a previous cursor available (maybe a cursor that
        * represent a tool) set it as the cursor. If not, set an arrow

@@ -1,3 +1,15 @@
+2015-03-31  Germán Arias <germanandre@gmx.es>
+
+	* Source/win32/WIN32Server.m (-windowEventProc:, -process_mouse_event:):
+	Start tracking the mouse at the first mouse movement (as suggested in
+	a note at MSDN documentation) so the window receives the WM_MOUSELEAVE
+	message when the mouse leave the client area. I don't use the message
+	WM_NCMOUSEMOVE, as suggested by Fred, because when the user moves
+	fast the mouse this messages is not generated. But we receive the
+	WM_MOUSELEAVE message no matter if the mouse move fast or not. This
+	approach make unnecessary handle the message WM_NCMOUSEMOVE. I also
+	remove a redundant line in WM_MOUSELEAVE.
+
 2015-03-23  Germán Arias <germanandre@gmx.es>
 
 	* Source/win32/WIN32Server.m (-windowEventProc:, -process_mouse_event:):
