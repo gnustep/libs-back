@@ -7,13 +7,19 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.24.1}
+
+Improvements in win32 display and mouse tracking.
+
+Various minor bugfixes and cleanups.
+
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.24.0}
 
 Added experimental Opal backend.
 
 Allow for ARGB visual for OpenGL.
-
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.23.0}
 
