@@ -63,14 +63,14 @@ after-distclean::
 
 back.make: back.make.in Version configure
 	if [ -x config.status ]; then \
-	  ./config.status --recheck; \
+	  ./config.status --recheck && ./config.status; \
 	else \
 	  ./configure; \
 	fi
 
 config.mak: config.mak.in configure
 	if [ -x config.status ]; then \
-	  ./config.status --recheck; \
+	  ./config.status --recheck && ./config.status \
 	else \
 	  ./configure; \
 	fi
