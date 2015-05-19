@@ -70,7 +70,7 @@ back.make: back.make.in Version configure
 
 config.mak: config.mak.in configure
 	if [ -x config.status ]; then \
-	  ./config.status --recheck && ./config.status \
+	  ./config.status --recheck && ./config.status; \
 	else \
 	  ./configure; \
 	fi
