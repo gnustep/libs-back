@@ -68,7 +68,7 @@ back.make: back.make.in Version configure
 	  ./configure; \
 	fi
 
-config.mak: config.mak.in configure
+config.make: config.make.in configure
 	if [ -x config.status ]; then \
 	  ./config.status --recheck && ./config.status; \
 	else \
