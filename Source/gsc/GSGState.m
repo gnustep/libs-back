@@ -1276,31 +1276,38 @@ typedef enum {
 - (void) _fillRect: (NSRect)rect withPattern: (NSImage*)color_pattern
 {
   NSSize size;
-  CGFloat x;
-  CGFloat y;
   NSAffineTransform *ictm;
+  NSPoint patternPhase, startPoint, endPoint, point;
 
   // The coordinates we get here are already in device space,
   // but compositeToPoint needs user space coordinates
   ictm = [ctm copyWithZone: [self zone]];
   [ictm invert];
 
-  size = [pattern size];
-  y = floor(NSMinY(rect) / size.height) * size.height;
+  size = [color_pattern size];
+  patternPhase = [drawcontext patternPhase];
 
-    while (y < NSMaxY(rect))
+  if (!NSEqualPoints(patternPhase, NSZeroPoint))
     {
-      x = floor(NSMinX(rect) / size.width) * size.width;
-      while (x < NSMaxX(rect))
+      // patternPhase % pattern size
+      patternPhase.x -= floor(patternPhase.x / size.width) * size.width;
+      patternPhase.y -= floor(patternPhase.y / size.height) * size.height;
+    }
+
+  startPoint = NSMakePoint(floor((NSMinX(rect) - patternPhase.x) / size.width) * size.width 
+                           + patternPhase.x,
+                           floor((NSMinY(rect) - patternPhase.y) / size.height) * size.height
+                           + patternPhase.y);
+
+  endPoint = NSMakePoint(NSMaxX(rect), NSMaxY(rect));
+
+  for (point.y = startPoint.y; point.y < endPoint.y; point.y += size.height)
+    {
+      for (point.x = startPoint.x; point.x < endPoint.x; point.x += size.width)
         {
-          NSPoint p = NSMakePoint(x, y);
-          
-          p = [ictm transformPoint: p];
-	  [color_pattern compositeToPoint: p
-                         operation: NSCompositeSourceOver];
-	  x += size.width;
+	  [color_pattern compositeToPoint: [ictm transformPoint: point]
+                                operation: NSCompositeSourceOver];
         }
-      y += size.height;
     }
   RELEASE(ictm);
 }

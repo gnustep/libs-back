@@ -1,3 +1,9 @@
+2015-05-22  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSGState.m (_fillRect:withPattern:): Add support for
+	patternPhase.
+	Patch by Josh Freeman <gnustep_lists@twilightedge.com>
+
 2015-05-18 Riccardo Mottola <rm@gnu.org>
 
 	* GNUmakefile.postamble
