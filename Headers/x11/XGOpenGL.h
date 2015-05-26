@@ -57,7 +57,7 @@
 @interface XGGLPixelFormat : NSOpenGLPixelFormat
 {
   Display * display;
-  long int glxminorversion;
+  int glxminorversion;
 
   GLXFBConfig  *fbconfig;
   int pickedFBConfig;
