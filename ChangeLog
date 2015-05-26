@@ -1,3 +1,12 @@
+2015-05-26: Sebastian Reitenbach <sebastia@l00-bugdead-prods.de>
+
+	* Source/cairo/CairoGState.m
+	  abs -> fabs
+	* Source/x11/XGGLContext.m
+	  format string fix
+	* Headers/x11/XGOpenGL.h
+	  glxminorversion is int, not long int
+
 2015-05-22  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m: Add support for image interpolation

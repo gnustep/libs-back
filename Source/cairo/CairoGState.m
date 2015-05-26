@@ -859,8 +859,8 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
   r = [ctm rectInMatrixSpace: r];
   x = NSWidth(r);
   y = NSHeight(r);
-  ix = abs(floor(x));
-  iy = abs(floor(y));
+  ix = fabs(floor(x));
+  iy = fabs(floor(y));
   ssize = NSMakeSize(ix, iy);
 
   dict = [NSMutableDictionary dictionary];

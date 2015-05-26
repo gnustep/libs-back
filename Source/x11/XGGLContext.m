@@ -506,7 +506,7 @@ static XGGLContext *currentGLContext;
   saved_ignores_backing = [view _ignoresBacking];
   [view _setIgnoresBacking: YES];
 
-  NSDebugMLLog(@"GLX", @"glx_window : %u", glx_drawable);
+  NSDebugMLLog(@"GLX", @"glx_window : %lu", (unsigned long) glx_drawable);
 }
 
 - (void)update
