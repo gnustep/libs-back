@@ -409,7 +409,7 @@ if test "x$enable_wgl" = "xyes"; then
 
      save_libs="$LIBS"
      LIBS="$WGL_LIBS"
-     AC_TRY_LINK([#include <windows.h>], [int main() { wglCreateContext(0); }],
+     AC_TRY_LINK([#include <windows.h>], [ wglCreateContext(0); ],
 	   [use_wgl=yes], [use_wgl=no])
      LIBS="$save_libs"
      AC_MSG_RESULT([$use_wgl])

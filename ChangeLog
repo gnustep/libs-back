@@ -1,4 +1,10 @@
-2015-05-26: Sebastian Reitenbach <sebastia@l00-bugdead-prods.de>
+2015-06-05  Fred Kiefer <FredKiefer@gmx.de>
+
+        * configure.ac: Fix configure for mingw
+        * configure: Regenerated
+	Patch by Marcian Lytwyn <marcian.lytwyn@advcsi.com>
+
+2015-05-26 Sebastian Reitenbach <sebastia@l00-bugdead-prods.de>
 
 	* Source/cairo/CairoGState.m
 	  abs -> fabs
