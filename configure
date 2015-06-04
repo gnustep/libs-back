@@ -5752,7 +5752,7 @@ $as_echo_n "checking for wgl... " >&6; }
 int
 main ()
 {
-int main() { wglCreateContext(0); }
+ wglCreateContext(0);
   ;
   return 0;
 }
