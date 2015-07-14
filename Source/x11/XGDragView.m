@@ -52,9 +52,9 @@
 #define SLIDE_TIME_STEP   .02   /* in seconds */
 #define SLIDE_NR_OF_STEPS 20  
 
-#define	dragWindev [XGServer _windowWithTag: [_window windowNumber]]
+#define	DRAGWINDEV [XGServer _windowWithTag: [_window windowNumber]]
 #define	XX(P)	(P.x)
-#define	XY(P)	(DisplayHeight(XDPY, dragWindev->screen) - P.y)
+#define	XY(P)	(DisplayHeight(XDPY, DRAGWINDEV->screen) - P.y)
 
 @interface XGRawWindow : NSWindow
 @end
@@ -268,6 +268,8 @@ static	XGDragView	*sharedDragView = nil;
                  timestamp: (NSTimeInterval)time
                   toWindow: (int)dWindowNumber
 {
+  gswindow_device_t *dragWindev = DRAGWINDEV;
+
   switch (subtype)
     {
       case GSAppKitDraggingDrop:
@@ -333,6 +335,7 @@ static	XGDragView	*sharedDragView = nil;
   None      if there is no X window that accepts drag and drop.
 */
 - (Window) _xWindowAcceptingDnDDescendentOf: (Window) parent 
+                                   ignoring: (Window) ident
 				     underX: (int) x 
 					  Y: (int) y
 {
@@ -344,7 +347,7 @@ static	XGDragView	*sharedDragView = nil;
   XWindowAttributes attr;
   int ret_x, ret_y;
 
-  if (parent == dragWindev->ident)
+  if (parent == ident)
     return -1;
   
   XQueryTree(display, parent, &root, &ignore, &children, &nchildren);
@@ -361,11 +364,16 @@ static	XGDragView	*sharedDragView = nil;
 	&& ret_y >= 0 && ret_y < attr.height)
         {
           result = [self _xWindowAcceptingDnDDescendentOf: child
+                                                 ignoring: ident
 						   underX: x
 							Y: y];
-          if (result != (Window)-1)
+          // With window decoration there may be multiple windows
+          // at the same place. Try all of them.
+          if ((result != (Window)-1) && (result != (Window) None))
+            {
             break;
         }
+    }
     }
 
   if (children)
@@ -389,8 +397,10 @@ static	XGDragView	*sharedDragView = nil;
 - (Window) _xWindowAcceptingDnDunderX: (int) x Y: (int) y
 {
   Window result;
+  gswindow_device_t *dragWindev = DRAGWINDEV;
 
   result = [self _xWindowAcceptingDnDDescendentOf: dragWindev->root
+                                         ignoring: dragWindev->ident
 					   underX: x
 						Y: y];
   if (result == (Window)-1)

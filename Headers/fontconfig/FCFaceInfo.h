@@ -1,11 +1,11 @@
 /*
-   CairoFontEnumerator.m
- 
+   FCFaceInfo.h
+
    Copyright (C) 2003 Free Software Foundation, Inc.
 
    August 31, 2003
    Written by Banlu Kemiyatorn <object at gmail dot com>
-   Base on original code of Alex Malmberg
+   Base on code by Alexander Malmberg <alexander@malmberg.org>
    Rewrite: Fred Kiefer <fredkiefer@gmx.de>
    Date: Jan 2006
  
@@ -28,20 +28,45 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "cairo/CairoFontEnumerator.h"
-#include "cairo/CairoFontInfo.h"
+#ifndef FCFACEINFO_H
+#define FCFACEINFO_H
 
-@implementation CairoFontEnumerator 
+#include <Foundation/Foundation.h>
+#include <ft2build.h>  
+#include FT_FREETYPE_H
+#include <fontconfig/fontconfig.h>
 
-+ (Class) faceInfoClass
+@interface FCFaceInfo : NSObject
 {
-  return [CairoFaceInfo class];
-    }
+	int _weight;
+	unsigned int _traits;
 
-+ (CairoFaceInfo *) fontWithName: (NSString *) name
-{
-  return (CairoFaceInfo *) [super fontWithName: name];
-    }
+	FcPattern *_pattern;
+
+	NSString *_familyName;
+	NSCharacterSet *_characterSet;
+	BOOL _hasNoCharacterSet;
+}
+
+- (id) initWithfamilyName: (NSString *)familyName 
+                   weight: (int)weight 
+                   traits: (unsigned int)traits 
+                  pattern: (FcPattern *)pattern;
+
+- (unsigned int) cacheSize;
+
+- (int) weight;
+- (void) setWeight: (int)weight;
+- (unsigned int) traits;
+- (void) setTraits: (unsigned int)traits;
+
+- (NSString *) familyName;
+- (void) setFamilyName: (NSString *)name;
+
+- (void *) fontFace;
+- (FcPattern *) matchedPattern;
+
+- (NSCharacterSet*)characterSet;
 
 @end
-
+#endif

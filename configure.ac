@@ -1,7 +1,7 @@
-#  configure.in for GNUstep GUI Backend
+#  configure.ac for GNUstep GUI Backend
 #  Process this file with autoconf to produce a configure script.
 #
-#  Copyright (C) 1996-2002 Free Software Foundation, Inc.
+#  Copyright (C) 1996-2015 Free Software Foundation, Inc.
 #
 #  Author:  Adam Fedor <fedor@gnu.org>
 #
@@ -47,8 +47,43 @@ AC_CONFIG_AUX_DIR($GNUSTEP_MAKEFILES)
 #--------------------------------------------------------------------
 # Determine the host, build, and target systems
 #--------------------------------------------------------------------
-AC_PROG_CC
 AC_CANONICAL_TARGET([])
+
+#--------------------------------------------------------------------
+# Find the compiler
+#--------------------------------------------------------------------
+MAKECC=`gnustep-config --variable=CC`
+MAKECPP=`gnustep-config --variable=CPP`
+MAKECXX=`gnustep-config --variable=CXX`
+if test "$CC" = ""; then
+  CC=$MAKECC
+else
+  if test "$CC" != "$MAKECC"; then
+    AC_MSG_WARN([You are running configure with the compiler ($CC) set to a different value from that used by gnustep-make ($MAKECC).  To a
+void conflicts/problems, reconfigure/reinstall gnustep-make to use $CC or run the gnustep-base configure again with your CC environment var
+iable set to $MAKECC])
+  fi
+fi
+if test "$CPP" = ""; then
+  CPP=$MAKECPP
+else
+  if test "$CPP" != "$MAKECPP"; then
+    AC_MSG_WARN([You are running configure with the preprocessor ($CPP) set to a different value from that used by gnustep-make ($MAKECPP).
+  To avoid conflicts/problems, reconfigure/reinstall gnustep-make to use $CPP or run the gnustep-base configure again with your CPP environ
+ment variable set to $MAKECPP])
+  fi
+fi
+if test "$CXX" = ""; then
+  CXX=$MAKECXX
+else
+  if test "$CXX" != "$MAKECXX"; then
+    AC_MSG_WARN([You are running configure with the compiler ($CXX) set to a different value from that used by gnustep-make ($MAKECXX).  To
+ avoid conflicts/problems, reconfigure/reinstall gnustep-make to use $CXX or run the gnustep-base configure again with your CXX environment
+ variable set to $MAKECXX])
+  fi
+fi
+AC_PROG_CC
+AC_PROG_CPP
 
 #--------------------------------------------------------------------
 # The following is so that headers and custom libraries
@@ -173,7 +208,6 @@ if test $set_x_paths = yes; then
   if test $have_xshape = yes; then
   AC_CHECK_LIB(Xext, XShapeCombineMask,
     [
-      LIBS="-lXext $LIBS"
       AC_DEFINE(HAVE_XSHAPE, 1, [Define to enable Xshape support])
     ]
     ,)
@@ -274,11 +308,7 @@ if test $WITH_XFT = yes; then
   AC_CHECK_LIB(fontconfig, FcPatternCreate, have_fc=yes, have_fc=no)
   AC_CHECK_HEADER(fontconfig/fontconfig.h)
   if test "$have_fc" = yes -a "$ac_cv_header_fontconfig_fontconfig_h" = yes; then
-    # fontconfig is likely to be included if we found xft via pkg-config, so 
-    # don't include it twice
-    if test $PKG_XFT = no; then
       XFT_LIBS="${XFT_LIBS} -lfontconfig"
-    fi
     AC_DEFINE(HAVE_FC,1,[Define if you have FcPatternCreate])
   fi
   CPPFLAGS=${save_CPPFLAGS}
@@ -642,7 +672,26 @@ elif test x"$BUILD_GRAPHICS" = "xxlib"; then
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
  : # Nothing to do
 elif test x"$BUILD_GRAPHICS" = "xopal"; then
+ CPPFLAGS="$FONTCONFIG_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
  LIBS="-lopal -lgnustep-corebase $LIBS"
+ LIBS="$FONTCONFIG_LIBS $FREETYPE_LIBS $LIBS"
+ if test "$have_freetype" = no ; then # FCFaceInfo requires this
+    AC_MSG_WARN([can't find freetype, required for graphics=opal!])
+    if test $BUILD_SERVER = win32; then
+      BUILD_GRAPHICS=winlib
+else
+      BUILD_GRAPHICS=xlib
+    fi
+    AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
+ elif test "$have_fontconfig" = no ; then
+    AC_MSG_WARN([can't find fontconfig, required for graphics=opal!])
+    if test $BUILD_SERVER = win32; then
+      BUILD_GRAPHICS=winlib
+    else
+      BUILD_GRAPHICS=xlib
+    fi
+    AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
+  fi
 else
   AC_MSG_ERROR([Invalid graphics backend $BUILD_GRAPHICS])
 fi

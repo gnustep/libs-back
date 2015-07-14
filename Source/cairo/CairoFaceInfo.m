@@ -29,26 +29,9 @@
 */
 
 #include "cairo/CairoFaceInfo.h"
-#include "cairo/CairoFontEnumerator.h"
 #include <cairo-ft.h>
-#include <AppKit/NSFontManager.h>
 
 @implementation CairoFaceInfo 
-
-- (id) initWithfamilyName: (NSString *)familyName 
-                   weight: (int)weight 
-                   traits: (unsigned int)traits 
-                  pattern: (FcPattern *)pattern
-{
-  _pattern = pattern;
-  FcPatternReference(_pattern);
-
-  [self setFamilyName: familyName];
-  [self setWeight: weight];
-  [self setTraits: traits];
-
-  return self;
-}
 
 - (void) dealloc
 {
@@ -56,57 +39,21 @@
     {
       cairo_font_face_destroy(_fontFace);
     }
-  FcPatternDestroy(_pattern);
-  RELEASE(_familyName);
-  RELEASE(_characterSet);
   [super dealloc];
 }
 
-- (void) setFamilyName: (NSString *)name
-{
-  ASSIGN(_familyName, name);
-}
-
-- (NSString *)familyName
-{
-  return _familyName;
-}
-
-- (int) weight
-{
-  return _weight;
-}
-
-- (void) setWeight: (int)weight
-{
-  _weight = weight;
-}
-
-- (unsigned int) traits
-{
-  return _traits;
-}
-
-- (void) setTraits: (unsigned int)traits
-{
-  _traits = traits;
-}
-
-- (unsigned int) cacheSize
-{
-  return 257;
-}
-
-- (cairo_font_face_t *)fontFace
+- (void *)fontFace
 {
   if (!_fontFace)
     {
-      FcResult result;
       FcPattern *resolved;
+      FcBool scalable;
 
-      FcConfigSubstitute(NULL, _pattern, FcMatchPattern); 
-      FcDefaultSubstitute(_pattern);
-      resolved = FcFontMatch(NULL, _pattern, &result);
+      resolved = [self matchedPattern];
+      FcPatternGetBool(resolved, FC_SCALABLE, 0, &scalable);
+      if (scalable != FcTrue) {
+        NSLog(@"Selected non-scalable font.");
+      }
 
       _fontFace = cairo_ft_font_face_create_for_pattern(resolved);
       FcPatternDestroy(resolved);
@@ -121,34 +68,6 @@
     }
 
   return _fontFace;
-}
-
-- (NSCharacterSet*)characterSet
-{
-  if (_characterSet == nil && !_hasNoCharacterSet)
-    {
-      FcResult result;
-      FcPattern *resolved;
-      FcCharSet *charset;
-      
-      FcConfigSubstitute(NULL, _pattern, FcMatchPattern); 
-      FcDefaultSubstitute(_pattern);
-      resolved = FcFontMatch(NULL, _pattern, &result);
-      
-      if (FcResultMatch == FcPatternGetCharSet(resolved, FC_CHARSET, 0, &charset))
-	{
-	  _characterSet = [[FontconfigCharacterSet alloc] initWithFontconfigCharSet: charset];
-	}  
-      
-      /* Only try to get the character set once because FcFontMatch is expensive */
-      if (_characterSet == nil)
-	{
-	  _hasNoCharacterSet = YES;
-	}
-
-      FcPatternDestroy(resolved);
-    }
-  return _characterSet;
 }
 
 @end

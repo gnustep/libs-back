@@ -28,24 +28,16 @@
 #ifndef CairoFontInfo_h
 #define CairoFontInfo_h
 
-#include <GNUstepGUI/GSFontInfo.h>
+#include "fontconfig/FCFontInfo.h"
 #include "cairo/CairoFaceInfo.h"
 #include <cairo.h>
 
-@interface CairoFontInfo : GSFontInfo
+@interface CairoFontInfo : FCFontInfo
 {
 @public
 	cairo_scaled_font_t *_scaled;
-	CairoFaceInfo *_faceInfo;
-	BOOL _screenFont;
-	CGFloat lineHeight;
-
-	unsigned int _cacheSize;
-	unsigned int *_cachedGlyphs;
-	NSSize *_cachedSizes;
 }
 
-- (void) setCacheSize:(unsigned int)size;
 - (void) drawGlyphs: (const NSGlyph*)glyphs
 	     length: (int)length 
 	         on: (cairo_t*)ct;

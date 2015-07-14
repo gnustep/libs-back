@@ -37,6 +37,10 @@ cairo_OBJC_FILES = CairoSurface.m \
   CairoFaceInfo.m \
   CairoPSSurface.m \
   CairoPDFSurface.m \
+  ../fontconfig/FCFaceInfo.m \
+  ../fontconfig/FCFontEnumerator.m \
+  ../fontconfig/FCFontInfo.m \
+
 
 ifeq ($(BUILD_SERVER),x11)
   ifeq ($(WITH_GLITZ),yes)

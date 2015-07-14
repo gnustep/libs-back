@@ -28,16 +28,28 @@
 #ifndef OpalFontInfo_h_defined
 #define OpalFontInfo_h_defined
 
-#import <GNUstepGUI/GSFontInfo.h>
-
-@interface OpalFontInfo : GSFontInfo
+#include "fontconfig/FCFontInfo.h"
+#include "opal/OpalFaceInfo.h"
+#if 0
+#include <cairo.h>
+#endif
+@interface OpalFontInfo : FCFontInfo
 {
+@public
+#if 0
+	cairo_scaled_font_t *_scaled;
+#endif
 }
-
+/*
 - (id) initWithFontName: (NSString *)name 
                  matrix: (const CGFloat *)fmatrix 
              screenFont: (BOOL)p_screenFont;
-
+*/
+#if 0
+- (void) drawGlyphs: (const NSGlyph*)glyphs
+	     length: (int)length 
+	         on: (cairo_t*)ct;
+#endif
 @end
 
 #endif

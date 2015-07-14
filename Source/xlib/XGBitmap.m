@@ -1261,7 +1261,6 @@ _pixmap_read_alpha(RContext *context,
     }
   else
     {
-      XColor		c2;
       unsigned		row;
       unsigned long pixels[CSIZE];
       XColor colors[CSIZE];
@@ -1279,7 +1278,6 @@ _pixmap_read_alpha(RContext *context,
        * RGB color values - on the downside, it's very slow.
        */
       pixel = (unsigned long)-1;	// Never valid?
-      c2.pixel = pixel;
 
        for (row = 0; row < srect.height; row++)
 	{

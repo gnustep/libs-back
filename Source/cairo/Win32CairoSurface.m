@@ -331,7 +331,6 @@
         // Cleanup the cairo surfaces...
         cairo_surface_destroy(src);
         cairo_surface_destroy(dst);
-        [self deleteScreenHdc:hdc];
         
         // Convert BGRA to RGBA
         // Original code located in XGCairSurface.m
@@ -369,6 +368,9 @@
         result = [[[NSImage alloc] initWithSize: NSMakeSize(width, height)] autorelease];
         [result addRepresentation: bmp];
       }
+      
+      // Cleanup the screen HDC...
+      [self deleteScreenHdc:hdc];
     }
   
   // Return whatever we got...

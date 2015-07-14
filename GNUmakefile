@@ -56,5 +56,6 @@ endif
 -include GNUmakefile.preamble
 
 include $(GNUSTEP_MAKEFILES)/aggregate.make
+include $(GNUSTEP_MAKEFILES)/Master/deb.make
 
 -include GNUmakefile.postamble

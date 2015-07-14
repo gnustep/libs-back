@@ -37,29 +37,6 @@
 
 @implementation CairoFontInfo 
 
-- (void) setCacheSize: (unsigned int)size
-{
-  _cacheSize = size;
-  if (_cachedSizes)
-    {
-      free(_cachedSizes);
-    }
-  if (_cachedGlyphs)
-    {
-      free(_cachedGlyphs);
-    }
-  _cachedSizes = malloc(sizeof(NSSize) * size);
-  if (_cachedSizes)
-    {
-      memset(_cachedSizes, 0, sizeof(NSSize) * size);
-    }
-  _cachedGlyphs = malloc(sizeof(unsigned int) * size);
-  if (_cachedGlyphs)
-    {
-      memset(_cachedGlyphs, 0, sizeof(unsigned int) * size);
-    }
-}
-
 - (BOOL) setupAttributes
 {
   cairo_font_extents_t font_extents;
@@ -68,27 +45,10 @@
   cairo_matrix_t ctm;
   cairo_font_options_t *options;
 
-  ASSIGN(_faceInfo, [CairoFontEnumerator fontWithName: fontName]);
-  if (!_faceInfo)
+  if (![super setupAttributes])
     {
       return NO;
     }
-
-  // check for font specific cache size from face info
-  [self setCacheSize: [_faceInfo cacheSize]];
-
-  /* setting GSFontInfo:
-   * weight, traits, familyName,
-   * mostCompatibleStringEncoding, encodingScheme, coveredCharacterSet
-   */
-
-  weight = [_faceInfo weight];
-  traits = [_faceInfo traits];
-  familyName = [[_faceInfo familyName] copy];
-  mostCompatibleStringEncoding = NSUTF8StringEncoding;
-  encodingScheme = @"iso10646-1";
-  coveredCharacterSet = [[_faceInfo characterSet] retain];
-
 
   /* setting GSFontInfo:
    * xHeight, pix_width, pix_height
@@ -190,21 +150,11 @@
 
 - (void) dealloc
 {
-  RELEASE(_faceInfo);
   if (_scaled)
     {
       cairo_scaled_font_destroy(_scaled);
     }
-  if (_cachedSizes)
-    free(_cachedSizes);
-  if (_cachedGlyphs)
-    free(_cachedGlyphs);
   [super dealloc];
-}
-
-- (CGFloat) defaultLineHeightForFont
-{
-  return lineHeight;
 }
 
 - (BOOL) glyphIsEncoded: (NSGlyph)glyph
@@ -309,15 +259,6 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
   return 0.0;
 }
 
-- (NSGlyph) glyphWithName: (NSString *) glyphName
-{
-  /* subclass should override */
-  /* terrible! FIXME */
-  NSGlyph g = [glyphName cString][0];
-
-  return g;
-}
-
 - (void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs 
                               count: (int)length 
                        toBezierPath: (NSBezierPath *)path
@@ -407,7 +348,8 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
 
   // Set font options from the scaled font
   // FIXME: Instead of setting the matrix, setting the face, and setting
-  // the options, we should be using cairo_set_scaled_font
+  // the options, we should be using cairo_set_scaled_font().
+  // But we have to deal with the flipped matrix here.
   {
     cairo_font_options_t *options = cairo_font_options_create();
     cairo_scaled_font_get_font_options(_scaled, options);
@@ -472,7 +414,6 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
              length: (int)length 
                  on: (cairo_t*)ct
 {
-  cairo_matrix_t font_matrix;
   unichar ustr[length+1];
   char str[3*length+1];
   unsigned char *b;
@@ -494,36 +435,10 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
       return;
     }
 
-  cairo_matrix_init(&font_matrix, matrix[0], matrix[1], -matrix[2],
-                    matrix[3], matrix[4], matrix[5]);
-  cairo_set_font_matrix(ct, &font_matrix);
+  cairo_set_scaled_font(ct, _scaled);
   if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
     {
-      NSLog(@"Error while setting font matrix: %s", 
-            cairo_status_to_string(cairo_status(ct)));
-      return;
-    }
-
-  cairo_set_font_face(ct, [_faceInfo fontFace]);
-  if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
-    {
-      NSLog(@"Error while setting font face: %s", 
-            cairo_status_to_string(cairo_status(ct)));
-      return;
-    }
-
-  // Set font options from the scaled font
-  // FIXME: Instead of setting the matrix, setting the face, and setting
-  // the options, we should be using cairo_set_scaled_font
-  {
-    cairo_font_options_t *options = cairo_font_options_create();
-    cairo_scaled_font_get_font_options(_scaled, options);
-    cairo_set_font_options(ct, options);
-    cairo_font_options_destroy(options);
-  }
-  if (cairo_status(ct) != CAIRO_STATUS_SUCCESS)
-    {
-      NSLog(@"Error while setting font options: %s", 
+      NSLog(@"Error while setting scaled font: %s", 
             cairo_status_to_string(cairo_status(ct)));
       return;
     }

@@ -1,14 +1,11 @@
 /*
-   CairoFontEnumerator.m
- 
+   FCFontInfo.h
+
    Copyright (C) 2003 Free Software Foundation, Inc.
 
    August 31, 2003
    Written by Banlu Kemiyatorn <object at gmail dot com>
-   Base on original code of Alex Malmberg
-   Rewrite: Fred Kiefer <fredkiefer@gmx.de>
-   Date: Jan 2006
- 
+
    This file is part of GNUstep.
 
    This library is free software; you can redistribute it and/or
@@ -28,20 +25,26 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "cairo/CairoFontEnumerator.h"
-#include "cairo/CairoFontInfo.h"
+#ifndef FCFontInfo_h
+#define FCFontInfo_h
 
-@implementation CairoFontEnumerator 
+#include <GNUstepGUI/GSFontInfo.h>
+#include "fontconfig/FCFaceInfo.h"
 
-+ (Class) faceInfoClass
+@interface FCFontInfo : GSFontInfo
 {
-  return [CairoFaceInfo class];
-    }
+@public
+	FCFaceInfo *_faceInfo;
+	BOOL _screenFont;
+	CGFloat lineHeight;
 
-+ (CairoFaceInfo *) fontWithName: (NSString *) name
-{
-  return (CairoFaceInfo *) [super fontWithName: name];
-    }
+	unsigned int _cacheSize;
+	unsigned int *_cachedGlyphs;
+	NSSize *_cachedSizes;
+}
 
+- (void) setCacheSize:(unsigned int)size;
+- (BOOL) setupAttributes;
 @end
 
+#endif

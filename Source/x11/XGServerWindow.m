@@ -112,7 +112,7 @@ static int		last_win_num = 0;
                                         bitsPerPixel: (NSInteger)pixelBits;
 @end
 
-static NSBitmapImageRep *getStandardBitmapForBitmapFormat(NSImage *image, NSBitmapFormat bitmapFormat)
+static NSBitmapImageRep *getStandardBitmap(NSImage *image)
 {
   NSBitmapImageRep *rep;
 
@@ -149,16 +149,12 @@ static NSBitmapImageRep *getStandardBitmapForBitmapFormat(NSImage *image, NSBitm
                                        hasAlpha: [rep hasAlpha]
                                        isPlanar: NO
                                  colorSpaceName: NSCalibratedRGBColorSpace
-                                   bitmapFormat: bitmapFormat
+                                   bitmapFormat: 0
                                     bytesPerRow: 0
                                    bitsPerPixel: 0];
     }
 }
 
-static NSBitmapImageRep *getStandardBitmap(NSImage *image)
-{
-  return getStandardBitmapForBitmapFormat(image, 0);
-}
 
 void __objc_xgcontextwindow_linking (void)
 {
@@ -846,7 +842,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 				context->depth,
 				CopyFromParent,
 				context->visual,
-				(CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect),
+				(CWColormap | CWBorderPixel | CWOverrideRedirect),
 				&window->xwn_attrs);
 
   /*
@@ -1106,7 +1102,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
                   parent = new_parent;
                   repx = wattr.x;
                   repy = wattr.y;
-                  NSLog(@"QueryTree window is %lu (root %lu cwin root %lu)", 
+                  NSDebugLLog(@"Offset", 
+                              @"QueryTree window is %lu (root %lu cwin root %lu)", 
                         parent, root, window->root);
                   if (!XQueryTree(dpy, parent, &root, &new_parent, 
                                   &children, &nchildren))
@@ -1311,7 +1308,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
           // Window state
           generic.netstates.net_wm_state_atom = 
 	    XInternAtom(dpy, "_NET_WM_STATE", False);
-	  generic.netstates.new_wm_state_modal_atom = 
+	  generic.netstates.net_wm_state_modal_atom = 
 	    XInternAtom(dpy, "_NET_WM_STATE_MODAL", False);
           generic.netstates.net_wm_state_sticky_atom = 
 	    XInternAtom(dpy, "_NET_WM_STATE_STICKY", False);
@@ -1830,10 +1827,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
    only done if the Window is buffered or retained. */
 - (void) _createBuffer: (gswindow_device_t *)window
 {
-  if (window->type == NSBackingStoreNonretained
-      || (window->gdriverProtocol & GDriverHandlesBacking))
-    return;
-
   if (window->depth == 0)
     window->depth = DefaultDepth(dpy, window->screen);
   if (NSWidth(window->xframe) == 0 && NSHeight(window->xframe) == 0)
@@ -1876,7 +1869,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   long *iconPropertyData;
   int iconSize;
  
-  rep = getStandardBitmapForBitmapFormat(image, NSAlphaNonpremultipliedBitmapFormat);
+  rep = getStandardBitmap(image);
   if (rep == nil)
     {
       NSLog(@"Wrong image type for WM icon");
@@ -1916,14 +1909,28 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 	  // blue
 	  B = d[2];
 	  // alpha
+#if 0
+/*
+  For unclear reasons the alpha handling does not work, so we simulate it.
+*/
 	  if (samples == 4)
 	    {
-	      A = d[3];
+	      A = d[4];
 	    }
 	  else
 	    {
 	      A = 255;
 	    }
+#else
+	  if (R || G || B)
+	    {
+	      A = 255;
+	    }
+	  else
+	    {
+	      A = 0;
+	    }
+#endif
 
           iconPropertyData[index++] = A << 24 | R << 16 | G << 8 | B;
 	  d += samples;
@@ -2041,7 +2048,9 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 				context->depth,
 				CopyFromParent,
 				context->visual,
-				(CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect),
+                                // Don't set the CWBackPixel, as the background of the
+                                // window may be different.
+				(CWColormap | CWBorderPixel | CWOverrideRedirect),
 				&window->xwn_attrs);
 
   /*
@@ -2317,10 +2326,9 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       NSMapRemove(windowmaps, (void*)window->ident);
     }
 
-  if (window->buffer && (window->gdriverProtocol & GDriverHandlesBacking) == 0)
+  if (window->buffer)
     XFreePixmap (dpy, window->buffer);
-  if (window->alpha_buffer 
-      && (window->gdriverProtocol & GDriverHandlesBacking) == 0)
+  if (window->alpha_buffer)
     XFreePixmap (dpy, window->alpha_buffer);
   if (window->region)
     XDestroyRegion (window->region);
@@ -2539,9 +2547,9 @@ NSLog(@"styleoffsets ... guessing offsets\n");
 
   NSDebugLLog(@"XGTrace", @"DPSwindowbacking: %d : %d", (int)type, win);
 
+  window->type = type;
   if ((window->gdriverProtocol & GDriverHandlesBacking))
     {
-      window->type = type;
       return;
     }
 
@@ -2550,8 +2558,10 @@ NSLog(@"styleoffsets ... guessing offsets\n");
       XFreePixmap (dpy, window->buffer);
       window->buffer = 0;
     }
-  window->type = type;
+  else if (window->buffer == 0)
+    {
   [self _createBuffer: window];
+}
 }
 
 - (void) titlewindow: (NSString *)window_title : (int) win
@@ -2752,10 +2762,26 @@ NSLog(@"styleoffsets ... guessing offsets\n");
   window->buffer_width = width;
   window->buffer_height = height;
 
-  if (window->buffer == 0)
+#if (BUILD_GRAPHICS == GRAPHICS_xlib)
+  /* The window->gdriverProtocol flag does not work as intended;
+     it doesn't get set until after _createBuffer is called,
+     so it's not a relaible way to tell whether we need to create
+     a backing pixmap here.
+
+     This method was causing a serious leak with the default
+     Cairo XGCairoModernSurface because we were erroneously
+     creating a pixmap, and then not releasing it in -termwindow:
+     because the GDriverHandlesBacking flag was set in between.
+
+     So this #if servers as a foolproof way of ensuring we
+     don't ever create window->buffer in the default configuration.
+   */
+  if ((window->buffer == 0) && (window->type != NSBackingStoreNonretained) &&
+      ((window->gdriverProtocol & GDriverHandlesBacking) == 0))
     {
       [self _createBuffer: window];
     }
+#endif
 
   [self styleoffsets: &l : &r : &t : &b
 		    : window->win_attrs.window_style : window->ident];
@@ -3091,6 +3117,17 @@ static BOOL didCreatePixmaps;
 		}
 	    }
 	}
+
+      if (window->win_attrs.window_level == NSModalPanelWindowLevel)
+        {
+          [self _sendRoot: window->root 
+                     type: generic.netstates.net_wm_state_atom
+                   window: window->ident
+                    data0: _NET_WM_STATE_ADD
+                    data1: generic.netstates.net_wm_state_modal_atom
+                    data2: 0
+                    data3: 1];
+    }
     }
   XFlush(dpy);
 }

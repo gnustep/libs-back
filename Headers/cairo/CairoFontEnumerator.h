@@ -28,41 +28,16 @@
 #ifndef CairoFontEnumerator_h
 #define CairoFontEnumerator_h
 
-#include <GNUstepGUI/GSFontInfo.h>
+#include "fontconfig/FCFontEnumerator.h"
 #include <cairo.h>
-#define id fontconfig_id
-#include <fontconfig/fontconfig.h>
-#undef id
-#include "cairo/CairoFaceInfo.h"
 
-@interface CairoFontEnumerator : GSFontEnumerator
+@class CairoFaceInfo;
+
+@interface CairoFontEnumerator : FCFontEnumerator
+{
+}
++ (Class) faceInfoClass;
 + (CairoFaceInfo *) fontWithName: (NSString *)name;
-@end
-
-@interface FontconfigPatternGenerator : NSObject
-{
-  NSDictionary *_attributes;
-  FcPattern *_pat;
-}
-- (FcPattern *)createPatternWithAttributes: (NSDictionary *)attributes;
-@end
-
-@interface FontconfigPatternParser : NSObject
-{
-  NSMutableDictionary *_attributes;
-  FcPattern *_pat;
-}
-- (NSDictionary*)attributesFromPattern: (FcPattern *)pat;
-@end
-
-@interface FontconfigCharacterSet : NSCharacterSet
-{
-  FcCharSet *_charset;
-}
-
-- (id)initWithFontconfigCharSet: (FcCharSet*)charset;
-- (FcCharSet*)fontconfigCharSet;
-
 @end
 
 #endif

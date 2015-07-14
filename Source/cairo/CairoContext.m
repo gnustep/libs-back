@@ -74,17 +74,6 @@
 #  error Invalid server for Cairo backend : non implemented
 #endif /* BUILD_SERVER */
 
-@interface NSBitmapImageRep (GSPrivate)
-- (NSBitmapImageRep *) _convertToFormatBitsPerSample: (int)bps
-                                     samplesPerPixel: (int)spp
-                                            hasAlpha: (BOOL)alpha
-                                            isPlanar: (BOOL)isPlanar
-                                      colorSpaceName: (NSString*)colorSpaceName
-                                        bitmapFormat: (NSBitmapFormat)bitmapFormat 
-                                         bytesPerRow: (int)rowBytes
-                                        bitsPerPixel: (int)pixelBits;
-@end
-
 @implementation CairoContext
 
 + (void) initializeBackend
@@ -124,8 +113,8 @@
   // further debugging cairo/MSwindows non-retained backing store type:
   // This is called from NSWindow/flushWindow for the non-retained backing
   // store case.  This code originally seems to have been added due to the 
-  // non-retained backing store type NOT showing up on XWindows/Cairo combination
-  // and added this XFlush call to handle this case.
+  // non-retained backing store type NOT showing up on XWindows/Cairo
+  // combination and added this XFlush call to handle this case.
   
   // For MSWindows a similar problem seems to occur. However, the only
   // equivalent to XFlush on MSWindows is GdiFlush, which doesn't cause
@@ -137,9 +126,10 @@
 #if BUILD_SERVER == SERVER_x11
   XFlush([(XGServer *)server xDisplay]);
 #elif BUILD_SERVER == SERVER_win32
-  Win32CairoSurface *surface;
+  CairoSurface *surface = nil;
+
   [CGSTATE GSCurrentSurface: &surface : NULL : NULL];
-  if (surface)
+  if ((surface != nil) && ([surface surface] != NULL))
     {
       // Non-retained backing store types currently unsupported on MSWindows...
       // Currently handling such windows as buffered and invoking the handle
@@ -224,50 +214,6 @@
       return YES;
     }
 }
-
-- (void) GSDrawImage: (NSRect)rect: (void *)imageref
-{
-  NSBitmapImageRep *bitmap;
-  const unsigned char *data[5];
-  NSString *colorSpaceName;
-
-  bitmap = (NSBitmapImageRep*)imageref;
-  colorSpaceName = [bitmap colorSpaceName];
-  if ([bitmap isPlanar] || ([bitmap bitmapFormat] != 0) 
-      || ([bitmap bitsPerSample] != 8) ||
-      (![colorSpaceName isEqualToString: NSDeviceRGBColorSpace] &&
-       ![colorSpaceName isEqualToString: NSCalibratedRGBColorSpace]))
-    {
-      int bitsPerSample = 8;
-      BOOL isPlanar = NO;
-      int samplesPerPixel = [bitmap hasAlpha] ? 4 : 3;
-      NSString *colorSpaceName = NSCalibratedRGBColorSpace;
-      NSBitmapImageRep *new;
-
-     new = [bitmap _convertToFormatBitsPerSample: bitsPerSample
-                    samplesPerPixel: samplesPerPixel
-                    hasAlpha: [bitmap hasAlpha]
-                    isPlanar: isPlanar
-                    colorSpaceName: colorSpaceName
-                    bitmapFormat: 0
-                    bytesPerRow: 0
-                    bitsPerPixel: 0];
-
-      if (new == nil)
-    {
-          NSLog(@"Could not convert bitmap data");
-          return;
-    }
-      bitmap = new;
-    }
-
-  [bitmap getBitmapDataPlanes: (unsigned char **)&data];
-  [self NSDrawBitmap: rect : [bitmap pixelsWide] : [bitmap pixelsHigh]
-        : [bitmap bitsPerSample] : [bitmap samplesPerPixel]
-        : [bitmap bitsPerPixel] : [bitmap bytesPerRow] : [bitmap isPlanar]
-        : [bitmap hasAlpha] :  [bitmap colorSpaceName]
-        : data];
-    }
 
 - (void) GSCurrentDevice: (void **)device : (int *)x : (int *)y
 {

@@ -47,17 +47,21 @@
 
 + (int) glxMinorVersion
 {
+  static int cachedVersion = -1;
+
+  if (cachedVersion == -1)
+    {
   Display * display = [(XGServer *)GSCurrentServer() xDisplay];
   NSDictionary * attributes = [GSCurrentServer() attributes];
   NSString * sn = [attributes objectForKey: GSScreenNumber];
 
   // This is due to some OpenGL drivers reporting a lower overall GLX version than they actually implement.
-  NSString * glxServerVersion = [NSString stringWithFormat:@"%s", glXQueryServerString(display, [sn intValue], GLX_VERSION)];
-  NSString * glxClientVersion = [NSString stringWithFormat:@"%s", glXGetClientString(display, GLX_VERSION)];
-
+      NSString *glxServerVersion = 
+        [NSString stringWithFormat:@"%s", glXQueryServerString(display, [sn intValue], GLX_VERSION)];
+      NSString *glxClientVersion =
+        [NSString stringWithFormat:@"%s", glXGetClientString(display, GLX_VERSION)];
   float serverversion = [glxServerVersion floatValue];
   float clientversion = [glxClientVersion floatValue];
-
   float serverIntegerPart;
   float clientIntegerPart;
   float fracServer = modff(serverversion, &serverIntegerPart);
@@ -69,11 +73,11 @@
       fracClient = rintf(fracClient * 10.0f);
 
       NSDebugMLLog(@"GLX", @"server %f client %f", fracServer, fracClient );
-
-      return (int)MIN(fracServer, fracClient);
+          cachedVersion = (int)MIN(fracServer, fracClient);
+    }
     }
 
-  return -1;
+  return cachedVersion;
 }
 
 // Works for some attributes only
@@ -85,7 +89,6 @@
 
   NSAssert((fbconfig != NULL || visualinfo != NULL) && configurationCount > 0,
             NSInternalInconsistencyException);
-
 
   if (glxminorversion >= 3)
     {
@@ -272,11 +275,9 @@ do \
                 {
                   ptr++;
                   append(GLX_SAMPLE_BUFFERS, *ptr);
-                  break;
                 }
-              #else
-              break;
               #endif
+              break;
             }
           case NSOpenGLPFASamples:
             {
@@ -285,11 +286,9 @@ do \
                 {
                   ptr++;
                   append(GLX_SAMPLES, *ptr);
-                  break;
                 }
-              #else
-              break;
               #endif
+              break;
             }
 
           case NSOpenGLPFAAuxDepthStencil:
@@ -332,6 +331,10 @@ do \
   NSDictionary * dsattributes;
 
   self = [super init];
+  if (self == nil)
+    {
+      return nil;
+    }
 
   fbconfig = NULL;
   visualinfo = NULL;
@@ -361,8 +364,7 @@ do \
 	  if ((NULL != pictFormat
                && (pictFormat->type == PictTypeDirect)
                && (pictFormat->direct.alphaMask))
-              ||
-              !shouldRequestARGBVisual)
+              || !shouldRequestARGBVisual)
 	    {
               pickedFBConfig = i;
               visualinfo = vinfo;
@@ -427,8 +429,8 @@ do \
   if ( context == NULL )
     {
       NSDebugMLLog(@"GLX", 
-        @"Can not create GL context for pixel format %@ - Error %u",
-        self, glGetError());
+        @"Cannot create GL context for pixel format %@ - Error %s",
+        self, glGetString(glGetError()));
     }
 
   return context;
@@ -437,7 +439,7 @@ do \
 - (GLXWindow) drawableForWindow: (Window)xwindowid
 {
   GLXWindow win;
-  GLint error;
+  GLenum error;
 
   if (glxminorversion >= 3)
     {
@@ -452,8 +454,8 @@ do \
   if ( error != GL_NO_ERROR )
     {
       NSDebugMLLog(@"GLX", 
-                   @"Can not create GL window for pixel format %@ - Error %u",
-                   self, error );
+                   @"Cannot create GL window for pixel format %@ - Error %s",
+                   self, glGetString(error));
     }
 
   return win;

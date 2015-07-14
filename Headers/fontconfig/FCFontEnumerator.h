@@ -1,14 +1,10 @@
 /*
-   CairoFontEnumerator.m
- 
-   Copyright (C) 2003 Free Software Foundation, Inc.
+   FCFontEnumerator.h
 
+   Copyright (C) 2003 Free Software Foundation, Inc.
    August 31, 2003
    Written by Banlu Kemiyatorn <object at gmail dot com>
-   Base on original code of Alex Malmberg
-   Rewrite: Fred Kiefer <fredkiefer@gmx.de>
-   Date: Jan 2006
- 
+
    This file is part of GNUstep.
 
    This library is free software; you can redistribute it and/or
@@ -28,20 +24,47 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "cairo/CairoFontEnumerator.h"
-#include "cairo/CairoFontInfo.h"
 
-@implementation CairoFontEnumerator 
+#ifndef FCFontEnumerator_h
+#define FCFontEnumerator_h
 
-+ (Class) faceInfoClass
+#include <GNUstepGUI/GSFontInfo.h>
+#define id fontconfig_id
+#include <fontconfig/fontconfig.h>
+#undef id
+#include "fontconfig/FCFaceInfo.h"
+
+@interface FCFontEnumerator : GSFontEnumerator
 {
-  return [CairoFaceInfo class];
-    }
+}
++ (Class) faceInfoClass;
++ (FCFaceInfo *) fontWithName: (NSString *)name;
+@end
 
-+ (CairoFaceInfo *) fontWithName: (NSString *) name
+@interface FontconfigPatternGenerator : NSObject
 {
-  return (CairoFaceInfo *) [super fontWithName: name];
-    }
+  NSDictionary *_attributes;
+  FcPattern *_pat;
+}
+- (FcPattern *)createPatternWithAttributes: (NSDictionary *)attributes;
+@end
+
+@interface FontconfigPatternParser : NSObject
+{
+  NSMutableDictionary *_attributes;
+  FcPattern *_pat;
+}
+- (NSDictionary*)attributesFromPattern: (FcPattern *)pat;
+@end
+
+@interface FontconfigCharacterSet : NSCharacterSet
+{
+  FcCharSet *_charset;
+}
+
+- (id)initWithFontconfigCharSet: (FcCharSet*)charset;
+- (FcCharSet*)fontconfigCharSet;
 
 @end
 
+#endif

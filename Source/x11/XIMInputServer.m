@@ -39,6 +39,7 @@
 #include "x11/XGInputServer.h"
 #include <X11/Xlocale.h>
 
+#define NoneStyle           (XIMPreeditNone     | XIMStatusNone)
 #define RootWindowStyle	    (XIMPreeditNothing	| XIMStatusNothing)
 #define OffTheSpotStyle	    (XIMPreeditArea	| XIMStatusArea)
 #define OverTheSpotStyle    (XIMPreeditPosition	| XIMStatusArea)
@@ -68,8 +69,18 @@
 		display: (Display *)dpy
 		   name: (NSString *)name
 {
+  char *locale;
   delegate = aDelegate;
   ASSIGN(server_name, name);
+
+  locale = setlocale(LC_CTYPE, "");
+
+  if (XSupportsLocale() != True) 
+    {
+      NSLog(@"Xlib does not support locale setting %s", locale);
+      /* FIXME: Should we reset the locale or just hope that X 
+	 can deal with it? */
+    }
 
 #ifdef USE_XIM
   if ([self ximInit: dpy] == NO)
@@ -218,6 +229,39 @@
   return YES;
 }
 
+static XIMStyle
+betterStyle(XIMStyle a, XIMStyle b, XIMStyle xim_requested_style)
+{
+  if (a == xim_requested_style)
+    return a;
+  if (b == xim_requested_style)
+    return b;
+
+  // N.B. We don't support OnTheSpotStyle so it is omitted here
+
+  if (a == OverTheSpotStyle)
+    return a;
+  if (b == OverTheSpotStyle)
+    return b;
+
+  if (a == OffTheSpotStyle)
+    return a;
+  if (b == OffTheSpotStyle)
+    return b;
+
+  if (a == RootWindowStyle)
+    return a;
+  if (b == RootWindowStyle)
+    return b;
+
+  if (a == NoneStyle)
+    return a;
+  if (b == NoneStyle)
+    return b;
+
+  return 0;
+}
+
 - (int) ximStyleInit
 {
   NSUserDefaults    *uds;
@@ -265,16 +309,18 @@
 
   for (i = 0; i < styles->count_styles; i++)
     {
-      if (styles->supported_styles[i] == xim_requested_style)
-	{
-	  xim_style = xim_requested_style;
-	  XFree(styles);
-	  return 1;
+      xim_style = betterStyle(xim_style, styles->supported_styles[i],
+			      xim_requested_style);
 	}
-    }
-  NSLog(@"XIM: '%@' is not supported", request);
   XFree(styles);
+
+  if (xim_style == 0)
+    {
+      NSLog(@"XIM: no supported styles found");
   return 0;
+}
+
+  return 1;
 }
 
 - (void) ximClose
@@ -325,7 +371,7 @@
 {
   XIC xic = NULL;
 
-  if (xim_style == RootWindowStyle)
+  if (xim_style == RootWindowStyle || xim_style == NoneStyle)
     {
       xic = XCreateIC(xim,
 		      XNInputStyle, xim_style,

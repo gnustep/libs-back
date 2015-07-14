@@ -25,6 +25,7 @@
    Boston, MA 02110-1301, USA.
 */
 
+#import <CoreGraphics/CoreGraphics.h>
 #import "gsc/GSGState.h"
 
 @class OpalSurface;
@@ -32,35 +33,50 @@
 @interface OpalGState : GSGState
 {
   OpalSurface * _opalSurface;
-}
 
-- (void) DPSinitclip;
+  /** When a surface's gstate is being switched away from,
+      we store the current gstate in _opGState.
+
+      When a surface's gstate is being switched back to,
+      if _opGState is not nil, we apply the stored gstate.
+
+      To facilitate OpalGState class instance copying, we 
+      also store a copy of the gstate inside _opGState when
+      gstate's -copyWithZone: is being run. This is because
+      the same _opalSurface should be used in both new and
+      old OpalGState. 
+
+      The same is done in Cairo backend, with one key 
+      difference: since all graphics state operations in 
+      Cairo are done directly on cairo_t and are unrelated
+      to the surface, Opal mixes the concepts of a gstate
+      and a surface into a context. Hence, when gstate is
+      switched, it's OpalContext's duty to apply the stored
+      copy of a gstate from _opGState. No such trickery
+      is needed with Cairo, as Cairo backend can simply
+      have a different cairo_t with the same surface.
+   **/
+  OPGStateRef _opGState;
+}
+@end
+
+@interface OpalGState (InitializationMethods)
 - (void) DPSinitgraphics;
-- (void) DPSclip;
-- (void) DPSfill;
-- (void) DPSimage: (NSAffineTransform *)matrix
-                 : (NSInteger)pixelsWide
-		 : (NSInteger)pixelsHigh
-                 : (NSInteger)bitsPerSample 
-		 : (NSInteger)samplesPerPixel
-                 : (NSInteger)bitsPerPixel
-		 : (NSInteger)bytesPerRow
-                 : (BOOL)isPlanar
-		 : (BOOL)hasAlpha
-                 : (NSString *)colorSpaceName
-		 : (const unsigned char *const[5])data;
-- (void) compositeGState: (OpalGState *)source
-                fromRect: (NSRect)srcRect 
-                 toPoint: (NSPoint)destPoint 
-                      op: (NSCompositingOperation)op
-                fraction: (CGFloat)delta;
-- (void) compositerect: (NSRect)aRect
-                    op: (NSCompositingOperation)op;
 - (void) GSSetSurface: (OpalSurface *)opalSurface
                      : (int)x
                      : (int)y;
+- (void) GSCurrentSurface: (OpalSurface **)surface
+                         : (int *)x
+                         : (int *)y;
 @end
 
 @interface OpalGState (Accessors)
-- (CGContextRef) cgContext;
+- (CGContextRef) CGContext;
+- (OPGStateRef) OPGState;
+- (void) setOPGState: (OPGStateRef) opGState;
+@end
+
+@interface OpalGState (NonrequiredMethods)
+- (void) DPSgsave;
+- (void) DPSgrestore;
 @end

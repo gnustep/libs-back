@@ -101,6 +101,16 @@ static inline CGFloat floatToUserSpace(NSAffineTransform *ctm, double d)
   return (CGFloat)d;
 }
 
+static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpolation interpolation)
+{
+  switch (interpolation)
+    {
+    case NSImageInterpolationNone: return CAIRO_FILTER_NEAREST;
+    case NSImageInterpolationLow: return CAIRO_FILTER_FAST;
+    case NSImageInterpolationHigh: return CAIRO_FILTER_BEST;
+    default: return CAIRO_FILTER_GOOD;
+    }
+}
 
 
 @implementation CairoGState 
@@ -401,18 +411,11 @@ static inline CGFloat floatToUserSpace(NSAffineTransform *ctm, double d)
 
 - (void) GSSetFont: (GSFontInfo *)fontref
 {
-  cairo_matrix_t font_matrix;
-  const CGFloat *matrix; 
-
   [super GSSetFont: fontref];
 
   if (_ct)
     {
-      matrix = [font matrix];
-      cairo_set_font_face(_ct, [((CairoFontInfo *)font)->_faceInfo fontFace]);
-      cairo_matrix_init(&font_matrix, matrix[0], matrix[1], matrix[2],
-			matrix[3], matrix[4], matrix[5]);
-      cairo_set_font_matrix(_ct, &font_matrix);
+      cairo_set_scaled_font(_ct, ((CairoFontInfo *)font)->_scaled);
     }
 }
 
@@ -856,8 +859,8 @@ static inline CGFloat floatToUserSpace(NSAffineTransform *ctm, double d)
   r = [ctm rectInMatrixSpace: r];
   x = NSWidth(r);
   y = NSHeight(r);
-  ix = abs(floor(x));
-  iy = abs(floor(y));
+  ix = fabs(floor(x));
+  iy = fabs(floor(y));
   ssize = NSMakeSize(ix, iy);
 
   dict = [NSMutableDictionary dictionary];
@@ -1170,7 +1173,8 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
     cairo_matrix_init_scale(&source_matrix, 1, -1);
     cairo_matrix_translate(&source_matrix, 0, -pixelsHigh);
     cairo_pattern_set_matrix(cpattern, &source_matrix);
-    cairo_pattern_set_filter(cpattern, CAIRO_FILTER_BILINEAR);
+    cairo_pattern_set_filter(cpattern, 
+                             cairoFilterFromNSImageInterpolation([drawcontext imageInterpolation]));
     if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 6, 0))
       {
         cairo_pattern_set_extend(cpattern, CAIRO_EXTEND_PAD);
@@ -1261,7 +1265,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   cairo_pattern_t *cpattern;
   cairo_matrix_t source_matrix;
 
-  NSDebugMLLog(@"CairoGState", @"%self: %@\n", self);
+  NSDebugMLLog(@"CairoGState", @"self: %@\n", self);
 
   if (!_ct || !source->_ct)
     {
@@ -1316,9 +1320,10 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       ssize = [source->_surface size];
     }
 
-  if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 8, 0))
+  if ((cairo_version() >= CAIRO_VERSION_ENCODE(1, 8, 0)) && 
+      (cairo_version() <= CAIRO_VERSION_ENCODE(1, 13, 0)))
     {      
-      // For cairo > 1.8 we seem to need this adjustment
+      // For cairo > 1.8 and < 1.13 we seem to need this adjustment
       srcRectInBase.origin.y -= 2 * (source->offset.y - ssize.height);
     }
 
@@ -1345,7 +1350,8 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   //cairo_matrix_translate(&source_matrix, 0,  -[_surface size].height);
   cairo_matrix_translate(&source_matrix, minx - x + dx, miny - y + dy - ssize.height);
   cairo_pattern_set_matrix(cpattern, &source_matrix);
-  cairo_pattern_set_filter(cpattern, CAIRO_FILTER_BILINEAR);
+  cairo_pattern_set_filter(cpattern, 
+                           cairoFilterFromNSImageInterpolation([drawcontext imageInterpolation]));
   cairo_set_source(_ct, cpattern);
   cairo_pattern_destroy(cpattern);
   cairo_rectangle(_ct, x, y, width, height);
@@ -1437,7 +1443,8 @@ doesn't support to use the receiver cairo target as the source. */
   cairo_matrix_init_scale(&source_matrix, 1, -1);
   cairo_matrix_translate(&source_matrix, 0, -[source->_surface size].height);
   cairo_pattern_set_matrix(cpattern, &source_matrix);
-  cairo_pattern_set_filter(cpattern, CAIRO_FILTER_BILINEAR);
+  cairo_pattern_set_filter(cpattern, 
+                           cairoFilterFromNSImageInterpolation([drawcontext imageInterpolation]));
   if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 6, 0))
     {
       cairo_pattern_set_extend(cpattern, CAIRO_EXTEND_PAD);
