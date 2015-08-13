@@ -2467,7 +2467,7 @@ process_char(WPARAM wParam, unsigned *eventModifierFlags)
       case VK_F8: WIN_FUNCTIONKEY return NSF8FunctionKey;
       case VK_F9: WIN_FUNCTIONKEY return NSF9FunctionKey;
       case VK_F10: WIN_FUNCTIONKEY return NSF10FunctionKey;
-      case VK_F11: WIN_FUNCTIONKEY return NSF12FunctionKey;
+      case VK_F11: WIN_FUNCTIONKEY return NSF11FunctionKey;
       case VK_F12: WIN_FUNCTIONKEY return NSF12FunctionKey;
       case VK_F13: WIN_FUNCTIONKEY return NSF13FunctionKey;
       case VK_F14: WIN_FUNCTIONKEY return NSF14FunctionKey;
