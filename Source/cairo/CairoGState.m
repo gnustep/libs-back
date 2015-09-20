@@ -723,6 +723,8 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
             break;
         }
     }
+  // FIXME: Should be part of the state 
+  cairo_set_antialias(_ct, [drawcontext shouldAntialias] ? CAIRO_ANTIALIAS_DEFAULT : CAIRO_ANTIALIAS_NONE);
 }
 
 - (void) DPSclip
