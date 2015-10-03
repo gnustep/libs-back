@@ -254,6 +254,36 @@ static NSMapTable *gtable;
   return gstate;
 }
 
+- (void) setShouldAntialias: (BOOL)antialias
+{
+  [gstate setShouldAntialias: antialias];
+}
+
+- (BOOL) shouldAntialias
+{
+  return [gstate shouldAntialias];
+}
+
+- (NSPoint) patternPhase
+{
+  return [gstate patternPhase];
+}
+
+- (void) setPatternPhase: (NSPoint)phase
+{
+  [gstate setPatternPhase: phase];
+}
+
+- (NSCompositingOperation) compositingOperation
+{
+  return [gstate compositingOperation];
+}
+
+- (void) setCompositingOperation: (NSCompositingOperation)operation
+{
+  [gstate setCompositingOperation: operation];
+}
+
 @end
 
 @implementation GSContext (Ops)

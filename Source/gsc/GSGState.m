@@ -143,6 +143,36 @@
   ASSIGN(pattern, image);
 }
 
+- (void) setShouldAntialias: (BOOL)antialias
+{
+  _antialias = antialias;
+}
+
+- (BOOL) shouldAntialias
+{
+  return _antialias;
+}
+
+- (NSPoint) patternPhase
+{
+  return _patternPhase;
+}
+
+- (void) setPatternPhase: (NSPoint)phase
+{
+  _patternPhase = phase;
+}
+
+- (NSCompositingOperation) compositingOperation
+{
+  return _compositingOperation;
+}
+
+- (void) setCompositingOperation: (NSCompositingOperation)operation
+{
+  _compositingOperation = operation;
+}
+
 // This is only a fall back, the method should not be called any more.
 - (void) compositeGState: (GSGState *)source
                 fromRect: (NSRect)aRect
@@ -1285,7 +1315,7 @@ typedef enum {
   [ictm invert];
 
   size = [color_pattern size];
-  patternPhase = [drawcontext patternPhase];
+  patternPhase = [self patternPhase];
 
   if (!NSEqualPoints(patternPhase, NSZeroPoint))
     {

@@ -69,6 +69,9 @@ typedef enum {
   NSAffineTransform *textCtm;   /* Text transform - concat with ctm */
   GSTextDrawingMode textMode;
   BOOL viewIsFlipped;
+  BOOL    _antialias;
+  NSPoint _patternPhase;
+  NSCompositingOperation _compositingOperation;
 }
 
 - initWithDrawContext: (GSContext *)context;
@@ -79,6 +82,13 @@ typedef enum {
 
 - (void) setColor: (device_color_t *)color state: (color_state_t)cState;
 - (void) GSSetPatterColor: (NSImage*)image;
+
+- (void) setShouldAntialias: (BOOL)antialias;
+- (BOOL) shouldAntialias;
+- (NSPoint) patternPhase;
+- (void) setPatternPhase: (NSPoint)phase;
+- (NSCompositingOperation) compositingOperation;
+- (void) setCompositingOperation:(NSCompositingOperation) operation;
 
 - (void) compositeGState: (GSGState *)source
                 fromRect: (NSRect)aRect
