@@ -209,6 +209,12 @@ static NSMapTable *gtable;
       gstate = [[[object_getClass(self) GStateClass] allocWithZone: z] 
                    initWithDrawContext: self];
 
+      // Set some default values
+      [self setShouldAntialias: YES];
+      [self setImageInterpolation: NSImageInterpolationNone];
+      [self setPatternPhase: NSMakePoint(0.0, 0.0)];
+      [self setCompositingOperation: NSCompositeSourceOver];
+
       // Special handling for window drawing
       dest = [info objectForKey: NSGraphicsContextDestinationAttributeName];
       if ((dest != nil) && [dest isKindOfClass: [NSWindow class]])
