@@ -1,3 +1,7 @@
+2015-10-09  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSContext.m: Set some defaults.
+
 2015-10-03  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/gsc/GSGState.h
