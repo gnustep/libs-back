@@ -1,3 +1,9 @@
+2015-10-16  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerEvent.m (-processEvent:): Move repeate key
+	detection from process_key_event() to here to enable filtering out
+	keyUp events as Cocoa does.
+
 2015-10-09  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSContext.m: Set some defaults.
