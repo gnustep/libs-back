@@ -89,8 +89,6 @@ static KeySym _help_keysyms[2];
 static BOOL _is_keyboard_initialized = NO;
 static BOOL _mod_ignore_shift = NO;
 
-static BOOL next_event_is_a_keyrepeat;
-
 void __objc_xgcontextevent_linking (void)
 {
 }
@@ -129,7 +127,8 @@ XGErrorHandler(Display *display, XErrorEvent *err)
 }
 
 static NSEvent*process_key_event (XEvent* xEvent, XGServer* ctxt, 
-  NSEventType eventType, NSMutableArray *event_queue);
+                                  NSEventType eventType, 
+                                  NSMutableArray *event_queue, BOOL keyRepeat);
 
 static unichar process_char (KeySym keysym, unsigned *eventModifierFlags);
 
@@ -334,9 +333,11 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 {
   static int clickCount = 1;
   static unsigned int eventFlags;
+  static NSPoint eventLocation;
+  // Time of last key press
+  static Time downTime = 0;
   NSEvent *e = nil;
   XEvent xEvent;
-  static NSPoint eventLocation;
   NSWindow *nswin;
   Window xWin;
   NSEventType eventType;
@@ -1020,8 +1021,6 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         NSDebugLLog(@"NSEvent", @"%lu Expose\n",
                     xEvent.xexpose.window);
         {
-          BOOL isSubWindow = NO;
-
           if (cWin == 0 || xEvent.xexpose.window != cWin->ident)
             {
               generic.cachedWindow
@@ -1029,6 +1028,8 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             }
           // sub-window ?
 	  /*
+          BOOL isSubWindow = NO;
+
             {
               Window xw;
               xw = xEvent.xexpose.window;
@@ -1195,24 +1196,71 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                     xEvent.xgravity.window);
         break;
 
-            // a key has been pressed
+        // a key has been pressed
       case KeyPress:
         NSDebugLLog(@"NSEvent", @"%lu KeyPress\n",
                     xEvent.xkey.window);
         [self setLastTime: xEvent.xkey.time];
-        e = process_key_event (&xEvent, self, NSKeyDown, event_queue);
+        e = process_key_event (&xEvent, self, NSKeyDown, event_queue, NO);
+        // Store the time of key down to catch repeated keys
+        downTime = xEvent.xkey.time;
         break;
 
-            // a key has been released
+        // a key has been released
       case KeyRelease:
         NSDebugLLog(@"NSEvent", @"%lu KeyRelease\n",
                     xEvent.xkey.window);
         [self setLastTime: xEvent.xkey.time];
-        e = process_key_event (&xEvent, self, NSKeyUp, event_queue);
+
+        /*
+          For key repeats X creates two corresponding KeyRelease/KeyPress events.
+          So, first we check for the KeyRelease event, take a look at the next
+          event in the queue and look if they are a matching KeyRelease/KeyPress
+          pair. If so, we ignore the current KeyRelease event, and if there was 
+          a long enough time interval report the the next keyPress event as a 
+          repeat.
+        */
+        if (XEventsQueued(dpy, QueuedAfterReading))
+          {
+            XEvent nev;
+            XPeekEvent(dpy, &nev);
+
+            if (nev.type == KeyPress && 
+                nev.xkey.window == xEvent.xkey.window &&
+                nev.xkey.time == xEvent.xkey.time &&
+                nev.xkey.keycode == xEvent.xkey.keycode)
+              {
+                // delete retriggered KeyPress event
+                XNextEvent (dpy, &xEvent);
+
+                // After some time we should generate repeated keyDowns
+                if (xEvent.xkey.time - downTime > 1000)
+                  {
+                    downTime = xEvent.xkey.time;
+                    e = process_key_event(&xEvent, self, NSKeyDown, event_queue, YES);
+                   }
+              }
+            else
+              {
+                /*
+                if (nev.type == ClientMessage)
+                  {
+                    NSDebugLLog(@"NSEvent", @"Next event ClientMessage type %ld %s",
+                                xEvent.xclient.message_type, 
+                                XGetAtomName(dpy, xEvent.xclient.message_type));
+                  }
+                */
+                e = process_key_event(&xEvent, self, NSKeyUp, event_queue, NO);
+              }
+          }
+        else
+          {
+            e = process_key_event(&xEvent, self, NSKeyUp, event_queue, NO);
+          }
         break;
 
-            // reports the state of the keyboard when pointer or
-            // focus enters a window
+        // reports the state of the keyboard when pointer or
+        // focus enters a window
       case KeymapNotify:
         {
           if (_is_keyboard_initialized == NO)
@@ -2014,7 +2062,7 @@ keysym_is_X_modifier (KeySym keysym)
 
 static NSEvent*
 process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
-  NSMutableArray *event_queue)
+                   NSMutableArray *event_queue, BOOL keyRepeat)
 {
   NSString *keys, *ukeys;
   KeySym keysym;
@@ -2031,8 +2079,6 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
   int alt_key = 0;
   int help_key = 0;
   KeySym modKeysym;  // process modifier independently of shift, etc.
-  XEvent next_event;
-  BOOL keyRepeat = NO;
   
   if (_is_keyboard_initialized == NO)
     initialize_keyboard ();
@@ -2178,34 +2224,6 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
   if (keysym_is_X_modifier (keysym))
     {
       eventType = NSFlagsChanged;
-    }
-
-
-    /*
-    For key repeats X creates two corresponding KeyRelease/KeyPress events.
-    So, first we check for the KeyRelease event, take a look at the next
-    event in the queue and look if they are a matching KeyRelease/KeyPress
-    pair. If so, we mark the current KeyRelease event as a KeyRepeat, and
-    set "next_event_is_a_keyrepeat" to "YES" so that we know that the next
-    event is a repeat too.
-    */
-  if ( next_event_is_a_keyrepeat == YES )
-    {
-        keyRepeat = YES;
-        next_event_is_a_keyrepeat = NO;
-    }
-  else if( XEventsQueued( [context xDisplay], QueuedAfterReading ) )
-    {
-      XPeekEvent( [context xDisplay], &next_event );
-      if( next_event.type == KeyPress &&
-          next_event.xkey.window == xEvent->xkey.window &&
-          next_event.xkey.keycode == xEvent->xkey.keycode &&
-          next_event.xkey.time == xEvent->xkey.time )
-        {
-          // Do not report anything for this event
-          keyRepeat = YES;
-          next_event_is_a_keyrepeat = YES;
-        }
     }
 
 
