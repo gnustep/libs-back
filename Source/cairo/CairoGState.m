@@ -837,6 +837,7 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
 
 - (NSDictionary *) GSReadRect: (NSRect)r
 {
+  static NSDictionary *baseDict = nil;
   NSMutableDictionary *dict;
   NSSize ssize;
   NSAffineTransform *matrix;
@@ -847,10 +848,11 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
   cairo_surface_t *isurface;
   cairo_t *ct;
   cairo_status_t status;
-  int size;
-  int i;
+  int dataSize;
   NSMutableData *data;
-  unsigned char *cdata;
+  unsigned char *dataBytes;
+  uint32_t *dataPixel;
+  int pixelCounter;
 
   if (!_ct)
     {
@@ -864,31 +866,35 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
   iy = fabs(floor(y));
   ssize = NSMakeSize(ix, iy);
 
-  dict = [NSMutableDictionary dictionary];
+  if (!baseDict)
+    {
+        baseDict = [[NSDictionary dictionaryWithObjectsAndKeys:
+                                    NSDeviceRGBColorSpace, @"ColorSpace",
+                                    [NSNumber numberWithUnsignedInt: 8], @"BitsPerSample",
+                                    [NSNumber numberWithUnsignedInt: 32], @"Depth",
+                                    [NSNumber numberWithUnsignedInt: 4], @"SamplesPerPixel",
+                                    [NSNumber numberWithUnsignedInt: 1], @"HasAlpha",
+                                    nil]
+                            retain];
+    }
+    
+  dict = [NSMutableDictionary dictionaryWithDictionary: baseDict];
+
   [dict setObject: [NSValue valueWithSize: ssize] forKey: @"Size"];
-  [dict setObject: NSDeviceRGBColorSpace forKey: @"ColorSpace"];
-  
-  [dict setObject: [NSNumber numberWithUnsignedInt: 8] forKey: @"BitsPerSample"];
-  [dict setObject: [NSNumber numberWithUnsignedInt: 32]
-	forKey: @"Depth"];
-  [dict setObject: [NSNumber numberWithUnsignedInt: 4] 
-	forKey: @"SamplesPerPixel"];
-  [dict setObject: [NSNumber numberWithUnsignedInt: 1]
-	forKey: @"HasAlpha"];
 
   matrix = [self GSCurrentCTM];
   [matrix translateXBy: -r.origin.x - offset.x 
 	  yBy: r.origin.y + NSHeight(r) - offset.y];
   [dict setObject: matrix forKey: @"Matrix"];
 
-  size = ix*iy*4;
-  data = [NSMutableData dataWithLength: size];
+  dataSize = ix*iy*4;
+  data = [NSMutableData dataWithLength: dataSize];
   if (data == nil)
     return nil;
-  cdata = [data mutableBytes];
+  dataBytes = [data mutableBytes];
 
   surface = cairo_get_target(_ct);
-  isurface = cairo_image_surface_create_for_data(cdata, format, ix, iy, 4*ix);
+  isurface = cairo_image_surface_create_for_data(dataBytes, format, ix, iy, 4*ix);
   status = cairo_surface_status(isurface);
   if (status != CAIRO_STATUS_SUCCESS)
     {
@@ -920,21 +926,24 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
   cairo_destroy(ct);
   cairo_surface_destroy(isurface);
 
-  for (i = 0; i < 4 * ix * iy; i += 4)
-    {
-      unsigned char d = cdata[i];
+  dataPixel = (uint32_t *) dataBytes;
+  
+  pixelCounter = ix * iy;
 
+  while (pixelCounter--)
+    {
 #if GS_WORDS_BIGENDIAN
-      cdata[i] = cdata[i + 1];
-      cdata[i + 1] = cdata[i + 2];
-      cdata[i + 2] = cdata[i + 3];
-      cdata[i + 3] = d;
+        // ARGB -> RGBA
+      *dataPixel = (*dataPixel << 8)        // ARGB -> RGB_
+                    | (*dataPixel >> 24);   // ARGB -> ___A
 #else
-      cdata[i] = cdata[i + 2];
-      //cdata[i + 1] = cdata[i + 1];
-      cdata[i + 2] = d;
-      //cdata[i + 3] = cdata[i + 3];
-#endif 
+        // ARGB -> ABGR
+      *dataPixel = ((*dataPixel & 0x000000FF) << 16)    // ___B -> _B__
+                    | ((*dataPixel & 0x00FF0000) >> 16) // _R__ -> ___R
+                    | (*dataPixel & 0xFF00FF00);        // A_G_ -> A_G_
+#endif
+
+      dataPixel++; 
     }
 
   [dict setObject: data forKey: @"Data"];
@@ -1017,12 +1026,9 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   cairo_format_t format;
   NSAffineTransformStruct tstruct;
   cairo_surface_t *surface;
-  unsigned char	*tmp = NULL;
-  int i = 0;
-  int j;
-  int index;
-  unsigned int pixels = pixelsHigh * pixelsWide;
-  unsigned char *rowData;
+  unsigned char *dataRow, *reformattedData;
+  int reformattedDataSize, rowCounter, columnCounter;
+  uint32_t *reformattedDataPixel;
   cairo_matrix_t local_matrix;
   cairo_status_t status;
 
@@ -1055,73 +1061,78 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   while ((bytesPerRow * 8) < (bitsPerPixel * pixelsWide))
     bytesPerRow++;
 
+  reformattedDataSize = pixelsWide * pixelsHigh * sizeof(*reformattedDataPixel);
+
   switch (bitsPerPixel)
     {
     case 32:
-      tmp = malloc(pixels * 4);
-      if (!tmp)
+      reformattedData = malloc(reformattedDataSize);
+      if (!reformattedData)
         {
           NSLog(@"Could not allocate drawing space for image");
           return;
         }
 
-      rowData = (unsigned char *)data[0];
-      index = 0;
+      dataRow = (unsigned char *)data[0];
+      reformattedDataPixel = (uint32_t *) reformattedData;
 
-      for (i = 0; i < pixelsHigh; i++)
+      rowCounter = pixelsHigh;
+
+      while (rowCounter--)
         {
-          unsigned char *d = rowData;
+          uint32_t *dataPixel = (uint32_t *) dataRow;
 
-          for (j = 0; j < pixelsWide; j++)
+          columnCounter = pixelsWide;
+
+          while (columnCounter--)
             {
 #if GS_WORDS_BIGENDIAN
-              tmp[index++] = d[3];
-              tmp[index++] = d[0];
-              tmp[index++] = d[1];
-              tmp[index++] = d[2];
+                // RGBA (uint32) -> ARGB (uint32)
+              *reformattedDataPixel++ = (*dataPixel >> 8)       // RGBA -> _RGB
+                                        | (*dataPixel << 24);   // RGBA -> A___
 #else
-              tmp[index++] = d[2];
-              tmp[index++] = d[1];
-              tmp[index++] = d[0];
-              tmp[index++] = d[3];
+                // ABGR (uint32) -> ARGB (uint32)
+              *reformattedDataPixel++ = ((*dataPixel & 0x000000FF) << 16)   // ___R -> _R__
+                                        | ((*dataPixel & 0x00FF0000) >> 16) // _B__ -> ___B
+                                        | (*dataPixel & 0xFF00FF00);        // A_G_ -> A_G_
 #endif 
-              d += 4;
+              dataPixel++;
             }
-          rowData += bytesPerRow;
+
+          dataRow += bytesPerRow;
         }
       format = CAIRO_FORMAT_ARGB32;
       break;
     case 24:
-      tmp = malloc(pixels * 4);
-      if (!tmp)
+      reformattedData = malloc(reformattedDataSize);
+      if (!reformattedData)
         {
           NSLog(@"Could not allocate drawing space for image");
           return;
         }
 
-      rowData = (unsigned char *)data[0];
-      index = 0;
+      dataRow = (unsigned char *)data[0];
+      reformattedDataPixel = (uint32_t *) reformattedData;
 
-      for (i = 0; i < pixelsHigh; i++)
+      rowCounter = pixelsHigh;
+
+      while (rowCounter--)
         {
-          unsigned char *d = rowData;
+          unsigned char *dataPixelComponent = dataRow;
 
-          for (j = 0; j < pixelsWide; j++)
+          columnCounter = pixelsWide;
+
+          while (columnCounter--)
             {
-#if GS_WORDS_BIGENDIAN
-              tmp[index++] = 0;
-              tmp[index++] = d[0];
-              tmp[index++] = d[1];
-              tmp[index++] = d[2];
-#else
-              tmp[index++] = d[2];
-              tmp[index++] = d[1];
-              tmp[index++] = d[0];
-              tmp[index++] = 0;
-#endif
-              d += 3;
+                // R,G,B (uchar[0-2]) -> _RGB (uint32)
+              *reformattedDataPixel++ = (((uint32_t) dataPixelComponent[0]) << 16)  // R -> _R__
+                                        | (((uint32_t) dataPixelComponent[1]) << 8) // G -> __G_
+                                        | ((uint32_t) dataPixelComponent[2]);       // B -> ___B
+
+              dataPixelComponent += 3;
             }
-          rowData += bytesPerRow;
+
+          dataRow += bytesPerRow;
         }
       format = CAIRO_FORMAT_RGB24;
       break;
@@ -1130,18 +1141,18 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       return;
     }
 
-  surface = cairo_image_surface_create_for_data((void*)tmp,
+  surface = cairo_image_surface_create_for_data((void*)reformattedData,
 						format,
 						pixelsWide,
 						pixelsHigh,
-						pixelsWide * 4);
+						pixelsWide * sizeof(*reformattedDataPixel));
   status = cairo_surface_status(surface);
   if (status != CAIRO_STATUS_SUCCESS)
     {
       NSLog(@"Cairo status '%s' in DPSimage", cairo_status_to_string(status));
-      if (tmp)
+      if (reformattedData)
         {
-          free(tmp);
+          free(reformattedData);
         }
 
       return;
@@ -1191,9 +1202,9 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
   cairo_surface_destroy(surface);
   cairo_restore(_ct);
 
-  if (tmp)
+  if (reformattedData)
     {
-      free(tmp);
+      free(reformattedData);
     }
 }
 

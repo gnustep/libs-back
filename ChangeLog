@@ -1,3 +1,9 @@
+2015-10-28  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-GSReadRect:, -DPSimage:..:):
+	Drawing speedup for slow machines.
+	Patch by Josh Freeman <gnustep_lists@twilightedge.com>
+
 2015-10-16  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerEvent.m (-processEvent:): Move repeate key
