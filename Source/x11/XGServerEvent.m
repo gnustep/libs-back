@@ -334,8 +334,6 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
   static int clickCount = 1;
   static unsigned int eventFlags;
   static NSPoint eventLocation;
-  // Time of last key press
-  static Time downTime = 0;
   NSEvent *e = nil;
   XEvent xEvent;
   NSWindow *nswin;
@@ -1202,8 +1200,6 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                     xEvent.xkey.window);
         [self setLastTime: xEvent.xkey.time];
         e = process_key_event (&xEvent, self, NSKeyDown, event_queue, NO);
-        // Store the time of key down to catch repeated keys
-        downTime = xEvent.xkey.time;
         break;
 
         // a key has been released
@@ -1216,9 +1212,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
           For key repeats X creates two corresponding KeyRelease/KeyPress events.
           So, first we check for the KeyRelease event, take a look at the next
           event in the queue and look if they are a matching KeyRelease/KeyPress
-          pair. If so, we ignore the current KeyRelease event, and if there was 
-          a long enough time interval report the the next keyPress event as a 
-          repeat.
+          pair. If so, we ignore the current KeyRelease event.
         */
         if (XEventsQueued(dpy, QueuedAfterReading))
           {
@@ -1230,15 +1224,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                 nev.xkey.time == xEvent.xkey.time &&
                 nev.xkey.keycode == xEvent.xkey.keycode)
               {
-                // delete retriggered KeyPress event
-                XNextEvent (dpy, &xEvent);
-
-                // After some time we should generate repeated keyDowns
-                if (xEvent.xkey.time - downTime > 1000)
-                  {
-                    downTime = xEvent.xkey.time;
-                    e = process_key_event(&xEvent, self, NSKeyDown, event_queue, YES);
-                   }
+                // Ignore the current KeyRelease event.
               }
             else
               {
