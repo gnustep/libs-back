@@ -74,6 +74,7 @@
 
 
 static BOOL handlesWindowDecorations = YES;
+static int _wmAppIcon = -1;
 
 
 /*
@@ -1708,6 +1709,24 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       // FIXME: Need to set WM_CLIENT_MACHINE as well.
     }
 
+  /* WindowMaker hack: We want to display our own app icon window in the
+   * icon window provided by WindowMaker. However, this only works when
+   * the icon window is the first window being mapped. For that reason,
+   * we create an empty icon window here before the code below eventually
+   * generates some temporary windows to determine the window frame offsets
+   * and reuse the icon window once the real app icon window is allocated.
+   */
+  if ((generic.wm & XGWM_WINDOWMAKER) == XGWM_WINDOWMAKER
+      && generic.flags.useWindowMakerIcons == 1)
+    {
+      NSDebugLLog(@"XGTrace", @"WindowMaker hack: Preparing app icon window");
+      _wmAppIcon =
+	[self window: NSZeroRect : NSBackingStoreBuffered
+		    : NSIconWindowMask : defScreen];
+      [self orderwindow: NSWindowAbove : -1 : _wmAppIcon];
+      NSDebugLLog(@"XGTrace", @"WindowMaker hack: icon window = %d", _wmAppIcon);
+    }
+
   /* We need to determine the offsets between the actual decorated window
    * and the window we draw into.
    */
@@ -1996,6 +2015,19 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   RContext              *context;
 
   NSDebugLLog(@"XGTrace", @"DPSwindow: %@ %d", NSStringFromRect(frame), (int)type);
+  /* WindowMaker hack: Reuse the empty app icon allocated in _setupRootWindow
+   * for the real app icon.
+   */
+  if ((generic.wm & XGWM_WINDOWMAKER) == XGWM_WINDOWMAKER
+      && generic.flags.useWindowMakerIcons == 1
+      && (style & NSIconWindowMask) == NSIconWindowMask
+      && _wmAppIcon != -1)
+    {
+      int win = _wmAppIcon;
+      NSDebugLLog(@"XGTrace", @"WindowMaker hack: Returning window %d as app icon window", win);
+      _wmAppIcon = -1;
+      return win;
+    }
   root = [self _rootWindowForScreen: screen];
   context = [self xrContextForScreen: screen];
 

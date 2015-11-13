@@ -1,3 +1,11 @@
+2015-11-13  Wolfgang Lux  <wolfgang.lux@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_setupRootWindow, window::::):
+	Create an empty app icon window before eventually checking the
+	window frame offsets when using WindowMaker. This fixes the issue
+	that the first GNUstep application started under WindowMaker did
+	not get a proper application menu.
+
 2015-11-03  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerEvent.m (-processEvent:): For repeated keys
