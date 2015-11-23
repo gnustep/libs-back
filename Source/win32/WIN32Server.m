@@ -227,6 +227,9 @@ LRESULT CALLBACK KeyboardProc_LL(int nCode, WPARAM wParam, LPARAM lParam)
   // We need to restrict normal keyboard messages during a system capture mouse
   // sequence to avoid allowing the user to change windows and potentially start
   // another GNUstep app before capture mouse sequence is completed...
+  PKBDLLHOOKSTRUCT kbdllstruct = (PKBDLLHOOKSTRUCT)lParam;
+  if (kbdllstruct->vkCode == VK_ESCAPE) // allow Escape key to be processed
+	return(CallNextHookEx(0, nCode, wParam, lParam));
   return(TRUE);
 }
 

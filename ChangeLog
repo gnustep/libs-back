@@ -1,3 +1,8 @@
+2015-11-23  Doug Simons <doug.simons@testplant.com>
+
+	* Source/win32/WIN32Server.m : Allow the Escape key to go through
+	while still blocking other keys during a capture mouse sequence.
+
 2014-07-09  Doug Simons <doug.simons@testplant.com>
 
 	* Source/win32/WIN32Server.m : Fix process_key_event to set
