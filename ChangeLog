@@ -1,3 +1,18 @@
+2015-11-25 Riccardo Mottola <rm@gnu.org>
+
+	* configure
+	* configure.ac
+	* config.h.in
+	Specifically check for X11/extensions/sync.
+
+	* Headers/x11/XGServer.h
+	* Headers/x11/XGServerWindow.h
+	* Source/x11/XGServer.m
+	* Source/x11/XGServerEvent.m
+	* Source/x11/XGServerWindow.m
+	Enable Sync only on explicit presence of sync.h, not just Xext.
+
+
 2015-11-13  Wolfgang Lux  <wolfgang.lux@gmail.com>
 
 	* Source/x11/XGServerWindow.m (_setupRootWindow, window::::):

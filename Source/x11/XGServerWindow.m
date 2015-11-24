@@ -1,6 +1,6 @@
 /* XGServerWindows - methods for window/screen handling
 
-   Copyright (C) 1999 Free Software Foundation, Inc.
+   Copyright (C) 1999-2015 Free Software Foundation, Inc.
 
    Written by:  Adam Fedor <fedor@gnu.org>
    Date: Nov 1999
@@ -1507,7 +1507,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   if ((generic.wm & XGWM_EWMH) != 0)
     {
       window->protocols[window->numProtocols++] = generic.net_wm_ping_atom;
-#ifdef HAVE_LIBXEXT
+#ifdef HAVE_X11_EXTENSIONS_SYNC_H
       window->protocols[window->numProtocols++] = generic.net_wm_sync_request_atom;
 #endif
     }
@@ -2155,7 +2155,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   window->gen_hints.flags |= WindowGroupHint;
   window->gen_hints.window_group = ROOT;
   
-#ifdef HAVE_LIBXEXT
+#ifdef HAVE_X11_EXTENSIONS_SYNC_H
   /**
    * Setup net_wm_sync_request_counter
    */
@@ -3774,7 +3774,7 @@ static BOOL didCreatePixmaps;
 	}
     }
 
-#ifdef HAVE_LIBXEXT
+#ifdef HAVE_X11_EXTENSIONS_SYNC_H
   if (window->net_wm_sync_request_counter_value_low != 0 
       || window->net_wm_sync_request_counter_value_high != 0) 
     {
