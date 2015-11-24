@@ -1,7 +1,7 @@
 /*
    XGServerEvent - Window/Event code for X11 backends.
 
-   Copyright (C) 1998,1999 Free Software Foundation, Inc.
+   Copyright (C) 1998-2015 Free Software Foundation, Inc.
 
    Written by:  Adam Fedor <fedor@boulder.colorado.edu>
    Date: Nov 1998
@@ -634,7 +634,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                     (SubstructureRedirectMask | SubstructureNotifyMask), 
                     &xEvent);
                 }
-#ifdef HAVE_LIBXEXT
+#ifdef HAVE_X11_EXTENSIONS_SYNC_H
 	      else if ((Atom)xEvent.xclient.data.l[0]
 		== generic.net_wm_sync_request_atom)
 		{

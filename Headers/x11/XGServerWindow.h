@@ -1,6 +1,6 @@
 /* Window ops for X11 server
 
-   Copyright (C) 1999 Free Software Foundation, Inc.
+   Copyright (C) 1999-2015 Free Software Foundation, Inc.
 
    Written by:  Adam Fedor <fedor@gnu.org>
    Date: Nov 1999
@@ -117,7 +117,7 @@ typedef struct _gswindow_device_t {
   void                  *gdriver;      /* gdriver ident. Managed by gdriver */
   int                   gdriverProtocol; /* Managed by gdriver */
   BOOL			ignore_take_focus;
-#ifdef HAVE_LIBXEXT
+#ifdef HAVE_X11_EXTENSIONS_SYNC_H
   uint32_t              net_wm_sync_request_counter_value_low;
   uint32_t              net_wm_sync_request_counter_value_high;
   XSyncCounter          net_wm_sync_request_counter;

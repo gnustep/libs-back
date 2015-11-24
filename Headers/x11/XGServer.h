@@ -2,7 +2,7 @@
 
    <abstract>Backend server using the X11.</abstract>
 
-   Copyright (C) 2002 Free Software Foundation, Inc.
+   Copyright (C) 2002-2015 Free Software Foundation, Inc.
 
    Author: Adam Fedor <fedor@gnu.org>
    Date: Mar 2002
@@ -36,7 +36,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include "x11/XGGeneric.h"
-#ifdef HAVE_LIBXEXT
+#ifdef HAVE_X11_EXTENSIONS_SYNC_H
 #include <X11/extensions/sync.h>
 #endif
 /*

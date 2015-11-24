@@ -1,7 +1,7 @@
 /* -*- mode:ObjC -*-
    XGServer - X11 Server Class
 
-   Copyright (C) 1998,2002 Free Software Foundation, Inc.
+   Copyright (C) 1998-2015 Free Software Foundation, Inc.
 
    Written by:  Adam Fedor <fedor@gnu.org>
    Date: Mar 2002
@@ -447,7 +447,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 
   XSetErrorHandler(XGErrorHandler);
 
-#ifdef HAVE_LIBXEXT
+#ifdef HAVE_X11_EXTENSIONS_SYNC_H
   {
     int xsync_evbase, xsync_errbase;
     int major, minor;
