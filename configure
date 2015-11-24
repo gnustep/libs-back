@@ -4932,6 +4932,22 @@ fi
 
   fi
 
+  for ac_header in X11/extensions/sync.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "X11/extensions/sync.h" "ac_cv_header_X11_extensions_sync_h" "#include <X11/X.h>
+   #include <X11/Xutil.h>
+
+"
+if test "x$ac_cv_header_X11_extensions_sync_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_X11_EXTENSIONS_SYNC_H 1
+_ACEOF
+
+fi
+
+done
+
+
   LIBS="$X_LIBS $LIBS"
 fi
 
