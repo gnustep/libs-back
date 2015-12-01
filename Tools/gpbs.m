@@ -1221,7 +1221,7 @@ init(int argc, char** argv, char **env)
             {
               NSFileManager *filemgr     = [NSFileManager defaultManager];
               NSArray       *folderPaths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
-              NSString      *filepath    = [[folderPaths firstObject] stringByAppendingPathComponent:@"GNUstep"];
+              NSString      *filepath    = [[folderPaths firstObject] stringByAppendingPathComponent:@"gpbs"];
               BOOL           isDir       = NO;
               NSError       *error       = nil;
               NSLog(@"%s:log path: %@", __PRETTY_FUNCTION__, filepath);
