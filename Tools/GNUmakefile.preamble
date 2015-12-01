@@ -67,3 +67,10 @@ CONFIG_SYSTEM_LIB_DIR += $(GRAPHIC_LFLAGS)
 else
 ADDITIONAL_TOOL_LIBS += -lgnustep-gui -lgnustep-back $(SYSTEM_LIBS)
 endif
+
+ifeq ($(findstring mingw32, $(GNUSTEP_TARGET_OS)), mingw32)
+ADDITIONAL_LIB_DIRS += -L./Backtrace
+ADDITIONAL_TOOL_LIBS += -lbacktrace
+SUBPROJECTS = Backtrace
+endif
+

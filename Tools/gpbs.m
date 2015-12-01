@@ -1235,6 +1235,7 @@ init(int argc, char** argv, char **env)
                 }
               }
               
+#if 0 // TODO...
               // Purge logfile to 3 max each...
               NSArray *properties = [NSArray arrayWithObjects:@"NSURLCreationDateKey", nil];
               NSArray *logfiles   = [filemgr contentsOfDirectoryAtURL:[NSURL fileURLWithPath:filepath]
@@ -1265,6 +1266,7 @@ init(int argc, char** argv, char **env)
                       NSLog(@"%s:purging output log files: %@", __PRETTY_FUNCTION__, outfiles);
                     }
                 }
+#endif
               
               if ([filemgr fileExistsAtPath:filepath isDirectory:&isDir] && isDir)
                 {
@@ -1418,12 +1420,27 @@ main(int argc, char** argv, char **env)
             }
         }
     }
+  
+#if defined(__MINGW__)
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"GSGPBSLoggingEnabled"])
+  {
+    // Load backtrace library for mingw...
+    NSString *gpbstool = [NSString stringWithCString:argv[0] encoding:NSASCIIStringEncoding];
+    NSString *gpbspath = [gpbstool stringByDeletingLastPathComponent];
+    NSString *backtrace = [gpbspath stringByAppendingPathComponent:@"backtrace.dll"];
+    
+    if (LoadLibraryA([backtrace cStringUsingEncoding:NSUTF8StringEncoding]) == 0)
+      NSWarnMLog(@"error loading mingw backtrace library - status: %d", GetLastError());
+    else
+      NSWarnMLog(@"Windows/mingw backtrace library loaded successfully");
+  }
+#endif
 
   if (verbose)
     {
       NSLog(@"GNU pasteboard server startup.");
     }
-
+  
   if ([[NSUserDefaults standardUserDefaults]
 	  stringForKey: @"GSStartupNotification"])
     {
