@@ -993,6 +993,7 @@ NSMutableDictionary	*pasteboards = nil;
   [connections removeObjectIdenticalTo: connection];
   if (auto_stop == YES && [connections count] == 0)
     {
+      NSLog(@"no connection and auto-stop enabled - exiting...");
       exit(EXIT_SUCCESS);
     }
   return self;
@@ -1066,9 +1067,10 @@ ihandler(int sig)
   /*
  * Prevent recursion.
  */
-if (beenHere == YES)
-  {
-    abort();
+  if (beenHere == YES)
+    {
+      NSLog(@"%s:been here - aborting...", __PRETTY_FUNCTION__);
+      abort();
     }
   beenHere = YES;
 
@@ -1077,6 +1079,7 @@ if (beenHere == YES)
    */
   if (sig == SIGTERM)
     {
+      NSLog(@"%s:SIGTERM - aborting...", __PRETTY_FUNCTION__);
       exit(EXIT_FAILURE);
     }
 
@@ -1100,11 +1103,13 @@ if (beenHere == YES)
 
   if (action == YES)
     {
+      NSLog(@"%s:action == YES - aborting...", __PRETTY_FUNCTION__);
       abort();
     }
   else
     {
       fprintf(stderr, "gpbs killed by signal %d\n", sig);
+      NSLog(@"%s:gpbs killed by signal %d\n", __PRETTY_FUNCTION__, sig);
       exit(sig);
     }
 }
@@ -1451,6 +1456,7 @@ main(int argc, char** argv, char **env)
     }
 
   [[NSRunLoop currentRunLoop] run];
+  NSLog(@"%s:run loop completed - exiting...", __PRETTY_FUNCTION__);
   RELEASE(server);
   RELEASE(pool);
   exit(EXIT_SUCCESS);
