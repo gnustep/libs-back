@@ -52,7 +52,7 @@ static CGContextRef createCGBitmapContext(int pixelsWide,
                                   8,      // bits per component
                                   bitmapBytesPerRow,
                                   colorSpace,
-                                  kCGImageAlphaPremultipliedLast);
+                                  kCGBitmapByteOrder32Host | kCGImageAlphaPremultipliedFirst);
 
   // Note: our use of premultiplied alpha means that we need to
   // do alpha blending using:

@@ -245,7 +245,8 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
 {
   CGFontRef face = [_faceInfo fontFace];
   int advance = 0;
-  CGFontGetGlyphAdvances(face, &glyph, 1, &advance);
+  CGGlyph cgglyph = glyph;
+  CGFontGetGlyphAdvances(face, &cgglyph, 1, &advance);
 
   CGFloat advanceUserSpace = [self _fontUnitToUserSpace: advance];
 
