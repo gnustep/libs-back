@@ -66,18 +66,6 @@ static inline NSPoint _NSPointFromCGPoint(CGPoint cgpoint)
     {
       theCopy->_opGState = OPContextCopyGState(cgctx);
     }
-  else
-    {
-      // FIXME: perhaps Opal could provide an API for getting the default
-      // gstate?
-      CGColorSpaceRef colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
-      CGContextRef ctx = CGBitmapContextCreate(NULL, 1, 1, 8, 32, colorSpace, kCGImageAlphaPremultipliedFirst);
-      CGColorSpaceRelease(colorSpace);
-      theCopy->_opGState = OPContextCopyGState(ctx);
-      CGContextRelease(ctx);
-      NSDebugLLog(@"OpalGState", @"Included default gstate %p", theCopy->_opGState);
-    }
-
   return theCopy;
 }
 
@@ -118,6 +106,7 @@ static inline NSPoint _NSPointFromCGPoint(CGPoint cgpoint)
   const CGFloat alpha = 1.0; // TODO: is this correct?
   if (cgctx)
     {
+      CGContextSetGrayStrokeColor(cgctx, gray, alpha);
       CGContextSetGrayFillColor(cgctx, gray, alpha);
     }
   [super DPSsetgray: gray];
@@ -132,9 +121,23 @@ static inline NSPoint _NSPointFromCGPoint(CGPoint cgpoint)
   if (cgctx)
     {
       CGContextSetRGBStrokeColor(cgctx, r, g, b, alpha);
-      CGContextSetRGBFillColor(CGCTX, r, g, b, alpha);
+      CGContextSetRGBFillColor(cgctx, r, g, b, alpha);
     }
   [super DPSsetrgbcolor: r : g : b];
+}
+
+- (void) DPSsetcmykcolor: (CGFloat)c : (CGFloat)m : (CGFloat)y : (CGFloat)k
+{
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+  CGContextRef cgctx = CGCTX;
+
+  const CGFloat alpha = 1.0; // TODO: is this correct?
+  if (cgctx)
+    {
+      CGContextSetCMYKFillColor(cgctx, c, m, y, k, alpha);
+      CGContextSetCMYKStrokeColor(cgctx, c, m, y, k, alpha);
+    }
+  [super DPSsetcmykcolor: c : m : y : k];
 }
 
 
@@ -795,7 +798,7 @@ static inline NSPoint _NSPointFromCGPoint(CGPoint cgpoint)
       CGDataProviderRef dataProvider = CGDataProviderCreateWithCFData(nsData);
       CGImageRef img = CGImageCreate(pixelsWide, pixelsHigh, bitsPerSample,
                                      bitsPerPixel, bytesPerRow, colorSpace,
-                                     hasAlpha ? kCGImageAlphaPremultipliedLast : 0 /* correct? */,
+                                     kCGBitmapByteOrder32Big | (hasAlpha ? kCGImageAlphaPremultipliedLast : 0),
                                      dataProvider,
                                      NULL, /* const CGFloat decode[] is what? */
                                      false, /* shouldInterpolate? */

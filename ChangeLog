@@ -1,3 +1,12 @@
+2015-12-13  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/opal/OpalFontInfo.m
+	Prevent a compiler warning.
+	* Source/opal/OpalGState.m
+	* Source/opal/OpalSurface.m
+	Correct the bitmap flags used.
+	Add a few missing function calls.
+
 2015-11-25 Riccardo Mottola <rm@gnu.org>
 
 	* configure
