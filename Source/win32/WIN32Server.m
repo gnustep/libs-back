@@ -2910,12 +2910,12 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
               HBITMAP hOldXorMaskBitmap = (HBITMAP)SelectObject(hXorMaskDC, hXorMaskBitmap);
               
               // Scan each pixel of the souce bitmap and create the masks
-              int x;
+              int y;
               int *pixel = (int*)[rep bitmapData];
-              for(x = 0; x < bm.bmWidth; ++x)
+              for(y = 0; y < bm.bmHeight; ++y)
                 {
-                  int y;
-                  for (y = 0; y < bm.bmHeight; ++y)
+                  int x;
+                  for (x = 0; x < bm.bmWidth; ++x)
                     {
                       if (*pixel++ == 0x00000000)
                         {
