@@ -1,6 +1,9 @@
-#  Copyright (C) 2004 Free Software Foundation, Inc.
 #
-#  Author: Banlu Kemiyatorn <object at gmail dot com>
+#  Main makefile for GNUstep Backend win32
+#
+#  Copyright (C) 2002 Free Software Foundation, Inc.
+#
+#  Author: Adam Fedor <fedor@gnu.org>
 #
 #  This file is part of the GNUstep Backend.
 #
@@ -22,52 +25,26 @@
 
 PACKAGE_NAME = gnustep-back
 GNUSTEP_LOCAL_ADDITIONAL_MAKEFILES=../../back.make
+
 include $(GNUSTEP_MAKEFILES)/common.make
 
 include ../../config.make
 
-SUBPROJECT_NAME=cairo
+# The library to be compiled, as a library or as a bundle
+SUBPROJECT_NAME=wayland
+
+wayland_LOCALIZED_RESOURCE_FILES = \
+
+# The C source files to be compiled
+wayland_C_FILES = \
+xdg-shell-unstable-v5-protocol.c \
 
 # The Objective-C source files to be compiled
-cairo_OBJC_FILES = CairoSurface.m \
-  CairoFontInfo.m \
-  CairoGState.m \
-  CairoContext.m \
-  CairoFontEnumerator.m \
-  CairoFaceInfo.m \
-  CairoPSSurface.m \
-  CairoPDFSurface.m \
-  ../fontconfig/FCFaceInfo.m \
-  ../fontconfig/FCFontEnumerator.m \
-  ../fontconfig/FCFontInfo.m \
-
-
-ifeq ($(BUILD_SERVER),x11)
-  ifeq ($(WITH_GLITZ),yes)
-    cairo_OBJC_FILES += XGCairoGlitzSurface.m
-  else
-    cairo_OBJC_FILES += XGCairoSurface.m XGCairoXImageSurface.m XGCairoModernSurface.m
-  endif
-else
-  ifeq ($(BUILD_SERVER),wayland)
-    cairo_OBJC_FILES += WaylandCairoSurface.m
-  else
-    ifeq ($(BUILD_GRAPHICS),cairo)
-      ifeq ($(WITH_GLITZ),yes)
-        cairo_OBJC_FILES += Win32CairoGlitzSurface.m
-      else
-        cairo_OBJC_FILES += Win32CairoSurface.m Win32CairoGState.m
-        # Win32CairoXImageSurface.m 
-      endif
-    endif
-  endif
-endif
-
-cairo_OBJC_FILES += 
+wayland_OBJC_FILES = \
+WaylandServer.m  \
 
 -include GNUmakefile.preamble
 
 include $(GNUSTEP_MAKEFILES)/subproject.make
 
 -include GNUmakefile.postamble
-

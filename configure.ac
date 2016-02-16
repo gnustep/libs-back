@@ -565,7 +565,7 @@ case $target_os in
 esac
 
 AC_ARG_ENABLE(server, 
-  [  --enable-server=SRV     Build server type: x11, win32],,
+  [  --enable-server=SRV     Build server type: x11, win32, wayland],,
   enable_server=$BUILD_SERVER)
 AC_ARG_ENABLE(graphics, 
   [  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal],,
@@ -584,6 +584,8 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
     AC_MSG_WARN([can't find freetype, required for graphics=cairo])
     if test $BUILD_SERVER = win32; then
       BUILD_GRAPHICS=winlib
+    elif test $BUILD_SERVER = wayland; then
+      AC_MSG_ERROR([wayland backend requires cairo])
     else
       BUILD_GRAPHICS=xlib
     fi
@@ -592,6 +594,8 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
     AC_MSG_WARN([can't find cairo, required for graphics=cairo!])
     if test $BUILD_SERVER = win32; then
       BUILD_GRAPHICS=winlib
+    elif test $BUILD_SERVER = wayland; then
+      AC_MSG_ERROR([wayland backend requires cairo])
     else
       BUILD_GRAPHICS=art
     fi
@@ -642,6 +646,9 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
       CAIRO_LIBS="$CAIRO_LIBS $CAIRO_XLIB_LIBS $XFT_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS"
       AC_MSG_RESULT(xlib)
+    elif test $BUILD_SERVER = wayland; then
+      CAIRO_LIBS="$CAIRO_LIBS $XFT_LIBS"
+      CAIRO_CFLAGS="$CAIRO_CFLAGS"
     else
       AC_MSG_ERROR([Invalid Cairo installation])
     fi
@@ -743,6 +750,7 @@ fi
 AH_TOP([
 #define SERVER_x11      1
 #define SERVER_win32    2
+#define SERVER_wayland  3
 #define GRAPHICS_xdps   0
 #define GRAPHICS_art    1
 #define GRAPHICS_xlib   2
