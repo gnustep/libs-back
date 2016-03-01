@@ -1,3 +1,7 @@
+2016-03-01  Seong Gu Lee <sgleehd@gmail.com>
+
+	* Headers/win32/WIN32Server.h: tweak for compilation on 64bit windows
+
 2015-12-13  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/opal/OpalFontInfo.m
