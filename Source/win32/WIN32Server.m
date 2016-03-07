@@ -635,10 +635,13 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       W32DisplayMonitorInfo *infoMon    = [monitorInfo objectAtIndex:index];
       RECT                   infoRect   = [infoMon rect];
       NSRect                 infoFrame  = [infoMon frame];
-      NSLog(@"screen %ld - hMon: %ld frame:top:%ld left:%ld bottom:%ld right:%ld  frame: %@\n",
+	  
+	  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"GSMonitorScreensLogs"]) {
+		NSLog(@"screen %ld - hMon: %ld frame:top:%ld left:%ld bottom:%ld right:%ld  frame: %@\n",
             index, (long)[infoMon hMonitor],
             infoRect.top, infoRect.left, infoRect.bottom, infoRect.right,
             NSStringFromRect(infoFrame));
+	  }
     }
 }
 
