@@ -96,6 +96,7 @@ typedef struct w32serverFlags
   HICON  currentAppIcon;
   NSMutableArray *monitorInfo;
   NSMutableDictionary *systemCursors;
+  NSMutableArray *listOfCursorsFailed;
 }
 
 - (BOOL) handlesWindowDecorations;

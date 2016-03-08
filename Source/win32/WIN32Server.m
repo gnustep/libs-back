@@ -676,6 +676,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
       systemCursors = RETAIN([NSMutableDictionary dictionary]);
       monitorInfo   = RETAIN([NSMutableArray array]);
+	  listOfCursorsFailed = RETAIN([NSMutableArray array]);
 
       [self _resetMonitors];
       [self setupRunLoopInputSourcesForMode: NSDefaultRunLoopMode]; 
@@ -744,6 +745,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
     }
   }
   RELEASE(systemCursors);
+  RELEASE(listOfCursorsFailed);
   [super dealloc];
 }
 
@@ -2782,12 +2784,29 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 	  CURSORINFO cursorInfo;
 	  cursorInfo.cbSize = sizeof(CURSORINFO); 
 	  if (!GetCursorInfo(&cursorInfo)) {
-		NSLog(@"GetCursorInfo failed with %d", GetLastError());
-        return NSZeroPoint;
+	  
+		if ([NSCursor currentCursor]) {
+			BOOL cursorFound = FALSE;
+			NSImage *cursorImage = [[NSCursor currentCursor] image];
+			
+			// has the cursor already failed?
+			for (NSImage *item in listOfCursorsFailed) {
+				if (cursorImage == item) {
+					cursorFound = TRUE;
+					break;
+				}
+			}
+			
+			// log this cursor fail entry to avoid multiple logs
+			if (!cursorFound) {
+				[listOfCursorsFailed addObject:cursorImage];
+				NSLog(@"GetCursorInfo failed with %d", GetLastError());
+			}
+		}
+		return NSZeroPoint;
       }
 	  p = cursorInfo.ptScreenPos;
     }
-
   return MSScreenPointToGS(p.x, p.y);
 }
 
