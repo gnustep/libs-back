@@ -2931,6 +2931,17 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
               HBITMAP hOldAndMaskBitmap = (HBITMAP)SelectObject(hAndMaskDC, hAndMaskBitmap);
               HBITMAP hOldXorMaskBitmap = (HBITMAP)SelectObject(hXorMaskDC, hXorMaskBitmap);
               
+              /* On windows, to calculate the color for a pixel, first an AND is done
+               * with the background and the "and" bitmap, then an XOR with the "xor"
+               * bitmap. This means that when the data in the "and" bitmap is 0, the
+               * pixel will get the color as specified in the "xor" bitmap.
+               * However, if the data in the "and" bitmap is 1, the result will be the
+               * background XOR'ed with the value in the "xor" bitmap. In case the "xor"
+               * data is completely black (0x000000) the pixel will become transparent,
+               * in case it's white (0xffffff) the pixel will become the inverse of the
+               * background color.
+               */
+
               // Scan each pixel of the souce bitmap and create the masks
               int y;
               int *pixel = (int*)[rep bitmapData];
