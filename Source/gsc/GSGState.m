@@ -949,7 +949,7 @@ typedef enum {
     ASSIGN(path, [path bezierPathByFlatteningPath]);
 }
 
-- (void) DPSinitclip;
+- (void) DPSinitclip
 {
   [self subclassResponsibility: _cmd];
 }
