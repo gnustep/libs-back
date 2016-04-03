@@ -24,10 +24,12 @@
 #define Win32CairoGState_h
 
 #include "cairo/CairoGState.h"
+#include <AppKit/NSBezierPath.h>
 
 
 @interface Win32CairoGState : CairoGState
 {
+  NSBezierPath *_lastPath;
 }
 
 - (HDC) getHDC;
