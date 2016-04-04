@@ -109,7 +109,7 @@
   return [description copy];
 }
 
-- copyWithZone: (NSZone *)zone
+- (id)copyWithZone: (NSZone *)zone
 {
   GSGState *new = (GSGState *)NSCopyObject(self, 0, zone);  
   /* Do a deep copy since gstates are isolated from each other */
