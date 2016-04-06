@@ -1191,7 +1191,7 @@ HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
   [self _paintPath: path_stroke];
 }
 
-- (void) DPSinitclip;
+- (void) DPSinitclip
 {
   if (clipRegion)
     {
