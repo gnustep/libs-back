@@ -1,3 +1,9 @@
+2016-04-06  Ivan Vucica <ivan@vucica.net>
+
+	* Source/gsc/GSGState.m:
+	Remove extraneous semicolons.
+	Patch by mlytwyn (cherrypicked from testplant branch, r39614).
+
 2016-03-01  Seong Gu Lee <sgleehd@gmail.com>
 
 	* Headers/win32/WIN32Server.h: tweak for compilation on 64bit windows
