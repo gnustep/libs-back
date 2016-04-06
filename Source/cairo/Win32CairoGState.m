@@ -37,6 +37,19 @@
     }
 }
 
+- (void) dealloc
+{
+  DESTROY(_lastPath);
+  [super dealloc];
+}
+
+- (id)copyWithZone: (NSZone *)zone
+{
+  Win32CairoGState *object = [super copyWithZone: zone];
+  object->_lastPath = [_lastPath copy];
+  return object;
+}
+
 - (HDC) getHDC
 {
   if (_surface)

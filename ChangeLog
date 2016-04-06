@@ -4,6 +4,10 @@
 	Remove extraneous semicolons.
 	Patch by mlytwyn (cherrypicked from testplant branch, r39614).
 
+	* Source/cairo/Win32CairoGState.m:
+	Implement dealloc/copyWithZone on Win32CairoGState instance.
+	Patch by mlytwyn (cherrypicked from testplant branch, r39618).
+
 2016-03-01  Seong Gu Lee <sgleehd@gmail.com>
 
 	* Headers/win32/WIN32Server.h: tweak for compilation on 64bit windows
