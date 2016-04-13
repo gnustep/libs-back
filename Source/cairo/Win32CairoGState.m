@@ -98,7 +98,6 @@ POINT GSWindowPointToMS(GSGState *s, NSPoint p)
       // Return the HDC...
       return hdc;
     }
-  NSLog(@"%s:_surface is NULL\n", __PRETTY_FUNCTION__);
   return NULL;
 }
 
