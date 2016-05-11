@@ -33,6 +33,9 @@ include ../../config.make
 # The library to be compiled, as a library or as a bundle
 SUBPROJECT_NAME=win32
 
+#win32_SUBPROJECTS = MSUserNotifications
+SUBPROJECTS = MSUserNotifications
+
 win32_LOCALIZED_RESOURCE_FILES = \
 
 # The C source files to be compiled
@@ -53,5 +56,6 @@ w32_GLcontext.m \
 -include GNUmakefile.preamble
 
 include $(GNUSTEP_MAKEFILES)/subproject.make
+include $(GNUSTEP_MAKEFILES)/aggregate.make
 
 -include GNUmakefile.postamble
