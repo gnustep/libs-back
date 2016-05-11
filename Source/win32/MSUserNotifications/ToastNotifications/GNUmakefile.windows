@@ -1,18 +1,31 @@
-
-all: ToastNotifications-0.dll
-
-clean:
-	rm -rf obj
-
-obj:
-	mkdir -p obj
-
-install: ToastNotifications-0.dll
-
-ifeq ($(debug),yes)
-ToastNotifications-0.dll: obj ToastNotifications/Debug/ToastNotifications.dll
-	cp -p ToastNotifications/Debug/ToastNotifications.dll obj/ToastNotifications-0.dll
-else
-ToastNotifications-0.dll: obj ToastNotifications/Release/ToastNotifications.dll
-	cp -p ToastNotifications/Release/ToastNotifications.dll obj/ToastNotifications-0.dll
+ifeq ($(GNUSTEP_MAKEFILES),)
+ GNUSTEP_MAKEFILES := $(shell gnustep-config --variable=GNUSTEP_MAKEFILES 2>/dev/null)
+  ifeq ($(GNUSTEP_MAKEFILES),)
+    $(warning )
+    $(warning Unable to obtain GNUSTEP_MAKEFILES setting from gnustep-config!)
+    $(warning Perhaps gnustep-make is not properly installed,)
+    $(warning so gnustep-config is not in your PATH.)
+    $(warning )
+    $(warning Your PATH is currently $(PATH))
+    $(warning )
+  endif
 endif
+
+ifeq ($(GNUSTEP_MAKEFILES),)
+  $(error You need to set GNUSTEP_MAKEFILES before compiling!)
+endif
+
+LIBRARY_NAME = ToastNotifications
+
+ToastNotifications_NEEDS_GUI = NO
+ToastNotification_CFLAGS += -DBUILD_DLL
+ToastNotification_OBJCFLAGS += -DBUILD_DLL
+ToastNotifications_LDFLAGS +=
+ToastNotifications_OBJC_FILES = 
+ToastNotifications_OBJCC_FILES = ToastNotifications.mm
+ToastNotifications_RESOURCE_FILES += 
+
+ADDITIONAL_OBJCCFLAGS += -DBUILD_DLL
+
+include $(GNUSTEP_MAKEFILES)/common.make
+include $(GNUSTEP_MAKEFILES)/library.make
