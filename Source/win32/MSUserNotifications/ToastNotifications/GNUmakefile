@@ -9,6 +9,8 @@ clean:
 	(rm -rf ToastNotifications/ToastNotifications/Release)
 	(rm -rf ToastNotifications/ipch ToastNotifications/*.sdf)
   
+distclean: clean
+
 obj:
 	mkdir -p obj
 
@@ -21,3 +23,5 @@ else
 ToastNotifications-0.dll: obj ToastNotifications/Release/ToastNotifications.dll
 	cp -p ToastNotifications/Release/ToastNotifications.dll obj/ToastNotifications-0.dll
 endif
+
+include $(GNUSTEP_MAKEFILES)/common.make
