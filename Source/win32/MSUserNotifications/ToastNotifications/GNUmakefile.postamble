@@ -37,4 +37,4 @@ after-clean::
 	(cd ToastNotifications/Release && (find . -type f | grep -v '.dll' | xargs rm -rf))
 	(rm -rf ToastNotifications/ToastNotifications/Debug)
 	(rm -rf ToastNotifications/ToastNotifications/Release)
-	(rm -rf ToastNotifications/ipch ToastNotifications/*.sdf)
+	(rm -rf ToastNotifications/ipch ToastNotifications/*.sdf ToastNotifications/*.suo)
