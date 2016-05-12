@@ -282,7 +282,17 @@ gsColorToHSB(device_color_t *color)
 	    diff = V - Temp;
 	    if (V == r)
 	      {
-	        H = (g - b)/diff;
+          if (diff == 0.0)
+            {
+              // Invoke same code as r=g=b above...
+              H = 0;
+              // diff == 0 so diff/V == 0
+              // V already == r
+            }
+          else
+            {
+              H = (g - b)/diff;
+            }
 	      }
 	    else if (V == g)
 	      {
