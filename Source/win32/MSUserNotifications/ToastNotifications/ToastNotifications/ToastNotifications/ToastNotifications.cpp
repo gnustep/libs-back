@@ -483,7 +483,12 @@ extern "C" EXPORT BOOL __cdecl sendNotification(HWND hWnd, HICON icon, SEND_NOTE
 	return FALSE;
 }
 
-EXPORT BOOL __cdecl removeNotification(HICON icon, REMOVE_NOTE_INFO_T *noteinfo)
+extern "C" EXPORT BOOL __cdecl removeNotification(HICON icon, REMOVE_NOTE_INFO_T *noteinfo)
 {
+#if 1 //defined(DEBUG)
+  static char str[512];
+  sprintf_s(str, "%s:%d: note %p uniqueID: %d", __FUNCTION__, __LINE__, noteinfo, noteinfo->uniqueID);
+  OutputDebugStringA(str);
+#endif
   return FALSE;
 }
