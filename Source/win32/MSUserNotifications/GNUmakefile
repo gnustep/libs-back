@@ -17,6 +17,9 @@ endif
 
 BUNDLE_NAME = NSUserNotification
 
+# Get common definitions - needed for base version information
+-include $(GNUSTEP_MAKEFILES)/common.make
+
 NSUserNotification_NEEDS_GUI = NO
 NSUserNotification_CFLAGS += -DWINVER=0x0600 -D_WIN32_IE=0x0600 -DBUILD_DLL -fms-extensions
 NSUserNotification_OBJCFLAGS += -DWINVER=0x0600 -D_WIN32_IE=0x0600 -DBUILD_DLL -fms-extensions
@@ -36,20 +39,21 @@ NSUserNotification_RESOURCE_FILES = \
 SUBPROJECTS = ToastNotifications TaskbarNotifications
 
 # Set this to the ROOT DIRECTORY of your GNUstep build that contains the 'core' directory...
-BASE_VERSION_DEFINED =
-ifneq ($(MAJOR_VERSION),)
-  ifneq ($(MINOR_VERSION),)
+ifdef GNUSTEP_BASE_MAJOR_VERSION
+  ifdef GNUSTEP_BASE_MINOR_VERSION
     BASE_VERSION_DEFINED=1
   endif
 endif
-ifdef ($(BASE_VERSION_DEFINED),)
+ifndef BASE_VERSION_DEFINED
   ifeq ($(GNUSTEP_BUILD_ROOT),)
     $(error You need to checkout core/base and/or set GNUSTEP_BUILD_ROOT to your gnustep root containing 'core/base' before compiling!)
   endif
   include ${GNUSTEP_BUILD_ROOT}/core/base/Version
+  GNUSTEP_BASE_MAJOR_VERSION=$(MAJOR_VERSION)
+  GNUSTEP_BASE_MAJOR_VERSION=$(MINOR_VERSION)
   BASE_VERSION_DEFINED=1
 endif
-libgnustep-base_INTERFACE_VERSION=$(MAJOR_VERSION).$(MINOR_VERSION)
+libgnustep-base_INTERFACE_VERSION=$(GNUSTEP_BASE_MAJOR_VERSION).$(GNUSTEP_BASE_MINOR_VERSION)
 NSUserNotification_INSTALL_DIR = $(GNUSTEP_LIBRARY)/Libraries/gnustep-base/Versions/$(libgnustep-base_INTERFACE_VERSION)/Resources/
 
 #include GNUmakefile.postamble

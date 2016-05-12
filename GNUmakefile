@@ -43,7 +43,6 @@ GNUSTEP_LOCAL_ADDITIONAL_MAKEFILES=back.make
 include $(GNUSTEP_MAKEFILES)/common.make
 
 include ./Version
--include ../back/Version
 
 #
 # The list of subproject directories

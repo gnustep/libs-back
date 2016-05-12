@@ -33,8 +33,14 @@ include ../../config.make
 # The library to be compiled, as a library or as a bundle
 SUBPROJECT_NAME=win32
 
-#win32_SUBPROJECTS = MSUserNotifications
-SUBPROJECTS = MSUserNotifications
+# We NEED the base version so MSUserNotifications can compile correctly
+# We'll omit it if for some reason we couldn't get the Version file
+ifdef GNUSTEP_BASE_MAJOR_VERSION
+  ifdef GNUSTEP_BASE_MINOR_VERSION
+    #$(info building MSUserNotifications bundle...)
+    SUBPROJECTS = MSUserNotifications
+  endif
+endif
 
 win32_LOCALIZED_RESOURCE_FILES = \
 
