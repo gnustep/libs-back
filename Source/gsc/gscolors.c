@@ -280,35 +280,38 @@ gsColorToHSB(device_color_t *color)
 	    Temp = (r < g ? r : g);
 	    Temp = (b < Temp ? b : Temp);
 	    diff = V - Temp;
-	    if (V == r)
-	      {
-          if (diff == 0.0)
-            {
-              // Invoke same code as r=g=b above...
-              H = 0;
-              // diff == 0 so diff/V == 0
-              // V already == r
-            }
-          else
+      
+      // TESTPLANT-MAL-05162016: customer getting crashes in this
+      // code somehwere - only case I can find that could cause one
+      // is V == 0...
+      if (V == 0.0)
+        {
+          _hue_component = 0;
+          _saturation_component = 0;
+          _brightness_component = r;
+        }
+        else
+        {
+          if (V == r)
             {
               H = (g - b)/diff;
             }
-	      }
-	    else if (V == g)
-	      {
-	        H = (b - r)/diff + 2;
-	      }
-	    else
-	      {
-	        H = (r - g)/diff + 4;
-	      }
-	    if (H < 0)
-	      {
-	        H += 6;
-	      }
-	    _hue_component = H/6;
-	    _saturation_component = diff/V;
-	    _brightness_component = V;
+          else if (V == g)
+            {
+              H = (b - r)/diff + 2;
+            }
+          else
+            {
+              H = (r - g)/diff + 4;
+            }
+          if (H < 0)
+            {
+              H += 6;
+            }
+          _hue_component = H/6;
+          _saturation_component = diff/V;
+          _brightness_component = V;
+        }
 	  }
 	color->field[0] = _hue_component;
 	color->field[1] = _saturation_component;
