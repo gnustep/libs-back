@@ -77,10 +77,11 @@ void _removeApplicationIcon(DWORD, HICON);
 void _removeProcessInfo();
 void _removeApplicationIconForID(UINT appIconID);
 
-static HANDLE gHandleDLL  = NULL;
-static HWND   gHandleWin  = NULL;
-static UINT   gNotifyMsg  = 0;
-static UINT   gNotifyCnt  = 0;
+static HANDLE         gHandleDLL         = NULL;
+static HWND           gHandleWin         = NULL;
+static UINT           gNotifyMsg         = 0;
+static UINT           gNotifyCnt         = 0;
+static DLLVERSIONINFO gShell32DllVersion = { 0 };
 
 // Objective-C/GNUstep references...
 static NSString            *gUuidString  = nil;
@@ -161,6 +162,40 @@ void _initWin32Context()
 
   // Register our message window type......
   _registerWindowsClass();
+  
+#if defined(DEBUG)
+  // Get Shell32 DLL version information...
+  HMODULE hShell32Dll = LoadLibrary(TEXT("Shell32.dll"));
+  if (hShell32Dll == NULL)
+  {
+    NSLog(@"%s:unable to load library Shell32.dll - error: %d", __PRETTY_FUNCTION__, GetLastError());
+  }
+  else
+  {
+    DLLGETVERSIONPROC procaddr = (DLLGETVERSIONPROC)GetProcAddress(hShell32Dll, TEXT("DllGetVersion"));
+    
+    if (procaddr == NULL)
+    {
+      NSLog(@"%s:Shell32.dll version info function 'DllGetVersion' missing", __PRETTY_FUNCTION__);
+    }
+    else
+    {
+      // Setup the size parameter for the structure...
+      gShell32DllVersion.cbSize = sizeof(gShell32DllVersion);
+      
+      // Get the version information...
+      procaddr(&gShell32DllVersion);
+      NSLog(@"%s:Shell32.dll version info - major: %d minor: %d build: %d platform %d", __PRETTY_FUNCTION__,
+            gShell32DllVersion.dwMajorVersion,
+            gShell32DllVersion.dwMinorVersion,
+            gShell32DllVersion.dwBuildNumber,
+            gShell32DllVersion.dwPlatformID);
+    }
+#endif
+
+    // cleanup...
+    FreeLibrary(hShell32Dll);
+  }
   
   // Register the windows notify message we want...
   gNotifyMsg = RegisterWindowMessage(NOTIFY_MESSAGE_NAME);
@@ -844,6 +879,7 @@ EXPORT BOOL __cdecl removeNotification(HICON icon, REMOVE_NOTE_INFO_T *noteinfo)
   NSLog(@"%s:%d:ID %d", __PRETTY_FUNCTION__, __LINE__, noteinfo->uniqueID);
   
   _setupNotifyData(notifyData);
+  //s_setupNotifyDataTextInfo(notifyData, "", "");
   notifyData.uID = _addApplicationIcon(GetCurrentProcessId(), NULL, icon);
 
   // Show the notification.
