@@ -191,12 +191,12 @@ void _initWin32Context()
             gShell32DllVersion.dwBuildNumber,
             gShell32DllVersion.dwPlatformID);
     }
-#endif
 
     // cleanup...
     FreeLibrary(hShell32Dll);
   }
-  
+#endif
+
   // Register the windows notify message we want...
   gNotifyMsg = RegisterWindowMessage(NOTIFY_MESSAGE_NAME);
   if (gNotifyMsg == 0)
