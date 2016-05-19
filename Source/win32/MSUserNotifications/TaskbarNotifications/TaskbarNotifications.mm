@@ -790,8 +790,8 @@ void _setupNotifyDataTextInfo(NOTIFYICONDATA &notifyData, const char *title, con
 
   // This text will be shown as the icon's tooltip.
   StrCpy(notifyData.szTip, informativeText);
-  StrCpy(notifyData.szInfo, title);
-  StrCpy(notifyData.szInfoTitle, informativeText);
+  StrCpy(notifyData.szInfo, informativeText);
+  StrCpy(notifyData.szInfoTitle, title);
 }
 
 void _setupNotifyData(NOTIFYICONDATA &notifyData)
