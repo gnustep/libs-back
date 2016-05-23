@@ -9,7 +9,7 @@
 
 #include "resource.h"		// main symbols
 
-const wchar_t AppId[] = L"Microsoft.Samples.DesktopToasts";
+const wchar_t AppId[] = L"Testplant.Eggplant.Notifications";
 
 
 
