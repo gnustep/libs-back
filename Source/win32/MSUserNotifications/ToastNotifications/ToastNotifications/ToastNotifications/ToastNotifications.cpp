@@ -348,7 +348,15 @@ HRESULT CToastNotificationsApp::CreateToast(_In_ IToastNotificationManagerStatic
 	_hwnd = hWnd;
 	ComPtr<IToastNotifier> notifier;
 	HRESULT hr = toastManager->CreateToastNotifierWithId(StringReferenceWrapper(AppId).Get(), &notifier);
-	if (SUCCEEDED(hr))
+	if (FAILED(hr))
+	{
+#if defined(DEBUG)
+		char str[256];
+		sprintf_s(str, "error creating toast - status: %d", GetLastError());
+		OutputDebugStringA(str);
+#endif
+	}
+	else
 	{
 		ComPtr<IToastNotificationFactory> factory;
 		hr = GetActivationFactory(StringReferenceWrapper(RuntimeClass_Windows_UI_Notifications_ToastNotification).Get(), &factory);
@@ -394,7 +402,7 @@ HRESULT CToastNotificationsApp::DisplayToast(HWND hWnd, wchar_t* notificationTit
 
 #if defined(DEBUG)
 	static wchar_t str[512];
-	swprintf_s(str, L"%s:%d: note title: %su infoText: %su", TEXT(__FUNCTION__), __LINE__, notificationTitle, notificationTitle, imagePath);
+	swprintf_s(str, L"%s:%d: note title: %s infoText: %s imagePath: %s", TEXT(__FUNCTION__), __LINE__, notificationTitle, notificationTitle, imagePath);
   OutputDebugString(str);
 #endif
 
@@ -412,7 +420,7 @@ HRESULT CToastNotificationsApp::DisplayToast(HWND hWnd, wchar_t* notificationTit
 
 #if defined(DEBUG)
 			char str[256];
-			sprintf_s(str, "done with toast xml and calling the toast method %d\n");
+			sprintf_s(str, "done with toast xml and calling the toast method");
 			OutputDebugStringA(str);
 #endif
 
@@ -427,8 +435,7 @@ HRESULT CToastNotificationsApp::DisplayToast(HWND hWnd, wchar_t* notificationTit
 
 extern "C" EXPORT BOOL __cdecl sendNotification(HWND hWnd, HICON icon, SEND_NOTE_INFO_T *noteInfo)
 {
-		//NSLog(@"%s:hWnd: %p icon: %p GUID: %p note: %p", __PRETTY_FUNCTION__, hWnd, icon, note);
-
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
 #if defined(DEBUG)
 	  static char str[512];
 	  sprintf_s(str, "%s:%d: note %p", __FUNCTION__, __LINE__, noteInfo);
@@ -485,6 +492,7 @@ extern "C" EXPORT BOOL __cdecl sendNotification(HWND hWnd, HICON icon, SEND_NOTE
 
 extern "C" EXPORT BOOL __cdecl removeNotification(HICON icon, REMOVE_NOTE_INFO_T *noteinfo)
 {
+	AFX_MANAGE_STATE(AfxGetStaticModuleState()); 
 #if 1 //defined(DEBUG)
   static char str[512];
   sprintf_s(str, "%s:%d: note %p uniqueID: %d", __FUNCTION__, __LINE__, noteinfo, noteinfo->uniqueID);

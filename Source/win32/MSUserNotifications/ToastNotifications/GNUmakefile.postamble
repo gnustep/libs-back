@@ -38,3 +38,5 @@ after-clean::
 	(rm -rf ToastNotifications/ToastNotifications/Debug)
 	(rm -rf ToastNotifications/ToastNotifications/Release)
 	(rm -rf ToastNotifications/ipch ToastNotifications/*.sdf ToastNotifications/*.suo)
+	(rm -rf ToastNotifications/ToastNotifications.VC.db)
+	(rm -rf ToastNotifications/.vs ToastNotifications/obj ToastNotifications/DTAR*)
