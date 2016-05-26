@@ -64,3 +64,16 @@
 #include <wrl\implements.h>
 #include <windows.ui.notifications.h>
 #include "StringReferenceWrapper.h"
+
+// Log function prototypes...
+void dll_log_s(const char *function, int line, const char *format, ...);
+void dll_logw_s(const wchar_t *function, int line, const wchar_t *format, ...);
+#define dll_log(f,...)  dll_log_s(__FUNCTION__,__LINE__,f,##__VA_ARGS__);
+#define dll_logw(f,...) dll_logw_s(TEXT(__FUNCTION__), __LINE__,f,##__VA_ARGS__);
+#if defined(DEBUG)
+#define dll_dlog(f,...)  dll_log_s(__FUNCTION__,__LINE__,f,##__VA_ARGS__);
+#define dll_dlogw(f,...) dll_logw_s(TEXT(__FUNCTION__), __LINE__,f,##__VA_ARGS__);
+#else
+#define dll_dlog(f,...)  {}
+#define dll_dlogw(f,...) {}
+#endif

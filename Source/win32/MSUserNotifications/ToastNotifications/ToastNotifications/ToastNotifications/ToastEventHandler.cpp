@@ -5,20 +5,18 @@ using namespace ABI::Windows::UI::Notifications;
 
 ToastEventHandler::ToastEventHandler(_In_ HWND hToActivate, _In_ HWND hEdit) : _ref(1), _hToActivate(hToActivate), _hEdit(hEdit)
 {
-
+  dll_dlog("");
 }
 
 ToastEventHandler::~ToastEventHandler()
 {
-    
+  dll_dlog("");
 }
 
 // DesktopToastActivatedEventHandler
 IFACEMETHODIMP ToastEventHandler::Invoke(_In_ IToastNotification* sender, _In_ IInspectable* /* args */)
 {
-  static char str[512];
-  sprintf_s(str, "%s:%d: IToastNotePtr: %p msg: The user clicked on the toast", __FUNCTION__, __LINE__, sender);
-  OutputDebugStringA(str);
+  dll_dlog("IToastNotePtr: %p msg: The user clicked on the toast", sender);
 
   BOOL succeeded = SetForegroundWindow(_hToActivate);
   if (succeeded)
@@ -53,13 +51,15 @@ IFACEMETHODIMP ToastEventHandler::Invoke(_In_ IToastNotification* sender, _In_ I
             break;
         }
 
-        static wchar_t str[512];
-        swprintf_s(str, L"%s:%d: IToastNotePtr: %p msg: %s", TEXT(__FUNCTION__), __LINE__, sender, outputText);
-        OutputDebugStringW(str);
+        dll_dlogw(L"IToastNotePtr: %p msg: %s", sender, outputText);
 
         LRESULT succeeded = SendMessage(_hEdit, WM_SETTEXT, reinterpret_cast<WPARAM>(nullptr), reinterpret_cast<LPARAM>(outputText));
         hr = succeeded ? S_OK : E_FAIL;
     }
+
+    // Cleanup...
+    delete sender;
+    delete this;
     return hr;
 }
 

@@ -17,6 +17,7 @@
 #include <locale>
 #include <codecvt>
 #include <string>
+//#include <wchar.h>
 
 using namespace Microsoft::WRL;
 using namespace ABI::Windows::UI::Notifications;
@@ -57,23 +58,17 @@ using namespace Windows::Foundation;
 BEGIN_MESSAGE_MAP(CToastNotificationsApp, CWinApp)
 END_MESSAGE_MAP()
 
-
 // CToastNotificationsApp construction
-
 CToastNotificationsApp::CToastNotificationsApp()
 {
-	// TODO: add construction code here,
-	// Place all significant initialization in InitInstance
+  // TODO: add construction code here,
+  // Place all significant initialization in InitInstance
+  dll_dlog("");
 }
 
 CToastNotificationsApp::~CToastNotificationsApp()
 {
-
-#if defined(DEBUG) 
-  static char str[512];
-  sprintf_s(str, "%s:%d: DONE", __FUNCTION__, __LINE__);
-  OutputDebugStringA(str);
-#endif
+  dll_dlog("");
 }
 
 // The one and only CToastNotificationsApp object
@@ -85,418 +80,339 @@ CToastNotificationsApp theApp;
 
 BOOL CToastNotificationsApp::InitInstance()
 {
-	CWinApp::InitInstance();
+  CWinApp::InitInstance();
 
-	return TRUE;
+  return TRUE;
 }
 
 // Create the toast XML from a template
 HRESULT CToastNotificationsApp::CreateToastXml(_In_ IToastNotificationManagerStatics *toastManager, _Outptr_ IXmlDocument** inputXml, wchar_t* notificationTitle, wchar_t* notificationDescription, wchar_t* imagePath)
 {
-#if defined(DEBUG) 
-	int number = 600;
-	char str[256];
-	sprintf_s(str, "inside create toast xml and calling GetTemplateContent %d\n", number);
-	OutputDebugStringA(str);
-#endif
+  dll_dlog("note title: %s info %s imagePath: %s", notificationTitle, notificationDescription, imagePath);
 
-	HRESULT hr = toastManager->GetTemplateContent(ToastTemplateType_ToastImageAndText04, inputXml);
+  HRESULT hr = toastManager->GetTemplateContent(ToastTemplateType_ToastImageAndText04, inputXml);
 
-#if defined(DEBUG)
-	sprintf_s(str, "done with  GetTemplateContent %d\n", number);
-	OutputDebugStringA(str);
-#endif
-
-	if (SUCCEEDED(hr))
-	{
-
-#if defined(DEBUG)
-		sprintf_s(str, "OK inside\n");
-		OutputDebugStringA(str);
-#endif
-		
-		//wchar_t *imagePath = _wfullpath(nullptr, L"toastImageAndText.png", MAX_PATH);
-
-#if defined(DEBUG)
-    static wchar_t wstr[512];
-    swprintf_s(wstr, TEXT("%s:%d:imagePath: %s"), TEXT(__FUNCTION__), __LINE__, imagePath);
-    OutputDebugStringW(wstr);
-#endif
-    
+  if (FAILED(hr))
+  {
+    dll_log("GetTemplateContent failed - status: %d", GetLastError());
+  }
+  else
+  {
+    //wchar_t *imagePath = _wfullpath(nullptr, L"toastImageAndText.png", MAX_PATH);
     hr = imagePath != nullptr ? S_OK : HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
-		
-		if (SUCCEEDED(hr))
-		{
-		
-#if defined(DEBUG)
-			sprintf_s(str, "got hte image path and now setting its source");
-			OutputDebugStringA(str);
-#endif
 
-			hr = SetImageSrc(imagePath, *inputXml);
+    if (FAILED(hr))
+    {
+      dll_log("imagePath failed - status: %d", GetLastError());
+    }
+    else
+    {
+      hr = SetImageSrc(imagePath, *inputXml);
 
-			if (SUCCEEDED(hr))
-			{
+      if (FAILED(hr))
+      {
+        dll_log("SetImageSrc failed - status: %d", GetLastError());
+      }
+      else
+      {
+        wchar_t* textValues[] =
+        {
+          notificationTitle,
+          notificationDescription,
+          L"      "
+        };
 
-#if defined(DEBUG)
-				sprintf_s(str, "done setting the source");
-				OutputDebugStringA(str);
-#endif
-		
-				wchar_t* textValues[] = {
-					notificationTitle,
-					notificationDescription,
-					L"      "
-				};
-
-				UINT32 textLengths[] = { wcslen(notificationTitle), wcslen(notificationDescription), 6 };
-				hr = SetTextValues(textValues, 3, textLengths, *inputXml);
-
-			}
-		}
-		else {
-
-#if defined(DEBUG)
-			sprintf_s(str, "AHh!with imagepath %ld\n", GetLastError());
-			OutputDebugStringA(str);
-#endif
-
-		}
-	}
-	else {
-
-#if defined(DEBUG)
-		sprintf_s(str, "AHh! Shoot, done with  GetTemplateContent %ld\n", GetLastError());
-		OutputDebugStringA(str);
-#endif
-
-	}
-	return hr;
+        UINT32 textLengths[] = { wcslen(notificationTitle), wcslen(notificationDescription), 6 };
+        hr = SetTextValues(textValues, 3, textLengths, *inputXml);
+      }
+    }
+  }
+  return hr;
 }
 
 HRESULT CToastNotificationsApp::SetTextValues(_In_reads_(textValuesCount) wchar_t **textValues, _In_ UINT32 textValuesCount, _In_reads_(textValuesCount) UINT32 *textValuesLengths, _In_ IXmlDocument *toastXml)
 {
+  HRESULT hr = textValues != nullptr && textValuesCount > 0 ? S_OK : E_INVALIDARG;
+  if (FAILED(hr))
+  {
+    dll_log("text values/count mismatched - textValues: %p count: %d", textValues, textValuesCount);
+  }
+  else
+  {
+    ComPtr<IXmlNodeList> nodeList;
 
-#if defined(DEBUG)
-	int number = 600;
-	char str[256];
-	sprintf_s(str, "inside set text values %d\n", number);
-	OutputDebugStringA(str);
-#endif
+    hr = toastXml->GetElementsByTagName(StringReferenceWrapper(L"text").Get(), &nodeList);
+    if (FAILED(hr))
+    {
+      dll_log("GetElementsByTagName failed - status: %d", GetLastError());
+    }
+    else
+    {
+      UINT32 nodeListLength;
+      hr = nodeList->get_Length(&nodeListLength);
 
-	HRESULT hr = textValues != nullptr && textValuesCount > 0 ? S_OK : E_INVALIDARG;
-	if (SUCCEEDED(hr))
-	{
-		ComPtr<IXmlNodeList> nodeList;
+      if (FAILED(hr))
+      {
+        dll_log("nodeList->get_Length failed - status: %d", GetLastError());
+      }
+      else
+      {
+        hr = textValuesCount <= nodeListLength ? S_OK : E_INVALIDARG;
 
-#if defined(DEBUG)
-		sprintf_s(str, "before calling get tag names %d\n", number);
-		OutputDebugStringA(str);
-#endif
+        if (FAILED(hr))
+        {
+          dll_log("textValuesCount > nodeListLength failed");
+        }
+        else
+        {
+          for (UINT32 i = 0; i < textValuesCount; i++)
+          {
+            ComPtr<IXmlNode> textNode;
+            hr = nodeList->Item(i, &textNode);
 
-		hr = toastXml->GetElementsByTagName(StringReferenceWrapper(L"text").Get(), &nodeList);
-		if (SUCCEEDED(hr))
-		{
+            if (FAILED(hr))
+            {
+              dll_log("textValuesCount > nodeListLength failed");
+            }
+            else
+            {
+              hr = SetNodeValueString(StringReferenceWrapper(textValues[i], textValuesLengths[i]).Get(), textNode.Get(), toastXml);
+              if (FAILED(hr))
+              {
+                dll_log("SetNodeValueString failed - value: %s length: %d", textValues[i], textValuesLengths[i]);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 
-#if defined(DEBUG)
-			sprintf_s(str, "inside succeeded %d\n", number);
-			OutputDebugStringA(str);
-#endif
-
-			UINT32 nodeListLength;
-			hr = nodeList->get_Length(&nodeListLength);
-
-			if (SUCCEEDED(hr))
-			{
-
-#if defined(DEBUG)
-				sprintf_s(str, "inside got length %d\n", number);
-				OutputDebugStringA(str);
-#endif
-
-				hr = textValuesCount <= nodeListLength ? S_OK : E_INVALIDARG;
-
-				if (SUCCEEDED(hr))
-				{
-
-#if defined(DEBUG)
-					sprintf_s(str, "insidenode list length %d\n", number);
-					OutputDebugStringA(str);
-#endif
-
-					for (UINT32 i = 0; i < textValuesCount; i++)
-					{
-						ComPtr<IXmlNode> textNode;
-						hr = nodeList->Item(i, &textNode);
-
-						if (SUCCEEDED(hr))
-						{
-
-#if defined(DEBUG)
-							sprintf_s(str, "before calling node value string %d\n", number);
-							OutputDebugStringA(str);
-#endif
-
-							hr = SetNodeValueString(StringReferenceWrapper(textValues[i], textValuesLengths[i]).Get(), textNode.Get(), toastXml);
-						}
-					}
-				}
-			}
-		}
-	}
-
-	//int number = 600;
-	//char str[256];
-
-#if defined(DEBUG)
-	sprintf_s(str, "returning from set text values %d\n", number);
-	OutputDebugStringA(str);
-#endif
-
-	return hr;
+  return hr;
 }
 
 HRESULT CToastNotificationsApp::SetImageSrc(_In_z_ wchar_t *imagePath, _In_ IXmlDocument *toastXml)
 {
-	wchar_t imageSrc[MAX_PATH] = L"file:///";
-	HRESULT hr = StringCchCat(imageSrc, ARRAYSIZE(imageSrc), imagePath);
-	if (SUCCEEDED(hr))
-	{
-		ComPtr<IXmlNodeList> nodeList;
-		hr = toastXml->GetElementsByTagName(StringReferenceWrapper(L"image").Get(), &nodeList);
-		if (SUCCEEDED(hr))
-		{
-			ComPtr<IXmlNode> imageNode;
-			hr = nodeList->Item(0, &imageNode);
-			if (SUCCEEDED(hr))
-			{
-				ComPtr<IXmlNamedNodeMap> attributes;
+  wchar_t imageSrc[MAX_PATH] = L"file:///";
+  HRESULT hr = StringCchCat(imageSrc, ARRAYSIZE(imageSrc), imagePath);
+  if (FAILED(hr))
+  {
+    dll_logw(TEXT("StringCchCat failed - imagePath: %s"), imagePath);
+  }
+  else
+  {
+    ComPtr<IXmlNodeList> nodeList;
+    hr = toastXml->GetElementsByTagName(StringReferenceWrapper(L"image").Get(), &nodeList);
+    if (FAILED(hr))
+    {
+      dll_logw(TEXT("GetElementsByTagName failed for: 'image'"));
+    }
+    else
+    {
+      ComPtr<IXmlNode> imageNode;
+      hr = nodeList->Item(0, &imageNode);
+      if (FAILED(hr))
+      {
+        dll_logw(TEXT("nodeList->Item failed for: 'image'"));
+      }
+      else
+      {
+        ComPtr<IXmlNamedNodeMap> attributes;
 
-				hr = imageNode->get_Attributes(&attributes);
-				if (SUCCEEDED(hr))
-				{
-					ComPtr<IXmlNode> srcAttribute;
+        hr = imageNode->get_Attributes(&attributes);
+        if (FAILED(hr))
+        {
+          dll_logw(TEXT("imageNode->get_Attributes failed for: 'image'"));
+        }
+        else
+        {
+          ComPtr<IXmlNode> srcAttribute;
 
-					hr = attributes->GetNamedItem(StringReferenceWrapper(L"src").Get(), &srcAttribute);
-					if (SUCCEEDED(hr))
-					{
-#if defined(DEBUG)
-            static char str[256];
-            sprintf_s(str, "setting image source %d", hr);
-            OutputDebugStringA(str);
-#endif
+          hr = attributes->GetNamedItem(StringReferenceWrapper(L"src").Get(), &srcAttribute);
+          if (FAILED(hr))
+          {
+            dll_logw(TEXT("attributes->GetNamedItem failed for: 'src'"));
+          }
+          else
+          {
             hr = SetNodeValueString(StringReferenceWrapper(imageSrc).Get(), srcAttribute.Get(), toastXml);
-					}
-				}
-			}
-		}
-	}
+          }
+        }
+      }
+    }
+  }
 
-#if defined(DEBUG)
-	int number = 600;
-	char str[256];
-	sprintf_s(str, "returning from set image source %d\n", number);
-	OutputDebugStringA(str);
-#endif
-
-	return hr;
+  return hr;
 }
 
 HRESULT CToastNotificationsApp::SetNodeValueString(_In_ HSTRING inputString, _In_ IXmlNode *node, _In_ IXmlDocument *xml)
 {
+  ComPtr<IXmlText> inputText;
 
-#if defined(DEBUG)
-	int number = 600;
-	char str[256];
-	sprintf_s(str, "inside node value string %d\n", number);
-	OutputDebugStringA(str);
-#endif
+  HRESULT hr = xml->CreateTextNode(inputString, &inputText);
 
-	ComPtr<IXmlText> inputText;
+  if (FAILED(hr))
+  {
+    dll_log("CreateTextNode failed")
+  }
+  else
+  {
+    ComPtr<IXmlNode> inputTextNode;
 
-	HRESULT hr = xml->CreateTextNode(inputString, &inputText);
+    hr = inputText.As(&inputTextNode);
+    if (FAILED(hr))
+    {
+      dll_log("inputText failed")
+    }
+    else
+    {
+      ComPtr<IXmlNode> pAppendedChild;
+      hr = node->AppendChild(inputTextNode.Get(), &pAppendedChild);
+      if (FAILED(hr))
+      {
+        dll_log("AppendChild failed");
+      }
+    }
+  }
 
-	if (SUCCEEDED(hr))
-	{
-
-#if defined(DEBUG)
-		sprintf_s(str, "done create node text %d\n", number);
-		OutputDebugStringA(str);
-#endif
-
-		ComPtr<IXmlNode> inputTextNode;
-
-		hr = inputText.As(&inputTextNode);
-		if (SUCCEEDED(hr))
-		{
-			ComPtr<IXmlNode> pAppendedChild;
-			hr = node->AppendChild(inputTextNode.Get(), &pAppendedChild);
-		}
-	}
-
-#if defined(DEBUG)
-	number = 600;
-	sprintf_s(str, "returning from set node value string %d\n", number);
-	OutputDebugStringA(str);
-#endif
-
-	return hr;
+  return hr;
 }
 
 HRESULT CToastNotificationsApp::CreateToast(_In_ IToastNotificationManagerStatics *toastManager, _In_ IXmlDocument *xml, HWND hWnd)
 {
-	_hwnd = hWnd;
-	ComPtr<IToastNotifier> notifier;
-	HRESULT hr = toastManager->CreateToastNotifierWithId(StringReferenceWrapper(AppId).Get(), &notifier);
-	if (FAILED(hr))
-	{
-#if defined(DEBUG)
-		char str[256];
-		sprintf_s(str, "error creating toast - status: %d", GetLastError());
-		OutputDebugStringA(str);
-#endif
-	}
-	else
-	{
-		ComPtr<IToastNotificationFactory> factory;
-		hr = GetActivationFactory(StringReferenceWrapper(RuntimeClass_Windows_UI_Notifications_ToastNotification).Get(), &factory);
-		if (SUCCEEDED(hr))
-		{
-			ComPtr<IToastNotification> toast;
-			hr = factory->CreateToastNotification(xml, &toast);
-			if (SUCCEEDED(hr))
-			{
-				// Register the event handlers
-				EventRegistrationToken activatedToken, dismissedToken, failedToken;
-				ComPtr<ToastEventHandler> eventHandler(new ToastEventHandler(_hwnd, _hwnd));
+  _hwnd = hWnd;
+  ComPtr<IToastNotifier> notifier;
+  HRESULT hr = toastManager->CreateToastNotifierWithId(StringReferenceWrapper(AppId).Get(), &notifier);
+  if (FAILED(hr))
+  {
+    dll_log("error creating toast - status: %d", GetLastError());
+  }
+  else
+  {
+    ComPtr<IToastNotificationFactory> factory;
+    hr = GetActivationFactory(StringReferenceWrapper(RuntimeClass_Windows_UI_Notifications_ToastNotification).Get(), &factory);
+    if (FAILED(hr))
+    {
+      dll_log("GetActivationFactory failed - status: %d", GetLastError());
+    }
+    else
+    {
+      ComPtr<IToastNotification> toast;
+      hr = factory->CreateToastNotification(xml, &toast);
+      if (FAILED(hr))
+      {
+        dll_log("factory->CreateToastNotification failed - status: %d", GetLastError());
+      }
+      else
+      {
+        // Register the event handlers
+        EventRegistrationToken activatedToken, dismissedToken, failedToken;
+        ComPtr<ToastEventHandler> eventHandler(new ToastEventHandler(_hwnd, _hwnd));
 
-				toast->add_Activated(eventHandler.Get(), &activatedToken);
-				if (SUCCEEDED(hr))
-				{
-					hr = toast->add_Dismissed(eventHandler.Get(), &dismissedToken);
-					if (SUCCEEDED(hr))
-					{
-						hr = toast->add_Failed(eventHandler.Get(), &failedToken);
-						if (SUCCEEDED(hr))
-						{
-							hr = notifier->Show(toast.Get());
-						}
-					}
-				}
-			}
+        toast->add_Activated(eventHandler.Get(), &activatedToken);
+        if (FAILED(hr))
+        {
+          dll_log("toast->add_Activated failed - status: %d", GetLastError());
+        }
+        else
+        {
+          hr = toast->add_Dismissed(eventHandler.Get(), &dismissedToken);
+          if (FAILED(hr))
+          {
+            dll_log("toast->add_Dismissed failed - status: %d", GetLastError());
+          }
+          else
+          {
+            hr = toast->add_Failed(eventHandler.Get(), &failedToken);
+            if (FAILED(hr))
+            {
+              dll_log("toast->add_Failed failed - status: %d", GetLastError());
+            }
+            else
+            {
+              hr = notifier->Show(toast.Get());
+            }
+          }
+        }
+      }
+    }
+  }
 
-		}
-	}
-
-#if defined(DEBUG)
-	static wchar_t str[256];
-  swprintf_s(str, TEXT("returning from create toast"));
-	OutputDebugString(str);
-#endif
-
-	return hr;
+  return hr;
 }
 
 HRESULT CToastNotificationsApp::DisplayToast(HWND hWnd, wchar_t* notificationTitle, wchar_t* notificationDescription, wchar_t* imagePath)
 {
+  dll_dlogw(L"note title: %s infoText: %s imagePath: %s", notificationTitle, notificationTitle, imagePath);
 
-#if defined(DEBUG)
-	static wchar_t str[512];
-	swprintf_s(str, L"%s:%d: note title: %s infoText: %s imagePath: %s", TEXT(__FUNCTION__), __LINE__, notificationTitle, notificationTitle, imagePath);
-  OutputDebugString(str);
-#endif
+  ComPtr<IToastNotificationManagerStatics> toastStatics;
 
-	ComPtr<IToastNotificationManagerStatics> toastStatics;
+  HRESULT hr = GetActivationFactory(StringReferenceWrapper(RuntimeClass_Windows_UI_Notifications_ToastNotificationManager).Get(), &toastStatics);
 
-	HRESULT hr = GetActivationFactory(StringReferenceWrapper(RuntimeClass_Windows_UI_Notifications_ToastNotificationManager).Get(), &toastStatics);
+  if (FAILED(hr))
+  {
+    dll_log("GetActivationFactory failed for %s", StringReferenceWrapper(RuntimeClass_Windows_UI_Notifications_ToastNotificationManager).Get());
+  }
+  else
+  {
+    ComPtr<IXmlDocument> toastXml;
+    hr = CreateToastXml(toastStatics.Get(), &toastXml, notificationTitle, notificationDescription, imagePath);
 
-	if (SUCCEEDED(hr))
-	{
-		ComPtr<IXmlDocument> toastXml;
-		hr = CreateToastXml(toastStatics.Get(), &toastXml, notificationTitle, notificationDescription, imagePath);
+    if (FAILED(hr))
+    {
+      dll_log("CreateToastXml failed");
+    }
+    else
+    {
+      hr = CreateToast(toastStatics.Get(), toastXml.Get(), hWnd);
+      if (FAILED(hr))
+      {
+        dll_log("CreateToast failed");
+      }
+    }
+    return hr;
+  }
 
-		if (SUCCEEDED(hr))
-		{
-
-#if defined(DEBUG)
-			char str[256];
-			sprintf_s(str, "done with toast xml and calling the toast method");
-			OutputDebugStringA(str);
-#endif
-
-			hr = CreateToast(toastStatics.Get(), toastXml.Get(), hWnd);
-		}
-		return hr;
-	}
-	else
-		
-		return 1;
+  return 1;
 }
 
 extern "C" EXPORT BOOL __cdecl sendNotification(HWND hWnd, HICON icon, SEND_NOTE_INFO_T *noteInfo)
 {
-	AFX_MANAGE_STATE(AfxGetStaticModuleState());
-#if defined(DEBUG)
-	  static char str[512];
-	  sprintf_s(str, "%s:%d: note %p", __FUNCTION__, __LINE__, noteInfo);
-	  OutputDebugStringA(str);
-    sprintf_s(str, "%s:%d: noteInfo ptrs: title: %p infoText: %p imagePath: %p", __FUNCTION__, __LINE__, noteInfo->title, noteInfo->informativeText, noteInfo->appIconPath);
-	  OutputDebugStringA(str);
-#endif
+  AFX_MANAGE_STATE(AfxGetStaticModuleState());
+  dll_dlog("note %p", noteInfo);
 
-#if defined(DEBUG)
-	  sprintf_s(str, "%s:%d: note title: %s", __FUNCTION__, __LINE__, noteInfo->title);
-	  OutputDebugStringA(str);
-    sprintf_s(str, "%s:%d: note infoText: %s", __FUNCTION__, __LINE__, noteInfo->informativeText);
-    OutputDebugStringA(str);
-    sprintf_s(str, "%s:%d: note contentPath: %s", __FUNCTION__, __LINE__, noteInfo->appIconPath);
-    OutputDebugStringA(str);
-    sprintf_s(str, "%s:%d: note UUID: %s", __FUNCTION__, __LINE__, noteInfo->uuidString);
-	  OutputDebugStringA(str);
-#endif
+  dll_dlog("note title: %s", noteInfo->title);
+  dll_dlog("note infoText: %s", noteInfo->informativeText);
+  dll_dlog("note contentPath: %s", noteInfo->appIconPath);
+  dll_dlog("note UUID: %s", noteInfo->uuidString);
 
-		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-		std::wstring title = converter.from_bytes(noteInfo->title);
-		std::wstring description = converter.from_bytes(noteInfo->informativeText);
-    std::wstring imagePath = TEXT("");
-    
-    // Convert content image path if available...
-    if (noteInfo->appIconPath != NULL)
-      imagePath = converter.from_bytes(noteInfo->appIconPath);
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+  std::wstring title       = converter.from_bytes(noteInfo->title);
+  std::wstring description = converter.from_bytes(noteInfo->informativeText);
+  std::wstring imagePath   = TEXT("");
 
-#if defined(DEBUG)
-		static wchar_t wstr[512];
-    swprintf_s(wstr, TEXT("%s:%d: note title: %s infoText: %s imagePath: %s"), TEXT(__FUNCTION__), __LINE__, title.c_str(), description.c_str(), imagePath.c_str());
-		OutputDebugString(wstr);
-#endif
+  // Convert content image path if available...
+  if (noteInfo->appIconPath != NULL)
+    imagePath = converter.from_bytes(noteInfo->appIconPath);
 
-#if 0
-		CToastNotificationsApp *app = new CToastNotificationsApp();
-		HRESULT hr = app->DisplayToast(hWnd, const_cast<wchar_t*>(title.c_str()), const_cast<wchar_t*>(description.c_str()));
-#else
-    HRESULT hr = theApp.DisplayToast(hWnd, const_cast<wchar_t*>(title.c_str()), const_cast<wchar_t*>(description.c_str()), const_cast<wchar_t*>(imagePath.c_str()));
-#endif
+  dll_dlogw(TEXT("note title: %s infoText: %s imagePath: %s"), title.c_str(), description.c_str(), imagePath.c_str());
 
-#if defined(DEBUG)
-		sprintf_s(str, "%s:%d: HR %d", __FUNCTION__, __LINE__, hr);
-		OutputDebugStringA(str);
-#endif
+  HRESULT hr = theApp.DisplayToast(hWnd, const_cast<wchar_t*>(title.c_str()), const_cast<wchar_t*>(description.c_str()), const_cast<wchar_t*>(imagePath.c_str()));
 
-	if (SUCCEEDED(hr))
-	{
-		return TRUE;
-	}
+  dll_dlog("HR %d", hr);
 
-	return FALSE;
+  if (SUCCEEDED(hr))
+  {
+    return TRUE;
+  }
+
+  return FALSE;
 }
 
 extern "C" EXPORT BOOL __cdecl removeNotification(HICON icon, REMOVE_NOTE_INFO_T *noteinfo)
 {
-	AFX_MANAGE_STATE(AfxGetStaticModuleState()); 
-#if 1 //defined(DEBUG)
-  static char str[512];
-  sprintf_s(str, "%s:%d: note %p uniqueID: %d", __FUNCTION__, __LINE__, noteinfo, noteinfo->uniqueID);
-  OutputDebugStringA(str);
-#endif
+  AFX_MANAGE_STATE(AfxGetStaticModuleState());
+  dll_log("note %p uniqueID: %d", noteinfo, noteinfo->uniqueID);
   return FALSE;
 }
