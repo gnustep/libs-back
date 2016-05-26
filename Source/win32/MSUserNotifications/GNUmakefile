@@ -33,6 +33,7 @@ NSUserNotification_BUNDLE_LIBS = -lgnustep-gui -lgdi32
 #  -I/mingw/lib/gcc/mingw32/4.8.1/include/c++/mingw32 \
 #  -I/mingw/lib/gcc/mingw32/4.8.1/include/c++
 NSUserNotification_RESOURCE_FILES = \
+  Images/GNUstep.png \
   ToastNotifications/obj/ToastNotifications-0.dll \
   TaskbarNotifications/obj/TaskbarNotifications-0.dll
 #NSUserNotification_SUBPROJECTS = ToastNotifications TaskbarNotifications

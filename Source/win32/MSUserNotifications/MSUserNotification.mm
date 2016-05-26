@@ -66,6 +66,11 @@ static NSString * const kButtonActionKey = @"show";
 @end
 
 @implementation NSImage (Private)
+- (void)_setFilename:(NSString*)filename
+{
+  _fileName = [filename copy];
+}
+
 - (NSString*)_filename
 {
   return _fileName;
@@ -106,10 +111,12 @@ static NSString * const kButtonActionKey = @"show";
       NSString     *imageName   = [[infoDict objectForKey:@"CFBundleIconFiles"] objectAtIndex:0];
       NSString     *imageType   = @"";
       NSString     *path        = nil;
+      NSLog(@"XXX");
       NSImage      *image       = [self _imageForBundleInfo:infoDict];
+      NSLog(@"XXX");
 
       appIcon     = [self _iconFromImage:image];
-      appIconPath = [image _filename];
+      appIconPath = [[image _filename] copy];
       NSLog(@"%s:bundle: %@ image: %@ icon: %p path: %@", __PRETTY_FUNCTION__, classBundle, image, appIcon, appIconPath);
       
       if (appIcon == NULL)
@@ -186,7 +193,8 @@ static NSString * const kButtonActionKey = @"show";
     DestroyIcon(icon);
   }
   
-  [imageToIcon release];
+  RELEASE(appIconPath);
+  RELEASE(imageToIcon);
   [super dealloc];
 }
 
@@ -195,32 +203,39 @@ static NSString * const kButtonActionKey = @"show";
   NSImage  *image       = nil;
   NSString *appIconFile = [infoDict objectForKey: @"NSIcon"];
   
-  if (appIconFile && ![appIconFile isEqual: @""])
+  if (appIconFile && ![appIconFile isEqual: @""] && ![[appIconFile pathExtension] isEqual: @"png"])
   {
     image = [NSImage imageNamed: appIconFile];
   }
-
-  // Try to look up the icns file.
-  appIconFile = [infoDict objectForKey: @"CFBundleIconFile"];
-  if (appIconFile && ![appIconFile isEqual: @""])
-  {
-    image = [NSImage imageNamed: appIconFile];
-  }
-
+  
   if (image == nil)
   {
-    image = [NSImage imageNamed: @"GNUstep"];
-  }
-  else
-  {
-    /* Set the new image to be named 'NSApplicationIcon' ... to do that we
-     * must first check that any existing image of the same name has its
-     * name removed.
-     */
-    [(NSImage*)[NSImage imageNamed: @"NSApplicationIcon"] setName: nil];
-    // We need to copy the image as we may have a proxy here
-    image = AUTORELEASE([image copy]);
-    [image setName: @"NSApplicationIcon"];
+    // Try to look up the icns file.
+    appIconFile = [infoDict objectForKey: @"CFBundleIconFile"];
+    if (appIconFile && ![appIconFile isEqual: @""] && ![[appIconFile pathExtension] isEqual: @"png"])
+    {
+      image = [NSImage imageNamed: appIconFile];
+    }
+
+    if (image == nil)
+    {
+      NSBundle *bundle = [NSBundle bundleForClass: [self class]];
+      appIconFile      = [bundle pathForResource:@"GNUstep" ofType:@"png"];
+      image            = AUTORELEASE([[NSImage alloc] initWithContentsOfFile:appIconFile]);
+      [image setName:@"NSUserNotificationIcon"];
+      [image _setFilename:appIconFile];
+    }
+    else
+    {
+      /* Set the new image to be named 'NSApplicationIcon' ... to do that we
+       * must first check that any existing image of the same name has its
+       * name removed.
+       */
+      [(NSImage*)[NSImage imageNamed: @"NSApplicationIcon"] setName: nil];
+      // We need to copy the image as we may have a proxy here
+      image = AUTORELEASE([image copy]);
+      [image setName: @"NSApplicationIcon"];
+    }
   }
   return image;
 }
