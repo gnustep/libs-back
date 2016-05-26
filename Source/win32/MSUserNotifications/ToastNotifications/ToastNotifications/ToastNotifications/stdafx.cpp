@@ -7,7 +7,6 @@
 
 void dll_log_s(const char *function, int line, const char *format, ...)
 {
-#if defined(DEBUG)
   static const size_t STRBUFSIZE = 512;
   static char str[STRBUFSIZE];
   va_list argptr;
@@ -16,12 +15,10 @@ void dll_log_s(const char *function, int line, const char *format, ...)
   vsprintf_s(&str[strlen(str)], STRBUFSIZE - strlen(str), format, argptr);
   OutputDebugStringA(str);
   va_end(argptr);
-#endif
 }
 
 void dll_logw_s(const wchar_t *function, int line, const wchar_t *format, ...)
 {
-#if defined(DEBUG)
   static const size_t STRBUFSIZE = 512;
   static wchar_t wstr[STRBUFSIZE];
   va_list argptr;
@@ -30,5 +27,4 @@ void dll_logw_s(const wchar_t *function, int line, const wchar_t *format, ...)
   vswprintf_s(&wstr[_tcslen(wstr)], STRBUFSIZE - _tcslen(wstr), format, argptr);
   OutputDebugStringW(wstr);
   va_end(argptr);
-#endif
 }

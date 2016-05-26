@@ -9,7 +9,7 @@
 
 #include "resource.h"		// main symbols
 
-const wchar_t AppId[] = L"Testplant.Eggplant.Notifications";
+const wchar_t AppId[] = L"Testplant.Notifications.Eggplant";
 
 
 
@@ -57,7 +57,10 @@ public:
 		_In_ ABI::Windows::Data::Xml::Dom::IXmlDocument *xml
 		);
 
-		
+protected:
+  HRESULT TryCreateShortcut();
+  HRESULT InstallShortcut(_In_z_ wchar_t *shortcutPath);
+
 private:
 	HWND _hwnd;
 	HWND _hEdit;

@@ -17,7 +17,6 @@
 #include <locale>
 #include <codecvt>
 #include <string>
-//#include <wchar.h>
 
 using namespace Microsoft::WRL;
 using namespace ABI::Windows::UI::Notifications;
@@ -84,11 +83,106 @@ BOOL CToastNotificationsApp::InitInstance()
 
   return TRUE;
 }
+// In order to display toasts, a desktop application must have a shortcut on the Start menu.
+// Also, an AppUserModelID must be set on that shortcut.
+// The shortcut should be created as part of the installer. The following code shows how to create
+// a shortcut and assign an AppUserModelID using Windows APIs. You must download and include the 
+// Windows API Code Pack for Microsoft .NET Framework for this code to function
+//
+// Included in this project is a wxs file that be used with the WiX toolkit
+// to make an installer that creates the necessary shortcut. One or the other should be used.
+
+HRESULT CToastNotificationsApp::TryCreateShortcut()
+{
+  wchar_t shortcutPath[MAX_PATH];
+  DWORD charWritten = GetEnvironmentVariable(L"APPDATA", shortcutPath, MAX_PATH);
+  HRESULT hr = charWritten > 0 ? S_OK : E_INVALIDARG;
+  dll_logw(shortcutPath);
+
+  if (SUCCEEDED(hr))
+  {
+    errno_t concatError = wcscat_s(shortcutPath, ARRAYSIZE(shortcutPath), L"\\Microsoft\\Windows\\Start Menu\\Programs\\ToastNotifications.lnk");
+    hr = concatError == 0 ? S_OK : E_INVALIDARG;
+    if (SUCCEEDED(hr))
+    {
+      DWORD attributes = GetFileAttributes(shortcutPath);
+      bool fileExists = attributes < 0xFFFFFFF;
+
+      if (!fileExists)
+      {
+        hr = InstallShortcut(shortcutPath);
+      }
+      else
+      {
+        hr = S_FALSE;
+      }
+    }
+  }
+  return hr;
+}
+
+// Install the shortcut
+HRESULT CToastNotificationsApp::InstallShortcut(_In_z_ wchar_t *shortcutPath)
+{
+  dll_logw(shortcutPath);
+  wchar_t exePath[MAX_PATH];
+
+  DWORD charWritten = GetModuleFileNameEx(GetCurrentProcess(), nullptr, exePath, ARRAYSIZE(exePath));
+  dll_logw(exePath);
+
+  HRESULT hr = charWritten > 0 ? S_OK : E_FAIL;
+
+  if (SUCCEEDED(hr))
+  {
+    ComPtr<IShellLink> shellLink;
+    hr = CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&shellLink));
+
+    if (SUCCEEDED(hr))
+    {
+      hr = shellLink->SetPath(exePath);
+      if (SUCCEEDED(hr))
+      {
+        hr = shellLink->SetArguments(L"");
+        if (SUCCEEDED(hr))
+        {
+          ComPtr<IPropertyStore> propertyStore;
+
+          hr = shellLink.As(&propertyStore);
+          if (SUCCEEDED(hr))
+          {
+            PROPVARIANT appIdPropVar;
+            hr = InitPropVariantFromString(AppId, &appIdPropVar);
+            if (SUCCEEDED(hr))
+            {
+              hr = propertyStore->SetValue(PKEY_AppUserModel_ID, appIdPropVar);
+              dll_log("propertyStore result: %d", hr);
+              if (SUCCEEDED(hr))
+              {
+                hr = propertyStore->Commit();
+                if (SUCCEEDED(hr))
+                {
+                  ComPtr<IPersistFile> persistFile;
+                  hr = shellLink.As(&persistFile);
+                  if (SUCCEEDED(hr))
+                  {
+                    hr = persistFile->Save(shortcutPath, TRUE);
+                  }
+                }
+              }
+              PropVariantClear(&appIdPropVar);
+            }
+          }
+        }
+      }
+    }
+  }
+  return hr;
+}
 
 // Create the toast XML from a template
 HRESULT CToastNotificationsApp::CreateToastXml(_In_ IToastNotificationManagerStatics *toastManager, _Outptr_ IXmlDocument** inputXml, wchar_t* notificationTitle, wchar_t* notificationDescription, wchar_t* imagePath)
 {
-  dll_dlog("note title: %s info %s imagePath: %s", notificationTitle, notificationDescription, imagePath);
+  dll_dlogw(L"note title: %s info %s imagePath: %s", notificationTitle, notificationDescription, imagePath);
 
   HRESULT hr = toastManager->GetTemplateContent(ToastTemplateType_ToastImageAndText04, inputXml);
 
@@ -98,7 +192,19 @@ HRESULT CToastNotificationsApp::CreateToastXml(_In_ IToastNotificationManagerSta
   }
   else
   {
-    //wchar_t *imagePath = _wfullpath(nullptr, L"toastImageAndText.png", MAX_PATH);
+    // ONLY supporting .png files right now...
+    std::wstring filePath = imagePath;
+    if ((filePath.find_last_of(L".") == std::wstring::npos) ||
+        (filePath.substr(filePath.find_last_of(L".") + 1) != L"png"))
+    {
+      // Replace with proxy image...
+      imagePath = L"toastImageAndText.png";
+    }
+
+    // Get full path to image...
+    imagePath = _wfullpath(nullptr, imagePath, MAX_PATH);
+
+    dll_logw(TEXT("loading application image file: %s"), imagePath);
     hr = imagePath != nullptr ? S_OK : HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
 
     if (FAILED(hr))

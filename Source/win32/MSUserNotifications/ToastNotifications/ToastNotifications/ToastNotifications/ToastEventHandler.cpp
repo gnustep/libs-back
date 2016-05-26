@@ -58,8 +58,6 @@ IFACEMETHODIMP ToastEventHandler::Invoke(_In_ IToastNotification* sender, _In_ I
     }
 
     // Cleanup...
-    delete sender;
-    delete this;
     return hr;
 }
 
