@@ -111,9 +111,7 @@ static NSString * const kButtonActionKey = @"show";
       NSString     *imageName   = [[infoDict objectForKey:@"CFBundleIconFiles"] objectAtIndex:0];
       NSString     *imageType   = @"";
       NSString     *path        = nil;
-      NSLog(@"XXX");
       NSImage      *image       = [self _imageForBundleInfo:infoDict];
-      NSLog(@"XXX");
 
       appIcon     = [self _iconFromImage:image];
       appIconPath = [[image _filename] copy];
