@@ -5,12 +5,12 @@ using namespace ABI::Windows::UI::Notifications;
 
 ToastEventHandler::ToastEventHandler(_In_ HWND hToActivate, _In_ HWND hEdit) : _ref(1), _hToActivate(hToActivate), _hEdit(hEdit)
 {
-  dll_dlog("");
+  dll_dlog("this: %p", this);
 }
 
 ToastEventHandler::~ToastEventHandler()
 {
-  dll_dlog("");
+  dll_dlog("this: %p", this);
 }
 
 // DesktopToastActivatedEventHandler
@@ -52,6 +52,7 @@ IFACEMETHODIMP ToastEventHandler::Invoke(_In_ IToastNotification* sender, _In_ I
         }
 
         dll_dlogw(L"IToastNotePtr: %p msg: %s", sender, outputText);
+        //notifier->RemoveFromSchedule
 
         LRESULT succeeded = SendMessage(_hEdit, WM_SETTEXT, reinterpret_cast<WPARAM>(nullptr), reinterpret_cast<LPARAM>(outputText));
         hr = succeeded ? S_OK : E_FAIL;
@@ -66,4 +67,23 @@ IFACEMETHODIMP ToastEventHandler::Invoke(_In_ IToastNotification* /* sender */, 
 {
     LRESULT succeeded = SendMessage(_hEdit, WM_SETTEXT, reinterpret_cast<WPARAM>(nullptr), reinterpret_cast<LPARAM>(L"The toast encountered an error."));
     return succeeded ? S_OK : E_FAIL;
+}
+
+IFACEMETHODIMP_(ULONG) ToastEventHandler::AddRef()
+{
+  LONG value = InterlockedIncrement(&_ref);
+  dll_dlog("ref: %d value: %d", _ref, value);
+  return value;
+}
+
+IFACEMETHODIMP_(ULONG) ToastEventHandler::Release()
+{
+  ULONG l = InterlockedDecrement(&_ref);
+  dll_dlog("ref: %d value: %d", _ref, l);
+  if (l == 0)
+  {
+    dll_dlog("deleting this: %p", this);
+    delete this;
+  }
+  return l;
 }

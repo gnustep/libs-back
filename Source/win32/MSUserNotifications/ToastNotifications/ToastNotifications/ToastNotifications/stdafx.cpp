@@ -3,12 +3,14 @@
 // stdafx.obj will contain the pre-compiled type information
 
 #include "stdafx.h"
-
+#include <string>
+#include <sstream>
 
 void dll_log_s(const char *function, int line, const char *format, ...)
 {
   static const size_t STRBUFSIZE = 512;
   static char str[STRBUFSIZE];
+  std::stringstream message;
   va_list argptr;
   va_start(argptr, format);
   sprintf_s(str, STRBUFSIZE, "%s:%d: ", function, line);

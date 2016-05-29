@@ -2,21 +2,20 @@
 //
 
 #pragma once
-
+#
 #ifndef __AFXWIN_H__
 	#error "include 'stdafx.h' before including this file for PCH"
 #endif
 
 #include "resource.h"		// main symbols
+#include <vector>
 
 const wchar_t AppId[] = L"Testplant.Notifications.Eggplant";
-
-
-
 
 // CToastNotificationsApp
 // See ToastNotifications.cpp for the implementation of this class
 //
+class CToastNotification;
 
 class CToastNotificationsApp : public CWinApp
 {
@@ -26,13 +25,13 @@ public:
 
 // Overrides
 public:
-	virtual BOOL InitInstance();
+  virtual BOOL InitInstance();
+  virtual BOOL ExitInstance();
 
 	DECLARE_MESSAGE_MAP()
 	friend class ToastEventHandler;
 
 public:
-	//HRESULT DisplayToast(HWND hWnd, wchar_t* notificationTitle, wchar_t* notificationDescription);
   HRESULT DisplayToast(HWND hWnd, wchar_t* notificationTitle, wchar_t* notificationDescription, wchar_t* imagePath);
 	HRESULT CreateToastXml(
 		_In_ ABI::Windows::UI::Notifications::IToastNotificationManagerStatics *toastManager,
@@ -64,4 +63,5 @@ protected:
 private:
 	HWND _hwnd;
 	HWND _hEdit;
+  std::vector<CToastNotification*> toasts;
 };

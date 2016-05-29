@@ -109,6 +109,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="ToastEventHandler.cpp" />
+    <ClCompile Include="ToastNotification.cpp" />
     <ClCompile Include="ToastNotifications.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -117,6 +118,7 @@
     <ClInclude Include="StringReferenceWrapper.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="ToastEventHandler.h" />
+    <ClInclude Include="ToastNotification.h" />
     <ClInclude Include="ToastNotifications.h" />
   </ItemGroup>
   <ItemGroup>
@@ -125,9 +127,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ToastNotifications.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="toastImageAndText.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

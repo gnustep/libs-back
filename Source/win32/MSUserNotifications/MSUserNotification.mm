@@ -68,7 +68,11 @@ static NSString * const kButtonActionKey = @"show";
 @implementation NSImage (Private)
 - (void)_setFilename:(NSString*)filename
 {
+#if 0
   _fileName = [filename copy];
+#else
+  ASSIGN(_fileName, filename);
+#endif
 }
 
 - (NSString*)_filename
@@ -115,7 +119,9 @@ static NSString * const kButtonActionKey = @"show";
 
       appIcon     = [self _iconFromImage:image];
       appIconPath = [[image _filename] copy];
+#if defined(DEBUG)
       NSLog(@"%s:bundle: %@ image: %@ icon: %p path: %@", __PRETTY_FUNCTION__, classBundle, image, appIcon, appIconPath);
+#endif
       
       if (appIcon == NULL)
       {
@@ -165,7 +171,7 @@ static NSString * const kButtonActionKey = @"show";
           {
             pSendNotification = (SendNotificationFunctionPtr)GetProcAddress(hNotificationLib, "sendNotification");
             pRemoveNotification = (RemoveNotificationFunctionPtr)GetProcAddress(hNotificationLib, "removeNotification");
-#if 1 //defined(DEBUG)
+#if defined(DEBUG)
             NSLog(@"%s:DLL ptr: %p send notification ptr: %p remove ptr: %p", __PRETTY_FUNCTION__,
                   hNotificationLib, pSendNotification, pRemoveNotification);
 #endif
@@ -183,6 +189,9 @@ static NSString * const kButtonActionKey = @"show";
 
 - (void) dealloc
 {
+#if defined(DEBUG)
+  NSLog(@"%s:", __PRETTY_FUNCTION__);
+#endif
   // Cleanup any icons we generated...
   NSEnumerator *iter = [imageToIcon objectEnumerator];
   HICON         icon = NULL;
@@ -191,8 +200,8 @@ static NSString * const kButtonActionKey = @"show";
     DestroyIcon(icon);
   }
   
-  RELEASE(appIconPath);
-  RELEASE(imageToIcon);
+  DESTROY(appIconPath);
+  DESTROY(imageToIcon);
   [super dealloc];
 }
 
@@ -229,10 +238,10 @@ static NSString * const kButtonActionKey = @"show";
        * must first check that any existing image of the same name has its
        * name removed.
        */
-      [(NSImage*)[NSImage imageNamed: @"NSApplicationIcon"] setName: nil];
+      //[(NSImage*)[NSImage imageNamed: @"NSApplicationIcon"] setName: nil];
       // We need to copy the image as we may have a proxy here
       image = AUTORELEASE([image copy]);
-      [image setName: @"NSApplicationIcon"];
+      //[image setName: @"NSApplicationIcon"];
     }
   }
   return image;

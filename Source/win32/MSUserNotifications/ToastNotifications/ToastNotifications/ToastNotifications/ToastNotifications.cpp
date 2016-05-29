@@ -11,7 +11,7 @@
 #include <Windows.ui.notifications.h>
 #include <strsafe.h>
 #include "ToastNotifications.h"
-#include "ToastEventHandler.h"
+#include "ToastNotification.h"
 #include "../../../MSUserNotificationAPI.h"
 
 #include <locale>
@@ -51,7 +51,6 @@ using namespace Windows::Foundation;
 //		Please see MFC Technical Notes 33 and 58 for additional
 //		details.
 //
-
 // CToastNotificationsApp
 
 BEGIN_MESSAGE_MAP(CToastNotificationsApp, CWinApp)
@@ -62,12 +61,12 @@ CToastNotificationsApp::CToastNotificationsApp()
 {
   // TODO: add construction code here,
   // Place all significant initialization in InitInstance
-  dll_dlog("");
+  dll_dlog("this: %p", this);
 }
 
 CToastNotificationsApp::~CToastNotificationsApp()
 {
-  dll_dlog("");
+  dll_dlog("this: %p", this);
 }
 
 // The one and only CToastNotificationsApp object
@@ -79,10 +78,33 @@ CToastNotificationsApp theApp;
 
 BOOL CToastNotificationsApp::InitInstance()
 {
+  dll_dlog("this: %p", this);
   CWinApp::InitInstance();
+
+  // Do our cleanup here AFTER invoking sub-class method...
 
   return TRUE;
 }
+
+BOOL CToastNotificationsApp::ExitInstance()
+{
+  dll_dlog("this: %p", this);
+
+  // Do our cleanup here BEFORE invoking sub-class method...
+  if (toasts.size() > 0)
+  {
+    dll_dlog("deleting toast - cnt: %d", toasts.size());
+    std::vector<CToastNotification*>::iterator toast;
+    for (toast = toasts.begin(); toast < toasts.end(); ++toast)
+    {
+      dll_dlog("toast ptr: %p", *toast);
+      delete *toast;
+    }
+  }
+
+  return CWinApp::ExitInstance();
+}
+
 // In order to display toasts, a desktop application must have a shortcut on the Start menu.
 // Also, an AppUserModelID must be set on that shortcut.
 // The shortcut should be created as part of the installer. The following code shows how to create
@@ -91,7 +113,6 @@ BOOL CToastNotificationsApp::InitInstance()
 //
 // Included in this project is a wxs file that be used with the WiX toolkit
 // to make an installer that creates the necessary shortcut. One or the other should be used.
-
 HRESULT CToastNotificationsApp::TryCreateShortcut()
 {
   wchar_t shortcutPath[MAX_PATH];
@@ -204,7 +225,7 @@ HRESULT CToastNotificationsApp::CreateToastXml(_In_ IToastNotificationManagerSta
     // Get full path to image...
     imagePath = _wfullpath(nullptr, imagePath, MAX_PATH);
 
-    dll_logw(TEXT("loading application image file: %s"), imagePath);
+    dll_dlogw(TEXT("loading application image file: %s"), imagePath);
     hr = imagePath != nullptr ? S_OK : HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
 
     if (FAILED(hr))
@@ -231,6 +252,9 @@ HRESULT CToastNotificationsApp::CreateToastXml(_In_ IToastNotificationManagerSta
         UINT32 textLengths[] = { wcslen(notificationTitle), wcslen(notificationDescription), 6 };
         hr = SetTextValues(textValues, 3, textLengths, *inputXml);
       }
+
+      // Delete/free imagePath from _wfullpath call above...
+      free(imagePath);
     }
   }
   return hr;
@@ -412,35 +436,10 @@ HRESULT CToastNotificationsApp::CreateToast(_In_ IToastNotificationManagerStatic
       }
       else
       {
-        // Register the event handlers
-        EventRegistrationToken activatedToken, dismissedToken, failedToken;
-        ComPtr<ToastEventHandler> eventHandler(new ToastEventHandler(_hwnd, _hwnd));
-
-        toast->add_Activated(eventHandler.Get(), &activatedToken);
-        if (FAILED(hr))
-        {
-          dll_log("toast->add_Activated failed - status: %d", GetLastError());
-        }
-        else
-        {
-          hr = toast->add_Dismissed(eventHandler.Get(), &dismissedToken);
-          if (FAILED(hr))
-          {
-            dll_log("toast->add_Dismissed failed - status: %d", GetLastError());
-          }
-          else
-          {
-            hr = toast->add_Failed(eventHandler.Get(), &failedToken);
-            if (FAILED(hr))
-            {
-              dll_log("toast->add_Failed failed - status: %d", GetLastError());
-            }
-            else
-            {
-              hr = notifier->Show(toast.Get());
-            }
-          }
-        }
+        CToastNotification *toastNotification = new CToastNotification(toast.Get(), _hwnd);
+        hr = notifier->Show(toast.Get());
+        if (SUCCEEDED(hr))
+          toasts.push_back(toastNotification);
       }
     }
   }
@@ -519,6 +518,6 @@ extern "C" EXPORT BOOL __cdecl sendNotification(HWND hWnd, HICON icon, SEND_NOTE
 extern "C" EXPORT BOOL __cdecl removeNotification(HICON icon, REMOVE_NOTE_INFO_T *noteinfo)
 {
   AFX_MANAGE_STATE(AfxGetStaticModuleState());
-  dll_log("note %p uniqueID: %d", noteinfo, noteinfo->uniqueID);
+  dll_dlog("note %p uniqueID: %d", noteinfo, noteinfo->uniqueID);
   return FALSE;
 }

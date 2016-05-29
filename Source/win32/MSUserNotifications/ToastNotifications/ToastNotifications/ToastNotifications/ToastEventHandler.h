@@ -21,13 +21,9 @@ public:
     IFACEMETHODIMP Invoke(_In_ ABI::Windows::UI::Notifications::IToastNotification *sender, _In_ ABI::Windows::UI::Notifications::IToastFailedEventArgs *e);
 
     // IUnknown
-    IFACEMETHODIMP_(ULONG) AddRef() { return InterlockedIncrement(&_ref); }
+    IFACEMETHODIMP_(ULONG) AddRef();
 
-    IFACEMETHODIMP_(ULONG) Release() {
-        ULONG l = InterlockedDecrement(&_ref);
-        if (l == 0) delete this;
-        return l;
-    }
+    IFACEMETHODIMP_(ULONG) Release();
 
     IFACEMETHODIMP QueryInterface(_In_ REFIID riid, _COM_Outptr_ void **ppv) {
         if (IsEqualIID(riid, IID_IUnknown))
