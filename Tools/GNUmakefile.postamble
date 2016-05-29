@@ -32,9 +32,6 @@ before-all::
 	$(LN_S) ../Source/xlib/XGCommonFont.m .
 	-$(RM) xdnd.c
 	$(LN_S) ../Source/x11/xdnd.c .
-ifeq ($(findstring mingw32, $(GNUSTEP_TARGET_OS)), mingw32)
-	(cd Backtrace; make; cd ..)
-endif
 
 # Things to do after compiling
 # after-all::
@@ -44,9 +41,6 @@ endif
 
 # Things to do after installing
 after-install::
-ifeq ($(findstring mingw32, $(GNUSTEP_TARGET_OS)), mingw32)
-	$(INSTALL) backtrace/backtrace.dll $(GNUSTEP_TOOLS)
-endif
 	if [ ! -f $(GNUSTEP_DOC_MAN) ]; then \
 	  $(MKDIRS) $(GNUSTEP_DOC_MAN); \
 	fi; \
@@ -66,9 +60,6 @@ endif
 
 # Things to do after uninstalling
 after-uninstall::
-ifeq ($(findstring mingw32, $(GNUSTEP_TARGET_OS)), mingw32)
-	rm -f $(GNUSTEP_TOOLS)/backtrace.dll
-endif
 	for file in $(MAN1_PAGES) __done; do \
 	  if [ $$file != __done ]; then \
 	    rm -f $(GNUSTEP_DOC_MAN)/man1/$$file.gz; \

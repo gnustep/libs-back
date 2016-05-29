@@ -1425,21 +1425,6 @@ main(int argc, char** argv, char **env)
             }
         }
     }
-  
-#if defined(__MINGW__)
-  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"GSGPBSLoggingEnabled"])
-  {
-    // Load backtrace library for mingw...
-    NSString *gpbstool = [NSString stringWithCString:argv[0] encoding:NSASCIIStringEncoding];
-    NSString *gpbspath = [gpbstool stringByDeletingLastPathComponent];
-    NSString *backtrace = [gpbspath stringByAppendingPathComponent:@"backtrace.dll"];
-    
-    if (LoadLibraryA([backtrace cStringUsingEncoding:NSUTF8StringEncoding]) == 0)
-      NSWarnMLog(@"error loading mingw backtrace library - status: %d", GetLastError());
-    else
-      NSWarnMLog(@"Windows/mingw backtrace library loaded successfully");
-  }
-#endif
 
   if (verbose)
     {
