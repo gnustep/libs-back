@@ -2881,124 +2881,138 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   *cid = (void*)hCursor;
 }
 
+- (BITMAP) createBitmapFromImage: (NSImage*)image
+{
+  BITMAP bm = NULL;
+  
+  return(bm);
+}
+
+- (HICON) createIconFromImage: (NSImage*)image
+{
+  HICON icon = NULL;
+  
+  NSBitmapImageRep *rep = getStandardBitmap(image);
+  if (rep == nil)
+  {
+    /* FIXME: We might create a blank cursor here? */
+    NSWarnMLog(@"Could not convert cursor bitmap data");
+  }
+  else
+  {
+    if (hotp.x >= [rep pixelsWide])
+      hotp.x = [rep pixelsWide]-1;
+    
+    if (hotp.y >= [rep pixelsHigh])
+      hotp.y = [rep pixelsHigh]-1;
+    
+    int w = [rep pixelsWide];
+    int h = [rep pixelsHigh];
+    
+    // Create a windows bitmap from the image representation's bitmap...
+    if ((w > 0) && (h > 0))
+    {
+      BITMAP    bm;
+      HDC       hDC             = GetDC(NULL);
+      HDC       hMainDC         = CreateCompatibleDC(hDC);
+      HDC       hAndMaskDC      = CreateCompatibleDC(hDC);
+      HDC       hXorMaskDC      = CreateCompatibleDC(hDC);
+      HBITMAP   hAndMaskBitmap  = NULL;
+      HBITMAP   hXorMaskBitmap  = NULL;
+      
+      // Create the source bitmap...
+      HBITMAP hSourceBitmap = CreateBitmap(w, h, [rep numberOfPlanes], [rep bitsPerPixel], [rep bitmapData]);
+      
+      // Get the dimensions of the source bitmap
+      GetObject(hSourceBitmap, sizeof(BITMAP), &bm);
+      
+      // Create compatible bitmaps for the device context...
+      hAndMaskBitmap = CreateCompatibleBitmap(hDC, bm.bmWidth, bm.bmHeight);
+      hXorMaskBitmap = CreateCompatibleBitmap(hDC, bm.bmWidth, bm.bmHeight);
+      
+      // Select the bitmaps to DC
+      HBITMAP hOldMainBitmap    = (HBITMAP)SelectObject(hMainDC, hSourceBitmap);
+      HBITMAP hOldAndMaskBitmap = (HBITMAP)SelectObject(hAndMaskDC, hAndMaskBitmap);
+      HBITMAP hOldXorMaskBitmap = (HBITMAP)SelectObject(hXorMaskDC, hXorMaskBitmap);
+      
+      /* On windows, to calculate the color for a pixel, first an AND is done
+       * with the background and the "and" bitmap, then an XOR with the "xor"
+       * bitmap. This means that when the data in the "and" bitmap is 0, the
+       * pixel will get the color as specified in the "xor" bitmap.
+       * However, if the data in the "and" bitmap is 1, the result will be the
+       * background XOR'ed with the value in the "xor" bitmap. In case the "xor"
+       * data is completely black (0x000000) the pixel will become transparent,
+       * in case it's white (0xffffff) the pixel will become the inverse of the
+       * background color.
+       */
+      
+      // Scan each pixel of the souce bitmap and create the masks
+      int y;
+      int *pixel = (int*)[rep bitmapData];
+      for(y = 0; y < bm.bmHeight; ++y)
+      {
+        int x;
+        for (x = 0; x < bm.bmWidth; ++x)
+        {
+          if (*pixel++ == 0x00000000)
+          {
+            SetPixel(hAndMaskDC, x, y, RGB(255, 255, 255));
+            SetPixel(hXorMaskDC, x, y, RGB(0, 0, 0));
+          }
+          else
+          {
+            SetPixel(hAndMaskDC, x, y, RGB(0, 0, 0));
+            SetPixel(hXorMaskDC, x, y, GetPixel(hMainDC, x, y));
+          }
+        }
+      }
+      
+      // Reselect the old bitmap objects...
+      SelectObject(hMainDC, hOldMainBitmap);
+      SelectObject(hAndMaskDC, hOldAndMaskBitmap);
+      SelectObject(hXorMaskDC, hOldXorMaskBitmap);
+      
+      // Create the cursor from the generated and/xor data...
+      ICONINFO iconinfo = { 0 };
+      iconinfo.fIcon    = FALSE;
+      iconinfo.xHotspot = hotp.x;
+      iconinfo.yHotspot = hotp.y;
+      iconinfo.hbmMask  = hAndMaskBitmap;
+      iconinfo.hbmColor = hXorMaskBitmap;
+      
+      // Finally, try to create the cursor...
+      icon = CreateIconIndirect(&iconinfo);
+      
+      // Cleanup the DC's...
+      DeleteDC(hXorMaskDC);
+      DeleteDC(hAndMaskDC);
+      DeleteDC(hMainDC);
+      
+      // Cleanup the bitmaps...
+      DeleteObject(hXorMaskBitmap);
+      DeleteObject(hAndMaskBitmap);
+      DeleteObject(hSourceBitmap);
+      
+      // Release the screen HDC...
+      ReleaseDC(NULL,hDC);
+    }
+  }
+  
+  return(icon);
+}
+
 - (void) imagecursor: (NSPoint)hotp : (NSImage *)image : (void **)cid
 {
   if (cid)
     {
-      // Default the return cursur ID to NULL...
-      *cid = NULL;
-
-      NSBitmapImageRep *rep = getStandardBitmap(image);
-      if (rep == nil)
-        {
-          /* FIXME: We might create a blank cursor here? */
-          NSWarnMLog(@"Could not convert cursor bitmap data");
-}
+      // Try to create the cursor...
+      *cid = [self createIconFromImage: image];
+      
+      // Need to save these created cursors to remove later...
+      if (*cid == NULL)
+        NSWarnMLog(@"error creating cursor - status: %p", GetLastError());
       else
-        {
-          if (hotp.x >= [rep pixelsWide])
-            hotp.x = [rep pixelsWide]-1;
-
-          if (hotp.y >= [rep pixelsHigh])
-            hotp.y = [rep pixelsHigh]-1;
-          
-          int w = [rep pixelsWide];
-          int h = [rep pixelsHigh];
-          
-          // Create a windows bitmap from the image representation's bitmap...
-          if ((w > 0) && (h > 0))
-            {
-              BITMAP    bm;
-              HDC       hDC             = GetDC(NULL);
-              HDC       hMainDC         = CreateCompatibleDC(hDC);
-              HDC       hAndMaskDC      = CreateCompatibleDC(hDC);
-              HDC       hXorMaskDC      = CreateCompatibleDC(hDC);      
-              HBITMAP   hAndMaskBitmap  = NULL;
-              HBITMAP   hXorMaskBitmap  = NULL;
-              
-              // Create the source bitmap...
-              HBITMAP hSourceBitmap = CreateBitmap(w, h, [rep numberOfPlanes], [rep bitsPerPixel], [rep bitmapData]);
-              
-              // Get the dimensions of the source bitmap
-              GetObject(hSourceBitmap, sizeof(BITMAP), &bm);
-              
-              // Create compatible bitmaps for the device context...
-              hAndMaskBitmap = CreateCompatibleBitmap(hDC, bm.bmWidth, bm.bmHeight);
-              hXorMaskBitmap = CreateCompatibleBitmap(hDC, bm.bmWidth, bm.bmHeight);
-              
-              // Select the bitmaps to DC
-              HBITMAP hOldMainBitmap    = (HBITMAP)SelectObject(hMainDC, hSourceBitmap);
-              HBITMAP hOldAndMaskBitmap = (HBITMAP)SelectObject(hAndMaskDC, hAndMaskBitmap);
-              HBITMAP hOldXorMaskBitmap = (HBITMAP)SelectObject(hXorMaskDC, hXorMaskBitmap);
-              
-              /* On windows, to calculate the color for a pixel, first an AND is done
-               * with the background and the "and" bitmap, then an XOR with the "xor"
-               * bitmap. This means that when the data in the "and" bitmap is 0, the
-               * pixel will get the color as specified in the "xor" bitmap.
-               * However, if the data in the "and" bitmap is 1, the result will be the
-               * background XOR'ed with the value in the "xor" bitmap. In case the "xor"
-               * data is completely black (0x000000) the pixel will become transparent,
-               * in case it's white (0xffffff) the pixel will become the inverse of the
-               * background color.
-               */
-
-              // Scan each pixel of the souce bitmap and create the masks
-              int y;
-              int *pixel = (int*)[rep bitmapData];
-              for(y = 0; y < bm.bmHeight; ++y)
-                {
-                  int x;
-                  for (x = 0; x < bm.bmWidth; ++x)
-                    {
-                      if (*pixel++ == 0x00000000)
-                        {
-                          SetPixel(hAndMaskDC, x, y, RGB(255, 255, 255));
-                          SetPixel(hXorMaskDC, x, y, RGB(0, 0, 0));
-                        }
-                      else
-                        {
-                          SetPixel(hAndMaskDC, x, y, RGB(0, 0, 0));
-                          SetPixel(hXorMaskDC, x, y, GetPixel(hMainDC, x, y));
-                        }
-                    }
-                }
-              
-              // Reselect the old bitmap objects...
-              SelectObject(hMainDC, hOldMainBitmap);
-              SelectObject(hAndMaskDC, hOldAndMaskBitmap);
-              SelectObject(hXorMaskDC, hOldXorMaskBitmap);
-              
-              // Create the cursor from the generated and/xor data...
-              ICONINFO iconinfo = { 0 };
-              iconinfo.fIcon    = FALSE;
-              iconinfo.xHotspot = hotp.x;
-              iconinfo.yHotspot = hotp.y;
-              iconinfo.hbmMask  = hAndMaskBitmap;
-              iconinfo.hbmColor = hXorMaskBitmap;
-              
-              // Finally, try to create the cursor...
-              *cid = CreateIconIndirect(&iconinfo);
-
-              // Cleanup the DC's...
-              DeleteDC(hXorMaskDC);
-              DeleteDC(hAndMaskDC);
-              DeleteDC(hMainDC);
-              
-              // Cleanup the bitmaps...
-              DeleteObject(hXorMaskBitmap);
-              DeleteObject(hAndMaskBitmap);
-              DeleteObject(hSourceBitmap);
-              
-              // Release the screen HDC...
-              ReleaseDC(NULL,hDC);
-              
-              // Need to save these created cursors to remove later...
-              [systemCursors setObject:[NSValue valueWithPointer:*cid] forKey:[NSValue valueWithPointer:*cid]];
-            }
-          
-          if (*cid == NULL)
-            NSWarnMLog(@"error creating cursor - status: %p", GetLastError());
-        }
+        [systemCursors setObject:[NSValue valueWithPointer:*cid] forKey:[NSValue valueWithPointer:*cid]];
     }
 }
 
@@ -3037,7 +3051,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   if (cursorId == NULL)
     {
       NSWarnMLog(@"trying to free a cursor not created by us: %p", cid);
-}
+    }
   else
     {
       // Remove the entry and destroy the cursor...

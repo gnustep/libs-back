@@ -1236,7 +1236,7 @@ init(int argc, char** argv, char **env)
               {
                 if ([filemgr createDirectoryAtPath:filepath withIntermediateDirectories:YES attributes:nil error:&error] == NO)
                 {
-                  NSLog(@"%s:error creating path: %@ error: %@", __PRETTY_FUNCTION__, error);
+                  NSLog(@"%s:error creating path: %@ error: %@", __PRETTY_FUNCTION__, filepath, error);
                 }
               }
               
@@ -1284,7 +1284,7 @@ init(int argc, char** argv, char **env)
                     }
                   
                   if ([[NSUserDefaults standardUserDefaults] boolForKey:@"GSGPBSLoggingAttachPid"] == NO)
-                    filename = [filename stringByAppendingFormat:@"_%ld",getpid()];
+                    filename = [filename stringByAppendingFormat:@"_%ld",(long)getpid()];
 
                   NSString *outfile  = [filename stringByAppendingFormat:@"_out.log"];
                   NSString *outpath  = [filepath stringByAppendingPathComponent:outfile];
