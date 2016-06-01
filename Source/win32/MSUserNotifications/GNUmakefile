@@ -27,7 +27,7 @@ NSUserNotification_OBJCCFLAGS += -DWINVER=0x0600 -D_WIN32_IE=0x0600 -DBUILD_DLL 
 NSUserNotification_PRINCIPAL_CLASS = MSUserNotificationCenter
 NSUserNotification_OBJC_FILES =
 NSUserNotification_OBJCC_FILES = MSUserNotification.mm
-NSUserNotification_BUNDLE_LIBS = -lgnustep-gui -lgdi32
+NSUserNotification_BUNDLE_LIBS = -lgnustep-gui -lgdi32 -lgdiplus
 #NSUserNotification_LIBS = stdc++
 #NSUserNotification_INCLUDE_DIRS += \
 #  -I/mingw/lib/gcc/mingw32/4.8.1/include/c++/mingw32 \

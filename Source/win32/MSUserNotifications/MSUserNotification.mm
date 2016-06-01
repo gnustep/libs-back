@@ -50,6 +50,10 @@
 #include <windows.h>
 #include <ShellAPI.h>
 #include <shlwapi.h>
+#include <gdiplus/gdiplus.h>
+
+#include <iostream>
+#include <string>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -210,7 +214,7 @@ static NSString * const kButtonActionKey = @"show";
   NSImage  *image       = nil;
   NSString *appIconFile = [infoDict objectForKey: @"NSIcon"];
   
-  if (appIconFile && ![appIconFile isEqual: @""] && ![[appIconFile pathExtension] isEqual: @"png"])
+  if (appIconFile && ![appIconFile isEqual: @""])
   {
     image = [NSImage imageNamed: appIconFile];
   }
@@ -219,7 +223,7 @@ static NSString * const kButtonActionKey = @"show";
   {
     // Try to look up the icns file.
     appIconFile = [infoDict objectForKey: @"CFBundleIconFile"];
-    if (appIconFile && ![appIconFile isEqual: @""] && ![[appIconFile pathExtension] isEqual: @"png"])
+    if (appIconFile && ![appIconFile isEqual: @""])
     {
       image = [NSImage imageNamed: appIconFile];
     }
@@ -247,142 +251,11 @@ static NSString * const kButtonActionKey = @"show";
   return image;
 }
 
-- (HICON) _iconFromRep: (NSBitmapImageRep*)rep
-{
-  HICON result = NULL;
-  
-  if (rep)
-  {
-    int w = [rep pixelsWide];
-    int h = [rep pixelsHigh];
-    
-    // Create a windows bitmap from the image representation's bitmap...
-    if ((w > 0) && (h > 0))
-    {
-      BITMAP    bm;
-      HDC       hDC             = GetDC(NULL);
-      HDC       hMainDC         = CreateCompatibleDC(hDC);
-      HDC       hAndMaskDC      = CreateCompatibleDC(hDC);
-      HDC       hXorMaskDC      = CreateCompatibleDC(hDC);      
-      HBITMAP   hAndMaskBitmap  = NULL;
-      HBITMAP   hXorMaskBitmap  = NULL;
-      
-      // Create the source bitmap...
-      HBITMAP hSourceBitmap = CreateBitmap(w, h, [rep numberOfPlanes], [rep bitsPerPixel], [rep bitmapData]);
-      
-      // Get the dimensions of the source bitmap
-      GetObject(hSourceBitmap, sizeof(BITMAP), &bm);
-      
-      // Create compatible bitmaps for the device context...
-      hAndMaskBitmap = CreateCompatibleBitmap(hDC, bm.bmWidth, bm.bmHeight);
-      hXorMaskBitmap = CreateCompatibleBitmap(hDC, bm.bmWidth, bm.bmHeight);
-      
-      // Select the bitmaps to DC
-      HBITMAP hOldMainBitmap    = (HBITMAP)SelectObject(hMainDC, hSourceBitmap);
-      HBITMAP hOldAndMaskBitmap = (HBITMAP)SelectObject(hAndMaskDC, hAndMaskBitmap);
-      HBITMAP hOldXorMaskBitmap = (HBITMAP)SelectObject(hXorMaskDC, hXorMaskBitmap);
-      
-      /* On windows, to calculate the color for a pixel, first an AND is done
-       * with the background and the "and" bitmap, then an XOR with the "xor"
-       * bitmap. This means that when the data in the "and" bitmap is 0, the
-       * pixel will get the color as specified in the "xor" bitmap.
-       * However, if the data in the "and" bitmap is 1, the result will be the
-       * background XOR'ed with the value in the "xor" bitmap. In case the "xor"
-       * data is completely black (0x000000) the pixel will become transparent,
-       * in case it's white (0xffffff) the pixel will become the inverse of the
-       * background color.
-       */
-
-      // Scan each pixel of the souce bitmap and create the masks
-      int y;
-      int *pixel = (int*)[rep bitmapData];
-      for(y = 0; y < bm.bmHeight; ++y)
-      {
-        int x;
-        for (x = 0; x < bm.bmWidth; ++x)
-          {
-            if (*pixel++ == 0x00000000)
-              {
-                SetPixel(hAndMaskDC, x, y, RGB(255, 255, 255));
-                SetPixel(hXorMaskDC, x, y, RGB(0, 0, 0));
-              }
-            else
-              {
-                SetPixel(hAndMaskDC, x, y, RGB(0, 0, 0));
-                SetPixel(hXorMaskDC, x, y, GetPixel(hMainDC, x, y));
-              }
-          }
-      }
-    
-      // Reselect the old bitmap objects...
-      SelectObject(hMainDC, hOldMainBitmap);
-      SelectObject(hAndMaskDC, hOldAndMaskBitmap);
-      SelectObject(hXorMaskDC, hOldXorMaskBitmap);
-      
-      // Create the cursor from the generated and/xor data...
-      ICONINFO iconinfo = { 0 };
-      iconinfo.fIcon    = FALSE;
-      iconinfo.xHotspot = 0;
-      iconinfo.yHotspot = 0;
-      iconinfo.hbmMask  = hAndMaskBitmap;
-      iconinfo.hbmColor = hXorMaskBitmap;
-      
-      // Finally, try to create the cursor...
-      result = CreateIconIndirect(&iconinfo);
-
-      // Cleanup the DC's...
-      DeleteDC(hXorMaskDC);
-      DeleteDC(hAndMaskDC);
-      DeleteDC(hMainDC);
-      
-      // Cleanup the bitmaps...
-      DeleteObject(hXorMaskBitmap);
-      DeleteObject(hAndMaskBitmap);
-      DeleteObject(hSourceBitmap);
-      
-      // Release the screen HDC...
-      ReleaseDC(NULL,hDC);
-    }
-  }
-  
-  return(result);
-}
-
-- (NSBitmapImageRep*) _getStandardBitmap:(NSImage *)image
-{
-  NSBitmapImageRep *rep;
-  
-  if (image == nil)
-  {
-    return nil;
-  }
-  
-  rep = (NSBitmapImageRep *)[image bestRepresentationForDevice: nil];
-  if (!rep || ![rep respondsToSelector: @selector(samplesPerPixel)])
-  {
-    /* FIXME: We might create a blank cursor here? */
-    //NSLog(@"%s:could not convert cursor bitmap data for image: %@", __PRETTY_FUNCTION__, image);
-    return nil;
-  }
-  else
-  {
-    // Convert into something usable by the backend
-    return [rep _convertToFormatBitsPerSample: 8
-                              samplesPerPixel: [rep hasAlpha] ? 4 : 3
-                                     hasAlpha: [rep hasAlpha]
-                                     isPlanar: NO
-                               colorSpaceName: NSCalibratedRGBColorSpace
-                                 bitmapFormat: 0
-                                  bytesPerRow: 0
-                                 bitsPerPixel: 0];
-  }
-}
-
 - (HICON) _iconFromImage: (NSImage *)image
 {
   // Default the return cursur ID to NULL...
   HICON result = NULL;
-
+  
 #if defined(DEBUG)
   NSLog(@"%s:image: %@ imageToIcon dict: %@", __PRETTY_FUNCTION__, image, imageToIcon);
 #endif
@@ -399,25 +272,56 @@ static NSString * const kButtonActionKey = @"show";
   }
   else
   {
-    NSBitmapImageRep *rep = [self _getStandardBitmap:image];
+    // Try to create the icon from the image...
+    Gdiplus::GdiplusStartupInput  startupInput;
+    Gdiplus::GdiplusStartupOutput startupOutput;
+    ULONG_PTR                     gdiplusToken;
     
-    if (rep == NULL)
+    // Using GDI Plus requires startup/shutdown...
+    Gdiplus::Status startStatus = Gdiplus::GdiplusStartup(&gdiplusToken, &startupInput, &startupOutput);
+    if (startStatus != Gdiplus::Ok)
     {
-      NSLog(@"%s:error creating standard bitmap for image: %@", __PRETTY_FUNCTION__, image);
+        NSLog(@"%s:error on GdiplusStartup - status: %d GetLastError: %d", __PRETTY_FUNCTION__, startStatus, GetLastError());
     }
     else
     {
-      // Try to create the icon from the image...
-      result = [self _iconFromRep:rep];
-      
-      // Need to save these created cursors to remove later...
-      if (result != NULL)
+      std::string  filename8 = [[image _filename] UTF8String];
+      std::wstring filename16(filename8.length(), L' ');                       // Make room for characters
+      std::copy(filename8.begin(), filename8.end(), filename16.begin()); // Copy string to wstring.
+      std::cout << __PRETTY_FUNCTION__ << ":filename8: " << filename8 << " filename16: " << filename16.c_str() << std::endl;
+      Gdiplus::Bitmap *bitmap = new Gdiplus::Bitmap(filename16.c_str());
+      Gdiplus::Status status = bitmap->GetHICON(&result);
+
+      // Check icon create status...
+      if (status != Gdiplus::Ok)
       {
-        [imageToIcon setObject:[NSValue valueWithPointer:result] forKey:[image name]];
-#if defined(DEBUG)
-        NSLog(@"%s:saving icon: %p for imageName: %@", __PRETTY_FUNCTION__, result, [image name]);
-#endif
+        NSLog(@"%s:error creating icon from bitmap - status: %d GetLastError: %d", __PRETTY_FUNCTION__, status, GetLastError());
       }
+#if 0 // For debugging...
+      else
+      {
+        ICONINFO iconinfo;
+        if (GetIconInfo(result, &iconinfo) == 0)
+        {
+          NSLog(@"%s:error GetIconInfo error - status: %d GetLastError: %d", __PRETTY_FUNCTION__, GetLastError());
+          DestroyIcon(result);
+        }
+        NSLog(@"%s:result: %p fIcon: %d X: %d Y: %d", __PRETTY_FUNCTION__, result, iconinfo.fIcon, iconinfo.xHotspot, iconinfo.yHotspot);
+      }
+#endif
+      
+      // Cleanup objects abnd shutdown GDI Plus...
+      delete bitmap;
+      Gdiplus::GdiplusShutdown(gdiplusToken);
+    }
+      
+    // Need to save these created cursors to remove later...
+    if (result != NULL)
+    {
+      [imageToIcon setObject:[NSValue valueWithPointer:result] forKey:[image name]];
+#if defined(DEBUG)
+      NSLog(@"%s:saving icon: %p for imageName: %@", __PRETTY_FUNCTION__, result, [image name]);
+#endif
     }
   }
   
