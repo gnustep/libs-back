@@ -241,7 +241,7 @@ static NSString * const kButtonActionKey = @"show";
       //[(NSImage*)[NSImage imageNamed: @"NSApplicationIcon"] setName: nil];
       // We need to copy the image as we may have a proxy here
       image = AUTORELEASE([image copy]);
-      //[image setName: @"NSApplicationIcon"];
+      [image setName: @"NSUserNotificationIcon"];
     }
   }
   return image;
