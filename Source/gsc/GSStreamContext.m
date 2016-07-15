@@ -264,8 +264,14 @@ fpfloat(FILE *stream, float f)
 - (void) GSSetFont: (void *)fontref
 {
   const CGFloat *m = [(GSFontInfo *)fontref matrix];
-  fprintf(gstream, "/%s findfont ", 
-	  [[(GSFontInfo *)fontref fontName] cString]);
+  NSString *postscriptName;
+
+  postscriptName = [[(GSFontInfo *)fontref fontDescriptor] postscriptName];
+  if (nil == postscriptName)
+    {
+      postscriptName = [(GSFontInfo *)fontref fontName];
+    }
+  fprintf(gstream, "/%s findfont ", [postscriptName cString]);
   fprintf(gstream, "[");
   fpfloat(gstream, m[0]);
   fpfloat(gstream, m[1]);
