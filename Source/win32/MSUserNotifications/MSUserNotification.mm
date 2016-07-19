@@ -289,7 +289,7 @@ static NSString * const kButtonActionKey = @"show";
       std::wstring filename16(filename8.length(), L' ');                 // Make room for characters
       std::copy(filename8.begin(), filename8.end(), filename16.begin()); // Copy string to wstring.
 #if defined(DEBUG)
-      std::cout << __PRETTY_FUNCTION__ << ":filename8: " << filename8 << " filename16: " << filename16 << std::endl;
+      std::cout << __PRETTY_FUNCTION__ << ":filename8: " << filename8 << " filename16: " << filename16.c_str() << std::endl;
 #endif
       Gdiplus::Bitmap *bitmap = new Gdiplus::Bitmap(filename16.c_str());
       Gdiplus::Status status = bitmap->GetHICON(&result);
