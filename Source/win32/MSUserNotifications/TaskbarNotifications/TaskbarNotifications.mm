@@ -876,7 +876,10 @@ EXPORT BOOL __cdecl removeNotification(HICON icon, REMOVE_NOTE_INFO_T *noteinfo)
   NSAutoreleasePool *pool       = [NSAutoreleasePool new];
   NOTIFYICONDATA     notifyData = { 0 };
   BOOL               status     = TRUE;
+  
+#if defined(DEBUG)
   NSLog(@"%s:%d:ID %d", __PRETTY_FUNCTION__, __LINE__, noteinfo->uniqueID);
+#endif
   
   _setupNotifyData(notifyData);
   //s_setupNotifyDataTextInfo(notifyData, "", "");
