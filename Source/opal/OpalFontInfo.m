@@ -108,7 +108,7 @@
   //   lineHeight = font_extents.height
   // alternatively: line spacing = (ascent + descent + "external leading")
   // (internal discussion between ivucica and ericwa, 2013-09-17)
-  lineHeight = leading + ascender - descender;
+  lineHeight = leading + ascender + descender;
 
 #if 0
   // Get default font options

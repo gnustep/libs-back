@@ -109,7 +109,8 @@ static CGContextRef createCGBitmapContext(int pixelsWide,
                        _gsWindowDevice->buffer_height);
     }
 
-  NSDebugLLog(@"OpalSurface", @"Created CGContexts: X11=%p, backing=%p", _x11CGContext, _backingCGContext);
+  NSDebugLLog(@"OpalSurface", @"Created CGContexts: X11=%p, backing=%p, width=%d height=%d",
+              _x11CGContext, _backingCGContext, _gsWindowDevice->buffer_width, _gsWindowDevice->buffer_height);
 
 }
 

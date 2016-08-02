@@ -209,8 +209,8 @@ static inline NSPoint _NSPointFromCGPoint(CGPoint cgpoint)
         }
 
       CGPoint pt = CGContextGetPathCurrentPoint(cgctx);
-      // FIXME: why * 0.66?
-      pt.y += [self->font defaultLineHeightForFont] * 0.66;
+      // FIXME: why?
+      pt.y += [self->font defaultLineHeightForFont] * 0.5;
       CGContextSetTextPosition(cgctx, pt.x, pt.y);
       CGContextShowGlyphsWithAdvances(cgctx, cgglyphs, (const CGSize *)advances,
                                       length);
@@ -239,14 +239,6 @@ static inline NSPoint _NSPointFromCGPoint(CGPoint cgpoint)
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
 
-  if (!pat && size != 0)
-    {
-      NSLog(@"%s: null 'pat' passed with size %d. Fixing by setting size to 0.", pat, (int)size);
-      size = 0;
-      // TODO: looking at opal, it does not seem to have a tolerance for
-      // pat=NULL although CGContextSetLineDash() explicitly specifies that
-      // as a possible argument
-    }
   CGContextRef cgctx = CGCTX;
 
   if (cgctx)
