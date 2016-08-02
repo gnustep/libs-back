@@ -1,3 +1,12 @@
+2016-08-02  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/opal/OpalFontInfo.m
+	Correct the calculation of line height.
+	* Source/opal/OpalGState.m
+	Adjust font placement to changed height.
+	* Source/opal/OpalSurface.m
+	Better debug output.
+
 2016-07-15  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSStreamContext.m:
