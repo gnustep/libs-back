@@ -2790,18 +2790,20 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 			NSImage *cursorImage = [[NSCursor currentCursor] image];
 			
 			// has the cursor already failed?
-			for (NSImage *item in listOfCursorsFailed) {
-				if (cursorImage == item) {
-					cursorFound = TRUE;
-					break;
-				}
-			}
-			
-			// log this cursor fail entry to avoid multiple logs
-			if (!cursorFound) {
-				[listOfCursorsFailed addObject:cursorImage];
-				NSLog(@"GetCursorInfo failed with %d", GetLastError());
-			}
+      if (cursorImage != nil) {
+        for (NSImage *item in listOfCursorsFailed) {
+          if (cursorImage == item) {
+            cursorFound = TRUE;
+            break;
+          }
+        }
+      
+        // log this cursor fail entry to avoid multiple logs
+        if (!cursorFound) {
+          [listOfCursorsFailed addObject:cursorImage];
+          NSLog(@"GetCursorInfo failed with %d", GetLastError());
+        }
+      }
 		}
 		return NSZeroPoint;
       }
