@@ -3199,7 +3199,7 @@ mask_for_keystate(BYTE *keyState)
       {
         // IGNORED - ALtGr key pressed...
       }
-      else if ((keyState[VK_LCONTROL] & 128) || (keyState[VK_RWIN] & 128))
+      else if ((keyState[VK_LCONTROL] & 128) || (keyState[VK_LWIN] & 128) || (keyState[VK_RWIN] & 128))
       {
         if([@"Control_L" isEqualToString: firstAlt] ||
            [@"Control_L" isEqualToString: secondAlt])
