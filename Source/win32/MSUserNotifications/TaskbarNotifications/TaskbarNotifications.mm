@@ -222,9 +222,12 @@ void _initWin32Context()
 
 void _destroyWin32Context()
 {
-  // Remove the process' info dictionary...
+  // Remove the process' info dictionary entried...
   _removeProcessInfo();
-      
+  
+  // Free process info dictionary...
+  DESTROY(gProcessInfo);
+
   // Destroy the message window...
   if (gHandleWin != NULL)
     DestroyWindow(gHandleWin);
@@ -671,7 +674,6 @@ void removeAppIconsForProcess()
 void _removeProcessInfo()
 {
   removeAppIconsForProcess();
-  [gProcessInfo release];
 }
 
 UINT _addApplicationIcon(DWORD processID, const char *uuidString, HICON icon)
