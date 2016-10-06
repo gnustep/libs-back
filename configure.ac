@@ -213,6 +213,11 @@ if test $set_x_paths = yes; then
     ,)
   fi
 
+  AC_CHECK_HEADERS(X11/extensions/sync.h,,,
+  [#include <X11/X.h>
+   #include <X11/Xutil.h>
+  ])
+
   LIBS="$X_LIBS $LIBS"
 fi
 AC_SUBST(X_PRE_LIBS)
