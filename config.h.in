@@ -53,9 +53,6 @@
 /* Define to 1 if you have the `Xt' library (-lXt). */
 #undef HAVE_LIBXT
 
-/* Define to 1 if you have the `shape' extension. */
-#undef HAVE_XSHAPE
-
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -98,6 +95,12 @@
 /* Define if you have the wgl library */
 #undef HAVE_WGL
 
+/* Define to 1 if you have the <X11/extensions/shape.h> header file. */
+#undef HAVE_X11_EXTENSIONS_SHAPE_H
+
+/* Define to 1 if you have the <X11/extensions/sync.h> header file. */
+#undef HAVE_X11_EXTENSIONS_SYNC_H
+
 /* Define to 1 if you have the <X11/extensions/XShm.h> header file. */
 #undef HAVE_X11_EXTENSIONS_XSHM_H
 
@@ -113,6 +116,9 @@
 
 /* Define to 1 if you have 'XInternAtoms' function. */
 #undef HAVE_XINTERNATOMS
+
+/* Define to enable Xshape support */
+#undef HAVE_XSHAPE
 
 /* Define to 1 if you have the `Xutf8LookupString' function. */
 #undef HAVE_XUTF8LOOKUPSTRING

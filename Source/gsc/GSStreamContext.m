@@ -1,7 +1,7 @@
 /* -*-objc-*-
    GSStreamContext - Drawing context to a stream.
 
-   Copyright (C) 1995, 2002 Free Software Foundation, Inc.
+   Copyright (C) 1995-2016 Free Software Foundation, Inc.
 
    Written by:  Adam Fedor <fedor@gnu.org>
    Date: Nov 1995
@@ -34,6 +34,7 @@
 #include <AppKit/NSBezierPath.h>
 #include <AppKit/NSView.h>
 #include <AppKit/NSBitmapImageRep.h>
+#import <AppKit/NSFontDescriptor.h>
 #include <Foundation/NSArray.h>
 #include <Foundation/NSData.h>
 #include <Foundation/NSDebug.h>
@@ -264,8 +265,14 @@ fpfloat(FILE *stream, float f)
 - (void) GSSetFont: (void *)fontref
 {
   const CGFloat *m = [(GSFontInfo *)fontref matrix];
-  fprintf(gstream, "/%s findfont ", 
-	  [[(GSFontInfo *)fontref fontName] cString]);
+  NSString *postscriptName;
+
+  postscriptName = [[(GSFontInfo *)fontref fontDescriptor] postscriptName];
+  if (nil == postscriptName)
+    {
+      postscriptName = [(GSFontInfo *)fontref fontName];
+    }
+  fprintf(gstream, "/%s findfont ", [postscriptName cString]);
   fprintf(gstream, "[");
   fpfloat(gstream, m[0]);
   fpfloat(gstream, m[1]);

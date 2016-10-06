@@ -56,6 +56,12 @@
 #include <config.h>
 #include <windows.h>
 
+/* MINGW64 hack to build */
+#ifdef __MINGW64__
+#undef GWL_USERDATA
+#define GWL_USERDATA GWLP_USERDATA 
+#endif
+
 /*
  This standard windows macros are missing in MinGW.  The definition
  here is almost correct, but will fail for multi monitor systems
