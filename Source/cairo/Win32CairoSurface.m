@@ -47,7 +47,7 @@
       gsDevice = device;
       _surface = NULL;
   
-      WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(device, GWL_USERDATA);
+      WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr(device, GWLP_USERDATA);
       HDC         hDC = GetDC(device);
 
       if (hDC == NULL)

@@ -68,7 +68,7 @@
   win->useHDC = NO;
 
   // Save win internals structure pointer for window handle...
-  SetWindowLong(hwnd, GWL_USERDATA, (int)win);
+  SetWindowLongPtr(hwnd, GWLP_USERDATA, (int)win);
   SetWindowLongPtr(hwnd, IME_INFO, (LONG)ime);
 
   [self windowbacking: type : (int)hwnd];

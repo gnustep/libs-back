@@ -36,7 +36,7 @@
 static void 
 invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 {
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)hwnd, GWLP_USERDATA);
 
   if (!win->useHDC || win->backingStoreEmpty)
     {

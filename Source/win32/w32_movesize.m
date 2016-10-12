@@ -284,7 +284,7 @@
 
 - (LRESULT) decodeWM_GETMINMAXINFOParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
   MINMAXINFO *mm;
 
   if (win != NULL)

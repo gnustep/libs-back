@@ -23,7 +23,10 @@
 #include <Foundation/NSValue.h>
 
 #include <ShellAPI.h>
+#define CINTERFACE
+#define interface struct
 #include <shlwapi.h>
+#undef interface
 //#include <Winuser.h>
 #include <rpcdce.h>
 
@@ -45,6 +48,12 @@
 #endif
 #if !defined(NIN_BALLOONUSERCLICK)
 #define NIN_BALLOONUSERCLICK    (WM_USER + 5)
+#endif
+#if !defined(NIN_POPUPOPEN)
+#define NIN_POPUPOPEN        (WM_USER + 6)
+#endif
+#if !defined(NIN_POPUPCLOSE)
+#define NIN_POPUPCLOSE        (WM_USER + 7)
 #endif
 
 #ifdef BUILD_DLL
@@ -767,11 +776,11 @@ GUID guidFromUUIDString(NSString *uuidString)
   NSString  *data4 = [[components objectAtIndex: 3] stringByAppendingString: [components objectAtIndex: 4]];
   NSScanner *scanner4 = [NSScanner scannerWithString: data4];
 
-  NSUInteger value;
-  [scanner1 scanHexInt: (NSUInteger*)&theGUID.Data1];
-  [scanner2 scanHexInt: (NSUInteger*)&value];
+  unsigned int value;
+  [scanner1 scanHexInt: (unsigned int*)&theGUID.Data1];
+  [scanner2 scanHexInt: &value];
   theGUID.Data2 = (WORD) value;
-  [scanner3 scanHexInt: (NSUInteger*)&value];
+  [scanner3 scanHexInt: &value];
   theGUID.Data3 = (WORD) value;
 
   return theGUID;

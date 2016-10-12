@@ -24,8 +24,8 @@
 // Whenever this restriction is lifted, we can get rid of it here as well.
 #if __has_feature(objc_default_synthesize_properties)
 
-#include <windows.h>
 #include <GNUstepBase/GSConfig.h>
+#include <windows.h>
 
 // C++ header includes...
 #include <string>

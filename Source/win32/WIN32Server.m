@@ -1030,7 +1030,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 - (void) resizeBackingStoreFor: (HWND)hwnd
 {
 #if (BUILD_GRAPHICS==GRAPHICS_winlib)
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)hwnd, GWL_USERDATA);
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)hwnd, GWLP_USERDATA);
   
   // FIXME: We should check if the size really did change.
   if (win->useHDC)
@@ -2121,8 +2121,8 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       // Borderless window request...
       if (wstyle & WS_POPUP)
       {
-        LONG    wstyleOld  = GetWindowLong(hwnd, GWL_STYLE);
-        LONG    estyleOld  = GetWindowLong(hwnd, GWL_EXSTYLE);
+        LONG    wstyleOld  = GetWindowLongPtr(hwnd, GWL_STYLE);
+        LONG    estyleOld  = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
         LONG    wstyleNew  = (wstyleOld & ~WS_OVERLAPPEDWINDOW);
         LONG    estyleNew  = estyleOld | WS_EX_TOOLWINDOW;
         
@@ -2132,8 +2132,8 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
                     estyleOld, estyleNew);
         
         // Modify window style parameters and update the window information...
-        SetWindowLong(hwnd, GWL_STYLE, wstyleNew);
-        SetWindowLong(hwnd, GWL_EXSTYLE, estyleNew);
+        SetWindowLongPtr(hwnd, GWL_STYLE, wstyleNew);
+        SetWindowLongPtr(hwnd, GWL_EXSTYLE, estyleNew);
         SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
                      SWP_FRAMECHANGED | SWP_NOSENDCHANGING | SWP_NOREPOSITION |
                      SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
@@ -2164,8 +2164,8 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 	   @"-stylewindow: : called when [self handlesWindowDecorations] == NO");
 
   NSDebugLLog(@"WTrace", @"stylewindow: %d : %d", style, winNum);
-  SetWindowLong((HWND)winNum, GWL_STYLE, wstyle);
-  SetWindowLong((HWND)winNum, GWL_EXSTYLE, estyle);
+  SetWindowLongPtr((HWND)winNum, GWL_STYLE, wstyle);
+  SetWindowLongPtr((HWND)winNum, GWL_EXSTYLE, estyle);
 }
 
 - (void) setbackgroundcolor: (NSColor *)color : (int)win
@@ -2175,7 +2175,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 /** Changes window's the backing store to type */
 - (void) windowbacking: (NSBackingStoreType)type : (int) winNum
 {
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)winNum, GWLP_USERDATA);
 
   NSDebugLLog(@"WTrace", @"windowbacking: %d : %d", type, winNum);
 #if (BUILD_GRAPHICS==GRAPHICS_winlib)
@@ -2288,7 +2288,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
   if (op == NSWindowOut)
     {
-      SetWindowLong((HWND)winNum, OFF_ORDERED, 0);
+      SetWindowLongPtr((HWND)winNum, OFF_ORDERED, 0);
       ShowWindow((HWND)winNum, SW_HIDE);
       return;
     }
@@ -2306,10 +2306,10 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
     }
 
   ShowWindow((HWND)winNum, flag);
-  SetWindowLong((HWND)winNum, OFF_ORDERED, 1);
+  SetWindowLongPtr((HWND)winNum, OFF_ORDERED, 1);
   
   // Process window leveling...
-  level = GetWindowLong((HWND)winNum, OFF_LEVEL);
+  level = GetWindowLongPtr((HWND)winNum, OFF_LEVEL);
 
   if (otherWin <= 0)
     {
@@ -2334,14 +2334,14 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       /* Put this on the same window level as the window we are ordering
        * it against.
        */
-      otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
+      otherLevel = GetWindowLongPtr((HWND)otherWin, OFF_LEVEL);
       if (level != otherLevel)
         {
           NSDebugLLog(@"WTrace",
             @"orderwindow: implicitly set level of %d (%d) to that of %d (%d)",
             winNum, level, otherWin, otherLevel);
                 level = otherLevel;
-          SetWindowLong((HWND)winNum, OFF_LEVEL, level);
+          SetWindowLongPtr((HWND)winNum, OFF_LEVEL, level);
         }
     }
 
@@ -2388,9 +2388,9 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
             && GetClassName((HWND)otherWin, buf, 32) == 18
             && strncmp(buf, "GNUstepWindowClass", 18) == 0)
             {
-              if (GetWindowLong((HWND)otherWin, OFF_ORDERED) == 1)
+              if (GetWindowLongPtr((HWND)otherWin, OFF_ORDERED) == 1)
                 {
-                  otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
+                  otherLevel = GetWindowLongPtr((HWND)otherWin, OFF_LEVEL);
                   NSDebugLLog(@"WTrace", @"orderwindow: found gnustep window %d (%d)",
                               otherWin, otherLevel);
                   if (otherLevel >= level)
@@ -2471,9 +2471,9 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
             && GetClassName((HWND)otherWin, buf, 32) == 18
             && strncmp(buf, "GNUstepWindowClass", 18) == 0)
             {
-              if (GetWindowLong((HWND)otherWin, OFF_ORDERED) == 1)
+              if (GetWindowLongPtr((HWND)otherWin, OFF_ORDERED) == 1)
                 {
-                  otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
+                  otherLevel = GetWindowLongPtr((HWND)otherWin, OFF_LEVEL);
                   s = [s stringByAppendingFormat:
                     @"%d (%d)\n", otherWin, otherLevel];
                 }
@@ -2510,7 +2510,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
                SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
   
 #if (BUILD_GRAPHICS==GRAPHICS_winlib)
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)winNum, GWLP_USERDATA);
 
   if ((win->useHDC)
       && (r.right - r.left != r2.right - r2.left)
@@ -2555,10 +2555,10 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 - (void) setwindowlevel: (int) level : (int) winNum
 {
   NSDebugLLog(@"WTrace", @"setwindowlevel: %d : %d", level, winNum);
-  if (GetWindowLong((HWND)winNum, OFF_LEVEL) != level)
+  if (GetWindowLongPtr((HWND)winNum, OFF_LEVEL) != level)
     {
-      SetWindowLong((HWND)winNum, OFF_LEVEL, level);
-      if (GetWindowLong((HWND)winNum, OFF_ORDERED) == YES)
+      SetWindowLongPtr((HWND)winNum, OFF_LEVEL, level);
+      if (GetWindowLongPtr((HWND)winNum, OFF_ORDERED) == YES)
 	{
           [self orderwindow: NSWindowAbove : 0 : winNum];
 	}
@@ -2567,7 +2567,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
 - (int) windowlevel: (int) winNum
 {
-  return GetWindowLong((HWND)winNum, OFF_LEVEL);
+  return GetWindowLongPtr((HWND)winNum, OFF_LEVEL);
 }
 
 - (NSArray *) windowlist
@@ -2615,7 +2615,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 /** Set the maximum size of the window */
 - (void) setmaxsize: (NSSize)size : (int) winNum
 {
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)winNum, GWLP_USERDATA);
   POINT p;
 
   p.x = size.width;
@@ -2625,20 +2625,20 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   // Disable the maximize box if a maximum size is set
   if (size.width < 10000 || size.height < 10000)
     {
-      SetWindowLong((HWND)winNum, GWL_STYLE, 
-          GetWindowLong((HWND)winNum, GWL_STYLE) ^ WS_MAXIMIZEBOX);
+      SetWindowLongPtr((HWND)winNum, GWL_STYLE, 
+          GetWindowLongPtr((HWND)winNum, GWL_STYLE) ^ WS_MAXIMIZEBOX);
     }
   else
     {
-      SetWindowLong((HWND)winNum, GWL_STYLE, 
-          GetWindowLong((HWND)winNum, GWL_STYLE) | WS_MAXIMIZEBOX);
+      SetWindowLongPtr((HWND)winNum, GWL_STYLE, 
+          GetWindowLongPtr((HWND)winNum, GWL_STYLE) | WS_MAXIMIZEBOX);
     }
 }
 
 /** Set the minimum size of the window */
 - (void) setminsize: (NSSize)size : (int) winNum
 {
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)winNum, GWL_USERDATA);
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)winNum, GWLP_USERDATA);
   POINT p;
 
   p.x = size.width;
@@ -2654,7 +2654,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 - (void) flushwindowrect: (NSRect)rect : (int)winNum
 {
   HWND hwnd = (HWND)winNum;
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
   if (win)
     {
@@ -2761,15 +2761,15 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 {
   if (alpha > 0.99)
     {
-      SetWindowLong((HWND)win, GWL_EXSTYLE,
-                    GetWindowLong((HWND)win, GWL_EXSTYLE) & ~WS_EX_LAYERED);
+      SetWindowLongPtr((HWND)win, GWL_EXSTYLE,
+                    GetWindowLongPtr((HWND)win, GWL_EXSTYLE) & ~WS_EX_LAYERED);
       RedrawWindow((HWND)win, NULL, NULL, 
                    RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
     }
   else
     {
-      SetWindowLong((HWND)win, GWL_EXSTYLE, 
-                    GetWindowLong((HWND)win, GWL_EXSTYLE) | WS_EX_LAYERED);
+      SetWindowLongPtr((HWND)win, GWL_EXSTYLE, 
+                    GetWindowLongPtr((HWND)win, GWL_EXSTYLE) | WS_EX_LAYERED);
       SetLayeredWindowAttributes((HWND)win, 0, 255 * alpha, LWA_ALPHA);
     }
 }
@@ -3058,15 +3058,15 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
 - (void) setIgnoreMouse: (BOOL)ignoreMouse : (int)win
 {
-  int extendedStyle = GetWindowLong((HWND)win, GWL_EXSTYLE);
+  int extendedStyle = GetWindowLongPtr((HWND)win, GWL_EXSTYLE);
 
   if (ignoreMouse)
     {
-      SetWindowLong((HWND)win, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT);
+      SetWindowLongPtr((HWND)win, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT);
     }
   else
     {
-      SetWindowLong((HWND)win, GWL_EXSTYLE, extendedStyle & ~WS_EX_TRANSPARENT);
+      SetWindowLongPtr((HWND)win, GWL_EXSTYLE, extendedStyle & ~WS_EX_TRANSPARENT);
     }
 }
 

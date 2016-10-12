@@ -49,7 +49,10 @@
 #include <stdio.h>
 #include <windows.h>
 #include <ShellAPI.h>
+#define CINTERFACE
+#define interface struct
 #include <shlwapi.h>
+#undef interface
 #include <gdiplus/gdiplus.h>
 
 #include <iostream>
@@ -335,7 +338,7 @@ static NSString * const kButtonActionKey = @"show";
 {
   NSLog(@"%s:UUIDString: %@", __PRETTY_FUNCTION__, uuidString);
   GUID       theGUID    = { 0 };
-  NSUInteger value      = 0;
+  unsigned int value      = 0;
   NSArray   *components = [uuidString componentsSeparatedByString: @"-"];
   NSScanner *scanner1   = [NSScanner scannerWithString: [components objectAtIndex: 0]];
   NSScanner *scanner2   = [NSScanner scannerWithString: [components objectAtIndex: 1]];
@@ -343,10 +346,10 @@ static NSString * const kButtonActionKey = @"show";
   NSString  *data4      = [[components objectAtIndex: 3] stringByAppendingString: [components objectAtIndex: 4]];
   NSScanner *scanner4   = [NSScanner scannerWithString: data4];
 
-  [scanner1 scanHexInt: (NSUInteger*)&theGUID.Data1];
-  [scanner2 scanHexInt: (NSUInteger*)&value];
+  [scanner1 scanHexInt: (unsigned int*)&theGUID.Data1];
+  [scanner2 scanHexInt: &value];
   theGUID.Data2 = (WORD) value;
-  [scanner3 scanHexInt: (NSUInteger*)&value];
+  [scanner3 scanHexInt: &value];
   theGUID.Data3 = (WORD) value;
 
   return theGUID;
