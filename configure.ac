@@ -556,8 +556,8 @@ LDFLAGS=${GRAPHIC_LFLAGS}
 BUILD_SERVER=x11
 BUILD_GRAPHICS=cairo
 case $target_os in
-  *mingw32* ) BUILD_SERVER=win32
-              BUILD_GRAPHICS=winlib;;
+  *mingw32* | *mingw64* ) BUILD_SERVER=win32
+                          BUILD_GRAPHICS=winlib;;
 esac
 
 AC_ARG_ENABLE(server, 
