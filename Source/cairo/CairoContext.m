@@ -105,6 +105,16 @@
   return YES;
 }
 
+- (id) initWithContextInfo: (NSDictionary *)info
+{
+  self = [super initWithContextInfo: info];
+  if (self)
+    {
+      [self setImageInterpolation: NSImageInterpolationDefault];
+    }
+  return self;
+}
+
 - (BOOL) isDrawingToScreen
 {
   CairoSurface *surface = nil;
