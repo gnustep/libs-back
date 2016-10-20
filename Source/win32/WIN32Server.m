@@ -87,14 +87,14 @@ static unsigned int mask_for_keystate(BYTE *keyState);
 
 
 @interface NSBitmapImageRep (GSPrivate)
-- (NSBitmapImageRep *) _convertToFormatBitsPerSample: (int)bps
-                                     samplesPerPixel: (int)spp
+- (NSBitmapImageRep *) _convertToFormatBitsPerSample: (NSInteger)bps
+                                     samplesPerPixel: (NSInteger)spp
                                             hasAlpha: (BOOL)alpha
                                             isPlanar: (BOOL)isPlanar
                                       colorSpaceName: (NSString*)colorSpaceName
-                                        bitmapFormat: (NSBitmapFormat)bitmapFormat
-                                         bytesPerRow: (int)rowBytes
-                                        bitsPerPixel: (int)pixelBits;
+                                        bitmapFormat: (NSBitmapFormat)bitmapFormat 
+                                         bytesPerRow: (NSInteger)rowBytes
+                                        bitsPerPixel: (NSInteger)pixelBits;
 @end
 
 
