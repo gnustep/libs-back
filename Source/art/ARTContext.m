@@ -23,18 +23,18 @@
 */
 
 
-#include <Foundation/NSDebug.h>
-#include <Foundation/NSDictionary.h>
-#include <Foundation/NSUserDefaults.h>
-#include <AppKit/NSBitmapImageRep.h>
-#include <AppKit/NSGraphics.h>
+#import <Foundation/NSDebug.h>
+#import <Foundation/NSDictionary.h>
+#import <Foundation/NSUserDefaults.h>
+#import <AppKit/NSBitmapImageRep.h>
+#import <AppKit/NSGraphics.h>
 
-#include "ARTGState.h"
-#include "blit.h"
-#include "ftfont.h"
+#import "ARTGState.h"
+#import "blit.h"
+#import "ftfont.h"
 
 #ifndef RDS
-#include "x11/XWindowBuffer.h"
+#import "x11/XWindowBuffer.h"
 #endif
 
 @implementation ARTContext
