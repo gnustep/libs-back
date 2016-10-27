@@ -1960,7 +1960,6 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
     else
     {
       NSDebugMLLog(@"WIN32", @"service 'Bonjour' is installed");
-      NSWarnMLog(@"service 'Bonjour' is installed");
       result = YES;
       
       // Cleanup...
@@ -2007,7 +2006,6 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       else
       {
         NSDebugMLLog(@"WIN32", @"service 'Bonjour' current state: %ld", serviceStatusInfo.dwCurrentState);
-        NSWarnMLog(@"service 'Bonjour' current state: %ld", serviceStatusInfo.dwCurrentState);
         result = (serviceStatusInfo.dwCurrentState == SERVICE_RUNNING);
       }
       
