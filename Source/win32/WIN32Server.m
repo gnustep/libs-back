@@ -749,7 +749,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   [super dealloc];
 }
 
-- (void) restrictWindow: (int)win toImage: (NSImage*)image
+- (void) restrictWindow: (NSInteger)win toImage: (NSImage*)image
 {
   //TODO [self subclassResponsibility: _cmd];
 }
@@ -925,7 +925,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
 /**
    As the number of the window is actually is handle we return this.  */
-- (void *) windowDevice: (int)win
+- (void *) windowDevice: (NSInteger)win
 {
   return (void *)win;
 }
@@ -2075,7 +2075,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
 */
 
-- (int) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style
+- (NSInteger) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style
               : (int) screen
 {
   HWND hwnd; 
@@ -2145,7 +2145,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   return (int)hwnd;
 }
 
-- (void) termwindow: (int) winNum
+- (void) termwindow: (NSInteger) winNum
 {
   NSDebugLLog(@"WCTrace", @"termwindow: %d", winNum);
   if (!DestroyWindow((HWND)winNum)) {
@@ -2153,7 +2153,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   }
 }
 
-- (void) stylewindow: (unsigned int)style : (int) winNum
+- (void) stylewindow: (unsigned int)style : (NSInteger) winNum
 {
   DWORD wstyle = [self windowStyleForGSStyle: style];
   DWORD estyle = [self exwindowStyleForGSStyle: style];
@@ -2171,7 +2171,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 }
 
 /** Changes window's the backing store to type */
-- (void) windowbacking: (NSBackingStoreType)type : (int) winNum
+- (void) windowbacking: (NSBackingStoreType)type : (NSInteger) winNum
 {
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)winNum, GWLP_USERDATA);
 
@@ -2217,14 +2217,14 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   win->type = type;
 }
 
-- (void) titlewindow: (NSString*)window_title : (int) winNum
+- (void) titlewindow: (NSString*)window_title : (NSInteger) winNum
 {
   NSDebugLLog(@"WTrace", @"titlewindow: %@ : %d", window_title, winNum);
   SetWindowTextW((HWND)winNum, (const unichar*)
     [window_title cStringUsingEncoding: NSUnicodeStringEncoding]);
 }
 
-- (void) miniwindow: (int) winNum
+- (void) miniwindow: (NSInteger) winNum
 {
   NSDebugLLog(@"WTrace", @"miniwindow: %d", winNum);
   ShowWindow((HWND)winNum, SW_MINIMIZE);
@@ -2236,7 +2236,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   return NO;
 }
 
-- (void) setWindowdevice: (int)winNum forContext: (NSGraphicsContext *)ctxt
+- (void) setWindowdevice: (NSInteger)winNum forContext: (NSGraphicsContext *)ctxt
 {
   RECT rect;
   float h, l, r, t, b;
@@ -2252,7 +2252,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   DPSinitclip(ctxt);
 }
 
-- (void) orderwindow: (int) op : (int) otherWin : (int) winNum
+- (void) orderwindow: (int) op : (NSInteger) otherWin : (NSInteger) winNum
 {
   int		flag = 0;
   int		foreground = 0;
@@ -2481,7 +2481,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
     }
 }
 
-- (void) movewindow: (NSPoint)loc : (int)winNum
+- (void) movewindow: (NSPoint)loc : (NSInteger)winNum
 {
   POINT p;
 
@@ -2493,7 +2493,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
                SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
 }
 
-- (void) placewindow: (NSRect)frame : (int) winNum
+- (void) placewindow: (NSRect)frame : (NSInteger) winNum
 {
   RECT r;
   RECT r2;
@@ -2536,13 +2536,13 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 #endif
 }
 
-- (BOOL) findwindow: (NSPoint)loc : (int) op : (int) otherWin 
+- (BOOL) findwindow: (NSPoint)loc : (int) op : (NSInteger) otherWin 
 		   : (NSPoint *)floc : (int*) winFound
 {
   return NO;
 }
 
-- (NSRect) windowbounds: (int) winNum
+- (NSRect) windowbounds: (NSInteger) winNum
 {
   RECT r;
 
@@ -2550,7 +2550,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   return MSScreenRectToGS(r);
 }
 
-- (void) setwindowlevel: (int) level : (int) winNum
+- (void) setwindowlevel: (int) level : (NSInteger) winNum
 {
   NSDebugLLog(@"WTrace", @"setwindowlevel: %d : %d", level, winNum);
   if (GetWindowLongPtr((HWND)winNum, OFF_LEVEL) != level)
@@ -2563,7 +2563,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
     }
 }
 
-- (int) windowlevel: (int) winNum
+- (int) windowlevel: (NSInteger) winNum
 {
   return GetWindowLongPtr((HWND)winNum, OFF_LEVEL);
 }
@@ -2605,13 +2605,13 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   return list;
 }
 
-- (int) windowdepth: (int) winNum
+- (int) windowdepth: (NSInteger) winNum
 {
   return 0;
 }
 
 /** Set the maximum size of the window */
-- (void) setmaxsize: (NSSize)size : (int) winNum
+- (void) setmaxsize: (NSSize)size : (NSInteger) winNum
 {
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)winNum, GWLP_USERDATA);
   POINT p;
@@ -2634,7 +2634,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 }
 
 /** Set the minimum size of the window */
-- (void) setminsize: (NSSize)size : (int) winNum
+- (void) setminsize: (NSSize)size : (NSInteger) winNum
 {
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)winNum, GWLP_USERDATA);
   POINT p;
@@ -2645,11 +2645,11 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 }
 
 /** Set the resize incremenet of the window */
-- (void) setresizeincrements: (NSSize)size : (int) winNum
+- (void) setresizeincrements: (NSSize)size : (NSInteger) winNum
 {
 }
 /** Causes buffered graphics to be flushed to the screen */
-- (void) flushwindowrect: (NSRect)rect : (int)winNum
+- (void) flushwindowrect: (NSRect)rect : (NSInteger)winNum
 {
   HWND hwnd = (HWND)winNum;
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -2717,11 +2717,11 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
     }
 }
 
-- (void) docedited: (int) edited : (int) winNum
+- (void) docedited: (int) edited : (NSInteger) winNum
 {
 }
 
-- (void) setinputstate: (int)state : (int)winNum
+- (void) setinputstate: (int)state : (NSInteger)winNum
 {
   if ([self handlesWindowDecorations] == NO)
     {
@@ -2737,7 +2737,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
 /** Forces focus to the window so that all key events are sent to this
     window */
-- (void) setinputfocus: (int) winNum
+- (void) setinputfocus: (NSInteger) winNum
 {
   NSDebugLLog(@"WTrace", @"setinputfocus: %d", winNum);
   NSDebugLLog(@"Focus", @"Setting input focus to %d", winNum);
@@ -2755,7 +2755,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   SetFocus((HWND)winNum);
 }
 
-- (void) setalpha: (float)alpha: (int) win
+- (void) setalpha: (float)alpha forWindow: (NSInteger) win
 {
   if (alpha > 0.99)
     {
@@ -2810,12 +2810,12 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   return MSScreenPointToGS(p.x, p.y);
 }
 
-- (NSPoint) mouseLocationOnScreen: (int)screen window: (int *)win
+- (NSPoint) mouseLocationOnScreen: (int)screen window: (NSInteger *)win
 {
   return [self mouselocation];
 }
 
-- (BOOL) capturemouse: (int) winNum
+- (BOOL) capturemouse: (NSInteger) winNum
 {
   HWND hwnd = (HWND)winNum;
   NSDebugLLog(@"WTrace", @"capturemouse: %d", winNum);
@@ -3048,13 +3048,13 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
     }
 }
 
-- (void) setParentWindow: (int)parentWin 
-          forChildWindow: (int)childWin
+- (void) setParentWindow: (NSInteger)parentWin 
+          forChildWindow: (NSInteger)childWin
 {
   //SetParent((HWND)childWin, (HWND)parentWin);
 }
 
-- (void) setIgnoreMouse: (BOOL)ignoreMouse : (int)win
+- (void) setIgnoreMouse: (BOOL)ignoreMouse : (NSInteger)win
 {
   int extendedStyle = GetWindowLongPtr((HWND)win, GWL_EXSTYLE);
 
