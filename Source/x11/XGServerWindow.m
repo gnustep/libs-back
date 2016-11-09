@@ -1818,7 +1818,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   while (NSNextMapEnumeratorPair(&enumerator, &key, (void**)&d) == YES)
     {
       if (d->display == dpy && d->ident != d->root)
-	[self termwindow: (int)(intptr_t)key];
+	[self termwindow: (NSInteger)(intptr_t)key];
     }
   NSFreeMapTable(mapcopy);
 }
@@ -1985,7 +1985,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     }
 }
 
-- (int) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style
+- (NSInteger) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style
 	      : (int)screen
 {
   gswindow_device_t	*window;
@@ -2178,7 +2178,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   return window->number;
 }
 
-- (int) nativeWindow: (void *)winref : (NSRect*)frame : (NSBackingStoreType*)type 
+- (NSInteger) nativeWindow: (void *)winref : (NSRect*)frame : (NSBackingStoreType*)type
 		    : (unsigned int*)style : (int*)screen
 {
   gswindow_device_t	*window;
@@ -2294,7 +2294,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   return window->number;
 }
 
-- (void) termwindow: (int)win
+- (void) termwindow: (NSInteger)win
 {
   gswindow_device_t *window;
 
@@ -2474,7 +2474,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
     }
 }
 
-- (void) stylewindow: (unsigned int)style : (int) win
+- (void) stylewindow: (unsigned int)style : (NSInteger) win
 {
   gswindow_device_t	*window;
 
@@ -2517,7 +2517,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
     }
 }
 
-- (void) setbackgroundcolor: (NSColor *)color : (int)win
+- (void) setbackgroundcolor: (NSColor *)color : (NSInteger)win
 {
   XColor xf;
   gswindow_device_t *window;
@@ -2537,7 +2537,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
   XSetWindowBackground(dpy, window->ident, window->xwn_attrs.background_pixel);
 }
 
-- (void) windowbacking: (NSBackingStoreType)type : (int) win
+- (void) windowbacking: (NSBackingStoreType)type : (NSInteger) win
 {
   gswindow_device_t *window;
 
@@ -2564,7 +2564,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
 }
 }
 
-- (void) titlewindow: (NSString *)window_title : (int) win
+- (void) titlewindow: (NSString *)window_title : (NSInteger) win
 {
   gswindow_device_t *window;
 
@@ -2619,7 +2619,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
     }
 }
 
-- (void) docedited: (int)edited : (int) win
+- (void) docedited: (int)edited : (NSInteger) win
 {
   gswindow_device_t *window;
 
@@ -2665,7 +2665,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
   return generic.flags.appOwnsMiniwindow;
 }
 
-- (void) miniwindow: (int) win
+- (void) miniwindow: (NSInteger) win
 {
   gswindow_device_t	*window;
   XEvent e;
@@ -2727,7 +2727,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
    Make sure we have the most up-to-date window information and then
    make sure the context has our new information
 */
-- (void) setWindowdevice: (int)win forContext: (NSGraphicsContext *)ctxt
+- (void) setWindowdevice: (NSInteger)win forContext: (NSGraphicsContext *)ctxt
 {
   unsigned width, height;
   gswindow_device_t *window;
@@ -2863,7 +2863,7 @@ static BOOL didCreatePixmaps;
   return 1;
 }   
 
-- (void) orderwindow: (int)op : (int)otherWin : (int)winNum
+- (void) orderwindow: (int)op : (NSInteger)otherWin : (NSInteger)winNum
 {
   gswindow_device_t	*window;
   gswindow_device_t	*other;
@@ -3137,7 +3137,7 @@ static BOOL didCreatePixmaps;
 /* Restrict the displayed part of the window to the given image.
    This only yields usefull results if the window is borderless and 
    displays the image itself */
-- (void) restrictWindow: (int)win toImage: (NSImage*)image
+- (void) restrictWindow: (NSInteger)win toImage: (NSImage*)image
 {
   gswindow_device_t	*window;
   Pixmap pixmap = 0;
@@ -3179,7 +3179,7 @@ static BOOL didCreatePixmaps;
 
 /* This method is a fast implementation of move that only works 
    correctly for borderless windows. Use with caution. */
-- (void) movewindow: (NSPoint)loc : (int)win
+- (void) movewindow: (NSPoint)loc : (NSInteger)win
 {
   gswindow_device_t	*window;
 
@@ -3197,7 +3197,7 @@ static BOOL didCreatePixmaps;
   setNormalHints(dpy, window);
 }
 
-- (void) placewindow: (NSRect)rect : (int)win
+- (void) placewindow: (NSRect)rect : (NSInteger)win
 {
   NSEvent *e;
   NSRect xVal;
@@ -3300,13 +3300,13 @@ static BOOL didCreatePixmaps;
     }
 }
 
-- (BOOL) findwindow: (NSPoint)loc : (int) op : (int) otherWin : (NSPoint *)floc 
+- (BOOL) findwindow: (NSPoint)loc : (int) op : (NSInteger) otherWin : (NSPoint *)floc
 : (int*) winFound
 {
   return NO;
 }
 
-- (NSRect) windowbounds: (int)win
+- (NSRect) windowbounds: (NSInteger)win
 {
   gswindow_device_t *window;
   int screenHeight;
@@ -3331,7 +3331,7 @@ static BOOL didCreatePixmaps;
   return rect;
 }
 
-- (void) setwindowlevel: (int)level : (int)win
+- (void) setwindowlevel: (int)level : (NSInteger)win
 {
   gswindow_device_t *window;
 
@@ -3508,7 +3508,7 @@ static BOOL didCreatePixmaps;
     }
 }
 
-- (int) windowlevel: (int)win
+- (int) windowlevel: (NSInteger)win
 {
   gswindow_device_t *window;
 
@@ -3560,7 +3560,7 @@ static BOOL didCreatePixmaps;
   return ret;
 }
 
-- (int) windowdepth: (int)win
+- (int) windowdepth: (NSInteger)win
 {
   gswindow_device_t *window;
 
@@ -3571,7 +3571,7 @@ static BOOL didCreatePixmaps;
   return window->depth;
 }
 
-- (void) setmaxsize: (NSSize)size : (int)win
+- (void) setmaxsize: (NSSize)size : (NSInteger)win
 {
   gswindow_device_t	*window;
   NSRect		r;
@@ -3589,7 +3589,7 @@ static BOOL didCreatePixmaps;
   setNormalHints(dpy, window);
 }
 
-- (void) setminsize: (NSSize)size : (int)win
+- (void) setminsize: (NSSize)size : (NSInteger)win
 {
   gswindow_device_t	*window;
   NSRect		r;
@@ -3607,7 +3607,7 @@ static BOOL didCreatePixmaps;
   setNormalHints(dpy, window);
 }
 
-- (void) setresizeincrements: (NSSize)size : (int)win
+- (void) setresizeincrements: (NSSize)size : (NSInteger)win
 {
   gswindow_device_t *window;
 
@@ -3623,7 +3623,7 @@ static BOOL didCreatePixmaps;
 }
 
 // process expose event
-- (void) _addExposedRectangle: (XRectangle)rectangle : (int)win : (BOOL) ignoreBacking
+- (void) _addExposedRectangle: (XRectangle)rectangle : (NSInteger)win : (BOOL) ignoreBacking
 {
   gswindow_device_t *window;
 
@@ -3685,7 +3685,7 @@ static BOOL didCreatePixmaps;
     }
 }
 
-- (void) flushwindowrect: (NSRect)rect : (int)win
+- (void) flushwindowrect: (NSRect)rect : (NSInteger)win
 {
   int xi, yi, width, height;
   XGCValues values;
@@ -3760,7 +3760,7 @@ static BOOL didCreatePixmaps;
 }
 
 // handle X expose events
-- (void) _processExposedRectangles: (int)win
+- (void) _processExposedRectangles: (NSInteger)win
 {
   int n;
   gswindow_device_t *window;
@@ -3807,7 +3807,7 @@ static BOOL didCreatePixmaps;
   XSetClipMask (dpy, window->gc, None);
 }
 
-- (BOOL) capturemouse: (int)win
+- (BOOL) capturemouse: (NSInteger)win
 {
   int ret;
   gswindow_device_t *window;
@@ -3850,7 +3850,7 @@ static BOOL didCreatePixmaps;
                0, 0, 0, 0, destX, destY);
 }
 
-- (void) setinputfocus: (int)win
+- (void) setinputfocus: (NSInteger)win
 {
   gswindow_device_t *window = WINDOW_WITH_TAG(win);
 
@@ -3897,7 +3897,7 @@ static BOOL didCreatePixmaps;
  * Instruct window manager that the specified window is 'key', 'main', or
  * just a normal window.
  */
-- (void) setinputstate: (int)st : (int)win
+- (void) setinputstate: (int)st : (NSInteger)win
 {
   if (!handlesWindowDecorations)
     return;
@@ -3956,7 +3956,7 @@ static BOOL didCreatePixmaps;
 }
 
 /** Sets the transparancy value for the whole window */
-- (void) setalpha: (float)alpha : (int) win
+- (void) setalpha: (float)alpha : (NSInteger) win
 {
   gswindow_device_t *window = WINDOW_WITH_TAG(win);
   static Atom opacity_atom = None;
@@ -3997,7 +3997,7 @@ static BOOL didCreatePixmaps;
     }
 }
 
-- (float) getAlpha: (int)win
+- (float) getAlpha: (NSInteger)win
 {
   gswindow_device_t *window = WINDOW_WITH_TAG(win);
   static Atom opacity_atom = None;
@@ -4034,7 +4034,7 @@ static BOOL didCreatePixmaps;
   return dpy;
 }
 
-- (void *) windowDevice: (int)win
+- (void *) windowDevice: (NSInteger)win
 {
   Window ptrloc;
   gswindow_device_t *window;
