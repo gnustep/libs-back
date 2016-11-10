@@ -2308,7 +2308,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       return;
     }
 
-  NSDebugLLog(@"XGTrace", @"DPStermwindow: %d", win);
+  NSDebugLLog(@"XGTrace", @"DPStermwindow: %ld", (long)win);
   if (window->ic)
     {
       [inputServer ximCloseIC: window->ic];
@@ -2484,7 +2484,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
   if (!window)
     return;
 
-  NSDebugLLog(@"XGTrace", @"DPSstylewindow: %d : %d", style, win);
+  NSDebugLLog(@"XGTrace", @"DPSstylewindow: %ld : %d", style, (long)win);
   if (window->win_attrs.window_style != style
     || (window->win_attrs.flags & GSWindowStyleAttr) == 0)
     {
@@ -2531,7 +2531,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
   xf.red   = 65535 * [color redComponent];
   xf.green = 65535 * [color greenComponent];
   xf.blue  = 65535 * [color blueComponent];
-  NSDebugLLog(@"XGTrace", @"setbackgroundcolor: %@ %d", color, win);
+  NSDebugLLog(@"XGTrace", @"setbackgroundcolor: %@ %ld", color, (long)win);
   xf = [self xColorFromColor: xf forScreen: window->screen];
   window->xwn_attrs.background_pixel = xf.pixel;
   XSetWindowBackground(dpy, window->ident, window->xwn_attrs.background_pixel);
@@ -2545,7 +2545,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
   if (!window)
     return;
 
-  NSDebugLLog(@"XGTrace", @"DPSwindowbacking: %d : %d", (int)type, win);
+  NSDebugLLog(@"XGTrace", @"DPSwindowbacking: %d : %ld", (int)type, (long)win);
 
   window->type = type;
   if ((window->gdriverProtocol & GDriverHandlesBacking))
@@ -2572,7 +2572,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
   if (!window)
     return;
 
-  NSDebugLLog(@"XGTrace", @"DPStitlewindow: %@ : %d", window_title, win);
+  NSDebugLLog(@"XGTrace", @"DPStitlewindow: %@ : %ld", window_title, (long)win);
   if (window_title && window->ident)
     {
       XTextProperty windowName;
@@ -2627,7 +2627,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
   if (!window)
     return;
 
-  NSDebugLLog(@"XGTrace", @"DPSdocedited: %d : %d", edited, win);
+  NSDebugLLog(@"XGTrace", @"DPSdocedited: %d : %ld", edited, (long)win);
   window->win_attrs.flags |= GSExtraFlagsAttr;
   if (edited)
     {
@@ -2675,7 +2675,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
     {
       return;
     }
-  NSDebugLLog(@"XGTrace", @"DPSminiwindow: %d ", win);
+  NSDebugLLog(@"XGTrace", @"DPSminiwindow: %ld ", (long)win);
   /*
    * If we haven't already done so - set the icon window hint for this
    * window so that the GNUstep miniwindow is displayed (if supported).
@@ -2733,11 +2733,11 @@ NSLog(@"styleoffsets ... guessing offsets\n");
   gswindow_device_t *window;
   float	t, b, l, r;
 
-  NSDebugLLog(@"XGTrace", @"DPSwindowdevice: %d ", win);
+  NSDebugLLog(@"XGTrace", @"DPSwindowdevice: %ld ", (long)win);
   window = WINDOW_WITH_TAG(win);
   if (!window)
     {
-      NSLog(@"Invalidparam: Invalid window number %d", win);
+      NSLog(@"Invalidparam: Invalid window number %ld", (long)win);
       return;
     }
 
@@ -2872,7 +2872,7 @@ static BOOL didCreatePixmaps;
   window = WINDOW_WITH_TAG(winNum);
   if (winNum == 0 || window == NULL)
     {
-      NSLog(@"Invalidparam: Ordering invalid window %d", winNum);
+      NSLog(@"Invalidparam: Ordering invalid window %ld", (long)winNum);
       return;
     }
 
@@ -2953,7 +2953,7 @@ static BOOL didCreatePixmaps;
 	}
     }
 
-  NSDebugLLog(@"XGTrace", @"DPSorderwindow: %d : %d : %d",op,otherWin,winNum);
+  NSDebugLLog(@"XGTrace", @"DPSorderwindow: %ld : %d : %ld",op,(long)otherWin,(long)winNum);
   level = window->win_attrs.window_level;
   if (otherWin > 0)
     {
@@ -3145,7 +3145,7 @@ static BOOL didCreatePixmaps;
   window = WINDOW_WITH_TAG(win);
   if (win == 0 || window == NULL)
     {
-      NSLog(@"Invalidparam: Restricting invalid window %d", win);
+      NSLog(@"Invalidparam: Restricting invalid window %ld", (long)win);
       return;
     }
 
@@ -3186,7 +3186,7 @@ static BOOL didCreatePixmaps;
   window = WINDOW_WITH_TAG(win);
   if (win == 0 || window == NULL)
     {
-      NSLog(@"Invalidparam: Moving invalid window %d", win);
+      NSLog(@"Invalidparam: Moving invalid window %ld", (long)win);
       return;
     }
 
@@ -3211,12 +3211,12 @@ static BOOL didCreatePixmaps;
   window = WINDOW_WITH_TAG(win);
   if (win == 0 || window == NULL)
     {
-      NSLog(@"Invalidparam: Placing invalid window %d", win);
+      NSLog(@"Invalidparam: Placing invalid window %ld", (long)win);
       return;
     }
 
-  NSDebugLLog(@"XGTrace", @"DPSplacewindow: %@ : %d", NSStringFromRect(rect), 
-	      win);
+  NSDebugLLog(@"XGTrace", @"DPSplacewindow: %@ : %ld", NSStringFromRect(rect),
+	      (long)win);
   nswin  = GSWindowWithNumber(win);
   frame = [nswin frame];
   if (NSEqualRects(rect, frame) == YES)
@@ -3318,7 +3318,7 @@ static BOOL didCreatePixmaps;
   if (!window)
     return NSZeroRect;
 
-  NSDebugLLog(@"XGTrace", @"DPScurrentwindowbounds: %d", win);
+  NSDebugLLog(@"XGTrace", @"DPScurrentwindowbounds: %ld", (long)win);
 
   // get the current xframe of the window
   XGetGeometry(dpy, window->ident, &window->root,
@@ -3339,7 +3339,7 @@ static BOOL didCreatePixmaps;
   if (!window)
     return;
 
-  NSDebugLLog(@"XGTrace", @"DPSsetwindowlevel: %d : %d", level, win);
+  NSDebugLLog(@"XGTrace", @"DPSsetwindowlevel: %d : %ld", level, (long)win);
   if ((int)(window->win_attrs.window_level) != level
     || (window->win_attrs.flags & GSWindowLevelAttr) == 0)
     {
@@ -3696,12 +3696,12 @@ static BOOL didCreatePixmaps;
   window = WINDOW_WITH_TAG(win);
   if (win == 0 || window == NULL)
     {
-      NSLog(@"Invalidparam: Placing invalid window %d", win);
+      NSLog(@"Invalidparam: Placing invalid window %ld", (long)win);
       return;
     }
 
-  NSDebugLLog(@"XGFlush", @"DPSflushwindowrect: %@ : %d", 
-	      NSStringFromRect(rect), win);
+  NSDebugLLog(@"XGFlush", @"DPSflushwindowrect: %@ : %ld",
+	      NSStringFromRect(rect), (long)win);
   if (window->type == NSBackingStoreNonretained)
     {
       XFlush(dpy);
@@ -3821,11 +3821,11 @@ static BOOL didCreatePixmaps;
 		     GrabModeAsync, GrabModeAsync, None, None, [self lastTime]);
 
   if (ret != GrabSuccess)
-    NSDebugLLog(@"XGTrace", @"Failed to grab pointer %d\n", win);
+    NSDebugLLog(@"XGTrace", @"Failed to grab pointer %ld\n", (long)win);
   else
     {
       grab_window = window;
-      NSDebugLLog(@"XGTrace", @"Grabbed pointer %d\n", win);
+      NSDebugLLog(@"XGTrace", @"Grabbed pointer %ld\n", (long)win);
     }
   return (ret == GrabSuccess) ? YES : NO;
 }
@@ -3856,11 +3856,11 @@ static BOOL didCreatePixmaps;
 
   if (win == 0 || window == 0)
     {
-      NSDebugLLog(@"Focus", @"Setting focus to unknown win %d", win);
+      NSDebugLLog(@"Focus", @"Setting focus to unknown win %ld", (long)win);
       return;
     }
 
-  NSDebugLLog(@"XGTrace", @"DPSsetinputfocus: %d", win);
+  NSDebugLLog(@"XGTrace", @"DPSsetinputfocus: %ld", (long)win);
   /*
    * If we have an outstanding request to set focus to this window,
    * we don't want to do it again.
@@ -3902,7 +3902,7 @@ static BOOL didCreatePixmaps;
   if (!handlesWindowDecorations)
     return;
 
-  NSDebugLLog(@"XGTrace", @"DPSsetinputstate: %d : %d", st, win);
+  NSDebugLLog(@"XGTrace", @"DPSsetinputstate: %d : %ld", st, (long)win);
   if ((generic.wm & XGWM_WINDOWMAKER) != 0)
     {
       gswindow_device_t *window = WINDOW_WITH_TAG(win);
@@ -3963,11 +3963,11 @@ static BOOL didCreatePixmaps;
 
   if (win == 0 || window == 0)
     {
-      NSDebugLLog(@"XGTrace", @"Setting alpha to unknown win %d", win);
+      NSDebugLLog(@"XGTrace", @"Setting alpha to unknown win %ld", (long)win);
       return;
     }
 
-  NSDebugLLog(@"XGTrace", @"setalpha: %d", win);
+  NSDebugLLog(@"XGTrace", @"setalpha: %ld", (long)win);
   
   /* Initialize the atom if needed */
   if (opacity_atom == None)
@@ -4007,7 +4007,7 @@ static BOOL didCreatePixmaps;
 
   if (win == 0 || window == 0)
     {
-      NSDebugLLog(@"XGTrace", @"Setting alpha to unknown win %d", win);
+      NSDebugLLog(@"XGTrace", @"Setting alpha to unknown win %ld", (long)win);
       return alpha;
     }
 
