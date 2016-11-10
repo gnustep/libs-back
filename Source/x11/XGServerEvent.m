@@ -2510,7 +2510,7 @@ process_modifier_flags(unsigned int state)
   return [self mouseLocationOnScreen: defScreen window: NULL];
 }
 
-- (NSPoint) mouseLocationOnScreen: (int)screen window: (int *)win
+- (NSPoint) mouseLocationOnScreen: (int)screen window: (NSInteger *)win
 {
   Window rootWin;
   Window childWin;
