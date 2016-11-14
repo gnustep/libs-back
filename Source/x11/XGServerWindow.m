@@ -5025,8 +5025,8 @@ _computeDepth(int class, int bpp)
   return NO;
 }
 
-- (void) setParentWindow: (int)parentWin 
-          forChildWindow: (int)childWin
+- (void) setParentWindow: (NSInteger)parentWin
+          forChildWindow: (NSInteger)childWin
 {
   gswindow_device_t	*cwindow;
   gswindow_device_t	*pwindow;
