@@ -68,10 +68,10 @@
   win->useHDC = NO;
 
   // Save win internals structure pointer for window handle...
-  SetWindowLongPtr(hwnd, GWLP_USERDATA, (int)win);
+  SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG)win);
   SetWindowLongPtr(hwnd, IME_INFO, (LONG)ime);
 
-  [self windowbacking: type : (int)hwnd];
+  [self windowbacking: type : (NSInteger)hwnd];
 
   // Find the icon file, assume it has the same name as the "icon" which
   // was specified in the bundle's dictionary...

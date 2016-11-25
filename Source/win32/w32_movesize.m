@@ -48,7 +48,7 @@
 			      location: eventLocation
 			 modifierFlags: 0
 			     timestamp: 0
-			  windowNumber: (int)hwnd
+			  windowNumber: (NSInteger)hwnd
 			       context: GSCurrentContext()
 			       subtype: GSAppKitWindowMoved
 				 data1: rect.origin.x
@@ -105,7 +105,7 @@
                                   location: eventLocation
                              modifierFlags: 0
                                  timestamp: 0
-                              windowNumber: (int)hwnd
+                              windowNumber: (NSInteger)hwnd
                                    context: GSCurrentContext()
                                    subtype: GSAppKitWindowResized
                                      data1: rect.size.width

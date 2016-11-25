@@ -61,7 +61,7 @@
 		      	          location: NSMakePoint(0, 0)
 			     modifierFlags: 0
 			         timestamp: 0
-			      windowNumber: (int)hwnd
+			      windowNumber: (NSInteger)hwnd
 			           context: GSCurrentContext()
 			           subtype: GSAppKitWindowLeave
 			             data1: 0

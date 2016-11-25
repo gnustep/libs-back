@@ -52,7 +52,7 @@
 		      location: eventLocation
 		      modifierFlags: 0
 		      timestamp: 0
-		      windowNumber: (int)hwnd
+		      windowNumber: (NSInteger)hwnd
 		      context: GSCurrentContext()
 		      subtype: GSAppKitWindowClose
 		      data1: 0

@@ -1388,7 +1388,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   // key events should go to the key window if we have one (Windows' focus window isn't always appropriate)
   int windowNumber = [[NSApp keyWindow] windowNumber];
   if (windowNumber == 0)
-    windowNumber = (int)hwnd;
+    windowNumber = (NSInteger)hwnd;
   
   /* FIXME: How do you guarantee a context is associated with an event? */
   BOOL               repeat   = (lParam & 0xFFFF) > 1;
@@ -1416,9 +1416,9 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   GetKeyboardState(keyState);
   
   // key events should go to the key window if we have one (Windows' focus window isn't always appropriate)
-  int windowNumber = [[NSApp keyWindow] windowNumber];
+  NSInteger windowNumber = [[NSApp keyWindow] windowNumber];
   if (windowNumber == 0)
-    windowNumber = (int)hwnd;
+    windowNumber = (NSInteger)hwnd;
   
   /* FIXME: How do you guarantee a context is associated with an event? */
   BOOL               repeat   = (lParam & 0xFFFF) > 1;
@@ -2140,9 +2140,9 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
       SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
 
-      [self _setWindowOwnedByServer: (int)hwnd];
+      [self _setWindowOwnedByServer: (NSInteger)hwnd];
     }
-  return (int)hwnd;
+  return (NSInteger)hwnd;
 }
 
 - (void) termwindow: (NSInteger) winNum
@@ -3369,7 +3369,7 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam, NSE
   // key events should go to the key window if we have one (Windows' focus window isn't always appropriate)
   int windowNumber = [[NSApp keyWindow] windowNumber];
   if (windowNumber == 0)
-    windowNumber  = (int)hwnd;
+    windowNumber  = (NSInteger)hwnd;
 	
   event = [NSEvent keyEventWithType: eventType
 			   location: eventLocation
@@ -3602,7 +3602,7 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 			     location: eventLocation
 			modifierFlags: eventFlags
 			    timestamp: time
-			 windowNumber: (int)hwnd
+			 windowNumber: (NSInteger)hwnd
 			      context: gcontext
 			  eventNumber: tick
 			   clickCount: clickCount

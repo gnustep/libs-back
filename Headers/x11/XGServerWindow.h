@@ -129,7 +129,7 @@ typedef struct _gswindow_device_t {
 @interface XGServer (DPSWindow)
 + (gswindow_device_t *) _windowForXWindow: (Window)xWindow;
 + (gswindow_device_t *) _windowForXParent: (Window)xWindow;
-+ (gswindow_device_t *) _windowWithTag: (int)windowNumber;
++ (gswindow_device_t *) _windowWithTag: (NSInteger)windowNumber;
 - (void) _addExposedRectangle: (XRectangle)rectangle : (NSInteger)win : (BOOL) ignoreBacking;
 - (void) _processExposedRectangles: (NSInteger)win;
 - (void) _initializeCursorForXWindow: (Window) win;

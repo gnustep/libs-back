@@ -84,7 +84,7 @@ static char	*rootName = 0;
 static Atom _net_frame_extents = None;
 static Atom _kde_frame_strut = None;
 
-#define WINDOW_WITH_TAG(windowNumber) (gswindow_device_t *)NSMapGet(windowtags, (void *)(uintptr_t)windowNumber) 
+#define WINDOW_WITH_TAG(windowNumber) (gswindow_device_t *)NSMapGet(windowtags, (void *)(uintptr_t)windowNumber)
 
 /* Current mouse grab window */
 static gswindow_device_t *grab_window = NULL;
@@ -471,7 +471,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   return NSMapGet(windowmaps, (void *)xWindow);
 }
 
-+ (gswindow_device_t *) _windowWithTag: (int)windowNumber
++ (gswindow_device_t *) _windowWithTag: (NSInteger)windowNumber
 {
   return WINDOW_WITH_TAG(windowNumber);
 }
@@ -2688,7 +2688,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
       nswin = GSWindowWithNumber(window->number);
       if (nswin != nil)
 	{
-	  int			iNum = [[nswin counterpart] windowNumber];
+	  NSInteger			iNum = [[nswin counterpart] windowNumber];
 	  gswindow_device_t	*iconw = WINDOW_WITH_TAG(iNum);
 
 	  if (iconw != 0)
