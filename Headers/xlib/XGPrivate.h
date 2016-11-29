@@ -79,7 +79,7 @@ extern unsigned long XGFontPropULong(Display *dpy, XFontStruct *font_struct,
 - (void) drawGlyphs: (const NSGlyph *) glyphs length: (int) len
 	  onDisplay: (Display*) xdpy drawable: (Drawable) draw
 	       with: (GC) xgcntxt at: (XPoint) xp;
-- (float) widthOfGlyphs: (const NSGlyph *) glyphs length: (int) len;
+- (CGFloat) widthOfGlyphs: (const NSGlyph *) glyphs length: (int) len;
 
 @end
 

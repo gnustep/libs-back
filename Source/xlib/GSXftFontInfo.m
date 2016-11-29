@@ -408,7 +408,7 @@ Ones(unsigned int n)
 		    len,
 		    &extents);
 
-  return extents.width;
+  return (CGFloat)extents.width;
 }
 
 - (NSMultibyteGlyphPacking)glyphPacking
