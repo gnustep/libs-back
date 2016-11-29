@@ -2484,7 +2484,7 @@ NSLog(@"styleoffsets ... guessing offsets\n");
   if (!window)
     return;
 
-  NSDebugLLog(@"XGTrace", @"DPSstylewindow: %ld : %d", style, (long)win);
+  NSDebugLLog(@"XGTrace", @"DPSstylewindow: %d : %ld", style, (long)win);
   if (window->win_attrs.window_style != style
     || (window->win_attrs.flags & GSWindowStyleAttr) == 0)
     {
@@ -2953,7 +2953,7 @@ static BOOL didCreatePixmaps;
 	}
     }
 
-  NSDebugLLog(@"XGTrace", @"DPSorderwindow: %ld : %d : %ld",op,(long)otherWin,(long)winNum);
+  NSDebugLLog(@"XGTrace", @"DPSorderwindow: %d : %ld : %ld",op,(long)otherWin,(long)winNum);
   level = window->win_attrs.window_level;
   if (otherWin > 0)
     {

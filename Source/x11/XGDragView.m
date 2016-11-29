@@ -266,7 +266,7 @@ static	XGDragView	*sharedDragView = nil;
                     action: (NSDragOperation)action
                   position: (NSPoint)eventLocation
                  timestamp: (NSTimeInterval)time
-                  toWindow: (int)dWindowNumber
+                  toWindow: (NSInteger)dWindowNumber
 {
   gswindow_device_t *dragWindev = DRAGWINDEV;
 
