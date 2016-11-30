@@ -629,19 +629,20 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 */
 - (void) _dumpMonitors
 {
-  NSInteger index = 0;
-  for (index = 0; index < [monitorInfo count]; ++index)
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"GSMonitorScreensLogs"])
     {
-      W32DisplayMonitorInfo *infoMon    = [monitorInfo objectAtIndex:index];
-      RECT                   infoRect   = [infoMon rect];
-      NSRect                 infoFrame  = [infoMon frame];
-	  
-	  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"GSMonitorScreensLogs"]) {
-		NSLog(@"screen %ld - hMon: %ld frame:top:%ld left:%ld bottom:%ld right:%ld  frame: %@\n",
-            index, (long)[infoMon hMonitor],
-            infoRect.top, infoRect.left, infoRect.bottom, infoRect.right,
-            NSStringFromRect(infoFrame));
-	  }
+      NSInteger index = 0;
+      for (index = 0; index < [monitorInfo count]; ++index)
+        {
+          W32DisplayMonitorInfo *infoMon    = [monitorInfo objectAtIndex:index];
+          RECT                   infoRect   = [infoMon rect];
+          NSRect                 infoFrame  = [infoMon frame];
+        
+          NSLog(@"screen %ld - hMon: %ld frame:top:%ld left:%ld bottom:%ld right:%ld  frame: %@\n",
+                  index, (long)[infoMon hMonitor],
+                  infoRect.top, infoRect.left, infoRect.bottom, infoRect.right,
+                  NSStringFromRect(infoFrame));
+        }
     }
 }
 
@@ -1489,69 +1490,69 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
   if (imeInfo && imeInfo->isComposing && (imeInfo->useCompositionWindow == NO))
     {
-    HIMC immc = ImmGetContext(hwnd);
-    if (immc == 0)
-      {
-        NSWarnMLog(@"IMMContext is NULL\n");
-      }
-    else if (lParam & GCS_RESULTSTR)
-      {
-        // Update our composition string information...
-        LONG length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, NULL, 0);
-        if (length)
-          {
-            TCHAR composition[length+sizeof(TCHAR)];
-            length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, &composition, length);
-            composition[ length ] = '\0';
+      HIMC immc = ImmGetContext(hwnd);
+      if (immc == 0)
+        {
+          NSWarnMLog(@"IMMContext is NULL\n");
+        }
+      else if (lParam & GCS_RESULTSTR)
+        {
+          // Update our composition string information...
+          LONG length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, NULL, 0);
+          if (length)
+            {
+              TCHAR composition[length+sizeof(TCHAR)];
+              length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, &composition, length);
+              composition[ length ] = '\0';
 
-            IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-            if (imeInfo == NULL)
-            {
-              NSWarnMLog(@"imeInfo is missing!!!");
+              IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+              if (imeInfo == NULL)
+              {
+                NSWarnMLog(@"imeInfo is missing!!!");
+              }
+              else
+              {
+                // Update with resulting composition...
+                [self updateImeCompositionToHWnd: hwnd composition:composition
+                                          length: length
+                                    deleteLength: imeInfo->inProgress];
+                
+                // Update our in progress indicator to show that we finished...
+                imeInfo->inProgress = 0;
+              }
             }
-            else
+          ImmReleaseContext(hwnd, immc);
+        }
+      else if (lParam & GCS_COMPSTR)
+        {
+          // Update our composition string information...
+          LONG length = ImmGetCompositionStringW(immc, GCS_COMPSTR, NULL, 0);
+          if (length) // && (length == 2))
             {
-              // Update with resulting composition...
-              [self updateImeCompositionToHWnd: hwnd composition:composition
-                                        length: length
-                                  deleteLength: imeInfo->inProgress];
+              TCHAR composition[length+sizeof(TCHAR)];
+              length = ImmGetCompositionStringW(immc, GCS_COMPSTR, &composition, length);
+              composition[length] = '\0';
               
-              // Update our in progress indicator to show that we finished...
-              imeInfo->inProgress = 0;
+              // We need to delete the last character sent for the current comosition...
+              IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+              if (imeInfo == NULL)
+              {
+                NSWarnMLog(@"imeInfo is missing!!!");
+              }
+              else
+              {
+                // Update with in progress composition...
+                [self updateImeCompositionToHWnd: hwnd
+                                     composition: composition
+                                          length: length
+                                    deleteLength: imeInfo->inProgress];
+                
+                // Update our in progress indicator...
+                imeInfo->inProgress = length / 2;
+              }
             }
-          }
-        ImmReleaseContext(hwnd, immc);
-      }
-    else if (lParam & GCS_COMPSTR)
-      {
-        // Update our composition string information...
-        LONG length = ImmGetCompositionStringW(immc, GCS_COMPSTR, NULL, 0);
-        if (length) // && (length == 2))
-          {
-            TCHAR composition[length+sizeof(TCHAR)];
-            length = ImmGetCompositionStringW(immc, GCS_COMPSTR, &composition, length);
-            composition[length] = '\0';
-            
-            // We need to delete the last character sent for the current comosition...
-            IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-            if (imeInfo == NULL)
-            {
-              NSWarnMLog(@"imeInfo is missing!!!");
-            }
-            else
-            {
-              // Update with in progress composition...
-              [self updateImeCompositionToHWnd: hwnd
-                                   composition: composition
-                                        length: length
-                                  deleteLength: imeInfo->inProgress];
-              
-              // Update our in progress indicator...
-              imeInfo->inProgress = length / 2;
-            }
-          }
-        ImmReleaseContext(hwnd, immc);
-      }
+          ImmReleaseContext(hwnd, immc);
+        }
     }
 }
 
@@ -1943,30 +1944,32 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   SC_HANDLE serviceControlManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
   
   if (serviceControlManager == NULL)
-  {
-    NSDebugMLLog(@"WIN32", @"cannot connect to service control manager - status: %ld", GetLastError());
-    NSWarnMLog(@"cannot connect to service control manager - status: %ld", GetLastError());
-  }
-  else
-  {
-    // CHeck for service running...
-    SC_HANDLE serviceHandle = OpenService(serviceControlManager, TEXT("Bonjour Service"), SERVICE_QUERY_STATUS);
-    
-    if (serviceHandle == NULL)
     {
-      NSDebugMLLog(@"WIN32", @"cannot open service 'Bonjour' - status: %ld", GetLastError());
-      NSWarnMLog(@"cannot open service 'Bonjour' - status: %ld", GetLastError());
+      NSDebugMLLog(@"WIN32", @"cannot connect to service control manager - status: %ld", GetLastError());
+      NSWarnMLog(@"cannot connect to service control manager - status: %ld", GetLastError());
     }
-    else
+  else
     {
-      NSDebugMLLog(@"WIN32", @"service 'Bonjour' is installed");
-      result = YES;
+      // CHeck for service running...
+      SC_HANDLE serviceHandle = OpenService(serviceControlManager, TEXT("Bonjour Service"), SERVICE_QUERY_STATUS);
+      
+      if (serviceHandle == NULL)
+        {
+          NSDebugMLLog(@"WIN32", @"cannot open service 'Bonjour' - status: %ld", GetLastError());
+          NSWarnMLog(@"cannot open service 'Bonjour' - status: %ld", GetLastError());
+        }
+      else
+        {
+          NSDebugMLLog(@"WIN32", @"service 'Bonjour' is installed");
+          result = YES;
+          
+          // Cleanup...
+          CloseServiceHandle(serviceHandle);
+        }
       
       // Cleanup...
-      CloseServiceHandle(serviceHandle);
       CloseServiceHandle(serviceControlManager);
     }
-  }
   
   // return our result...
   return result;
@@ -1978,42 +1981,44 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   SC_HANDLE serviceControlManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
   
   if (serviceControlManager == NULL)
-  {
-    NSDebugMLLog(@"WIN32", @"cannot connect to service control manager - status: %ld", GetLastError());
-    NSWarnMLog(@"cannot connect to service control manager - status: %ld", GetLastError());
-  }
-  else
-  {
-    // Check for service running...
-    //TCHAR     *name          = TEXT([serviceName UTF8String]);
-    SC_HANDLE  serviceHandle = OpenService(serviceControlManager, TEXT("Bonjour Service"), SERVICE_QUERY_STATUS);
-    
-    if (serviceHandle == NULL)
     {
-      NSDebugMLLog(@"WIN32", @"cannot open service 'Bonjour' - status: %ld", GetLastError());
-      NSWarnMLog(@"cannot open service 'Bonjour' - status: %ld", GetLastError());
+      NSDebugMLLog(@"WIN32", @"cannot connect to service control manager - status: %ld", GetLastError());
+      NSWarnMLog(@"cannot connect to service control manager - status: %ld", GetLastError());
     }
-    else
+  else
     {
-      SERVICE_STATUS_PROCESS serviceStatusInfo;
-      DWORD                  ssiSize;
+      // Check for service running...
+      //TCHAR     *name          = TEXT([serviceName UTF8String]);
+      SC_HANDLE  serviceHandle = OpenService(serviceControlManager, TEXT("Bonjour Service"), SERVICE_QUERY_STATUS);
       
-      if (0 == QueryServiceStatusEx(serviceHandle, SC_STATUS_PROCESS_INFO, (LPBYTE)&serviceStatusInfo, sizeof(serviceStatusInfo), &ssiSize))
-      {
-        NSDebugMLLog(@"WIN32", @"cannot query service 'Bonjour' - status: %ld", GetLastError());
-        NSWarnMLog(@"cannot query service 'Bonjour' - status: %ld", GetLastError());
-      }
+      if (serviceHandle == NULL)
+        {
+          NSDebugMLLog(@"WIN32", @"cannot open service 'Bonjour' - status: %ld", GetLastError());
+          NSWarnMLog(@"cannot open service 'Bonjour' - status: %ld", GetLastError());
+        }
       else
-      {
-        NSDebugMLLog(@"WIN32", @"service 'Bonjour' current state: %ld", serviceStatusInfo.dwCurrentState);
-        result = (serviceStatusInfo.dwCurrentState == SERVICE_RUNNING);
-      }
+        {
+          SERVICE_STATUS_PROCESS serviceStatusInfo;
+          DWORD                  ssiSize;
+          
+          if (0 == QueryServiceStatusEx(serviceHandle, SC_STATUS_PROCESS_INFO, (LPBYTE)&serviceStatusInfo, sizeof(serviceStatusInfo), &ssiSize))
+            {
+              NSDebugMLLog(@"WIN32", @"cannot query service 'Bonjour' - status: %ld", GetLastError());
+              NSWarnMLog(@"cannot query service 'Bonjour' - status: %ld", GetLastError());
+            }
+          else
+            {
+              NSDebugMLLog(@"WIN32", @"service 'Bonjour' current state: %ld", serviceStatusInfo.dwCurrentState);
+              result = (serviceStatusInfo.dwCurrentState == SERVICE_RUNNING);
+            }
+          
+          // Cleanup...
+          CloseServiceHandle(serviceHandle);
+        }
       
       // Cleanup...
-      CloseServiceHandle(serviceHandle);
       CloseServiceHandle(serviceControlManager);
     }
-  }
   
   // return our result...
   return result;
@@ -2148,9 +2153,10 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 - (void) termwindow: (NSInteger) winNum
 {
   NSDebugLLog(@"WCTrace", @"termwindow: %d", winNum);
-  if (!DestroyWindow((HWND)winNum)) {
-    NSLog(@"DestroyWindow Failed %d", GetLastError());
-  }
+  if (!DestroyWindow((HWND)winNum))
+    {
+      NSLog(@"DestroyWindow Failed %d", GetLastError());
+    }
 }
 
 - (void) stylewindow: (unsigned int)style : (NSInteger) winNum
@@ -2447,6 +2453,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         NSDebugMLLog(@"WError", @"SetForegroundWindow error for HWND: %p\n", winNum);
       _enableCallbacks = YES;
     }
+  
   /* For debug log window stack.
    */
   if (GSDebugSet(@"WTrace") == YES)
@@ -2557,9 +2564,9 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
     {
       SetWindowLongPtr((HWND)winNum, OFF_LEVEL, level);
       if (GetWindowLongPtr((HWND)winNum, OFF_ORDERED) == YES)
-	{
-          [self orderwindow: NSWindowAbove : 0 : winNum];
-	}
+        {
+                [self orderwindow: NSWindowAbove : 0 : winNum];
+        }
     }
 }
 
@@ -2596,9 +2603,9 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
        * FIXME We should improve the API to support all windows on server.
        */
       if (GSWindowWithNumber((int)w) != nil)
-	{
-	  [list addObject: [NSNumber numberWithInt: (int)w]];
-	}
+        {
+          [list addObject: [NSNumber numberWithInt: (int)w]];
+        }
       w = GetNextWindow(w, GW_HWNDNEXT);
     }
 
@@ -2778,35 +2785,44 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
   if (!GetCursorPos(&p))
     { 
-	  // Try using cursorInfo which should work in more situations
-	  CURSORINFO cursorInfo;
-	  cursorInfo.cbSize = sizeof(CURSORINFO); 
-	  if (!GetCursorInfo(&cursorInfo)) {
-	  
-		if ([NSCursor currentCursor]) {
-			BOOL cursorFound = FALSE;
-			NSImage *cursorImage = [[NSCursor currentCursor] image];
-			
-			// has the cursor already failed?
-      if (cursorImage != nil) {
-        for (NSImage *item in listOfCursorsFailed) {
-          if (cursorImage == item) {
-            cursorFound = TRUE;
-            break;
+      // Try using cursorInfo which should work in more situations
+      CURSORINFO cursorInfo;
+      cursorInfo.cbSize = sizeof(CURSORINFO);
+        
+      if (!GetCursorInfo(&cursorInfo))
+        {
+        
+          if ([NSCursor currentCursor])
+            {
+              BOOL cursorFound = FALSE;
+              NSImage *cursorImage = [[NSCursor currentCursor] image];
+              
+              // has the cursor already failed?
+              if (cursorImage != nil)
+                {
+                  for (NSImage *item in listOfCursorsFailed)
+                    {
+                      if (cursorImage == item)
+                        {
+                          cursorFound = TRUE;
+                          break;
+                        }
+                    }
+                
+                  // log this cursor fail entry to avoid multiple logs
+                  if (!cursorFound)
+                    {
+                      [listOfCursorsFailed addObject:cursorImage];
+                      NSLog(@"GetCursorInfo failed with %d", GetLastError());
+                    }
+                }
+            }
+            return NSZeroPoint;
           }
-        }
-      
-        // log this cursor fail entry to avoid multiple logs
-        if (!cursorFound) {
-          [listOfCursorsFailed addObject:cursorImage];
-          NSLog(@"GetCursorInfo failed with %d", GetLastError());
-        }
-      }
-		}
-		return NSZeroPoint;
-      }
-	  p = cursorInfo.ptScreenPos;
+        
+        p = cursorInfo.ptScreenPos;
     }
+  
   return MSScreenPointToGS(p.x, p.y);
 }
 
