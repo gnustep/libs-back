@@ -1387,7 +1387,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   GetKeyboardState(keyState);
   
   // key events should go to the key window if we have one (Windows' focus window isn't always appropriate)
-  int windowNumber = [[NSApp keyWindow] windowNumber];
+  NSInteger windowNumber = [[NSApp keyWindow] windowNumber];
   if (windowNumber == 0)
     windowNumber = (NSInteger)hwnd;
   
@@ -3383,7 +3383,7 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam, NSE
 	}
 	
   // key events should go to the key window if we have one (Windows' focus window isn't always appropriate)
-  int windowNumber = [[NSApp keyWindow] windowNumber];
+  NSInteger windowNumber = [[NSApp keyWindow] windowNumber];
   if (windowNumber == 0)
     windowNumber  = (NSInteger)hwnd;
 	
