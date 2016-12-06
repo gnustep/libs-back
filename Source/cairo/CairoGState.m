@@ -1221,7 +1221,7 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       if (GSCompositeHighlight == op)
         {
           cairo_set_operator(_ct, CAIRO_OPERATOR_DIFFERENCE);
-          cairo_set_source_rgb(_ct, 1, 1, 1);
+          cairo_set_source_rgb(_ct, 0.25, 0.25, 0.25);
         }
       else
 #endif
