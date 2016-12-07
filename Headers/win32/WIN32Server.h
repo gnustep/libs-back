@@ -205,9 +205,9 @@ typedef struct w32serverFlags
 enum _WIN_EXTRA_BYTES
 {
   OFF_LEVEL       = 0,
-  OFF_ORDERED     = OFF_LEVEL + sizeof(DWORD),
-  IME_INFO        = OFF_ORDERED + sizeof(DWORD),
-  WIN_EXTRABYTES  = IME_INFO + sizeof(DWORD)
+  OFF_ORDERED     = OFF_LEVEL + sizeof(DWORD),   // Value
+  IME_INFO        = OFF_ORDERED + sizeof(void*), // Pointer
+  WIN_EXTRABYTES  = IME_INFO + sizeof(void*)     // Pointer
 };
 
 
