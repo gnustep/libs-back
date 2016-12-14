@@ -249,7 +249,7 @@ HRESULT CToastNotificationsApp::CreateToastXml(_In_ IToastNotificationManagerSta
           L"      "
         };
 
-        UINT32 textLengths[] = { wcslen(notificationTitle), wcslen(notificationDescription), 6 };
+        UINT32 textLengths[] = { (UINT32)wcslen(notificationTitle), (UINT32)wcslen(notificationDescription), 6 };
         hr = SetTextValues(textValues, 3, textLengths, *inputXml);
       }
 

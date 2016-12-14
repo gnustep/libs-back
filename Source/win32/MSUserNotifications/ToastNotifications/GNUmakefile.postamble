@@ -16,11 +16,11 @@
 #  Boston, MA 02110-1301, USA.
 
 ifeq ($(debug),yes)
-ToastNotifications-0.dll: obj ToastNotifications/Debug/ToastNotifications.dll
-	cp -p ToastNotifications/Debug/ToastNotifications.dll obj/ToastNotifications-0.dll
+ToastNotifications-0.dll: obj ToastNotifications/$(GNUSTEP_HOST_CPU)/Debug/ToastNotifications.dll
+	cp -p ToastNotifications/$(GNUSTEP_HOST_CPU)/Debug/ToastNotifications.dll obj/ToastNotifications-0.dll
 else
-ToastNotifications-0.dll: obj ToastNotifications/Release/ToastNotifications.dll
-	cp -p ToastNotifications/Release/ToastNotifications.dll obj/ToastNotifications-0.dll
+ToastNotifications-0.dll: obj ToastNotifications/$(GNUSTEP_HOST_CPU)/Release/ToastNotifications.dll
+	cp -p ToastNotifications/$(GNUSTEP_HOST_CPU)/Release/ToastNotifications.dll obj/ToastNotifications-0.dll
 endif
 
 # Things to do before compiling
@@ -33,8 +33,8 @@ after-all:: ToastNotifications-0.dll
 # Things to do after clean
 after-clean::
 	rm -rf obj
-	(cd ToastNotifications/Debug && (find . -type f | grep -v '.dll' | xargs rm -rf))
-	(cd ToastNotifications/Release && (find . -type f | grep -v '.dll' | xargs rm -rf))
+	(cd ToastNotifications/$(GNUSTEP_HOST_CPU)/Debug && (find . -type f | grep -v '.dll' | xargs rm -rf))
+	(cd ToastNotifications/$(GNUSTEP_HOST_CPU)/Release && (find . -type f | grep -v '.dll' | xargs rm -rf))
 	(rm -rf ToastNotifications/ToastNotifications/Debug)
 	(rm -rf ToastNotifications/ToastNotifications/Release)
 	(rm -rf ToastNotifications/ipch ToastNotifications/*.sdf ToastNotifications/*.suo)
