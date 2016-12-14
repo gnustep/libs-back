@@ -33,8 +33,10 @@ after-all:: ToastNotifications-0.dll
 # Things to do after clean
 after-clean::
 	rm -rf obj
-	(cd ToastNotifications/$(GNUSTEP_HOST_CPU)/Debug && (find . -type f | grep -v '.dll' | xargs rm -rf))
-	(cd ToastNotifications/$(GNUSTEP_HOST_CPU)/Release && (find . -type f | grep -v '.dll' | xargs rm -rf))
+	(cd ToastNotifications/ix86/Debug && (find . -type f | grep -v '.dll' | xargs rm -rf))
+	(cd ToastNotifications/ix86/Release && (find . -type f | grep -v '.dll' | xargs rm -rf))
+	(cd ToastNotifications/x86_64/Debug && (find . -type f | grep -v '.dll' | xargs rm -rf))
+	(cd ToastNotifications/x86_64/Release && (find . -type f | grep -v '.dll' | xargs rm -rf))
 	(rm -rf ToastNotifications/ToastNotifications/Debug)
 	(rm -rf ToastNotifications/ToastNotifications/Release)
 	(rm -rf ToastNotifications/ipch ToastNotifications/*.sdf ToastNotifications/*.suo)
