@@ -612,16 +612,16 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   XEvent event;
 
   memset(&event, 0, sizeof(event));
-	event.xclient.type = ClientMessage;
-	event.xclient.message_type = type;
-	event.xclient.format = 32;
-	event.xclient.display = dpy;
-	event.xclient.window = window;
-	event.xclient.data.l[0] = data0;
-	event.xclient.data.l[1] = data1;
-	event.xclient.data.l[2] = data2;
-	event.xclient.data.l[3] = data3;
-	XSendEvent(dpy, root, False,
+  event.xclient.type = ClientMessage;
+  event.xclient.message_type = type;
+  event.xclient.format = 32;
+  event.xclient.display = dpy;
+  event.xclient.window = window;
+  event.xclient.data.l[0] = data0;
+  event.xclient.data.l[1] = data1;
+  event.xclient.data.l[2] = data2;
+  event.xclient.data.l[3] = data3;
+  XSendEvent(dpy, root, False,
              (SubstructureNotifyMask|SubstructureRedirectMask), &event);
   XFlush(dpy);
 }
@@ -706,26 +706,26 @@ select_input(Display *display, Window w, BOOL ignoreMouse)
 Bool
 _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 {
-	XID *data = (XID*)arg;
+  XID *data = (XID*)arg;
 
-	if (event->type == PropertyNotify &&
+  if (event->type == PropertyNotify &&
       event->xproperty.window == data[0] &&
       event->xproperty.atom == data[1] &&
       event->xproperty.state == PropertyNewValue)
-		{
+    {
       return True;
-		}
-	else
-		{
+    }
+  else
+    {
       return False;
-		}
+    }
 }
 
 - (BOOL) _tryRequestFrameExtents: (gswindow_device_t *)window
 {
   static Atom _net_request_frame_extents = None;
-	XEvent xEvent;
-	XID event_data[2];
+  XEvent xEvent;
+  XID event_data[2];
   NSDate *limit;
 
   if (_net_frame_extents == None)
@@ -756,15 +756,15 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
         data3: 0];
   
   limit = [NSDate dateWithTimeIntervalSinceNow: 1.0];
-	while ([limit timeIntervalSinceNow] > 0.0)
-		{
+  while ([limit timeIntervalSinceNow] > 0.0)
+    {
       if (XCheckTypedWindowEvent(dpy, window->ident, DestroyNotify, &xEvent))
-			  {
+        {
           return NO;
         }
       else if (XCheckIfEvent(dpy, &xEvent, _get_next_prop_new_event,
                              (char*)(&event_data)))
-			  {
+        {
           return YES; 
         }
       else
@@ -775,8 +775,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
                         [NSDate dateWithTimeIntervalSinceNow: 0.01]];
           IF_NO_GC([pool release]);
         }
-     }
-
+    }
 
   return NO;
 }
@@ -1062,10 +1061,10 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
         {
           Window parent = repp;
           XWindowAttributes	wattr;
-          float			l;
-          float			r;
-          float			t;
-          float			b;
+          int			l;
+          int			r;
+          int			t;
+          int			b;
 
           /* Get the WM offset info which we hope is the same
            * for all parented windows with the same style.
@@ -1138,14 +1137,21 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
           b = wattr.height + wattr.border_width * 2;
           b -= (window->xframe.size.height + t);
 
-          o->l = l;
-          o->r = r;
-          o->t = t;
-          o->b = b;
-          o->known = YES;
-          NSDebugLLog(@"Offset",
-                      @"Style %d lrtb set to %d,%d,%d,%d\n",
-                      style, (int)o->l, (int)o->r, (int)o->t, (int)o->b);
+          if ((l >= 0) && (r >= 0) && (t >= 0) && (b >= 0))
+            {
+              o->l = (float)l;
+              o->r = (float)r;
+              o->t = (float)t;
+              o->b = (float)b;
+              o->known = YES;
+              NSDebugLLog(@"Offset",
+                          @"Style %d lrtb set to %d,%d,%d,%d\n",
+                          style, l, r, t, b);
+            }
+          else
+            {
+              NSLog(@"Reparenting resulted in negative border %d, %d, %d, %d", l, r, t, b);
+            }
         }
     }
 

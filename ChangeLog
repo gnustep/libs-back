@@ -1,3 +1,8 @@
+2017-01-08  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_checkStyle:): Ignore invalid
+	border information.
+
 2016-08-02  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/opal/OpalFontInfo.m
