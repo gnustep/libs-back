@@ -49,7 +49,7 @@ typedef struct {
   Atom win_utility_atom;
   Atom win_splash_atom;
   Atom win_override_atom;
-  Atom win_topmenu_atom;
+  Atom _dummy1;
   Atom win_popup_menu_atom;
   Atom win_dropdown_menu_atom;
   Atom win_tooltip_atom;

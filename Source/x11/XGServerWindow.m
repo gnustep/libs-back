@@ -420,17 +420,6 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
  */
 
 
-@interface NSEvent (WindowHack)
-- (void) _patchLocation: (NSPoint)loc;
-@end
-
-@implementation NSEvent (WindowHack)
-- (void) _patchLocation: (NSPoint)loc
-{
-  location_point = loc;
-}
-@end
-
 @interface XGServer (WindowOps)
 - (gswindow_device_t *) _rootWindowForScreen: (int)screen;
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
@@ -665,39 +654,25 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 static void
 select_input(Display *display, Window w, BOOL ignoreMouse)
 {
-  long event_mask;
+  long event_mask = ExposureMask
+    | KeyPressMask
+    | KeyReleaseMask
+    | StructureNotifyMask
+    | FocusChangeMask
+    /* enable property notifications to detect window (de)miniaturization */
+    | PropertyChangeMask
+    //    | ColormapChangeMask
+    | KeymapStateMask
+    | VisibilityChangeMask;
 
   if (!ignoreMouse)
     {
-      event_mask = ExposureMask
-        | KeyPressMask
-        | KeyReleaseMask
-        | ButtonPressMask
+      event_mask |= ButtonPressMask
         | ButtonReleaseMask
         | ButtonMotionMask
-        | StructureNotifyMask
         | PointerMotionMask
         | EnterWindowMask
-        | LeaveWindowMask
-        | FocusChangeMask
-        /* enable property notifications to detect window (de)miniaturization */
-        | PropertyChangeMask
-        //    | ColormapChangeMask
-        | KeymapStateMask
-        | VisibilityChangeMask;
-    }
-  else
-    {
-      event_mask = ExposureMask
-        | KeyPressMask
-        | KeyReleaseMask
-        | StructureNotifyMask
-        | FocusChangeMask
-        /* enable property notifications to detect window (de)miniaturization */
-        | PropertyChangeMask
-        //    | ColormapChangeMask
-        | KeymapStateMask
-        | VisibilityChangeMask;
+        | LeaveWindowMask;
     }
 
   XSelectInput(display, w, event_mask);
@@ -780,6 +755,43 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   return NO;
 }
 
+- (unsigned long*) _getExtents: (Window)win
+{
+  int count;
+  unsigned long *extents;
+
+  /* If our window manager supports _NET_FRAME_EXTENTS we trust that as
+   * definitive information.
+   */
+  if (_net_frame_extents == None)
+    {
+      _net_frame_extents = XInternAtom(dpy, "_NET_FRAME_EXTENTS", False);
+    }
+  extents = (unsigned long *)PropGetCheckProperty(dpy, win, _net_frame_extents,
+                                                  XA_CARDINAL, 32, 4, &count);
+  if (extents != 0)
+    {
+      NSDebugLLog(@"Offset", @"Offsets retrieved from _NET_FRAME_EXTENTS");
+    }
+  if (extents == 0)
+    {
+      /* If our window manager supports _KDE_NET_WM_FRAME_STRUT we assume
+       * its as reliable as _NET_FRAME_EXTENTS
+       */
+      if (_kde_frame_strut == None)
+        {
+          _kde_frame_strut = XInternAtom(dpy, "_KDE_NET_WM_FRAME_STRUT", False);
+        }
+      extents = (unsigned long *)PropGetCheckProperty(dpy, win, _kde_frame_strut,
+                                                      XA_CARDINAL, 32, 4, &count);
+      if (extents!= 0)
+        {
+          NSDebugLLog(@"Offset", @"Offsets retrieved from _KDE_NET_WM_FRAME_STRUT");
+        }
+    }
+  return extents;
+}
+   
 - (BOOL) _checkStyle: (unsigned)style
 {
   gswindow_device_t	*window;
@@ -790,7 +802,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   XClassHint		classhint;
   RContext              *context;
   XEvent		xEvent;
-  int			count;
   unsigned long		*extents;
   Offsets		*o = generic.offsets + (style & 15);
   int			repp = 0;
@@ -1010,38 +1021,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
         }
     }
 
-  /* If our window manager supports _NET_FRAME_EXTENTS we trust that as
-   * definitive information.
-   */
-  if (_net_frame_extents == None)
-    {
-      _net_frame_extents = XInternAtom(dpy, "_NET_FRAME_EXTENTS", False);
-    }
-  extents = (unsigned long *)PropGetCheckProperty(dpy,
-    window->ident, _net_frame_extents, XA_CARDINAL, 32, 4, &count);
-  if (extents != 0)
-    {
-      NSDebugLLog(@"Offset", @"Offsets retrieved from _NET_FRAME_EXTENTS");
-    }
-  if (extents == 0)
-    {
-      /* If our window manager supports _KDE_NET_WM_FRAME_STRUT we assume
-       * its as reliable as _NET_FRAME_EXTENTS
-       */
-      if (_kde_frame_strut == None)
-        {
-          _kde_frame_strut = XInternAtom(dpy,
-            "_KDE_NET_WM_FRAME_STRUT", False);
-        }
-      extents = (unsigned long *)PropGetCheckProperty(dpy,
-        window->ident, _kde_frame_strut, XA_CARDINAL, 32, 4, &count);
-      if (extents!= 0)
-        {
-          NSDebugLLog(@"Offset",
-                      @"Offsets retrieved from _KDE_NET_WM_FRAME_STRUT");
-        }
-    }
-
+  extents = [self _getExtents: window->ident];
   if (extents != 0) 
     {
       o->l = extents[0];
@@ -1309,8 +1289,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
           generic.wintypes.win_override_atom = 
               XInternAtom(dpy, "_KDE_NET_WM_WINDOW_TYPE_OVERRIDE", False);
 #endif
-          generic.wintypes.win_topmenu_atom = 
-              XInternAtom(dpy, "_KDE_NET_WM_WINDOW_TYPE_TOPMENU", False);
           
           // Window state
           generic.netstates.net_wm_state_atom = 
@@ -2404,28 +2382,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   /* First check _NET_FRAME_EXTENTS */
   if (win  && ((generic.wm & XGWM_EWMH) != 0)) 
     {
-      int count;
-      unsigned long *extents;
-
-      if (_net_frame_extents == None)
-        {
-          _net_frame_extents = XInternAtom(dpy,
-            "_NET_FRAME_EXTENTS", False);
-        }
-
-      extents = (unsigned long *)PropGetCheckProperty(dpy,
-        win, _net_frame_extents, XA_CARDINAL, 32, 4, &count);
-
-      if (!extents) // && (generic.wm & XGWM_KDE)) 
-        {
-          if (_kde_frame_strut == None)
-            {
-              _kde_frame_strut = XInternAtom(dpy,
-                "_KDE_NET_WM_FRAME_STRUT", False);
-            }
-          extents = (unsigned long *)PropGetCheckProperty(dpy,
-            win, _kde_frame_strut, XA_CARDINAL, 32, 4, &count);
-        }
+      unsigned long *extents = [self _getExtents: win];
 
       if (extents) 
         {
@@ -2464,8 +2421,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       return;
     }
 
-NSLog(@"styleoffsets ... guessing offsets\n");
-
+  NSLog(@"styleoffsets ... guessing offsets\n");
   if ((generic.wm & XGWM_WINDOWMAKER) != 0)
     {
       *l = *r = *t = *b = 1.0;
@@ -2974,15 +2930,6 @@ static BOOL didCreatePixmaps;
        */
       if ((window->win_attrs.window_style & NSIconWindowMask) != 0)
 	{
-#if 0
-	  /* This doesn't appear to do anything useful, and, at least
-	     with WindowMaker, can cause the app to flicker and spuriously
-	     lose focus if the app icon is already visible.  */
-	  if (op != NSWindowOut)
-	    {
-	      XMapRaised(dpy, ROOT);
-	    }
-#endif
 	  return;
 	}
       if ((window->win_attrs.window_style & NSMiniWindowMask) != 0)
@@ -3427,26 +3374,14 @@ static BOOL didCreatePixmaps;
             }
           else if (level == NSMainMenuWindowLevel)
             {
-              // For strange reasons menu level does not
-              // work out for the main menu
-              //data[0] = generic.wintypes.win_topmenu_atom;
               data[0] = generic.wintypes.win_dock_atom;
-              //len = 2;
               skipTaskbar = YES;
             }
           else if (level == NSSubmenuWindowLevel
                    || level == NSFloatingWindowLevel
                    || level == NSTornOffMenuWindowLevel)
             {
-#ifdef USE_KDE_OVERRIDE
-              data[0] = generic.wintypes.win_override_atom;
-              //data[0] = generic.wintypes.win_utility_atom;
-              data[1] = generic.wintypes.win_menu_atom;
-              len = 2;
-#else
               data[0] = generic.wintypes.win_menu_atom;
-              len = 1;
-#endif
               skipTaskbar = YES;
             }
           else if (level == NSDockWindowLevel
@@ -3458,15 +3393,17 @@ static BOOL didCreatePixmaps;
           // Does this belong into a different category?
           else if (level == NSPopUpMenuWindowLevel)
             {
-#ifdef USE_KDE_OVERRIDE
-              data[0] = generic.wintypes.win_override_atom;
-              data[1] = generic.wintypes.win_floating_atom;
-              len = 2;
-#else
+                NSWindow *nswin = GSWindowWithNumber(window->number);
+
+                if ([[nswin className] isEqual: @"GSTTPanel"])
+                  {
+                    data[0] = generic.wintypes.win_tooltip_atom;
+                  }
+                else
+                  {
 //              data[0] = generic.wintypes.win_popup_menu_atom;
-              data[0] = generic.wintypes.win_modal_atom;
-              len = 1;
-#endif
+                    data[0] = generic.wintypes.win_modal_atom;
+                  }
               skipTaskbar = YES;
             }
           else if (level == NSDesktopWindowLevel)
