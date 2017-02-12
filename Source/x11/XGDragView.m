@@ -309,7 +309,7 @@ static	XGDragView	*sharedDragView = nil;
 
 
 - (NSWindow*) windowAcceptingDnDunder: (NSPoint)p
-			    windowRef: (int*)mouseWindowRef
+			    windowRef: (NSInteger*)mouseWindowRef
 {
   gswindow_device_t	*dwindev;
 
