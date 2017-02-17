@@ -776,8 +776,8 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 }
 
 - (int) findWindowAt: (NSPoint)screenLocation 
-           windowRef: (int*)windowRef 
-           excluding: (int)win
+           windowRef: (NSInteger*)windowRef
+           excluding: (NSInteger)win
 {
   HWND hwnd;
   POINT p;
