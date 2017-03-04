@@ -126,9 +126,7 @@ static NSString * const kButtonActionKey = @"show";
 
       appIcon     = [self _iconFromImage:image];
       appIconPath = [[image _filename] copy];
-#if defined(DEBUG)
-      NSLog(@"%s:bundle: %@ image: %@ icon: %p path: %@", __PRETTY_FUNCTION__, classBundle, image, appIcon, appIconPath);
-#endif
+      NSWarnMLog(@"bundle: %@ image: %@ icon: %p path: %@", classBundle, image, appIcon, appIconPath);
       
       if (appIcon == NULL)
       {
@@ -147,9 +145,8 @@ static NSString * const kButtonActionKey = @"show";
       }
       else
       {
-#if defined(DEBUG)
-        NSLog(@"%s:version number is: %d", __PRETTY_FUNCTION__, osvi.dwMajorVersion);
-#endif
+        NSWarnMLog(@"version number is: %d", osvi.dwMajorVersion);
+
         if  (osvi.dwMajorVersion >= 6)
         {
           if (osvi.dwMinorVersion == 1)
@@ -178,10 +175,7 @@ static NSString * const kButtonActionKey = @"show";
           {
             pSendNotification = (SendNotificationFunctionPtr)GetProcAddress(hNotificationLib, "sendNotification");
             pRemoveNotification = (RemoveNotificationFunctionPtr)GetProcAddress(hNotificationLib, "removeNotification");
-#if defined(DEBUG)
-            NSLog(@"%s:DLL ptr: %p send notification ptr: %p remove ptr: %p", __PRETTY_FUNCTION__,
-                  hNotificationLib, pSendNotification, pRemoveNotification);
-#endif
+            NSWarnMLog(@"DLL ptr: %p send notification ptr: %p remove ptr: %p", hNotificationLib, pSendNotification, pRemoveNotification);
           }
         }
       }
@@ -196,9 +190,6 @@ static NSString * const kButtonActionKey = @"show";
 
 - (void) dealloc
 {
-#if defined(DEBUG)
-  NSLog(@"%s:", __PRETTY_FUNCTION__);
-#endif
   // Cleanup any icons we generated...
   NSEnumerator *iter = [imageToIcon objectEnumerator];
   HICON         icon = NULL;
@@ -258,10 +249,7 @@ static NSString * const kButtonActionKey = @"show";
 {
   // Default the return cursur ID to NULL...
   HICON result = NULL;
-  
-#if defined(DEBUG)
-  NSLog(@"%s:image: %@ imageToIcon dict: %@", __PRETTY_FUNCTION__, image, imageToIcon);
-#endif
+
   if ([image name] == nil)
   {
     NSLog(@"%s:cannot create/store image icon for NIL image names: %@", __PRETTY_FUNCTION__, result, [image name]);
@@ -269,9 +257,6 @@ static NSString * const kButtonActionKey = @"show";
   else if ([imageToIcon objectForKey:[image name]])
   {
     result = (HICON)[[imageToIcon objectForKey: image] pointerValue];
-#if defined(DEBUG)
-    NSLog(@"%s:reusing icon: %p for imageName: %@", __PRETTY_FUNCTION__, result, [image name]);
-#endif
   }
   else
   {
@@ -291,9 +276,6 @@ static NSString * const kButtonActionKey = @"show";
       std::string  filename8 = [[image _filename] UTF8String];
       std::wstring filename16(filename8.length(), L' ');                 // Make room for characters
       std::copy(filename8.begin(), filename8.end(), filename16.begin()); // Copy string to wstring.
-#if defined(DEBUG)
-      std::cout << __PRETTY_FUNCTION__ << ":filename8: " << filename8 << " filename16: " << filename16.c_str() << std::endl;
-#endif
       Gdiplus::Bitmap *bitmap = new Gdiplus::Bitmap(filename16.c_str());
       Gdiplus::Status status = bitmap->GetHICON(&result);
 
@@ -324,9 +306,6 @@ static NSString * const kButtonActionKey = @"show";
     if (result != NULL)
     {
       [imageToIcon setObject:[NSValue valueWithPointer:result] forKey:[image name]];
-#if defined(DEBUG)
-      NSLog(@"%s:saving icon: %p for imageName: %@", __PRETTY_FUNCTION__, result, [image name]);
-#endif
     }
   }
   
@@ -336,7 +315,6 @@ static NSString * const kButtonActionKey = @"show";
 
 - (GUID)guidFromUUIDString:(NSString*)uuidString
 {
-  NSLog(@"%s:UUIDString: %@", __PRETTY_FUNCTION__, uuidString);
   GUID       theGUID    = { 0 };
   unsigned int value      = 0;
   NSArray   *components = [uuidString componentsSeparatedByString: @"-"];
@@ -376,13 +354,7 @@ static NSString * const kButtonActionKey = @"show";
 - (NSNumber*)_showNotification:(NSUserNotification*)note forWindow:(NSWindow*)forWindow
 {
   NSAutoreleasePool *pool = [NSAutoreleasePool new];
-
-#if defined(DEBUG)
-  NSLog(@"%s:title: %@ informativeText: %@ contentImage: %@ (%@)", __PRETTY_FUNCTION__, note.title, note.informativeText, note.contentImage, [note.contentImage _filename]);
-#endif
-
-  NSNumber *result = nil;
-  
+  NSNumber          *result = nil;
   
   if (pSendNotification != NULL)
   {
@@ -405,10 +377,6 @@ static NSString * const kButtonActionKey = @"show";
     {
       // Attempt to create a window icon from image...
       noteInfo.contentIcon = [self _iconFromImage:note.contentImage];
-      
-#if defined(DEBUG)
-      NSLog(@"%s:image: %@ icon: %p", __PRETTY_FUNCTION__, note.contentImage, noteInfo.contentIcon);
-#endif
     }
 
     BOOL status = pSendNotification((HWND)GetModuleHandle(NULL), appIcon, &noteInfo);
@@ -417,10 +385,6 @@ static NSString * const kButtonActionKey = @"show";
     {
       note.identifier = [[UUIDString copy] autorelease];
       note.presented = YES;
-
-#if defined(DEBUG)
-      NSLog(@"%s:status: %d uniqueID: %d", __PRETTY_FUNCTION__, status, uniqueID);
-#endif
 
       return [NSNumber numberWithBool:uniqueID++];
     }
@@ -504,10 +468,6 @@ static NSString * const kButtonActionKey = @"show";
 
 - (void)_removeDeliveredNotification:(NSUserNotification *)theNote
 {
-#if defined(DEBUG)
-    NSLog(@"%s:note: %@ ID: %@", __PRETTY_FUNCTION__, theNote, theNote->_uniqueId);
-#endif
-
   if (pRemoveNotification != NULL)
   {
     REMOVE_NOTE_INFO_T noteInfo = { 0 };
