@@ -1,3 +1,7 @@
+2017-04-04  Ivan Vucica <ivan@vucica.net>
+
+	* Releasing 0.25.1.
+
 2017-01-17  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/x11/XGGeneric.h: Remove obsolte atom.
