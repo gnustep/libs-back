@@ -428,7 +428,7 @@ static	XGDragView	*sharedDragView = nil;
   NSCountedSet		*drag_set = [self dragTypesForWindow: win];
 
   winNum = [win windowNumber];
-  window = [isa _windowWithTag: winNum];
+  window = [[self class] _windowWithTag: winNum];
 
   GSEnsureDndIsInitialized ();
 

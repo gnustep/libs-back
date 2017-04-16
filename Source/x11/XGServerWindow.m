@@ -2745,7 +2745,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     && (window->buffer_width != width || window->buffer_height != height)
     && (window->gdriverProtocol & GDriverHandlesBacking) == 0)
     {
-      [isa waitAllContexts];
+      [[self class] waitAllContexts];
       XFreePixmap(dpy, window->buffer);
       window->buffer = 0;
       if (window->alpha_buffer)
@@ -3623,7 +3623,7 @@ static BOOL didCreatePixmaps;
       values.foreground = window->xwn_attrs.background_pixel;
       valuemask = (GCFunction | GCPlaneMask | GCClipMask | GCForeground);
       XChangeGC(dpy, window->gc, valuemask, &values);
-      [isa waitAllContexts];
+      [[self class] waitAllContexts];
       if ((window->gdriverProtocol & GDriverHandlesExpose))
 	{
 	  /* Temporary protocol until we standardize the backing buffer */
@@ -3698,7 +3698,7 @@ static BOOL didCreatePixmaps;
 
   if (width > 0 || height > 0)
     {
-      [isa waitAllContexts];
+      [[self class] waitAllContexts];
       if ((window->gdriverProtocol & GDriverHandlesBacking))
 	{
 	  NSDebugLLog (@"XGFlush", 
