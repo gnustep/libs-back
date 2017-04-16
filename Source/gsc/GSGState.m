@@ -1249,7 +1249,7 @@ typedef enum {
       out[0] = out[1] = out[2] = 0.0;
       for (x = NSMinX(rect); x < NSMaxX(rect); x++)
         {
-          char r, g, b, a;
+          unsigned char r, g, b, a;
             
           [function eval: in : out];
      

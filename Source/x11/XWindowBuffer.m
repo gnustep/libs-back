@@ -645,7 +645,7 @@ static int warn = 0;
         while (XCheckTypedEvent(window->display,
           XShmGetEventBase(window->display) + ShmCompletion, &e))
           {
-            [isa _gotShmCompletion: ((XShmCompletionEvent *)&e)->drawable];
+            [[self class] _gotShmCompletion: ((XShmCompletionEvent *)&e)->drawable];
           }
       }
     }
