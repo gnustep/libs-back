@@ -68,8 +68,8 @@
   win->useHDC = NO;
 
   // Save win internals structure pointer for window handle...
-  SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG)win);
-  SetWindowLongPtr(hwnd, IME_INFO, (LONG)ime);
+  SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)win);
+  SetWindowLongPtr(hwnd, IME_INFO, (LONG_PTR)ime);
 
   [self windowbacking: type : (NSInteger)hwnd];
 
@@ -102,7 +102,7 @@
 		       cpath,
 		       IMAGE_ICON,0,0,
 		       LR_DEFAULTSIZE|LR_LOADFROMFILE);
-      HICON oldIcon = SetClassLongPtr(hwnd,GCLP_HICON,(LONG_PTR)icon);
+      HICON oldIcon = (HICON)SetClassLongPtr(hwnd,GCLP_HICON,(LONG_PTR)icon);
       if (oldIcon != NULL)
         DestroyIcon(oldIcon);
     }

@@ -56,12 +56,6 @@
 #include <config.h>
 #include <windows.h>
 
-/* MINGW64 hack to build */
-#ifdef __MINGW64__
-#undef GWL_USERDATA
-#define GWL_USERDATA GWLP_USERDATA 
-#endif
-
 /*
  This standard windows macros are missing in MinGW.  The definition
  here is almost correct, but will fail for multi monitor systems
@@ -129,9 +123,11 @@ typedef struct w32serverFlags
 
 @interface WIN32Server (w32_activate)
 
-- (LRESULT) decodeWM_MOUSEACTIVATEParams: (WPARAM)wParam : (LPARAM)lParam 
+#if 0
+- (LRESULT) decodeWM_MOUSEACTIVATEParams: (WPARAM)wParam : (LPARAM)lParam
 						: (HWND)hwnd;
-- (LRESULT) decodeWM_ACTIVEParams: (WPARAM)wParam : (LPARAM)lParam 
+#endif
+- (LRESULT) decodeWM_ACTIVEParams: (WPARAM)wParam : (LPARAM)lParam
 				 : (HWND)hwnd;
 - (LRESULT) decodeWM_ACTIVEAPPParams: (HWND)hwnd : (WPARAM)wParam 
 				    : (LPARAM)lParam;
@@ -204,10 +200,10 @@ typedef struct w32serverFlags
 
 enum _WIN_EXTRA_BYTES
 {
-  OFF_LEVEL       = 0,
-  OFF_ORDERED     = OFF_LEVEL + sizeof(DWORD),   // Value
-  IME_INFO        = OFF_ORDERED + sizeof(void*), // Pointer
-  WIN_EXTRABYTES  = IME_INFO + sizeof(void*)     // Pointer
+  OFF_LEVEL       = 0,                          // Value
+  OFF_ORDERED     = OFF_LEVEL + sizeof(LONG),   // Value
+  IME_INFO        = OFF_ORDERED + sizeof(LONG), // Pointer
+  WIN_EXTRABYTES  = IME_INFO + sizeof(LONG_PTR) // Pointer
 };
 
 
