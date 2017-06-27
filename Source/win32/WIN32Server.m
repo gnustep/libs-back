@@ -2627,16 +2627,20 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   p.y = size.height;
   win->minmax.ptMaxTrackSize = p;
 
-  // Disable the maximize box if a maximum size is set
-  if (size.width < 10000 || size.height < 10000)
+  // If the window has resizable set on it...
+  if (GetWindowLong((HWND)winNum, GWL_STYLE) & WS_SIZEBOX)
     {
-      SetWindowLong((HWND)winNum, GWL_STYLE,
-          GetWindowLong((HWND)winNum, GWL_STYLE) ^ WS_MAXIMIZEBOX);
-    }
-  else
-    {
-      SetWindowLong((HWND)winNum, GWL_STYLE,
-          GetWindowLong((HWND)winNum, GWL_STYLE) | WS_MAXIMIZEBOX);
+      // Disable the maximize box if a maximum size is set
+      if (size.width < 10000 || size.height < 10000)
+        {
+          SetWindowLong((HWND)winNum, GWL_STYLE,
+              GetWindowLong((HWND)winNum, GWL_STYLE) ^ WS_MAXIMIZEBOX);
+        }
+      else
+        {
+          SetWindowLong((HWND)winNum, GWL_STYLE,
+              GetWindowLong((HWND)winNum, GWL_STYLE) | WS_MAXIMIZEBOX);
+        }
     }
 }
 
@@ -2655,6 +2659,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 - (void) setresizeincrements: (NSSize)size : (NSInteger) winNum
 {
 }
+
 /** Causes buffered graphics to be flushed to the screen */
 - (void) flushwindowrect: (NSRect)rect : (NSInteger)winNum
 {
