@@ -1449,7 +1449,7 @@ HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
       return NULL;
     }
 
-  win = (WIN_INTERN *)GetWindowLong((HWND)window, GWLP_USERDATA);
+  win = (WIN_INTERN *)GetWindowLongPtr((HWND)window, GWLP_USERDATA);
   if (win && win->useHDC)
     {
       hDC = win->hdc;
