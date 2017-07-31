@@ -1,3 +1,8 @@
+2017-07-31  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-DPSshow:): Get DPSshow: to work on
+	scaled windows.
+
 2017-04-16  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSGState.m
