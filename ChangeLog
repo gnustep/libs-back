@@ -1,3 +1,22 @@
+2017-07-17  Daniel Ferreira <dtf@stanford.edu>
+
+	* Source/opal/GNUmakefile: add OpalBridge.m to project.
+	* Source/opal/OpalBridge.m:	
+	Implement a bridge between NSColor and CGColorRef and a stub for a
+	bridge between NSImage and CGImageRef. This improves compatibility with
+	Quartz.
+
+2017-07-17  Daniel Ferreira <dtf@stanford.edu>
+
+	* Headers/opal/OpalSurface.h
+	* Source/opal/OpalContext.m
+	* Source/opal/OpalSurface.m:	
+	In Quartz, the "graphics port" bound to an NSGraphicsContext (subclassed
+	by OpalContext) is a CGContext. We currently initialize one in
+	OpalSurface if it does not exist, however we do not allow the client to
+	initialize a graphics context with a custom graphics port, which should
+	be allowed. We have enabled this feature.
+
 2017-07-31  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoGState.m (-DPSshow:): Get DPSshow: to work on

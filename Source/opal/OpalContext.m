@@ -167,8 +167,20 @@
                     : (int)y
 {
   OpalSurface *surface;
-
-  surface = [[OpalSurface alloc] initWithDevice: device];
+  
+  /*
+   * The "graphics port" associated to an OpalContext is necessarily a
+   * CGContextRef supplied by the client to back the OpalContext, instead
+   * of having us create the CGContextRef ourselves.
+   *
+   * Since -graphicsPort is overriden from NSGraphicsContext to compute the
+   * CGContextRef for an OpalSurface (which is not initialized yet), we
+   * get the _graphicsPort ivar directly to obtain the supplied CGContextRef
+   * on initialization, and use that to init our surface.
+   */
+  CGContextRef suppliedContext = self->_graphicsPort;
+  surface = [[OpalSurface alloc] initWithDevice: device
+                                        context: suppliedContext];
 
   [OGSTATE GSSetSurface: surface
                        : x

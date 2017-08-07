@@ -70,7 +70,7 @@ static CGContextRef createCGBitmapContext(int pixelsWide,
 
 @implementation OpalSurface
 
-- (void) createCGContexts
+- (void) createCGContextsWithSuppliedBackingContext: (CGContextRef)ctx
 {
   // FIXME: this method and class presumes we are being passed
   // a window device.
@@ -83,7 +83,7 @@ static CGContextRef createCGBitmapContext(int pixelsWide,
   Display * display = _gsWindowDevice->display;
   Window window = _gsWindowDevice->ident;
 
-  _x11CGContext = OPX11ContextCreate(display, window);
+  _x11CGContext = ctx ?: OPX11ContextCreate(display, window);
 
 #if 0
   if (_gsWindowDevice->type == NSBackingStoreNonretained)
@@ -114,7 +114,9 @@ static CGContextRef createCGBitmapContext(int pixelsWide,
 
 }
 
-- (id) initWithDevice: (void *)device
+// FIXME: *VERY* bad things will happen if a non-bitmap
+// context is passed here.
+- (id) initWithDevice: (void *)device context: (CGContextRef)ctx
 {
   self = [super init];
   if (!self)
@@ -124,7 +126,7 @@ static CGContextRef createCGBitmapContext(int pixelsWide,
   // a window device.
   _gsWindowDevice = (gswindow_device_t *) device;
 
-  [self createCGContexts];
+  [self createCGContextsWithSuppliedBackingContext: ctx];
 
   return self;
 }

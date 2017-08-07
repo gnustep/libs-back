@@ -35,7 +35,7 @@
   CGContextRef _x11CGContext;
 }
 
-- (id) initWithDevice: (void *)device;
+- (id) initWithDevice: (void *)device context: (CGContextRef)ctx;
 - (void *)device;
 - (CGContextRef) CGContext;
 - (NSSize) size;
