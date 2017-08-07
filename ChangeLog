@@ -17,6 +17,11 @@
 	initialize a graphics context with a custom graphics port, which should
 	be allowed. We have enabled this feature.
 
+2017-07-31  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-DPSshow:): Get DPSshow: to work on
+	scaled windows.
+
 2017-04-16  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSGState.m
