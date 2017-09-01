@@ -54,6 +54,7 @@ static BOOL	auto_stop = NO;		/* Stop when all connections closed. */
 static char	ebuf[2048];
 
 static NSMutableArray	*connections = nil;
+static NSTimer          *timer       = nil;           /* When to shut down. */
 
 #ifdef HAVE_SYSLOG
 
@@ -756,6 +757,11 @@ NSMutableDictionary	*pasteboards = nil;
       if ([connections indexOfObjectIdenticalTo: c] == NSNotFound)
         {
           [connections addObject: c];
+          if (nil != timer)
+            {
+              [timer invalidate];
+              timer = nil;
+            }
         }
     }
   /*
@@ -971,6 +977,19 @@ NSMutableDictionary	*pasteboards = nil;
   return YES;
 }
 
+- (void) autoStop: (NSTimer*)t
+{
+  if (t == timer)
+    {
+      timer = nil;
+    }
+  if (auto_stop == YES && [connections count] == 0)
+    {
+      // There is nothing else using this process, stop...
+      exit(EXIT_SUCCESS);
+    }
+}
+
 - (id) connectionBecameInvalid: (NSNotification*)notification
 {
   id connection = [notification object];
@@ -993,8 +1012,16 @@ NSMutableDictionary	*pasteboards = nil;
   [connections removeObjectIdenticalTo: connection];
   if (auto_stop == YES && [connections count] == 0)
     {
-      NSLog(@"no connection and auto-stop enabled - exiting...");
-      exit(EXIT_SUCCESS);
+      if (nil != timer)
+        {
+          [timer invalidate];
+        }
+      NSTimeInterval timeout = [[NSUserDefaults standardDefaults] floatForKey:@"GSGPBSAutostopTimeout"];
+      timer = [NSTimer scheduledTimerWithTimeInterval: ((timeout == 0) ? 15.0 : timeout)
+                                               target: self
+                                             selector: @selector(autoStop:)
+                                             userInfo: nil
+                                              repeats: NO];
     }
   return self;
 }
