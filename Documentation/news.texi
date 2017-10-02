@@ -7,11 +7,17 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.26.0}
+
+@itemize @bullet
+@item This section is yet to be written.
+@end itemize
+
+@ifclear ANNOUNCE-ONLY
 @section Noteworthy changes in version @samp{0.25.1}
 
 Small fixes and cleanups.
 
-@ifclear ANNOUNCE-ONLY
 @section Noteworthy changes in version @samp{0.25.0}
 
 Support for pattern phase, compositing operation, image interpolation and antialiasing per gstate.

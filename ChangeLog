@@ -1,3 +1,11 @@
+2017-10-01  Ivan Vucica <ivan@vucica.net>
+
+	* Documentation/news.texi:
+	Add stub 0.26.0 entry.
+
+	* Version:
+	Bump to 0.26.0.
+
 2017-07-17  Daniel Ferreira <dtf@stanford.edu>
 
 	* Source/opal/GNUmakefile: add OpalBridge.m to project.
