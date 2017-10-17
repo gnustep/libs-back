@@ -161,7 +161,18 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   NSString *s;
   unsigned int len;
 
-  s = [_pb stringForType: NSStringPboardType];
+  NS_DURING
+    {
+      s = [_pb stringForType: NSStringPboardType];
+    }
+  NS_HANDLER
+    {
+      // Don't allow exceptions to propagate up
+      NSWarnMLog(@"exception: %@", localException);
+      return;
+    }
+  NS_ENDHANDLER
+  
   if (s == nil)
     {
       return;
