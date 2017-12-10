@@ -1,3 +1,11 @@
+2017-12-10  Ivan Vucica <ivan@vucica.net>
+
+	* ANNOUNCE
+	* Documentation/news.texi
+	* README:
+	Added release notes to news.texi and regenerated the rest for
+	0.26.0 release.
+
 2017-10-01  Ivan Vucica <ivan@vucica.net>
 
 	* Documentation/news.texi:

@@ -9,8 +9,14 @@
 
 @section Noteworthy changes in version @samp{0.26.0}
 
+This release includes a few bugfixes, as well as compatibility improvements
+as a result of GSoC 2017 project.
+
 @itemize @bullet
-@item This section is yet to be written.
+@item opal: Bridging categories between Opal and GNUstep GUI. Added onto NSColor, NSImage and NSImageRep.
+@item cairo: Get -DPSshow: to work on scaled windows.
+@item opal: Allow creating a NSGraphicsContext with a custom graphics port, other than a CGContext.
+@item misc: Fix reported static analyser warnings.
 @end itemize
 
 @ifclear ANNOUNCE-ONLY
