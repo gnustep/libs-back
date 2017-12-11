@@ -58,8 +58,7 @@
 
 static Win32PbOwner *wpb = nil;
 static HWND hwndNextViewer = NULL;
-LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
-                             WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK MainWndPbsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
 @implementation Win32PbOwner
@@ -98,7 +97,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   wc.cbSize = sizeof(wc);          
   //wc.style = CS_OWNDC;
   wc.style = CS_HREDRAW | CS_VREDRAW; 
-  wc.lpfnWndProc = (WNDPROC) MainWndProc; 
+  wc.lpfnWndProc = (WNDPROC) MainWndPbsProc;
   wc.cbClsExtra = 0; 
   wc.cbWndExtra = 0; 
   wc.hInstance = _hinstance; 
@@ -212,7 +211,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
  */
 - (void) grapClipboard
 {
-  if (!OpenClipboard(_hwnd)) 
+  if (!OpenClipboard(_hwnd))
      {
        NSLog(@"Failed to get the Win32 clipboard. %d", GetLastError());
        return; 
@@ -369,8 +368,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 
 @end
 
-LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, 
-                             WPARAM wParam, LPARAM lParam) 
+LRESULT CALLBACK MainWndPbsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 { 
   switch (uMsg) 
     { 

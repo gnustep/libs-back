@@ -59,6 +59,9 @@ w32_windowdisplay.m \
 w32_GLformat.m \
 w32_GLcontext.m \
 
+# Include gpbs/win32pbs in backend bundle for direct pasteboard server
+win32_OBJC_FILES += ../../Tools/win32pbs.m ../../Tools/gpbs.m
+
 -include GNUmakefile.preamble
 
 include $(GNUSTEP_MAKEFILES)/subproject.make
