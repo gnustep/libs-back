@@ -7,6 +7,12 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.26.1}
+
+This release contains no changes since 0.26.0. It is released to coincide
+with gnustep-gui 0.26.1, released to mark gnustep-base 1.25.1 as the
+requirement for gnustep-gui.
+
 @section Noteworthy changes in version @samp{0.26.0}
 
 This release includes a few bugfixes, as well as compatibility improvements

@@ -1,3 +1,12 @@
+2017-12-21  Ivan Vucica <ivan@vucica.net>
+
+	* ANNOUNCE
+	* Documentation/news.texi
+	* README
+	* Version
+	* NEWS:
+	Releasing 0.26.1 to coincide with the -gui release.
+
 2017-12-10  Ivan Vucica <ivan@vucica.net>
 
 	* ANNOUNCE
