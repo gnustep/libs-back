@@ -7,6 +7,11 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.26.2}
+
+This release contains no changes since 0.26.1. It is released to coincide
+with gnustep-gui 0.26.2, which has important bugfixes related to printing.
+
 @section Noteworthy changes in version @samp{0.26.1}
 
 This release contains no changes since 0.26.0. It is released to coincide
