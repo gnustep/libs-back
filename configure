@@ -656,6 +656,8 @@ XT_LIBS
 XT_CFLAGS
 XEXT_LIBS
 XEXT_CFLAGS
+PKG_CONFIG_LIBDIR
+PKG_CONFIG_PATH
 PKG_CONFIG
 X_EXTRA_LIBS
 X_LIBS
@@ -745,7 +747,36 @@ LDFLAGS
 LIBS
 CPPFLAGS
 CPP
-XMKMF'
+XMKMF
+PKG_CONFIG
+PKG_CONFIG_PATH
+PKG_CONFIG_LIBDIR
+XEXT_CFLAGS
+XEXT_LIBS
+XT_CFLAGS
+XT_LIBS
+XMU_CFLAGS
+XMU_LIBS
+XFT_CFLAGS
+XFT_LIBS
+CAIRO_CFLAGS
+CAIRO_LIBS
+CAIRO_FT_CFLAGS
+CAIRO_FT_LIBS
+CAIRO_XLIB_CFLAGS
+CAIRO_XLIB_LIBS
+CAIRO_WIN32_CFLAGS
+CAIRO_WIN32_LIBS
+CAIRO_GLITZ_CFLAGS
+CAIRO_GLITZ_LIBS
+FONTCONFIG_CFLAGS
+FONTCONFIG_LIBS
+GLITZ_CFLAGS
+GLITZ_LIBS
+GLITZ_GLX_CFLAGS
+GLITZ_GLX_LIBS
+GLITZ_WGL_CFLAGS
+GLITZ_WGL_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1387,6 +1418,53 @@ Some influential environment variables:
               you have headers in a nonstandard directory <include dir>
   CPP         C preprocessor
   XMKMF       Path to xmkmf, Makefile generator for X Window System
+  PKG_CONFIG  path to pkg-config utility
+  PKG_CONFIG_PATH
+              directories to add to pkg-config's search path
+  PKG_CONFIG_LIBDIR
+              path overriding pkg-config's built-in search path
+  XEXT_CFLAGS C compiler flags for XEXT, overriding pkg-config
+  XEXT_LIBS   linker flags for XEXT, overriding pkg-config
+  XT_CFLAGS   C compiler flags for XT, overriding pkg-config
+  XT_LIBS     linker flags for XT, overriding pkg-config
+  XMU_CFLAGS  C compiler flags for XMU, overriding pkg-config
+  XMU_LIBS    linker flags for XMU, overriding pkg-config
+  XFT_CFLAGS  C compiler flags for XFT, overriding pkg-config
+  XFT_LIBS    linker flags for XFT, overriding pkg-config
+  CAIRO_CFLAGS
+              C compiler flags for CAIRO, overriding pkg-config
+  CAIRO_LIBS  linker flags for CAIRO, overriding pkg-config
+  CAIRO_FT_CFLAGS
+              C compiler flags for CAIRO_FT, overriding pkg-config
+  CAIRO_FT_LIBS
+              linker flags for CAIRO_FT, overriding pkg-config
+  CAIRO_XLIB_CFLAGS
+              C compiler flags for CAIRO_XLIB, overriding pkg-config
+  CAIRO_XLIB_LIBS
+              linker flags for CAIRO_XLIB, overriding pkg-config
+  CAIRO_WIN32_CFLAGS
+              C compiler flags for CAIRO_WIN32, overriding pkg-config
+  CAIRO_WIN32_LIBS
+              linker flags for CAIRO_WIN32, overriding pkg-config
+  CAIRO_GLITZ_CFLAGS
+              C compiler flags for CAIRO_GLITZ, overriding pkg-config
+  CAIRO_GLITZ_LIBS
+              linker flags for CAIRO_GLITZ, overriding pkg-config
+  FONTCONFIG_CFLAGS
+              C compiler flags for FONTCONFIG, overriding pkg-config
+  FONTCONFIG_LIBS
+              linker flags for FONTCONFIG, overriding pkg-config
+  GLITZ_CFLAGS
+              C compiler flags for GLITZ, overriding pkg-config
+  GLITZ_LIBS  linker flags for GLITZ, overriding pkg-config
+  GLITZ_GLX_CFLAGS
+              C compiler flags for GLITZ_GLX, overriding pkg-config
+  GLITZ_GLX_LIBS
+              linker flags for GLITZ_GLX, overriding pkg-config
+  GLITZ_WGL_CFLAGS
+              C compiler flags for GLITZ_WGL, overriding pkg-config
+  GLITZ_WGL_LIBS
+              linker flags for GLITZ_WGL, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -4343,6 +4421,127 @@ if test "x$no_x" = xyes; then
   set_x_paths=no
 fi
 
+
+
+
+
+
+
+
+if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
+	if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
+set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PKG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
+$as_echo "$PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_PKG_CONFIG"; then
+  ac_pt_PKG_CONFIG=$PKG_CONFIG
+  # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_PKG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_PKG_CONFIG="$ac_pt_PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_PKG_CONFIG=$ac_cv_path_ac_pt_PKG_CONFIG
+if test -n "$ac_pt_PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_PKG_CONFIG" >&5
+$as_echo "$ac_pt_PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_PKG_CONFIG" = x; then
+    PKG_CONFIG=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    PKG_CONFIG=$ac_pt_PKG_CONFIG
+  fi
+else
+  PKG_CONFIG="$ac_cv_path_PKG_CONFIG"
+fi
+
+fi
+if test -n "$PKG_CONFIG"; then
+	_pkg_min_version=0.9.0
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking pkg-config is at least version $_pkg_min_version" >&5
+$as_echo_n "checking pkg-config is at least version $_pkg_min_version... " >&6; }
+	if $PKG_CONFIG --atleast-pkgconfig-version $_pkg_min_version; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+		PKG_CONFIG=""
+	fi
+fi
+
 if test $set_x_paths = yes; then
   GRAPHIC_CFLAGS="$X_CFLAGS $GRAPHIC_CFLAGS"
   CPPFLAGS="$X_CFLAGS $CPPFLAGS"
@@ -4394,104 +4593,96 @@ fi
 
   if test "$HAVE_LIBXext" = no; then
 
-  succeeded=no
-
-  if test -z "$PKG_CONFIG"; then
-    # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_PKG_CONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
-  ;;
-esac
-fi
-PKG_CONFIG=$ac_cv_path_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
-$as_echo "$PKG_CONFIG" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  fi
-
-  if test "$PKG_CONFIG" = "no" ; then
-     echo "pkg-config script not be found"
-     ## We don't want the user to see this warning
-     ## echo "*** The pkg-config script could not be found. Make sure it is"
-     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
-     ## echo "*** to the full path to pkg-config."
-     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
-  else
-     PKG_CONFIG_MIN_VERSION=0.9.0
-     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xext" >&5
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for xext" >&5
 $as_echo_n "checking for xext... " >&6; }
 
-        if $PKG_CONFIG --exists "xext" ; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-            succeeded=yes
+if test -n "$XEXT_CFLAGS"; then
+    pkg_cv_XEXT_CFLAGS="$XEXT_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"xext\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "xext") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_XEXT_CFLAGS=`$PKG_CONFIG --cflags "xext" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$XEXT_LIBS"; then
+    pkg_cv_XEXT_LIBS="$XEXT_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"xext\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "xext") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_XEXT_LIBS=`$PKG_CONFIG --libs "xext" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking XEXT_CFLAGS" >&5
-$as_echo_n "checking XEXT_CFLAGS... " >&6; }
-            XEXT_CFLAGS=`$PKG_CONFIG --cflags "xext"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XEXT_CFLAGS" >&5
-$as_echo "$XEXT_CFLAGS" >&6; }
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking XEXT_LIBS" >&5
-$as_echo_n "checking XEXT_LIBS... " >&6; }
-            XEXT_LIBS=`$PKG_CONFIG --libs "xext"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XEXT_LIBS" >&5
-$as_echo "$XEXT_LIBS" >&6; }
+
+if test $pkg_failed = yes; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        XEXT_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "xext" 2>&1`
         else
-            XEXT_CFLAGS=""
-            XEXT_LIBS=""
-            ## If we have a custom action on failure, don't print errors, but
-            ## do set a variable so people can do so.
-            XEXT_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "xext"`
-            echo $XEXT_PKG_ERRORS
+	        XEXT_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "xext" 2>&1`
         fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$XEXT_PKG_ERRORS" >&5
 
+	as_fn_error $? "Package requirements (xext) were not met:
 
+$XEXT_PKG_ERRORS
 
-     else
-        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
-        echo "*** See http://www.freedesktop.org/software/pkgconfig"
-     fi
-  fi
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
 
-  if test $succeeded = yes; then
-     :
-  else
-     as_fn_error $? "Library requirements (xext) not met; consider adjusting the PKG_CONFIG_PATH environment variable if your libraries are in a nonstandard prefix so pkg-config can find them." "$LINENO" 5
-  fi
+Alternatively, you may set the environment variables XEXT_CFLAGS
+and XEXT_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details." "$LINENO" 5
+elif test $pkg_failed = untried; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
 
+Alternatively, you may set the environment variables XEXT_CFLAGS
+and XEXT_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details" "$LINENO" 5; }
+else
+	XEXT_CFLAGS=$pkg_cv_XEXT_CFLAGS
+	XEXT_LIBS=$pkg_cv_XEXT_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi
   fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lXt" >&5
@@ -4535,104 +4726,96 @@ fi
 
   if test "$HAVE_LIBXt" = no; then
 
-  succeeded=no
-
-  if test -z "$PKG_CONFIG"; then
-    # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_PKG_CONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
-  ;;
-esac
-fi
-PKG_CONFIG=$ac_cv_path_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
-$as_echo "$PKG_CONFIG" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  fi
-
-  if test "$PKG_CONFIG" = "no" ; then
-     echo "pkg-config script not be found"
-     ## We don't want the user to see this warning
-     ## echo "*** The pkg-config script could not be found. Make sure it is"
-     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
-     ## echo "*** to the full path to pkg-config."
-     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
-  else
-     PKG_CONFIG_MIN_VERSION=0.9.0
-     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xt" >&5
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for xt" >&5
 $as_echo_n "checking for xt... " >&6; }
 
-        if $PKG_CONFIG --exists "xt" ; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-            succeeded=yes
+if test -n "$XT_CFLAGS"; then
+    pkg_cv_XT_CFLAGS="$XT_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"xt\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "xt") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_XT_CFLAGS=`$PKG_CONFIG --cflags "xt" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$XT_LIBS"; then
+    pkg_cv_XT_LIBS="$XT_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"xt\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "xt") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_XT_LIBS=`$PKG_CONFIG --libs "xt" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking XT_CFLAGS" >&5
-$as_echo_n "checking XT_CFLAGS... " >&6; }
-            XT_CFLAGS=`$PKG_CONFIG --cflags "xt"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XT_CFLAGS" >&5
-$as_echo "$XT_CFLAGS" >&6; }
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking XT_LIBS" >&5
-$as_echo_n "checking XT_LIBS... " >&6; }
-            XT_LIBS=`$PKG_CONFIG --libs "xt"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XT_LIBS" >&5
-$as_echo "$XT_LIBS" >&6; }
+
+if test $pkg_failed = yes; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        XT_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "xt" 2>&1`
         else
-            XT_CFLAGS=""
-            XT_LIBS=""
-            ## If we have a custom action on failure, don't print errors, but
-            ## do set a variable so people can do so.
-            XT_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "xt"`
-            echo $XT_PKG_ERRORS
+	        XT_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "xt" 2>&1`
         fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$XT_PKG_ERRORS" >&5
 
+	as_fn_error $? "Package requirements (xt) were not met:
 
+$XT_PKG_ERRORS
 
-     else
-        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
-        echo "*** See http://www.freedesktop.org/software/pkgconfig"
-     fi
-  fi
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
 
-  if test $succeeded = yes; then
-     :
-  else
-     as_fn_error $? "Library requirements (xt) not met; consider adjusting the PKG_CONFIG_PATH environment variable if your libraries are in a nonstandard prefix so pkg-config can find them." "$LINENO" 5
-  fi
+Alternatively, you may set the environment variables XT_CFLAGS
+and XT_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details." "$LINENO" 5
+elif test $pkg_failed = untried; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
 
+Alternatively, you may set the environment variables XT_CFLAGS
+and XT_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details" "$LINENO" 5; }
+else
+	XT_CFLAGS=$pkg_cv_XT_CFLAGS
+	XT_LIBS=$pkg_cv_XT_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi
   fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lXmu" >&5
@@ -4676,104 +4859,96 @@ fi
 
   if test "$HAVE_LIBXmu" = no; then
 
-  succeeded=no
-
-  if test -z "$PKG_CONFIG"; then
-    # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_PKG_CONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
-  ;;
-esac
-fi
-PKG_CONFIG=$ac_cv_path_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
-$as_echo "$PKG_CONFIG" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  fi
-
-  if test "$PKG_CONFIG" = "no" ; then
-     echo "pkg-config script not be found"
-     ## We don't want the user to see this warning
-     ## echo "*** The pkg-config script could not be found. Make sure it is"
-     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
-     ## echo "*** to the full path to pkg-config."
-     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
-  else
-     PKG_CONFIG_MIN_VERSION=0.9.0
-     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xmu" >&5
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for xmu" >&5
 $as_echo_n "checking for xmu... " >&6; }
 
-        if $PKG_CONFIG --exists "xmu" ; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-            succeeded=yes
+if test -n "$XMU_CFLAGS"; then
+    pkg_cv_XMU_CFLAGS="$XMU_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"xmu\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "xmu") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_XMU_CFLAGS=`$PKG_CONFIG --cflags "xmu" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$XMU_LIBS"; then
+    pkg_cv_XMU_LIBS="$XMU_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"xmu\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "xmu") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_XMU_LIBS=`$PKG_CONFIG --libs "xmu" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking XMU_CFLAGS" >&5
-$as_echo_n "checking XMU_CFLAGS... " >&6; }
-            XMU_CFLAGS=`$PKG_CONFIG --cflags "xmu"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XMU_CFLAGS" >&5
-$as_echo "$XMU_CFLAGS" >&6; }
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking XMU_LIBS" >&5
-$as_echo_n "checking XMU_LIBS... " >&6; }
-            XMU_LIBS=`$PKG_CONFIG --libs "xmu"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XMU_LIBS" >&5
-$as_echo "$XMU_LIBS" >&6; }
+
+if test $pkg_failed = yes; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        XMU_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "xmu" 2>&1`
         else
-            XMU_CFLAGS=""
-            XMU_LIBS=""
-            ## If we have a custom action on failure, don't print errors, but
-            ## do set a variable so people can do so.
-            XMU_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "xmu"`
-            echo $XMU_PKG_ERRORS
+	        XMU_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "xmu" 2>&1`
         fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$XMU_PKG_ERRORS" >&5
 
+	as_fn_error $? "Package requirements (xmu) were not met:
 
+$XMU_PKG_ERRORS
 
-     else
-        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
-        echo "*** See http://www.freedesktop.org/software/pkgconfig"
-     fi
-  fi
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
 
-  if test $succeeded = yes; then
-     :
-  else
-     as_fn_error $? "Library requirements (xmu) not met; consider adjusting the PKG_CONFIG_PATH environment variable if your libraries are in a nonstandard prefix so pkg-config can find them." "$LINENO" 5
-  fi
+Alternatively, you may set the environment variables XMU_CFLAGS
+and XMU_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details." "$LINENO" 5
+elif test $pkg_failed = untried; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
 
+Alternatively, you may set the environment variables XMU_CFLAGS
+and XMU_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details" "$LINENO" 5; }
+else
+	XMU_CFLAGS=$pkg_cv_XMU_CFLAGS
+	XMU_LIBS=$pkg_cv_XMU_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi
   fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XFixesSelectSelectionInput in -lXfixes" >&5
@@ -5040,106 +5215,77 @@ fi
 #--------------------------------------------------------------------
 # Extended font support & UTF8 support
 #--------------------------------------------------------------------
-PKG_XFT=no
 
-  succeeded=no
-
-  if test -z "$PKG_CONFIG"; then
-    # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_PKG_CONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
-  ;;
-esac
-fi
-PKG_CONFIG=$ac_cv_path_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
-$as_echo "$PKG_CONFIG" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  fi
-
-  if test "$PKG_CONFIG" = "no" ; then
-     echo "pkg-config script not be found"
-     ## We don't want the user to see this warning
-     ## echo "*** The pkg-config script could not be found. Make sure it is"
-     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
-     ## echo "*** to the full path to pkg-config."
-     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
-  else
-     PKG_CONFIG_MIN_VERSION=0.9.0
-     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xft" >&5
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for xft" >&5
 $as_echo_n "checking for xft... " >&6; }
 
-        if $PKG_CONFIG --exists "xft" ; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-            succeeded=yes
+if test -n "$XFT_CFLAGS"; then
+    pkg_cv_XFT_CFLAGS="$XFT_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"xft\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "xft") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_XFT_CFLAGS=`$PKG_CONFIG --cflags "xft" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$XFT_LIBS"; then
+    pkg_cv_XFT_LIBS="$XFT_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"xft\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "xft") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_XFT_LIBS=`$PKG_CONFIG --libs "xft" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking XFT_CFLAGS" >&5
-$as_echo_n "checking XFT_CFLAGS... " >&6; }
-            XFT_CFLAGS=`$PKG_CONFIG --cflags "xft"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XFT_CFLAGS" >&5
-$as_echo "$XFT_CFLAGS" >&6; }
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking XFT_LIBS" >&5
-$as_echo_n "checking XFT_LIBS... " >&6; }
-            XFT_LIBS=`$PKG_CONFIG --libs "xft"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XFT_LIBS" >&5
-$as_echo "$XFT_LIBS" >&6; }
+
+if test $pkg_failed = yes; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        XFT_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "xft" 2>&1`
         else
-            XFT_CFLAGS=""
-            XFT_LIBS=""
-            ## If we have a custom action on failure, don't print errors, but
-            ## do set a variable so people can do so.
-            XFT_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "xft"`
-
+	        XFT_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "xft" 2>&1`
         fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$XFT_PKG_ERRORS" >&5
 
-
-
-     else
-        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
-        echo "*** See http://www.freedesktop.org/software/pkgconfig"
-     fi
-  fi
-
-  if test $succeeded = yes; then
-     WITH_XFT=yes
-  else
-     WITH_XFT=no
-  fi
-
+	WITH_XFT=no
+elif test $pkg_failed = untried; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	WITH_XFT=no
+else
+	XFT_CFLAGS=$pkg_cv_XFT_CFLAGS
+	XFT_LIBS=$pkg_cv_XFT_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	WITH_XFT=yes
+fi
 
 if test $WITH_XFT = no; then
   # pkg-config failed for some reason, Check the old way?
@@ -5209,7 +5355,6 @@ fi
   LIBS=${save_LIBS}
 else
   WITH_XFT=yes
-  PKG_XFT=yes
 fi
 
 if test $WITH_XFT = yes; then
@@ -5863,606 +6008,432 @@ fi
 #--------------------------------------------------------------------
 # Cairo graphics libraries
 #--------------------------------------------------------------------
-PKG_CAIRO=no
 
-  succeeded=no
-
-  if test -z "$PKG_CONFIG"; then
-    # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_PKG_CONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
-  ;;
-esac
-fi
-PKG_CONFIG=$ac_cv_path_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
-$as_echo "$PKG_CONFIG" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  fi
-
-  if test "$PKG_CONFIG" = "no" ; then
-     echo "pkg-config script not be found"
-     ## We don't want the user to see this warning
-     ## echo "*** The pkg-config script could not be found. Make sure it is"
-     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
-     ## echo "*** to the full path to pkg-config."
-     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
-  else
-     PKG_CONFIG_MIN_VERSION=0.9.0
-     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cairo" >&5
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for cairo" >&5
 $as_echo_n "checking for cairo... " >&6; }
 
-        if $PKG_CONFIG --exists "cairo" ; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-            succeeded=yes
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking CAIRO_CFLAGS" >&5
-$as_echo_n "checking CAIRO_CFLAGS... " >&6; }
-            CAIRO_CFLAGS=`$PKG_CONFIG --cflags "cairo"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CAIRO_CFLAGS" >&5
-$as_echo "$CAIRO_CFLAGS" >&6; }
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking CAIRO_LIBS" >&5
-$as_echo_n "checking CAIRO_LIBS... " >&6; }
-            CAIRO_LIBS=`$PKG_CONFIG --libs "cairo"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CAIRO_LIBS" >&5
-$as_echo "$CAIRO_LIBS" >&6; }
-        else
-            CAIRO_CFLAGS=""
-            CAIRO_LIBS=""
-            ## If we have a custom action on failure, don't print errors, but
-            ## do set a variable so people can do so.
-            CAIRO_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "cairo"`
-
-        fi
-
-
-
-     else
-        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
-        echo "*** See http://www.freedesktop.org/software/pkgconfig"
-     fi
-  fi
-
-  if test $succeeded = yes; then
-     have_cairo=yes
-  else
-     have_cairo=no
-  fi
-
-PKG_CAIRO_FT=no
-
-  succeeded=no
-
-  if test -z "$PKG_CONFIG"; then
-    # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_PKG_CONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
+if test -n "$CAIRO_CFLAGS"; then
+    pkg_cv_CAIRO_CFLAGS="$CAIRO_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"cairo\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "cairo") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CAIRO_CFLAGS=`$PKG_CONFIG --cflags "cairo" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
-  case $PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
-  ;;
-esac
+  pkg_failed=yes
 fi
-PKG_CONFIG=$ac_cv_path_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
-$as_echo "$PKG_CONFIG" >&6; }
+ else
+    pkg_failed=untried
+fi
+if test -n "$CAIRO_LIBS"; then
+    pkg_cv_CAIRO_LIBS="$CAIRO_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"cairo\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "cairo") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CAIRO_LIBS=`$PKG_CONFIG --libs "cairo" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CAIRO_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "cairo" 2>&1`
+        else
+	        CAIRO_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "cairo" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CAIRO_PKG_ERRORS" >&5
+
+	have_cairo=no
+elif test $pkg_failed = untried; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	have_cairo=no
+else
+	CAIRO_CFLAGS=$pkg_cv_CAIRO_CFLAGS
+	CAIRO_LIBS=$pkg_cv_CAIRO_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_cairo=yes
 fi
 
-
-  fi
-
-  if test "$PKG_CONFIG" = "no" ; then
-     echo "pkg-config script not be found"
-     ## We don't want the user to see this warning
-     ## echo "*** The pkg-config script could not be found. Make sure it is"
-     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
-     ## echo "*** to the full path to pkg-config."
-     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
-  else
-     PKG_CONFIG_MIN_VERSION=0.9.0
-     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cairo-ft" >&5
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for cairo-ft" >&5
 $as_echo_n "checking for cairo-ft... " >&6; }
 
-        if $PKG_CONFIG --exists "cairo-ft" ; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-            succeeded=yes
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking CAIRO_FT_CFLAGS" >&5
-$as_echo_n "checking CAIRO_FT_CFLAGS... " >&6; }
-            CAIRO_FT_CFLAGS=`$PKG_CONFIG --cflags "cairo-ft"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CAIRO_FT_CFLAGS" >&5
-$as_echo "$CAIRO_FT_CFLAGS" >&6; }
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking CAIRO_FT_LIBS" >&5
-$as_echo_n "checking CAIRO_FT_LIBS... " >&6; }
-            CAIRO_FT_LIBS=`$PKG_CONFIG --libs "cairo-ft"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CAIRO_FT_LIBS" >&5
-$as_echo "$CAIRO_FT_LIBS" >&6; }
-        else
-            CAIRO_FT_CFLAGS=""
-            CAIRO_FT_LIBS=""
-            ## If we have a custom action on failure, don't print errors, but
-            ## do set a variable so people can do so.
-            CAIRO_FT_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "cairo-ft"`
-
-        fi
-
-
-
-     else
-        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
-        echo "*** See http://www.freedesktop.org/software/pkgconfig"
-     fi
-  fi
-
-  if test $succeeded = yes; then
-     have_cairo_ft=yes
-  else
-     have_cairo_ft=no
-  fi
-
-PKG_CAIRO_XLIB=no
-
-  succeeded=no
-
-  if test -z "$PKG_CONFIG"; then
-    # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_PKG_CONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
+if test -n "$CAIRO_FT_CFLAGS"; then
+    pkg_cv_CAIRO_FT_CFLAGS="$CAIRO_FT_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"cairo-ft\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "cairo-ft") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CAIRO_FT_CFLAGS=`$PKG_CONFIG --cflags "cairo-ft" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
-  case $PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
-  ;;
-esac
+  pkg_failed=yes
 fi
-PKG_CONFIG=$ac_cv_path_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
-$as_echo "$PKG_CONFIG" >&6; }
+ else
+    pkg_failed=untried
+fi
+if test -n "$CAIRO_FT_LIBS"; then
+    pkg_cv_CAIRO_FT_LIBS="$CAIRO_FT_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"cairo-ft\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "cairo-ft") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CAIRO_FT_LIBS=`$PKG_CONFIG --libs "cairo-ft" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CAIRO_FT_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "cairo-ft" 2>&1`
+        else
+	        CAIRO_FT_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "cairo-ft" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CAIRO_FT_PKG_ERRORS" >&5
+
+	have_cairo_ft=no
+elif test $pkg_failed = untried; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	have_cairo_ft=no
+else
+	CAIRO_FT_CFLAGS=$pkg_cv_CAIRO_FT_CFLAGS
+	CAIRO_FT_LIBS=$pkg_cv_CAIRO_FT_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_cairo_ft=yes
 fi
 
-
-  fi
-
-  if test "$PKG_CONFIG" = "no" ; then
-     echo "pkg-config script not be found"
-     ## We don't want the user to see this warning
-     ## echo "*** The pkg-config script could not be found. Make sure it is"
-     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
-     ## echo "*** to the full path to pkg-config."
-     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
-  else
-     PKG_CONFIG_MIN_VERSION=0.9.0
-     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cairo-xlib" >&5
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for cairo-xlib" >&5
 $as_echo_n "checking for cairo-xlib... " >&6; }
 
-        if $PKG_CONFIG --exists "cairo-xlib" ; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-            succeeded=yes
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking CAIRO_XLIB_CFLAGS" >&5
-$as_echo_n "checking CAIRO_XLIB_CFLAGS... " >&6; }
-            CAIRO_XLIB_CFLAGS=`$PKG_CONFIG --cflags "cairo-xlib"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CAIRO_XLIB_CFLAGS" >&5
-$as_echo "$CAIRO_XLIB_CFLAGS" >&6; }
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking CAIRO_XLIB_LIBS" >&5
-$as_echo_n "checking CAIRO_XLIB_LIBS... " >&6; }
-            CAIRO_XLIB_LIBS=`$PKG_CONFIG --libs "cairo-xlib"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CAIRO_XLIB_LIBS" >&5
-$as_echo "$CAIRO_XLIB_LIBS" >&6; }
-        else
-            CAIRO_XLIB_CFLAGS=""
-            CAIRO_XLIB_LIBS=""
-            ## If we have a custom action on failure, don't print errors, but
-            ## do set a variable so people can do so.
-            CAIRO_XLIB_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "cairo-xlib"`
-
-        fi
-
-
-
-     else
-        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
-        echo "*** See http://www.freedesktop.org/software/pkgconfig"
-     fi
-  fi
-
-  if test $succeeded = yes; then
-     have_cairo_xlib=yes
-  else
-     have_cairo_xlib=no
-  fi
-
-PKG_CAIRO_WIN32=no
-
-  succeeded=no
-
-  if test -z "$PKG_CONFIG"; then
-    # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_PKG_CONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
+if test -n "$CAIRO_XLIB_CFLAGS"; then
+    pkg_cv_CAIRO_XLIB_CFLAGS="$CAIRO_XLIB_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"cairo-xlib\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "cairo-xlib") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CAIRO_XLIB_CFLAGS=`$PKG_CONFIG --cflags "cairo-xlib" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
-  case $PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
-  ;;
-esac
+  pkg_failed=yes
 fi
-PKG_CONFIG=$ac_cv_path_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
-$as_echo "$PKG_CONFIG" >&6; }
+ else
+    pkg_failed=untried
+fi
+if test -n "$CAIRO_XLIB_LIBS"; then
+    pkg_cv_CAIRO_XLIB_LIBS="$CAIRO_XLIB_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"cairo-xlib\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "cairo-xlib") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CAIRO_XLIB_LIBS=`$PKG_CONFIG --libs "cairo-xlib" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CAIRO_XLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "cairo-xlib" 2>&1`
+        else
+	        CAIRO_XLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "cairo-xlib" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CAIRO_XLIB_PKG_ERRORS" >&5
+
+	have_cairo_xlib=no
+elif test $pkg_failed = untried; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	have_cairo_xlib=no
+else
+	CAIRO_XLIB_CFLAGS=$pkg_cv_CAIRO_XLIB_CFLAGS
+	CAIRO_XLIB_LIBS=$pkg_cv_CAIRO_XLIB_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_cairo_xlib=yes
 fi
 
-
-  fi
-
-  if test "$PKG_CONFIG" = "no" ; then
-     echo "pkg-config script not be found"
-     ## We don't want the user to see this warning
-     ## echo "*** The pkg-config script could not be found. Make sure it is"
-     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
-     ## echo "*** to the full path to pkg-config."
-     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
-  else
-     PKG_CONFIG_MIN_VERSION=0.9.0
-     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cairo-win32" >&5
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for cairo-win32" >&5
 $as_echo_n "checking for cairo-win32... " >&6; }
 
-        if $PKG_CONFIG --exists "cairo-win32" ; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-            succeeded=yes
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking CAIRO_WIN32_CFLAGS" >&5
-$as_echo_n "checking CAIRO_WIN32_CFLAGS... " >&6; }
-            CAIRO_WIN32_CFLAGS=`$PKG_CONFIG --cflags "cairo-win32"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CAIRO_WIN32_CFLAGS" >&5
-$as_echo "$CAIRO_WIN32_CFLAGS" >&6; }
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking CAIRO_WIN32_LIBS" >&5
-$as_echo_n "checking CAIRO_WIN32_LIBS... " >&6; }
-            CAIRO_WIN32_LIBS=`$PKG_CONFIG --libs "cairo-win32"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CAIRO_WIN32_LIBS" >&5
-$as_echo "$CAIRO_WIN32_LIBS" >&6; }
-        else
-            CAIRO_WIN32_CFLAGS=""
-            CAIRO_WIN32_LIBS=""
-            ## If we have a custom action on failure, don't print errors, but
-            ## do set a variable so people can do so.
-            CAIRO_WIN32_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "cairo-win32"`
-
-        fi
-
-
-
-     else
-        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
-        echo "*** See http://www.freedesktop.org/software/pkgconfig"
-     fi
-  fi
-
-  if test $succeeded = yes; then
-     have_cairo_win32=yes
-  else
-     have_cairo_win32=no
-  fi
-
-PKG_CAIRO_GLITZ=no
-
-  succeeded=no
-
-  if test -z "$PKG_CONFIG"; then
-    # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_PKG_CONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
+if test -n "$CAIRO_WIN32_CFLAGS"; then
+    pkg_cv_CAIRO_WIN32_CFLAGS="$CAIRO_WIN32_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"cairo-win32\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "cairo-win32") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CAIRO_WIN32_CFLAGS=`$PKG_CONFIG --cflags "cairo-win32" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
-  case $PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
-  ;;
-esac
+  pkg_failed=yes
 fi
-PKG_CONFIG=$ac_cv_path_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
-$as_echo "$PKG_CONFIG" >&6; }
+ else
+    pkg_failed=untried
+fi
+if test -n "$CAIRO_WIN32_LIBS"; then
+    pkg_cv_CAIRO_WIN32_LIBS="$CAIRO_WIN32_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"cairo-win32\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "cairo-win32") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CAIRO_WIN32_LIBS=`$PKG_CONFIG --libs "cairo-win32" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CAIRO_WIN32_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "cairo-win32" 2>&1`
+        else
+	        CAIRO_WIN32_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "cairo-win32" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CAIRO_WIN32_PKG_ERRORS" >&5
+
+	have_cairo_win32=no
+elif test $pkg_failed = untried; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	have_cairo_win32=no
+else
+	CAIRO_WIN32_CFLAGS=$pkg_cv_CAIRO_WIN32_CFLAGS
+	CAIRO_WIN32_LIBS=$pkg_cv_CAIRO_WIN32_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_cairo_win32=yes
 fi
 
-
-  fi
-
-  if test "$PKG_CONFIG" = "no" ; then
-     echo "pkg-config script not be found"
-     ## We don't want the user to see this warning
-     ## echo "*** The pkg-config script could not be found. Make sure it is"
-     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
-     ## echo "*** to the full path to pkg-config."
-     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
-  else
-     PKG_CONFIG_MIN_VERSION=0.9.0
-     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cairo-glitz" >&5
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for cairo-glitz" >&5
 $as_echo_n "checking for cairo-glitz... " >&6; }
 
-        if $PKG_CONFIG --exists "cairo-glitz" ; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-            succeeded=yes
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking CAIRO_GLITZ_CFLAGS" >&5
-$as_echo_n "checking CAIRO_GLITZ_CFLAGS... " >&6; }
-            CAIRO_GLITZ_CFLAGS=`$PKG_CONFIG --cflags "cairo-glitz"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CAIRO_GLITZ_CFLAGS" >&5
-$as_echo "$CAIRO_GLITZ_CFLAGS" >&6; }
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking CAIRO_GLITZ_LIBS" >&5
-$as_echo_n "checking CAIRO_GLITZ_LIBS... " >&6; }
-            CAIRO_GLITZ_LIBS=`$PKG_CONFIG --libs "cairo-glitz"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CAIRO_GLITZ_LIBS" >&5
-$as_echo "$CAIRO_GLITZ_LIBS" >&6; }
-        else
-            CAIRO_GLITZ_CFLAGS=""
-            CAIRO_GLITZ_LIBS=""
-            ## If we have a custom action on failure, don't print errors, but
-            ## do set a variable so people can do so.
-            CAIRO_GLITZ_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "cairo-glitz"`
-
-        fi
-
-
-
-     else
-        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
-        echo "*** See http://www.freedesktop.org/software/pkgconfig"
-     fi
-  fi
-
-  if test $succeeded = yes; then
-     have_cairo_glitz=yes
-  else
-     have_cairo_glitz=no
-  fi
-
-PKG_FONTCONFIG=no
-
-  succeeded=no
-
-  if test -z "$PKG_CONFIG"; then
-    # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_PKG_CONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
+if test -n "$CAIRO_GLITZ_CFLAGS"; then
+    pkg_cv_CAIRO_GLITZ_CFLAGS="$CAIRO_GLITZ_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"cairo-glitz\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "cairo-glitz") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CAIRO_GLITZ_CFLAGS=`$PKG_CONFIG --cflags "cairo-glitz" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
-  case $PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
-  ;;
-esac
+  pkg_failed=yes
 fi
-PKG_CONFIG=$ac_cv_path_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
-$as_echo "$PKG_CONFIG" >&6; }
+ else
+    pkg_failed=untried
+fi
+if test -n "$CAIRO_GLITZ_LIBS"; then
+    pkg_cv_CAIRO_GLITZ_LIBS="$CAIRO_GLITZ_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"cairo-glitz\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "cairo-glitz") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_CAIRO_GLITZ_LIBS=`$PKG_CONFIG --libs "cairo-glitz" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        CAIRO_GLITZ_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "cairo-glitz" 2>&1`
+        else
+	        CAIRO_GLITZ_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "cairo-glitz" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$CAIRO_GLITZ_PKG_ERRORS" >&5
+
+	have_cairo_glitz=no
+elif test $pkg_failed = untried; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	have_cairo_glitz=no
+else
+	CAIRO_GLITZ_CFLAGS=$pkg_cv_CAIRO_GLITZ_CFLAGS
+	CAIRO_GLITZ_LIBS=$pkg_cv_CAIRO_GLITZ_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_cairo_glitz=yes
 fi
 
-
-  fi
-
-  if test "$PKG_CONFIG" = "no" ; then
-     echo "pkg-config script not be found"
-     ## We don't want the user to see this warning
-     ## echo "*** The pkg-config script could not be found. Make sure it is"
-     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
-     ## echo "*** to the full path to pkg-config."
-     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
-  else
-     PKG_CONFIG_MIN_VERSION=0.9.0
-     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fontconfig" >&5
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for fontconfig" >&5
 $as_echo_n "checking for fontconfig... " >&6; }
 
-        if $PKG_CONFIG --exists "fontconfig" ; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-            succeeded=yes
+if test -n "$FONTCONFIG_CFLAGS"; then
+    pkg_cv_FONTCONFIG_CFLAGS="$FONTCONFIG_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"fontconfig\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "fontconfig") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_FONTCONFIG_CFLAGS=`$PKG_CONFIG --cflags "fontconfig" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$FONTCONFIG_LIBS"; then
+    pkg_cv_FONTCONFIG_LIBS="$FONTCONFIG_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"fontconfig\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "fontconfig") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_FONTCONFIG_LIBS=`$PKG_CONFIG --libs "fontconfig" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking FONTCONFIG_CFLAGS" >&5
-$as_echo_n "checking FONTCONFIG_CFLAGS... " >&6; }
-            FONTCONFIG_CFLAGS=`$PKG_CONFIG --cflags "fontconfig"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FONTCONFIG_CFLAGS" >&5
-$as_echo "$FONTCONFIG_CFLAGS" >&6; }
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking FONTCONFIG_LIBS" >&5
-$as_echo_n "checking FONTCONFIG_LIBS... " >&6; }
-            FONTCONFIG_LIBS=`$PKG_CONFIG --libs "fontconfig"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FONTCONFIG_LIBS" >&5
-$as_echo "$FONTCONFIG_LIBS" >&6; }
+
+if test $pkg_failed = yes; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        FONTCONFIG_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "fontconfig" 2>&1`
         else
-            FONTCONFIG_CFLAGS=""
-            FONTCONFIG_LIBS=""
-            ## If we have a custom action on failure, don't print errors, but
-            ## do set a variable so people can do so.
-            FONTCONFIG_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "fontconfig"`
-
+	        FONTCONFIG_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "fontconfig" 2>&1`
         fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$FONTCONFIG_PKG_ERRORS" >&5
 
-
-
-     else
-        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
-        echo "*** See http://www.freedesktop.org/software/pkgconfig"
-     fi
-  fi
-
-  if test $succeeded = yes; then
-     have_fontconfig=yes
-  else
-     have_fontconfig=no
-  fi
-
+	have_fontconfig=no
+elif test $pkg_failed = untried; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	have_fontconfig=no
+else
+	FONTCONFIG_CFLAGS=$pkg_cv_FONTCONFIG_CFLAGS
+	FONTCONFIG_LIBS=$pkg_cv_FONTCONFIG_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_fontconfig=yes
+fi
 
 if test "$have_cairo" = no; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cairo_create in -lcairo" >&5
@@ -6696,104 +6667,76 @@ fi
 
 if test "x$enable_glitz" = "xyes"; then
 
-  succeeded=no
-
-  if test -z "$PKG_CONFIG"; then
-    # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_PKG_CONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
-  ;;
-esac
-fi
-PKG_CONFIG=$ac_cv_path_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
-$as_echo "$PKG_CONFIG" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  fi
-
-  if test "$PKG_CONFIG" = "no" ; then
-     echo "pkg-config script not be found"
-     ## We don't want the user to see this warning
-     ## echo "*** The pkg-config script could not be found. Make sure it is"
-     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
-     ## echo "*** to the full path to pkg-config."
-     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
-  else
-     PKG_CONFIG_MIN_VERSION=0.9.0
-     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for glitz" >&5
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for glitz" >&5
 $as_echo_n "checking for glitz... " >&6; }
 
-        if $PKG_CONFIG --exists "glitz" ; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-            succeeded=yes
+if test -n "$GLITZ_CFLAGS"; then
+    pkg_cv_GLITZ_CFLAGS="$GLITZ_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glitz\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "glitz") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GLITZ_CFLAGS=`$PKG_CONFIG --cflags "glitz" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$GLITZ_LIBS"; then
+    pkg_cv_GLITZ_LIBS="$GLITZ_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glitz\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "glitz") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GLITZ_LIBS=`$PKG_CONFIG --libs "glitz" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking GLITZ_CFLAGS" >&5
-$as_echo_n "checking GLITZ_CFLAGS... " >&6; }
-            GLITZ_CFLAGS=`$PKG_CONFIG --cflags "glitz"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GLITZ_CFLAGS" >&5
-$as_echo "$GLITZ_CFLAGS" >&6; }
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking GLITZ_LIBS" >&5
-$as_echo_n "checking GLITZ_LIBS... " >&6; }
-            GLITZ_LIBS=`$PKG_CONFIG --libs "glitz"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GLITZ_LIBS" >&5
-$as_echo "$GLITZ_LIBS" >&6; }
+
+if test $pkg_failed = yes; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        GLITZ_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "glitz" 2>&1`
         else
-            GLITZ_CFLAGS=""
-            GLITZ_LIBS=""
-            ## If we have a custom action on failure, don't print errors, but
-            ## do set a variable so people can do so.
-            GLITZ_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "glitz"`
-
+	        GLITZ_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "glitz" 2>&1`
         fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$GLITZ_PKG_ERRORS" >&5
 
-
-
-     else
-        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
-        echo "*** See http://www.freedesktop.org/software/pkgconfig"
-     fi
-  fi
-
-  if test $succeeded = yes; then
-     have_glitz=yes
-  else
-     have_glitz=no
-  fi
-
+	have_glitz=no
+elif test $pkg_failed = untried; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	have_glitz=no
+else
+	GLITZ_CFLAGS=$pkg_cv_GLITZ_CFLAGS
+	GLITZ_LIBS=$pkg_cv_GLITZ_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_glitz=yes
+fi
   save_CPPFLAGS=$CPPFLAGS
     CPPFLAGS="$CPPFLAGS $GLITZ_CFLAGS"
     ac_fn_c_check_header_mongrel "$LINENO" "glitz.h" "ac_cv_header_glitz_h" "$ac_includes_default"
@@ -6809,104 +6752,76 @@ fi
 
     if test "x$WITH_GLX" = "xyes"; then
 
-  succeeded=no
-
-  if test -z "$PKG_CONFIG"; then
-    # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_PKG_CONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
-  ;;
-esac
-fi
-PKG_CONFIG=$ac_cv_path_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
-$as_echo "$PKG_CONFIG" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  fi
-
-  if test "$PKG_CONFIG" = "no" ; then
-     echo "pkg-config script not be found"
-     ## We don't want the user to see this warning
-     ## echo "*** The pkg-config script could not be found. Make sure it is"
-     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
-     ## echo "*** to the full path to pkg-config."
-     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
-  else
-     PKG_CONFIG_MIN_VERSION=0.9.0
-     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for glitz-glx" >&5
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for glitz-glx" >&5
 $as_echo_n "checking for glitz-glx... " >&6; }
 
-        if $PKG_CONFIG --exists "glitz-glx" ; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-            succeeded=yes
+if test -n "$GLITZ_GLX_CFLAGS"; then
+    pkg_cv_GLITZ_GLX_CFLAGS="$GLITZ_GLX_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glitz-glx\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "glitz-glx") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GLITZ_GLX_CFLAGS=`$PKG_CONFIG --cflags "glitz-glx" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$GLITZ_GLX_LIBS"; then
+    pkg_cv_GLITZ_GLX_LIBS="$GLITZ_GLX_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glitz-glx\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "glitz-glx") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GLITZ_GLX_LIBS=`$PKG_CONFIG --libs "glitz-glx" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking GLITZ_GLX_CFLAGS" >&5
-$as_echo_n "checking GLITZ_GLX_CFLAGS... " >&6; }
-            GLITZ_GLX_CFLAGS=`$PKG_CONFIG --cflags "glitz-glx"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GLITZ_GLX_CFLAGS" >&5
-$as_echo "$GLITZ_GLX_CFLAGS" >&6; }
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking GLITZ_GLX_LIBS" >&5
-$as_echo_n "checking GLITZ_GLX_LIBS... " >&6; }
-            GLITZ_GLX_LIBS=`$PKG_CONFIG --libs "glitz-glx"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GLITZ_GLX_LIBS" >&5
-$as_echo "$GLITZ_GLX_LIBS" >&6; }
+
+if test $pkg_failed = yes; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        GLITZ_GLX_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "glitz-glx" 2>&1`
         else
-            GLITZ_GLX_CFLAGS=""
-            GLITZ_GLX_LIBS=""
-            ## If we have a custom action on failure, don't print errors, but
-            ## do set a variable so people can do so.
-            GLITZ_GLX_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "glitz-glx"`
-
+	        GLITZ_GLX_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "glitz-glx" 2>&1`
         fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$GLITZ_GLX_PKG_ERRORS" >&5
 
-
-
-     else
-        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
-        echo "*** See http://www.freedesktop.org/software/pkgconfig"
-     fi
-  fi
-
-  if test $succeeded = yes; then
-     have_glitz_glx=yes
-  else
-     have_glitz_glx=no
-  fi
-
+	have_glitz_glx=no
+elif test $pkg_failed = untried; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	have_glitz_glx=no
+else
+	GLITZ_GLX_CFLAGS=$pkg_cv_GLITZ_GLX_CFLAGS
+	GLITZ_GLX_LIBS=$pkg_cv_GLITZ_GLX_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_glitz_glx=yes
+fi
       save_CPPFLAGS=$CPPFLAGS
         CPPFLAGS="$CPPFLAGS $GLITZ_GLX_CFLAGS"
         ac_fn_c_check_header_mongrel "$LINENO" "glitz-glx.h" "ac_cv_header_glitz_glx_h" "$ac_includes_default"
@@ -6930,104 +6845,76 @@ $as_echo "#define HAVE_GLITZ_GLX 1" >>confdefs.h
 
     if test "x$WITH_WGL" = "xyes"; then
 
-  succeeded=no
-
-  if test -z "$PKG_CONFIG"; then
-    # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_PKG_CONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
-  ;;
-esac
-fi
-PKG_CONFIG=$ac_cv_path_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
-$as_echo "$PKG_CONFIG" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  fi
-
-  if test "$PKG_CONFIG" = "no" ; then
-     echo "pkg-config script not be found"
-     ## We don't want the user to see this warning
-     ## echo "*** The pkg-config script could not be found. Make sure it is"
-     ## echo "*** in your path, or set the PKG_CONFIG environment variable"
-     ## echo "*** to the full path to pkg-config."
-     ## echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
-  else
-     PKG_CONFIG_MIN_VERSION=0.9.0
-     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for glitz-wgl" >&5
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for glitz-wgl" >&5
 $as_echo_n "checking for glitz-wgl... " >&6; }
 
-        if $PKG_CONFIG --exists "glitz-wgl" ; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-            succeeded=yes
+if test -n "$GLITZ_WGL_CFLAGS"; then
+    pkg_cv_GLITZ_WGL_CFLAGS="$GLITZ_WGL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glitz-wgl\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "glitz-wgl") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GLITZ_WGL_CFLAGS=`$PKG_CONFIG --cflags "glitz-wgl" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$GLITZ_WGL_LIBS"; then
+    pkg_cv_GLITZ_WGL_LIBS="$GLITZ_WGL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glitz-wgl\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "glitz-wgl") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GLITZ_WGL_LIBS=`$PKG_CONFIG --libs "glitz-wgl" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking GLITZ_WGL_CFLAGS" >&5
-$as_echo_n "checking GLITZ_WGL_CFLAGS... " >&6; }
-            GLITZ_WGL_CFLAGS=`$PKG_CONFIG --cflags "glitz-wgl"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GLITZ_WGL_CFLAGS" >&5
-$as_echo "$GLITZ_WGL_CFLAGS" >&6; }
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking GLITZ_WGL_LIBS" >&5
-$as_echo_n "checking GLITZ_WGL_LIBS... " >&6; }
-            GLITZ_WGL_LIBS=`$PKG_CONFIG --libs "glitz-wgl"`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GLITZ_WGL_LIBS" >&5
-$as_echo "$GLITZ_WGL_LIBS" >&6; }
+
+if test $pkg_failed = yes; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        GLITZ_WGL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "glitz-wgl" 2>&1`
         else
-            GLITZ_WGL_CFLAGS=""
-            GLITZ_WGL_LIBS=""
-            ## If we have a custom action on failure, don't print errors, but
-            ## do set a variable so people can do so.
-            GLITZ_WGL_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "glitz-wgl"`
-
+	        GLITZ_WGL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "glitz-wgl" 2>&1`
         fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$GLITZ_WGL_PKG_ERRORS" >&5
 
-
-
-     else
-        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
-        echo "*** See http://www.freedesktop.org/software/pkgconfig"
-     fi
-  fi
-
-  if test $succeeded = yes; then
-     have_glitz_wgl=yes
-  else
-     have_glitz_wgl=no
-  fi
-
+	have_glitz_wgl=no
+elif test $pkg_failed = untried; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	have_glitz_wgl=no
+else
+	GLITZ_WGL_CFLAGS=$pkg_cv_GLITZ_WGL_CFLAGS
+	GLITZ_WGL_LIBS=$pkg_cv_GLITZ_WGL_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_glitz_wgl=yes
+fi
       save_CPPFLAGS=$CPPFLAGS
         CPPFLAGS="$CPPFLAGS $GLITZ_WGL_CFLAGS"
         ac_fn_c_check_header_mongrel "$LINENO" "glitz-wgl.h" "ac_cv_header_glitz_wgl_h" "$ac_includes_default"

@@ -1,3 +1,10 @@
+2018-01-03  Yavor Doganov  <yavor@gnu.org>
+
+	* pkg.m4: Update to serial 12.
+	* configure.ac: Use PKG_PROG_PKG_CONFIG to detect pkg-config.
+	Remove all PKG_* shell variables.
+	* configure: Regenerate.
+
 2018-01-01  Ivan Vucica <ivan@vucica.net>
 
 	* ANNOUNCE
