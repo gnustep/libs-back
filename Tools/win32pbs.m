@@ -28,7 +28,9 @@
 */
 
 /* Access Windows 2000 (and later) API.  Required for HWND_MESSAGE.  */
+#if !defined(WINVER)
 #define WINVER 0x500
+#endif
 
 #include <Foundation/Foundation.h>
 #include <Foundation/NSUserDefaults.h>
@@ -359,10 +361,17 @@ LRESULT CALLBACK MainWndPbsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                   watcher: (id<RunLoopEvents>)self
                   forMode: mode];
 #else 
+  // Disable runloop watching if compiling for in-app standalone use...
+#if defined(IN_APP_PASTEBOARD_SERVER)
+#warning disabling runloop watcher for gpbs
+#else
+#warning enabling runloop watcher for gpbs
   [currentRunLoop addEvent: (void*)0
-                  type: ET_WINMSG
-                  watcher: (id<RunLoopEvents>)self
-                  forMode: mode];
+                      type: ET_WINMSG
+                   watcher: (id<RunLoopEvents>)self
+                   forMode: mode];
+
+#endif
 #endif
 }
 

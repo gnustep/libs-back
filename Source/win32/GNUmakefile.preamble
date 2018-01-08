@@ -28,13 +28,13 @@
 #
 
 # Additional flags to pass to the preprocessor
-ADDITIONAL_CPPFLAGS += -Wall $(CONFIG_SYSTEM_DEFS)
+ADDITIONAL_CPPFLAGS += -Wall $(CONFIG_SYSTEM_DEFS) -DIN_APP_PASTEBOARD_SERVER
 
 # Additional flags to pass to the Objective-C compiler
-ADDITIONAL_OBJCFLAGS = -DWINVER=0x0500 
+ADDITIONAL_OBJCFLAGS = -DWINVER=0x0500 -DIN_APP_PASTEBOARD_SERVER
 
 # Additional flags to pass to the C compiler
-ADDITIONAL_CFLAGS = -DWINVER=0x0500
+ADDITIONAL_CFLAGS = -DWINVER=0x0500 -DIN_APP_PASTEBOARD_SERVER
 
 # Additional include directories the compiler should search
 ADDITIONAL_INCLUDE_DIRS += -I../../Headers \
