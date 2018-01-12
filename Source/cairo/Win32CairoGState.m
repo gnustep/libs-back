@@ -67,6 +67,7 @@ POINT GSWindowPointToMS(GSGState *s, NSPoint p)
 
 - (HDC) getHDC
 {
+  NSDebugMLLog(@"Win32CairoGState", @"self: %p path: %@ _lastpath: %@", self, path, _lastPath);
   if (_surface)
     {
       cairo_surface_flush([_surface surface]);
@@ -103,6 +104,7 @@ POINT GSWindowPointToMS(GSGState *s, NSPoint p)
 
 - (void) releaseHDC: (HDC)hdc
 {
+  NSDebugMLLog(@"Win32CairoGState", @"self: %p path: %@ _lastpath: %@", self, path, _lastPath);
   if (hdc && _surface)
     {
       if (hdc != cairo_win32_surface_get_dc([_surface surface]))
@@ -126,7 +128,8 @@ POINT GSWindowPointToMS(GSGState *s, NSPoint p)
   {
     return;
   }
-  
+  NSDebugMLLog(@"Win32CairoGState", @"self: %p path: %@ _lastpath: %@", self, path, _lastPath);
+
   if (_lastPath == nil)
   {
     return;
@@ -181,11 +184,14 @@ POINT GSWindowPointToMS(GSGState *s, NSPoint p)
   }
   
   // Clear the used clip path...
-  DESTROY(_lastPath);
+  // TESTPLANT-MAL-01122018: modified to keep the last path in case
+  // the HDC is used again with the current clipping context...
+  //DESTROY(_lastPath);
 }
 
 - (void) DPSinitclip
 {
+  NSDebugMLLog(@"Win32CairoGState", @"self: %p path: %@ _lastpath: %@", self, path, _lastPath);
   // Destroy any clipping path we're holding...
   DESTROY(_lastPath);
   
@@ -197,6 +203,7 @@ POINT GSWindowPointToMS(GSGState *s, NSPoint p)
 {
   // Invoke super...
   [super DPSclip];
+  NSDebugMLLog(@"Win32CairoGState", @"self: %p path: %@ _lastpath: %@", self, path, _lastPath);
   
   // Keep a copy for ourselves for theme drawing directly to HDC...
   if (_lastPath == nil)
