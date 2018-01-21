@@ -1,3 +1,8 @@
+2018-01-21  Yavor Doganov  <yavor@gnu.org>
+
+	* configure.ac: Add FREETYPE_LIBS to LIBS when building xlib.
+	* configure: Regenerate
+
 2018-01-20  Yavor Doganov  <yavor@gnu.org>
 
 	* configure.ac: Detect freetype with PKG_CHECK_MODULES.

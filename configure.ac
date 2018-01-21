@@ -666,7 +666,7 @@ elif test x"$BUILD_GRAPHICS" = "xart"; then
     CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xxlib"; then
- : # Nothing to do
+ LIBS="$FREETYPE_LIBS $LIBS"
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
  : # Nothing to do
 elif test x"$BUILD_GRAPHICS" = "xopal"; then
