@@ -1,3 +1,8 @@
+2018-01-20  Yavor Doganov  <yavor@gnu.org>
+
+	* configure.ac: Detect freetype with PKG_CHECK_MODULES.
+	* configure: Regenerate.
+
 2018-01-03  Yavor Doganov  <yavor@gnu.org>
 
 	* pkg.m4: Update to serial 12.

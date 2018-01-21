@@ -260,8 +260,7 @@ AC_ARG_WITH(freetype,
 
 have_freetype=no
 if test $with_freetype = yes; then
-  FREETYPE_LIBS="`freetype-config --libs`"
-  FREETYPE_CFLAGS="`freetype-config --cflags`"
+  PKG_CHECK_MODULES([FREETYPE], [freetype2])
 
   if test x"$FREETYPE_LIBS" != x; then
     save_CPPFLAGS=${CPPFLAGS}
