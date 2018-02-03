@@ -707,6 +707,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -819,6 +820,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE}'
@@ -1071,6 +1073,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1208,7 +1219,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1361,6 +1372,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1401,7 +1413,7 @@ Optional Features:
   --disable-xim           Disable XIM support
   --disable-wgl           Disable WGL support
   --enable-glitz          Enable Glitz support
-  --enable-server=SRV     Build server type: x11, win32
+  --enable-server=SRV     Build server type: x11, win32, wayland
   --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal
 
 Optional Packages:
@@ -7159,6 +7171,8 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
 $as_echo "$as_me: WARNING: can't find freetype, required for graphics=cairo" >&2;}
     if test $BUILD_SERVER = win32; then
       BUILD_GRAPHICS=winlib
+    elif test $BUILD_SERVER = wayland; then
+      as_fn_error $? "wayland backend requires cairo" "$LINENO" 5
     else
       BUILD_GRAPHICS=xlib
     fi
@@ -7169,6 +7183,8 @@ $as_echo "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
 $as_echo "$as_me: WARNING: can't find cairo, required for graphics=cairo!" >&2;}
     if test $BUILD_SERVER = win32; then
       BUILD_GRAPHICS=winlib
+    elif test $BUILD_SERVER = wayland; then
+      as_fn_error $? "wayland backend requires cairo" "$LINENO" 5
     else
       BUILD_GRAPHICS=art
     fi
@@ -7232,6 +7248,132 @@ $as_echo "winlib" >&6; }
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS"
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: xlib" >&5
 $as_echo "xlib" >&6; }
+    elif test $BUILD_SERVER = wayland; then
+      for ac_header in wayland-util.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "wayland-util.h" "ac_cv_header_wayland_util_h" "$ac_includes_default"
+if test "x$ac_cv_header_wayland_util_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_WAYLAND_UTIL_H 1
+_ACEOF
+
+else
+  as_fn_error $? "**** No wayland-util.h. Install libwayland-dev or equivalent." "$LINENO" 5
+fi
+
+done
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for wl_display_flush in -lwayland-client" >&5
+$as_echo_n "checking for wl_display_flush in -lwayland-client... " >&6; }
+if ${ac_cv_lib_wayland_client_wl_display_flush+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lwayland-client  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char wl_display_flush ();
+int
+main ()
+{
+return wl_display_flush ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_wayland_client_wl_display_flush=yes
+else
+  ac_cv_lib_wayland_client_wl_display_flush=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_wayland_client_wl_display_flush" >&5
+$as_echo "$ac_cv_lib_wayland_client_wl_display_flush" >&6; }
+if test "x$ac_cv_lib_wayland_client_wl_display_flush" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBWAYLAND_CLIENT 1
+_ACEOF
+
+  LIBS="-lwayland-client $LIBS"
+
+else
+  as_fn_error $? "**** No wl_display_flush in libwayland-client. Install correct version of libwayland-dev or equivalent." "$LINENO" 5
+fi
+
+      for ac_header in xkbcommon/xkbcommon.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "xkbcommon/xkbcommon.h" "ac_cv_header_xkbcommon_xkbcommon_h" "$ac_includes_default"
+if test "x$ac_cv_header_xkbcommon_xkbcommon_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_XKBCOMMON_XKBCOMMON_H 1
+_ACEOF
+
+else
+  as_fn_error $? "**** No xkbcommon/xkbcommon.h. Required for wayland. Install libxkbcommon-dev or equivalent." "$LINENO" 5
+fi
+
+done
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xkb_context_new in -lxkbcommon" >&5
+$as_echo_n "checking for xkb_context_new in -lxkbcommon... " >&6; }
+if ${ac_cv_lib_xkbcommon_xkb_context_new+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lxkbcommon  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char xkb_context_new ();
+int
+main ()
+{
+return xkb_context_new ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_xkbcommon_xkb_context_new=yes
+else
+  ac_cv_lib_xkbcommon_xkb_context_new=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_xkbcommon_xkb_context_new" >&5
+$as_echo "$ac_cv_lib_xkbcommon_xkb_context_new" >&6; }
+if test "x$ac_cv_lib_xkbcommon_xkb_context_new" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBXKBCOMMON 1
+_ACEOF
+
+  LIBS="-lxkbcommon $LIBS"
+
+else
+  as_fn_error $? "**** No xkb_context_new in libxkbcommon. Install correct version of libxkbcommon-dev or equivalent." "$LINENO" 5
+fi
+
+      CAIRO_LIBS="$CAIRO_LIBS $XFT_LIBS"
+      CAIRO_CFLAGS="$CAIRO_CFLAGS"
+      LIBS="-lwayland-client -lxkbcommon $LIBS"
     else
       as_fn_error $? "Invalid Cairo installation" "$LINENO" 5
     fi

@@ -623,24 +623,22 @@ static const struct wl_shell_surface_listener shell_surface_listener = {
 };
 
 static void
-xdg_shell_ping(void *data, struct xdg_shell *shell, uint32_t serial)
+xdg_wm_base_ping(void *data, struct xdg_wm_base *shell, uint32_t serial)
 {
     WaylandConfig *wlconfig = data;
-    xdg_shell_pong(shell, serial);
+    xdg_wm_base_pong(shell, serial);
     wl_display_dispatch_pending(wlconfig->display);
     wl_display_flush(wlconfig->display);
 
 }
 
-static const struct xdg_shell_listener xdg_shell_listener = {
-    xdg_shell_ping,
+static const struct xdg_wm_base_listener wm_base_listener = {
+    xdg_wm_base_ping,
 };
 
 static void
 handle_surface_configure(void *data, struct xdg_surface *xdg_surface,
-			 int32_t x, int32_t y,
-			 int32_t width, int32_t height,
-			 struct wl_array *states, uint32_t serial)
+			 uint32_t serial)
 {
     struct window *window = data;
     WaylandConfig *wlconfig = window->wlconfig;
@@ -706,15 +704,8 @@ handle_surface_configure(void *data, struct xdg_surface *xdg_surface,
 #endif
 }
 
-static void
-handle_surface_delete(void *data, struct xdg_surface *xdg_surface)
-{
-    NSDebugLog(@"handle_surface_delete");
-}
-
 static const struct xdg_surface_listener xdg_surface_listener = {
     handle_surface_configure,
-    handle_surface_delete,
 };
 
 static void
@@ -734,11 +725,10 @@ handle_global(void *data, struct wl_registry *registry,
 			     &wl_shell_interface, 1);
 	*/
     } else if (strcmp(interface, "xdg_shell") == 0) {
-	wlconfig->xdg_shell = wl_registry_bind(registry, name,
-					       &xdg_shell_interface, 1);
-	xdg_shell_use_unstable_version(wlconfig->xdg_shell, 5);
-	xdg_shell_add_listener(wlconfig->xdg_shell,
-			       &xdg_shell_listener, wlconfig);
+	wlconfig->wm_base = wl_registry_bind(registry, name,
+					     &xdg_wm_base_interface, 1);
+	xdg_shell_add_listener(wlconfig->wm_base,
+			       &wm_base_listener, wlconfig);
     } else if (strcmp(interface, "wl_shm") == 0) {
 	wlconfig->shm = wl_registry_bind(wlconfig->registry, name,
 					 &wl_shm_interface, 1);
@@ -982,6 +972,7 @@ int NSToWayland(struct window *window, int ns_y)
     window->height = height = NSHeight(frame);
     window->pos_x = frame.origin.x;
     window->pos_y = NSToWayland(window, frame.origin.y);
+    window->window_id = wlconfig->last_window_id;
 
     wlsurface = wl_compositor_create_surface(wlconfig->compositor);
     if (wlsurface == NULL) {
@@ -1001,18 +992,17 @@ int NSToWayland(struct window *window, int ns_y)
     }
     */
 
+    window->xdg_surface = xdg_wm_base_get_xdg_surface(wlconfig->wm_base,
+						      wlsurface);
+    // TODO: xdg_shell_get_xdg_surface_special() no longer exists,
+    // so we need to find another way
     if (style & NSMainMenuWindowMask) {
-	window->xdg_surface =
-	    xdg_shell_get_xdg_surface_special(wlconfig->xdg_shell, wlsurface, 2);
-	NSDebugLog(@"window id=%d will be a panel", wlconfig->last_window_id);
+	NSDebugLog(@"window id=%d will be a panel", window->window_id);
+    } else if (style & NSBackgroundWindowMask) {
+	NSDebugLog(@"window id=%d will be a ?", window->window_id);
+    } else {
+	NSDebugLog(@"window id=%d will be ordinary", window->window_id);
     }
-    else if (style & NSBackgroundWindowMask)
-	window->xdg_surface =
-	    xdg_shell_get_xdg_surface_special(wlconfig->xdg_shell, wlsurface, 1);
-    else
-	window->xdg_surface =
-	    xdg_shell_get_xdg_surface_special(wlconfig->xdg_shell, wlsurface, 0);
-
 
     xdg_surface_set_user_data(window->xdg_surface, window);
     xdg_surface_add_listener(window->xdg_surface,

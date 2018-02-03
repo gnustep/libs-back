@@ -16,7 +16,7 @@
 #include <xkbcommon/xkbcommon.h>
 
 #include "cairo/WaylandCairoSurface.h"
-#include "wayland/xdg-shell-unstable-v5-client-protocol.h"
+#include "wayland/xdg-shell-client-protocol.h"
 
 struct pointer {
     struct wl_pointer *wlpointer;
@@ -36,14 +36,14 @@ typedef struct _WaylandConfig {
     struct wl_registry *registry;
     struct wl_compositor *compositor;
     struct wl_shell *shell;
-    struct xdg_shell *xdg_shell;
+    struct xdg_wm_base *wm_base;
     struct wl_shm *shm;
     struct wl_seat *seat;
     struct wl_keyboard *keyboard;
     struct wl_surface *surface;
     struct wl_shell_surface *shell_surface;
     struct wl_buffer *buffer;
-    
+
     struct wl_list output_list;
     int output_count;
     struct wl_list window_list;

@@ -37,7 +37,7 @@ wayland_LOCALIZED_RESOURCE_FILES = \
 
 # The C source files to be compiled
 wayland_C_FILES = \
-xdg-shell-unstable-v5-protocol.c \
+xdg-shell-protocol.c \
 
 # The Objective-C source files to be compiled
 wayland_OBJC_FILES = \

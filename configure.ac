@@ -647,8 +647,17 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS"
       AC_MSG_RESULT(xlib)
     elif test $BUILD_SERVER = wayland; then
+      AC_CHECK_HEADERS(wayland-util.h,,
+        [AC_MSG_ERROR([**** No wayland-util.h. Install libwayland-dev or equivalent.])])
+      AC_CHECK_LIB(wayland-client, wl_display_flush,,
+        [AC_MSG_ERROR([**** No wl_display_flush in libwayland-client. Install correct version of libwayland-dev or equivalent.])])
+      AC_CHECK_HEADERS(xkbcommon/xkbcommon.h,,
+        [AC_MSG_ERROR([**** No xkbcommon/xkbcommon.h. Required for wayland. Install libxkbcommon-dev or equivalent.])])
+      AC_CHECK_LIB(xkbcommon, xkb_context_new,,
+        [AC_MSG_ERROR([**** No xkb_context_new in libxkbcommon. Install correct version of libxkbcommon-dev or equivalent.])])
       CAIRO_LIBS="$CAIRO_LIBS $XFT_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS"
+      LIBS="-lwayland-client -lxkbcommon $LIBS"
     else
       AC_MSG_ERROR([Invalid Cairo installation])
     fi
