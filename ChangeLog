@@ -1,3 +1,24 @@
+2018-02-05  Yavor Doganov  <yavor@gnu.org>
+
+	* Headers/xlib/GSXftFontInfo.h (GSXftFontInfo): Inherit from
+	the FCFontInfo class.
+	(GSXftFaceInfo, GSXftFontEnumerator): New classes inheriting from
+	FCFaceInfo and FCFontEnumerator.
+	* Source/xlib/GSXftFontInfo.m: Assume fontconfig is available;
+	remove HAVE_FC define and !HAVE_FC code.
+	(allFonts): Remove.
+	(FcFont, FcFontEnumerator): Remove implementations.
+	(GSXftFontEnumerator): Override +faceInfoClass and +fontWithName:.
+	(Ones, coveredCharacterSet): Remove, not needed anymore.
+	(advancementForGlyph:): Add support for glyph caching.
+	(setupAttributes): Obtain pattern from the GSXftFaceInfo
+	instance.  Remove unnecessary code for setting ivars already set
+	by the superclass.  Set lineHeight to capHeight.
+	* Source/xlib/XGContext.m (initializeBackend) [HAVE_XFT]: Remove
+	HAVE_FC conditional.  Set fontEnumerator to GSXftFontEnumerator.
+	* Source/xlib/GNUmakefile (xlib_OBJC_FILES): Add fontconfig files
+	in the WITH_XFT conditional.
+
 2018-01-21  Yavor Doganov  <yavor@gnu.org>
 
 	* configure.ac: Add FREETYPE_LIBS to LIBS when building xlib.

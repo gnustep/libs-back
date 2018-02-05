@@ -44,7 +44,6 @@
 #include <AppKit/NSBezierPath.h>
 #include "xlib/GSXftFontInfo.h"
 
-#ifdef HAVE_FC
 #define id _gs_avoid_id_collision
 #include <fontconfig/fontconfig.h>
 #undef id
@@ -54,211 +53,19 @@
 #include FT_GLYPH_H
 #include FT_OUTLINE_H
 
-/*
- * class global dictionary of existing fonts
- */
-static NSMutableDictionary *allFonts = nil;
-
-// just a warpper around a FcPattern, to make it a NSObject
-@interface FcFont : NSObject
-{
-  FcPattern *aFont;
-}
-- initWithPattern:(FcPattern *)aFace;
-- (FcPattern *)font;
+@implementation GSXftFaceInfo
 @end
 
-@implementation FcFont
-
-- initWithPattern:(FcPattern *)aFace
+@implementation GSXftFontEnumerator
++ (Class) faceInfoClass
 {
-  [super init];
-  aFont = aFace;
-  FcPatternReference(aFace);
-  return self;
+  return [GSXftFaceInfo class];
 }
-
-- (FcPattern *)font
++ (GSXftFaceInfo *) fontWithName: (NSString *) name
 {
-  return aFont;
-}
-
-- (void) dealloc
-{
-  FcPatternDestroy(aFont);  
-  [super dealloc];
+  return (GSXftFaceInfo *) [super fontWithName: name];
 }
 @end
-
-@implementation FcFontEnumerator
-
-// Make a GNUStep style font descriptor from a FcPattern
-static NSArray *faFromFc(FcPattern *pat)
-{
-  int weight, slant, spacing, nsweight;
-  unsigned int nstraits = 0;
-  char *family;
-  NSMutableString *name, *style;
-
-  if (FcPatternGetInteger(pat, FC_WEIGHT, 0, &weight) != FcResultMatch ||
-      FcPatternGetInteger(pat, FC_SLANT,  0, &slant) != FcResultMatch ||
-      FcPatternGetString(pat, FC_FAMILY, 0, (FcChar8 **)&family) != FcResultMatch)
-    return nil;
-
-  if (FcPatternGetInteger(pat, FC_SPACING, 0, &spacing) == FcResultMatch)
-    if (spacing==FC_MONO || spacing==FC_CHARCELL)
-      nstraits |= NSFixedPitchFontMask;
-  
-  name = [NSMutableString stringWithCapacity: 100];
-  style = [NSMutableString stringWithCapacity: 100];
-  [name appendString: [NSString stringWithUTF8String: family]];
-
-  switch (weight) 
-    {
-    case FC_WEIGHT_LIGHT:
-      [style appendString: @"Light"];
-      nsweight = 3;
-      break;
-    case FC_WEIGHT_MEDIUM:
-      nsweight = 6;
-      break;
-    case FC_WEIGHT_DEMIBOLD:
-      [style appendString: @"Demibold"];
-      nsweight = 7;
-      break;
-    case FC_WEIGHT_BOLD:
-      [style appendString: @"Bold"];
-      nsweight = 9;
-      nstraits |= NSBoldFontMask;
-      break;
-    case FC_WEIGHT_BLACK:
-      [style appendString: @"Black"];
-      nsweight = 12;
-      nstraits |= NSBoldFontMask;
-      break;
-    default:
-      nsweight = 6;
-    }
-
-  switch (slant) 
-    {
-    case FC_SLANT_ROMAN:
-      break;
-    case FC_SLANT_ITALIC:
-      [style appendString: @"Italic"];
-      nstraits |= NSItalicFontMask;
-      break;
-    case FC_SLANT_OBLIQUE:
-      [style appendString: @"Oblique"];
-      nstraits |= NSItalicFontMask;
-      break;
-    }
-
-  if ([style length] > 0)
-    {
-      [name appendString: @"-"];
-      [name appendString: style];
-    }
-  else
-    {
-      [style appendString: @"Roman"];
-    }
-
-  return [NSArray arrayWithObjects: name, 
-		  style, 
-		  [NSNumber numberWithInt: nsweight], 
-		  [NSNumber numberWithUnsignedInt: nstraits],
-		  nil];
-}
-
-- (void) enumerateFontsAndFamilies
-{
-  int i;
-  NSMutableDictionary *fcxft_allFontFamilies = [[NSMutableDictionary alloc] init];
-  NSMutableDictionary *fcxft_allFonts = [[NSMutableDictionary alloc] init];
-  NSMutableArray *fcxft_allFontNames = [[NSMutableArray alloc] init];
-
-  FcPattern *pat = FcPatternCreate();
-  FcObjectSet *os = FcObjectSetBuild(FC_FAMILY, FC_SLANT, FC_WEIGHT, 
-                                     FC_SPACING, NULL);
-  FcFontSet *fs = FcFontList(0, pat, os);
-
-  FcPatternDestroy(pat);
-  FcObjectSetDestroy(os);
-
-  for (i=0; i < fs->nfont; i++)
-    {
-      char *family;
-
-      if (FcPatternGetString(fs->fonts[i], FC_FAMILY, 0, (FcChar8 **)&family) == FcResultMatch)
-        {
-          NSArray *fontArray;
-
-          if ((fontArray = faFromFc(fs->fonts[i])))
-            {
-	      NSString *familyString;
-	      NSMutableArray *familyArray;
-              FcFont *aFont;
-	      NSString *name = [fontArray objectAtIndex: 0];
-
-              familyString = [NSString stringWithUTF8String: family];
-              if (!(familyArray = [fcxft_allFontFamilies objectForKey: familyString]))
-                {
-                  familyArray = [[NSMutableArray alloc] init];
-                  [fcxft_allFontFamilies setObject: familyArray forKey: familyString];
-		  RELEASE(familyArray);
-                }
-              NSDebugLLog(@"NSFont", @"fc enumerator: adding font: %@", name);
-              [familyArray addObject: fontArray];
-              [fcxft_allFontNames addObject: name];      
-              aFont = [[FcFont alloc] initWithPattern: fs->fonts[i]];
-              [fcxft_allFonts setObject: aFont forKey: name];
-              RELEASE(aFont);
-            }
-        }
-    }
-  FcFontSetDestroy (fs); 
-
-  allFontNames = fcxft_allFontNames;
-  allFontFamilies = fcxft_allFontFamilies;
-  allFonts = fcxft_allFonts;
-}
-
--(NSString *) defaultSystemFontName
-{
-  if ([allFontNames containsObject: @"Bitstream Vera Sans"])
-    return @"Bitstream Vera Sans";
-  if ([allFontNames containsObject: @"FreeSans"])
-    return @"FreeSans";
-  if ([allFontNames containsObject: @"DejaVu Sans"])
-    return @"DejaVu Sans";
-  return @"Helvetica";
-}
-
--(NSString *) defaultBoldSystemFontName
-{
-  if ([allFontNames containsObject: @"Bitstream Vera Sans-Bold"])
-    return @"Bitstream Vera Sans-Bold";
-  if ([allFontNames containsObject: @"FreeSans-Bold"])
-    return @"FreeSans-Bold";
-  if ([allFontNames containsObject: @"DejaVu Sans-Bold"])
-    return @"DejaVu Sans-Bold";
-  return @"Helvetica-Bold";
-}
-
--(NSString *) defaultFixedPitchFontName
-{
-  if ([allFontNames containsObject: @"Bitstream Vera Sans Mono"])
-    return @"Bitstream Vera Sans Mono";
-  if ([allFontNames containsObject: @"FreeMono"])
-    return @"FreeMono";
-  if ([allFontNames containsObject: @"DejaVu Sans Mono"])
-    return @"DejaVu Sans Mono";
-  return @"Courier";
-}
-
-@end
-#endif
 
 @interface GSXftFontInfo (Private)
 
@@ -297,82 +104,6 @@ static NSArray *faFromFc(FcPattern *pat)
   if (font_info != NULL)
     XftFontClose([XGServer currentXDisplay], (XftFont *)font_info);
   [super dealloc];
-}
-
-#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
-#if __INT_MIN__ == 0x7fffffff
-#define Ones(mask) __builtin_popcount(mask)
-#else
-#define Ones(mask) __builtin_popcountl((mask) & 0xffffffff)
-#endif
-#else
-/* Otherwise fall back on HACKMEM 169.  */
-static int
-Ones(unsigned int n)
-{
-  register unsigned int tmp;
-    
-  tmp = n - ((n >> 1) & 033333333333)
-      - ((n >> 2) & 011111111111);
-  return ((tmp + (tmp >> 3)) & 030707070707) % 63;
-}
-#endif
-
-- (NSCharacterSet*) coveredCharacterSet
-{
-  if (coveredCharacterSet == nil)
-    {
-      if (!((XftFont *)font_info)->charset)
-        return nil;
-      else
-        {
-          NSMutableData	*d = [NSMutableData new];
-          unsigned count = 0;
-          FcCharSet *charset = ((XftFont *)font_info)->charset;
-          FcChar32 ucs4;
-          FcChar32 map[FC_CHARSET_MAP_SIZE];
-          FcChar32 next;
-          BOOL swap = NSHostByteOrder() == NS_BigEndian;
-
-          if (!d)
-            return nil;
-
-          for (ucs4 = FcCharSetFirstPage(charset, map, &next);
-               ucs4 != FC_CHARSET_DONE;
-               ucs4 = FcCharSetNextPage(charset, map, &next))
-            {
-              unsigned int i;
-              NSRange aRange;
-              unsigned int max;
-
-              aRange = NSMakeRange(ucs4, FC_CHARSET_MAP_SIZE * sizeof(FcChar32));
-              max = NSMaxRange(aRange);
-              // Round up to a suitable plane size
-              max = ((max + 8191) >> 13) << 13;
-              [d setLength: max];
-
-              for (i = 0; i < FC_CHARSET_MAP_SIZE; i++)
-                if (map[i])
-                  {
-                    // Do some byte swapping, if needed.
-                    if (swap)
-                      {
-                        map[i] = NSSwapInt(map[i]);
-                      }
-                    count += Ones(map[i]);
-                  }
-            
-              [d replaceBytesInRange: aRange withBytes: map];
-            }
-
-          ASSIGN(coveredCharacterSet, 
-                 [NSCharacterSet characterSetWithBitmapRepresentation: d]);
-          numberOfGlyphs = count;
-          RELEASE(d);
-        }
-    }
-
-  return coveredCharacterSet;
 }
 
 - (CGFloat) widthOfString: (NSString*)string
@@ -418,6 +149,24 @@ Ones(unsigned int n)
 
 - (NSSize) advancementForGlyph: (NSGlyph)glyph
 {
+  if (_cachedSizes)
+    {
+      int entry = glyph % _cacheSize;
+
+      if (_cachedGlyphs[entry] == glyph)
+        return _cachedSizes[entry];
+
+      XGlyphInfo *pc = [self xGlyphInfo: glyph];
+
+      if (!pc)
+        return NSMakeSize((float)(font_info)->max_advance_width, 0);
+
+      _cachedGlyphs[entry] = glyph;
+      _cachedSizes[entry] = NSMakeSize((float)pc->xOff, (float)pc->yOff);
+
+      return _cachedSizes[entry];
+    }
+
   XGlyphInfo *pc = [self xGlyphInfo: glyph];
 
   // if per_char is NULL assume max bounds
@@ -731,13 +480,13 @@ static FT_Outline_Funcs bezierpath_funcs = {
   Display *xdpy = [XGServer currentXDisplay];
   int defaultScreen = DefaultScreen(xdpy);
 
-#ifdef HAVE_FC
-  FcFont *realFont = [allFonts objectForKey: fontName];
+  GSXftFaceInfo *realFont = [GSXftFontEnumerator fontWithName: fontName];
   FcPattern *fontPattern;
   FcPattern *pattern; 
   FcResult fc_result;
-  char *family;
-  int fcspacing, fcweight, fcslant;
+
+  if (![super setupAttributes])
+    return NO;
 
   if (!realFont)
     {
@@ -747,7 +496,7 @@ static FT_Outline_Funcs bezierpath_funcs = {
   if (!xdpy)
     return NO;
 
-  fontPattern = FcPatternDuplicate([realFont font]);
+  fontPattern = FcPatternDuplicate([realFont matchedPattern]);
 
   // the only thing needs customization here is the size
   // FIXME: It would be correcter to use FC_SIZE as GNUstep should be
@@ -759,55 +508,6 @@ static FT_Outline_Funcs bezierpath_funcs = {
   pattern = XftFontMatch(xdpy, defaultScreen, fontPattern, &fc_result);
   // tide up
   FcPatternDestroy(fontPattern);
-  
-  if (FcPatternGetString(pattern, FC_FAMILY, 0, (FcChar8 **)&family) == FcResultMatch)
-    {
-      ASSIGN(familyName, [NSString stringWithUTF8String: (const char*)family]);
-    }
-  if (FcPatternGetInteger(pattern, FC_SPACING, 0, &fcspacing) == FcResultMatch)
-    {
-      isFixedPitch = (fcspacing == FC_MONO || fcspacing == FC_CHARCELL);
-    }
-  if (FcPatternGetInteger(pattern, FC_WEIGHT, 0, &fcweight) == FcResultMatch)
-    {
-      switch (fcweight)
-        {
-        case FC_WEIGHT_LIGHT:
-            weight = 3;
-            break;
-        case FC_WEIGHT_MEDIUM:
-            weight = 6;
-            break;
-        case FC_WEIGHT_DEMIBOLD:
-            weight = 7;
-            break;
-        case FC_WEIGHT_BOLD:
-            weight = 9;
-            break;
-        case FC_WEIGHT_BLACK:
-            weight = 12;
-            break;
-	default:
-          // Don't know
-          weight = 6;
-	}
-    }
-
-  if (FcPatternGetInteger(pattern, FC_SLANT,  0, &fcslant) == FcResultMatch)
-    {
-      switch (fcslant) 
-        {
-        case FC_SLANT_ROMAN:
-          traits |= NSUnitalicFontMask;
-          break;
-        case FC_SLANT_ITALIC:
-          traits |= NSItalicFontMask;
-          break;
-        case FC_SLANT_OBLIQUE:
-          traits |= NSItalicFontMask;
-          break;
-       }
-    }
 
   // Derek Zhou claims that this takes over the ownership of the pattern
   if ((font_info = XftFontOpenPattern(xdpy, pattern)))
@@ -820,119 +520,13 @@ static FT_Outline_Funcs bezierpath_funcs = {
       return NO;
     }
 
-  /* TODO: somehow make gnustep-gui send unicode our way. utf8? ugly, but it works */
-  mostCompatibleStringEncoding = NSUTF8StringEncoding;
-  encodingScheme = @"iso10646-1";
-#else 
-  NSString *reg;
-  XftPattern *pattern;
-  XftResult result;
-  NSString *xfontname;
-  char *xftTypeString;
-  int xftTypeInt;
-  NSArray *encoding;
-
-  if (!xdpy)
-    return NO;
-
-  // Retrieve the XLFD matching the given fontName. DPS->X.
-  xfontname = XGXFontName(fontName, matrix[0]);
-
-  // Load Xft font and get font info structure.
-  if ((xfontname == nil) ||
-      (font_info = XftFontOpenXlfd(xdpy, defaultScreen, [xfontname UTF8String])) == NULL)
-    {
-      NSLog(@"Unable to open fixed font %@", xfontname);
-      return NO;
-    }
-  else
-    NSDebugLog(@"Loaded font: %@", xfontname);
-
-  pattern = font_info->pattern;
-  result = XftPatternGetString(pattern, XFT_FAMILY, 0, &xftTypeString);
-  if (result != XftResultTypeMismatch)
-    {
-      ASSIGN(familyName,
-         [NSString stringWithUTF8String: (const char*)xftTypeString]);
-    }
-  result = XftPatternGetInteger(pattern, XFT_SPACING, 0, &xftTypeInt);
-  if (result != XftResultTypeMismatch)
-    {
-      isFixedPitch = (xftTypeInt != 0);
-    }
-
-  result = XftPatternGetInteger(pattern, XFT_WEIGHT, 0, &xftTypeInt);
-  if (result != XftResultTypeMismatch)
-    {
-      switch (xftTypeInt)
-        {
-        case 0:
-          weight = 3;
-          break;
-        case 100:
-          weight = 6;
-          break;
-        case 180:
-          weight = 7;
-          break;
-        case 200:
-          weight = 9;
-          break;
-        case 210:
-          weight = 12;
-          break;
-        default:
-          // Don't know
-          weight = 6;;
-        }
-    }
-
-  result = XftPatternGetInteger(pattern, XFT_SLANT, 0, &xftTypeInt);
-  if (result != XftResultTypeMismatch)
-    {
-      if (xftTypeInt != 0)
-        traits |= NSItalicFontMask;
-      else
-        traits |= NSUnitalicFontMask;
-    }
-
-  XftPatternGetString(pattern, XFT_ENCODING, 0, &xftTypeString);
-  encodingScheme = [NSString stringWithUTF8String: xftTypeString];
-  encoding = [encodingScheme componentsSeparatedByString: @"-"];
-  reg = [encoding objectAtIndex: 0];
-  if (reg != nil)
-    { 
-      if ([encoding count] > 1)
-        {
-	  NSString *enc = [encoding lastObject];
-	  mostCompatibleStringEncoding = GSEncodingForRegistry(reg, enc);
-	  if (mostCompatibleStringEncoding == GSUndefinedEncoding)
-	    mostCompatibleStringEncoding = NSASCIIStringEncoding;
-          if (mostCompatibleStringEncoding == NSUnicodeStringEncoding)
-            mostCompatibleStringEncoding = NSUTF8StringEncoding;
-	  RETAIN(encodingScheme);
-	}
-    }
-  else
-    encodingScheme = nil;
-  // FIXME: italicAngle, underlinePosition, underlineThickness are not set.
-  // Should use XA_ITALIC_ANGLE, XA_UNDERLINE_POSITION, XA_UNDERLINE_THICKNESS
-#endif
-
   // Fill the ivars
-  if (weight >= 9)
-    traits |= NSBoldFontMask;
-  else
-    traits |= NSUnboldFontMask;
-
-  if (isFixedPitch)
-    traits |= NSFixedPitchFontMask;
-
   isBaseFont = NO;
   ascender = font_info->ascent;
   descender = -(font_info->descent);
   capHeight = ascender - descender;   // TODO
   xHeight = capHeight*0.6;   //Errr... TODO
+  lineHeight = capHeight;
   fontBBox = NSMakeRect(
     (float)(0),
     (float)(-font_info->descent),
