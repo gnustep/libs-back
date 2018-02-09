@@ -411,6 +411,8 @@ _parse_display_name(NSString *name, int *dn, int *sn)
         }
     }
 
+  XInitThreads();
+
   if (display_name)
     {
       dpy = XOpenDisplay([display_name cString]);
