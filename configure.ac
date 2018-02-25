@@ -782,3 +782,11 @@ AC_SUBST(BACKEND_NAME)
 
 AC_CONFIG_FILES([back.make config.make])
 AC_OUTPUT
+
+AS_IF([test $BUILD_GRAPHICS = art || test $BUILD_GRAPHICS = xlib || test $BUILD_GRAPHICS = xdps], [
+cat <<EOF
+m4_text_box([WARNING])
+You are about to build the $BUILD_GRAPHICS backend which is deprecated
+and likely to be removed in the future.
+EOF
+])

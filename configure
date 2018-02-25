@@ -8625,3 +8625,15 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
+
+if test $BUILD_GRAPHICS = art || test $BUILD_GRAPHICS = xlib || test $BUILD_GRAPHICS = xdps; then :
+
+cat <<EOF
+## ------- ##
+## WARNING ##
+## ------- ##
+You are about to build the $BUILD_GRAPHICS backend which is deprecated
+and likely to be removed in the future.
+EOF
+
+fi

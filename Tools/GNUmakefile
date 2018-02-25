@@ -37,8 +37,13 @@ TOOL_NAME = gpbs
 gpbs_OBJC_FILES = gpbs.m
 font_cacher_OBJC_FILES = font_cacher.m
 
+MAN1_PAGES = gpbs.1
+
 ifeq ($(BUILD_GRAPHICS),xlib)
+ifeq ($(WITH_XFT),no)
 TOOL_NAME += font_cacher
+MAN1_PAGES += font_cacher.1
+endif
 endif
 
 ifeq ($(BUILD_SERVER),x11)
@@ -52,8 +57,6 @@ endif
 ifeq ($(BUILD_SERVER),win32)
 gpbs_OBJC_FILES += win32pbs.m 
 endif
-
-MAN1_PAGES = gpbs.1
 
 -include GNUmakefile.preamble
 

@@ -1,3 +1,11 @@
+2018-02-25  Yavor Doganov  <yavor@gnu.org>
+
+	* Tools/font_cacher.1: New file.
+	* Tools/GNUmakefile: Build font_cacher only if WITH_XFT=no.
+	Install the manpage conditionally.
+	* configure.ac: Add deprecation warning for art/xlib/xdps.
+	* configure: Regenerate.
+
 2018-02-09  Yavor Doganov  <yavor@gnu.org>
 
 	* Source/x11/XGServer.m (_initXContext): Call XInitThreads to
