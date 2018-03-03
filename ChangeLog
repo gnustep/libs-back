@@ -1,3 +1,9 @@
+2018-03-03 Riccardo Mottola <rm@gnu.org>
+
+	* configure.ac
+	* configure
+	Be consistent in prepending flags to existing LDFLAGS and CPPLFLAGS.
+
 2018-02-25  Yavor Doganov  <yavor@gnu.org>
 
 	* Tools/font_cacher.1: New file.

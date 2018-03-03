@@ -129,10 +129,10 @@ LDFLAGS="$LDFLAGS -L$GNUSTEP_LDIR/$LIBRARY_COMBO -L$GNUSTEP_LDIR"
 #--------------------------------------------------------------------
 case "$target_os" in
   freebsd* | openbsd* )   
-	      CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
-              LDFLAGS="$LDFLAGS -L/usr/pkg/lib";;
-  netbsd*)    CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
-	      LDFLAGS="$LDFLAGS -Wl,-R/usr/pkg/lib -L/usr/pkg/lib";;
+	      CPPFLAGS="-I/usr/pkg/include $CPPFLAGS"
+              LDFLAGS="-L/usr/pkg/lib $LDFLAGS";;
+  netbsd*)    CPPFLAGS="-I/usr/pkg/include $CPPFLAGS"
+	      LDFLAGS="-Wl,-R/usr/pkg/lib -L/usr/pkg/lib $LDFLAGS";;
 esac
 
 #--------------------------------------------------------------------
@@ -165,13 +165,13 @@ fi
 PKG_PROG_PKG_CONFIG
 
 if test $set_x_paths = yes; then
-  GRAPHIC_CFLAGS="$X_CFLAGS $GRAPHIC_CFLAGS"
-  CPPFLAGS="$X_CFLAGS $CPPFLAGS"
+  GRAPHIC_CFLAGS="$GRAPHIC_CFLAGS $X_CFLAGS"
+  CPPFLAGS="$CPPFLAGS $X_CFLAGS"
   # Note: Don't include $X_LIBS in LDFLAGS as it may conflict with
   # other libraries installed in /sw, /sw/lib/freetyp2/lib
   #GRAPHIC_LFLAGS="$X_LIBS $GRAPHIC_LFLAGS"
   # But do include it here just to find the extra x libraries 
-  LDFLAGS="$X_LIBS $LDFLAGS"
+  LDFLAGS="$LDFLAGS $X_LIBS"
   LIBS="-lX11 $X_EXTRA_LIBS $LIBS"
 
   AC_CHECK_LIB(Xext, main)
@@ -264,7 +264,7 @@ if test $with_freetype = yes; then
 
   if test x"$FREETYPE_LIBS" != x; then
     save_CPPFLAGS=${CPPFLAGS}
-    CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
+    CPPFLAGS="${FREETYPE_CFLAGS} ${CPPFLAGS}"
     AC_CHECK_HEADER(ft2build.h,have_freetype=yes, have_freetype=no)
     CPPFLAGS="${save_CPPFLAGS}"
   fi
@@ -713,8 +713,8 @@ if test $BUILD_SERVER = x11; then
     AC_MSG_ERROR([libXext not found - required for building x11 server])
   fi
   if test "x$WITH_GLX" = "xyes"; then
-    LIBS="$LIBS $GLX_LIBS"
-    CPPFLAGS="$CPPFLAGS $GLX_CFLAGS"
+    LIBS="$GLX_LIBS $LIBS"
+    CPPFLAGS="$GLX_CFLAGS $CPPFLAGS"
   else
     AC_MSG_NOTICE([Warning : no OpenGL support for X11 backend])
   fi

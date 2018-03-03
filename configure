@@ -3427,10 +3427,10 @@ LDFLAGS="$LDFLAGS -L$GNUSTEP_LDIR/$LIBRARY_COMBO -L$GNUSTEP_LDIR"
 #--------------------------------------------------------------------
 case "$target_os" in
   freebsd* | openbsd* )
-	      CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
-              LDFLAGS="$LDFLAGS -L/usr/pkg/lib";;
-  netbsd*)    CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
-	      LDFLAGS="$LDFLAGS -Wl,-R/usr/pkg/lib -L/usr/pkg/lib";;
+	      CPPFLAGS="-I/usr/pkg/include $CPPFLAGS"
+              LDFLAGS="-L/usr/pkg/lib $LDFLAGS";;
+  netbsd*)    CPPFLAGS="-I/usr/pkg/include $CPPFLAGS"
+	      LDFLAGS="-Wl,-R/usr/pkg/lib -L/usr/pkg/lib $LDFLAGS";;
 esac
 
 #--------------------------------------------------------------------
@@ -4551,13 +4551,13 @@ $as_echo "no" >&6; }
 fi
 
 if test $set_x_paths = yes; then
-  GRAPHIC_CFLAGS="$X_CFLAGS $GRAPHIC_CFLAGS"
-  CPPFLAGS="$X_CFLAGS $CPPFLAGS"
+  GRAPHIC_CFLAGS="$GRAPHIC_CFLAGS $X_CFLAGS"
+  CPPFLAGS="$CPPFLAGS $X_CFLAGS"
   # Note: Don't include $X_LIBS in LDFLAGS as it may conflict with
   # other libraries installed in /sw, /sw/lib/freetyp2/lib
   #GRAPHIC_LFLAGS="$X_LIBS $GRAPHIC_LFLAGS"
   # But do include it here just to find the extra x libraries
-  LDFLAGS="$X_LIBS $LDFLAGS"
+  LDFLAGS="$LDFLAGS $X_LIBS"
   LIBS="-lX11 $X_EXTRA_LIBS $LIBS"
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lXext" >&5
@@ -5296,7 +5296,7 @@ fi
 
   if test x"$FREETYPE_LIBS" != x; then
     save_CPPFLAGS=${CPPFLAGS}
-    CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
+    CPPFLAGS="${FREETYPE_CFLAGS} ${CPPFLAGS}"
     ac_fn_c_check_header_mongrel "$LINENO" "ft2build.h" "ac_cv_header_ft2build_h" "$ac_includes_default"
 if test "x$ac_cv_header_ft2build_h" = xyes; then :
   have_freetype=yes
@@ -7260,8 +7260,8 @@ if test $BUILD_SERVER = x11; then
     as_fn_error $? "libXext not found - required for building x11 server" "$LINENO" 5
   fi
   if test "x$WITH_GLX" = "xyes"; then
-    LIBS="$LIBS $GLX_LIBS"
-    CPPFLAGS="$CPPFLAGS $GLX_CFLAGS"
+    LIBS="$GLX_LIBS $LIBS"
+    CPPFLAGS="$GLX_CFLAGS $CPPFLAGS"
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: Warning : no OpenGL support for X11 backend" >&5
 $as_echo "$as_me: Warning : no OpenGL support for X11 backend" >&6;}
