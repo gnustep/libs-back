@@ -92,6 +92,8 @@ typedef enum {
 - (NSRect) _OSFrameToXHints: (NSRect)o for: (void*)window;
 - (NSRect) _XFrameToOSFrame: (NSRect)x for: (void*)window;
 - (NSRect) _XFrameToXHints: (NSRect)o for: (void*)window;
+
+- (NSString *) windowManagerName;
 @end
 
 // Public interface for the input methods.  

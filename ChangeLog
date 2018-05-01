@@ -1,3 +1,12 @@
+2018-05-01  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/x11/XGGeneric.h: Move all atoms in XGGeneric data structure.
+	* Source/x11/XGServerEvent.m,
+	* Source/x11/XGServerWindow.m: Use atoms from XGGeneric.
+	* Headers/x11/XGServer.h,
+	* Source/x11/XGServerEvent.m (-windowManagerName): New method to
+	get the name of the window manager.
+
 2018-03-03 Riccardo Mottola <rm@gnu.org>
 
 	* configure.ac

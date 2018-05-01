@@ -583,13 +583,13 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             }
           if (cWin == 0)
             break;
-          if (xEvent.xclient.message_type == generic.protocols_atom)
+          if (xEvent.xclient.message_type == generic.WM_PROTOCOLS_ATOM)
             {
               [self setLastTime: (Time)xEvent.xclient.data.l[1]];
               NSDebugLLog(@"NSEvent", @"WM Protocol - %s\n",
                           XGetAtomName(dpy, xEvent.xclient.data.l[0]));
 
-              if ((Atom)xEvent.xclient.data.l[0] == generic.delete_win_atom)
+              if ((Atom)xEvent.xclient.data.l[0] == generic.WM_DELETE_WINDOW_ATOM)
                 {
                   /*
                    * WM is asking us to close a window
@@ -606,7 +606,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                                data2: 0];
                 }
               else if ((Atom)xEvent.xclient.data.l[0]
-                == generic.miniaturize_atom)
+                == generic._GNUSTEP_WM_MINIATURIZE_WINDOW_ATOM)
                 {
 		  NSDebugLLog(@"Miniaturize", @"%lu miniaturized", cWin->number);
                   eventLocation = NSMakePoint(0,0);
@@ -621,13 +621,13 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                                data2: 0];
                 }
               else if ((Atom)xEvent.xclient.data.l[0]
-                == generic.take_focus_atom)
+                == generic.WM_TAKE_FOCUS_ATOM)
                 {
                   e = [self _handleTakeFocusAtom: xEvent 
                                       forContext: gcontext];
                 }
               else if ((Atom)xEvent.xclient.data.l[0]
-                == generic.net_wm_ping_atom)
+                == generic._NET_WM_PING_ATOM)
                 {
                   xEvent.xclient.window = RootWindow(dpy, cWin->screen);
                   XSendEvent(dpy, xEvent.xclient.window, False, 
@@ -636,7 +636,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                 }
 #ifdef HAVE_X11_EXTENSIONS_SYNC_H
 	      else if ((Atom)xEvent.xclient.data.l[0]
-		== generic.net_wm_sync_request_atom)
+		== generic._NET_WM_SYNC_REQUEST_ATOM)
 		{
 		  cWin->net_wm_sync_request_counter_value_low = (Atom)xEvent.xclient.data.l[2];
 		  cWin->net_wm_sync_request_counter_value_high = (Atom)xEvent.xclient.data.l[3];
@@ -1470,7 +1470,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         NSDebugLLog(@"NSEvent", @"%lu PropertyNotify - '%s'\n",
                     xEvent.xproperty.window,
                     XGetAtomName(dpy, xEvent.xproperty.atom));
-	if (xEvent.xproperty.atom == generic.wm_state_atom)
+	if (xEvent.xproperty.atom == generic.WM_STATE_ATOM)
 	  {
 	    if (cWin == 0 || xEvent.xproperty.window != cWin->ident)
 	      {
@@ -1505,7 +1505,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 			 [self _ewmh_isHidden: xEvent.xproperty.window] == YES))
 		      {
 			/* Same event as when we get ClientMessage with the
-			 * atom equal to generic.miniaturize_atom
+			 * atom equal to generic._GNUSTEP_WM_MINIATURIZE_WINDOW_ATOM
 			 */
 			NSDebugLLog(@"Miniaturize", @"%lu miniaturized",
 				    cWin->number);
@@ -1710,8 +1710,8 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
  * of type 'long' or 'unsigned long' even on machines where those types
  * hold 64bit values.
  */
-                XChangeProperty(dpy, cWin->ident, generic.win_decor_atom, 
-                                generic.win_decor_atom, 32, PropModeReplace, 
+                XChangeProperty(dpy, cWin->ident, generic._GNUSTEP_WM_ATTR_ATOM,
+                                generic._GNUSTEP_WM_ATTR_ATOM, 32, PropModeReplace,
                                 (unsigned char *)&cWin->win_attrs,
                                 sizeof(GNUstepWMAttributes)/sizeof(CARD32));
               }
@@ -1743,27 +1743,19 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
           NSArray *types = [pb types];
           NSData *data = nil;
           Atom xType = xEvent.xselectionrequest.target;
-          static Atom XG_UTF8_STRING = None;
-          static Atom XG_TEXT = None;
 
-          if (XG_UTF8_STRING == None)
-            {
-              XG_UTF8_STRING = XInternAtom(dpy, "UTF8_STRING", False);
-              XG_TEXT = XInternAtom(dpy, "TEXT", False);
-            }
-
-          if (((xType == XG_UTF8_STRING) || 
+          if (((xType == generic.UTF8_STRING_ATOM) || 
                (xType == XA_STRING) || 
-               (xType == XG_TEXT)) &&
+               (xType == generic.TEXT_ATOM)) &&
               [types containsObject: NSStringPboardType])
             {
               NSString *s = [pb stringForType: NSStringPboardType];
 
-              if (xType == XG_UTF8_STRING)
+              if (xType == generic.UTF8_STRING_ATOM)
                 {
                   data = [s dataUsingEncoding: NSUTF8StringEncoding];
                 }
-              else if ((xType == XA_STRING) || (xType == XG_TEXT))
+              else if ((xType == XA_STRING) || (xType == generic.TEXT_ATOM))
                 {
                   data = [s dataUsingEncoding: NSISOLatin1StringEncoding];
                 }
