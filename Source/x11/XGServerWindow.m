@@ -168,27 +168,36 @@ PropGetCheckProperty(Display *dpy, Window window, Atom hint, Atom type,
   int tmp;
 
   if (count <= 0)
-    tmp = 0xffffff;
+    {
+      tmp = 0xffffff;
+    }
   else
-    tmp = count;
+    {
+      tmp = count;
+    }
 
   if (XGetWindowProperty(dpy, window, hint, 0, tmp, False, type,
 			 &type_ret, &fmt_ret, &nitems_ret, &bytes_after_ret,
 			 (unsigned char **)&data)!=Success || !data)
+    {
       return NULL;
+    }
 
   if ((type != AnyPropertyType && type != type_ret)
     || (count > 0 && nitems_ret != (unsigned long)count)
+    || (bytes_after_ret != 0)
     || (format != 0 && format != fmt_ret))
     {
-      NSLog(@"XGetWindowProperty type %d type_ret %d count %d count_ret %d format %d format_ret %d",
-            type, type_ret, count, nitems_ret, format, fmt_ret);
+      NSLog(@"XGetWindowProperty type %d type_ret %d count %d count_ret %d format %d format_ret %d bytes_after_ret %d",
+            type, type_ret, count, nitems_ret, format, fmt_ret, bytes_after_ret);
       XFree(data);
       return NULL;
     }
 
   if (retCount)
-    *retCount = nitems_ret;
+    {
+      *retCount = nitems_ret;
+    }
 
   return data;
 }

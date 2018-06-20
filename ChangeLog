@@ -1,3 +1,9 @@
+2018-06-20  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m: Check for bytes_after_ret in
+	PropGetCheckProperty. Attempt to improve the window border detection.
+	Based on idea by Tom MacSween <Tom.MacSween@crins-sinrc.ca>
+
 2018-05-01  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/x11/XGGeneric.h: Move all atoms in XGGeneric data structure.
