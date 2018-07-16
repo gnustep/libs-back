@@ -1455,7 +1455,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       const char *str = [[pInfo processName] UTF8String];
 
       generic.rootName = malloc(strlen(str) + 1);
-      strncpy(generic.rootName, str, strlen(str));
+      strncpy(generic.rootName, str, strlen(str) + 1);
     }
 
   /*

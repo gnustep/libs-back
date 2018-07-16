@@ -1,3 +1,8 @@
+2018-07-16  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (_setupRootWindow): Make sure the
+	root name variable is null terminated.
+
 2018-06-20  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m: Check for bytes_after_ret in
