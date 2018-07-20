@@ -89,6 +89,9 @@ static NSMapTable *windowtags = NULL;
 /* Track used window numbers */
 static int		last_win_num = 0;
 
+@interface NSApplication (Private)
+- (void) _appIconInit;
+@end
 
 @interface NSCursor (BackendPrivate)
 - (void *)_cid;
@@ -2692,12 +2695,19 @@ static BOOL didCreatePixmaps;
   GC pixgc;
   RColor pixelRColor;
   RContext *rcontext;
-
+  NSDictionary *infoDict = nil;
+  NSString *appIconFile = nil;
+  
   NSAssert(!didCreatePixmaps, @"called _createAppIconPixmap twice");
 
   didCreatePixmaps = YES;
-
   image = [NSApp applicationIconImage];
+  if(image == nil)
+    {
+      [NSApp _appIconInit];
+      image = [NSApp applicationIconImage];
+    }
+
   rep = getStandardBitmap(image);
   if (rep == nil)
     return 0;
