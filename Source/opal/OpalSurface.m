@@ -72,6 +72,8 @@ static CGContextRef createCGBitmapContext(int pixelsWide,
 
 - (void) createCGContextsWithSuppliedBackingContext: (CGContextRef)ctx
 {
+  int pixelsWide;
+  int pixelsHigh;
   // FIXME: this method and class presumes we are being passed
   // a window device.
 
@@ -80,10 +82,26 @@ static CGContextRef createCGBitmapContext(int pixelsWide,
       NSLog(@"FIXME: Replacement of OpalSurface %p's CGContexts (x11=%p,backing=%p) without transfer of gstate", self, _x11CGContext, _backingCGContext);
     }
 
-  Display * display = _gsWindowDevice->display;
-  Window window = _gsWindowDevice->ident;
+  if (ctx)
+    {
+      _x11CGContext = ctx;
+      pixelsWide = CGBitmapContextGetWidth(ctx);
+      pixelsHigh = CGBitmapContextGetHeight(ctx);
+    }
+  else
+    {
+      Display * display = _gsWindowDevice->display;
+      Window window = _gsWindowDevice->ident;
 
-  _x11CGContext = ctx ?: OPX11ContextCreate(display, window);
+      _x11CGContext = OPX11ContextCreate(display, window);
+      pixelsWide = _gsWindowDevice->buffer_width;
+      pixelsHigh = _gsWindowDevice->buffer_height;
+
+      // Ask XGServerWindow to call +[OpalContext handleExposeRect:forDriver:]
+      // to let us handle the back buffer -> front buffer copy using Opal.
+      _gsWindowDevice->gdriverProtocol |= GDriverHandlesExpose | GDriverHandlesBacking;
+      _gsWindowDevice->gdriver = self;
+    }
 
 #if 0
   if (_gsWindowDevice->type == NSBackingStoreNonretained)
@@ -98,19 +116,11 @@ static CGContextRef createCGBitmapContext(int pixelsWide,
     {
       // Do double-buffer:
       // Create a similar surface to the window which supports alpha
-
-      // Ask XGServerWindow to call +[OpalContext handleExposeRect:forDriver:]
-      // to let us handle the back buffer -> front buffer copy using Opal.
-      _gsWindowDevice->gdriverProtocol |= GDriverHandlesExpose | GDriverHandlesBacking;
-      _gsWindowDevice->gdriver = self;
-
-      _backingCGContext = createCGBitmapContext(
-                       _gsWindowDevice->buffer_width,
-                       _gsWindowDevice->buffer_height);
+      _backingCGContext = createCGBitmapContext(pixelsWide, pixelsHigh);
     }
 
   NSDebugLLog(@"OpalSurface", @"Created CGContexts: X11=%p, backing=%p, width=%d height=%d",
-              _x11CGContext, _backingCGContext, _gsWindowDevice->buffer_width, _gsWindowDevice->buffer_height);
+              _x11CGContext, _backingCGContext, pixelsWide, pixelsHigh);
 
 }
 
@@ -154,6 +164,11 @@ static CGContextRef createCGBitmapContext(int pixelsWide,
 - (void) handleExposeRect: (NSRect)rect
 {
   NSDebugLLog(@"OpalSurface", @"handleExposeRect %@", NSStringFromRect(rect));
+
+  if (!_backingCGContext)
+    {
+      return;
+    }
 
   CGImageRef backingImage = CGBitmapContextCreateImage(_backingCGContext);
   if (!backingImage) // FIXME: writing a nil image fails with Opal
@@ -222,8 +237,8 @@ static CGContextRef createCGBitmapContext(int pixelsWide,
 
 - (NSSize) size
 {
-  return NSMakeSize(_gsWindowDevice->buffer_width,
-                    _gsWindowDevice->buffer_height);
+  return NSMakeSize(CGBitmapContextGetWidth(_backingCGContext),
+                    CGBitmapContextGetHeight(_backingCGContext));
 }
 
 @end

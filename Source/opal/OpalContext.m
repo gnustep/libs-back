@@ -115,9 +115,21 @@
 #endif // XSHM
 #endif // BUILD_SERVER = SERVER_x11
 
-@end 
+- (id) initWithGraphicsPort: (void *)port
+                    flipped: (BOOL)flag;
+{
+  self = [super initWithGraphicsPort: port
+                             flipped: flag];
+  if (self != nil)
+    {
+      [self GSSetDevice: NULL : -1 : -1];
+    }
+  return self;
+}
 
-@implementation OpalContext (Ops) 
+@end
+
+@implementation OpalContext (Ops)
 
 - (BOOL) isCompatibleBitmap: (NSBitmapImageRep*)bitmap
 {
@@ -167,7 +179,7 @@
                     : (int)y
 {
   OpalSurface *surface;
-  
+
   /*
    * The "graphics port" associated to an OpalContext is necessarily a
    * CGContextRef supplied by the client to back the OpalContext, instead
@@ -181,6 +193,12 @@
   CGContextRef suppliedContext = self->_graphicsPort;
   surface = [[OpalSurface alloc] initWithDevice: device
                                         context: suppliedContext];
+  if (x == -1 && y == -1)
+    {
+      NSSize size = [surface size];
+      x = 0;
+      y = size.height;
+    }
 
   [OGSTATE GSSetSurface: surface
                        : x

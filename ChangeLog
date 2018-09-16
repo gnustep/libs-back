@@ -1,3 +1,11 @@
+2018-09-16  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/opal/OpalContext.m (-initWithGraphicsPort:flipped:): Implement.
+	* Source/opal/OpalContext.m (-GSSetDevice:::): Get height form
+	surface if no y value is given.
+	* Source/opal/OpalSurface.m: Rewrite to handle the case where
+	device is not set.
+
 2018-07-16  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (_setupRootWindow): Make sure the
@@ -112,7 +120,7 @@
 2017-07-17  Daniel Ferreira <dtf@stanford.edu>
 
 	* Source/opal/GNUmakefile: add OpalBridge.m to project.
-	* Source/opal/OpalBridge.m:	
+	* Source/opal/OpalBridge.m:
 	Implement a bridge between NSColor and CGColorRef and a stub for a
 	bridge between NSImage and CGImageRef. This improves compatibility with
 	Quartz.
@@ -121,7 +129,7 @@
 
 	* Headers/opal/OpalSurface.h
 	* Source/opal/OpalContext.m
-	* Source/opal/OpalSurface.m:	
+	* Source/opal/OpalSurface.m:
 	In Quartz, the "graphics port" bound to an NSGraphicsContext (subclassed
 	by OpalContext) is a CGContext. We currently initialize one in
 	OpalSurface if it does not exist, however we do not allow the client to
