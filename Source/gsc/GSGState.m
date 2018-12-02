@@ -130,10 +130,14 @@
     in the current color */
 - (void) setColor: (device_color_t *)color state: (color_state_t)cState
 {
-  if (cState & COLOR_FILL)
-    fillColor = *color;
-  if (cState & COLOR_STROKE)
-    strokeColor = *color;
+  if ((cState & COLOR_FILL) && (&fillColor != color))
+    {
+      fillColor = *color;
+    }
+  if ((cState & COLOR_STROKE) && (&strokeColor != color))
+    {
+      strokeColor = *color;
+    }
   cstate = cState;
   DESTROY(pattern);
 }

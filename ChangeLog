@@ -1,3 +1,7 @@
+2018-12-02 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSGState.m (-setColor:state:): Don't copy values onto themselves.
+
 2018-09-16  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/opal/OpalContext.m (-initWithGraphicsPort:flipped:): Implement.
