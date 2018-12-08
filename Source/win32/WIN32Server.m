@@ -2250,9 +2250,21 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
   NSDebugLLog(@"WTrace", @"windowdevice: %d", winNum);
   window = GSWindowWithNumber(winNum);
-  GetClientRect((HWND)winNum, &rect);
-  h = rect.bottom - rect.top;
-  [self styleoffsets: &l : &r : &t : &b : [window styleMask]];
+   //This calculates the size differently for bare windows (no title, menus, etc) than for normal windows
+  //this is because the GetClientRect method (and the getWindowRect method) are limiting window size, which is a problem when
+  //trying to draw very large images. For normal windows this won't be an issue because they should never be larger than the screen
+  if (([window styleMask] & (~NSUnscaledWindowMask) & (~NSFullScreenWindowMask) & (~NSWindowStyleMaskFullScreen)) == 0) {
+	h = [window frame].size.height;
+	b = 0;
+	l = 0;
+  }
+  else {
+    GetClientRect((HWND)winNum, &rect);
+	h = rect.bottom - rect.top;
+   [self styleoffsets: &l : &r : &t : &b : [window styleMask]];
+   
+  }
+  
   GSSetDevice(ctxt, (void*)winNum, l, h + b);
   DPSinitmatrix(ctxt);
   DPSinitclip(ctxt);
