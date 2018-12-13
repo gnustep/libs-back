@@ -181,7 +181,16 @@
   //this is because the GetClientRect method (and the getWindowRect method) are limiting window size, which is a problem when
   //trying to draw very large images. For normal windows this won't be an issue because they should never be larger than the screen
   if (([window styleMask] & (~NSUnscaledWindowMask) & (~NSFullScreenWindowMask) & (~NSWindowStyleMaskFullScreen)) == 0) {
-	return [window frame].size;
+	RECT csize;
+
+	GetClientRect([self gsDevice], &csize);
+	NSSize cMakeSize = NSMakeSize(csize.right - csize.left, csize.bottom - csize.top);
+	if (cMakeSize.width > [window frame].size.width || cMakeSize.height > [window frame].size.height) {
+		return cMakeSize;
+	}
+	else {
+		return [window frame].size;
+	}
   }
   else {
 	RECT csize;
