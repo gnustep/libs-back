@@ -176,21 +176,15 @@
 - (NSSize) size
 {
   NSWindow *window = GSWindowWithNumber(gsDevice);
-
-  //This calculates the size differently for bare windows (no title, menus, etc) than for normal windows
-  //this is because the GetClientRect method (and the getWindowRect method) are limiting window size, which is a problem when
-  //trying to draw very large images. For normal windows this won't be an issue because they should never be larger than the screen
-  if (([window styleMask] & (~NSUnscaledWindowMask) & (~NSFullScreenWindowMask) & (~NSWindowStyleMaskFullScreen)) == 0) {
-	RECT csize;
-
-	GetClientRect([self gsDevice], &csize);
-	NSSize cMakeSize = NSMakeSize(csize.right - csize.left, csize.bottom - csize.top);
-	if (cMakeSize.width > [window frame].size.width || cMakeSize.height > [window frame].size.height) {
-		return cMakeSize;
-	}
-	else {
-		return [window frame].size;
-	}
+  
+  RECT desktop;
+  const HWND hDesktop = GetDesktopWindow();
+  GetWindowRect(hDesktop, &desktop);
+  float screenWidth = desktop.right;
+  float screenHeight = desktop.bottom;
+    
+  if (([window styleMask] & (~NSUnscaledWindowMask) & (~NSFullScreenWindowMask) & (~NSWindowStyleMaskFullScreen)) == 0 && ([window frame].size.width >= screenWidth || [window frame].size.height >= screenHeight)) {
+	return [window frame].size;
   }
   else {
 	RECT csize;
