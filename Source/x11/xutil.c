@@ -207,7 +207,7 @@ RGetXImage(RContext *context, Drawable d, int x, int y,
     RXImage *ximg = NULL;
 
 #ifdef XSHM
-    if (context->attribs->use_shared_memory && 0) {
+    if (context->attribs->use_shared_memory && 0) {	// Never executed. Why?
 	ximg = RCreateXImage(context, getDepth(context->dpy, d),
 			     width, height);
 
@@ -219,7 +219,7 @@ RGetXImage(RContext *context, Drawable d, int x, int y,
 	    XShmGetImage(context->dpy, d, ximg->image, x, y, AllPlanes);
 	}
     }
-    if (!ximg) {
+    if (!ximg) {   // Always true. Why?
 	ximg = malloc(sizeof(RXImage));
 	if (!ximg) {
 	    RErrorCode = RERR_NOMEMORY;
