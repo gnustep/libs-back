@@ -351,6 +351,8 @@ image2TrueColor(RContext *ctx, RImage *image)
 	    if (!err || !nerr) {
 		if (nerr)
 		    free(nerr);
+		if (err)
+		    free(err);
 		RErrorCode = RERR_NOMEMORY;
 		RDestroyXImage(ctx, ximg);
 		return NULL;
@@ -522,6 +524,8 @@ image2PseudoColor(RContext *ctx, RImage *image)
 	if (!err || !nerr) {
 	    if (nerr)
 		free(nerr);
+	    if (err)
+		free(err);
 	    RErrorCode = RERR_NOMEMORY;
 	    RDestroyXImage(ctx, ximg);
 	    return NULL;
@@ -757,6 +761,8 @@ image2GrayScale(RContext *ctx, RImage *image)
 	if (!gerr || !ngerr) {
 	    if (ngerr)
 		free(ngerr);
+	    if (gerr)
+		free(gerr);
 	    RErrorCode = RERR_NOMEMORY;
 	    RDestroyXImage(ctx, ximg);
 	    return NULL;

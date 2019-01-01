@@ -1,3 +1,7 @@
+2018-12-31 Pavel Shlyak <pvshlyak@edu.hse.ru>
+
+	* Source/x11/convert.c: Don't leak memory on error handling
+
 2018-12-02 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/gsc/GSGState.m (-setColor:state:): Don't copy values onto themselves.
