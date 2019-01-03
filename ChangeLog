@@ -1,3 +1,8 @@
+2019-01-04 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/opal/OpalGState.m: Add colour handling for all the
+	different colour spaces.
+
 2018-12-31 Pavel Shlyak <pvshlyak@edu.hse.ru>
 
 	* Source/x11/convert.c: Don't leak memory on error handling

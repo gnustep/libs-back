@@ -55,6 +55,13 @@ static inline NSPoint _NSPointFromCGPoint(CGPoint cgpoint)
 
 @implementation OpalGState
 
+- (void) dealloc
+{
+  RELEASE(_opalSurface);
+  RELEASE(_opGState);
+  [super dealloc];
+}
+
 - (id)copyWithZone: (NSZone *)zone
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
@@ -82,64 +89,63 @@ static inline NSPoint _NSPointFromCGPoint(CGPoint cgpoint)
   [super setOffset: theOffset];
 }
 
+- (void) setColor: (device_color_t *)color state: (color_state_t)cState
+{
+  CGContextRef cgctx = CGCTX;
+
+  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
+
+  if (cgctx)
+    {
+      if (color->space == hsb_colorspace)
+        {
+          gsColorToRGB(color);
+        }
+
+      if (color->space == gray_colorspace)
+        {
+          if (cState & COLOR_STROKE)
+            {
+              CGContextSetGrayStrokeColor(cgctx, color->field[0], color->field[AINDEX]);
+            }
+          if (cState & COLOR_FILL)
+            {
+              CGContextSetGrayFillColor(cgctx, color->field[0], color->field[AINDEX]);
+            }
+        }
+      else if (color->space == rgb_colorspace)
+        {
+          if (cState & COLOR_STROKE)
+            {
+              CGContextSetRGBStrokeColor(cgctx, color->field[0], color->field[1],
+                                         color->field[2], color->field[AINDEX]);
+            }
+          if (cState & COLOR_FILL)
+            {
+              CGContextSetRGBFillColor(cgctx, color->field[0], color->field[1],
+                                       color->field[2], color->field[AINDEX]);
+            }
+        }
+      else if (color->space == cmyk_colorspace)
+        {
+          if (cState & COLOR_STROKE)
+            {
+              CGContextSetCMYKStrokeColor(cgctx, color->field[0], color->field[1],
+                                          color->field[2], color->field[3], color->field[AINDEX]);
+            }
+          if (cState & COLOR_FILL)
+            {
+              CGContextSetCMYKFillColor(cgctx, color->field[0], color->field[1],
+                                        color->field[2], color->field[3], color->field[AINDEX]);
+            }
+        }
+    }
+  [super setColor: color state: cState];
+}
+
 @end
 
 @implementation OpalGState (Ops)
-
-- (void) DPSsetalpha: (CGFloat)a
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s - alpha %g", self, [self class], __PRETTY_FUNCTION__, a);
-  CGContextRef cgctx = CGCTX;
-
-  if (cgctx)
-    {
-      CGContextSetAlpha(cgctx, a);
-    }
-  [super DPSsetalpha: a];
-}
-
-- (void) DPSsetgray: (CGFloat)gray
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  CGContextRef cgctx = CGCTX;
-
-  const CGFloat alpha = 1.0; // TODO: is this correct?
-  if (cgctx)
-    {
-      CGContextSetGrayStrokeColor(cgctx, gray, alpha);
-      CGContextSetGrayFillColor(cgctx, gray, alpha);
-    }
-  [super DPSsetgray: gray];
-}
-
-- (void) DPSsetrgbcolor: (CGFloat)r : (CGFloat)g : (CGFloat)b
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  CGContextRef cgctx = CGCTX;
-
-  const CGFloat alpha = 1.0; // TODO: is this correct?
-  if (cgctx)
-    {
-      CGContextSetRGBStrokeColor(cgctx, r, g, b, alpha);
-      CGContextSetRGBFillColor(cgctx, r, g, b, alpha);
-    }
-  [super DPSsetrgbcolor: r : g : b];
-}
-
-- (void) DPSsetcmykcolor: (CGFloat)c : (CGFloat)m : (CGFloat)y : (CGFloat)k
-{
-  NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  CGContextRef cgctx = CGCTX;
-
-  const CGFloat alpha = 1.0; // TODO: is this correct?
-  if (cgctx)
-    {
-      CGContextSetCMYKFillColor(cgctx, c, m, y, k, alpha);
-      CGContextSetCMYKStrokeColor(cgctx, c, m, y, k, alpha);
-    }
-  [super DPSsetcmykcolor: c : m : y : k];
-}
-
 
 - (void) DPSshow: (const char *)s
 {
@@ -1081,16 +1087,20 @@ doesn't support to use the receiver cairo target as the source. */
 - (void *) saveClip
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  CGRect * r = calloc(sizeof(CGRect), 1);
+  CGRect *r = calloc(sizeof(CGRect), 1);
   *r = CGContextGetClipBoundingBox(CGCTX);
   return r;
 }
 
 - (void) restoreClip: (void *)savedClip
 {
+  CGRect *r = (CGRect *)savedClip;
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
   OPContextResetClip(CGCTX);
-  CGContextClipToRect(CGCTX, *(CGRect *)savedClip);
+  if (!CGRectIsNull(*r))
+    {
+      CGContextClipToRect(CGCTX, *r);
+    }
   free(savedClip);
 }
 
