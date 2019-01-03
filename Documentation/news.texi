@@ -7,6 +7,19 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.27.0}
+
+This release includes a few bugfixes.
+
+@itemize @bullet
+@item Improve configuration.
+@item xlib: Improve xft font classes.
+@item x11: Enable drawing in secondary threads.
+@item x11: Better handling of atoms. Method to get the window manager.
+@item opal: Improve colour handling
+@end itemize
+
+@ifclear ANNOUNCE-ONLY
 @section Noteworthy changes in version @samp{0.26.2}
 
 This release contains no changes since 0.26.1. It is released to coincide
@@ -30,7 +43,6 @@ as a result of GSoC 2017 project.
 @item misc: Fix reported static analyser warnings.
 @end itemize
 
-@ifclear ANNOUNCE-ONLY
 @section Noteworthy changes in version @samp{0.25.1}
 
 Small fixes and cleanups.

@@ -1,5 +1,9 @@
 2019-01-04 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Documentation/news.texi: Fill in some details for pending release.
+
+2019-01-04 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/opal/OpalGState.m: Add colour handling for all the
 	different colour spaces.
 
@@ -14,7 +18,7 @@
 2018-09-16  Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/opal/OpalContext.m (-initWithGraphicsPort:flipped:): Implement.
-	* Source/opal/OpalContext.m (-GSSetDevice:::): Get height form
+	* Source/opal/OpalContext.m (-GSSetDevice:::): Get height from
 	surface if no y value is given.
 	* Source/opal/OpalSurface.m: Rewrite to handle the case where
 	device is not set.
