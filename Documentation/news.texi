@@ -12,7 +12,7 @@
 This release includes a few bugfixes.
 
 @itemize @bullet
-@item Improve configuration.
+@item configure: Improve configuration.
 @item xlib: Improve xft font classes.
 @item x11: Enable drawing in secondary threads.
 @item x11: Better handling of atoms. Method to get the window manager.
