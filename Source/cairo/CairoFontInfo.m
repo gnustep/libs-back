@@ -35,6 +35,13 @@
 #include <math.h>
 #include <cairo-ft.h>
 
+#include FT_FREETYPE_H
+#include FT_SFNT_NAMES_H
+#include FT_TRUETYPE_TABLES_H
+#include FT_TYPE1_TABLES_H
+#include <fontconfig/fontconfig.h>
+#include <fontconfig/fcfreetype.h>
+
 @implementation CairoFontInfo 
 
 - (BOOL) setupAttributes
@@ -159,15 +166,38 @@
 
 - (BOOL) glyphIsEncoded: (NSGlyph)glyph
 {
-  /* FIXME: There is no proper way to determine with the toy font API,
-     whether a glyph is supported or not. We will just ignore ligatures 
-     and report all other glyph as existing.
-  return !NSEqualSizes([self advancementForGlyph: glyph], NSZeroSize);
-  */
-  if ((glyph >= 0xFB00) && (glyph <= 0xFB05))
-    return NO;
-  else
-    return YES;
+  BOOL val = NO;
+
+  if (_scaled)
+    {
+      FT_Face face = cairo_ft_scaled_font_lock_face(_scaled);
+      if (FT_Get_Char_Index (face, glyph) != 0)
+	{
+	  val = YES;
+	}
+
+      cairo_ft_scaled_font_unlock_face(_scaled);
+    }
+  return val;
+}
+
+- (NSGlyph) glyphWithName: (NSString *)glyphName
+{
+  NSGlyph val = NSNullGlyph;
+  FT_String *name = (FT_String *)[glyphName UTF8String];
+
+  if (_scaled)
+    {
+      FT_Face face = cairo_ft_scaled_font_lock_face(_scaled);
+      if (FT_Has_PS_Glyph_Names(face))
+	{
+	  val = (NSGlyph) FT_Get_Name_Index(face, name);
+	}
+
+      cairo_ft_scaled_font_unlock_face(_scaled);
+    }
+
+  return val;
 }
 
 static
