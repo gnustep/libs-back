@@ -51,6 +51,10 @@
   cairo_matrix_t font_matrix;
   cairo_matrix_t ctm;
   cairo_font_options_t *options;
+  cairo_hint_metrics_t metrics = CAIRO_HINT_METRICS_ON;
+  cairo_hint_style_t   style = CAIRO_HINT_STYLE_DEFAULT;
+  NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+  int hinting = 0, subpixel = 0;
 
   if (![super setupAttributes])
     {
@@ -78,16 +82,48 @@
       return NO;
     }
 
-  // We must not leave the hinting settings as their defaults,
-  // because if we did, that would mean using the surface defaults
-  // which might or might not use hinting (xlib does by default.)
-  //
-  // Since we make measurements outside of the context of a surface
-  // (-advancementForGlyph:), we need to ensure that the same
-  // hinting settings are used there as when we draw. For now,
-  // just force hinting to be off.
-  cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_ON);
-  cairo_font_options_set_hint_style(options, CAIRO_HINT_STYLE_NONE);
+  if ((hinting = [ud integerForKey: @"GSFontHinting"]))
+    { /*
+       * This part is only here to debug disabling the use of hinting for
+       * metrics, because doing so causes menus to get cut off on the right.
+       */
+      switch (hinting >> 4)
+	{
+	  case 1:
+	    metrics = CAIRO_HINT_METRICS_OFF;
+	    break;
+	  case 2:
+	    metrics = CAIRO_HINT_METRICS_ON;
+	    break;
+	}
+
+      switch (hinting & 0x0f)
+	{
+	  case 1:
+	    style = CAIRO_HINT_STYLE_NONE;
+	    break;
+	  case 2:
+	    style = CAIRO_HINT_STYLE_SLIGHT;
+	    break;
+	  case 3:
+	    style = CAIRO_HINT_STYLE_MEDIUM;
+	    break;
+	  case 4:
+	    style = CAIRO_HINT_STYLE_FULL;
+	    break;
+	}
+    }
+  cairo_font_options_set_hint_metrics(options, metrics);
+  cairo_font_options_set_hint_style(options, style);
+
+  if ((subpixel = [ud integerForKey: @"back-art-subpixel-text"]))
+    {
+      cairo_font_options_set_antialias(options, CAIRO_ANTIALIAS_SUBPIXEL);
+      cairo_font_options_set_subpixel_order(options, CAIRO_SUBPIXEL_ORDER_RGB);
+
+      if (subpixel == 2)
+	cairo_font_options_set_subpixel_order(options, CAIRO_SUBPIXEL_ORDER_BGR);
+    }
 
   _scaled = cairo_scaled_font_create(face, &font_matrix, &ctm, options);
   cairo_font_options_destroy(options);
