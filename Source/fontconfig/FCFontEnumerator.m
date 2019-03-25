@@ -94,13 +94,26 @@ sortFontFacesArray(id fontArr1, id fontArr2, void *context)
   unsigned int traits2 = [[fontArr2 objectAtIndex: 3] unsignedIntValue];
 
   // order first by weight
-  if (weight1 > weight2)
-    return NSOrderedDescending;
   if (weight1 < weight2)
     return NSOrderedAscending;
-  if (traits1 < traits2)
+  if (weight1 > weight2)
+    return NSOrderedDescending;
+
+  // Italic next
+  if ((traits1 & NSItalicFontMask) < (traits2 & NSItalicFontMask))
     return NSOrderedAscending;
-  if (traits1 > traits2)
+  if ((traits1 & NSItalicFontMask) > (traits2 & NSItalicFontMask))
+    return NSOrderedDescending;
+
+  // now do condensed
+  if ((traits1 & NSCondensedFontMask) < (traits2 & NSCondensedFontMask))
+    return NSOrderedAscending;
+  if ((traits1 & NSCondensedFontMask) > (traits2 & NSCondensedFontMask))
+    return NSOrderedDescending;
+  // ...and expanded
+  if ((traits1 & NSExpandedFontMask) < (traits2 & NSExpandedFontMask))
+    return NSOrderedAscending;
+  if ((traits1 & NSExpandedFontMask) > (traits2 & NSExpandedFontMask))
     return NSOrderedDescending;
 
   // Special case: "Regular" sorts before non-Regular, for many reasons.
