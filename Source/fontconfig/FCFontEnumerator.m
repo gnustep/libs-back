@@ -167,6 +167,9 @@ static NSArray *faFromFc(FcPattern *pat)
 #ifdef FC_POSTSCRIPT_NAME
   char *fcname;
 #endif
+#if 0
+  FT_Face ftface = NULL;
+#endif
 
   if (FcPatternGetInteger(pat, FC_WEIGHT, 0, &weight) != FcResultMatch
     || FcPatternGetInteger(pat, FC_SLANT,  0, &slant) != FcResultMatch
@@ -177,6 +180,26 @@ static NSArray *faFromFc(FcPattern *pat)
   if (FcPatternGetInteger(pat, FC_SPACING, 0, &spacing) == FcResultMatch)
     if (spacing==FC_MONO || spacing==FC_CHARCELL)
       nstraits |= NSFixedPitchFontMask;
+
+  /*
+     This code will allow us to access TrueType/OpenType font tables from
+     fontconfig. If we want to implement features like the so-called "OS/2"
+     table which contains typographic family info ("give me a list of 'script'
+     fonts with slab serifs") and stuff like the font's correct typographic
+     line height and its xHeight, this is where we get that info.
+
+     For more information, see http://www.microsoft.com/typography/otspec/
+  */
+#if 0
+  if (FcPatternGetFTFace (pat, FC_FT_FACE, 0, &ftface) == FcResultMatch)
+    {
+      // we got a FreeType face now, mwahaha.
+      TT_Header *head = FT_Get_Sfnt_Table (ftface, FT_SFNT_HEAD);
+      TT_OS2 *os2 = FT_Get_Sfnt_Table (ftface, FT_SFNT_OS2);
+      TT_HoriHeader *hhea = FT_Get_Sfnt_Table (ftface, FT_SFNT_HHEA);
+      TT_Postscript *post = FT_Get_Sfnt_Table (ftface, FT_SFNT_POST);
+    }
+#endif
 
   name = [NSMutableString stringWithCapacity: 100];
 #ifdef FC_POSTSCRIPT_NAME
