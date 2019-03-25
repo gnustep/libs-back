@@ -53,6 +53,29 @@
 #define FC_WEIGHT_ULTRABLACK FC_WEIGHT_BLACK
 #endif
 
+static float
+convertWeight (int fcWeight, int bottomValue, int topValue)
+{
+  /*
+    This is the distance between topValue and bottomValue expressed as a
+    fraction between zero and one. We do this to express the range of
+    fontconfig font weights in a useful manner.
+  */
+
+  if (fcWeight <= bottomValue)
+    {
+      return 0.0;
+    }
+  else if (fcWeight >= topValue)
+    {
+      return 1.0;
+    }
+  else
+    {
+      return (float) (fcWeight - bottomValue) * (1.0f / (topValue - bottomValue));
+    }
+}
+
 static NSComparisonResult
 sortFontFacesArray(id fontArr1, id fontArr2, void *context)
 {
@@ -65,8 +88,8 @@ sortFontFacesArray(id fontArr1, id fontArr2, void *context)
   */
   NSString *style1 = [fontArr1 objectAtIndex: 1];
   NSString *style2 = [fontArr2 objectAtIndex: 1];
-  int weight1 = [[fontArr1 objectAtIndex: 2] intValue];
-  int weight2 = [[fontArr2 objectAtIndex: 2] intValue];
+  float weight1 = [[fontArr1 objectAtIndex: 2] floatValue];
+  float weight2 = [[fontArr2 objectAtIndex: 2] floatValue];
   unsigned int traits1 = [[fontArr1 objectAtIndex: 3] unsignedIntValue];
   unsigned int traits2 = [[fontArr2 objectAtIndex: 3] unsignedIntValue];
 
@@ -123,7 +146,8 @@ NSMutableDictionary * __allFonts;
 // Make a GNUstep style font descriptor from a FcPattern
 static NSArray *faFromFc(FcPattern *pat)
 {
-  int weight, slant, spacing, width, nsweight;
+  int weight, slant, spacing, width;
+  float nsweight;
   unsigned int nstraits = 0;
   char *fcfamily, *fcstyle;
   NSMutableString *name, *family, *style;
@@ -150,99 +174,107 @@ static NSArray *faFromFc(FcPattern *pat)
   family = [NSMutableString stringWithUTF8String: fcfamily];
   style = [NSMutableString stringWithCapacity: 100];
 
-  switch (weight) 
+  if (weight < FC_WEIGHT_ULTRALIGHT)
     {
-      case FC_WEIGHT_THIN:
-        [style appendString: @"Thin"];
-        nsweight = 1;
-        break;
-      case FC_WEIGHT_ULTRALIGHT:
-        [style appendString: @"Ultralight"];
-        nsweight = 2;
-        break;
-      case FC_WEIGHT_LIGHT:
-        [style appendString: @"Light"];
-        nsweight = 3;
-        break;
-      case FC_WEIGHT_BOOK:
-        [style appendString: @"Book"];
-        nsweight = 4;
-        break;
-      case FC_WEIGHT_REGULAR:
-//        [style appendString: @"Regular"];
-        nsweight = 5;
-        break;
-      case FC_WEIGHT_MEDIUM:
-        [style appendString: @"Medium"];
-        nsweight = 6;
-        break;
-      case FC_WEIGHT_DEMIBOLD:
-        [style appendString: @"Demibold"];
-        nsweight = 7;
-        break;
-      case FC_WEIGHT_BOLD:
-        [style appendString: @"Bold"];
-        nsweight = 9;
-        nstraits |= NSBoldFontMask;
-        break;
-      case FC_WEIGHT_ULTRABOLD:
-        [style appendString: @"Ultrabold"];
-        nsweight = 11;
-        nstraits |= NSBoldFontMask;
-        break;
-      case FC_WEIGHT_BLACK:
-        [style appendString: @"Black"];
-        nsweight = 12;
-        nstraits |= NSBoldFontMask;
-        break;
-      case FC_WEIGHT_ULTRABLACK:
-        [style appendString: @"Ultrablack"];
-        nsweight = 13;
-        nstraits |= NSBoldFontMask;
-        break;
-      default:
-        nsweight = 5;
+      [style appendString: @"Thin"];
+      nsweight = 1 + convertWeight (weight, FC_WEIGHT_THIN, FC_WEIGHT_ULTRALIGHT);
+    }
+  else if (weight < FC_WEIGHT_LIGHT)
+    {
+      [style appendString: @"Ultralight"];
+      nsweight = 2 + convertWeight (weight, FC_WEIGHT_ULTRALIGHT, FC_WEIGHT_LIGHT);
+    }
+  else if (weight < FC_WEIGHT_BOOK)
+    {
+      [style appendString: @"Light"];
+      nsweight = 3 + convertWeight (weight, FC_WEIGHT_LIGHT, FC_WEIGHT_BOOK);
+    }
+  else if (weight < FC_WEIGHT_REGULAR)
+    {
+      [style appendString: @"Book"];
+      nsweight = 4 + convertWeight (weight, FC_WEIGHT_BOOK, FC_WEIGHT_REGULAR);
+    }
+  else if (weight < FC_WEIGHT_MEDIUM)
+    {
+      nsweight = 5 + convertWeight (weight, FC_WEIGHT_REGULAR, FC_WEIGHT_MEDIUM);
+    }
+  else if (weight < FC_WEIGHT_DEMIBOLD)
+    {
+      [style appendString: @"Medium"];
+      nsweight = 6 + convertWeight (weight, FC_WEIGHT_MEDIUM, FC_WEIGHT_DEMIBOLD);
+    }
+  else if (weight < FC_WEIGHT_BOLD)
+    {
+      [style appendString: @"Demibold"];
+      nsweight = 7 + convertWeight (weight, FC_WEIGHT_DEMIBOLD, FC_WEIGHT_BOLD);
+    }
+  else if (weight < FC_WEIGHT_ULTRABOLD)
+    {
+      [style appendString: @"Bold"];
+      nsweight = 9 + convertWeight (weight, FC_WEIGHT_BOLD, FC_WEIGHT_ULTRABOLD);
+      nstraits |= NSBoldFontMask;
+    }
+  else if (weight < FC_WEIGHT_BLACK)
+    {
+      [style appendString: @"Ultrabold"];
+      nsweight = 11 + convertWeight (weight, FC_WEIGHT_ULTRABOLD, FC_WEIGHT_BLACK);
+      nstraits |= NSBoldFontMask;
+    }
+  else if (weight < FC_WEIGHT_ULTRABLACK)
+    {
+      [style appendString: @"Black"];
+      nsweight = 12 + convertWeight (weight, FC_WEIGHT_BLACK, FC_WEIGHT_ULTRABLACK);
+      nstraits |= NSBoldFontMask;
+    }
+  else
+    {
+      [style appendString: @"Ultrablack"];
+      nsweight = 13 + convertWeight (weight, FC_WEIGHT_ULTRABLACK, FC_WEIGHT_ULTRABLACK + 20);
+      nstraits |= NSBoldFontMask;
     }
 
   if (FcPatternGetInteger(pat, FC_WIDTH, 0, &width) == FcResultMatch)
-    switch (width) 
-      {
-	case FC_WIDTH_ULTRACONDENSED:
-          [style appendString: @"Ultracondensed"];
-          nstraits |= NSCondensedFontMask;
-	  break;
-	case FC_WIDTH_EXTRACONDENSED:
-          [style appendString: @"Extracondensed"];
-          nstraits |= NSCondensedFontMask;
-	  break;
-	case FC_WIDTH_CONDENSED:
-          [style appendString: @"Condensed"];
-          nstraits |= NSCondensedFontMask;
-	  break;
-	case FC_WIDTH_SEMICONDENSED:
-          [style appendString: @"Semicondensed"];
-          nstraits |= NSCondensedFontMask;
-	  break;
-	case FC_WIDTH_SEMIEXPANDED:
-          [style appendString: @"Semiexpanded"];
-          nstraits |= NSExpandedFontMask;
-	  break;
-	case FC_WIDTH_EXPANDED:
-          [style appendString: @"Expanded"];
-          nstraits |= NSExpandedFontMask;
-	  break;
-	case FC_WIDTH_EXTRAEXPANDED:
-          [style appendString: @"Extraexpanded"];
-          nstraits |= NSExpandedFontMask;
-	  break;
-	case FC_WIDTH_ULTRAEXPANDED:
-          [style appendString: @"Ultraexpanded"];
-          nstraits |= NSExpandedFontMask;
-	  break;
-
-	default:
-      	  break;
-      }
+    {
+      if (width < FC_WIDTH_EXTRACONDENSED)
+	{
+	  [style appendString: @"Ultracondensed"];
+	  nstraits |= NSCondensedFontMask;
+	}
+      else if (width < FC_WIDTH_CONDENSED)
+	{
+	  [style appendString: @"Extracondensed"];
+	  nstraits |= NSCondensedFontMask;
+	}
+      else if (width < FC_WIDTH_SEMICONDENSED)
+	{
+	  [style appendString: @"Condensed"];
+	  nstraits |= NSCondensedFontMask;
+	}
+      else if (width < FC_WIDTH_SEMIEXPANDED)
+	{
+	  // do nothing, this is "regular"
+	}
+      else if (width < FC_WIDTH_EXPANDED)
+	{
+	  [style appendString: @"Semiexpanded"];
+	  nstraits |= NSExpandedFontMask;
+	}
+      else if (width < FC_WIDTH_EXTRAEXPANDED)
+	{
+	  [style appendString: @"Expanded"];
+	  nstraits |= NSExpandedFontMask;
+	}
+      else if (width < FC_WIDTH_ULTRAEXPANDED)
+	{
+	  [style appendString: @"Extraexpanded"];
+	  nstraits |= NSExpandedFontMask;
+	}
+      else
+	{
+	  [style appendString: @"Ultraexpanded"];
+	  nstraits |= NSExpandedFontMask;
+	}
+    }
 
   switch (slant) 
     {
@@ -280,7 +312,7 @@ static NSArray *faFromFc(FcPattern *pat)
 //  NSLog (@"family: %@, style: %s/%@", name, fcstyle, style);
   return [NSArray arrayWithObjects: name, 
 		  style, 
-		  [NSNumber numberWithInt: nsweight], 
+		  [NSNumber numberWithFloat: nsweight],
 		  [NSNumber numberWithUnsignedInt: nstraits],
 		  nil];
 }
@@ -338,7 +370,7 @@ static NSArray *faFromFc(FcPattern *pat)
                   [familyArray addObject: fontArray];
                   [fcxft_allFontNames addObject: name];
                   aFont = [[faceInfoClass alloc] initWithfamilyName: familyString
-                              weight: [[fontArray objectAtIndex: 2] intValue]
+                              weight: [[fontArray objectAtIndex: 2] floatValue]
                               traits: [[fontArray objectAtIndex: 3] unsignedIntValue]
                              pattern: fs->fonts[i]];
                   [fcxft_allFonts setObject: aFont forKey: name];
