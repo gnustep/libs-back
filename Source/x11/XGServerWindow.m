@@ -188,7 +188,7 @@ PropGetCheckProperty(Display *dpy, Window window, Atom hint, Atom type,
     || (bytes_after_ret != 0)
     || (format != 0 && format != fmt_ret))
     {
-      NSLog(@"XGetWindowProperty type %d type_ret %d count %d count_ret %d format %d format_ret %d bytes_after_ret %d",
+      NSLog(@"XGetWindowProperty type %lu type_ret %lu count %d count_ret %lu format %d format_ret %d bytes_after_ret %lu",
             type, type_ret, count, nitems_ret, format, fmt_ret, bytes_after_ret);
       XFree(data);
       return NULL;
@@ -3263,10 +3263,14 @@ static BOOL didCreatePixmaps;
               skipTaskbar = YES;
             }
           else if (level == NSSubmenuWindowLevel
-                   || level == NSFloatingWindowLevel
                    || level == NSTornOffMenuWindowLevel)
             {
               data[0] = generic._NET_WM_WINDOW_TYPE_MENU_ATOM;
+              skipTaskbar = YES;
+            }
+          else if (level == NSFloatingWindowLevel)
+            {
+              data[0] = generic._NET_WM_WINDOW_TYPE_UTILITY_ATOM;
               skipTaskbar = YES;
             }
           else if (level == NSDockWindowLevel

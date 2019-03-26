@@ -1,3 +1,7 @@
+2019-03-26 Sergii Stoian <stoyan255@gmail.com>
+	* Source/x11/XGServerWindow.m:
+	(setwindowlevel::) Set `Utility` window type for NSFloatingWindowLevel.
+
 2019-01-04 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Documentation/news.texi: Fill in some details for pending release.
