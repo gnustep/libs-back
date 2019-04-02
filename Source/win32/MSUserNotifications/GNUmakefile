@@ -21,9 +21,9 @@ BUNDLE_NAME = NSUserNotification
 -include $(GNUSTEP_MAKEFILES)/common.make
 
 NSUserNotification_NEEDS_GUI = NO
-NSUserNotification_CFLAGS += -DWINVER=0x0600 -D_WIN32_IE=0x0600 -DBUILD_DLL -fms-extensions
-NSUserNotification_OBJCFLAGS += -DWINVER=0x0600 -D_WIN32_IE=0x0600 -DBUILD_DLL -fms-extensions
-NSUserNotification_OBJCCFLAGS += -DWINVER=0x0600 -D_WIN32_IE=0x0600 -DBUILD_DLL -fms-extensions
+NSUserNotification_CFLAGS += -DWINVER=0x0600 -D_WIN32_IE=0x0600 -DBUILD_DLL -fms-extensions -fno-cxx-exceptions
+NSUserNotification_OBJCFLAGS += -DWINVER=0x0600 -D_WIN32_IE=0x0600 -DBUILD_DLL -fms-extensions -fno-cxx-exceptions
+NSUserNotification_OBJCCFLAGS += -DWINVER=0x0600 -D_WIN32_IE=0x0600 -DBUILD_DLL -fms-extensions -fno-cxx-exceptions
 NSUserNotification_PRINCIPAL_CLASS = MSUserNotificationCenter
 NSUserNotification_OBJC_FILES =
 NSUserNotification_OBJCC_FILES = MSUserNotification.mm
