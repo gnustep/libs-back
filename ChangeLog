@@ -1,3 +1,10 @@
+2019-04-02  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m:
+	(orderwindow:::) Map application icon window without focus flickering
+	for applications executed with argument `-autolaunch YES` in WindowMaker
+	environment.
+
 2019-03-26 Sergii Stoian <stoyan255@gmail.com>
 	* Source/x11/XGServerWindow.m:
 	(setwindowlevel::) Set `Utility` window type for NSFloatingWindowLevel.
