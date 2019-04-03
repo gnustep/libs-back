@@ -472,10 +472,10 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             /*
              * We must hand over control of our icon/miniwindow
              * to Window Maker.
-                 */
+             */
             if ((cWin->win_attrs.window_style
-              & (NSMiniWindowMask | NSIconWindowMask)) != 0
-              && eventType == NSLeftMouseDown && clickCount == 1)
+                 & (NSMiniWindowMask | NSIconWindowMask)) != 0
+                && eventType == NSLeftMouseDown)
               {
                 if (cWin->parent == None)
                   break;
@@ -484,7 +484,8 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                 XSendEvent(dpy, cWin->parent, True,
                            ButtonPressMask, &xEvent);
                 XFlush(dpy);
-                break;
+                if (clickCount != 2)
+                  break;
               }
           }
 

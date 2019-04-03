@@ -1,3 +1,8 @@
+2019-04-04  Sergii Stoian  <stoyan255@ukr.net>
+
+	* Source/x11/XGServerEvent.m (processEvent:):
+	Send double-click on appicon to the WindowMaker.
+
 2019-04-02  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m:
