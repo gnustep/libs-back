@@ -2821,15 +2821,15 @@ static BOOL didCreatePixmaps;
  	    {
               XEvent ev;
 
-              // Inform WM to ignore focus events
+              // Inform WindowMaker to ignore focus events
               ev.xclient.type = ClientMessage;
-              ev.xclient.message_type = XInternAtom(dpy,"WM_IGNORE_FOCUS_EVENTS", False);
+              ev.xclient.message_type = generic.WM_IGNORE_FOCUS_EVENTS_ATOM;
               ev.xclient.format = 32;
               ev.xclient.data.l[0] = True;
               XSendEvent(dpy, ROOT, True, EnterWindowMask, &ev);
               // Display application icon
               XMapWindow(dpy, ROOT);
-              // Inform WM to process focus events again
+              // Inform WindowMaker to process focus events again
               ev.xclient.data.l[0] = False;
               XSendEvent(dpy, ROOT, True, EnterWindowMask, &ev);
             }

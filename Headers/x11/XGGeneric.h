@@ -108,7 +108,8 @@ static char *atom_names[] = {
   "_GNUSTEP_WM_MINIATURIZE_WINDOW",
   "_GNUSTEP_WM_ATTR",
   "_GNUSTEP_TITLEBAR_STATE",
-  "_GNUSTEP_FRAME_OFFSETS"
+  "_GNUSTEP_FRAME_OFFSETS",
+  "WM_IGNORE_FOCUS_EVENTS"
  };
 
 /*
@@ -181,6 +182,7 @@ static char *atom_names[] = {
 #define _GNUSTEP_WM_ATTR_ATOM                  atoms[64]
 #define _GNUSTEP_TITLEBAR_STATE_ATOM           atoms[65]
 #define _GNUSTEP_FRAME_OFFSETS_ATOM            atoms[66]
+#define WM_IGNORE_FOCUS_EVENTS_ATOM            atoms[67]
 
 /*
  * Frame offsets for window inside parent decoration window.
