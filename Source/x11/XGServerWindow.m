@@ -2815,6 +2815,24 @@ static BOOL didCreatePixmaps;
        */
       if ((window->win_attrs.window_style & NSIconWindowMask) != 0)
 	{
+          NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+          if (op != NSWindowOut && window->map_state == IsUnmapped &&
+              [[defaults objectForKey: @"autolaunch"] isEqualToString:@"YES"])
+ 	    {
+              XEvent ev;
+
+              // Inform WindowMaker to ignore focus events
+              ev.xclient.type = ClientMessage;
+              ev.xclient.message_type = generic.WM_IGNORE_FOCUS_EVENTS_ATOM;
+              ev.xclient.format = 32;
+              ev.xclient.data.l[0] = True;
+              XSendEvent(dpy, ROOT, True, EnterWindowMask, &ev);
+              // Display application icon
+              XMapWindow(dpy, ROOT);
+              // Inform WindowMaker to process focus events again
+              ev.xclient.data.l[0] = False;
+              XSendEvent(dpy, ROOT, True, EnterWindowMask, &ev);
+            }
 	  return;
 	}
       if ((window->win_attrs.window_style & NSMiniWindowMask) != 0)
