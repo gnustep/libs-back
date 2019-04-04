@@ -484,7 +484,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                 XSendEvent(dpy, cWin->parent, True,
                            ButtonPressMask, &xEvent);
                 XFlush(dpy);
-                if (clickCount != 2)
+                if (clickCount == 1)
                   break;
               }
           }
