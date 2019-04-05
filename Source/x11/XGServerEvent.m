@@ -622,6 +622,21 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                                data2: 0];
                 }
               else if ((Atom)xEvent.xclient.data.l[0]
+                       == generic._GNUSTEP_WM_HIDE_APP_ATOM)
+                {
+                  NSDebugLLog(@"Hide", @"%lu application will be hidden", cWin->number);
+                  eventLocation = NSMakePoint(0,0);
+                  e = [NSEvent otherEventWithType: NSAppKitDefined
+                                         location: eventLocation
+                                    modifierFlags: 0
+                                        timestamp: 0
+                                     windowNumber: cWin->number
+                                          context: gcontext
+                                          subtype: GSAppKitAppHide
+                                            data1: 0
+                                            data2: 0];
+                }              
+              else if ((Atom)xEvent.xclient.data.l[0]
                 == generic.WM_TAKE_FOCUS_ATOM)
                 {
                   e = [self _handleTakeFocusAtom: xEvent 

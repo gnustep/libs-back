@@ -104,8 +104,10 @@ static char *atom_names[] = {
   "_WINDOWMAKER_WM_PROTOCOLS",
   "_WINDOWMAKER_NOTICEBOARD",
   "_WINDOWMAKER_ICON_TILE",
+  "_WINDOWMAKER_WM_FUNCTION",
   "_RGBA_IMAGE",
   "_GNUSTEP_WM_MINIATURIZE_WINDOW",
+  "_GNUSTEP_WM_HIDE_APP",
   "_GNUSTEP_WM_ATTR",
   "_GNUSTEP_TITLEBAR_STATE",
   "_GNUSTEP_FRAME_OFFSETS",
@@ -177,12 +179,14 @@ static char *atom_names[] = {
 #define _WINDOWMAKER_WM_PROTOCOLS_ATOM         atoms[59]
 #define _WINDOWMAKER_NOTICEBOARD_ATOM          atoms[60]
 #define _WINDOWMAKER_ICON_TILE_ATOM            atoms[61]
-#define _RGBA_IMAGE_ATOM                       atoms[62]
-#define _GNUSTEP_WM_MINIATURIZE_WINDOW_ATOM    atoms[63]
-#define _GNUSTEP_WM_ATTR_ATOM                  atoms[64]
-#define _GNUSTEP_TITLEBAR_STATE_ATOM           atoms[65]
-#define _GNUSTEP_FRAME_OFFSETS_ATOM            atoms[66]
-#define WM_IGNORE_FOCUS_EVENTS_ATOM            atoms[67]
+#define _WINDOWMAKER_WM_FUNCTION_ATOM          atoms[62]
+#define _RGBA_IMAGE_ATOM                       atoms[63]
+#define _GNUSTEP_WM_MINIATURIZE_WINDOW_ATOM    atoms[64]
+#define _GNUSTEP_WM_HIDE_APP_ATOM              atoms[65]
+#define _GNUSTEP_WM_ATTR_ATOM                  atoms[66]
+#define _GNUSTEP_TITLEBAR_STATE_ATOM           atoms[67]
+#define _GNUSTEP_FRAME_OFFSETS_ATOM            atoms[68]
+#define WM_IGNORE_FOCUS_EVENTS_ATOM            atoms[69]
 
 /*
  * Frame offsets for window inside parent decoration window.

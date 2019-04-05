@@ -72,7 +72,7 @@ typedef struct {
 #define WMFHideOtherApplications		10
 #define WMFHideApplication			12
 
-#define GSMaxWMProtocols 5
+#define GSMaxWMProtocols 6
 
 /* Graphics Driver protocol. Setup in [NSGraphicsContext-contextDevice:] */
 enum {
