@@ -1396,10 +1396,13 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       window->protocols[window->numProtocols++] = generic._NET_WM_SYNC_REQUEST_ATOM;
 #endif
     }
-  if ((generic.wm & XGWM_WINDOWMAKER) != 0
-      && (window->win_attrs.window_style & NSMiniaturizableWindowMask) != 0)
+  if ((generic.wm & XGWM_WINDOWMAKER) != 0)
     {
-      window->protocols[window->numProtocols++] = generic._GNUSTEP_WM_MINIATURIZE_WINDOW_ATOM;
+      if ((window->win_attrs.window_style & NSMiniaturizableWindowMask) != 0)
+        {
+          window->protocols[window->numProtocols++] = generic._GNUSTEP_WM_MINIATURIZE_WINDOW_ATOM;
+        }
+      window->protocols[window->numProtocols++] = generic._GNUSTEP_WM_HIDE_APP_ATOM;
     }
   NSAssert1(window->numProtocols <= GSMaxWMProtocols,
 	    @"Too many protocols (%d > GSMaxWMProtocols)",
@@ -2600,6 +2603,28 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     XWithdrawWindow(dpy, window->ident, window->screen);
   else if (window->wm_state != IconicState)
     XIconifyWindow(dpy, window->ident, window->screen);
+}
+
+/* Actually this is "hide application" action.
+   However, key press may be received by particular window. */
+- (BOOL) hideApplication: (int)win
+{
+  gswindow_device_t *window;
+  
+  if ((generic.wm & XGWM_WINDOWMAKER) == 0)
+    return NO;
+    
+  window = [XGServer _windowWithTag: win];
+  [self _sendRoot: window->root
+             type: generic._WINDOWMAKER_WM_FUNCTION_ATOM
+           window: window->ident
+            data0: WMFHideApplication
+            data1: CurrentTime
+            data2: 0
+            data3: 0];
+  XSync(dpy, False);
+    
+  return YES;
 }
 
 /**

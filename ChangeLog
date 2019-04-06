@@ -1,3 +1,21 @@
+2019-04-06  Sergii Stoian  <stoyan255@ukr.net>
+
+	* Source/x11/XGServerWindow.m (hideApplication:): new method name for
+	`hidewindow`.
+
+2019-04-05  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Headers/x11/XGServerWindow.h (GSMaxWMProtocols): increased number to support
+	WMFHideApplication.
+	* Headers/x11/XGGeneric.h: Atoms _WINDOWMAKER_WM_FUNCTION, _GNUSTEP_WM_HIDE_APP
+	were added.
+
+	* Source/x11/XGServerWindow.m (_setSupportedWMProtocols:): added
+	_GNUSTEP_WM_HIDE_APP protocol suport to the window protocols.
+	(hidewindow:): implementation of GSDisplayServer method.
+	* Source/x11/XGServerEvent.m (processEvent:): process _GNUSTEP_WM_HIDE_APP
+	client message.
+
 2019-04-04  Sergii Stoian  <stoyan255@ukr.net>
 
 	* Source/x11/XGServerEvent.m (processEvent:):
