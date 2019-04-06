@@ -1,3 +1,8 @@
+2019-04-06  Sergii Stoian  <stoyan255@ukr.net>
+
+	* Source/x11/XGServerWindow.m (hideApplication:): new method name for
+	`hidewindow`.
+
 2019-04-05  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Headers/x11/XGServerWindow.h (GSMaxWMProtocols): increased number to support

@@ -2607,7 +2607,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 
 /* Actually this is "hide application" action.
    However, key press may be received by particular window. */
-- (BOOL) hidewindow: (int)win
+- (BOOL) hideApplication: (int)win
 {
   gswindow_device_t *window;
   
