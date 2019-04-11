@@ -476,7 +476,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
               }
           }
         else if (xEvent.xbutton.button == generic.rMouse
-          && generic.rMouse != 0)
+                 && generic.rMouse != 0)
           {
             if (swapMouseButtons)
               {
@@ -490,34 +490,34 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
               }
           }
         else if (xEvent.xbutton.button == generic.mMouse
-          && generic.mMouse != 0)
+                 && generic.mMouse != 0)
           {
             eventType = NSOtherMouseDown;
             buttonNumber = generic.mMouse;
           }
         else if (xEvent.xbutton.button == generic.upMouse
-          && generic.upMouse != 0)
+                 && generic.upMouse != 0)
           {
             deltaY = 1. * mouseScrollMultiplier;
             eventType = NSScrollWheel;
             buttonNumber = generic.upMouse;
           }
         else if (xEvent.xbutton.button == generic.downMouse
-          && generic.downMouse != 0)
+                 && generic.downMouse != 0)
           {
             deltaY = -1. * mouseScrollMultiplier;
             eventType = NSScrollWheel;
             buttonNumber = generic.downMouse;
           }
         else if (xEvent.xbutton.button == generic.scrollLeftMouse
-          && generic.scrollLeftMouse != 0)
+                 && generic.scrollLeftMouse != 0)
           {
             deltaX = -1. * mouseScrollMultiplier;
             eventType = NSScrollWheel;
             buttonNumber = generic.scrollLeftMouse;
           }
         else if (xEvent.xbutton.button == generic.scrollRightMouse
-          && generic.scrollRightMouse != 0)
+                 && generic.scrollRightMouse != 0)
           {
             deltaX = 1. * mouseScrollMultiplier;
             eventType = NSScrollWheel;
@@ -599,7 +599,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
               }
           }
         else if (xEvent.xbutton.button == generic.rMouse
-          && generic.rMouse != 0)
+                 && generic.rMouse != 0)
           {
             if (swapMouseButtons)
               {
@@ -613,7 +613,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
               }
           }
         else if (xEvent.xbutton.button == generic.mMouse
-          && generic.mMouse != 0)
+                 && generic.mMouse != 0)
           {
             eventType = NSOtherMouseUp;
             buttonNumber = generic.mMouse;
@@ -623,6 +623,9 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             // we ignore release of scrollUp or scrollDown
             break;                /* Unknown button */
           }
+        
+        if (menuButtonEnabled == NO && eventType == menuMouseButton)
+          break; // disabled menu button was released
 
         eventFlags = process_modifier_flags(xEvent.xbutton.state);
         // if pointer is grabbed use grab window
