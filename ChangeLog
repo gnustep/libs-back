@@ -1,3 +1,24 @@
+2019-04-12  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerEvent.m (mouseOptionsChanged:): change double-click
+	minimum value to 200 and default to 300.
+
+2019-04-11  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerEvent.m (processEvent:): do not send event if
+	disabled menu mouse button was released.
+
+2019-04-11  Sergii Stoian  <stoyan255@ukr.net>
+
+	* Source/x11/XGServerEvent.m (initializeMouse): new method. Calls
+	-mouseOptionsChanged: and setups observer for defaults changes.
+	(mouseOptionsChanged:): new method. Read mouse properties from user
+	defaults.
+	(processEvent:): respect mouse options on ButtonPress and
+	ButtonRelease events.
+
+	* Source/x11/XGServer.m (dealloc): remove notification observer.
+
 2019-04-06  Sergii Stoian  <stoyan255@ukr.net>
 
 	* Source/x11/XGServerWindow.m (hideApplication:): new method name for

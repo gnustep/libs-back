@@ -40,6 +40,7 @@
 #include <Foundation/NSString.h>
 #include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSDebug.h>
+#include <Foundation/NSDistributedNotificationCenter.h>
 
 #include <signal.h>
 /* Terminate cleanly if we get a signal to do so */
@@ -489,6 +490,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 - (void) dealloc
 {
   NSDebugLog(@"Destroying X11 Server");
+  [[NSDistributedNotificationCenter defaultCenter] removeObserver:self];
   DESTROY(inputServer);
   [self _destroyServerWindows];
   NSFreeMapTable(screenList);

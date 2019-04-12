@@ -42,6 +42,7 @@
 #include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSRunLoop.h>
 #include <Foundation/NSDebug.h>
+#include <Foundation/NSDistributedNotificationCenter.h>
 
 #include "x11/XGServerWindow.h"
 #include "x11/XGInputServer.h"
@@ -88,6 +89,16 @@ static KeySym _help_keysyms[2];
 
 static BOOL _is_keyboard_initialized = NO;
 static BOOL _mod_ignore_shift = NO;
+
+/*
+  Mouse properties. In comments below specified defaults key and default value.
+*/
+static NSInteger   clickTime;             // "GSDoubleClickTime" - milisecond (250)
+static NSInteger   clickMove;             // "GSMouseMoveThreshold" - in pixels (3)
+static NSInteger   mouseScrollMultiplier; // "GSMouseScrollMultiplier" - times (1)
+static NSEventType menuMouseButton;       // "GSMenuButtonEvent" - (NSRightMouseButon)
+static BOOL        menuButtonEnabled;     // "GSMenuButtonEnabled" - BOOL
+static BOOL        swapMouseButtons;      // YES if "GSMenuButtonEvent" == NSLeftMouseButton
 
 void __objc_xgcontextevent_linking (void)
 {
@@ -328,6 +339,52 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
   return o;
 }
 
+- (void) initializeMouse
+{
+  [self mouseOptionsChanged:nil];
+  [[NSDistributedNotificationCenter defaultCenter]
+    addObserver: self
+       selector: @selector(mouseOptionsChanged:)
+           name: NSUserDefaultsDidChangeNotification
+         object: nil];
+}
+
+- (void) mouseOptionsChanged: (NSNotification *)aNotif
+{
+  NSUserDefaults *defs = [NSUserDefaults standardUserDefaults];
+
+  clickTime = [defs integerForKey:@"GSDoubleClickTime"];
+  if (clickTime < 200)
+    clickTime = 300;
+  
+  clickMove = [defs integerForKey:@"GSMouseMoveThreshold"];
+  if (clickMove < 3)
+    clickMove = 3;
+
+  mouseScrollMultiplier = [defs integerForKey:@"GSMouseScrollMultiplier"];
+  if (mouseScrollMultiplier == 0)
+    mouseScrollMultiplier = 1;
+
+  if ([defs objectForKey:@"GSMenuButtonEnabled"])
+    menuButtonEnabled = [defs boolForKey:@"GSMenuButtonEnabled"];
+  else
+    menuButtonEnabled = YES;
+
+  if ([defs objectForKey:@"GSMenuButtonEvent"])
+    menuMouseButton = [defs integerForKey:@"GSMenuButtonEvent"];
+  else
+    menuMouseButton = NSRightMouseDown;
+  
+  switch (menuMouseButton)
+    {
+    case NSLeftMouseDown:
+      swapMouseButtons = YES;
+      break;
+    default:
+      swapMouseButtons = NO;
+      break;
+    }
+}
 
 - (void) processEvent: (XEvent *) event
 {
@@ -366,21 +423,21 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
          */
         {
           BOOL incrementCount = YES;
-
-#define CLICK_TIME 300
-#define CLICK_MOVE 3
+          
+          if (clickTime == 0) [self initializeMouse];
+         
           if (xEvent.xbutton.time
-            >= (unsigned long)(generic.lastClick + CLICK_TIME))
+            >= (unsigned long)(generic.lastClick + clickTime))
             incrementCount = NO;
           else if (generic.lastClickWindow != xEvent.xbutton.window)
             incrementCount = NO;
-          else if ((generic.lastClickX - xEvent.xbutton.x) > CLICK_MOVE)
+          else if ((generic.lastClickX - xEvent.xbutton.x) > clickMove)
             incrementCount = NO;
-          else if ((generic.lastClickX - xEvent.xbutton.x) < -CLICK_MOVE)
+          else if ((generic.lastClickX - xEvent.xbutton.x) < -clickMove)
             incrementCount = NO;
-          else if ((generic.lastClickY - xEvent.xbutton.y) > CLICK_MOVE)
+          else if ((generic.lastClickY - xEvent.xbutton.y) > clickMove)
             incrementCount = NO;
-          else if ((generic.lastClickY - xEvent.xbutton.y) < -CLICK_MOVE)
+          else if ((generic.lastClickY - xEvent.xbutton.y) < -clickMove)
             incrementCount = NO;
 
           if (incrementCount == YES)
@@ -407,46 +464,62 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 
         if (xEvent.xbutton.button == generic.lMouse)
           {
-            eventType = NSLeftMouseDown;
-            buttonNumber = generic.lMouse;
+            if (swapMouseButtons)
+              {
+                eventType = NSRightMouseDown;
+                buttonNumber = generic.rMouse;
+              }
+            else
+              {
+                eventType = NSLeftMouseDown;
+                buttonNumber = generic.lMouse;
+              }
           }
         else if (xEvent.xbutton.button == generic.rMouse
-          && generic.rMouse != 0)
+                 && generic.rMouse != 0)
           {
-            eventType = NSRightMouseDown;
-            buttonNumber = generic.rMouse;
+            if (swapMouseButtons)
+              {
+                eventType = NSLeftMouseDown;
+                buttonNumber = generic.lMouse;
+              }
+            else
+              {
+                eventType = NSRightMouseDown;
+                buttonNumber = generic.rMouse;
+              }
           }
         else if (xEvent.xbutton.button == generic.mMouse
-          && generic.mMouse != 0)
+                 && generic.mMouse != 0)
           {
             eventType = NSOtherMouseDown;
             buttonNumber = generic.mMouse;
           }
         else if (xEvent.xbutton.button == generic.upMouse
-          && generic.upMouse != 0)
+                 && generic.upMouse != 0)
           {
-            deltaY = 1.;
+            deltaY = 1. * mouseScrollMultiplier;
             eventType = NSScrollWheel;
             buttonNumber = generic.upMouse;
           }
         else if (xEvent.xbutton.button == generic.downMouse
-          && generic.downMouse != 0)
+                 && generic.downMouse != 0)
           {
-            deltaY = -1.;
+            deltaY = -1. * mouseScrollMultiplier;
             eventType = NSScrollWheel;
             buttonNumber = generic.downMouse;
           }
         else if (xEvent.xbutton.button == generic.scrollLeftMouse
-          && generic.scrollLeftMouse != 0)
+                 && generic.scrollLeftMouse != 0)
           {
-            deltaX = -1.;
+            deltaX = -1. * mouseScrollMultiplier;
             eventType = NSScrollWheel;
             buttonNumber = generic.scrollLeftMouse;
           }
         else if (xEvent.xbutton.button == generic.scrollRightMouse
-          && generic.scrollRightMouse != 0)
+                 && generic.scrollRightMouse != 0)
           {
-            deltaX = 1.;
+            deltaX = 1. * mouseScrollMultiplier;
             eventType = NSScrollWheel;
             buttonNumber = generic.scrollRightMouse;
           }
@@ -454,6 +527,9 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
           {
             break;                /* Unknown button */
           }
+
+        if (menuButtonEnabled == NO && eventType == menuMouseButton)
+          break; // disabled menu button was pressed
 
         eventFlags = process_modifier_flags(xEvent.xbutton.state);
         // if pointer is grabbed use grab window
@@ -511,17 +587,33 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         [self setLastTime: xEvent.xbutton.time];
         if (xEvent.xbutton.button == generic.lMouse)
           {
-            eventType = NSLeftMouseUp;
-            buttonNumber = generic.lMouse;
+            if (swapMouseButtons)
+              {
+                eventType = NSRightMouseUp;
+                buttonNumber = generic.rMouse;
+              }
+            else
+              {
+                eventType = NSLeftMouseUp;
+                buttonNumber = generic.lMouse;
+              }
           }
         else if (xEvent.xbutton.button == generic.rMouse
-          && generic.rMouse != 0)
+                 && generic.rMouse != 0)
           {
-            eventType = NSRightMouseUp;
-            buttonNumber = generic.rMouse;
+            if (swapMouseButtons)
+              {
+                eventType = NSLeftMouseUp;
+                buttonNumber = generic.lMouse;
+              }
+            else
+              {
+                eventType = NSRightMouseUp;
+                buttonNumber = generic.rMouse;
+              }
           }
         else if (xEvent.xbutton.button == generic.mMouse
-          && generic.mMouse != 0)
+                 && generic.mMouse != 0)
           {
             eventType = NSOtherMouseUp;
             buttonNumber = generic.mMouse;
@@ -531,6 +623,9 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             // we ignore release of scrollUp or scrollDown
             break;                /* Unknown button */
           }
+        
+        if (menuButtonEnabled == NO && eventType == menuMouseButton)
+          break; // disabled menu button was released
 
         eventFlags = process_modifier_flags(xEvent.xbutton.state);
         // if pointer is grabbed use grab window
