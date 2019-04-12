@@ -354,8 +354,8 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
   NSUserDefaults *defs = [NSUserDefaults standardUserDefaults];
 
   clickTime = [defs integerForKey:@"GSDoubleClickTime"];
-  if (clickTime < 250)
-    clickTime = 250;
+  if (clickTime < 200)
+    clickTime = 300;
   
   clickMove = [defs integerForKey:@"GSMouseMoveThreshold"];
   if (clickMove < 3)
