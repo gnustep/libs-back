@@ -142,7 +142,7 @@ static NSBitmapImageRep *getStandardBitmap(NSImage *image)
                                        hasAlpha: [rep hasAlpha]
                                        isPlanar: NO
                                  colorSpaceName: NSCalibratedRGBColorSpace
-                                   bitmapFormat: 0
+                                   bitmapFormat: [rep bitmapFormat]
                                     bytesPerRow: 0
                                    bitsPerPixel: 0];
     }
@@ -4177,29 +4177,32 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
     case GSIBeamCursor:
       cursor = XCreateFontCursor(dpy, XC_xterm);
       break;
+    case GSClosedHandCursor:
+      cursor = XCreateFontCursor(dpy, XC_fleur);
+      break;
+    case GSOpenHandCursor:
+      cursor = XCreateFontCursor(dpy, XC_hand1);
+      break;
+    case GSPointingHandCursor:
+      cursor = XCreateFontCursor(dpy, XC_hand2);
+      break;
     case GSCrosshairCursor:
       cursor = XCreateFontCursor(dpy, XC_crosshair);
       break;
-    case GSDisappearingItemCursor:
-      cursor = XCreateFontCursor(dpy, XC_shuttle);
-      break;
-    case GSPointingHandCursor:
-      cursor = XCreateFontCursor(dpy, XC_hand1);
-      break;
     case GSResizeDownCursor:
-      cursor = XCreateFontCursor(dpy, XC_bottom_side);
+      cursor = XCreateFontCursor(dpy, XC_sb_down_arrow);
       break;
     case GSResizeLeftCursor:
-      cursor = XCreateFontCursor(dpy, XC_left_side);
+      cursor = XCreateFontCursor(dpy, XC_sb_left_arrow);
       break;
     case GSResizeLeftRightCursor:
       cursor = XCreateFontCursor(dpy, XC_sb_h_double_arrow);
       break;
     case GSResizeRightCursor:
-      cursor = XCreateFontCursor(dpy, XC_right_side);
+      cursor = XCreateFontCursor(dpy, XC_sb_right_arrow);
       break;
     case GSResizeUpCursor:
-      cursor = XCreateFontCursor(dpy, XC_top_side);
+      cursor = XCreateFontCursor(dpy, XC_sb_up_arrow);
       break;
     case GSResizeUpDownCursor:
       cursor = XCreateFontCursor(dpy, XC_sb_v_double_arrow);
