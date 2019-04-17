@@ -4190,19 +4190,19 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
       cursor = XCreateFontCursor(dpy, XC_crosshair);
       break;
     case GSResizeDownCursor:
-      cursor = XCreateFontCursor(dpy, XC_sb_down_arrow);
+      cursor = XCreateFontCursor(dpy, XC_bottom_side);
       break;
     case GSResizeLeftCursor:
-      cursor = XCreateFontCursor(dpy, XC_sb_left_arrow);
+      cursor = XCreateFontCursor(dpy, XC_left_side);
       break;
     case GSResizeLeftRightCursor:
       cursor = XCreateFontCursor(dpy, XC_sb_h_double_arrow);
       break;
     case GSResizeRightCursor:
-      cursor = XCreateFontCursor(dpy, XC_sb_right_arrow);
+      cursor = XCreateFontCursor(dpy, XC_right_side);
       break;
     case GSResizeUpCursor:
-      cursor = XCreateFontCursor(dpy, XC_sb_up_arrow);
+      cursor = XCreateFontCursor(dpy, XC_top_side);
       break;
     case GSResizeUpDownCursor:
       cursor = XCreateFontCursor(dpy, XC_sb_v_double_arrow);
