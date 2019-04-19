@@ -4177,9 +4177,6 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
     case GSIBeamCursor:
       cursor = XCreateFontCursor(dpy, XC_xterm);
       break;
-    case GSClosedHandCursor:
-      cursor = XCreateFontCursor(dpy, XC_fleur);
-      break;
     case GSOpenHandCursor:
       cursor = XCreateFontCursor(dpy, XC_hand1);
       break;
