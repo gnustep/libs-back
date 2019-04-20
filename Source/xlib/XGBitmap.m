@@ -778,6 +778,7 @@ _bitmap_combine_alpha(RContext *context,
    */
    switch (bits_per_sample)
      {
+        case 16:
         case 8:
           img.pro_mul = 1;
           break;
