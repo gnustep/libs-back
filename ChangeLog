@@ -1,3 +1,24 @@
+2019-04-20  Sergii Stoian  <stoyan255@ukr.net>
+
+	* Source/x11/XGServerWindow.m (standardcursor::): Getting of
+	XC_fleur as GSCloseHandCursor was removed because it loads in
+	NSCursor as image.
+
+2019-04-18  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (standardcursor::): revert resizing
+	cursor names to the old values upon request of project owner.
+
+2019-04-17  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (getStandardBitmap): send `bitmapFormat`
+	to _convertToFormatBitsPerSample::::::::. Fixes display of colored
+	mouse cursor images.
+	(standardcursor::): cleanup in Xlib cursors handling. Additional
+	cursor types were added: GSClosedHandCursor, GSOpenHandCursor.
+	Removed GSDisappearingItemCursor type handling - it loads in NSCursor
+	from image.
+
 2019-04-12  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerEvent.m (mouseOptionsChanged:): change double-click

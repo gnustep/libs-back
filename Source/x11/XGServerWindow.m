@@ -142,7 +142,7 @@ static NSBitmapImageRep *getStandardBitmap(NSImage *image)
                                        hasAlpha: [rep hasAlpha]
                                        isPlanar: NO
                                  colorSpaceName: NSCalibratedRGBColorSpace
-                                   bitmapFormat: 0
+                                   bitmapFormat: [rep bitmapFormat]
                                     bytesPerRow: 0
                                    bitsPerPixel: 0];
     }
@@ -4177,14 +4177,14 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
     case GSIBeamCursor:
       cursor = XCreateFontCursor(dpy, XC_xterm);
       break;
-    case GSCrosshairCursor:
-      cursor = XCreateFontCursor(dpy, XC_crosshair);
-      break;
-    case GSDisappearingItemCursor:
-      cursor = XCreateFontCursor(dpy, XC_shuttle);
+    case GSOpenHandCursor:
+      cursor = XCreateFontCursor(dpy, XC_hand1);
       break;
     case GSPointingHandCursor:
-      cursor = XCreateFontCursor(dpy, XC_hand1);
+      cursor = XCreateFontCursor(dpy, XC_hand2);
+      break;
+    case GSCrosshairCursor:
+      cursor = XCreateFontCursor(dpy, XC_crosshair);
       break;
     case GSResizeDownCursor:
       cursor = XCreateFontCursor(dpy, XC_bottom_side);
