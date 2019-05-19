@@ -1,3 +1,17 @@
+2019-05-19 Fred Kiefer <FredKiefer@gmx.de>
+
+	* .gitignore: Add copied files as they should never be commited.
+	* Headers/fontconfig/FCFaceInfo.h: Add method displaName.
+	* Source/art/FTFontEnumerator.m: Retain the display name.
+	* Source/fontconfig/FCFaceInfo.m,
+	* Source/fontconfig/FCFontInfo.m,
+	* Source/art/ftfont.m: Implement the method displayName.
+	* Source/cairo/CairoFontInfo.m: Enable font hinting and use
+	subpixel antialias if the variable back-art-subpixel-text is set.
+	* Source/fontconfig/FCFontEnumerator.m: Better handling of font
+	names, weight and the order of fonts.
+	Merged huge pull request by Jeff Teunissen <deek@d2dc.net>
+
 2019-04-20  Sergii Stoian  <stoyan255@ukr.net>
 
 	* Source/x11/XGServerWindow.m (standardcursor::): Getting of
