@@ -11,3 +11,6 @@ config.cache
 config.make
 back.make
 Source/config.h
+Source/libgnustep*Info.plist
+Tools/XGCommonFont.m
+Tools/xdnd.c

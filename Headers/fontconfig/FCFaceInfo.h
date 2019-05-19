@@ -63,6 +63,8 @@
 - (NSString *) familyName;
 - (void) setFamilyName: (NSString *)name;
 
+- (NSString *) displayName;
+
 - (void *) fontFace;
 - (FcPattern *) matchedPattern;
 

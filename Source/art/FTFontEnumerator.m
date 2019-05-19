@@ -245,8 +245,7 @@ static void add_face(NSString *family, int family_weight,
       return;
     }
 
-  fi->displayName = [[family stringByAppendingString: @" "]
-			     stringByAppendingString: faceName];
+  fi->displayName = [[NSString stringWithFormat: @"%@ %@", family, faceName] retain];
 
 
   weight = family_weight;
