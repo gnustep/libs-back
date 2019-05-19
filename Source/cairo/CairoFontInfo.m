@@ -119,10 +119,15 @@
   if ((subpixel = [ud integerForKey: @"back-art-subpixel-text"]))
     {
       cairo_font_options_set_antialias(options, CAIRO_ANTIALIAS_SUBPIXEL);
-      cairo_font_options_set_subpixel_order(options, CAIRO_SUBPIXEL_ORDER_RGB);
 
       if (subpixel == 2)
-	cairo_font_options_set_subpixel_order(options, CAIRO_SUBPIXEL_ORDER_BGR);
+        {
+          cairo_font_options_set_subpixel_order(options, CAIRO_SUBPIXEL_ORDER_BGR);
+        }
+      else
+        {
+          cairo_font_options_set_subpixel_order(options, CAIRO_SUBPIXEL_ORDER_RGB);
+        }
     }
 
   _scaled = cairo_scaled_font_create(face, &font_matrix, &ctm, options);

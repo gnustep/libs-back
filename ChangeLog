@@ -1,5 +1,11 @@
 2019-05-19 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/cairo/CairoFontInfo.m,
+	* Source/fontconfig/FCFontEnumerator.m: Small cleanup of last pull
+	request.
+
+2019-05-19 Fred Kiefer <FredKiefer@gmx.de>
+
 	* .gitignore: Add copied files as they should never be commited.
 	* Headers/fontconfig/FCFaceInfo.h: Add method displaName.
 	* Source/art/FTFontEnumerator.m: Retain the display name.

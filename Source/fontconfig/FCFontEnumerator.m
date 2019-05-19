@@ -167,9 +167,6 @@ static NSArray *faFromFc(FcPattern *pat)
 #ifdef FC_POSTSCRIPT_NAME
   char *fcname;
 #endif
-#if 0
-  FT_Face ftface = NULL;
-#endif
 
   if (FcPatternGetInteger(pat, FC_WEIGHT, 0, &weight) != FcResultMatch
     || FcPatternGetInteger(pat, FC_SLANT,  0, &slant) != FcResultMatch
@@ -180,26 +177,6 @@ static NSArray *faFromFc(FcPattern *pat)
   if (FcPatternGetInteger(pat, FC_SPACING, 0, &spacing) == FcResultMatch)
     if (spacing==FC_MONO || spacing==FC_CHARCELL)
       nstraits |= NSFixedPitchFontMask;
-
-  /*
-     This code will allow us to access TrueType/OpenType font tables from
-     fontconfig. If we want to implement features like the so-called "OS/2"
-     table which contains typographic family info ("give me a list of 'script'
-     fonts with slab serifs") and stuff like the font's correct typographic
-     line height and its xHeight, this is where we get that info.
-
-     For more information, see http://www.microsoft.com/typography/otspec/
-  */
-#if 0
-  if (FcPatternGetFTFace (pat, FC_FT_FACE, 0, &ftface) == FcResultMatch)
-    {
-      // we got a FreeType face now, mwahaha.
-      TT_Header *head = FT_Get_Sfnt_Table (ftface, FT_SFNT_HEAD);
-      TT_OS2 *os2 = FT_Get_Sfnt_Table (ftface, FT_SFNT_OS2);
-      TT_HoriHeader *hhea = FT_Get_Sfnt_Table (ftface, FT_SFNT_HHEA);
-      TT_Postscript *post = FT_Get_Sfnt_Table (ftface, FT_SFNT_POST);
-    }
-#endif
 
   name = [NSMutableString stringWithCapacity: 100];
 #ifdef FC_POSTSCRIPT_NAME
@@ -384,24 +361,26 @@ static NSArray *faFromFc(FcPattern *pat)
 
           if ((fontArray = faFromFc(fs->fonts[i])))
             {
-              NSString *familyString;
-              NSMutableArray *familyArray;
-              FCFaceInfo *aFont;
               NSString *name = [fontArray objectAtIndex: 0];
-
-              familyString = [NSString stringWithUTF8String: family];
-              familyArray = [fcxft_allFontFamilies objectForKey: familyString];
-
-              if (familyArray == nil)
-                {
-                  NSDebugLLog(@"NSFont", @"Found font family %@", familyString);
-                  familyArray = [NSMutableArray array];
-                  [fcxft_allFontFamilies setObject: familyArray
-                                         forKey: familyString];
-                }
 
               if (![fcxft_allFontNames containsObject: name])
                 {
+                  NSString *familyString;
+                  NSMutableArray *familyArray;
+                  FCFaceInfo *aFont;
+
+                  familyString = [NSString stringWithUTF8String: family];
+                  familyArray = [fcxft_allFontFamilies objectForKey: familyString];
+
+                  if (familyArray == nil)
+                    {
+                      NSDebugLLog(@"NSFont", @"Found font family %@", familyString);
+                      familyArray = [[NSMutableArray alloc] init];
+                      [fcxft_allFontFamilies setObject: familyArray
+                                                forKey: familyString];
+                      RELEASE(familyArray);
+                    }
+
                   NSDebugLLog(@"NSFont", @"fc enumerator: adding font: %@", name);
                   [familyArray addObject: fontArray];
                   [fcxft_allFontNames addObject: name];
@@ -423,13 +402,14 @@ static NSArray *faFromFc(FcPattern *pat)
 
   // Sort font families
   {
-	NSComparisonResult (*fontSort) (id, id, void *) = sortFontFacesArray;
+    NSComparisonResult (*fontSort)(id, id, void *) = sortFontFacesArray;
     NSEnumerator *e = [allFontFamilies keyEnumerator];
     id key;
-	while ((key = [e nextObject]))
-	  {
-		[[allFontFamilies objectForKey: key] sortUsingFunction:fontSort context:NULL];
-	  }
+
+    while ((key = [e nextObject]))
+      {
+        [[allFontFamilies objectForKey: key] sortUsingFunction: fontSort context: NULL];
+      }
   }
 }
 
@@ -491,7 +471,7 @@ static NSArray *faFromFc(FcPattern *pat)
     }
   if ([allFontNames containsObject: @"BitstreamVeraSansMono-Roman"])
     {
-      return @"Bitstream Vera Sans Mono";
+      return @"BitstreamVeraSansMono-Roman";
     }
   if ([allFontNames containsObject: @"FreeMono"])
     {
