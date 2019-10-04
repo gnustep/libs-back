@@ -53,7 +53,7 @@ create_tmpfile_cloexec(char *tmpname)
 	fd = set_cloexec_or_close(fd);
 	unlink(tmpname);
     }
-    
+
     return fd;
 }
 
@@ -92,7 +92,7 @@ os_create_anonymous_file(off_t size)
 	errno = ret;
 	return -1;
     }
-    
+
     return fd;
 }
 
@@ -121,7 +121,7 @@ create_shm_buffer(struct window *window)
     }
 
     pool = wl_shm_create_pool(window->wlconfig->shm, fd, size);
-    
+
     surface = cairo_image_surface_create_for_data(window->data,
 						  CAIRO_FORMAT_ARGB32,
 						  window->width,
@@ -133,9 +133,9 @@ create_shm_buffer(struct window *window)
 				  window->width, window->height, stride,
 				  WL_SHM_FORMAT_ARGB8888);
     wl_shm_pool_destroy(pool);
-    
+
     close(fd);
-    
+
     return surface;
 }
 
@@ -154,18 +154,18 @@ create_shm_buffer(struct window *window)
 	NSDebugLog(@"can't create cairo surface");
 	return 0;
     }
-    
+
     wl_surface_attach(window->surface, window->buffer, 0, 0);
 
     window->wcs = self;
-    
+
     return self;
 }
 
 - (void) dealloc
 {
     struct window *window = (struct window*) gsDevice;
-    NSDebugLog(@"WaylandCairoSurface: dealloc win=%d", window->window_id); 
+    NSDebugLog(@"WaylandCairoSurface: dealloc win=%d", window->window_id);
     [super dealloc];
 }
 
@@ -213,7 +213,6 @@ create_shm_buffer(struct window *window)
     cairo_surface = _surface;
     cairo_surface_get_device_offset(cairo_surface, &backupOffsetX, &backupOffsetY);
     cairo_surface_set_device_offset(cairo_surface, 0, 0);
-    
 
     cairo_t *cr = cairo_create(cairo_surface);
     if (width != window->width && 0) {
@@ -223,7 +222,7 @@ create_shm_buffer(struct window *window)
 	cairo_rectangle(cr, 0, 0, width, height);
 	cairo_set_source_rgba(cr, 0, 0, 0, 0.8);
 	cairo_fill(cr);
-	
+
 	cairo_rectangle(cr, 10, 10, width - 20, height - 20);
 	cairo_set_source_rgba(cr, 1.0, 0, 0, 1);
 	cairo_fill(cr);
@@ -244,7 +243,7 @@ create_shm_buffer(struct window *window)
 	cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
 	cairo_paint(cr);
     }
-    
+
     cairo_destroy(cr);
 
     cairo_surface_set_device_offset(_surface, backupOffsetX, backupOffsetY);
@@ -259,4 +258,3 @@ create_shm_buffer(struct window *window)
 }
 
 @end
-

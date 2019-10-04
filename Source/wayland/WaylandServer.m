@@ -114,7 +114,7 @@ add_output(WaylandConfig *wlconfig, uint32_t id)
     output->server_output_id = id;
     wl_list_insert(wlconfig->output_list.prev, &output->link);
     (wlconfig->output_count)++;
-    
+
     wl_output_add_listener(output->output, &output_listener, output);
 }
 
@@ -157,12 +157,12 @@ pointer_handle_enter(void *data, struct wl_pointer *pointer,
 	NSDebugLog(@"no surface");
 	return;
     }
-    
+
     WaylandConfig *wlconfig = data;
     struct window *window = wl_surface_get_user_data(surface);
     float sx = wl_fixed_to_double(sx_w);
     float sy = wl_fixed_to_double(sy_w);
-    
+
     wlconfig->pointer.x = sx;
     wlconfig->pointer.y = sy;
     wlconfig->pointer.focus = window;
@@ -210,14 +210,14 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer,
 
 	NSDebugLog(@"obtaining locations: wayland=%fx%f pointer=%fx%f",
 		   sx, sy, window->wlconfig->pointer.x, window->wlconfig->pointer.y);
-    
+
 	gcontext = GSCurrentContext();
 	eventLocation = NSMakePoint(sx,
 				    window->height - sy);
 
 	eventFlags = 0;
 	eventType = NSLeftMouseDragged;
-	
+
 	tick = 0;
 
 
@@ -236,7 +236,7 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer,
 				     deltaX: deltaX
 				     deltaY: deltaY
 				     deltaZ: 0.];
-	
+
 	[GSCurrentServer() postEvent: event atStart: NO];
     }
 
@@ -280,7 +280,7 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
 	    wlconfig->pointer.last_click_time = time;
 	    wlconfig->pointer.last_click_x = wlconfig->pointer.x;
 	    wlconfig->pointer.last_click_y = wlconfig->pointer.y;
-	}	    
+	}
 
 	switch (button) {
 	case BTN_LEFT:
@@ -306,7 +306,7 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
     tick = serial;
 
     NSDebugLog(@"sending pointer event at: %fx%f, window=%d", wlconfig->pointer.x, wlconfig->pointer.y, window->window_id);
-    
+
     event = [NSEvent mouseEventWithType: eventType
 			       location: eventLocation
 			  modifierFlags: eventFlags
@@ -388,7 +388,7 @@ keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard,
 	xkb_keymap_unref(keymap);
 	return;
     }
-    
+
     xkb_keymap_unref(wlconfig->xkb.keymap);
     xkb_state_unref(wlconfig->xkb.state);
     wlconfig->xkb.keymap = keymap;
@@ -400,7 +400,6 @@ keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard,
 	1 << xkb_keymap_mod_get_index(wlconfig->xkb.keymap, "Mod1");
     wlconfig->xkb.shift_mask =
 	1 << xkb_keymap_mod_get_index(wlconfig->xkb.keymap, "Shift");
-		
 }
 
 static void
@@ -445,7 +444,6 @@ keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard,
 	wlconfig->modifiers |= NSAlternateKeyMask;
     if (mask & wlconfig->xkb.shift_mask)
 	wlconfig->modifiers |= NSShiftKeyMask;
-    
 }
 
 static void
@@ -472,9 +470,9 @@ keyboard_handle_key(void *data, struct wl_keyboard *keyboard,
 	sym = NSDeleteCharacter;
     } else {
 	code = key + 8;
-	
+
 	num_syms = xkb_state_key_get_syms(wlconfig->xkb.state, code, &syms);
-	
+
 	sym = XKB_KEY_NoSymbol;
 	if (num_syms == 1)
 	    sym = syms[0];
@@ -482,7 +480,7 @@ keyboard_handle_key(void *data, struct wl_keyboard *keyboard,
 
     NSString *s = [NSString stringWithUTF8String: &sym];
     NSEventType eventType;
-	
+
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
 	eventType = NSKeyDown;
     } else {
@@ -499,7 +497,7 @@ keyboard_handle_key(void *data, struct wl_keyboard *keyboard,
 			   charactersIgnoringModifiers: s
 				  isARepeat: NO
 				    keyCode: code];
-  
+
     [GSCurrentServer() postEvent: ev atStart: NO];
 
     NSDebugLog(@"keyboard_handle_key: %@", s);
@@ -643,7 +641,7 @@ handle_surface_configure(void *data, struct xdg_surface *xdg_surface,
     struct window *window = data;
     WaylandConfig *wlconfig = window->wlconfig;
     NSDebugLog(@"handle_surface_configure: win=%d", window->window_id);
-    
+
     NSEvent *ev = nil;
     NSWindow *nswindow = GSWindowWithNumber(window->window_id);
 
@@ -658,7 +656,7 @@ handle_surface_configure(void *data, struct xdg_surface *xdg_surface,
 				 subtype: GSAppKitWindowFocusIn
 				   data1: 0
 			       data2: 0];
-	
+
 	[nswindow sendEvent: ev];
     }
 
@@ -675,7 +673,7 @@ handle_surface_configure(void *data, struct xdg_surface *xdg_surface,
 	window->pos_y = y;
 	moved = 1;
     }
-	       
+
     xdg_surface_ack_configure(window->xdg_surface, serial);
     NSRect rect = NSMakeRect(0, 0,
 			     window->width, window->height);
@@ -688,7 +686,7 @@ handle_surface_configure(void *data, struct xdg_surface *xdg_surface,
 	NSDebugLog(@"window moved, notifying AppKit");
 	NSEvent *ev = nil;
 	NSWindow *nswindow = GSWindowWithNumber(window->window_id);
-    
+
 	ev = [NSEvent otherEventWithType: NSAppKitDefined
 				location: NSZeroPoint
 			   modifierFlags: 0
@@ -718,7 +716,7 @@ handle_global(void *data, struct wl_registry *registry,
 	wlconfig->compositor =
 	    wl_registry_bind(wlconfig->registry, name,
 			     &wl_compositor_interface, 1);
-	/*	
+	/*
     } else if (strcmp(interface, "wl_shell") == 0) {
 	wlconfig->shell =
 	    wl_registry_bind(registry, name,
@@ -791,7 +789,7 @@ int NSToWayland(struct window *window, int ns_y)
     wlconfig->last_window_id = 1;
     wl_list_init(&wlconfig->output_list);
     wl_list_init(&wlconfig->window_list);
-    
+
     wlconfig->display = wl_display_connect(NULL);
     if (!wlconfig->display) {
 	[NSException raise: NSWindowServerCommunicationException
@@ -803,7 +801,7 @@ int NSToWayland(struct window *window, int ns_y)
 			     &registry_listener, wlconfig);
     wl_display_dispatch(wlconfig->display);
     wl_display_roundtrip(wlconfig->display);
-   
+
     return self;
 }
 
@@ -825,7 +823,7 @@ int NSToWayland(struct window *window, int ns_y)
 {
     NSRunLoop *currentRunLoop = [NSRunLoop currentRunLoop];
     int fdWaylandHandle = wl_display_get_fd(wlconfig->display);
-    
+
     [currentRunLoop addEvent: (void*)fdWaylandHandle
 			type: ET_RDESC
 		     watcher: (id<RunLoopEvents>)self
@@ -838,10 +836,10 @@ int NSToWayland(struct window *window, int ns_y)
     [super initWithAttributes: info];
     [self _initWaylandContext];
 
-    [self setupRunLoopInputSourcesForMode: NSDefaultRunLoopMode]; 
-    [self setupRunLoopInputSourcesForMode: NSConnectionReplyMode]; 
-    [self setupRunLoopInputSourcesForMode: NSModalPanelRunLoopMode]; 
-    [self setupRunLoopInputSourcesForMode: NSEventTrackingRunLoopMode]; 
+    [self setupRunLoopInputSourcesForMode: NSDefaultRunLoopMode];
+    [self setupRunLoopInputSourcesForMode: NSConnectionReplyMode];
+    [self setupRunLoopInputSourcesForMode: NSModalPanelRunLoopMode];
+    [self setupRunLoopInputSourcesForMode: NSEventTrackingRunLoopMode];
 
     return self;
 }
@@ -902,7 +900,7 @@ int NSToWayland(struct window *window, int ns_y)
 		   output->alloc_x, output->alloc_y,
 		   output->width, output->height);
     }
-    
+
     return screens;
 }
 
@@ -1079,7 +1077,7 @@ int NSToWayland(struct window *window, int ns_y)
 
 - (int) nativeWindow: (void *)winref
 		    : (NSRect*)frame
-		    : (NSBackingStoreType*)type 
+		    : (NSBackingStoreType*)type
 		    : (unsigned int*)style
 		    : (int*)screen
 {
@@ -1207,17 +1205,17 @@ int NSToWayland(struct window *window, int ns_y)
 	float deltaX = 0.0;
 	float deltaY = 0.0;
 	int tick;
-	
+
 	gcontext = GSCurrentContext();
 	eventLocation = NSMakePoint(wlconfig->pointer.x,
 				    window->height - wlconfig->pointer.y);
 	eventFlags = 0;
 	eventType = NSLeftMouseUp;
-	
+
 	tick = 0;
-	
+
 	NSDebugLog(@"sending pointer event at: %fx%f, window=%d", wlconfig->pointer.x, wlconfig->pointer.y, window->window_id);
-	
+
 	event = [NSEvent mouseEventWithType: eventType
 				   location: eventLocation
 			      modifierFlags: eventFlags
@@ -1263,9 +1261,9 @@ int NSToWayland(struct window *window, int ns_y)
 	    wlconfig->pointer.y -= (wframe.origin.y - window->pos_y);
 	    wlconfig->pointer.x -= (wframe.origin.x - window->pos_x);
 	}
-	
+
 	window->width = wframe.size.width;
-	window->height = wframe.size.height;       
+	window->height = wframe.size.height;
 	window->pos_x = wframe.origin.x;
 	window->pos_y = wframe.origin.y;
 
@@ -1278,7 +1276,7 @@ int NSToWayland(struct window *window, int ns_y)
 	NSRect flushRect = NSMakeRect(0, 0,
 				      window->width, window->height);
 	[window->instance flushwindowrect:rect :window->window_id];
-	
+
 	wl_display_dispatch_pending(window->wlconfig->display);
 	wl_display_flush(window->wlconfig->display);
 
@@ -1307,7 +1305,7 @@ int NSToWayland(struct window *window, int ns_y)
 	    [(GSWindowWithNumber(window->window_id)) sendEvent: ev];
 	    NSDebugLog(@"placewindow notify moved=%fx%f", rect.origin.x, rect.origin.y);
 	}
-	    
+
 	NSDebugLog(@"placewindow: newpos=%fx%f", window->pos_x, window->pos_y);
 	NSDebugLog(@"placewindow: newsize=%fx%f", window->width, window->height);
     }
@@ -1319,7 +1317,7 @@ int NSToWayland(struct window *window, int ns_y)
     NSDebugLog(@"windowbounds: win=%d, pos=%dx%d size=%dx%d",
 	       window->window_id, window->pos_x, window->pos_y,
 	       window->width, window->height);
-    
+
     return NSMakeRect(window->pos_x, window->output->height - window->pos_y,
 		      window->width, window->height);
 }
@@ -1335,9 +1333,9 @@ int NSToWayland(struct window *window, int ns_y)
     return 0;
 }
 
-/** Backends can override this method to return an array of window numbers 
+/** Backends can override this method to return an array of window numbers
     ordered front to back.  The front most window being the first object
-    in the array.  
+    in the array.
     The default implementation returns the visible windows in an
     unspecified order.
  */
@@ -1385,7 +1383,7 @@ int NSToWayland(struct window *window, int ns_y)
     [[GSCurrentContext() class] handleExposeRect: rect forDriver: window->wcs];
 }
 
-- (void) styleoffsets: (float*) l : (float*) r : (float*) t : (float*) b 
+- (void) styleoffsets: (float*) l : (float*) r : (float*) t : (float*) b
 		     : (unsigned int) style
 {
     NSDebugLog(@"styleoffsets");
@@ -1441,12 +1439,12 @@ int NSToWayland(struct window *window, int ns_y)
 	NSDebugLog(@"NOT captured");
 	x = wlconfig->pointer.x;
 	y = wlconfig->pointer.y;
-	
+
 	if (window) {
 	    x += window->pos_x;
 	    y += window->pos_y;
 	    win = &window->window_id;
-	}	
+	}
     }
 
     wl_list_for_each(output, &wlconfig->output_list, link) {
@@ -1457,13 +1455,13 @@ int NSToWayland(struct window *window, int ns_y)
     }
 
     NSDebugLog(@"mouseLocationOnScreen: returning %fx%f", x, y);
-    
+
     return NSMakePoint(x, y);
 }
 
 - (BOOL) capturemouse: (int) win
 {
-    NSDebugLog(@"capturemouse: %d", win);    
+    NSDebugLog(@"capturemouse: %d", win);
     return NO;
 }
 
@@ -1519,7 +1517,7 @@ int NSToWayland(struct window *window, int ns_y)
     NSDebugLog(@"freecursor");
 }
 
-- (void) setParentWindow: (int)parentWin 
+- (void) setParentWindow: (int)parentWin
           forChildWindow: (int)childWin
 {
     NSDebugLog(@"setParentWindow: parent=%d child=%d", parentWin, childWin);
