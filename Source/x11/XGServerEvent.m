@@ -1220,6 +1220,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                     xEvent.xfocus.window, cWin->number);
         // Store this for debugging, may not be the real focus window
         generic.currentFocusWindow = cWin->number;
+        generic.desiredFocusWindow = cWin->number;
         if (xEvent.xfocus.serial == generic.focusRequestNumber)
           {
             /*
@@ -1243,18 +1244,24 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
            * it's not one of ours.
            * If it has gone to our root window - use the icon window.
            * If it has gone to a window - we see if it is one of ours.
+           * If it has gone to our unmapped window - deactivate.
            */
           XGetInputFocus(xEvent.xfocus.display, &fw, &rev);
           NSDebugLLog(@"NSEvent", @"%lu FocusOut\n",
                       xEvent.xfocus.window);
-          if (fw != None && fw != PointerRoot)
+          if (cWin && (fw == cWin->parent) && (cWin->map_state != IsViewable))
+            { // focus switched to WM decorations
+              nswin = GSWindowWithNumber(cWin->number);
+              [self setinputfocus:[[[NSApp mainMenu] window] windowNumber]];
+            }
+          else if (fw != None && fw != PointerRoot)
             {
               generic.cachedWindow = [XGServer _windowForXWindow: fw];
               if (cWin == 0)
                 {
                   generic.cachedWindow = [XGServer _windowForXParent: fw];
                 }
-              if (cWin == 0)
+              if (cWin == 0 || (cWin->map_state != IsViewable))
                 {
                   nswin = nil;
                 }
@@ -1449,7 +1456,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
              * focus, re-do the request.
              */
             if (generic.desiredFocusWindow == cWin->number
-                && generic.focusRequestNumber == 0)
+                && generic.focusRequestNumber == 0 && [NSApp isActive] != NO)
               {
                 NSDebugLLog(@"Focus", @"Refocusing %lu on map notify", 
                             cWin->number);
@@ -1913,19 +1920,14 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 {
   int key_num;
   NSWindow *key_win;
+  gswindow_device_t *keyWin;
   NSEvent *e = nil;
   key_win = [NSApp keyWindow];
   key_num = [key_win windowNumber];
+  keyWin =  [XGServer _windowWithTag:key_num];
   NSDebugLLog(@"Focus", @"take focus:%lu (current=%lu key=%d)",
               cWin->number, generic.currentFocusWindow, key_num);
 
-  /* Sometimes window managers lose the setinputfocus on the key window
-   * e.g. when ordering out a window with focus then ordering in the key window.   
-   * it might search for a window until one accepts its take focus request.
-   */
-  if (key_num == cWin->number)
-    cWin->ignore_take_focus = NO;
-  
   /* Invalidate the previous request. It's possible the app lost focus
      before this request was fufilled and we are being focused again,
      or ??? */
@@ -1933,6 +1935,17 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
     generic.focusRequestNumber = 0;
     generic.desiredFocusWindow = 0;
   }
+
+  if (([NSApp isActive] == NO) &&
+      ([NSApp isHidden] == NO) &&
+      ([[NSApp mainMenu] isTransient] == NO) &&
+      (cWin->number != key_num))
+    {
+      NSDebugLLog(@"Focus", @"[TakeFocus] %lu(%li) activate application.",
+                  cWin->ident, cWin->number);
+      cWin->ignore_take_focus = NO;
+    }
+  
   /* We'd like to send this event directly to the front-end to handle,
      but the front-end polls events so slowly compared the speed at
      which X events could potentially come that we could easily get
@@ -1945,15 +1958,36 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
          window to take focus after each one gets hidden. */
       NSDebugLLog(@"Focus", @"WM take focus while hiding");
     }
-  else if (cWin->ignore_take_focus == YES)
+  else if ([[NSApp mainMenu] isTransient] != NO) // right-click main menu
+    {
+      /* Do not grab focus from active application if right-click on our 
+         application icon was performed. */
+      NSDebugLLog(@"Focus",
+                  @"[TakeFocus] ignore request for transient application menu.");
+    }
+  else if (cWin->number == key_num && keyWin->map_state != IsUnmapped) // already key window
     {
       NSDebugLLog(@"Focus", @"Ignoring window focus request");
       cWin->ignore_take_focus = NO;
     }
-  else if (cWin->number == key_num)
+  else if (cWin->ignore_take_focus == YES) // after orderwindow:::
     {
-      NSDebugLLog(@"Focus", @"Reasserting key window");
-      [GSServerForWindow(key_win) setinputfocus: key_num];
+      NSDebugLLog(@"Focus",
+                  @"[TakeFocus] %lu(%li): ignore_take_focus == YES...",
+                  cWin->ident, cWin->number);
+      /* Window was requested to take focus and earlier (orderwindow:::) 
+         was instructed to ignore "Take Focus" requests. Normally, we must 
+         ignore this request. However, key window was unmapped by window manager. 
+         In WindowMaker it happens after workspace switch. 
+         We should grab focus to have keyboard input. */
+      cWin->ignore_take_focus = NO;
+      if (key_num && keyWin->map_state == IsUnmapped)
+        {
+          NSDebugLLog(@"Focus",
+                      @"[TakeFocus] ...%lu(%li): key window was unmapped"
+                      " - setinputfocus to self", cWin->ident, cWin->number);
+          [GSServerForWindow(key_win) setinputfocus: cWin->number];
+        }
     }
   else if (key_num 
            && cWin->number == [[[NSApp mainMenu] window] windowNumber])
@@ -1962,12 +1996,35 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
          to become key, so it tells the main menu (typically the first
          menu in the list), but since we already have a window that
          was key before, use that instead */
-      NSDebugLLog(@"Focus", @"Key window is already %d", key_num);
-      [GSServerForWindow(key_win) setinputfocus: key_num];
+      NSDebugLLog(@"Focus",
+                  @"[TakeFocus] %lu(%li): main menu. Key window is already"
+                  " set to: %lu(%d)...",
+                  cWin->ident, cWin->number, keyWin->ident, key_num);
+      
+      if (keyWin->map_state == IsUnmapped)
+        {
+          NSDebugLLog(@"Focus", @"[TakeFocus] ...%lu(%li): key window was unmapped"
+                      " - setinputfocus to self", cWin->ident, cWin->number);
+          [GSServerForWindow(key_win) setinputfocus: cWin->number];
+        }
+      else
+        {
+          /* If application will be deactivated and key window receive TakeFocus, 
+             nothing happens because:
+             - NSApplication resigns key window on deactivation;
+             - key window has `ignore_take_focus == YES`;
+             So click on key window of inactive application will be ignored 
+             because of ignore_take_focus == YES. 
+             To handle such situation we set input focus to key window if key 
+             window is visible and hasn't receive TakeFocus message yet. */
+          NSDebugLLog(@"Focus",
+                      @"[TakeFocus] ...%lu(%li):  setinputfocus to key: %lu(%d)",
+                      cWin->ident, cWin->number, keyWin->ident, key_num);
+          [GSServerForWindow(key_win) setinputfocus: key_num];
+        }
     }
   else
     {
-      NSPoint eventLocation;
       /*
        * Here the app asked for this (if key_win==nil) or there was a
        * click on the title bar or some other reason (window mapped,
@@ -1975,16 +2032,15 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
        * last reason but we just have to deal with that since we can
        * never be sure if it's necessary.
        */
-      eventLocation = NSMakePoint(0,0);
       e = [NSEvent otherEventWithType:NSAppKitDefined
-                   location: eventLocation
-                   modifierFlags: 0
-                   timestamp: 0
-                   windowNumber: cWin->number
-                   context: gcontext
-                   subtype: GSAppKitWindowFocusIn
-                   data1: 0
-                   data2: 0];
+                             location: NSMakePoint(0,0)
+                        modifierFlags: 0
+                            timestamp: 0
+                         windowNumber: cWin->number
+                              context: gcontext
+                              subtype: GSAppKitWindowFocusIn
+                                data1: 0
+                                data2: 0];
     }
   return e;
 }

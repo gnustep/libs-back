@@ -1,3 +1,23 @@
+2019-12-11  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerEvent.m (processEvent:):
+	On FocusIn event:
+	- set desiredFocusWindow in addition to currentFocusWindow;
+	- set focus to app main menu if focus received by window decorations;
+	- deactivate application if window is not visible also.
+	On MapNotify event:
+	- refocus window only if application is not active.
+	(_handleTakeFocusAtom:forContext:): Fix focus handling for a number of
+	cases for WindowMaker specific TakeFocus atom:
+	- make sure that application is not active, not hidden, it's a main menu
+	  and is not transient, it's already key and visible before reset of
+	  `ignore_take_focus` to NO.
+	- do not grab focus from active application by right-click app menu.
+	- check if window is in unmapped state for newly created windows before
+	  setting input focus.
+	- select corrent window for input focus setting if main menu was received
+	  focus event.
+
 2019-05-19 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoFontInfo.m,
