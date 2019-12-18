@@ -1244,17 +1244,11 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
            * it's not one of ours.
            * If it has gone to our root window - use the icon window.
            * If it has gone to a window - we see if it is one of ours.
-           * If it has gone to our unmapped window - deactivate.
            */
           XGetInputFocus(xEvent.xfocus.display, &fw, &rev);
           NSDebugLLog(@"NSEvent", @"%lu FocusOut\n",
                       xEvent.xfocus.window);
-          if (cWin && (fw == cWin->parent) && (cWin->map_state != IsViewable))
-            { // focus switched to WM decorations
-              nswin = GSWindowWithNumber(cWin->number);
-              [self setinputfocus:[[[NSApp mainMenu] window] windowNumber]];
-            }
-          else if (fw != None && fw != PointerRoot)
+          if (fw != None && fw != PointerRoot)
             {
               generic.cachedWindow = [XGServer _windowForXWindow: fw];
               if (cWin == 0)
