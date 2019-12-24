@@ -42,6 +42,80 @@
 #include <fontconfig/fontconfig.h>
 #include <fontconfig/fcfreetype.h>
 
+void set_font_options(cairo_font_options_t *options)
+{
+  NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+  cairo_hint_metrics_t metrics = CAIRO_HINT_METRICS_ON;
+  cairo_hint_style_t   style = CAIRO_HINT_STYLE_NONE;
+  int hinting = [ud integerForKey: @"GSFontHinting"];
+  int subpixel = 0;
+
+  if (hinting == 0) 
+    {
+      /*
+       * This could be on purpose or a missing value.
+       * In the later case use the defaults.
+       */
+      if (nil == [ud objectForKey: @"GSFontHinting"])
+        {
+          hinting = 33;
+        }
+    }
+  
+  /*
+   * This part is only here to debug disabling the use of hinting for
+   * metrics, because doing so causes menus to get cut off on the right.
+   */
+  switch (hinting >> 4)
+    {
+    case 0:
+      metrics = CAIRO_HINT_METRICS_DEFAULT;
+      break;
+    case 1:
+      metrics = CAIRO_HINT_METRICS_OFF;
+      break;
+    case 2:
+      metrics = CAIRO_HINT_METRICS_ON;
+      break;
+    }
+  
+  switch (hinting & 0x0f)
+    {
+    case 0:
+      style = CAIRO_HINT_STYLE_DEFAULT;
+      break;
+    case 1:
+      style = CAIRO_HINT_STYLE_NONE;
+      break;
+    case 2:
+      style = CAIRO_HINT_STYLE_SLIGHT;
+      break;
+    case 3:
+      style = CAIRO_HINT_STYLE_MEDIUM;
+      break;
+    case 4:
+      style = CAIRO_HINT_STYLE_FULL;
+      break;
+    }
+  
+  cairo_font_options_set_hint_metrics(options, metrics);
+  cairo_font_options_set_hint_style(options, style);
+
+  if ((subpixel = [ud integerForKey: @"back-art-subpixel-text"]))
+    {
+      cairo_font_options_set_antialias(options, CAIRO_ANTIALIAS_SUBPIXEL);
+
+      if (subpixel == 2)
+        {
+          cairo_font_options_set_subpixel_order(options, CAIRO_SUBPIXEL_ORDER_BGR);
+        }
+      else
+        {
+          cairo_font_options_set_subpixel_order(options, CAIRO_SUBPIXEL_ORDER_RGB);
+        }
+    }
+}
+
 @implementation CairoFontInfo 
 
 - (BOOL) setupAttributes
@@ -51,10 +125,6 @@
   cairo_matrix_t font_matrix;
   cairo_matrix_t ctm;
   cairo_font_options_t *options;
-  cairo_hint_metrics_t metrics = CAIRO_HINT_METRICS_ON;
-  cairo_hint_style_t   style = CAIRO_HINT_STYLE_DEFAULT;
-  NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
-  int hinting = 0, subpixel = 0;
 
   if (![super setupAttributes])
     {
@@ -81,54 +151,8 @@
     {
       return NO;
     }
-
-  if ((hinting = [ud integerForKey: @"GSFontHinting"]))
-    { /*
-       * This part is only here to debug disabling the use of hinting for
-       * metrics, because doing so causes menus to get cut off on the right.
-       */
-      switch (hinting >> 4)
-	{
-	  case 1:
-	    metrics = CAIRO_HINT_METRICS_OFF;
-	    break;
-	  case 2:
-	    metrics = CAIRO_HINT_METRICS_ON;
-	    break;
-	}
-
-      switch (hinting & 0x0f)
-	{
-	  case 1:
-	    style = CAIRO_HINT_STYLE_NONE;
-	    break;
-	  case 2:
-	    style = CAIRO_HINT_STYLE_SLIGHT;
-	    break;
-	  case 3:
-	    style = CAIRO_HINT_STYLE_MEDIUM;
-	    break;
-	  case 4:
-	    style = CAIRO_HINT_STYLE_FULL;
-	    break;
-	}
-    }
-  cairo_font_options_set_hint_metrics(options, metrics);
-  cairo_font_options_set_hint_style(options, style);
-
-  if ((subpixel = [ud integerForKey: @"back-art-subpixel-text"]))
-    {
-      cairo_font_options_set_antialias(options, CAIRO_ANTIALIAS_SUBPIXEL);
-
-      if (subpixel == 2)
-        {
-          cairo_font_options_set_subpixel_order(options, CAIRO_SUBPIXEL_ORDER_BGR);
-        }
-      else
-        {
-          cairo_font_options_set_subpixel_order(options, CAIRO_SUBPIXEL_ORDER_RGB);
-        }
-    }
+  
+  set_font_options(options);
 
   _scaled = cairo_scaled_font_create(face, &font_matrix, &ctm, options);
   cairo_font_options_destroy(options);

@@ -1,3 +1,8 @@
+2019-12-24 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoFontInfo.m: Revert to the old defaults for
+	hinting and allow for all possible values to be set.
+
 2019-05-19 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoFontInfo.m,
