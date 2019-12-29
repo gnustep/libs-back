@@ -36,13 +36,10 @@ typedef struct _WaylandConfig {
     struct wl_registry *registry;
     struct wl_compositor *compositor;
     struct wl_shell *shell;
-    struct xdg_wm_base *wm_base;
     struct wl_shm *shm;
     struct wl_seat *seat;
     struct wl_keyboard *keyboard;
-    struct wl_surface *surface;
-    struct wl_shell_surface *shell_surface;
-    struct wl_buffer *buffer;
+    struct xdg_wm_base *wm_base;
 
     struct wl_list output_list;
     int output_count;
@@ -78,7 +75,6 @@ struct output {
     char *make;
     char *model;
 
-    //display_output_handler_t destroy_handler;
     void *user_data;
 };
 
@@ -97,17 +93,15 @@ struct window {
     int is_out;
 
     unsigned char *data;
-    struct wl_surface *surface;
     struct wl_buffer *buffer;
-    struct wl_shell_surface *shell_surface;
+    struct wl_surface *surface;
     struct xdg_surface *xdg_surface;
+    struct xdg_toplevel *toplevel;
+
     struct output *output;
     WaylandCairoSurface *wcs;
 };
 
-
-cairo_surface_t *
-create_shm_buffer(struct window *window);
 
 @interface WaylandServer : GSDisplayServer
 {

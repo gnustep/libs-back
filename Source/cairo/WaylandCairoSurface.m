@@ -52,7 +52,7 @@ os_create_anonymous_file(off_t size)
     return fd;
 }
 
-cairo_surface_t *
+static cairo_surface_t *
 create_shm_buffer(struct window *window)
 {
     struct wl_shm_pool *pool;
@@ -62,6 +62,7 @@ create_shm_buffer(struct window *window)
     stride = window->width * 4;
     size = stride * window->height;
 
+    NSDebugLog(@"WaylandCairoSurface: creating shm buffer of %d bytes", size);
     fd = os_create_anonymous_file(size);
     if (fd < 0) {
 	NSLog(@"creating a buffer file for surface failed");
@@ -104,7 +105,6 @@ create_shm_buffer(struct window *window)
 
     gsDevice = device;
 
-    //_surface = window->main_surface->cairo_surface;
     _surface = create_shm_buffer(window);
     if (_surface == NULL) {
 	NSDebugLog(@"can't create cairo surface");
@@ -112,7 +112,6 @@ create_shm_buffer(struct window *window)
     }
 
     wl_surface_attach(window->surface, window->buffer, 0, 0);
-
     window->wcs = self;
 
     return self;
@@ -142,8 +141,7 @@ create_shm_buffer(struct window *window)
 {
     NSDebugLog(@"handleExposeRect");
     struct window *window = (struct window*) gsDevice;
-    struct wl_surface *wlsurface = window->surface;
-    cairo_surface_t *cairo_surface;
+    cairo_surface_t *cairo_surface = _surface;
     double  backupOffsetX = 0;
     double  backupOffsetY = 0;
     int x = NSMinX(rect);
@@ -153,20 +151,12 @@ create_shm_buffer(struct window *window)
 
     NSDebugLog(@"updating region: %dx%d %dx%d", x, y, width, height);
 
-    if (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS)
+    if (cairo_surface_status(cairo_surface) != CAIRO_STATUS_SUCCESS)
     {
 	NSWarnMLog(@"cairo initial window error status: %s\n",
 		   cairo_status_to_string(cairo_surface_status(_surface)));
     }
 
-    /*
-    cairo_surface = create_shm_buffer(window);
-    if (cairo_surface == NULL) {
-	NSDebugLog(@"can't create cairo surface");
-	return;
-    }
-    */
-    cairo_surface = _surface;
     cairo_surface_get_device_offset(cairo_surface, &backupOffsetX, &backupOffsetY);
     cairo_surface_set_device_offset(cairo_surface, 0, 0);
 
@@ -202,14 +192,12 @@ create_shm_buffer(struct window *window)
 
     cairo_destroy(cr);
 
-    cairo_surface_set_device_offset(_surface, backupOffsetX, backupOffsetY);
-
-    wl_surface_attach(wlsurface, window->buffer, 0, 0);
-    wl_surface_damage(wlsurface, 0, 0, window->width, window->height);
-    wl_surface_commit(wlsurface);
-
+    wl_surface_commit(window->surface);
     wl_display_dispatch_pending(window->wlconfig->display);
     wl_display_flush(window->wlconfig->display);
+
+    cairo_surface_set_device_offset(_surface, backupOffsetX, backupOffsetY);
+
     NSDebugLog(@"handleExposeRect exit");
 }
 

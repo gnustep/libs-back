@@ -17,6 +17,7 @@
 #include <Foundation/NSDebug.h>
 #include <Foundation/NSValue.h>
 
+#include <unistd.h>
 #include <xkbcommon/xkbcommon.h>
 #include <linux/input.h>
 #include <sys/mman.h>
@@ -97,42 +98,7 @@ static const struct wl_output_listener output_listener = {
     handle_done,
     handle_scale
 };
-
-static void
-add_output(WaylandConfig *wlconfig, uint32_t id)
-{
-    NSDebugLog(@"add_output");
-
-    struct output *output;
-
-    output = (struct output *) malloc(sizeof(struct output));
-    memset(output, 0, sizeof(struct output));
-    output->wlconfig = wlconfig;
-    output->scale = 1;
-    output->output =
-	wl_registry_bind(wlconfig->registry, id, &wl_output_interface, 2);
-    output->server_output_id = id;
-    wl_list_insert(wlconfig->output_list.prev, &output->link);
-    (wlconfig->output_count)++;
-
-    wl_output_add_listener(output->output, &output_listener, output);
-}
-
-static void
-output_destroy(struct output *output)
-{
-    NSDebugLog(@"output_destroy");
-
-    /* XXX - Should we implement this?
-    if (output->destroy_handler)
-	(*output->destroy_handler)(output, output->user_data);
-    */
-
-    wl_output_destroy(output->output);
-    wl_list_remove(&output->link);
-    free(output);
-}
-
+/*
 static void
 destroy_output(WaylandConfig *wlconfig, uint32_t id)
 {
@@ -140,13 +106,15 @@ destroy_output(WaylandConfig *wlconfig, uint32_t id)
 
     wl_list_for_each(output, &wlconfig->output_list, link) {
 	if (output->server_output_id == id) {
-	    output_destroy(output);
-	    (wlconfig->output_count)--;
+	    wl_output_destroy(output->output);
+	    wl_list_remove(&output->link);
+	    free(output);
+	    wlconfig->output_count--;
 	    break;
 	}
     }
 }
-
+*/
 static void
 pointer_handle_enter(void *data, struct wl_pointer *pointer,
 		     uint32_t serial, struct wl_surface *surface,
@@ -204,7 +172,6 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer,
 	NSPoint eventLocation;
 	NSGraphicsContext *gcontext;
 	unsigned int eventFlags;
-	int tick;
 	float deltaX = sx - window->wlconfig->pointer.x;
 	float deltaY = sy - window->wlconfig->pointer.y;
 
@@ -217,9 +184,6 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer,
 
 	eventFlags = 0;
 	eventType = NSLeftMouseDragged;
-
-	tick = 0;
-
 
 	NSDebugLog(@"sending pointer delta: %fx%f, window=%d", deltaX, deltaY, window->window_id);
 
@@ -316,7 +280,7 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
 			    eventNumber: tick
 			     clickCount: clickCount
 			       pressure: 1.0
-			 buttonNumber: 0 /* FIXME */
+			   buttonNumber: 0 /* FIXME */
 				 deltaX: deltaX
 				 deltaY: deltaY
 				 deltaZ: 0.];
@@ -425,7 +389,6 @@ keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard,
 {
     NSDebugLog(@"keyboard_handle_modifiers");
     WaylandConfig *wlconfig = data;
-    struct input *input = data;
     xkb_mod_mask_t mask;
 
     /* If we're not using a keymap, then we don't handle PC-style modifiers */
@@ -457,13 +420,12 @@ keyboard_handle_key(void *data, struct wl_keyboard *keyboard,
     enum wl_keyboard_key_state state = state_w;
     const xkb_keysym_t *syms;
     xkb_keysym_t sym;
-    struct itimerspec its;
     struct window *window = wlconfig->pointer.focus;
 
-    if (!window) {
+    if (!window)
 	return;
-    }
 
+    code = 0;
     if (key == 28) {
 	sym = NSCarriageReturnCharacter;
     } else if (key == 14) {
@@ -494,7 +456,7 @@ keyboard_handle_key(void *data, struct wl_keyboard *keyboard,
 			       windowNumber: window->window_id
 				    context: GSCurrentContext()
 				 characters: s
-			   charactersIgnoringModifiers: s
+		charactersIgnoringModifiers: s
 				  isARepeat: NO
 				    keyCode: code];
 
@@ -574,16 +536,6 @@ static const struct wl_seat_listener seat_listener = {
 };
 
 static void
-add_seat(WaylandConfig *wlconfig, uint32_t name, uint32_t version)
-{
-    wlconfig->pointer.wlpointer = NULL;
-    wlconfig->seat_version = version;
-    wlconfig->seat = wl_registry_bind(wlconfig->registry, name,
-				      &wl_seat_interface, 1);
-    wl_seat_add_listener(wlconfig->seat, &seat_listener, wlconfig);
-}
-
-static void
 shm_format(void *data, struct wl_shm *wl_shm, uint32_t format)
 {
 }
@@ -592,55 +544,16 @@ struct wl_shm_listener shm_listener = {
         shm_format
 };
 
+#define XDG_SHELL
+
+#ifdef XDG_SHELL
 static void
-handle_ping(void *data, struct wl_shell_surface *shell_surface,
-	    uint32_t serial)
-{
-    NSDebugLog(@"handle_ping");
-    struct window *window = (struct window *) data;
-    wl_shell_surface_pong(shell_surface, serial);
-    wl_display_dispatch_pending(window->wlconfig->display);
-    wl_display_flush(window->wlconfig->display);
-}
-
-static void
-handle_configure(void *data, struct wl_shell_surface *shell_surface,
-		 uint32_t edges, int32_t width, int32_t height)
-{
-}
-
-static void
-handle_popup_done(void *data, struct wl_shell_surface *shell_surface)
-{
-}
-
-static const struct wl_shell_surface_listener shell_surface_listener = {
-    handle_ping,
-    handle_configure,
-    handle_popup_done
-};
-
-static void
-xdg_wm_base_ping(void *data, struct xdg_wm_base *shell, uint32_t serial)
-{
-    WaylandConfig *wlconfig = data;
-    xdg_wm_base_pong(shell, serial);
-    wl_display_dispatch_pending(wlconfig->display);
-    wl_display_flush(wlconfig->display);
-
-}
-
-static const struct xdg_wm_base_listener wm_base_listener = {
-    xdg_wm_base_ping,
-};
-
-static void
-handle_surface_configure(void *data, struct xdg_surface *xdg_surface,
+xdg_surface_on_configure(void *data, struct xdg_surface *xdg_surface,
 			 uint32_t serial)
 {
     struct window *window = data;
     WaylandConfig *wlconfig = window->wlconfig;
-    NSDebugLog(@"handle_surface_configure: win=%d", window->window_id);
+    NSDebugLog(@"xdg_surface_on_configure: win=%d", window->window_id);
 
     NSEvent *ev = nil;
     NSWindow *nswindow = GSWindowWithNumber(window->window_id);
@@ -651,11 +564,11 @@ handle_surface_configure(void *data, struct xdg_surface *xdg_surface,
 				location: NSZeroPoint
 			   modifierFlags: 0
 			       timestamp: 0
-			windowNumber: (int)window->window_id
+			    windowNumber: (int)window->window_id
 				 context: GSCurrentContext()
 				 subtype: GSAppKitWindowFocusIn
 				   data1: 0
-			       data2: 0];
+				   data2: 0];
 
 	[nswindow sendEvent: ev];
     }
@@ -700,11 +613,40 @@ handle_surface_configure(void *data, struct xdg_surface *xdg_surface,
 	[nswindow sendEvent: ev];
     }
 #endif
+//    xdg_surface_ack_configure(xdg_surface, serial);
 }
 
 static const struct xdg_surface_listener xdg_surface_listener = {
-    handle_surface_configure,
+    xdg_surface_on_configure,
 };
+
+#else
+static void
+wl_shell_surface_on_ping(void *data, struct wl_shell_surface *shell_surface,
+			 uint32_t serial)
+{
+    wl_shell_surface_pong(shell_surface, serial);
+}
+
+static void
+wl_shell_surface_on_configure(void *data,
+			      struct wl_shell_surface *shell_surface,
+			      uint32_t edges, int32_t width, int32_t height)
+{
+}
+
+static void
+wl_shell_surface_on_popup_done(void *data,
+			       struct wl_shell_surface *shell_surface)
+{
+}
+
+static const struct wl_shell_surface_listener shell_surface_listener = {
+    wl_shell_surface_on_ping,
+    wl_shell_surface_on_configure,
+    wl_shell_surface_on_popup_done,
+};
+#endif
 
 static void
 handle_global(void *data, struct wl_registry *registry,
@@ -712,29 +654,35 @@ handle_global(void *data, struct wl_registry *registry,
 {
     WaylandConfig *wlconfig = data;
 
-    if (strcmp(interface, "wl_compositor") == 0) {
-	wlconfig->compositor =
-	    wl_registry_bind(wlconfig->registry, name,
-			     &wl_compositor_interface, 1);
-	/*
-    } else if (strcmp(interface, "wl_shell") == 0) {
-	wlconfig->shell =
-	    wl_registry_bind(registry, name,
-			     &wl_shell_interface, 1);
-	*/
-    } else if (strcmp(interface, "xdg_shell") == 0) {
+    if (strcmp(interface, xdg_wm_base_interface.name) == 0) {
 	wlconfig->wm_base = wl_registry_bind(registry, name,
 					     &xdg_wm_base_interface, 1);
-	xdg_shell_add_listener(wlconfig->wm_base,
-			       &wm_base_listener, wlconfig);
-    } else if (strcmp(interface, "wl_shm") == 0) {
-	wlconfig->shm = wl_registry_bind(wlconfig->registry, name,
+    } else if (strcmp(interface, wl_shell_interface.name) == 0) {
+	wlconfig->shell = wl_registry_bind(registry, name,
+					   &wl_shell_interface, 1);
+    } else if (strcmp(interface, wl_compositor_interface.name) == 0) {
+	wlconfig->compositor = wl_registry_bind(registry, name,
+						&wl_compositor_interface, 1);
+    } else if (strcmp(interface, wl_shm_interface.name) == 0) {
+	wlconfig->shm = wl_registry_bind(registry, name,
 					 &wl_shm_interface, 1);
 	wl_shm_add_listener(wlconfig->shm, &shm_listener, wlconfig);
-    } else if (strcmp(interface, "wl_output") == 0) {
-        add_output(wlconfig, name);
-    } else if (strcmp(interface, "wl_seat") == 0) {
-	add_seat(wlconfig, name, version);
+    } else if (strcmp(interface, wl_output_interface.name) == 0) {
+	struct output *output = (struct output *)malloc(sizeof(struct output));
+	memset(output, 0, sizeof(struct output));
+	output->wlconfig = wlconfig;
+	output->scale = 1;
+	output->output = wl_registry_bind(registry, name, &wl_output_interface, 2);
+	output->server_output_id = name;
+	wl_list_insert(wlconfig->output_list.prev, &output->link);
+	wlconfig->output_count++;
+	wl_output_add_listener(output->output, &output_listener, output);
+    } else if (strcmp(interface, wl_seat_interface.name) == 0) {
+	wlconfig->pointer.wlpointer = NULL;
+	wlconfig->seat_version = version;
+	wlconfig->seat = wl_registry_bind(wlconfig->registry, name,
+					  &wl_seat_interface, 1);
+	wl_seat_add_listener(wlconfig->seat, &seat_listener, wlconfig);
     }
 }
 
@@ -797,10 +745,21 @@ int NSToWayland(struct window *window, int ns_y)
     }
 
     wlconfig->registry = wl_display_get_registry(wlconfig->display);
+    if (!wlconfig->registry) {
+	[NSException raise: NSWindowServerCommunicationException
+		    format: @"Unable to get global registry"];
+    }
     wl_registry_add_listener(wlconfig->registry,
 			     &registry_listener, wlconfig);
+
     wl_display_dispatch(wlconfig->display);
     wl_display_roundtrip(wlconfig->display);
+
+    if (!wlconfig->compositor || !wlconfig->wm_base) {
+	[NSException raise: NSWindowServerCommunicationException
+		    format: @"Unable to get compositor"];
+
+    }
 
     return self;
 }
@@ -810,8 +769,8 @@ int NSToWayland(struct window *window, int ns_y)
                  extra: (void*)extra
                forMode: (NSString*)mode
 {
-    NSDebugLog(@"receivedEvent");
     if (type == ET_RDESC){
+	NSDebugLog(@"receivedEvent ET_RDESC");
 	if (wl_display_dispatch(wlconfig->display) == -1) {
 	    [NSException raise: NSWindowServerCommunicationException
 			format: @"Connection to Wayland Server lost"];
@@ -822,7 +781,7 @@ int NSToWayland(struct window *window, int ns_y)
 - (void) setupRunLoopInputSourcesForMode: (NSString*)mode
 {
     NSRunLoop *currentRunLoop = [NSRunLoop currentRunLoop];
-    int fdWaylandHandle = wl_display_get_fd(wlconfig->display);
+    long fdWaylandHandle = wl_display_get_fd(wlconfig->display);
 
     [currentRunLoop addEvent: (void*)fdWaylandHandle
 			type: ET_RDESC
@@ -932,17 +891,13 @@ int NSToWayland(struct window *window, int ns_y)
     NSDebugLog(@"window: screen=%d frame=%@", screen, NSStringFromRect(frame));
     struct window *window;
     struct output *output;
-    struct wl_surface *wlsurface;
-    cairo_surface_t *cairo_surface;
-    cairo_t *cr;
     int width;
     int height;
     int altered = 0;
-    int window_type = 0;
 
     /* We're not allowed to create a zero rect window */
     if (NSWidth(frame) <= 0 || NSHeight(frame) <= 0) {
-	NSDebugLog(@"trying try create a zero rect window");
+	NSDebugLog(@"trying to create a zero rect window");
 	frame.size.width = 2;
 	frame.size.height = 2;
     }
@@ -971,29 +926,19 @@ int NSToWayland(struct window *window, int ns_y)
     window->pos_x = frame.origin.x;
     window->pos_y = NSToWayland(window, frame.origin.y);
     window->window_id = wlconfig->last_window_id;
-
-    wlsurface = wl_compositor_create_surface(wlconfig->compositor);
-    if (wlsurface == NULL) {
+    window->surface = wl_compositor_create_surface(wlconfig->compositor);
+    if (!window->surface) {
 	NSDebugLog(@"can't create wayland surface");
 	return 0;
     }
-    /*
-    window->shell_surface = wl_shell_get_shell_surface(wlconfig->shell,
-						       wlsurface);
-    if (window->shell_surface) {
-	NSDebugLog(@"shell surface is present");
-	wl_shell_surface_add_listener(window->shell_surface,
-				      &shell_surface_listener, window);
-	wl_shell_surface_set_toplevel(window->shell_surface);
-    } else {
-	NSDebugLog(@"shell surface is missing");
-    }
-    */
+    wl_surface_set_user_data(window->surface, window);
 
-    window->xdg_surface = xdg_wm_base_get_xdg_surface(wlconfig->wm_base,
-						      wlsurface);
+    window->xdg_surface =
+	xdg_wm_base_get_xdg_surface(wlconfig->wm_base, window->surface);
+
+#if 0
     // TODO: xdg_shell_get_xdg_surface_special() no longer exists,
-    // so we need to find another way
+    // so we need to find another way, see *get_popup for menus
     if (style & NSMainMenuWindowMask) {
 	NSDebugLog(@"window id=%d will be a panel", window->window_id);
     } else if (style & NSBackgroundWindowMask) {
@@ -1001,6 +946,9 @@ int NSToWayland(struct window *window, int ns_y)
     } else {
 	NSDebugLog(@"window id=%d will be ordinary", window->window_id);
     }
+#endif
+
+    window->toplevel = xdg_surface_get_toplevel(window->xdg_surface);
 
     xdg_surface_set_user_data(window->xdg_surface, window);
     xdg_surface_add_listener(window->xdg_surface,
@@ -1026,18 +974,12 @@ int NSToWayland(struct window *window, int ns_y)
 				    window->pos_y,
 				    window->width,
 				    window->height);
-    wl_surface_commit(wlsurface);
-
-    wl_surface_set_user_data(wlsurface, window);
-    window->surface = wlsurface;
-
-    window->window_id = wlconfig->last_window_id;
-    wl_list_insert(wlconfig->window_list.prev, &window->link);
-    (wlconfig->last_window_id)++;
-    (wlconfig->window_count)++;
-
-    wl_display_dispatch_pending(wlconfig->display);
+    wl_surface_commit(window->surface);
     wl_display_flush(wlconfig->display);
+
+    wl_list_insert(wlconfig->window_list.prev, &window->link);
+    wlconfig->last_window_id++;
+    wlconfig->window_count++;
 
     [self _setWindowOwnedByServer: (int)window->window_id];
 
@@ -1064,11 +1006,7 @@ int NSToWayland(struct window *window, int ns_y)
     NSDebugLog(@"termwindow: win=%d", win);
     struct window *window = get_window_with_id(wlconfig, win);
 
-    if (window->xdg_surface) {
-	xdg_surface_destroy(window->xdg_surface);
-    }
-
-    wl_surface_destroy(window->surface);
+    xdg_surface_destroy(window->xdg_surface);
     wl_buffer_destroy(window->buffer);
     wl_list_remove(&window->link);
 
@@ -1105,7 +1043,7 @@ int NSToWayland(struct window *window, int ns_y)
     struct window *window = get_window_with_id(wlconfig, win);
     const char *cString = [window_title UTF8String];
 
-    xdg_surface_set_title(window->xdg_surface, cString);
+    xdg_toplevel_set_title(window->toplevel, cString);
 }
 
 - (void) miniwindow: (int) win
@@ -1133,8 +1071,6 @@ int NSToWayland(struct window *window, int ns_y)
 
     if (op == NSWindowOut) {
 	NSDebugLog(@"orderwindow: NSWindowOut");
-	//window->pos_x += 32000;
-	//window->pos_y += 32000;
 	window->is_out = 1;
 	xdg_surface_set_window_geometry(window->xdg_surface,
 					window->pos_x + 32000,
@@ -1145,13 +1081,12 @@ int NSToWayland(struct window *window, int ns_y)
 				 window->width, window->height);
 	[window->instance flushwindowrect:rect :window->window_id];
 
+	xdg_toplevel_set_minimized(window->toplevel);
+
 	wl_display_dispatch_pending(window->wlconfig->display);
 	wl_display_flush(window->wlconfig->display);
-
-
-	//xdg_surface_set_minimized(window->xdg_surface);
     } else /*if (window->is_out)*/ {
-	NSDebugLog(@"orderwindow: restoring to %dx%d", window->pos_x, window->pos_y);
+	NSDebugLog(@"orderwindow: restoring to %fx%f", window->pos_x, window->pos_y);
 	xdg_surface_set_window_geometry(window->xdg_surface,
 					window->pos_x,
 					window->pos_y,
@@ -1161,7 +1096,8 @@ int NSToWayland(struct window *window, int ns_y)
 				 window->width, window->height);
 	[window->instance flushwindowrect:rect :window->window_id];
 
-	xdg_surface_set_minimized(window->xdg_surface);
+//	xdg_toplevel_set_minimized(window->toplevel);
+//	xdg_toplevel_set_fullscreen(window->toplevel, window->output);
 
 	wl_display_dispatch_pending(window->wlconfig->display);
 	wl_display_flush(window->wlconfig->display);
@@ -1193,10 +1129,10 @@ int NSToWayland(struct window *window, int ns_y)
 {
     NSDebugLog(@"placewindow: %d %@", win, NSStringFromRect(rect));
     struct window *window = get_window_with_id(wlconfig, win);
-    WaylandConfig *wlconfig = window->wlconfig;
+    WaylandConfig *config = window->wlconfig;
 
-    if (0 && wlconfig->pointer.serial && wlconfig->pointer.focus &&
-	wlconfig->pointer.focus->window_id == win) {
+    if (0 && config->pointer.serial && config->pointer.focus &&
+	config->pointer.focus->window_id == win) {
 	NSEvent *event;
 	NSEventType eventType;
 	NSPoint eventLocation;
@@ -1207,14 +1143,14 @@ int NSToWayland(struct window *window, int ns_y)
 	int tick;
 
 	gcontext = GSCurrentContext();
-	eventLocation = NSMakePoint(wlconfig->pointer.x,
-				    window->height - wlconfig->pointer.y);
+	eventLocation = NSMakePoint(config->pointer.x,
+				    window->height - config->pointer.y);
 	eventFlags = 0;
 	eventType = NSLeftMouseUp;
 
 	tick = 0;
 
-	NSDebugLog(@"sending pointer event at: %fx%f, window=%d", wlconfig->pointer.x, wlconfig->pointer.y, window->window_id);
+	NSDebugLog(@"sending pointer event at: %fx%f, window=%d", config->pointer.x, config->pointer.y, window->window_id);
 
 	event = [NSEvent mouseEventWithType: eventType
 				   location: eventLocation
@@ -1232,9 +1168,9 @@ int NSToWayland(struct window *window, int ns_y)
 
 	[GSCurrentServer() postEvent: event atStart: NO];
 
-	xdg_surface_move(window->xdg_surface,
-			 wlconfig->seat,
-			 wlconfig->pointer.serial);
+	xdg_toplevel_move(window->toplevel,
+			  config->seat,
+			  config->pointer.serial);
     } else {
 	NSDebugLog(@"placewindow: oldpos=%fx%f", window->pos_x, window->pos_y);
 	NSDebugLog(@"placewindow: oldsize=%fx%f", window->width, window->height);
@@ -1256,10 +1192,10 @@ int NSToWayland(struct window *window, int ns_y)
 
 	wframe = [self _OSFrameToWFrame: rect for: window];
 
-	if (wlconfig->pointer.focus &&
-	    wlconfig->pointer.focus->window_id == window->window_id) {
-	    wlconfig->pointer.y -= (wframe.origin.y - window->pos_y);
-	    wlconfig->pointer.x -= (wframe.origin.x - window->pos_x);
+	if (config->pointer.focus &&
+	    config->pointer.focus->window_id == window->window_id) {
+	    config->pointer.y -= (wframe.origin.y - window->pos_y);
+	    config->pointer.x -= (wframe.origin.x - window->pos_x);
 	}
 
 	window->width = wframe.size.width;
@@ -1272,9 +1208,10 @@ int NSToWayland(struct window *window, int ns_y)
 					window->pos_y,
 					window->width,
 					window->height);
-
+/*
 	NSRect flushRect = NSMakeRect(0, 0,
 				      window->width, window->height);
+*/
 	[window->instance flushwindowrect:rect :window->window_id];
 
 	wl_display_dispatch_pending(window->wlconfig->display);
@@ -1387,7 +1324,7 @@ int NSToWayland(struct window *window, int ns_y)
 		     : (unsigned int) style
 {
     NSDebugLog(@"styleoffsets");
-    /* XXX - Assume we don't decorations */
+    /* XXX - Assume we don't decorate */
     *l = *r = *t = *b = 0.0;
 }
 
@@ -1525,11 +1462,11 @@ int NSToWayland(struct window *window, int ns_y)
     struct window *child = get_window_with_id(wlconfig, childWin);
 
     if (parent) {
-	xdg_surface_set_parent(child->xdg_surface, parent->xdg_surface);
+	xdg_toplevel_set_parent(child->toplevel, parent->toplevel);
     } else {
-	xdg_surface_set_parent(child->xdg_surface, NULL);
+	xdg_toplevel_set_parent(child->toplevel, NULL);
     }
-    xdg_surface_set_minimized(child->xdg_surface);
+    xdg_toplevel_set_minimized(child->toplevel);
     wl_display_dispatch_pending(wlconfig->display);
     wl_display_flush(wlconfig->display);
 }
