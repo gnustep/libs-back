@@ -1016,7 +1016,7 @@ NSMutableDictionary	*pasteboards = nil;
         {
           [timer invalidate];
         }
-      NSTimeInterval timeout = [[NSUserDefaults standardDefaults] floatForKey:@"GSGPBSAutostopTimeout"];
+      NSTimeInterval timeout = [[NSUserDefaults standardUserDefaults] floatForKey:@"GSGPBSAutostopTimeout"];
       timer = [NSTimer scheduledTimerWithTimeInterval: ((timeout == 0) ? 15.0 : timeout)
                                                target: self
                                              selector: @selector(autoStop:)
