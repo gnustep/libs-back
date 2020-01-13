@@ -1,3 +1,13 @@
+2020-01-14  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (alphaMaskForImage): renamed from
+	image_mask().
+	(swapColors): new function to convert colors from ARGB order into RGBA
+	(big-endian systems) or BGRA (little-endian systems).
+	(_createAppIconPixmaps): use swapColors() and remove unused code.
+	(restrictWindow:toImage:): use alphaMaskForImage().
+	(imagecursor:::): use swapColors() and remove unused code.
+
 2020-01-13  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (_createNetIcon:result:size:): fixed

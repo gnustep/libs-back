@@ -2693,8 +2693,8 @@ static Pixmap xIconMask;
 static BOOL didCreatePixmaps;
 
 Pixmap
-image_mask(Display *xdpy, Drawable draw, const unsigned char *data,
-           int w, int h, int colors, int alpha_treshold)
+alphaMaskForImage(Display *xdpy, Drawable draw, const unsigned char *data,
+                  int w, int h, int colors, int alpha_treshold)
 {
   int j, i;
   unsigned char	ialpha;
@@ -2740,14 +2740,59 @@ image_mask(Display *xdpy, Drawable draw, const unsigned char *data,
   return pix;
 }
 
+// Convert RGBA unpacked to ARGB packed.
+// Packed ARGB values are layed out as ARGB on big endian systems
+// and as BGRA on low endian systems
+void
+swapColors(unsigned char *image_data, int width, int height,
+           int samples_per_pixel, int bytes_per_row)
+{
+  NSInteger     x, y;
+  unsigned char *data;
+  unsigned char *r, *g, *b, *a;
+
+  data = image_data;
+  r = data;
+  g = data + 1;
+  b = data + 2;
+  a = data + 3;
+  for (y = 0; y < height; y++)
+    {
+      unsigned char *d = data;
+      for (x = 0; x < width; x++)
+	{
+#if GS_WORDS_BIGENDIAN
+          // RGBA -> ARGB
+          unsigned char _d = d[3];
+          *r = _d;
+          *g = d[0];
+          *b = d[1];
+          *a = d[2];
+#else
+          // RGBA -> BGRA
+          unsigned char _d = d[0];
+          *r = d[2];
+          // *g = d[1];
+          *b = _d;
+          // *a = d[3];
+#endif
+          r += 4;
+          g += 4;
+          b += 4;
+          a += 4;
+	  d += samples_per_pixel;
+	}
+      data += bytes_per_row;
+    }
+}
+
+
 - (int) _createAppIconPixmaps
 {
   NSBitmapImageRep *rep;
-  int              i, j, width, height, samples, screen;
-  unsigned char    *data;
+  int              width, height, colors, screen;
   RContext         *rcontext;
   RXImage          *rxImage;
-  char             *r, *g, *b, *a;
 
   NSAssert(!didCreatePixmaps, @"called _createAppIconPixmap twice");
 
@@ -2761,40 +2806,20 @@ image_mask(Display *xdpy, Drawable draw, const unsigned char *data,
   rcontext = [self xrContextForScreen: screen];
   width = [rep pixelsWide];
   height = [rep pixelsHigh];
-  samples = [rep samplesPerPixel];
+  colors = [rep samplesPerPixel];
 
-  /**/
   rxImage = RCreateXImage(rcontext, rcontext->depth, width, height);
+  memcpy((char*)rxImage->image->data, [rep bitmapData], width * height * colors);
+  swapColors((unsigned char *)rxImage->image->data,
+             width, height, colors, [rep bytesPerRow]);
+  
   xIconPixmap = XCreatePixmap(dpy, rcontext->drawable,
                               width, height, rcontext->depth);
-  r = rxImage->image->data;
-  g = rxImage->image->data + 1;
-  b = rxImage->image->data + 2;
-  a = rxImage->image->data + 3;
-  data = [rep bitmapData];
-  for (i = 0; i < height; i++)
-    {
-      unsigned char *d = data;
-      for (j = 0; j < width; j++)
-	{
-          *r = d[2];
-          *g = d[1];
-          *b = d[0];
-          *a = d[3];
-          r += 4;
-          g += 4;
-          b += 4;
-          a += 4;
-	  d += samples;
-	}
-      data += [rep bytesPerRow];
-    }
   XPutImage(dpy, xIconPixmap, rcontext->copy_gc, rxImage->image,
             0, 0, 0, 0, width, height);
   RDestroyXImage(rcontext, rxImage);
-  /**/
   
-  xIconMask = image_mask(dpy, ROOT, [rep bitmapData], width, height, samples, 0);
+  xIconMask = alphaMaskForImage(dpy, ROOT, [rep bitmapData], width, height, colors, 0);
 
   return 1;
 }
@@ -3104,11 +3129,11 @@ image_mask(Display *xdpy, Drawable draw, const unsigned char *data,
         {
 	    if ([rep samplesPerPixel] == 4)
 	      {
-		pixmap = image_mask(dpy, GET_XDRAWABLE(window),
-                                    [rep bitmapData],
-                                    [rep pixelsWide], [rep pixelsHigh],
-                                    [rep samplesPerPixel],
-                                    ALPHA_THRESHOLD);
+		pixmap = alphaMaskForImage(dpy, GET_XDRAWABLE(window),
+                                           [rep bitmapData],
+                                           [rep pixelsWide], [rep pixelsHigh],
+                                           [rep samplesPerPixel],
+                                           ALPHA_THRESHOLD);
 	      }
 	}
     }
@@ -4250,56 +4275,11 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
     xcursorImage->yhot = hotp.y;
 
     // Copy the data from the image rep to the Xcursor structure
-    {
-      int bytesPerRow;
-      size_t row;
+    memcpy((char*)xcursorImage->pixels, data, w * h * colors);
 
-      bytesPerRow = [rep bytesPerRow];
-
-      for (row = 0; row < h; row++)
-	{
-	  memcpy((char*)xcursorImage->pixels + (row * (w * 4)),
-		 data + (row * bytesPerRow),
-		 bytesPerRow);
-	}
-    }
-
-    // FIXME: Factor this out
-    // Convert RGBA unpacked to ARGB packed
-    // NB Packed ARGB values are layed out as ARGB on big endian systems
-    // and as BDRA on low endian systems
-    {
-      NSInteger stride;
-      NSInteger x, y;
-      unsigned char *cdata;
-
-      stride = 4 * w;
-      cdata = (unsigned char *)xcursorImage->pixels;
-
-      for (y = 0; y < h; y++)
-	{
-	  for (x = 0; x < w; x++)
-	    {
-	      NSInteger i = (y * stride) + (x * 4);
-#if GS_WORDS_BIGENDIAN
-	      unsigned char d = cdata[i + 3];
-
-	      cdata[i + 3] = cdata[i + 2];
-	      cdata[i + 2] = cdata[i + 1];
-	      cdata[i + 1] = cdata[i];
-	      cdata[i] = d;
-#else
-	      unsigned char d = cdata[i];
-
-	      cdata[i] = cdata[i + 2];
-	      //cdata[i + 1] = cdata[i + 1];
-	      cdata[i + 2] = d;
-	      //cdata[i + 3] = cdata[i + 3];
-#endif
-	    }
-	}
-    }
-
+    swapColors((unsigned char *)xcursorImage->pixels, w, h,
+               colors, [rep bytesPerRow]);
+    
     cursor = XcursorImageLoadCursor(dpy, xcursorImage);
     XcursorImageDestroy(xcursorImage);
   }
