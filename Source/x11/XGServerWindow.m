@@ -1809,28 +1809,14 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 	  // blue
 	  B = d[2];
 	  // alpha
-#if 0
-/*
-  For unclear reasons the alpha handling does not work, so we simulate it.
-*/
 	  if (samples == 4)
 	    {
-	      A = d[4];
+	      A = d[3];
 	    }
 	  else
 	    {
 	      A = 255;
 	    }
-#else
-	  if (R || G || B)
-	    {
-	      A = 255;
-	    }
-	  else
-	    {
-	      A = 0;
-	    }
-#endif
 
           iconPropertyData[index++] = A << 24 | R << 16 | G << 8 | B;
 	  d += samples;
@@ -2018,8 +2004,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 
   // For window managers supporting EWMH, but not Window Maker,
   // where we use a different solution, set the window icon.
-  if (((generic.wm & XGWM_EWMH) != 0)
-    && ((generic.wm & XGWM_WINDOWMAKER) == 0))
+  if ((generic.wm & XGWM_EWMH) != 0)
     {
       [self _setNetWMIconFor: window->ident];
     }
@@ -2707,62 +2692,134 @@ static Pixmap xIconPixmap;
 static Pixmap xIconMask;
 static BOOL didCreatePixmaps;
 
--(int) _createAppIconPixmaps
+Pixmap
+alphaMaskForImage(Display *xdpy, Drawable draw, const unsigned char *data,
+                  int w, int h, int colors, int alpha_treshold)
 {
-  NSImage *image;
-  NSBitmapImageRep *rep;
-  int i, j, w, h, samples, screen;
+  int j, i;
+  unsigned char	ialpha;
+  Pixmap pix;
+  int bitmapSize = ((w + 7) >> 3) * h; // (w/8) rounded up times height
+  char *aData = calloc(1, bitmapSize);
+  char *cData = aData;
+
+  if (colors == 4)
+    {
+      int k;
+      for (j = 0; j < h; j++)
+	{
+	  k = 0;
+	  for (i = 0; i < w; i++, k++)
+	    {
+	      if (k > 7)
+		{
+	      	  cData++;
+	      	  k = 0;
+	      	}
+	      data += 3; // skip R, G, B
+	      ialpha = (unsigned short)((char)*data++);
+	      if (ialpha > alpha_treshold)
+                {
+		  *cData |= (0x01 << k);
+                }
+	    }
+	  cData++;
+	}
+    }
+  else
+    {
+      for (j = 0; j < bitmapSize; j++)
+	{
+	  *cData++ = 0xff;
+	}
+    }
+
+  pix = XCreatePixmapFromBitmapData(xdpy, draw, (char *)aData, w, h,
+				    1L, 0L, 1);
+  free(aData);
+  return pix;
+}
+
+// Convert RGBA unpacked to ARGB packed.
+// Packed ARGB values are layed out as ARGB on big endian systems
+// and as BGRA on little endian systems
+void
+swapColors(unsigned char *image_data, int width, int height,
+           int samples_per_pixel, int bytes_per_row)
+{
+  NSInteger     x, y;
   unsigned char *data;
-  XColor pixelColor;
-  GC pixgc;
-  RColor pixelRColor;
-  RContext *rcontext;
+  unsigned char *r, *g, *b, *a;
+
+  data = image_data;
+  r = data;
+  g = data + 1;
+  b = data + 2;
+  a = data + 3;
+  for (y = 0; y < height; y++)
+    {
+      unsigned char *d = data;
+      for (x = 0; x < width; x++)
+	{
+#if GS_WORDS_BIGENDIAN
+          // RGBA -> ARGB
+          unsigned char _d = d[3];
+          *r = _d;
+          *g = d[0];
+          *b = d[1];
+          *a = d[2];
+#else
+          // RGBA -> BGRA
+          unsigned char _d = d[0];
+          *r = d[2];
+          // *g = d[1];
+          *b = _d;
+          // *a = d[3];
+#endif
+          r += 4;
+          g += 4;
+          b += 4;
+          a += 4;
+	  d += samples_per_pixel;
+	}
+      data += bytes_per_row;
+    }
+}
+
+
+- (int) _createAppIconPixmaps
+{
+  NSBitmapImageRep *rep;
+  int              width, height, colors, screen;
+  RContext         *rcontext;
+  RXImage          *rxImage;
 
   NSAssert(!didCreatePixmaps, @"called _createAppIconPixmap twice");
 
   didCreatePixmaps = YES;
 
-  image = [NSApp applicationIconImage];
-  rep = getStandardBitmap(image);
+  rep = getStandardBitmap([NSApp applicationIconImage]);
   if (rep == nil)
     return 0;
 
-  data = [rep bitmapData];
   screen = [[[self screenList] objectAtIndex: 0] intValue];
-  xIconPixmap = XCreatePixmap(dpy,
-                      [self xDisplayRootWindowForScreen: screen],
-                      [rep pixelsWide], [rep pixelsHigh],
-                      DefaultDepth(dpy, screen));
-  pixgc = XCreateGC(dpy, xIconPixmap, 0, NULL);
-
-  h = [rep pixelsHigh];
-  w = [rep pixelsWide];
-  samples = [rep samplesPerPixel];
   rcontext = [self xrContextForScreen: screen];
+  width = [rep pixelsWide];
+  height = [rep pixelsHigh];
+  colors = [rep samplesPerPixel];
 
-  for (i = 0; i < h; i++)
-    {
-      unsigned char *d = data;
-      for (j = 0; j < w; j++)
-	{
-	  pixelRColor.red = d[0];
-	  pixelRColor.green = d[1];
-	  pixelRColor.blue = d[2];
-
-	  RGetClosestXColor(rcontext, &pixelRColor, &pixelColor);
-	  XSetForeground(dpy, pixgc, pixelColor. pixel);
-	  XDrawPoint(dpy, xIconPixmap, pixgc, j, i);
-	  d += samples;
-	}
-      data += [rep bytesPerRow];
-    }
-
-  XFreeGC(dpy, pixgc);
-
-  xIconMask = xgps_cursor_mask(dpy, ROOT, [rep bitmapData],
-			       [rep pixelsWide],
-			       [rep pixelsHigh],
-			       [rep samplesPerPixel]);
+  rxImage = RCreateXImage(rcontext, rcontext->depth, width, height);
+  memcpy((char*)rxImage->image->data, [rep bitmapData], width * height * colors);
+  swapColors((unsigned char *)rxImage->image->data,
+             width, height, colors, [rep bytesPerRow]);
+  
+  xIconPixmap = XCreatePixmap(dpy, rcontext->drawable,
+                              width, height, rcontext->depth);
+  XPutImage(dpy, xIconPixmap, rcontext->copy_gc, rxImage->image,
+            0, 0, 0, 0, width, height);
+  RDestroyXImage(rcontext, rxImage);
+  
+  xIconMask = alphaMaskForImage(dpy, ROOT, [rep bitmapData], width, height, colors, 0);
 
   return 1;
 }
@@ -3072,10 +3129,11 @@ static BOOL didCreatePixmaps;
         {
 	    if ([rep samplesPerPixel] == 4)
 	      {
-		pixmap = xgps_cursor_mask(dpy, GET_XDRAWABLE(window),
-					  [rep bitmapData],
-					  [rep pixelsWide], [rep pixelsHigh],
-					  [rep samplesPerPixel]);
+		pixmap = alphaMaskForImage(dpy, GET_XDRAWABLE(window),
+                                           [rep bitmapData],
+                                           [rep pixelsWide], [rep pixelsHigh],
+                                           [rep samplesPerPixel],
+                                           ALPHA_THRESHOLD);
 	      }
 	}
     }
@@ -4017,55 +4075,7 @@ static BOOL   cursor_hidden = NO;
     }
 }
 
-#define ALPHA_THRESHOLD 158
-
-Pixmap
-xgps_cursor_mask(Display *xdpy, Drawable draw, const unsigned char *data,
-		  int w, int h, int colors)
-{
-  int j, i;
-  unsigned char	ialpha;
-  Pixmap pix;
-  int bitmapSize = ((w + 7) >> 3) * h; // (w/8) rounded up times height
-  char *aData = calloc(1, bitmapSize);
-  char *cData = aData;
-
-  if (colors == 4)
-    {
-      int k;
-      for (j = 0; j < h; j++)
-	{
-	  k = 0;
-	  for (i = 0; i < w; i++, k++)
-	    {
-	      if (k > 7)
-		{
-	      	  cData++;
-	      	  k = 0;
-	      	}
-	      data += 3;
-	      ialpha = (unsigned short)((char)*data++);
-	      if (ialpha > ALPHA_THRESHOLD)
-		{
-		  *cData |= (0x01 << k);
-		}
-	    }
-	  cData++;
-	}
-    }
-  else
-    {
-      for (j = 0; j < bitmapSize; j++)
-	{
-	  *cData++ = 0xff;
-	}
-    }
-
-  pix = XCreatePixmapFromBitmapData(xdpy, draw, (char *)aData, w, h,
-				    1L, 0L, 1);
-  free(aData);
-  return pix;
-}
+#if !HAVE_XCURSOR
 
 Pixmap
 xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
@@ -4142,6 +4152,8 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
   free(aData);
   return pix;
 }
+
+#endif
 
 - (void) hidecursor
 {
@@ -4261,56 +4273,11 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
     xcursorImage->yhot = hotp.y;
 
     // Copy the data from the image rep to the Xcursor structure
-    {
-      int bytesPerRow;
-      size_t row;
+    memcpy((char*)xcursorImage->pixels, data, w * h * colors);
 
-      bytesPerRow = [rep bytesPerRow];
-
-      for (row = 0; row < h; row++)
-	{
-	  memcpy((char*)xcursorImage->pixels + (row * (w * 4)),
-		 data + (row * bytesPerRow),
-		 bytesPerRow);
-	}
-    }
-
-    // FIXME: Factor this out
-    // Convert RGBA unpacked to ARGB packed
-    // NB Packed ARGB values are layed out as ARGB on big endian systems
-    // and as BDRA on low endian systems
-    {
-      NSInteger stride;
-      NSInteger x, y;
-      unsigned char *cdata;
-
-      stride = 4 * w;
-      cdata = (unsigned char *)xcursorImage->pixels;
-
-      for (y = 0; y < h; y++)
-	{
-	  for (x = 0; x < w; x++)
-	    {
-	      NSInteger i = (y * stride) + (x * 4);
-#if GS_WORDS_BIGENDIAN
-	      unsigned char d = cdata[i + 3];
-
-	      cdata[i + 3] = cdata[i + 2];
-	      cdata[i + 2] = cdata[i + 1];
-	      cdata[i + 1] = cdata[i];
-	      cdata[i] = d;
-#else
-	      unsigned char d = cdata[i];
-
-	      cdata[i] = cdata[i + 2];
-	      //cdata[i + 1] = cdata[i + 1];
-	      cdata[i + 2] = d;
-	      //cdata[i + 3] = cdata[i + 3];
-#endif
-	    }
-	}
-    }
-
+    swapColors((unsigned char *)xcursorImage->pixels, w, h,
+               colors, [rep bytesPerRow]);
+    
     cursor = XcursorImageLoadCursor(dpy, xcursorImage);
     XcursorImageDestroy(xcursorImage);
   }
@@ -4328,7 +4295,7 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
       h = maxh;
 
     source = xgps_cursor_image(dpy, ROOT, data, w, h, colors, &fg, &bg);
-    mask = xgps_cursor_mask(dpy, ROOT, data, w, h, colors);
+    mask = alphaMaskForImage(dpy, ROOT, data, w, h, colors, ALPHA_TRESHOLD);
     bg = [self xColorFromColor: bg forScreen: defScreen];
     fg = [self xColorFromColor: fg forScreen: defScreen];
 
