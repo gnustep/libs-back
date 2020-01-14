@@ -7,6 +7,7 @@
 	(_createAppIconPixmaps): use swapColors() and remove unused code.
 	(restrictWindow:toImage:): use alphaMaskForImage().
 	(imagecursor:::): use swapColors() and remove unused code.
+	(ALPHA_THRESHOLD): removed duplicate of definition.
 
 2020-01-13  Sergii Stoian  <stoyan255@gmail.com>
 

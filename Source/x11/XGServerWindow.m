@@ -2742,7 +2742,7 @@ alphaMaskForImage(Display *xdpy, Drawable draw, const unsigned char *data,
 
 // Convert RGBA unpacked to ARGB packed.
 // Packed ARGB values are layed out as ARGB on big endian systems
-// and as BGRA on low endian systems
+// and as BGRA on little endian systems
 void
 swapColors(unsigned char *image_data, int width, int height,
            int samples_per_pixel, int bytes_per_row)
@@ -4076,8 +4076,6 @@ static BOOL   cursor_hidden = NO;
 }
 
 #if !HAVE_XCURSOR
-
-#define ALPHA_THRESHOLD 158
 
 Pixmap
 xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
