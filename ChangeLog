@@ -1,3 +1,12 @@
+2020-01-16  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerEvent.m (_handleTakeFocusAtom:forContext:): use
+	lowerCamelCase for objects and underscores for primitive types;
+	Added and used `this_window` variable - represents window that has
+	received TakeFocus event - instead of `cWin` (last used window by
+	backend); do not ignore TakeFocus request if now key window was set
+	and if main application menu received request.
+
 2020-01-14  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (alphaMaskForImage): renamed from
