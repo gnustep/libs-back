@@ -1914,18 +1914,16 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
   int key_num;
   NSWindow *keyWindow;
   NSEvent *e = nil;
-  gswindow_device_t *this_window;
   gswindow_device_t *key_window;
   
   keyWindow = [NSApp keyWindow];
   key_num = [keyWindow windowNumber];
   key_window = [XGServer _windowWithTag:key_num];
-  this_window = [XGServer _windowForXWindow:xEvent.xfocus.window];
   
   NSDebugLLog(@"Focus",
-              @"TakeFocus received by: %li (%lu) (focused = %lu, key = %d, cWin = %lu)",
-              this_window->number, xEvent.xfocus.window,
-              generic.currentFocusWindow, key_num, cWin->number);
+              @"TakeFocus received by: %li (%lu) (focused = %lu, key = %d)",
+              cWin->number, xEvent.xfocus.window,
+              generic.currentFocusWindow, key_num);
 
   /* Invalidate the previous request. It's possible the app lost focus
      before this request was fufilled and we are being focused again,
@@ -1941,11 +1939,11 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
    */
   if (key_num == 0)
     {
-      this_window->ignore_take_focus = NO;
+      cWin->ignore_take_focus = NO;
     }
-  else if (this_window->number == [[[NSApp mainMenu] window] windowNumber])
+  else if (cWin->number == [[[NSApp mainMenu] window] windowNumber])
     {
-      this_window->ignore_take_focus = NO;
+      cWin->ignore_take_focus = NO;
     }
 
   /* We'd like to send this event directly to the front-end to handle,
@@ -1960,18 +1958,18 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
          window to take focus after each one gets hidden. */
       NSDebugLLog(@"Focus", @"WM take focus while hiding");
     }
-  else if (this_window->ignore_take_focus == YES)
+  else if (cWin->ignore_take_focus == YES)
     {
       NSDebugLLog(@"Focus", @"Ignoring window focus request");
-      this_window->ignore_take_focus = NO;
+      cWin->ignore_take_focus = NO;
     }
-  else if (this_window->number == key_num)
+  else if (cWin->number == key_num)
     {
       NSDebugLLog(@"Focus", @"Reasserting key window");
       [GSServerForWindow(keyWindow) setinputfocus: key_num];
     }
   else if (key_num &&
-           this_window->number == [[[NSApp mainMenu] window] windowNumber])
+           cWin->number == [[[NSApp mainMenu] window] windowNumber])
     {
       /* This might occur when the window manager just wants someone
          to become key, so it tells the main menu (typically the first
@@ -1980,8 +1978,8 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
       NSDebugLLog(@"Focus", @"Key window is already %d", key_num);
       if (key_window->map_state == IsUnmapped) {
         /* `key_window` was unmapped by window manager. 
-           `this_window` and `key_window` are on the different workspace. */
-        [GSServerForWindow(keyWindow) setinputfocus: this_window->number];
+           this window and `key_window` are on the different workspace. */
+        [GSServerForWindow(keyWindow) setinputfocus: cWin->number];
       }
       else {
         [GSServerForWindow(keyWindow) setinputfocus: key_num];
@@ -2002,7 +2000,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                    location: eventLocation
                    modifierFlags: 0
                    timestamp: 0
-                   windowNumber: this_window->number
+                   windowNumber: cWin->number
                    context: gcontext
                    subtype: GSAppKitWindowFocusIn
                    data1: 0
