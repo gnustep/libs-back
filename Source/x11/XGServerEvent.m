@@ -1911,14 +1911,9 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 - (NSEvent *)_handleTakeFocusAtom: (XEvent)xEvent 
                        forContext: (NSGraphicsContext *)gcontext
 {
-  int key_num;
-  NSWindow *keyWindow;
+  NSWindow *keyWindow = [NSApp keyWindow];
+  int key_num = [keyWindow windowNumber];
   NSEvent *e = nil;
-  gswindow_device_t *key_window;
-  
-  keyWindow = [NSApp keyWindow];
-  key_num = [keyWindow windowNumber];
-  key_window = [XGServer _windowWithTag:key_num];
   
   NSDebugLLog(@"Focus",
               @"TakeFocus received by: %li (%lu) (focused = %lu, key = %d)",
@@ -1968,9 +1963,10 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
       NSDebugLLog(@"Focus", @"Reasserting key window");
       [GSServerForWindow(keyWindow) setinputfocus: key_num];
     }
-  else if (key_num
+  else if (key_num 
            && cWin->number == [[[NSApp mainMenu] window] windowNumber])
     {
+      gswindow_device_t *key_window = [XGServer _windowWithTag:key_num];
       /* This might occur when the window manager just wants someone
          to become key, so it tells the main menu (typically the first
          menu in the list), but since we already have a window that
