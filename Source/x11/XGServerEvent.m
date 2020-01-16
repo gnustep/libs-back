@@ -1968,8 +1968,8 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
       NSDebugLLog(@"Focus", @"Reasserting key window");
       [GSServerForWindow(keyWindow) setinputfocus: key_num];
     }
-  else if (key_num &&
-           cWin->number == [[[NSApp mainMenu] window] windowNumber])
+  else if (key_num
+           && cWin->number == [[[NSApp mainMenu] window] windowNumber])
     {
       /* This might occur when the window manager just wants someone
          to become key, so it tells the main menu (typically the first
