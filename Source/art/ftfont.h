@@ -25,6 +25,8 @@
 #ifndef ftfont_h
 #define ftfont_h
 
+#import "blit.h"
+
 @class NSAffineTransform;
 
 @protocol FTFontInfo
@@ -66,7 +68,40 @@
 +(void) initializeBackend;
 @end
 
-@class FTFontInfo;
+#import <ft2build.h>
+#import FT_CACHE_H
+
+#import <GNUstepGUI/GSFontInfo.h>
+#import "FTFaceInfo.h"
+
+#define CACHE_SIZE 257
+
+@interface FTFontInfo : GSFontInfo <FTFontInfo>
+{
+@public
+  int pix_width, pix_height;
+
+  FTC_FaceID faceId;
+  FTC_ImageTypeRec imageType;
+  FTC_ScalerRec scaler;
+  int unicodeCmap;
+
+  BOOL screenFont;
+
+  FTFaceInfo *face_info;
+  FT_Size ft_size;
+
+  /*
+  Profiling (2003-11-14) shows that calls to -advancementForGlyph: accounted
+  for roughly 20% of layout time. This cache reduces it to (currently)
+  insignificant levels.
+  */
+  unsigned int cachedGlyph[CACHE_SIZE];
+  NSSize cachedSize[CACHE_SIZE];
+
+  CGFloat lineHeight;
+}
+@end
 
 #endif
 

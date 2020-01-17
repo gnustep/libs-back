@@ -731,7 +731,7 @@ static void clip_svp_callback(void *data, int y, int start,
   ci.index = malloc(sizeof(unsigned int) * (clip_sy + 1));
   if (!ci.index)
     {
-      NSLog(@"Warning: out of memory calculating clipping spans (%i bytes)",
+      NSLog(@"Warning: out of memory calculating clipping spans (%lu bytes)",
 	    sizeof(unsigned int) * (clip_sy + 1));
       return;
     }

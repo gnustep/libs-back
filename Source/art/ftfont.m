@@ -22,17 +22,6 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
-
-#if (FREETYPE_MAJOR==2) && ((FREETYPE_MINOR<1) || ((FREETYPE_MINOR==1) && (FREETYPE_PATCH<8)))
-
-#import "ftfont-old.m"
-
-#else
-
-
 #include <math.h>
 
 #import <Foundation/NSObject.h>
@@ -56,7 +45,7 @@
 
 #import "ftfont.h"
 #import "FTFontEnumerator.h"
-#import "FTFaceInfo.h"
+// #import "FTFaceInfo.h"
 
 #import "blit.h"
 
@@ -66,7 +55,7 @@
 
 /** font handling interface **/
 
-#include FT_CACHE_H
+#include FT_FREETYPE_H
 
 #include FT_CACHE_IMAGE_H
 #include FT_CACHE_SMALL_BITMAPS_H
@@ -86,41 +75,8 @@ from the back-art-subpixel-text defaults key
 */
 static int subpixel_text;
 
-
-
-#define CACHE_SIZE 257
-
-@interface FTFontInfo : GSFontInfo <FTFontInfo>
-{
-@public
-  int pix_width, pix_height;
-
-  FTC_FaceID faceId;
-  FTC_ImageTypeRec imageType;
-  FTC_ScalerRec scaler;
-  int unicodeCmap;
-
-  BOOL screenFont;
-
-  FTFaceInfo *face_info;
-  FT_Size ft_size;
-
-  /*
-  Profiling (2003-11-14) shows that calls to -advancementForGlyph: accounted
-  for roughly 20% of layout time. This cache reduces it to (currently)
-  insignificant levels.
-  */
-  unsigned int cachedGlyph[CACHE_SIZE];
-  NSSize cachedSize[CACHE_SIZE];
-
-  CGFloat lineHeight;
-}
-@end
-
-
 @interface FTFontInfo_subpixel : FTFontInfo
 @end
-
 
 static FT_Library ft_library;
 static FTC_Manager ftc_manager;
@@ -421,7 +377,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
   return lineHeight;
 }
 
-- (unsigned) numberOfGlyphs
+- (NSUInteger) numberOfGlyphs
 {
   if (coveredCharacterSet == nil)
     {
@@ -529,7 +485,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
            real size, just a matrix.  Thus, we average pix_width and
            pix_height; we'll get the right answer for normal cases, and
            we can't really do anything about the weird cases.  */
-        f = fabs(pix_width) + fabs(pix_height);
+        f = abs(pix_width) + abs(pix_height);
         if (f > 1)
           f = f / 2.0;
         else
@@ -615,7 +571,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
             {
               NSLog(@"FTC_SBitCache_Lookup() failed with error %08x "
                 @"(%08x, %08x, %ix%i, %08x)",
-                error, glyph, imageType.face_id, imageType.width,
+                error, glyph, (unsigned)imageType.face_id, imageType.width,
                 imageType.height, imageType.flags);
               continue;
             }
@@ -1015,7 +971,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
         float f;
         use_sbit = 0;
 
-        f = fabs(pix_width) + fabs(pix_height);
+        f = abs(pix_width) + abs(pix_height);
         if (f > 1)
           f = f / 2.0;
         else
@@ -1045,7 +1001,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
             {
               NSLog(@"FTC_SBitCache_Lookup() failed with error %08x "
                 @"(%08x, %08x, %ix%i, %08x)",
-                error, glyph, imageType.face_id,
+                error, glyph, (unsigned)imageType.face_id,
                 imageType.width, imageType.height,
                 imageType.flags);
               continue;
@@ -1336,7 +1292,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
         float f;
         use_sbit = 0;
 
-        f = fabs(pix_width) + fabs(pix_height);
+        f = abs(pix_width) + abs(pix_height);
         if (f > 1)
           f = f / 2.0;
         else
@@ -1365,7 +1321,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
             {
               if (glyph != 0xffffffff)
                 NSLog(@"FTC_SBitCache_Lookup() failed with error %08x (%08x, %08x, %ix%i, %08x)",
-                  error, glyph, imageType.face_id, imageType.width, imageType.height,
+                  error, glyph, (unsigned)imageType.face_id, imageType.width, imageType.height,
                   imageType.flags
                 );
               continue;
@@ -1633,7 +1589,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
       if ((error = FTC_SBitCache_Lookup(ftc_sbitcache, &imageType, glyph, &sbit, NULL)))
         {
           NSLog(@"FTC_SBitCache_Lookup() failed with error %08x (%08x, %08x, %ix%i, %08x)",
-            error, glyph, imageType.face_id,
+            error, glyph, (unsigned)imageType.face_id,
             imageType.width, imageType.height,
             imageType.flags
         );
@@ -2025,12 +1981,12 @@ static int bezierpath_cubic_to(const FT_Vector *c1, const FT_Vector *c2,
 }
 
 static FT_Outline_Funcs bezierpath_funcs = {
-  move_to:bezierpath_move_to,
-  line_to:bezierpath_line_to,
-  conic_to:bezierpath_conic_to,
-  cubic_to:bezierpath_cubic_to,
-  shift:10,
-  delta:0,
+  .move_to = bezierpath_move_to,
+  .line_to = bezierpath_line_to,
+  .conic_to = bezierpath_conic_to,
+  .cubic_to = bezierpath_cubic_to,
+  .shift = 10,
+  .delta = 0,
 };
 
 
@@ -2658,6 +2614,4 @@ static char buf[1024]; /* !!TODO!! */
   return buf;
 }
 @end
-
-#endif /* freetype version check, >=2.1.8 */
 
