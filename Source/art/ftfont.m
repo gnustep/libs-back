@@ -45,13 +45,8 @@
 
 #import "ftfont.h"
 #import "FTFontEnumerator.h"
-// #import "FTFaceInfo.h"
-
-#import "blit.h"
-
 
 #define DI (*di)
-
 
 /** font handling interface **/
 
