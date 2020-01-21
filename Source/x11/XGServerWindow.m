@@ -4295,7 +4295,7 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
       h = maxh;
 
     source = xgps_cursor_image(dpy, ROOT, data, w, h, colors, &fg, &bg);
-    mask = alphaMaskForImage(dpy, ROOT, data, w, h, colors, ALPHA_TRESHOLD);
+    mask = alphaMaskForImage(dpy, ROOT, data, w, h, colors, ALPHA_THRESHOLD);
     bg = [self xColorFromColor: bg forScreen: defScreen];
     fg = [self xColorFromColor: fg forScreen: defScreen];
 
