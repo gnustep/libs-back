@@ -1,3 +1,48 @@
+2020-01-16  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerEvent.m (_handleTakeFocusAtom:forContext:): use
+	lowerCamelCase for objects and underscores for primitive types;
+	do not ignore TakeFocus request if no key window was set
+	and main application menu receives request.
+
+2020-01-14  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (alphaMaskForImage): renamed from
+	image_mask().
+	(swapColors): new function to convert colors from ARGB order into RGBA
+	(big-endian systems) or BGRA (little-endian systems).
+	(_createAppIconPixmaps): use swapColors() and remove unused code.
+	(restrictWindow:toImage:): use alphaMaskForImage().
+	(imagecursor:::): use swapColors() and remove unused code.
+	(ALPHA_THRESHOLD): removed duplicate of definition.
+
+2020-01-13  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_createNetIcon:result:size:): fixed
+	off-by-one mistake during alpha handling. Enable disabled code and
+	remove temprorary one.
+	(window::::): set NetWM icon to window for all EWMH capable WMs even
+	it's WindowMaker.
+	(image_mask): new function to create alpha mask for image. It's based
+	on xgps_cursor_mask() code with additional argument `alpha_treshold`.
+	This function may be used for images (alpha_treshold == 0) with real
+	alpha mask and for cursors (if no Xcursor library is used - no alpha
+	is used, no shadows in cursors, alpha_treshold == 158 is used to cut
+	transparent pixels).
+	(_createAppIconPixmaps): icon pixmap creation rewritten to support
+	images with alpha channel using wraster functions. Use image_mask().
+	(restrictWindow:toImage:): use image_mask() instead of
+	xgps_cursor_mask().
+	(xgps_cursor_mask): removed as image_mask() replaced it.
+	Guard xgps_cursor_image( with #if - will not be compiled if Xcursor
+	is used.
+	(imagecursor:::): use image_mask() instead of xgps_cursor_mask().
+
+2019-12-24 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoFontInfo.m: Revert to the old defaults for
+	hinting and allow for all possible values to be set.
+
 2019-05-19 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/cairo/CairoFontInfo.m,

@@ -1911,21 +1911,15 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 - (NSEvent *)_handleTakeFocusAtom: (XEvent)xEvent 
                        forContext: (NSGraphicsContext *)gcontext
 {
-  int key_num;
-  NSWindow *key_win;
+  NSWindow *keyWindow = [NSApp keyWindow];
+  int key_num = [keyWindow windowNumber];
   NSEvent *e = nil;
-  key_win = [NSApp keyWindow];
-  key_num = [key_win windowNumber];
-  NSDebugLLog(@"Focus", @"take focus:%lu (current=%lu key=%d)",
-              cWin->number, generic.currentFocusWindow, key_num);
-
-  /* Sometimes window managers lose the setinputfocus on the key window
-   * e.g. when ordering out a window with focus then ordering in the key window.   
-   * it might search for a window until one accepts its take focus request.
-   */
-  if (key_num == cWin->number)
-    cWin->ignore_take_focus = NO;
   
+  NSDebugLLog(@"Focus",
+              @"TakeFocus received by: %li (%lu) (focused = %lu, key = %d)",
+              cWin->number, xEvent.xfocus.window,
+              generic.currentFocusWindow, key_num);
+
   /* Invalidate the previous request. It's possible the app lost focus
      before this request was fufilled and we are being focused again,
      or ??? */
@@ -1933,6 +1927,20 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
     generic.focusRequestNumber = 0;
     generic.desiredFocusWindow = 0;
   }
+  
+  /* Sometimes window managers lose the setinputfocus on the key window
+   * e.g. when ordering out a window with focus then ordering in the key window.   
+   * it might search for a window until one accepts its take focus request.
+   */
+  if (key_num == 0)
+    {
+      cWin->ignore_take_focus = NO;
+    }
+  else if (cWin->number == [[[NSApp mainMenu] window] windowNumber])
+    {
+      cWin->ignore_take_focus = NO;
+    }
+
   /* We'd like to send this event directly to the front-end to handle,
      but the front-end polls events so slowly compared the speed at
      which X events could potentially come that we could easily get
@@ -1953,23 +1961,31 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
   else if (cWin->number == key_num)
     {
       NSDebugLLog(@"Focus", @"Reasserting key window");
-      [GSServerForWindow(key_win) setinputfocus: key_num];
+      [GSServerForWindow(keyWindow) setinputfocus: key_num];
     }
   else if (key_num 
            && cWin->number == [[[NSApp mainMenu] window] windowNumber])
     {
+      gswindow_device_t *key_window = [XGServer _windowWithTag:key_num];
       /* This might occur when the window manager just wants someone
          to become key, so it tells the main menu (typically the first
          menu in the list), but since we already have a window that
          was key before, use that instead */
       NSDebugLLog(@"Focus", @"Key window is already %d", key_num);
-      [GSServerForWindow(key_win) setinputfocus: key_num];
+      if (key_window->map_state == IsUnmapped) {
+        /* `key_window` was unmapped by window manager. 
+           this window and `key_window` are on the different workspace. */
+        [GSServerForWindow(keyWindow) setinputfocus: cWin->number];
+      }
+      else {
+        [GSServerForWindow(keyWindow) setinputfocus: key_num];
+      }
     }
   else
     {
       NSPoint eventLocation;
       /*
-       * Here the app asked for this (if key_win==nil) or there was a
+       * Here the app asked for this (if keyWindow==nil) or there was a
        * click on the title bar or some other reason (window mapped,
        * etc). We don't necessarily want to forward the event for the
        * last reason but we just have to deal with that since we can
