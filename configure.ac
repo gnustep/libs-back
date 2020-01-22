@@ -220,6 +220,17 @@ if test $set_x_paths = yes; then
    #include <X11/Xutil.h>
   ])
 
+  have_xrandr=no
+  AC_CHECK_HEADERS(X11/extensions/Xrandr.h, have_xrandr=yes,,)
+  if test $have_xrandr = yes; then
+  AC_CHECK_LIB(Xrandr, XRRUpdateConfiguration,
+    [
+       LIBS="-lXrandr $LIBS"
+       AC_DEFINE(HAVE_XRANDR, 1, [Define to enable Xrandr support])
+    ]
+    ,)
+  fi
+
   LIBS="$X_LIBS $LIBS"
 fi
 AC_SUBST(X_PRE_LIBS)

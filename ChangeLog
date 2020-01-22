@@ -1,3 +1,9 @@
+2020-01-22  Sergii Stoian  <stoyan255@gmail.com>
+
+	* configure.ac: check for availability of Xrandr library.
+	* config.h.in: added default value for Xrandr usage.
+	* configure: regenerate.
+
 2020-01-16  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerEvent.m (_handleTakeFocusAtom:forContext:): use

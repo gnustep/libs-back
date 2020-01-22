@@ -123,6 +123,9 @@
 /* Define to 1 if you have the `Xutf8LookupString' function. */
 #undef HAVE_XUTF8LOOKUPSTRING
 
+/* Define to enable Xrandr support */
+#undef HAVE_XRANDR
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
