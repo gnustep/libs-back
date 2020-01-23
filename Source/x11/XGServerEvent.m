@@ -1899,16 +1899,20 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
           }
 #endif
 #ifdef HAVE_XRANDR
-        if (xEvent.type & RRScreenChangeNotifyMask)
+        int randr_event_type = randrEventBase + RRScreenChangeNotify;
+        if (xEvent.type == randr_event_type)
           {
-            int count = ScreenCount(dpy);
-            int i;
+            int count = ScreenCount(dpy), i;
             for (i = 0; i < count; i++)
               {
                 if (xEvent.xconfigure.window == RootWindow(dpy, i))
                   {
                     NSLog(@"[XGServerEvent] RRScreenChangeNotify for screen %i/%i",
                           i, count);
+                    // Check if other RandR events are waiting in the queue.
+                    XSync(dpy,0);
+                    while (XCheckTypedEvent(dpy, randr_event_type, &xEvent)) {;}
+                    
                     XRRUpdateConfiguration(event);
                     [[NSNotificationCenter defaultCenter]
                       postNotificationName: NSApplicationDidChangeScreenParametersNotification

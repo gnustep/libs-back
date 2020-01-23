@@ -475,6 +475,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   int i;
   for (i = 0; i < count; i++)
     {
+      XRRQueryExtension(dpy, &randrEventBase, &randrErrorBase);
       XRRSelectInput(dpy, RootWindow(dpy, i), RRScreenChangeNotifyMask);
     }
 #endif

@@ -60,6 +60,7 @@ typedef enum {
   Window	    grabWindow;
   struct XGGeneric  generic;
   id                inputServer;
+  int               randrEventBase, randrErrorBase;
 }
 
 + (Display*) currentXDisplay;
