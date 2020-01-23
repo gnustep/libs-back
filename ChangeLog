@@ -1,3 +1,13 @@
+2020-01-23  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (boundsForScreen:): if Xrandr support
+	enabled get screen dimensions using Xrandr objects.
+
+	* Source/x11/XGServerEvent.m (processEvent:): process Xrandr event and
+	send NSApplicationDidChangeScreenParametersNotification.
+
+	* Source/x11/XGServer.m	(_initXContext): subscribe to the Xrandr event.
+
 2020-01-22  Sergii Stoian  <stoyan255@gmail.com>
 
 	* configure.ac: check for availability of Xrandr library.

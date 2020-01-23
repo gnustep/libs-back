@@ -55,6 +55,9 @@
 #else
 #include "x11/wraster.h"
 #endif
+#ifdef HAVE_XRANDR
+#include <X11/extensions/Xrandr.h>
+#endif
 
 #include "math.h"
 #include <X11/keysym.h>
@@ -1892,6 +1895,27 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
           {
             [gcontext gotShmCompletion: 
                         ((XShmCompletionEvent *)&xEvent)->drawable];
+            break;
+          }
+#endif
+#ifdef HAVE_XRANDR
+        if (xEvent.type & RRScreenChangeNotifyMask)
+          {
+            int count = ScreenCount(dpy);
+            int i;
+            for (i = 0; i < count; i++)
+              {
+                if (xEvent.xconfigure.window == RootWindow(dpy, i))
+                  {
+                    NSLog(@"[XGServerEvent] RRScreenChangeNotify for screen %i/%i",
+                          i, count);
+                    XRRUpdateConfiguration(event);
+                    [[NSNotificationCenter defaultCenter]
+                      postNotificationName: NSApplicationDidChangeScreenParametersNotification
+                                    object: NSApp];
+                    break;
+                  }
+              }
             break;
           }
 #endif

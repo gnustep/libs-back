@@ -66,6 +66,9 @@
 #if HAVE_XFIXES
 #include <X11/extensions/Xfixes.h>
 #endif
+#ifdef HAVE_XRANDR
+#include <X11/extensions/Xrandr.h>
+#endif
 
 #include "x11/XGDragView.h"
 #include "x11/XGInputServer.h"
@@ -4509,13 +4512,32 @@ _computeDepth(int class, int bpp)
 
 - (NSRect) boundsForScreen: (int)screen
 {
- if (screen < 0 || screen >= ScreenCount(dpy))
-   {
-     NSLog(@"Invalidparam: no screen %d", screen);
-     return NSZeroRect;
-   }
- return NSMakeRect(0, 0, DisplayWidth(dpy, screen),
-		   DisplayHeight(dpy, screen));
+  if (screen < 0 || screen >= ScreenCount(dpy))
+    {
+      NSLog(@"Invalidparam: no screen %d", screen);
+      return NSZeroRect;
+    }
+#ifdef HAVE_XRANDR
+  XRRScreenResources *screen_res;
+  XRROutputInfo      *output_info;
+  NSRect             boundsRect = {{0,0},{0,0}};
+  screen_res = XRRGetScreenResources(dpy, RootWindow(dpy, screen));
+  output_info = XRRGetOutputInfo(dpy, screen_res, screen_res->outputs[0]);
+  if (output_info->crtc)
+    {
+      XRRCrtcInfo *crtc_info;
+      crtc_info = XRRGetCrtcInfo(dpy, screen_res, output_info->crtc);
+      NSLog(@"Screen bounds: %i,%i %ux%u",
+            crtc_info->x, crtc_info->y, crtc_info->width, crtc_info->height);
+      boundsRect = NSMakeRect(crtc_info->x, crtc_info->y,
+                              crtc_info->width, crtc_info->height);
+    }
+  XRRFreeScreenResources(screen_res);
+  return boundsRect;
+#else
+  return NSMakeRect(0, 0, DisplayWidth(dpy, screen),
+                    DisplayHeight(dpy, screen));
+#endif
 }
 
 - (NSImage *) iconTileImage
