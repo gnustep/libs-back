@@ -32,6 +32,7 @@
 #include <AppKit/NSMenu.h>
 #include <AppKit/NSPasteboard.h>
 #include <AppKit/NSWindow.h>
+#include <AppKit/NSScreen.h>
 #include <Foundation/NSException.h>
 #include <Foundation/NSArray.h>
 #include <Foundation/NSDictionary.h>
@@ -1914,6 +1915,9 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                     while (XCheckTypedEvent(dpy, randr_event_type, &xEvent)) {;}
                     
                     XRRUpdateConfiguration(event);
+                    // Regenerate NSScreens
+                    [NSScreen resetScreens];
+                    // Notify application about screen parameters change
                     [[NSNotificationCenter defaultCenter]
                       postNotificationName: NSApplicationDidChangeScreenParametersNotification
                                     object: NSApp];
@@ -2697,7 +2701,7 @@ process_modifier_flags(unsigned int state)
       height = attribs.height;
     }
   else
-    height = DisplayHeight(dpy, screen_number);
+    height = [self boundsForScreen: screen_number].size.height;
   p = NSMakePoint(currentX, height - currentY);
   if (win)
     {

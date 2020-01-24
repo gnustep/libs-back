@@ -1,3 +1,20 @@
+2020-01-24  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_OSFrameToXFrame:for:): use
+	-boundsForScreen: to get correct screen dimensions if RandR is supported.
+	(_OSFrameToXHints:for:): ditto.
+	(_XFrameToOSFrame:for:): ditto.
+	(movewindow::): ditto.
+	(windowbounds:): ditto.
+	(setMouseLocation:onScreen:): ditto.
+	* Source/x11/XGDragView.m: ditto.
+
+	* Source/x11/XGServerEvent.m (processEvent:): destroy NSScreen screens
+	list to be regenereated on next call. This change updates ivars of
+	NSScreen (_frame, _depth) by recreating NSScreen instances.
+	(mouseLocationOnScreen:window:): use -boundsForScreen: to get correct
+	screen dimensions if RandR is supported.
+
 2020-01-23  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Headers/x11/XGServer.h (GSDisplayServer): RandR event and error base
