@@ -759,7 +759,7 @@ seem to cause edges to be off by a pixel
       return;
     }
 
-  NSLog(@"unimplemented DPSimage  %ix%i  |%@|  bips=%i spp=%i bipp=%i bypr=%i  planar=%i alpha=%i\n",
+  NSLog(@"unimplemented DPSimage  %lix%li  |%@|  bips=%li spp=%li bipp=%li bypr=%li  planar=%i alpha=%i\n",
         pixelsWide, pixelsHigh, matrix,
         bitsPerSample, samplesPerPixel, bitsPerPixel, bytesPerRow, isPlanar,
         hasAlpha);
