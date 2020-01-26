@@ -755,10 +755,13 @@ int NSToWayland(struct window *window, int ns_y)
     wl_display_dispatch(wlconfig->display);
     wl_display_roundtrip(wlconfig->display);
 
-    if (!wlconfig->compositor || !wlconfig->wm_base) {
+    if (!wlconfig->compositor) {
 	[NSException raise: NSWindowServerCommunicationException
 		    format: @"Unable to get compositor"];
-
+    }
+    if (!wlconfig->wm_base) {
+	[NSException raise: NSWindowServerCommunicationException
+		    format: @"Unable to get xdg-shell / xdg_wm_base"];
     }
 
     return self;
