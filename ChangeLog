@@ -1,5 +1,9 @@
 2020-01-26  Sergii Stoian  <stoyan255@gmail.com>
 
+	* Source/x11/XGServerWindow.m (boundsForScreen:): use `screen` variable
+	to identify output in RandR screen resources. Use `boundsRect` local
+	variable as return vaalue storage. Cleanup.
+
 	* Source/x11/XGServerEvent.m (processEvent:),
 	* Source/x11/XGServer.m (_initXContext): catch and process RandR event
 	on default screen.
