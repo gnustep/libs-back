@@ -1901,31 +1901,22 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 #endif
 #ifdef HAVE_XRANDR
         int randr_event_type = randrEventBase + RRScreenChangeNotify;
-        if (xEvent.type == randr_event_type)
+        if (xEvent.type == randr_event_type
+            && (xEvent.xconfigure.window == RootWindow(dpy, defScreen)))
           {
-            int count = ScreenCount(dpy), i;
-            for (i = 0; i < count; i++)
-              {
-                if (xEvent.xconfigure.window == RootWindow(dpy, i))
-                  {
-                    NSLog(@"[XGServerEvent] RRScreenChangeNotify for screen %i/%i",
-                          i, count);
-                    // Check if other RandR events are waiting in the queue.
-                    XSync(dpy,0);
-                    while (XCheckTypedEvent(dpy, randr_event_type, &xEvent)) {;}
+            // Check if other RandR events are waiting in the queue.
+            XSync(dpy,0);
+            while (XCheckTypedEvent(dpy, randr_event_type, &xEvent)) {;}
                     
-                    XRRUpdateConfiguration(event);
-                    // Regenerate NSScreens
-                    [NSScreen resetScreens];
-                    // Notify application about screen parameters change
-                    [[NSNotificationCenter defaultCenter]
+            XRRUpdateConfiguration(event);
+            // Regenerate NSScreens
+            [NSScreen resetScreens];
+            // Notify application about screen parameters change
+            [[NSNotificationCenter defaultCenter]
                       postNotificationName: NSApplicationDidChangeScreenParametersNotification
                                     object: NSApp];
-                    break;
-                  }
-              }
-            break;
           }
+        break;
 #endif
         NSLog(@"Received an untrapped event\n");
         break;

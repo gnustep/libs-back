@@ -1,3 +1,9 @@
+2020-01-26  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerEvent.m (processEvent:),
+	* Source/x11/XGServer.m (_initXContext): catch and process RandR event
+	on default screen.
+
 2020-01-24  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (_OSFrameToXFrame:for:): use

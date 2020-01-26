@@ -471,13 +471,8 @@ _parse_display_name(NSString *name, int *dn, int *sn)
                   initWithDelegate: nil display: dpy name: @"XIM"];
   
 #ifdef HAVE_XRANDR
-  int count = ScreenCount(dpy);
-  int i;
-  for (i = 0; i < count; i++)
-    {
-      XRRQueryExtension(dpy, &randrEventBase, &randrErrorBase);
-      XRRSelectInput(dpy, RootWindow(dpy, i), RRScreenChangeNotifyMask);
-    }
+  XRRQueryExtension(dpy, &randrEventBase, &randrErrorBase);
+  XRRSelectInput(dpy, RootWindow(dpy, defScreen), RRScreenChangeNotifyMask);
 #endif
   return self;
 }
