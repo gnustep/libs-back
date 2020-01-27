@@ -42,6 +42,26 @@
 	* config.h.in: added default value for Xrandr usage.
 	* configure: regenerate.
 
+2020-01-17  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/art/shfill.m:,
+	* Source/art/path.m:,
+	* Source/art/image.m (DPSimage:::::::::::):
+	fixed type formatting specifiers.
+
+	* Source/art/ftfont.m: removed include to ftfont-old.m.
+	(drawString:at::to::::::::color::::transform:deltas:::widthChar:drawinfo:):,
+	(drawGlyphs::at::to::::::color::::transform:drawinfo:):,
+	(drawGlyphs::at::to::::::alpha::color::::transform:drawinfo:):,
+	(bezierpath_funcs):,
+	fixed type formatting specifiers; moved interface declaration of FTFontInfo
+	to ftfont.h; removed GCCism.
+
+	* Source/art/ftfont.h: moved interface declaration of FTFontInfo here.
+	* Source/art/composite.m: fixed type formatting specifiers.
+	* Source/art/FTFontEnumerator.m (load_font_configuration): fixed type
+	formatting specifiers.
+
 2020-01-16  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerEvent.m (_handleTakeFocusAtom:forContext:): use

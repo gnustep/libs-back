@@ -1505,7 +1505,7 @@ static BOOL _rect_advance(rect_trace_t *t, int *x0, int *x1)
     }
   else
     {
-      NSLog(@"unimplemented compositerect: (%g %g)+(%g %g)  op: %i",
+      NSLog(@"unimplemented compositerect: (%g %g)+(%g %g)  op: %lu",
 	    aRect.origin.x, aRect.origin.y,
 	    aRect.size.width, aRect.size.height,
 	    op);

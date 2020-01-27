@@ -444,7 +444,7 @@ static void load_font_configuration(void)
       [families_pending removeAllObjects];
     }
 
-  NSDebugLLog(@"ftfont", @"got %i fonts in %i families",
+  NSDebugLLog(@"ftfont", @"got %lu fonts in %lu families",
     [fcfg_allFontNames count], [fcfg_allFontFamilies count]);
 
   if (![fcfg_allFontNames count])
