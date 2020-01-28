@@ -4512,7 +4512,7 @@ _computeDepth(int class, int bpp)
 
 - (NSRect) boundsForScreen: (int)screen
 {
-  NSRect boundsRect = {{0,0},{0,0}};
+  NSRect boundsRect = NSZeroRect;
   
   if (screen < 0 || screen >= ScreenCount(dpy))
     {

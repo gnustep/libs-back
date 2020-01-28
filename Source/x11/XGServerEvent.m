@@ -1905,7 +1905,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             && (xEvent.xconfigure.window == RootWindow(dpy, defScreen)))
           {
             // Check if other RandR events are waiting in the queue.
-            XSync(dpy,0);
+            XSync(dpy, 0);
             while (XCheckTypedEvent(dpy, randr_event_type, &xEvent)) {;}
                     
             XRRUpdateConfiguration(event);
