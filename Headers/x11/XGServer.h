@@ -52,6 +52,12 @@ typedef enum {
   XGDM_PORTABLE
 } XGDrawMechanism;
 
+typedef struct MonitorDevice {
+  NSWindowDepth depth;
+  NSSize resolution;
+  NSRect frame;
+} MonitorDevice;
+
 @interface XGServer : GSDisplayServer
 {
   Display           *dpy;
@@ -62,6 +68,7 @@ typedef enum {
   id                inputServer;
   int               randrEventBase;
   int               randrErrorBase;
+  MonitorDevice     *monitors;
 }
 
 + (Display*) currentXDisplay;

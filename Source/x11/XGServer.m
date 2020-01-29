@@ -503,6 +503,10 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   DESTROY(inputServer);
   [self _destroyServerWindows];
   NSFreeMapTable(screenList);
+  if (monitors != NULL)
+    {
+      NSZoneFree([self zone], monitors);
+    }
   XCloseDisplay(dpy);
   [super dealloc];
 }
