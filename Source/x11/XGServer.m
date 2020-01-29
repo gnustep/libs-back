@@ -69,6 +69,10 @@ terminate(int sig)
 #include "x11/XGOpenGL.h"
 #endif 
 
+#ifdef HAVE_XRANDR
+#include <X11/extensions/Xrandr.h>
+#endif
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -465,6 +469,11 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   [self _setupRootWindow];
   inputServer = [[XIMInputServer allocWithZone: [self zone]] 
                   initWithDelegate: nil display: dpy name: @"XIM"];
+  
+#ifdef HAVE_XRANDR
+  XRRQueryExtension(dpy, &randrEventBase, &randrErrorBase);
+  XRRSelectInput(dpy, RootWindow(dpy, defScreen), RRScreenChangeNotifyMask);
+#endif
   return self;
 }
 

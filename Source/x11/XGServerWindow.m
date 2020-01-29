@@ -66,6 +66,9 @@
 #if HAVE_XFIXES
 #include <X11/extensions/Xfixes.h>
 #endif
+#ifdef HAVE_XRANDR
+#include <X11/extensions/Xrandr.h>
+#endif
 
 #include "x11/XGDragView.h"
 #include "x11/XGInputServer.h"
@@ -506,7 +509,7 @@ BOOL AtomPresentAndPointsToItself(Display *dpy, Atom atom, Atom type)
   x.size.height = o.size.height - t - b;
   x.origin.x = o.origin.x + l;
   x.origin.y = o.origin.y + o.size.height - t;
-  x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y;
+  x.origin.y = [self boundsForScreen: win->screen].size.height - x.origin.y;
   NSDebugLLog(@"Frame", @"O2X %lu, %x, %@, %@", win->number, style,
     NSStringFromRect(o), NSStringFromRect(x));
   return x;
@@ -531,7 +534,7 @@ BOOL AtomPresentAndPointsToItself(Display *dpy, Atom atom, Atom type)
   x.size.height = o.size.height - t - b;
   x.origin.x = o.origin.x;
   x.origin.y = o.origin.y + o.size.height;
-  x.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y;
+  x.origin.y = [self boundsForScreen: win->screen].size.height - x.origin.y;
   NSDebugLLog(@"Frame", @"O2H %lu, %x, %@, %@", win->number, style,
     NSStringFromRect(o), NSStringFromRect(x));
   return x;
@@ -573,7 +576,7 @@ BOOL AtomPresentAndPointsToItself(Display *dpy, Atom atom, Atom type)
 
   [self styleoffsets: &l : &r : &t : &b : style : win->ident];
   o = x;
-  o.origin.y = DisplayHeight(dpy, win->screen) - x.origin.y;
+  o.origin.y = [self boundsForScreen: win->screen].size.height - x.origin.y;
   o.origin.y = o.origin.y - x.size.height - b;
   o.origin.x -= l;
   o.size.width += l + r;
@@ -3162,7 +3165,7 @@ swapColors(unsigned char *image_data, int width, int height,
     }
 
   window->siz_hints.x = (int)loc.x;
-  window->siz_hints.y = (int)(DisplayHeight(dpy, window->screen) -
+  window->siz_hints.y = (int)([self boundsForScreen: window->screen].size.height -
 			      loc.y - window->siz_hints.height);
   XMoveWindow (dpy, window->ident, window->siz_hints.x, window->siz_hints.y);
   setNormalHints(dpy, window);
@@ -3296,7 +3299,7 @@ swapColors(unsigned char *image_data, int width, int height,
     &x, &y, &width, &height, &window->border, &window->depth);
   window->xframe = NSMakeRect(x, y, width, height);
 
-  screenHeight = DisplayHeight(dpy, window->screen);
+  screenHeight = [self boundsForScreen: window->screen].size.height;
   rect = window->xframe;
   rect.origin.y = screenHeight - NSMaxY(window->xframe);
   return rect;
@@ -3803,7 +3806,7 @@ swapColors(unsigned char *image_data, int width, int height,
   int height;
   int destX, destY;
 
-  height = DisplayHeight(dpy, aScreen);
+  height = [self boundsForScreen: aScreen].size.height;
   destY = height - mouseLocation.y;
   destX = mouseLocation.x;
 
@@ -4509,13 +4512,33 @@ _computeDepth(int class, int bpp)
 
 - (NSRect) boundsForScreen: (int)screen
 {
- if (screen < 0 || screen >= ScreenCount(dpy))
-   {
-     NSLog(@"Invalidparam: no screen %d", screen);
-     return NSZeroRect;
-   }
- return NSMakeRect(0, 0, DisplayWidth(dpy, screen),
-		   DisplayHeight(dpy, screen));
+  NSRect boundsRect = NSZeroRect;
+  
+  if (screen < 0 || screen >= ScreenCount(dpy))
+    {
+      NSLog(@"Invalidparam: no screen %d", screen);
+      return NSZeroRect;
+    }
+  
+#ifdef HAVE_XRANDR
+  XRRScreenResources *screen_res;
+  XRROutputInfo      *output_info;
+  screen_res = XRRGetScreenResources(dpy, RootWindow(dpy, screen));
+  output_info = XRRGetOutputInfo(dpy, screen_res, screen_res->outputs[screen]);
+  if (output_info->crtc)
+    {
+      XRRCrtcInfo *crtc_info;
+      crtc_info = XRRGetCrtcInfo(dpy, screen_res, output_info->crtc);
+      boundsRect = NSMakeRect(crtc_info->x, crtc_info->y,
+                              crtc_info->width, crtc_info->height);
+    }
+  XRRFreeScreenResources(screen_res);
+#else
+  boundsRect = NSMakeRect(0, 0, DisplayWidth(dpy, screen),
+                          DisplayHeight(dpy, screen));
+#endif
+  
+  return boundsRect;
 }
 
 - (NSImage *) iconTileImage

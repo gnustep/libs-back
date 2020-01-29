@@ -1,3 +1,47 @@
+2020-01-26  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (boundsForScreen:): use `screen` variable
+	to identify output in RandR screen resources. Use `boundsRect` local
+	variable as return vaalue storage. Cleanup.
+
+	* Source/x11/XGServerEvent.m (processEvent:),
+	* Source/x11/XGServer.m (_initXContext): catch and process RandR event
+	on default screen.
+
+2020-01-24  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_OSFrameToXFrame:for:): use
+	-boundsForScreen: to get correct screen dimensions if RandR is supported.
+	(_OSFrameToXHints:for:): ditto.
+	(_XFrameToOSFrame:for:): ditto.
+	(movewindow::): ditto.
+	(windowbounds:): ditto.
+	(setMouseLocation:onScreen:): ditto.
+	* Source/x11/XGDragView.m: ditto.
+
+	* Source/x11/XGServerEvent.m (processEvent:): destroy NSScreen screens
+	list to be regenereated on next call. This change updates ivars of
+	NSScreen (_frame, _depth) by recreating NSScreen instances.
+	(mouseLocationOnScreen:window:): use -boundsForScreen: to get correct
+	screen dimensions if RandR is supported.
+
+2020-01-23  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Headers/x11/XGServer.h (GSDisplayServer): RandR event and error base
+	ivars were added.
+	* Source/x11/XGServer.m (_initXContext): get RandR event and error base.
+	* Source/x11/XGServerWindow.m (boundsForScreen:): if Xrandr support
+	enabled get screen dimensions using Xrandr objects.
+	* Source/x11/XGServerEvent.m (processEvent:): process Xrandr event and
+	send NSApplicationDidChangeScreenParametersNotification.
+	* Source/x11/XGServer.m	(_initXContext): subscribe to the Xrandr event.
+
+2020-01-22  Sergii Stoian  <stoyan255@gmail.com>
+
+	* configure.ac: check for availability of Xrandr library.
+	* config.h.in: added default value for Xrandr usage.
+	* configure: regenerate.
+
 2020-01-17  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/art/shfill.m:,
