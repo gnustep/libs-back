@@ -4373,10 +4373,7 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
 }
 
 /*******************************************************************************
- * Screens
- * 
- * X Display - connection to X11 server
- * X Screen - dedicated device(s) 
+ * Screens, monitors
  *******************************************************************************/
 
 static NSWindowDepth
@@ -4416,34 +4413,32 @@ _computeDepth(int class, int bpp)
   return depth;
 }
 
-// This method assumes that we deal with one X11 screen - `defScreen`.
-// Basically it means that we have DISPLAY variable set to `:0.0`.
-// Computer may have one or more monitor devices attached. X11 screen is a sum of
-// visble content of all monitors.
-//
-// Multiple X screens is not supported because it's outdated and practically
-// never used.
-//
-// Returned value is an array of connected monitor devices' indices.
+/* This method assumes that we deal with one X11 screen - `defScreen`.
+   Basically it means that we have DISPLAY variable set to `:0.0`.
+   AppKit and X11 use the same term "screen" with different meaning:
+   AppKit Screen - single mintor/display device.
+   X11 Screen - its a plane where X Server can draw on.
+   XRandR - Xorg extension that halps to manipulate monitors layout providing
+   X11 Screen. */
 #ifdef HAVE_XRANDR
 - (NSArray *)screenList
 {
   NSMutableArray      *screens;
-  int                 count, i;
+  int                 i;
   XRRScreenResources  *screen_res;
   XRROutputInfo       *output_info;
   XRRCrtcInfo         *crtc_info;
 
   screen_res = XRRGetScreenResources(dpy, RootWindow(dpy, defScreen));
-  count = screen_res->noutput;
+  monitorsCount = screen_res->noutput;
   
-  screens = [NSMutableArray arrayWithCapacity: count];
+  screens = [NSMutableArray arrayWithCapacity: monitorsCount];
   if (monitors != NULL) {
     NSZoneFree([self zone], monitors);
   }
-  monitors = NSZoneMalloc([self zone], count * sizeof(MonitorDevice));
+  monitors = NSZoneMalloc([self zone], monitorsCount * sizeof(MonitorDevice));
 
-  for (i = 0; i < count; i++)
+  for (i = 0; i < monitorsCount; i++)
     {
       output_info = XRRGetOutputInfo(dpy, screen_res, screen_res->outputs[i]);
       if (output_info->crtc)
@@ -4465,26 +4460,29 @@ _computeDepth(int class, int bpp)
   return screens;
 }
 #else // HAVE_XRANDR
-// Returns array of screen numbers
 - (NSArray *)screenList
 {
-  /* I guess screen numbers are in order starting from zero, but we
-     put the main screen first */
- int i;
- int count = ScreenCount(dpy);
- NSMutableArray *screens = [NSMutableArray arrayWithCapacity: count];
- if (count > 0)
-   [screens addObject: [NSNumber numberWithInt: defScreen]];
- for (i = 0; i < count; i++)
-   {
-     if (i != defScreen)
-       [screens addObject: [NSNumber numberWithInt: i]];
-   }
- return screens;
+  int i;
+  NSMutableArray *screens;
+ 
+  monitorsCount = ScreenCount(dpy);
+  screens = [NSMutableArray arrayWithCapacity: monitorsCount];
+  if (monitorsCount > 0)
+    {
+      /* I guess screen numbers are in order starting from zero, but we
+         put the main screen first */
+      [screens addObject: [NSNumber numberWithInt: defScreen]];
+    }
+  for (i = 0; i < count; i++)
+    {
+      if (i != defScreen)
+        [screens addObject: [NSNumber numberWithInt: i]];
+    }
+  return screens;
 }
 #endif
 
-- (NSWindowDepth) windowDepthForScreen: (int) screen_num // X Screen
+- (NSWindowDepth) windowDepthForScreen: (int) screen_num // X Screen - OK
 {
   Screen	*screen;
   int		 class = 0, bpp = 0;
@@ -4501,7 +4499,7 @@ _computeDepth(int class, int bpp)
   return _computeDepth(class, bpp);
 }
 
-- (const NSWindowDepth *) availableDepthsForScreen: (int) screen_num // X Screen
+- (const NSWindowDepth *) availableDepthsForScreen: (int) screen_num // X Screen - OK
 {
   Screen	*screen;
   int		 class = 0;
@@ -4535,7 +4533,7 @@ _computeDepth(int class, int bpp)
   return depths;
 }
 
-- (NSSize) resolutionForScreen: (int)screen_num // X Screen
+- (NSSize) resolutionForScreen: (int)screen_num // X Screen - !OK
 {
   // NOTE:
   // -gui now trusts the return value of resolutionForScreen:,
@@ -4572,7 +4570,7 @@ _computeDepth(int class, int bpp)
 {
   NSRect boundsRect = NSZeroRect;
   
-  if (screen < 0 || screen >= ScreenCount(dpy))
+  if (screen < 0 || screen >= monitorsCount)
     {
       NSLog(@"Invalidparam: no screen %d", screen);
       return NSZeroRect;
@@ -4580,7 +4578,9 @@ _computeDepth(int class, int bpp)
   
 #ifdef HAVE_XRANDR
   if (monitors != NULL)
-    boundsRect = monitors[screen].frame;
+    {
+      boundsRect = monitors[screen].frame;
+    }
 #else
   boundsRect = NSMakeRect(0, 0, DisplayWidth(dpy, screen),
                           DisplayHeight(dpy, screen));

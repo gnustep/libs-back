@@ -1,5 +1,18 @@
 2020-01-26  Sergii Stoian  <stoyan255@gmail.com>
 
+	* Headers/x11/XGServer.h: new structure `MonitorDevice` and ivar
+	`monitors`for holding cache of monitor's parameters (depth, resolution,
+	frame). New ivar `monitorsCount` - holds number of items in `monitors` for
+	RandR or X11 screen count otherwise.
+	* Source/x11/XGServerWindow.m (screenList): new method for RandR mode -
+	enumerates monitors and caches their parameters. Returns array of monitors'
+	indices to get access to monitors` items.
+	(boundsForScreen:): use cached `frame` parameter of specified monitor.
+	Use `monitorsCount` instead of ScreenCount().
+	* Source/x11/XGServer.m (dealloc): free `monitors` if it was used.
+
+2020-01-26  Sergii Stoian  <stoyan255@gmail.com>
+
 	* Source/x11/XGServerWindow.m (boundsForScreen:): use `screen` variable
 	to identify output in RandR screen resources. Use `boundsRect` local
 	variable as return vaalue storage. Cleanup.

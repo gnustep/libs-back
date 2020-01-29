@@ -69,6 +69,7 @@ typedef struct MonitorDevice {
   int               randrEventBase;
   int               randrErrorBase;
   MonitorDevice     *monitors;
+  unsigned          monitorsCount;
 }
 
 + (Display*) currentXDisplay;
