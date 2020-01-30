@@ -4473,7 +4473,7 @@ _computeDepth(int class, int bpp)
          put the main screen first */
       [screens addObject: [NSNumber numberWithInt: defScreen]];
     }
-  for (i = 0; i < count; i++)
+  for (i = 0; i < monitorsCount; i++)
     {
       if (i != defScreen)
         [screens addObject: [NSNumber numberWithInt: i]];
