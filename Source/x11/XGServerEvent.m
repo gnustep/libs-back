@@ -1981,6 +1981,13 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
       NSDebugLLog(@"Focus", @"Ignoring window focus request");
       cWin->ignore_take_focus = NO;
     }
+  else if ([[NSApp mainMenu] isTransient] != NO)
+    {
+      /* Do not grab focus from active application if right-click on our
+         application icon was performed. */
+      NSDebugLLog(@"Focus",
+                  @"Ignore transient application menu focus request.");
+    }
   else if (cWin->number == key_num)
     {
       NSDebugLLog(@"Focus", @"Reasserting key window");

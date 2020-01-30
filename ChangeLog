@@ -1,3 +1,9 @@
+2020-01-30  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerEvent.m (_handleTakeFocusAtom:forContext:):
+	do not grab focus of active applicaion if right-click app menu requests
+	focus.
+
 2020-01-26  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (boundsForScreen:): use `screen` variable
