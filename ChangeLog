@@ -9,6 +9,14 @@
 	indices to get access to monitors` items.
 	(boundsForScreen:): use cached `frame` parameter of specified monitor.
 	Use `monitorsCount` instead of ScreenCount().
+	(windowDepthForScreen:): renamed method parameter; append `x_` prefix to
+	`Screen *` internal variable; validate `screen` parameter value; use
+	`defScreen` for RandR enabled code.
+	(availableDepthsForScreen:): ditto.
+	(resolutionForScreen:): renamed method parameter; validate `screen`
+	parameter value.
+	(boundsForScreen:): renamed method parameter.
+
 	* Source/x11/XGServer.m (dealloc): free `monitors` if it was used.
 
 2020-01-26  Sergii Stoian  <stoyan255@gmail.com>

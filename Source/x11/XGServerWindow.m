@@ -4482,50 +4482,67 @@ _computeDepth(int class, int bpp)
 }
 #endif
 
-- (NSWindowDepth) windowDepthForScreen: (int) screen_num // X Screen - OK
+- (NSWindowDepth) windowDepthForScreen: (int) screen
 {
-  Screen	*screen;
+  Screen	*x_screen;
   int		 class = 0, bpp = 0;
 
-  screen = XScreenOfDisplay(dpy, screen_num);
-  if (screen == NULL)
+  if (screen < 0 || screen >= monitorsCount)
+    {
+      return 0;
+    }
+  
+#ifdef HAVE_RANDR
+  // `screen_num` is a monitor index not X11 screen
+  x_screen = XScreenOfDisplay(dpy, defScreen);
+#else
+  x_screen = XScreenOfDisplay(dpy, screen);
+#endif
+  
+  if (x_screen == NULL)
     {
       return 0;
     }
 
-  bpp = screen->root_depth;
-  class = screen->root_visual->class;
+  bpp = x_screen->root_depth;
+  class = x_screen->root_visual->class;
 
   return _computeDepth(class, bpp);
 }
 
-- (const NSWindowDepth *) availableDepthsForScreen: (int) screen_num // X Screen - OK
+- (const NSWindowDepth *) availableDepthsForScreen: (int) screen
 {
-  Screen	*screen;
+  Screen	*x_screen;
   int		 class = 0;
   int		 index = 0;
   int		 ndepths = 0;
   NSZone	*defaultZone = NSDefaultMallocZone();
   NSWindowDepth	*depths = 0;
 
-  if (dpy == NULL)
+  if (dpy == NULL || screen < 0 || screen >= monitorsCount)
     {
       return NULL;
     }
 
-  screen = XScreenOfDisplay(dpy, screen_num);
-  if (screen == NULL)
+#ifdef HAVE_RANDR
+  // `screen_num` is a monitor index not X11 screen
+  x_screen = XScreenOfDisplay(dpy, defScreen);
+#else
+  x_screen = XScreenOfDisplay(dpy, screen);
+#endif
+  
+  if (x_screen == NULL)
     {
       return NULL;
     }
 
   // Allocate the memory for the array and fill it in.
-  ndepths = screen->ndepths;
-  class = screen->root_visual->class;
+  ndepths = x_screen->ndepths;
+  class = x_screen->root_visual->class;
   depths = NSZoneMalloc(defaultZone, sizeof(NSWindowDepth)*(ndepths + 1));
   for (index = 0; index < ndepths; index++)
     {
-      int depth = screen->depths[index].depth;
+      int depth = x_screen->depths[index].depth;
       depths[index] = _computeDepth(class, depth);
     }
   depths[index] = 0; // terminate with a zero.
@@ -4533,7 +4550,7 @@ _computeDepth(int class, int bpp)
   return depths;
 }
 
-- (NSSize) resolutionForScreen: (int)screen_num // X Screen - !OK
+- (NSSize) resolutionForScreen: (int)screen
 {
   // NOTE:
   // -gui now trusts the return value of resolutionForScreen:,
@@ -4551,22 +4568,22 @@ _computeDepth(int class, int bpp)
   /*
   int res_x, res_y;
 
-  if (screen_num < 0 || screen_num >= ScreenCount(dpy))
+  if (screen < 0 || screen_num >= ScreenCount(dpy))
     {
-      NSLog(@"Invalidparam: no screen %d", screen_num);
+      NSLog(@"Invalidparam: no screen %d", screen);
       return NSMakeSize(0,0);
     }
   // This does not take virtual displays into account!!
-  res_x = DisplayWidth(dpy, screen_num) /
-      (DisplayWidthMM(dpy, screen_num) / 25.4);
-  res_y = DisplayHeight(dpy, screen_num) /
-      (DisplayHeightMM(dpy, screen_num) / 25.4);
+  res_x = DisplayWidth(dpy, screen) /
+      (DisplayWidthMM(dpy, screen) / 25.4);
+  res_y = DisplayHeight(dpy, screen) /
+      (DisplayHeightMM(dpy, screen) / 25.4);
 
   return NSMakeSize(res_x, res_y);
   */
 }
 
-- (NSRect) boundsForScreen: (int)screen // NSScreen
+- (NSRect) boundsForScreen: (int)screen
 {
   NSRect boundsRect = NSZeroRect;
   
