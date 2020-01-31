@@ -1,6 +1,6 @@
 /* XGServerWindows - methods for window/screen handling
 
-   Copyright (C) 1999-2015 Free Software Foundation, Inc.
+   Copyright (C) 1999-2020 Free Software Foundation, Inc.
 
    Written by:  Adam Fedor <fedor@gnu.org>
    Date: Nov 1999
@@ -4525,7 +4525,7 @@ _computeDepth(int class, int bpp)
   XRROutputInfo      *output_info;
   screen_res = XRRGetScreenResources(dpy, RootWindow(dpy, screen));
   output_info = XRRGetOutputInfo(dpy, screen_res, screen_res->outputs[screen]);
-  if (output_info->crtc)
+  if (NULL != output_info && 0 != output_info->crtc)
     {
       XRRCrtcInfo *crtc_info;
       crtc_info = XRRGetCrtcInfo(dpy, screen_res, output_info->crtc);
@@ -4533,11 +4533,15 @@ _computeDepth(int class, int bpp)
                               crtc_info->width, crtc_info->height);
     }
   XRRFreeScreenResources(screen_res);
-#else
-  boundsRect = NSMakeRect(0, 0, DisplayWidth(dpy, screen),
-                          DisplayHeight(dpy, screen));
 #endif
-  
+
+  // no XRandr available or XRR call failed
+  if (NSEqualRects(boundsRect, NSZeroRect))
+    {
+      boundsRect = NSMakeRect(0, 0, DisplayWidth(dpy, screen),
+			      DisplayHeight(dpy, screen));
+    }
+
   return boundsRect;
 }
 

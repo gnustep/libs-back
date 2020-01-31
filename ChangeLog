@@ -1,3 +1,8 @@
+2010-01-31  Riccardo Mottola <rm@gnu.org>
+
+	* Source/x11/XGServerWindow.m (boundsForScreen:):
+	Check if Xrandr did not succeed and provide fallback.
+
 2020-01-26  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (boundsForScreen:): use `screen` variable
