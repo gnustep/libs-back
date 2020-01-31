@@ -4524,17 +4524,20 @@ _computeDepth(int class, int bpp)
   XRRScreenResources *screen_res;
   XRROutputInfo      *output_info;
   screen_res = XRRGetScreenResources(dpy, RootWindow(dpy, screen));
-  output_info = XRRGetOutputInfo(dpy, screen_res, screen_res->outputs[screen]);
-  if (NULL != output_info && 0 != output_info->crtc)
+  if (screen_res != NULL && screen_res->noutput > 0)
     {
-      XRRCrtcInfo *crtc_info;
-      crtc_info = XRRGetCrtcInfo(dpy, screen_res, output_info->crtc);
-      boundsRect = NSMakeRect(crtc_info->x, crtc_info->y,
-                              crtc_info->width, crtc_info->height);
+      output_info = XRRGetOutputInfo(dpy, screen_res, screen_res->outputs[screen]);
+      if (NULL != output_info && 0 != output_info->crtc)
+        {
+          XRRCrtcInfo *crtc_info;
+          crtc_info = XRRGetCrtcInfo(dpy, screen_res, output_info->crtc);
+          boundsRect = NSMakeRect(crtc_info->x, crtc_info->y,
+                                  crtc_info->width, crtc_info->height);
+        }
     }
   XRRFreeScreenResources(screen_res);
 #endif
-
+  
   // no XRandr available or XRR call failed
   if (NSEqualRects(boundsRect, NSZeroRect))
     {

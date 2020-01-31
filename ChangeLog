@@ -1,3 +1,8 @@
+2020-01-31  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (boundsForScreen:): check for number of
+	XRandR's ouputs.
+
 2010-01-31  Riccardo Mottola <rm@gnu.org>
 
 	* Source/x11/XGServerWindow.m (boundsForScreen:):
