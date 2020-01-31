@@ -1,3 +1,12 @@
+2020-01-31  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (screenList): join RandR and non-RandR
+	code. Failback to Xlib generic method if any no RandR available or
+	RandR function call was unsuccessful. In Xlib generic method fill in
+	monitors array with values.
+	(boundsForScreen:): use values from cached `monitors` array since
+	-screenList fills it on both cases with or without RandR available.
+
 2020-01-30  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Headers/x11/XGServer.h: new structure `MonitorDevice` and ivar

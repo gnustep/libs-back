@@ -4420,67 +4420,67 @@ _computeDepth(int class, int bpp)
    X11 Screen - its a plane where X Server can draw on.
    XRandR - Xorg extension that halps to manipulate monitors layout providing
    X11 Screen. */
-#ifdef HAVE_XRANDR
 - (NSArray *)screenList
 {
   NSMutableArray      *screens;
   int                 i;
+
+  monitorsCount = 0;
+  if (monitors != NULL) {
+    NSZoneFree([self zone], monitors);
+  }
+  
+#ifdef HAVE_XRANDR
   XRRScreenResources  *screen_res;
   XRROutputInfo       *output_info;
   XRRCrtcInfo         *crtc_info;
 
   screen_res = XRRGetScreenResources(dpy, RootWindow(dpy, defScreen));
   monitorsCount = screen_res->noutput;
-  
-  screens = [NSMutableArray arrayWithCapacity: monitorsCount];
-  if (monitors != NULL) {
-    NSZoneFree([self zone], monitors);
-  }
-  monitors = NSZoneMalloc([self zone], monitorsCount * sizeof(MonitorDevice));
 
-  for (i = 0; i < monitorsCount; i++)
+  if (monitorsCount > 0)
     {
-      output_info = XRRGetOutputInfo(dpy, screen_res, screen_res->outputs[i]);
-      if (output_info->crtc)
-        {
-          crtc_info = XRRGetCrtcInfo(dpy, screen_res, output_info->crtc);
+      screens = [NSMutableArray arrayWithCapacity: monitorsCount];
+      monitors = NSZoneMalloc([self zone], monitorsCount * sizeof(MonitorDevice));
 
-          // Fill the cache of device parameters
+      for (i = 0; i < monitorsCount; i++)
+        {
+          output_info = XRRGetOutputInfo(dpy, screen_res, screen_res->outputs[i]);
+          if (output_info->crtc)
+            {
+              crtc_info = XRRGetCrtcInfo(dpy, screen_res, output_info->crtc);
+
+              // Fill the cache of device parameters
+              monitors[i].depth = [self windowDepthForScreen: i];
+              monitors[i].resolution = [self resolutionForScreen: i];
+              monitors[i].frame = NSMakeRect(crtc_info->x, crtc_info->y,
+                                             crtc_info->width, crtc_info->height);
+              // Add number of device
+              [screens addObject: [NSNumber numberWithInt: i]];
+            }
+        }
+    }
+  XRRFreeScreenResources(screen_res);
+#endif
+
+  if (monitorsCount == 0)
+    {
+      monitorsCount = ScreenCount(dpy);
+      monitors = NSZoneMalloc([self zone], monitorsCount * sizeof(MonitorDevice));
+      screens = [NSMutableArray arrayWithCapacity: monitorsCount];
+      for (i = 0; i < monitorsCount; i++)
+        {
           monitors[i].depth = [self windowDepthForScreen: i];
           monitors[i].resolution = [self resolutionForScreen: i];
-          monitors[i].frame = NSMakeRect(crtc_info->x, crtc_info->y,
-                                         crtc_info->width, crtc_info->height);
-          // Add number of device
+          monitors[i].frame = NSMakeRect(0, 0,
+                                         DisplayWidth(dpy, i),
+                                         DisplayHeight(dpy, i));
           [screens addObject: [NSNumber numberWithInt: i]];
         }
     }
   
-  XRRFreeScreenResources(screen_res);
-  
   return screens;
 }
-#else // HAVE_XRANDR
-- (NSArray *)screenList
-{
-  int i;
-  NSMutableArray *screens;
- 
-  monitorsCount = ScreenCount(dpy);
-  screens = [NSMutableArray arrayWithCapacity: monitorsCount];
-  if (monitorsCount > 0)
-    {
-      /* I guess screen numbers are in order starting from zero, but we
-         put the main screen first */
-      [screens addObject: [NSNumber numberWithInt: defScreen]];
-    }
-  for (i = 0; i < monitorsCount; i++)
-    {
-      if (i != defScreen)
-        [screens addObject: [NSNumber numberWithInt: i]];
-    }
-  return screens;
-}
-#endif
 
 - (NSWindowDepth) windowDepthForScreen: (int) screen
 {
@@ -4593,15 +4593,10 @@ _computeDepth(int class, int bpp)
       return NSZeroRect;
     }
   
-#ifdef HAVE_XRANDR
   if (monitors != NULL)
     {
       boundsRect = monitors[screen].frame;
     }
-#else
-  boundsRect = NSMakeRect(0, 0, DisplayWidth(dpy, screen),
-                          DisplayHeight(dpy, screen));
-#endif
   
   return boundsRect;
 }
