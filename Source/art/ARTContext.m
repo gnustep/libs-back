@@ -70,7 +70,7 @@
   gswindow_device_t *gs_win;
 
   gs_win = device;
-  [(XGServer *)server getForScreen: gs_win->screen pixelFormat: &bpp 
+  [(XGServer *)server getForScreen: gs_win->screen_id pixelFormat: &bpp 
                 masks: &red_mask : &green_mask : &blue_mask];
 #endif
   artcontext_setup_draw_info(&DI, red_mask, green_mask, blue_mask, bpp);

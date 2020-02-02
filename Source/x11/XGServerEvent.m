@@ -744,7 +744,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
               else if ((Atom)xEvent.xclient.data.l[0]
                 == generic._NET_WM_PING_ATOM)
                 {
-                  xEvent.xclient.window = RootWindow(dpy, cWin->screen);
+                  xEvent.xclient.window = RootWindow(dpy, cWin->screen_id);
                   XSendEvent(dpy, xEvent.xclient.window, False, 
                     (SubstructureRedirectMask | SubstructureNotifyMask), 
                     &xEvent);
@@ -796,7 +796,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                 send ConfigureNotify events for app icons.
               */
               XTranslateCoordinates(dpy, xEvent.xclient.window,
-                                    RootWindow(dpy, cWin->screen),
+                                    RootWindow(dpy, cWin->screen_id),
                                     0, 0,
                                     &root_x, &root_y,
                                     &root_child);
@@ -965,7 +965,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                 int root_x, root_y;
                 Window root_child;
                 XTranslateCoordinates(dpy, xEvent.xconfigure.window,
-                                      RootWindow(dpy, cWin->screen),
+                                      RootWindow(dpy, cWin->screen_id),
                                       0, 0,
                                       &root_x, &root_y,
                                       &root_child);
@@ -2066,7 +2066,7 @@ static void
 initialize_keyboard (void)
 {
   NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-  Display *display = [XGServer currentXDisplay];
+  Display *display = [XGServer xDisplay];
 
   // Below must be stored and checked as keysyms, not keycodes, since
   // more than one keycode may be mapped t the same keysym
@@ -2140,7 +2140,7 @@ set_up_num_lock (void)
     ShiftMask, LockMask, ControlMask, Mod1Mask, 
     Mod2Mask, Mod3Mask, Mod4Mask, Mod5Mask
   };
-  Display *display = [XGServer currentXDisplay];
+  Display *display = [XGServer xDisplay];
   KeyCode _num_lock_keycode;
   
   // Get NumLock keycode
@@ -2668,10 +2668,9 @@ process_modifier_flags(unsigned int state)
   BOOL ok;
   NSPoint p;
   int height;
-  int screen_number;
-  
-  screen_number = (screen >= 0) ? screen : defScreen;
-  ok = XQueryPointer (dpy, [self xDisplayRootWindowForScreen: screen_number],
+  int screen_id;
+
+  ok = XQueryPointer (dpy, [self xDisplayRootWindow],
     &rootWin, &childWin, &currentX, &currentY, &winX, &winY, &mask);
   p = NSMakePoint(-1,-1);
   if (ok == False)
@@ -2683,8 +2682,8 @@ process_modifier_flags(unsigned int state)
         {
           return p;
         }
-      screen_number = XScreenNumberOfScreen(attribs.screen);
-      if (screen >= 0 && screen != screen_number)
+      screen_id = XScreenNumberOfScreen(attribs.screen);
+      if (screen >= 0 && screen != screen_id)
         {
           /* Mouse not on the requred screen, return an invalid point */
           return p;
@@ -2692,7 +2691,7 @@ process_modifier_flags(unsigned int state)
       height = attribs.height;
     }
   else
-    height = [self boundsForScreen: screen_number].size.height;
+    height = [self boundsForScreen: screen].size.height;
   p = NSMakePoint(currentX, height - currentY);
   if (win)
     {

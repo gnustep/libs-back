@@ -222,8 +222,8 @@ no_xshm:
   visual = DefaultVisual(wi->display, DefaultScreen(wi->display));
 #else
   // Better to get the used visual from the XGServer.
-  visual = [(XGServer*)GSCurrentServer() visualForScreen: awindow->screen];
-  drawing_depth = [(XGServer*)GSCurrentServer() depthForScreen: awindow->screen];
+  visual = [(XGServer*)GSCurrentServer() screenVisual];
+  drawing_depth = [(XGServer*)GSCurrentServer() screenDepth];
 #endif
 
   /* TODO: resolve properly.

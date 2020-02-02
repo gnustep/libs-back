@@ -95,7 +95,7 @@
   Window win;
   XWindowAttributes attrs;
 
-  win = [self xDisplayRootWindowForScreen: screen];
+  win = [self xDisplayRootWindow];
  
   if (XGetWindowAttributes(dpy, win, &attrs))
     {

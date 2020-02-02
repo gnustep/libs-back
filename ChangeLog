@@ -1,3 +1,74 @@
+2020-02-03  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XWindowBuffer.m (windowBufferForWindow:depthInfo:): use
+	renamed	XGServer's `screenVisual` and `screenDepth` methods.
+
+	* Source/x11/XIMInputServer.m (initWithDelegate:name:):
+	use `+xDisplay` instead	of `xCurrentDisplay`. 
+	(clientWindowRect:): ditto.
+
+	* Headers/x11/XGServerWindow.h (_gswindow_device_t):
+	renamed `screen` to `screen_id`. `monitor_id` element was added -
+	this is an index of element in MonitorDevice array.
+	* Source/x11/XGServerWindow.m:
+	Removed `screen` parameter from methods which contains it in name.
+	Methods were renamed to remove `Screen` and `FromScreen`.
+	(_OSFrameToXFrame:for:): use `monitor_id` instead of `screen`.
+	(_OSFrameToXHints:for:): ditto.
+	(_XFrameToOSFrame:for:): ditto.
+	(_checkStyle:): use renamed methods and `screen_id` window structure
+	element.
+	(_rootWindow): renamed from _rootWindowForScreen:, use `defScreen`
+	instead of removed parameter `screen`, set window structure element
+	`monitor_id` to 0.
+	(_createBuffer:): use `screen_id` window structure.
+	(window::::): use renamed methods, `defScreen`, `screen_id` and
+	`monitor_id` window scructure elements.
+	(nativeWindow:::::): ditto.
+	(setbackgroundcolor::): ditto.
+	(miniwindow:): ditto.
+	(_createAppIconPixmaps): removed unused `screen` local variable, use
+	renamed `screenRContext` method.
+	(orderwindow:::): use `screen_id` window structure element.
+	(movewindow::): use `screen_id` window structure element as a parameter
+	to `boundsForScreen`.
+	(windowbounds:): ditto.
+	(windowlist): use renamed `_rootWindow` method.
+	(setMouseLocation:onScreen:): user renamed methods.
+	(_blankCursor): ditto.
+	(imagecursor:::): ditto
+	(recolorcursor:::): ditto.
+	(screenList): change with assumption that Xlib screen is one per application.
+	Failback code to RandR-related always creates arrays with one element (no
+	enumeration needed). Create `monitor` structure in failback (non-RandR) code.
+	Use `screen_id` MonitorDevice structure element to hold	Xlib screen ID.
+	(windowDepthForScreen:): assume that `screen` parameter is a Xlib screen ID,
+	simplify code - `screen` will be used with RandR or not.
+	(availableDepthsForScreen:): changed with assumption that `screen` is a index
+	of element in `monitors` structure.
+
+	* Source/x11/XGServerEvent.m:
+	use renamed methods and `screen_id` window structure element.
+
+	* Headers/x11/XGServer.h
+	Removed `screen` parameter from methods which contains it in name.
+	Methods were renamed to remove `Screen` and `FromScreen`.
+	(MonitorDevice): `screen_id` was added.
+
+	* Source/x11/XGServer.m:
+	use `screen_id` and rename mathods according to XGServer,h.
+	(_initXContext): initialize `monitors` array early here before first
+	use (calls to XGServerWindow methods).
+
+	* Source/x11/XGDragView.m (XDPY): use `monitor_id` in `boundForScreen:`
+	call.
+
+	* Source/cairo/XGCairoSurface.m: use `xDisplayRootWindow` XGServer's method.
+
+	* Source/art/ARTContext.m (setupDrawInfo:): use `xDisplayRootWindow`
+	XGServer's method.
+
+
 2020-01-31  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (screenList): join RandR and non-RandR
