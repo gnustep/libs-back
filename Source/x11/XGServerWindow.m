@@ -4457,7 +4457,7 @@ _computeDepth(int class, int bpp)
               crtc_info = XRRGetCrtcInfo(dpy, screen_res, output_info->crtc);
 
               // Fill the cache of device parameters
-              monitors[i].depth = [self windowDepthForScreen: defScreen];
+              monitors[i].depth = [self windowDepthForScreen: i];
               monitors[i].resolution = [self resolutionForScreen: defScreen];
               monitors[i].frame = NSMakeRect(crtc_info->x, crtc_info->y,
                                              crtc_info->width, crtc_info->height);
@@ -4489,7 +4489,7 @@ _computeDepth(int class, int bpp)
   return screens;
 }
 
-// `screen` is a Xlib screen number.
+// `screen` is a monitor index not X11 screen
 - (NSWindowDepth) windowDepthForScreen: (int)screen
 {
   Screen	*x_screen;
@@ -4500,7 +4500,7 @@ _computeDepth(int class, int bpp)
       return 0;
     }
   
-  x_screen = XScreenOfDisplay(dpy, screen);
+  x_screen = XScreenOfDisplay(dpy, monitors[screen].screen_id);
   
   if (x_screen == NULL)
     {
