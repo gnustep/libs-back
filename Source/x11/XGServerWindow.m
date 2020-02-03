@@ -4482,8 +4482,8 @@ _computeDepth(int class, int bpp)
 
   if (monitorsCount == 0)
     {
-      /* Assumed that it's always available 1 screen per application. We only
-         need to know it's number and it was saved in _initXContext as
+      /* It is assumed that there is always only one screen per application. 
+         We only need to know its number and it was saved in _initXContext as
          `defScreen`. */
       monitorsCount = 1;
       monitors = NSZoneMalloc([self zone], sizeof(MonitorDevice));
@@ -4560,7 +4560,7 @@ _computeDepth(int class, int bpp)
 }
 
 // `screen` is a Xlib screen number.
-- (NSSize) resolutionForScreen: (int)screen
+- (NSSize) resolutionForScreen: (int)screen_num
 {
   // NOTE:
   // -gui now trusts the return value of resolutionForScreen:,
