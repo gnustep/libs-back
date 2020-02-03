@@ -791,8 +791,10 @@ static int byte_order(void)
 #include <AppKit/NSClipView.h>
 #include <AppKit/NSTextView.h>
 
+#if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wobjc-protocol-method-implementation"
+#endif
 
 @implementation NSTextView (InputMethod)
 
@@ -907,5 +909,7 @@ static int byte_order(void)
 
 @end // NSTextView
 
+#if defined(__clang__)
 #pragma clang diagnostic pop
+#endif
 //==== End: Additional Code for NSTextView ====================================
