@@ -621,42 +621,12 @@ static int byte_order(void)
   Visual *visual;
   XImage *i;
   int bpp;
-// #if 0
-//   XVisualInfo template;
-//   XVisualInfo *visualInfo;
-//   int numMatches;
-  
-//   /*
-//     We need a visual that we can generate pixel values for by ourselves.
-//     Thus, we try to find a DirectColor or TrueColor visual. If that fails,
-//     we use the default visual and hope that it's usable.
-//   */
-//   template.class = DirectColor;
-//   visualInfo = XGetVisualInfo(dpy, VisualClassMask, &template, &numMatches);
-//   if (!visualInfo)
-//     {
-//       template.class = TrueColor;
-//       visualInfo = XGetVisualInfo(dpy, VisualClassMask, &template, &numMatches);
-//     }
-//   if (visualInfo)
-//     {
-//       visual = visualInfo->visual;
-//       bpp = visualInfo->depth;
-//       XFree(visualInfo);
-//     }
-//   else
-//     {
-//       visual = DefaultVisual(dpy, DefaultScreen(dpy));
-//       bpp = DefaultDepth(dpy, DefaultScreen(dpy));
-//     }
-// #else
   RContext *context;
 
   // Better to get the used visual from the context.
   context = [self screenRContext];
   visual = context->visual;
   bpp = context->depth;
-// #endif 
 
   i = XCreateImage(dpy, visual, bpp, ZPixmap, 0, NULL, 8, 8, 8, 0);
   bpp = i->bits_per_pixel;
