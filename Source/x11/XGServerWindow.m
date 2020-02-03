@@ -4438,6 +4438,7 @@ _computeDepth(int class, int bpp)
   
 #ifdef HAVE_XRANDR
   XRRScreenResources  *screen_res;
+  RROutput            primary_output;
   XRROutputInfo       *output_info;
   XRRCrtcInfo         *crtc_info;
 
@@ -4448,6 +4449,7 @@ _computeDepth(int class, int bpp)
       tmpScreens = [NSMutableArray arrayWithCapacity: monitorsCount];
       monitors = NSZoneMalloc([self zone], monitorsCount * sizeof(MonitorDevice));
 
+      primary_output = XRRGetOutputPrimary(dpy, [self xDisplayRootWindow]);
       for (i = 0; i < monitorsCount; i++)
         {
           output_info = XRRGetOutputInfo(dpy, screen_res, screen_res->outputs[i]);
@@ -4455,14 +4457,22 @@ _computeDepth(int class, int bpp)
           if (output_info->crtc)
             {
               crtc_info = XRRGetCrtcInfo(dpy, screen_res, output_info->crtc);
-
-              // Fill the cache of device parameters
-              monitors[i].depth = [self windowDepthForScreen: i];
-              monitors[i].resolution = [self resolutionForScreen: defScreen];
-              monitors[i].frame = NSMakeRect(crtc_info->x, crtc_info->y,
-                                             crtc_info->width, crtc_info->height);
-              // Add number of device
-              [tmpScreens addObject: [NSNumber numberWithInt: i]];
+              
+                monitors[i].depth = [self windowDepthForScreen: i];
+                monitors[i].resolution = [self resolutionForScreen: defScreen];
+                monitors[i].frame = NSMakeRect(crtc_info->x, crtc_info->y,
+                                               crtc_info->width, crtc_info->height);
+                /* Add monitor ID (index in monitors array).
+                   Put primary monitor ID index 0 since NSScreen get this as main 
+                   screen if application has no key window. */
+                if (screen_res->outputs[i] == primary_output)
+                  {
+                    [tmpScreens insertObject: [NSNumber numberWithInt: i] atIndex: 0];
+                  }
+                else
+                  {
+                    [tmpScreens addObject: [NSNumber numberWithInt: i]];
+                  }
             }
         }
       XRRFreeScreenResources(screen_res);
