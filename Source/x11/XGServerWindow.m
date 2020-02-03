@@ -2106,8 +2106,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   window = NSAllocateCollectable(sizeof(gswindow_device_t), NSScannedOption);
   memset(window, '\0', sizeof(gswindow_device_t));
   window->display = dpy;
-  window->screen_id = defScreen;
-  window->monitor_id = *screen;
+  window->screen_id = *screen;
+  window->monitor_id = 0;
   window->ident = windowRef;
   window->root = root->ident;
   window->parent = root->ident;
@@ -4417,6 +4417,8 @@ _computeDepth(int class, int bpp)
 
 /* This method assumes that we deal with one X11 screen - `defScreen`.
    Basically it means that we have DISPLAY variable set to `:0.0`.
+   Where both digits have artbitrary values, but it defines once on
+   every application run.
    AppKit and X11 use the same term "screen" with different meaning:
    AppKit Screen - single monitor/display device.
    X11 Screen - it's a plane where X Server can draw on.
