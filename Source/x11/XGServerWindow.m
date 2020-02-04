@@ -4434,6 +4434,7 @@ _computeDepth(int class, int bpp)
   monitorsCount = 0;
   if (monitors != NULL) {
     NSZoneFree([self zone], monitors);
+    monitors = NULL;
   }
   
 #ifdef HAVE_XRANDR
@@ -4441,6 +4442,7 @@ _computeDepth(int class, int bpp)
   RROutput            primary_output;
   XRROutputInfo       *output_info;
   XRRCrtcInfo         *crtc_info;
+  int                 mi;
 
   screen_res = XRRGetScreenResources(dpy, RootWindow(dpy, defScreen));
   if (screen_res != NULL)
@@ -4450,29 +4452,30 @@ _computeDepth(int class, int bpp)
       monitors = NSZoneMalloc([self zone], monitorsCount * sizeof(MonitorDevice));
 
       primary_output = XRRGetOutputPrimary(dpy, [self xDisplayRootWindow]);
-      for (i = 0; i < monitorsCount; i++)
+      for (i = 0, mi = 0; i < screen_res->noutput; i++)
         {
           output_info = XRRGetOutputInfo(dpy, screen_res, screen_res->outputs[i]);
-          monitors[i].screen_id = defScreen;
           if (output_info->crtc)
             {
               crtc_info = XRRGetCrtcInfo(dpy, screen_res, output_info->crtc);
               
-                monitors[i].depth = [self windowDepthForScreen: i];
-                monitors[i].resolution = [self resolutionForScreen: defScreen];
-                monitors[i].frame = NSMakeRect(crtc_info->x, crtc_info->y,
-                                               crtc_info->width, crtc_info->height);
-                /* Add monitor ID (index in monitors array).
-                   Put primary monitor ID index 0 since NSScreen get this as main 
-                   screen if application has no key window. */
-                if (screen_res->outputs[i] == primary_output)
-                  {
-                    [tmpScreens insertObject: [NSNumber numberWithInt: i] atIndex: 0];
-                  }
-                else
-                  {
-                    [tmpScreens addObject: [NSNumber numberWithInt: i]];
-                  }
+              monitors[mi].screen_id = defScreen;
+              monitors[mi].depth = [self windowDepthForScreen: mi];
+              monitors[mi].resolution = [self resolutionForScreen: defScreen];
+              monitors[mi].frame = NSMakeRect(crtc_info->x, crtc_info->y,
+                                              crtc_info->width, crtc_info->height);
+              /* Add monitor ID (index in monitors array).
+                 Put primary monitor ID index 0 since NSScreen get this as main 
+                 screen if application has no key window. */
+              if (screen_res->outputs[i] == primary_output)
+                {
+                  [tmpScreens insertObject: [NSNumber numberWithInt: mi] atIndex: 0];
+                }
+              else
+                {
+                  [tmpScreens addObject: [NSNumber numberWithInt: mi]];
+                }
+              mi++;
             }
         }
       XRRFreeScreenResources(screen_res);
