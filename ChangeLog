@@ -1,3 +1,11 @@
+2020-02-07 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (swapColors): Made code more
+	explicit and removed additional copy before calling this function.
+	This function should now do what the comment above it says.
+	(alphaMaskForImage): Slightly cleaner code.
+	* Source/x11/XGServerEvent.m: Prevent compiler warning by moving method.
+
 2020-02-07  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (_OSFrameToXFrame:for:):,
@@ -80,6 +88,16 @@
 	* Source/art/ARTContext.m (setupDrawInfo:): use `xDisplayRootWindow`
 	XGServer's method.
 
+
+2020-01-31  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (boundsForScreen:): check for number of
+	XRandR's ouputs.
+
+2020-01-31  Riccardo Mottola <rm@gnu.org>
+
+	* Source/x11/XGServerWindow.m (boundsForScreen:):
+	Check if Xrandr did not succeed and provide fallback.
 
 2020-01-31  Sergii Stoian  <stoyan255@gmail.com>
 

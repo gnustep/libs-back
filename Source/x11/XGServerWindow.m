@@ -1,6 +1,6 @@
 /* XGServerWindows - methods for window/screen handling
 
-   Copyright (C) 1999-2015 Free Software Foundation, Inc.
+   Copyright (C) 1999-2020 Free Software Foundation, Inc.
 
    Written by:  Adam Fedor <fedor@gnu.org>
    Date: Nov 1999
@@ -1460,9 +1460,10 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   if (generic.rootName == 0)
     {
       const char *str = [[pInfo processName] UTF8String];
+      int len = strlen(str) +1;
 
-      generic.rootName = malloc(strlen(str) + 1);
-      strncpy(generic.rootName, str, strlen(str) + 1);
+      generic.rootName = malloc(len);
+      strncpy(generic.rootName, str, len);
     }
 
   /*
@@ -2700,21 +2701,26 @@ static BOOL didCreatePixmaps;
 
 Pixmap
 alphaMaskForImage(Display *xdpy, Drawable draw, const unsigned char *data,
-                  int w, int h, int colors, int alpha_treshold)
+                  int w, int h, int colors, unsigned int alpha_treshold)
 {
-  int j, i;
-  unsigned char	ialpha;
   Pixmap pix;
-  int bitmapSize = ((w + 7) >> 3) * h; // (w/8) rounded up times height
-  char *aData = calloc(1, bitmapSize);
-  char *cData = aData;
+  // (w/8) rounded up times height
+  int bitmapSize = ((w + 7) >> 3) * h;
+  unsigned char *aData = calloc(1, bitmapSize);
 
   if (colors == 4)
     {
-      int k;
+      int j, i;
+      unsigned int ialpha;
+      unsigned char *cData = aData;
+
+      // skip R, G, B
+      data += 3;
+
       for (j = 0; j < h; j++)
 	{
-	  k = 0;
+	  int k = 0;
+
 	  for (i = 0; i < w; i++, k++)
 	    {
 	      if (k > 7)
@@ -2722,22 +2728,19 @@ alphaMaskForImage(Display *xdpy, Drawable draw, const unsigned char *data,
 	      	  cData++;
 	      	  k = 0;
 	      	}
-	      data += 3; // skip R, G, B
-	      ialpha = (unsigned short)((char)*data++);
+	      ialpha = (unsigned int)(*data);
 	      if (ialpha > alpha_treshold)
                 {
 		  *cData |= (0x01 << k);
                 }
+	      data += 4;
 	    }
 	  cData++;
 	}
     }
   else
     {
-      for (j = 0; j < bitmapSize; j++)
-	{
-	  *cData++ = 0xff;
-	}
+      memset(aData, 0xff, bitmapSize);
     }
 
   pix = XCreatePixmapFromBitmapData(xdpy, draw, (char *)aData, w, h,
@@ -2750,48 +2753,72 @@ alphaMaskForImage(Display *xdpy, Drawable draw, const unsigned char *data,
 // Packed ARGB values are layed out as ARGB on big endian systems
 // and as BGRA on little endian systems
 void
-swapColors(unsigned char *image_data, int width, int height,
-           int samples_per_pixel, int bytes_per_row)
+swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 {
-  NSInteger     x, y;
-  unsigned char *data;
+  unsigned char *target = image_data;
+  unsigned char *source = [rep bitmapData];
+  NSInteger width = [rep pixelsWide];
+  NSInteger height = [rep pixelsHigh];
+  NSInteger samples_per_pixel = [rep samplesPerPixel];
+  NSInteger bytes_per_row = [rep bytesPerRow];
   unsigned char *r, *g, *b, *a;
+  NSInteger     x, y;
 
-  data = image_data;
-  r = data;
-  g = data + 1;
-  b = data + 2;
-  a = data + 3;
-  for (y = 0; y < height; y++)
-    {
-      unsigned char *d = data;
-      for (x = 0; x < width; x++)
-	{
 #if GS_WORDS_BIGENDIAN
-          // RGBA -> ARGB
-          unsigned char _d = d[3];
-          *r = _d;
-          *g = d[0];
-          *b = d[1];
-          *a = d[2];
+  // RGBA -> ARGB
+  r = target + 1;
+  g = target + 2;
+  b = target + 3;
+  a = target;
 #else
-          // RGBA -> BGRA
-          unsigned char _d = d[0];
-          *r = d[2];
-          // *g = d[1];
-          *b = _d;
-          // *a = d[3];
+  // RGBA -> BGRA
+  r = target + 2;
+  g = target + 1;
+  b = target;
+  a = target + 3;
 #endif
-          r += 4;
-          g += 4;
-          b += 4;
-          a += 4;
-	  d += samples_per_pixel;
-	}
-      data += bytes_per_row;
+
+  if (samples_per_pixel == 4)
+    {
+      for (y = 0; y < height; y++)
+        {
+          unsigned char *d = source;
+          for (x = 0; x < width; x++)
+            {
+              *r = d[0];
+              *g = d[1];
+              *b = d[2];
+              *a = d[3];
+              r += 4;
+              g += 4;
+              b += 4;
+              a += 4;
+              d += samples_per_pixel;
+            }
+          source += bytes_per_row;
+        }
+    }
+  else if (samples_per_pixel == 3)
+    {
+      for (y = 0; y < height; y++)
+        {
+          unsigned char *d = source;
+          for (x = 0; x < width; x++)
+            {
+              *r = d[0];
+              *g = d[1];
+              *b = d[2];
+              *a = 255;
+              r += 4;
+              g += 4;
+              b += 4;
+              a += 4;
+              d += samples_per_pixel;
+            }
+          source += bytes_per_row;
+        }
     }
 }
-
 
 - (int) _createAppIconPixmaps
 {
@@ -2814,9 +2841,7 @@ swapColors(unsigned char *image_data, int width, int height,
   colors = [rep samplesPerPixel];
 
   rxImage = RCreateXImage(rcontext, rcontext->depth, width, height);
-  memcpy((char*)rxImage->image->data, [rep bitmapData], width * height * colors);
-  swapColors((unsigned char *)rxImage->image->data,
-             width, height, colors, [rep bytesPerRow]);
+  swapColors((unsigned char *)rxImage->image->data, rep);
   
   xIconPixmap = XCreatePixmap(dpy, rcontext->drawable,
                               width, height, rcontext->depth);
@@ -4234,7 +4259,6 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
   NSBitmapImageRep *rep;
   int w, h;
   int colors;
-  const unsigned char *data;
 
   rep = getStandardBitmap(image);
   if (rep == nil)
@@ -4254,7 +4278,6 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
   w = [rep pixelsWide];
   h = [rep pixelsHigh];
   colors = [rep samplesPerPixel];
-  data = [rep bitmapData];
 
   if (w <= 0 || h <= 0)
     {
@@ -4278,10 +4301,7 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
     xcursorImage->yhot = hotp.y;
 
     // Copy the data from the image rep to the Xcursor structure
-    memcpy((char*)xcursorImage->pixels, data, w * h * colors);
-
-    swapColors((unsigned char *)xcursorImage->pixels, w, h,
-               colors, [rep bytesPerRow]);
+    swapColors((unsigned char *)xcursorImage->pixels, rep);
     
     cursor = XcursorImageLoadCursor(dpy, xcursorImage);
     XcursorImageDestroy(xcursorImage);
@@ -4291,6 +4311,7 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
     Pixmap source, mask;
     unsigned int maxw, maxh;
     XColor fg, bg;
+    const unsigned char *data = [rep bitmapData];
 
     /* FIXME: Handle this better or return an error? */
     XQueryBestCursor(dpy, ROOT, w, h, &maxw, &maxh);

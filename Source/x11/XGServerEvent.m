@@ -343,16 +343,6 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
   return o;
 }
 
-- (void) initializeMouse
-{
-  [self mouseOptionsChanged:nil];
-  [[NSDistributedNotificationCenter defaultCenter]
-    addObserver: self
-       selector: @selector(mouseOptionsChanged:)
-           name: NSUserDefaultsDidChangeNotification
-         object: nil];
-}
-
 - (void) mouseOptionsChanged: (NSNotification *)aNotif
 {
   NSUserDefaults *defs = [NSUserDefaults standardUserDefaults];
@@ -388,6 +378,16 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
       swapMouseButtons = NO;
       break;
     }
+}
+
+- (void) initializeMouse
+{
+  [self mouseOptionsChanged: nil];
+  [[NSDistributedNotificationCenter defaultCenter]
+    addObserver: self
+       selector: @selector(mouseOptionsChanged:)
+           name: NSUserDefaultsDidChangeNotification
+         object: nil];
 }
 
 - (void) processEvent: (XEvent *) event
