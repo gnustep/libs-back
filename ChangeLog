@@ -1,3 +1,15 @@
+2020-02-07  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_OSFrameToXFrame:for:):,
+	(_OSFrameToXHints:for:): use Xlib screen height instead of monitor's
+	because we convert coordinates to Xlib area.
+
+	* Source/x11/XGServerEvent.m (processEvent:): update monitor_id from
+	NSWindow's screen number (it could change after event processing).
+	(mouseLocationOnScreen:window:): use Xlib screen height instead of
+	monitor's. Added comment to code that should be probably removed
+	later.
+
 2020-02-03  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XWindowBuffer.m (windowBufferForWindow:depthInfo:): use

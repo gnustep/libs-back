@@ -509,7 +509,7 @@ BOOL AtomPresentAndPointsToItself(Display *dpy, Atom atom, Atom type)
   x.size.height = o.size.height - t - b;
   x.origin.x = o.origin.x + l;
   x.origin.y = o.origin.y + o.size.height - t;
-  x.origin.y = [self boundsForScreen: win->monitor_id].size.height - x.origin.y;
+  x.origin.y = DisplayHeight(dpy, defScreen) - x.origin.y;
   NSDebugLLog(@"Frame", @"O2X %lu, %x, %@, %@", win->number, style,
     NSStringFromRect(o), NSStringFromRect(x));
   return x;
@@ -534,7 +534,7 @@ BOOL AtomPresentAndPointsToItself(Display *dpy, Atom atom, Atom type)
   x.size.height = o.size.height - t - b;
   x.origin.x = o.origin.x;
   x.origin.y = o.origin.y + o.size.height;
-  x.origin.y = [self boundsForScreen: win->monitor_id].size.height - x.origin.y;
+  x.origin.y = DisplayHeight(dpy, defScreen) - x.origin.y;
   NSDebugLLog(@"Frame", @"O2H %lu, %x, %@, %@", win->number, style,
     NSStringFromRect(o), NSStringFromRect(x));
   return x;

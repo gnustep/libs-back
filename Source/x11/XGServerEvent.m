@@ -1029,6 +1029,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             if (!NSEqualPoints(r.origin, x.origin))
               {
 		NSEvent *r;
+                NSWindow *window;
 
                 r = [NSEvent otherEventWithType: NSAppKitDefined
                              location: eventLocation
@@ -1045,7 +1046,12 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 		 * the programa can move/resize the window while we send
 		 * this event, causing a confusion.
 		 */
-		[[NSApp windowWithWindowNumber: cWin->number] sendEvent: r];
+                window = [NSApp windowWithWindowNumber: cWin->number];
+		[window sendEvent: r];
+                /* Update monitor_id of the backend window.
+                   NSWindow may change screen pointer while processing
+                   the event. */
+                cWin->monitor_id = [[window screen] screenNumber];
               }
           }	
         break;
@@ -2671,8 +2677,13 @@ process_modifier_flags(unsigned int state)
   int screen_id;
 
   ok = XQueryPointer (dpy, [self xDisplayRootWindow],
-    &rootWin, &childWin, &currentX, &currentY, &winX, &winY, &mask);
+                      &rootWin, &childWin, &currentX, &currentY,
+                      &winX, &winY, &mask);
   p = NSMakePoint(-1,-1);
+  /* FIXME: After multi-monitor support will be implemented `screen` method 
+     parameter doesn't make sense. The `if{}` block should be removed since 
+     we have only one screen and mouse can't be placed on "wrong" screen. 
+     Also actually we need `height` of the whole Xlib screen (defScreen). */
   if (ok == False)
     {
       /* Mouse not on the specified screen_number */
@@ -2691,7 +2702,9 @@ process_modifier_flags(unsigned int state)
       height = attribs.height;
     }
   else
-    height = [self boundsForScreen: screen].size.height;
+    {
+      height = DisplayHeight(dpy, defScreen);
+    }
   p = NSMakePoint(currentX, height - currentY);
   if (win)
     {
