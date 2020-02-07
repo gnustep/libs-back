@@ -1047,7 +1047,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 		 * this event, causing a confusion.
 		 */
                 window = [NSApp windowWithWindowNumber: cWin->number];
-		[window sendEvent: r];
+                [window sendEvent: r];
                 /* Update monitor_id of the backend window.
                    NSWindow may change screen pointer while processing
                    the event. */

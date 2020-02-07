@@ -576,7 +576,7 @@ BOOL AtomPresentAndPointsToItself(Display *dpy, Atom atom, Atom type)
 
   [self styleoffsets: &l : &r : &t : &b : style : win->ident];
   o = x;
-  o.origin.y = [self boundsForScreen: win->monitor_id].size.height - x.origin.y;
+  o.origin.y = DisplayHeight(dpy, defScreen) - x.origin.y;
   o.origin.y = o.origin.y - x.size.height - b;
   o.origin.x -= l;
   o.size.width += l + r;
@@ -3192,7 +3192,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
     }
 
   window->siz_hints.x = (int)loc.x;
-  window->siz_hints.y = (int)([self boundsForScreen: window->monitor_id].size.height -
+  window->siz_hints.y = (int)(DisplayHeight(dpy, defScreen) -
 			      loc.y - window->siz_hints.height);
   XMoveWindow (dpy, window->ident, window->siz_hints.x, window->siz_hints.y);
   setNormalHints(dpy, window);
@@ -4512,7 +4512,7 @@ _computeDepth(int class, int bpp)
       monitorsCount = 1;
       monitors = NSZoneMalloc([self zone], sizeof(MonitorDevice));
       monitors[0].screen_id = defScreen;
-      monitors[0].depth = [self windowDepthForScreen: defScreen];
+      monitors[0].depth = [self windowDepthForScreen: 0];
       monitors[0].resolution = [self resolutionForScreen: defScreen];
       monitors[0].frame = NSMakeRect(0, 0,
                                      DisplayWidth(dpy, defScreen),

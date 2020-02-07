@@ -1,3 +1,16 @@
+2020-02-07  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_XFrameToOSFrame:for:): use Xlib
+	screen height instead of monitor's because we convert coordinates
+	from Xlib area.
+	(movewindow::): use Xlib screen height because we're operating in
+	Xlib coordinate system.
+	(screenList): fill monitor depth with value returned by
+	windowPathForScreen with monitor at index 0 (screen_id already set so
+	method will get correct screen_id).
+
+	* Source/x11/XGServerEvent.m (processEvent:): fixed indentaion.
+
 2020-02-07 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (swapColors): Made code more
