@@ -4583,7 +4583,7 @@ _computeDepth(int class, int bpp)
   return depths;
 }
 
-// `screen` is a Xlib screen number.
+// `screen_num` is a Xlib screen number.
 - (NSSize) resolutionForScreen: (int)screen_num
 {
   // NOTE:
