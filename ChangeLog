@@ -1,3 +1,7 @@
+2020-02-08 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (screenList): Clean up implementation.
+
 2020-02-07  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (_XFrameToOSFrame:for:): use Xlib
