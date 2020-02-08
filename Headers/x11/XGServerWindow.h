@@ -84,8 +84,9 @@ typedef struct _gswindow_device_t {
   Display               *display;      /* Display this window is on */
   Window                ident;         /* Window handle */
   Window                root;          /* Handle of root window */
-  Window		parent;        /* Handle of parent window */
-  int                   screen;        /* Screeen this window is on */
+  Window                parent;        /* Handle of parent window */
+  int                   screen_id;     /* Screeen this window is on */
+  int                   monitor_id;    /* Physical monitor this window is on */
   GC                    gc;            /* GC for drawing */
   long                  number;        /* Globally unique identifier */
   unsigned int          depth;         /* Window depth */

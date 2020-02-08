@@ -1,4 +1,17 @@
-2020-92-07 Fred Kiefer <FredKiefer@gmx.de>
+2020-02-07  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_XFrameToOSFrame:for:): use Xlib
+	screen height instead of monitor's because we convert coordinates
+	from Xlib area.
+	(movewindow::): use Xlib screen height because we're operating in
+	Xlib coordinate system.
+	(screenList): fill monitor depth with value returned by
+	windowPathForScreen with monitor at index 0 (screen_id already set so
+	method will get correct screen_id).
+
+	* Source/x11/XGServerEvent.m (processEvent:): fixed indentaion.
+
+2020-02-07 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (swapColors): Made code more
 	explicit and removed additional copy before calling this function.
@@ -6,15 +19,128 @@
 	(alphaMaskForImage): Slightly cleaner code.
 	* Source/x11/XGServerEvent.m: Prevent compiler warning by moving method.
 
+2020-02-07  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_OSFrameToXFrame:for:):,
+	(_OSFrameToXHints:for:): use Xlib screen height instead of monitor's
+	because we convert coordinates to Xlib area.
+
+	* Source/x11/XGServerEvent.m (processEvent:): update monitor_id from
+	NSWindow's screen number (it could change after event processing).
+	(mouseLocationOnScreen:window:): use Xlib screen height instead of
+	monitor's. Added comment to code that should be probably removed
+	later.
+
+2020-02-03  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XWindowBuffer.m (windowBufferForWindow:depthInfo:): use
+	renamed	XGServer's `screenVisual` and `screenDepth` methods.
+
+	* Source/x11/XIMInputServer.m (initWithDelegate:name:):
+	use `+xDisplay` instead	of `xCurrentDisplay`. 
+	(clientWindowRect:): ditto.
+
+	* Headers/x11/XGServerWindow.h (_gswindow_device_t):
+	renamed `screen` to `screen_id`. `monitor_id` element was added -
+	this is an index of element in MonitorDevice array.
+	* Source/x11/XGServerWindow.m:
+	Removed `screen` parameter from methods which contains it in name.
+	Methods were renamed to remove `Screen` and `FromScreen`.
+	(_OSFrameToXFrame:for:): use `monitor_id` instead of `screen`.
+	(_OSFrameToXHints:for:): ditto.
+	(_XFrameToOSFrame:for:): ditto.
+	(_checkStyle:): use renamed methods and `screen_id` window structure
+	element.
+	(_rootWindow): renamed from _rootWindowForScreen:, use `defScreen`
+	instead of removed parameter `screen`, set window structure element
+	`monitor_id` to 0.
+	(_createBuffer:): use `screen_id` window structure.
+	(window::::): use renamed methods, `defScreen`, `screen_id` and
+	`monitor_id` window scructure elements.
+	(nativeWindow:::::): ditto.
+	(setbackgroundcolor::): ditto.
+	(miniwindow:): ditto.
+	(_createAppIconPixmaps): removed unused `screen` local variable, use
+	renamed `screenRContext` method.
+	(orderwindow:::): use `screen_id` window structure element.
+	(movewindow::): use `screen_id` window structure element as a parameter
+	to `boundsForScreen`.
+	(windowbounds:): ditto.
+	(windowlist): use renamed `_rootWindow` method.
+	(setMouseLocation:onScreen:): user renamed methods.
+	(_blankCursor): ditto.
+	(imagecursor:::): ditto
+	(recolorcursor:::): ditto.
+	(screenList): change with assumption that Xlib screen is one per application.
+	Failback code to RandR-related always creates arrays with one element (no
+	enumeration needed). Create `monitor` structure in failback (non-RandR) code.
+	Use `screen_id` MonitorDevice structure element to hold	Xlib screen ID.
+	(windowDepthForScreen:): assume that `screen` parameter is a Xlib screen ID,
+	simplify code - `screen` will be used with RandR or not.
+	(availableDepthsForScreen:): changed with assumption that `screen` is a index
+	of element in `monitors` structure.
+
+	* Source/x11/XGServerEvent.m:
+	use renamed methods and `screen_id` window structure element.
+
+	* Headers/x11/XGServer.h
+	Removed `screen` parameter from methods which contains it in name.
+	Methods were renamed to remove `Screen` and `FromScreen`.
+	(MonitorDevice): `screen_id` was added.
+
+	* Source/x11/XGServer.m:
+	use `screen_id` and rename mathods according to XGServer,h.
+	(_initXContext): initialize `monitors` array early here before first
+	use (calls to XGServerWindow methods).
+
+	* Source/x11/XGDragView.m (XDPY): use `monitor_id` in `boundForScreen:`
+	call.
+
+	* Source/cairo/XGCairoSurface.m: use `xDisplayRootWindow` XGServer's method.
+
+	* Source/art/ARTContext.m (setupDrawInfo:): use `xDisplayRootWindow`
+	XGServer's method.
+
+
 2020-01-31  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (boundsForScreen:): check for number of
 	XRandR's ouputs.
 
-2010-01-31  Riccardo Mottola <rm@gnu.org>
+2020-01-31  Riccardo Mottola <rm@gnu.org>
 
 	* Source/x11/XGServerWindow.m (boundsForScreen:):
 	Check if Xrandr did not succeed and provide fallback.
+
+2020-01-31  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (screenList): join RandR and non-RandR
+	code. Failback to Xlib generic method if any no RandR available or
+	RandR function call was unsuccessful. In Xlib generic method fill in
+	monitors array with values.
+	(boundsForScreen:): use values from cached `monitors` array since
+	-screenList fills it on both cases with or without RandR available.
+
+2020-01-30  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Headers/x11/XGServer.h: new structure `MonitorDevice` and ivar
+	`monitors`for holding cache of monitor's parameters (depth, resolution,
+	frame). New ivar `monitorsCount` - holds number of items in `monitors` for
+	RandR or X11 screen count otherwise.
+	* Source/x11/XGServerWindow.m (screenList): new method for RandR mode -
+	enumerates monitors and caches their parameters. Returns array of monitors'
+	indices to get access to monitors` items.
+	(boundsForScreen:): use cached `frame` parameter of specified monitor.
+	Use `monitorsCount` instead of ScreenCount().
+	(windowDepthForScreen:): renamed method parameter; append `x_` prefix to
+	`Screen *` internal variable; validate `screen` parameter value; use
+	`defScreen` for RandR enabled code.
+	(availableDepthsForScreen:): ditto.
+	(resolutionForScreen:): renamed method parameter; validate `screen`
+	parameter value.
+	(boundsForScreen:): renamed method parameter.
+
+	* Source/x11/XGServer.m (dealloc): free `monitors` if it was used.
 
 2020-01-26  Sergii Stoian  <stoyan255@gmail.com>
 

@@ -141,7 +141,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   XGDrawMechanism drawMechanism;
 }
 
-- initForDisplay: (Display *)dpy screen: (int)screen_number;
+- initForDisplay: (Display *)dpy screen: (int)screen_id;
 - (XGDrawMechanism) drawMechanism;
 - (RContext *) context;
 @end
@@ -173,7 +173,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   return attribs;
 }
 
-- initForDisplay: (Display *)dpy screen: (int)screen_number
+- initForDisplay: (Display *)dpy screen: (int)screen_id
 {
   RContextAttributes *attribs;
   XColor testColor;
@@ -182,7 +182,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
    /* Get the visual information */
   attribs = NULL;
   //attribs = [self _getXDefaults];
-  rcontext = RCreateContext(dpy, screen_number, attribs);
+  rcontext = RCreateContext(dpy, screen_id, attribs);
 
   /*
    * If we have shared memory available, only use it when the XGPS-Shm
@@ -291,7 +291,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
       drawMechanism = XGDM_PORTABLE;
     }
   NSDebugLLog(@"XGTrace", @"Draw mech %d for screen %d", drawMechanism,
-        screen_number);
+        screen_id);
   return self;
 }
 
@@ -377,14 +377,14 @@ _parse_display_name(NSString *name, int *dn, int *sn)
    Returns a pointer to the current X-Windows display variable for
    the current context.
 */
-+ (Display*) currentXDisplay
++ (Display *) xDisplay
 {
   return [(XGServer*)GSCurrentServer() xDisplay];
 }
 
 - (id) _initXContext
 {
-  int screen_number, display_number;
+  int screen_id, display_id;
   NSString *display_name;
 
   display_name = [server_info objectForKey: GSDisplayName];
@@ -436,13 +436,13 @@ _parse_display_name(NSString *name, int *dn, int *sn)
     }
 
   /* Parse display information */
-  _parse_display_name(display_name, &display_number, &screen_number);
+  _parse_display_name(display_name, &display_id, &screen_id);
   NSDebugLog(@"Opened display %@, display %d screen %d", 
-             display_name, display_number, screen_number);
+             display_name, display_id, screen_id);
   [server_info setObject: display_name forKey: GSDisplayName];
-  [server_info setObject: [NSNumber numberWithInt: display_number]
+  [server_info setObject: [NSNumber numberWithInt: display_id]
                   forKey: GSDisplayNumber];
-  [server_info setObject: [NSNumber numberWithInt: screen_number] 
+  [server_info setObject: [NSNumber numberWithInt: screen_id] 
                   forKey: GSScreenNumber];
 
   /* Setup screen*/
@@ -450,7 +450,11 @@ _parse_display_name(NSString *name, int *dn, int *sn)
     screenList = NSCreateMapTable(NSIntMapKeyCallBacks,
                                  NSObjectMapValueCallBacks, 20);
 
-  defScreen = screen_number;
+  defScreen = screen_id;
+
+  /* Enumerate monitors */
+  if (monitors == NULL)
+    [self screenList];
 
   XSetErrorHandler(XGErrorHandler);
 
@@ -503,6 +507,10 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   DESTROY(inputServer);
   [self _destroyServerWindows];
   NSFreeMapTable(screenList);
+  if (monitors != NULL)
+    {
+      NSZoneFree([self zone], monitors);
+    }
   XCloseDisplay(dpy);
   [super dealloc];
 }
@@ -515,46 +523,57 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   return dpy;
 }
 
-- (XGScreenContext *) _screenContextForScreen: (int)screen_number
+/**
+   Returns the root window of the display 
+*/
+- (Window) xDisplayRootWindow;
 {
-  int count = ScreenCount(dpy);
-  XGScreenContext *screen;
-
-  if (screen_number >= count)
-    {
-      [NSException raise: NSInvalidArgumentException
-                   format: @"Request for invalid screen"];
-    }
-
-  screen = NSMapGet(screenList, (void *)(uintptr_t)screen_number);
-  if (screen == NULL)
-    {
-      screen = [[XGScreenContext alloc] 
-                   initForDisplay: dpy screen: screen_number];
-      NSMapInsert(screenList, (void *)(uintptr_t)screen_number, (void *)screen);
-      RELEASE(screen);
-    }
-
-  return screen;
+  return RootWindow(dpy, defScreen);
 }
+
+/**
+   Returns the application root window, which is used for many things
+   such as window hints 
+*/
+- (Window) xAppRootWindow
+{
+  return generic.appRootWindow;
+}
+
+- (XGScreenContext *) _defaultScreenContext
+{
+  XGScreenContext *screenCtxt;
+
+  screenCtxt = NSMapGet(screenList, (void *)(uintptr_t)defScreen);
+  if (screenCtxt == NULL)
+    {
+      screenCtxt = [[XGScreenContext alloc] initForDisplay: dpy
+                                                    screen: defScreen];
+      NSMapInsert(screenList, (void *)(uintptr_t)defScreen, (void *)screenCtxt);
+      RELEASE(screenCtxt);
+    }
+
+  return screenCtxt;
+}
+
 
 /**
    Returns a pointer to a structure which describes aspects of the
    X windows display 
 */
-- (void *) xrContextForScreen: (int)screen_number
+- (void *) screenRContext
 {
-  return [[self _screenContextForScreen: screen_number] context];
+  return [[self _defaultScreenContext] context];
 }
 
-- (Visual *) visualForScreen: (int)screen_number
+- (Visual *) screenVisual
 {
-    return [[self _screenContextForScreen: screen_number] context]->visual;
+  return [[self _defaultScreenContext] context]->visual;
 }
 
-- (int) depthForScreen: (int)screen_number
+- (int) screenDepth
 {
-    return [[self _screenContextForScreen: screen_number] context]->depth;
+  return [[self _defaultScreenContext] context]->depth;
 }
 
 /**
@@ -562,9 +581,9 @@ _parse_display_name(NSString *name, int *dn, int *sn)
    the screen and how pixels should be drawn to the screen for maximum
    speed.
 */
-- (XGDrawMechanism) drawMechanismForScreen: (int)screen_number
+- (XGDrawMechanism) screenDrawMechanism
 {
- return [[self _screenContextForScreen: screen_number] drawMechanism];
+ return [[self _defaultScreenContext] drawMechanism];
 }
 
 // Could use NSSwapInt() instead
@@ -596,48 +615,18 @@ static int byte_order(void)
 /**
  * Used by the art backend to determine the drawing mechanism.
  */
-- (void) getForScreen: (int)screen_number pixelFormat: (int *)bpp_number 
+- (void) getForScreen: (int)screen_id pixelFormat: (int *)bpp_number 
                 masks: (int *)red_mask : (int *)green_mask : (int *)blue_mask
 {
   Visual *visual;
   XImage *i;
   int bpp;
-#if 0
-  XVisualInfo template;
-  XVisualInfo *visualInfo;
-  int numMatches;
-  
-  /*
-    We need a visual that we can generate pixel values for by ourselves.
-    Thus, we try to find a DirectColor or TrueColor visual. If that fails,
-    we use the default visual and hope that it's usable.
-  */
-  template.class = DirectColor;
-  visualInfo = XGetVisualInfo(dpy, VisualClassMask, &template, &numMatches);
-  if (!visualInfo)
-    {
-      template.class = TrueColor;
-      visualInfo = XGetVisualInfo(dpy, VisualClassMask, &template, &numMatches);
-    }
-  if (visualInfo)
-    {
-      visual = visualInfo->visual;
-      bpp = visualInfo->depth;
-      XFree(visualInfo);
-    }
-  else
-    {
-      visual = DefaultVisual(dpy, DefaultScreen(dpy));
-      bpp = DefaultDepth(dpy, DefaultScreen(dpy));
-    }
-#else
   RContext *context;
 
   // Better to get the used visual from the context.
-  context = [self xrContextForScreen: screen_number];
+  context = [self screenRContext];
   visual = context->visual;
   bpp = context->depth;
-#endif 
 
   i = XCreateImage(dpy, visual, bpp, ZPixmap, 0, NULL, 8, 8, 8, 0);
   bpp = i->bits_per_pixel;
@@ -674,42 +663,26 @@ static int byte_order(void)
 }
 
 /**
-   Returns the root window of the display 
-*/
-- (Window) xDisplayRootWindowForScreen: (int)screen_number;
-{
-  return RootWindow(dpy, screen_number);
-}
-
-/**
    Returns the closest color in the current colormap to the indicated
    X color
 */
-- (XColor) xColorFromColor: (XColor)color forScreen: (int)screen_number
+- (XColor) xColorFromColor: (XColor)color
 {
   Status ret;
   RColor rcolor;
-  RContext *context = [self xrContextForScreen: screen_number];
+  RContext *context = [self screenRContext];
   XAllocColor(dpy, context->cmap, &color);
   rcolor.red   = color.red / 256;
   rcolor.green = color.green / 256;
   rcolor.blue  = color.blue / 256;
   ret = RGetClosestXColor(context, &rcolor, &color);
   if (ret == False)
-    NSLog(@"Failed to alloc color (%d,%d,%d)\n",
-          (int)rcolor.red, (int)rcolor.green, (int)rcolor.blue);
+    {
+      NSLog(@"Failed to alloc color (%d,%d,%d)\n",
+            (int)rcolor.red, (int)rcolor.green, (int)rcolor.blue);
+    }
   return color;
 }
-
-/**
-   Returns the application root window, which is used for many things
-   such as window hints 
-*/
-- (Window) xAppRootWindow
-{
-  return generic.appRootWindow;
-}
-
 
 /**
   Wait for all contexts to finish processing. Only used with XDPS graphics.
@@ -801,7 +774,6 @@ static int byte_order(void)
 
 @end // XGServer (InputMethod)
 
-
 //==== Additional code for NSTextView =========================================
 //
 //  WARNING  This section is not genuine part of the XGServer implementation.
@@ -818,6 +790,11 @@ static int byte_order(void)
 
 #include <AppKit/NSClipView.h>
 #include <AppKit/NSTextView.h>
+
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wobjc-protocol-method-implementation"
+#endif
 
 @implementation NSTextView (InputMethod)
 
@@ -931,4 +908,8 @@ static int byte_order(void)
 }
 
 @end // NSTextView
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 //==== End: Additional Code for NSTextView ====================================
