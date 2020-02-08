@@ -129,7 +129,7 @@ static BOOL XGInitAtoms(Display *dpy)
 {
   if (font_info != NULL)
     {
-      XFreeFont([XGServer currentXDisplay], font_info);
+      XFreeFont([XGServer xDisplay], font_info);
     }
   [super dealloc];
 }
@@ -272,7 +272,7 @@ static BOOL XGInitAtoms(Display *dpy)
 
 - (BOOL) setupAttributes
 {
-  Display *xdpy = [XGServer currentXDisplay];
+  Display *xdpy = [XGServer xDisplay];
   NSString *reg;
   long height;      
   NSString *xfontname;

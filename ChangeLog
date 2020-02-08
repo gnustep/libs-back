@@ -1,5 +1,15 @@
 2020-02-08 Fred Kiefer <FredKiefer@gmx.de>
 
+	* Source/xlib/GSXftFontInfo.m,
+	* Source/xlib/XGFont.m,
+	* Source/xlib/XGFontManager.m,
+	* Source/xlib/XGFontSetFontInfo.m,
+	* Source/xlib/XGGState.m,
+	* Source/xlib/XGGeometry.m : Fixes after Xrandr change to get xlib
+	backend to compile again.
+
+2020-02-08 Fred Kiefer <FredKiefer@gmx.de>
+
 	* Source/x11/XGServerWindow.m (screenList): Clean up implementation.
 
 2020-02-07  Sergii Stoian  <stoyan255@gmail.com>

@@ -80,7 +80,7 @@ cache_name()
     {
       NSFileManager *mgr;
       BOOL flag;
-      Display *dpy = [XGServer currentXDisplay];
+      Display *dpy = [XGServer xDisplay];
       NSString *file_name;
       NSArray *paths;
       NSString *path = nil;
