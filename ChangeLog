@@ -1,3 +1,10 @@
+2020-02-11  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (screenList): Transform screen
+	origin into unflipped (OpenStep) coordinate system for XRandR capable
+	systems. After this change windows and screen will use the same start
+	of coordinate system for their origins.
+
 2020-02-07  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (_XFrameToOSFrame:for:): use Xlib

@@ -4464,6 +4464,8 @@ _computeDepth(int class, int bpp)
   XRROutputInfo       *output_info;
   XRRCrtcInfo         *crtc_info;
   int                 mi;
+  NSRect              frame;
+  int                 xScreenHeight = DisplayHeight(dpy, defScreen);
 
   screen_res = XRRGetScreenResources(dpy, RootWindow(dpy, defScreen));
   if (screen_res != NULL)
@@ -4483,8 +4485,13 @@ _computeDepth(int class, int bpp)
               monitors[mi].screen_id = defScreen;
               monitors[mi].depth = [self windowDepthForScreen: mi];
               monitors[mi].resolution = [self resolutionForScreen: defScreen];
-              monitors[mi].frame = NSMakeRect(crtc_info->x, crtc_info->y,
-                                              crtc_info->width, crtc_info->height);
+              /* Transform coordinates from Xlib (flipped) to OpenStep (unflippped). 
+                 Windows and screens should have the same coordinate system. */
+              frame = NSMakeRect(crtc_info->x,
+                                 xScreenHeight - crtc_info->height - crtc_info->y,
+                                 crtc_info->width,
+                                 crtc_info->height);
+              monitors[mi].frame = frame;
               /* Add monitor ID (index in monitors array).
                  Put primary monitor ID index 0 since NSScreen get this as main 
                  screen if application has no key window. */
