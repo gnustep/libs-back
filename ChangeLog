@@ -1,3 +1,9 @@
+2020-02-12  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (screenList): revert back to old code
+	logic: if XRandR available but can't get screens info for some reasons,
+	return array with one element (Xlib screen).
+
 2020-02-11  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (screenList): Transform screen
