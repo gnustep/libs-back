@@ -4465,6 +4465,7 @@ _computeDepth(int class, int bpp)
       NSMutableArray *tmpScreens;
       int             i;
       int             mi;
+      int             xScreenHeight = DisplayHeight(dpy, defScreen);
 
       monitorsCount = screen_res->noutput;
       tmpScreens = [NSMutableArray arrayWithCapacity: monitorsCount];
@@ -4485,8 +4486,12 @@ _computeDepth(int class, int bpp)
               monitors[mi].screen_id = defScreen;
               monitors[mi].depth = [self windowDepthForScreen: mi];
               monitors[mi].resolution = [self resolutionForScreen: defScreen];
-              monitors[mi].frame = NSMakeRect(crtc_info->x, crtc_info->y,
-                                              crtc_info->width, crtc_info->height);
+              /* Transform coordinates from Xlib (flipped) to OpenStep (unflippped). 
+                 Windows and screens should have the same coordinate system. */
+              monitors[mi].frame = NSMakeRect(crtc_info->x,
+                                              xScreenHeight - crtc_info->height - crtc_info->y,
+                                              crtc_info->width,
+                                              crtc_info->height);
               /* Add monitor ID (index in monitors array).
                  Put primary monitor ID at index 0 since NSScreen get this as main 
                  screen if application has no key window. */
