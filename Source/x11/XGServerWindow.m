@@ -4448,10 +4448,6 @@ _computeDepth(int class, int bpp)
    We map XRandR monitors (outputs) to NSScreen. */
 - (NSArray *)screenList
 {
-  NSArray        *screens;
-  NSMutableArray *tmpScreens;
-  int            i;
-
   monitorsCount = 0;
   if (monitors != NULL) {
     NSZoneFree([self zone], monitors);
@@ -4460,26 +4456,30 @@ _computeDepth(int class, int bpp)
   
 #ifdef HAVE_XRANDR
   XRRScreenResources  *screen_res;
-  RROutput            primary_output;
-  XRROutputInfo       *output_info;
-  XRRCrtcInfo         *crtc_info;
-  int                 mi;
-  NSRect              frame;
-  int                 xScreenHeight = DisplayHeight(dpy, defScreen);
+  Window               root = [self xDisplayRootWindow];
 
-  screen_res = XRRGetScreenResources(dpy, RootWindow(dpy, defScreen));
+  screen_res = XRRGetScreenResources(dpy, root);
   if (screen_res != NULL)
     {
+      RROutput        primary_output;
+      NSMutableArray *tmpScreens;
+      int             i;
+      int             mi;
+
       monitorsCount = screen_res->noutput;
       tmpScreens = [NSMutableArray arrayWithCapacity: monitorsCount];
       monitors = NSZoneMalloc([self zone], monitorsCount * sizeof(MonitorDevice));
+      primary_output = XRRGetOutputPrimary(dpy, root);
 
-      primary_output = XRRGetOutputPrimary(dpy, [self xDisplayRootWindow]);
       for (i = 0, mi = 0; i < screen_res->noutput; i++)
         {
+          XRROutputInfo *output_info;
+
           output_info = XRRGetOutputInfo(dpy, screen_res, screen_res->outputs[i]);
           if (output_info->crtc)
             {
+              XRRCrtcInfo *crtc_info;
+
               crtc_info = XRRGetCrtcInfo(dpy, screen_res, output_info->crtc);
               
               monitors[mi].screen_id = defScreen;
@@ -4493,7 +4493,7 @@ _computeDepth(int class, int bpp)
                                  crtc_info->height);
               monitors[mi].frame = frame;
               /* Add monitor ID (index in monitors array).
-                 Put primary monitor ID index 0 since NSScreen get this as main 
+                 Put primary monitor ID at index 0 since NSScreen get this as main 
                  screen if application has no key window. */
               if (screen_res->outputs[i] == primary_output)
                 {
@@ -4503,31 +4503,28 @@ _computeDepth(int class, int bpp)
                 {
                   [tmpScreens addObject: [NSNumber numberWithInt: mi]];
                 }
+              XRRFreeCrtcInfo(crtc_info);
               mi++;
             }
+          XRRFreeOutputInfo(output_info);
         }
       XRRFreeScreenResources(screen_res);
-      screens = [NSArray arrayWithArray: tmpScreens];
+      return [NSArray arrayWithArray: tmpScreens];
     }
 #endif
 
-  if (monitorsCount == 0)
-    {
-      /* It is assumed that there is always only one screen per application. 
-         We only need to know its number and it was saved in _initXContext as
-         `defScreen`. */
-      monitorsCount = 1;
-      monitors = NSZoneMalloc([self zone], sizeof(MonitorDevice));
-      monitors[0].screen_id = defScreen;
-      monitors[0].depth = [self windowDepthForScreen: 0];
-      monitors[0].resolution = [self resolutionForScreen: defScreen];
-      monitors[0].frame = NSMakeRect(0, 0,
-                                     DisplayWidth(dpy, defScreen),
-                                     DisplayHeight(dpy, defScreen));
-      screens = [NSArray arrayWithObject: [NSNumber numberWithInt: defScreen]];
-    }
-  
-  return screens;
+  /* It is assumed that there is always only one screen per application. 
+     We only need to know its number and it was saved in _initXContext as
+     `defScreen`. */
+  monitorsCount = 1;
+  monitors = NSZoneMalloc([self zone], sizeof(MonitorDevice));
+  monitors[0].screen_id = defScreen;
+  monitors[0].depth = [self windowDepthForScreen: 0];
+  monitors[0].resolution = [self resolutionForScreen: defScreen];
+  monitors[0].frame = NSMakeRect(0, 0,
+                                 DisplayWidth(dpy, defScreen),
+                                 DisplayHeight(dpy, defScreen));
+  return [NSArray arrayWithObject: [NSNumber numberWithInt: 0]];
 }
 
 // `screen` is a monitor index not X11 screen

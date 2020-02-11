@@ -46,7 +46,7 @@
 XRectangle
 accessibleRectForWindow (gswindow_device_t* win)
 {
-    Display* xdpy = [XGServer currentXDisplay];
+    Display* xdpy = [XGServer xDisplay];
     Window root;
     Window ignoreWindow;
     int x, y;

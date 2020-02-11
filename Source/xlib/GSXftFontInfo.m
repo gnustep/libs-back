@@ -102,7 +102,7 @@
 - (void) dealloc
 {
   if (font_info != NULL)
-    XftFontClose([XGServer currentXDisplay], (XftFont *)font_info);
+    XftFontClose([XGServer xDisplay], (XftFont *)font_info);
   [super dealloc];
 }
 
@@ -113,7 +113,7 @@
   XftChar16 str[len]; 
 
   [string getCharacters: (unichar*)str];
-  XftTextExtents16 ([XGServer currentXDisplay],
+  XftTextExtents16 ([XGServer xDisplay],
 		    font_info,
 		    str, 
 		    len,
@@ -133,7 +133,7 @@
       buf[i] = glyphs[i];
     }
 
-  XftTextExtents16 ([XGServer currentXDisplay],
+  XftTextExtents16 ([XGServer xDisplay],
 		    font_info,
 		    buf,
 		    len,
@@ -193,7 +193,7 @@
 
 - (BOOL) glyphIsEncoded: (NSGlyph)glyph
 {
-  return XftGlyphExists([XGServer currentXDisplay],
+  return XftGlyphExists([XGServer xDisplay],
 			(XftFont *)font_info, glyph);
 }
 
@@ -229,7 +229,7 @@
 /*
 - (CGFloat) pointSize
 {
-  Display	*xdpy = [XGServer currentXDisplay];
+  Display	*xdpy = [XGServer xDisplay];
 
   return XGFontPointSize(xdpy, font_info);
 }
@@ -302,14 +302,14 @@
 
 #ifdef HAVE_UTF8
   if (mostCompatibleStringEncoding == NSUTF8StringEncoding)
-    XftTextExtentsUtf8([XGServer currentXDisplay],
+    XftTextExtentsUtf8([XGServer xDisplay],
                        font_info,
                        (XftChar8 *)s,
                        len,
                        &extents);
   else
 #endif
-    XftTextExtents8([XGServer currentXDisplay],
+    XftTextExtents8([XGServer xDisplay],
                     font_info,
                     (XftChar8*)s, 
                     len,
@@ -438,7 +438,7 @@ static FT_Outline_Funcs bezierpath_funcs = {
 
       glyph = glyphs[i];
       // FIXME: Should do this conversion in the glyph creation!
-      glyph = XftCharIndex([XGServer currentXDisplay], 
+      glyph = XftCharIndex([XGServer xDisplay], 
                            (XftFont *)font_info, glyph);
      
       if (FT_Load_Glyph(face, glyph, load_flags))
@@ -477,7 +477,7 @@ static FT_Outline_Funcs bezierpath_funcs = {
 
 - (BOOL) setupAttributes
 {
-  Display *xdpy = [XGServer currentXDisplay];
+  Display *xdpy = [XGServer xDisplay];
   int defaultScreen = DefaultScreen(xdpy);
 
   GSXftFaceInfo *realFont = [GSXftFontEnumerator fontWithName: fontName];
@@ -547,7 +547,7 @@ static FT_Outline_Funcs bezierpath_funcs = {
 {
   static XGlyphInfo glyphInfo;
 
-  XftTextExtents32 ([XGServer currentXDisplay],
+  XftTextExtents32 ([XGServer xDisplay],
                     (XftFont *)font_info,
                     &glyph,
                     1,
