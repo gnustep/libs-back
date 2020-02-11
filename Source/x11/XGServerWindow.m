@@ -4448,6 +4448,9 @@ _computeDepth(int class, int bpp)
    We map XRandR monitors (outputs) to NSScreen. */
 - (NSArray *)screenList
 {
+  NSMutableArray *tmpScreens;
+  NSArray        *screens;
+  
   monitorsCount = 0;
   if (monitors != NULL) {
     NSZoneFree([self zone], monitors);
@@ -4462,7 +4465,6 @@ _computeDepth(int class, int bpp)
   if (screen_res != NULL)
     {
       RROutput        primary_output;
-      NSMutableArray *tmpScreens;
       int             i;
       int             mi;
       int             xScreenHeight = DisplayHeight(dpy, defScreen);
@@ -4509,22 +4511,27 @@ _computeDepth(int class, int bpp)
           XRRFreeOutputInfo(output_info);
         }
       XRRFreeScreenResources(screen_res);
-      return [NSArray arrayWithArray: tmpScreens];
+      screens = [NSArray arrayWithArray: tmpScreens];
     }
 #endif
 
   /* It is assumed that there is always only one screen per application. 
      We only need to know its number and it was saved in _initXContext as
      `defScreen`. */
-  monitorsCount = 1;
-  monitors = NSZoneMalloc([self zone], sizeof(MonitorDevice));
-  monitors[0].screen_id = defScreen;
-  monitors[0].depth = [self windowDepthForScreen: 0];
-  monitors[0].resolution = [self resolutionForScreen: defScreen];
-  monitors[0].frame = NSMakeRect(0, 0,
-                                 DisplayWidth(dpy, defScreen),
-                                 DisplayHeight(dpy, defScreen));
-  return [NSArray arrayWithObject: [NSNumber numberWithInt: 0]];
+  if (monitorsCount == 0)
+    {
+      monitorsCount = 1;
+      monitors = NSZoneMalloc([self zone], sizeof(MonitorDevice));
+      monitors[0].screen_id = defScreen;
+      monitors[0].depth = [self windowDepthForScreen: 0];
+      monitors[0].resolution = [self resolutionForScreen: defScreen];
+      monitors[0].frame = NSMakeRect(0, 0,
+                                     DisplayWidth(dpy, defScreen),
+                                     DisplayHeight(dpy, defScreen));
+      screens = [NSArray arrayWithObject: [NSNumber numberWithInt: defScreen]];
+    }
+  
+  return screens;
 }
 
 // `screen` is a monitor index not X11 screen
