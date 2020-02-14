@@ -1,3 +1,8 @@
+2020-02-14 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (screenList): Clean up
+	implementation again.
+
 2020-02-12  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (screenList): revert back to old code
