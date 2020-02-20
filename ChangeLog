@@ -1,3 +1,17 @@
+2020-02-20  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Headers/x11/XGServer.h (GSDisplayServer): added new ivar xScreenSize
+	to hold Xlib screen size dimensions.
+
+	* Source/x11/XGServerWindow.m: 
+	(_OSFrameToXFrame:for:): use xScreenSize instead of DisplayHeight.
+	(_OSFrameToXHints:for:): ditto.
+	(_XFrameToOSFrame:for:): ditto.
+	(movewindow::): ditto.
+	(_screenSize): new static function to get dimensions of Xlib screen from
+	root window.
+	(screenList): use xScreenSize instead of DisplayHeight/DisplayWidth.
+
 2020-02-14 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (screenList): Clean up

@@ -92,7 +92,6 @@ static NSMapTable *windowtags = NULL;
 /* Track used window numbers */
 static int		last_win_num = 0;
 
-
 @interface NSCursor (BackendPrivate)
 - (void *)_cid;
 @end
@@ -509,7 +508,7 @@ BOOL AtomPresentAndPointsToItself(Display *dpy, Atom atom, Atom type)
   x.size.height = o.size.height - t - b;
   x.origin.x = o.origin.x + l;
   x.origin.y = o.origin.y + o.size.height - t;
-  x.origin.y = DisplayHeight(dpy, defScreen) - x.origin.y;
+  x.origin.y = xScreenSize.height - x.origin.y;
   NSDebugLLog(@"Frame", @"O2X %lu, %x, %@, %@", win->number, style,
     NSStringFromRect(o), NSStringFromRect(x));
   return x;
@@ -534,7 +533,7 @@ BOOL AtomPresentAndPointsToItself(Display *dpy, Atom atom, Atom type)
   x.size.height = o.size.height - t - b;
   x.origin.x = o.origin.x;
   x.origin.y = o.origin.y + o.size.height;
-  x.origin.y = DisplayHeight(dpy, defScreen) - x.origin.y;
+  x.origin.y = xScreenSize.height - x.origin.y;
   NSDebugLLog(@"Frame", @"O2H %lu, %x, %@, %@", win->number, style,
     NSStringFromRect(o), NSStringFromRect(x));
   return x;
@@ -576,7 +575,7 @@ BOOL AtomPresentAndPointsToItself(Display *dpy, Atom atom, Atom type)
 
   [self styleoffsets: &l : &r : &t : &b : style : win->ident];
   o = x;
-  o.origin.y = DisplayHeight(dpy, defScreen) - x.origin.y;
+  o.origin.y = xScreenSize.height - x.origin.y;
   o.origin.y = o.origin.y - x.size.height - b;
   o.origin.x -= l;
   o.size.width += l + r;
@@ -3192,8 +3191,8 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
     }
 
   window->siz_hints.x = (int)loc.x;
-  window->siz_hints.y = (int)(DisplayHeight(dpy, defScreen) -
-			      loc.y - window->siz_hints.height);
+  window->siz_hints.y = (int)(xScreenSize.height
+                              - loc.y - window->siz_hints.height);
   XMoveWindow (dpy, window->ident, window->siz_hints.x, window->siz_hints.y);
   setNormalHints(dpy, window);
 }
@@ -4436,6 +4435,27 @@ _computeDepth(int class, int bpp)
   return depth;
 }
 
+static NSSize
+_screenSize(Display *dpy, int screen)
+{
+  int          x, y;
+  unsigned int width, height, border_width, depth;
+  Window       root_window;
+  NSSize       scrSize;
+
+  XGetGeometry(dpy, RootWindow(dpy, screen), &root_window,
+               &x, &y, &width, &height, &border_width, &depth);
+  scrSize = NSMakeSize(width, height);
+  
+  if (scrSize.height == 0)
+    scrSize.height = DisplayHeight(dpy, screen);
+  if (scrSize.width == 0)
+    scrSize.width = DisplayWidth(dpy, screen);
+
+  return scrSize;
+}
+  
+
 /* This method assumes that we deal with one X11 screen - `defScreen`.
    Basically it means that we have DISPLAY variable set to `:0.0`.
    Where both digits have artbitrary values, but it defines once on
@@ -4448,8 +4468,8 @@ _computeDepth(int class, int bpp)
    We map XRandR monitors (outputs) to NSScreen. */
 - (NSArray *)screenList
 {
-  int xScreenHeight = DisplayHeight(dpy, defScreen);
-  
+  xScreenSize = _screenSize(dpy, defScreen);
+
   monitorsCount = 0;
   if (monitors != NULL) {
     NSZoneFree([self zone], monitors);
@@ -4488,10 +4508,11 @@ _computeDepth(int class, int bpp)
                   monitors[mi].resolution = [self resolutionForScreen: defScreen];
                   /* Transform coordinates from Xlib (flipped) to OpenStep (unflippped). 
                      Windows and screens should have the same coordinate system. */
-                  monitors[mi].frame = NSMakeRect(crtc_info->x,
-                                                  xScreenHeight - crtc_info->height - crtc_info->y,
-                                                  crtc_info->width,
-                                                  crtc_info->height);
+                  monitors[mi].frame =
+                    NSMakeRect(crtc_info->x,
+                               xScreenSize.height - crtc_info->height - crtc_info->y,
+                               crtc_info->width,
+                               crtc_info->height);
                   /* Add monitor ID (index in monitors array).
                      Put primary monitor ID at index 0 since NSScreen get this as main 
                      screen if application has no key window. */
@@ -4533,9 +4554,7 @@ _computeDepth(int class, int bpp)
   monitors[0].screen_id = defScreen;
   monitors[0].depth = [self windowDepthForScreen: 0];
   monitors[0].resolution = [self resolutionForScreen: defScreen];
-  monitors[0].frame = NSMakeRect(0, 0,
-                                 DisplayWidth(dpy, defScreen),
-                                 xScreenHeight);
+  monitors[0].frame = NSMakeRect(0, 0, xScreenSize.width, xScreenSize.height);
   return [NSArray arrayWithObject: [NSNumber numberWithInt: defScreen]];
 }
 
