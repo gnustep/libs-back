@@ -2832,14 +2832,29 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 
   rep = getStandardBitmap([NSApp applicationIconImage]);
   if (rep == nil)
-    return 0;
+    {
+      return 0;
+    }
 
   rcontext = [self screenRContext];
   width = [rep pixelsWide];
   height = [rep pixelsHigh];
   colors = [rep samplesPerPixel];
 
+  if (rcontext->depth != 32)
+    {
+      NSLog(@"Unsupported context depth %d", rcontext->depth);
+      return 0;
+    }
+
   rxImage = RCreateXImage(rcontext, rcontext->depth, width, height);
+  if (rxImage->image->bytes_per_line != 4 * width)
+    {
+      NSLog(@"bytes_per_line %d does not match width %d", rxImage->image->bytes_per_line, width);
+      RDestroyXImage(rcontext, rxImage);
+      return 0;
+    }
+
   swapColors((unsigned char *)rxImage->image->data, rep);
   
   xIconPixmap = XCreatePixmap(dpy, rcontext->drawable,
@@ -2891,21 +2906,23 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 	  gen_hints.window_group = ROOT;
 	  gen_hints.icon_window = window->ident;
 
-	  if (!didCreatePixmaps)
-	    {
-	      [self _createAppIconPixmaps];
-	    }
-
-	  if (xIconPixmap)
-	    {
-	      gen_hints.flags |= IconPixmapHint;
-	      gen_hints.icon_pixmap = xIconPixmap;
-	    }
-	  if (xIconMask)
-	    {
-	      gen_hints.flags |= IconMaskHint;
-	      gen_hints.icon_mask = xIconMask;
-	    }
+          if ((generic.wm & XGWM_WINDOWMAKER) != 0)
+            {
+              if (!didCreatePixmaps)
+                {
+                  [self _createAppIconPixmaps];
+                }
+              if (xIconPixmap)
+                {
+                  gen_hints.flags |= IconPixmapHint;
+                  gen_hints.icon_pixmap = xIconPixmap;
+                }
+              if (xIconMask)
+                {
+                  gen_hints.flags |= IconMaskHint;
+                  gen_hints.icon_mask = xIconMask;
+                }
+            }
 
 	  XSetWMHints(dpy, ROOT, &gen_hints);
 	}

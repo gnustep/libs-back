@@ -1,9 +1,16 @@
+2020-02-21 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_createAppIconPixmaps): Made
+	preconditions of new code explicit.
+	* Source/x11/XGServerWindow.m (-orderwindow:::): Set icon pixmap
+	only for WindowMaker.
+
 2020-02-20  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Headers/x11/XGServer.h (GSDisplayServer): added new ivar xScreenSize
 	to hold Xlib screen size dimensions.
 
-	* Source/x11/XGServerWindow.m: 
+	* Source/x11/XGServerWindow.m:
 	(_OSFrameToXFrame:for:): use xScreenSize instead of DisplayHeight.
 	(_OSFrameToXHints:for:): ditto.
 	(_XFrameToOSFrame:for:): ditto.
