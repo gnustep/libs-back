@@ -4,6 +4,38 @@
 	as current window frame instead of NSWindow's frame because
 	`_frame` ivar may be already changed to desired value.
 
+2020-02-21 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_createAppIconPixmaps): Made
+	preconditions of new code explicit.
+	* Source/x11/XGServerWindow.m (-orderwindow:::): Set icon pixmap
+	only for WindowMaker.
+
+2020-02-20  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Headers/x11/XGServer.h (GSDisplayServer): added new ivar xScreenSize
+	to hold Xlib screen size dimensions.
+
+	* Source/x11/XGServerWindow.m:
+	(_OSFrameToXFrame:for:): use xScreenSize instead of DisplayHeight.
+	(_OSFrameToXHints:for:): ditto.
+	(_XFrameToOSFrame:for:): ditto.
+	(movewindow::): ditto.
+	(_screenSize): new static function to get dimensions of Xlib screen from
+	root window.
+	(screenList): use xScreenSize instead of DisplayHeight/DisplayWidth.
+
+2020-02-14 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (screenList): Clean up
+	implementation again.
+
+2020-02-12  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (screenList): revert back to old code
+	logic: if XRandR available but can't get screens info for some reasons,
+	return array with one element (Xlib screen).
+
 2020-02-11  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (screenList): Transform screen
