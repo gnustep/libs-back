@@ -3219,7 +3219,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   NSDebugLLog(@"XGTrace", @"DPSplacewindow: %@ : %d", NSStringFromRect(rect),
 	      win);
   nswin  = GSWindowWithNumber(win);
-  frame = [nswin frame];
+  frame = [self _XFrameToOSFrame: window->xframe for: window];
   if (NSEqualRects(rect, frame) == YES)
     return;
   if (NSEqualSizes(rect.size, frame.size) == NO)
