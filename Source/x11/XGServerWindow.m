@@ -3234,8 +3234,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 
   NSDebugLLog(@"XGTrace", @"DPSplacewindow: %@ : %d", NSStringFromRect(rect),
 	      win);
-  nswin  = GSWindowWithNumber(win);
-  frame = [nswin frame];
+  frame = [self _XFrameToOSFrame: window->xframe for: window];
   if (NSEqualRects(rect, frame) == YES)
     return;
   if (NSEqualSizes(rect.size, frame.size) == NO)
@@ -3285,6 +3284,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
      with min/max sizes and resizability in some window managers.  */
   setNormalHints(dpy, window);
 
+  nswin = GSWindowWithNumber(win);
   if (resize == YES)
     {
       NSDebugLLog(@"Moving", @"Fake size %lu - %@", window->number,

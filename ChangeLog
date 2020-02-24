@@ -1,3 +1,9 @@
+2020-02-24  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (placewindow::): use window->xframe
+	as current window frame instead of NSWindow's frame because
+	`_frame` ivar may be already changed to desired value.
+
 2020-02-21 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-_createAppIconPixmaps): Made
