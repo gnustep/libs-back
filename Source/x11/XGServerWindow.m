@@ -3219,7 +3219,6 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   NSEvent *e;
   NSRect xVal;
   NSRect xHint;
-  NSRect frame;
   gswindow_device_t *window;
   NSWindow *nswin;
   BOOL resize = NO;
@@ -3234,18 +3233,23 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 
   NSDebugLLog(@"XGTrace", @"DPSplacewindow: %@ : %d", NSStringFromRect(rect),
 	      win);
-  frame = [self _XFrameToOSFrame: window->xframe for: window];
-  if (NSEqualRects(rect, frame) == YES)
-    return;
-  if (NSEqualSizes(rect.size, frame.size) == NO)
+  if (NSEqualRects(rect, window->osframe) == YES)
+    {
+      return;
+    }
+
+  if (NSEqualSizes(rect.size, window->osframe.size) == NO)
     {
       resize = YES;
       move = YES;
     }
-  if (NSEqualPoints(rect.origin, frame.origin) == NO)
+  else if (NSEqualPoints(rect.origin, window->osframe.origin) == NO)
     {
       move = YES;
     }
+
+  // Cache OpenStep window frame for future comparison
+  window->osframe = rect;
 
   /* Temporarily remove minimum and maximum window size hints to make
    * the window resizable programatically.

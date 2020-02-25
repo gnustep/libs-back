@@ -1,3 +1,15 @@
+2020-02-26  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Headers/x11/XGServerWindow.h (_gswindow_device_t): new structure
+	memeber was added - `osframe`. This member intended to hold cached frame
+	of windows in OpenStep coordinate system. This makes backend more
+	reliable to the cases when gui changes NSWindow's _frame ivar before
+	call to backend methods which make windows placement.
+
+	* Source/x11/XGServerWindow.m (placewindow::): use `osframe` structure
+	member to decide if window change position or size. Removed usage of
+	temporary `frame` (used only for making desicion).
+
 2020-02-24  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (placewindow::): use window->xframe
