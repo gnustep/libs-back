@@ -3233,7 +3233,8 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 
   NSDebugLLog(@"XGTrace", @"DPSplacewindow: %@ : %d", NSStringFromRect(rect),
 	      win);
-  if (NSEqualRects(rect, window->osframe) == YES)
+  if (NSEqualRects(rect, window->osframe) == YES
+      && window->map_state == IsViewable)
     {
       return;
     }

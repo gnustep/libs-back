@@ -1,3 +1,11 @@
+2020-03-01  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (placewindow::): call XMoveResizeWindow
+	even if specified frame is equal current. No events will be send to
+	-gui for this case but X11 window position will be refreshed. It fixes
+	misplacement of image in slideImage:from:to: (second and all subsequent
+	calls).
+
 2020-02-26  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Headers/x11/XGServerWindow.h (_gswindow_device_t): new structure
