@@ -540,6 +540,11 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   return generic.appRootWindow;
 }
 
+- (NSSize) xScreenSize
+{
+  return xScreenSize;
+}
+
 - (XGScreenContext *) _defaultScreenContext
 {
   XGScreenContext *screenCtxt;

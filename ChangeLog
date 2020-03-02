@@ -1,3 +1,11 @@
+2020-03-03  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Headers/x11/XGServer.h,
+	* Source/x11/XGServer.m (xScreenSize): new primitive method.
+
+	* Source/x11/XGDragView.m (XY): use new primitive method to get Xlib
+	screen height. Fixes broken DnD on vertically aligned monitors.
+
 2020-03-01  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (placewindow::): call XMoveResizeWindow
