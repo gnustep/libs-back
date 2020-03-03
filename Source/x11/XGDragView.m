@@ -54,7 +54,7 @@
 
 #define	DRAGWINDEV [XGServer _windowWithTag: [_window windowNumber]]
 #define	XX(P)	(P.x)
-#define	XY(P)	([GSCurrentServer() boundsForScreen: DRAGWINDEV->monitor_id].size.height - P.y)
+#define	XY(P)	([(XGServer *)GSCurrentServer() xScreenSize].height - P.y)
 
 @interface XGRawWindow : NSWindow
 @end
