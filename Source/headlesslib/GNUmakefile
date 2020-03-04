@@ -26,10 +26,10 @@ include $(GNUSTEP_MAKEFILES)/common.make
 
 include ../../config.make
 
-SUBPROJECT_NAME=cairo
+SUBPROJECT_NAME=headlesslib
 
 # The Objective-C source files to be compiled
-cairo_OBJC_FILES = CairoSurface.m \
+headlesslib_OBJC_FILES = CairoSurface.m \
   CairoFontInfo.m \
   CairoGState.m \
   CairoContext.m \
@@ -37,37 +37,31 @@ cairo_OBJC_FILES = CairoSurface.m \
   CairoFaceInfo.m \
   CairoPSSurface.m \
   CairoPDFSurface.m \
-  ../fontconfig/FCFaceInfo.m \
-  ../fontconfig/FCFontEnumerator.m \
-  ../fontconfig/FCFontInfo.m \
+
 
 
 ifeq ($(BUILD_SERVER),x11)
   ifeq ($(WITH_GLITZ),yes)
-    cairo_OBJC_FILES += XGCairoGlitzSurface.m
+    headlesslib_OBJC_FILES += XGCairoGlitzSurface.m
   else
-    cairo_OBJC_FILES += XGCairoSurface.m XGCairoXImageSurface.m XGCairoModernSurface.m
+    headlesslib_OBJC_FILES += XGCairoSurface.m XGCairoXImageSurface.m XGCairoModernSurface.m
   endif
 else
   ifeq ($(BUILD_SERVER),xheadless)
-    ifeq ($(WITH_GLITZ),yes)
-      cairo_OBJC_FILES += XGCairoGlitzSurface.m
-    else
-      cairo_OBJC_FILES += XGCairoSurface.m XGCairoXImageSurface.m XGCairoModernSurface.m
-    endif
+    headlesslib_OBJC_FILES += XGCairoSurface.m XGCairoXImageSurface.m XGCairoModernSurface.m
   else
     ifeq ($(BUILD_GRAPHICS),cairo)
       ifeq ($(WITH_GLITZ),yes)
-        cairo_OBJC_FILES += Win32CairoGlitzSurface.m
+        headlesslib_OBJC_FILES += Win32CairoGlitzSurface.m
       else
-        cairo_OBJC_FILES += Win32CairoSurface.m Win32CairoGState.m
+        headlesslib_OBJC_FILES += Win32CairoSurface.m Win32CairoGState.m
         # Win32CairoXImageSurface.m 
       endif
     endif
   endif
 endif
 
-cairo_OBJC_FILES += 
+headlesslib_OBJC_FILES += 
 
 -include GNUmakefile.preamble
 

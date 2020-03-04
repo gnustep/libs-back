@@ -35,7 +35,7 @@
 + (void) initializeBackend;
 @end
 
-#if BUILD_SERVER == SERVER_x11
+#if (BUILD_SERVER == SERVER_x11) || (BUILD_SERVER == SERVER_xheadless)
 #include <x11/XGServer.h>
 @interface XGServer (Initialize)
 + (void) initializeBackend;
@@ -61,6 +61,8 @@
   /* Load in only one server */
 #if BUILD_SERVER == SERVER_x11
   [XGServer initializeBackend];
+#elif BUILD_SERVER == SERVER_xheadless
+  [XGServer initializeBackend];
 #elif BUILD_SERVER == SERVER_win32
   [WIN32Server initializeBackend];
 #else
@@ -83,6 +85,8 @@
     context = @"ARTContext";
 #elif (BUILD_GRAPHICS==GRAPHICS_xlib)
     context = @"XGContext";
+#elif (BUILD_GRAPHICS==GRAPHICS_headlesslib)
+    context = @"CairoContext";
 #elif (BUILD_GRAPHICS==GRAPHICS_winlib)
     context = @"WIN32Context";
 #elif (BUILD_GRAPHICS==GRAPHICS_cairo)
