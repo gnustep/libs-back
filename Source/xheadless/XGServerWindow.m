@@ -647,14 +647,6 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 }
 
 /* Cursor Ops */
-
-static char xgps_blank_cursor_bits [] = {
-0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
-static Cursor xgps_blank_cursor = None;
 static BOOL   cursor_hidden = NO;
 
 - (Cursor) _blankCursor
@@ -728,11 +720,6 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
 
 - (void) freecursor: (void*) cid
 {
-}
-
-static NSWindowDepth _computeDepth(int class, int bpp)
-{
-  return 0;
 }
 
 - (NSArray *)screenList
