@@ -1,7 +1,10 @@
 /*
-   Copyright (C) 2004 Free Software Foundation, Inc.
+   HeadlessContext.h
+ 
+   Copyright (C) 2003 Free Software Foundation, Inc.
 
-   Author:  Banlu Kemiyatorn <object at gmail dot com>
+   August 31, 2003
+   Written by Banlu Kemiyatorn <id at project-ile dot net>
 
    This file is part of GNUstep.
 
@@ -22,25 +25,14 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef CairoGState_h
-#define CairoGState_h
+#ifndef HeadlessContext_h
+#define HeadlessContext_h
 
-#include "gsc/GSGState.h"
+#include "gsc/GSContext.h"
 
-
-@class CairoSurface;
-
-@interface CairoGState : GSGState
+@interface HeadlessContext : GSContext
 {
-  @public
-    void *_ct;
-    CairoSurface *_surface;
 }
-
-- (void) GSCurrentSurface: (CairoSurface **)surface : (int *)x : (int *)y;
-- (void) GSSetSurface: (CairoSurface *)surface : (int)x : (int)y;
-
-- (void) showPage;
 @end
 
 #endif

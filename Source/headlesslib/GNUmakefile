@@ -31,8 +31,8 @@ SUBPROJECT_NAME=headlesslib
 # The Objective-C source files to be compiled
 headlesslib_OBJC_FILES = CairoSurface.m \
   CairoFontInfo.m \
-  CairoGState.m \
-  CairoContext.m \
+  HeadlessGState.m \
+  HeadlessContext.m \
   CairoFontEnumerator.m \
   CairoFaceInfo.m \
   CairoPSSurface.m \

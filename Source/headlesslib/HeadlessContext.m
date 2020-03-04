@@ -1,5 +1,5 @@
 /*
-   CairoContext.m
+   HeadlessContext.m
 
    Copyright (C) 2003 Free Software Foundation, Inc.
 
@@ -30,8 +30,8 @@
 #include <AppKit/NSPrintInfo.h>
 #include <AppKit/NSPrintOperation.h>
 
-#include "headlesslib/CairoGState.h"
-#include "headlesslib/CairoContext.h"
+#include "headlesslib/HeadlessGState.h"
+#include "headlesslib/HeadlessContext.h"
 #include "headlesslib/CairoSurface.h"
 #include "headlesslib/CairoPSSurface.h"
 #include "headlesslib/CairoPDFSurface.h"
@@ -39,14 +39,14 @@
 #include "headlesslib/CairoFontEnumerator.h"
 #include "config.h"
 
-#define CGSTATE ((CairoGState *)gstate)
+#define CGSTATE ((HeadlessGState *)gstate)
 
 
-#define _CAIRO_GSTATE_CLASSNAME CairoGState
+#define _CAIRO_GSTATE_CLASSNAME HeadlessGState
 #define _CAIRO_SURFACE_CLASSNAME XGCairoModernSurface
 #include "headlesslib/XGCairoModernSurface.h"
 
-@implementation CairoContext
+@implementation HeadlessContext
 
 + (void) initializeBackend
 {
@@ -116,7 +116,7 @@
 
 @end 
 
-@implementation CairoContext (Ops) 
+@implementation HeadlessContext (Ops) 
 
 - (BOOL) isCompatibleBitmap: (NSBitmapImageRep*)bitmap
 {
