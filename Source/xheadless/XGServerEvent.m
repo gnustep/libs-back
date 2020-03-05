@@ -43,20 +43,12 @@
 #include <Foundation/NSRunLoop.h>
 #include <Foundation/NSDebug.h>
 
-#include "x11/XGServerWindow.h"
-#include "x11/XGInputServer.h"
-#include "x11/XGGeneric.h"
-#include "x11/xdnd.h"
-
-#ifdef HAVE_WRASTER_H
-#include "wraster.h"
-#else
-#include "x11/wraster.h"
-#endif
+#include "xheadless/XHeadless.h"
+#include "xheadless/XGServerWindow.h"
+#include "xheadless/XGInputServer.h"
+#include "xheadless/XGGeneric.h"
 
 #include "math.h"
-#include <X11/keysym.h>
-#include <X11/Xproto.h>
 
 #if LIB_FOUNDATION_LIBRARY
 # include <Foundation/NSPosixFileDescriptor.h>
@@ -365,7 +357,7 @@ static unsigned int process_modifier_flags(unsigned int state)
       || ((generic.lastTimeStamp + OUT_DATE_TIME_DIFF)
           < [NSDate timeIntervalSinceReferenceDate]))
     {
-      return CurrentTime;
+      return [[NSDate date] timeIntervalSince1970];
     }
   else
     {
