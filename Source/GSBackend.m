@@ -86,7 +86,7 @@
 #elif (BUILD_GRAPHICS==GRAPHICS_xlib)
     context = @"XGContext";
 #elif (BUILD_GRAPHICS==GRAPHICS_headlesslib)
-    context = @"CairoContext";
+    context = @"HeadlessContext";
 #elif (BUILD_GRAPHICS==GRAPHICS_winlib)
     context = @"WIN32Context";
 #elif (BUILD_GRAPHICS==GRAPHICS_cairo)
