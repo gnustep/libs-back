@@ -22,14 +22,14 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef CairoSurface_h
-#define CairoSurface_h
+#ifndef HeadlessSurface_h
+#define HeadlessSurface_h
 
 #include <Foundation/Foundation.h>
 
 typedef void *cairo_surface_t;
 
-@interface CairoSurface : NSObject
+@interface HeadlessSurface : NSObject
 {
 @public
   void *gsDevice;

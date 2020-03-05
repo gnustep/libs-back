@@ -27,6 +27,7 @@
 #ifndef	INCLUDED_XGGENERIC_H
 #define	INCLUDED_XGGENERIC_H
 
+#include "XHeadless.h"
 /*
  * Flags to indicate which protocols the WindowManager follows
  */

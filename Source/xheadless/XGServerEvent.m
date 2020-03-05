@@ -45,7 +45,6 @@
 
 #include "x11/XGServerWindow.h"
 #include "x11/XGInputServer.h"
-#include "x11/XGDragView.h"
 #include "x11/XGGeneric.h"
 #include "x11/xdnd.h"
 

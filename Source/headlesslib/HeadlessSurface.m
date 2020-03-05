@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2002 Free Software Foundation, Inc.
+   Copyright (C) 2004 Free Software Foundation, Inc.
 
    Author: Banlu Kemiyatorn <object at gmail dot com>
 
@@ -22,17 +22,51 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef XGCairoSurface_h
-#define XGCairoSurface_h
+#include "headlesslib/HeadlessSurface.h"
 
-#include "headlesslib/CairoSurface.h"
-#include "xheadless/XGServerWindow.h"
+@implementation HeadlessSurface 
 
-@interface XGCairoSurface : CairoSurface
+- (id) initWithDevice: (void *) device
+{
+  /* TODO FIXME make a more abstract struct for the device */
+  [self subclassResponsibility:_cmd];
+
+  return self;
+}
+
+- (void) dealloc
+{
+  [super dealloc];
+}
+
+- (NSString *) description
+{
+  return [NSString stringWithFormat:@"<%@ %p xr:%p>", [self class], self, _surface];
+}
+
+-(NSSize) size
+{
+  [self subclassResponsibility:_cmd];
+  return NSMakeSize(0, 0);
+}
+
+- (void) setSize: (NSSize)newSize
+{
+  [self subclassResponsibility:_cmd];
+}
+
+- (cairo_surface_t *) surface
+{
+  return _surface;
+}
+
+- (void) handleExposeRect: (NSRect)rect
 {
 }
+
+- (BOOL) isDrawingToScreen
+{
+  return YES;
+}
+
 @end
-
-
-#endif
-

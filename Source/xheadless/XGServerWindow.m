@@ -34,6 +34,7 @@
 #include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSAutoreleasePool.h>
 #include <Foundation/NSDebug.h>
+#include <AppKit/NSEvent.h>
 #include <Foundation/NSException.h>
 #include <Foundation/NSThread.h>
 #include <AppKit/DPSOperators.h>
@@ -48,30 +49,12 @@
 #include <unistd.h>
 #endif
 
-#ifdef HAVE_WRASTER_H
-#include "wraster.h"
-#else
-#include "x11/wraster.h"
-#endif
-
-// For X_HAVE_UTF8_STRING
-#include <X11/Xlib.h>
-#include <X11/cursorfont.h>
-#if HAVE_XCURSOR
-#include <X11/Xcursor/Xcursor.h>
-#endif
-#ifdef HAVE_XSHAPE
-#include <X11/extensions/shape.h>
-#endif
-#if HAVE_XFIXES
-#include <X11/extensions/Xfixes.h>
-#endif
-
-#include "x11/XGDragView.h"
-#include "x11/XGInputServer.h"
+#include <xheadless/XGServerWindow.h>
+#include <xheadless/XGGeneric.h>
+#include <xheadless/XWindowBuffer.h>
+#include <xheadless/XGServer.h>
 
 #define	ROOT generic.appRootWindow
-
 
 static BOOL handlesWindowDecorations = YES;
 

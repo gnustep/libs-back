@@ -25,9 +25,9 @@
 #ifndef HeadlessModernSurface_h
 #define HeadlessModernSurface_h
 
-#include "headlesslib/CairoSurface.h"
+#include "headlesslib/HeadlessSurface.h"
 
-@interface HeadlessModernSurface : CairoSurface
+@interface HeadlessModernSurface : HeadlessSurface
 {
   @private
     void *_windowSurface;

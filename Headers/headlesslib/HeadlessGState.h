@@ -28,17 +28,17 @@
 #include "gsc/GSGState.h"
 
 
-@class CairoSurface;
+@class HeadlessSurface;
 
 @interface HeadlessGState : GSGState
 {
   @public
     void *_ct;
-    CairoSurface *_surface;
+    HeadlessSurface *_surface;
 }
 
-- (void) GSCurrentSurface: (CairoSurface **)surface : (int *)x : (int *)y;
-- (void) GSSetSurface: (CairoSurface *)surface : (int)x : (int)y;
+- (void) GSCurrentSurface: (HeadlessSurface **)surface : (int *)x : (int *)y;
+- (void) GSSetSurface: (HeadlessSurface *)surface : (int)x : (int)y;
 
 - (void) showPage;
 @end

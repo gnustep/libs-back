@@ -35,7 +35,7 @@
 #include <AppKit/NSGraphics.h>
 #include "headlesslib/HeadlessGState.h"
 #include "headlesslib/HeadlessFontInfo.h"
-#include "headlesslib/CairoSurface.h"
+#include "headlesslib/HeadlessSurface.h"
 #include "headlesslib/HeadlessContext.h"
 #include <math.h>
 
@@ -104,7 +104,7 @@
   return copy;
 }
 
-- (void) GSCurrentSurface: (CairoSurface **)surface : (int *)x : (int *)y
+- (void) GSCurrentSurface: (HeadlessSurface **)surface : (int *)x : (int *)y
 {
   if (x)
     *x = offset.x;
@@ -116,7 +116,7 @@
     }
 }
 
-- (void) GSSetSurface: (CairoSurface *)surface : (int)x : (int)y
+- (void) GSSetSurface: (HeadlessSurface *)surface : (int)x : (int)y
 {
   ASSIGN(_surface, surface);
   [self setOffset: NSMakePoint(x, y)];

@@ -32,37 +32,8 @@
 #include "config.h"
 
 #include <GNUstepGUI/GSDisplayServer.h>
-
-typedef unsigned long long Display;
-typedef unsigned long long Pixmap;
-typedef unsigned long long Window;
-typedef unsigned long long Visual;
-typedef unsigned long long XColor;
-typedef unsigned long long Time;
-typedef unsigned long long GC;
-typedef unsigned long long Drawable;
-typedef unsigned long long XWMHints;
-typedef unsigned long long XSizeHints;
-typedef unsigned long long XSetWindowAttributes;
-typedef unsigned long long Atom;
-typedef void              *XIC;
-typedef unsigned long long XIM;
-typedef unsigned long long XKeySim;
-typedef unsigned long long RContext;
-typedef unsigned long long RContextAttributes;
-typedef unsigned long long Region;
-typedef unsigned long long XRectangle;
-typedef unsigned long long Cursor;
-typedef unsigned long long XEvent;
-typedef unsigned long long XKeyEvent;
-typedef unsigned long long XErrorEvent;
-typedef unsigned long long KeySym;
-typedef unsigned long long XIMStyle;
-
-
-struct XGGeneric
-{
-};
+#include "XHeadless.h"
+#include "XGGeneric.h"
 
 /*
  * Enumerated type to say how we should draw pixels to the X display - used

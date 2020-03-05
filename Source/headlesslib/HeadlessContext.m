@@ -32,7 +32,7 @@
 
 #include "headlesslib/HeadlessGState.h"
 #include "headlesslib/HeadlessContext.h"
-#include "headlesslib/CairoSurface.h"
+#include "headlesslib/HeadlessSurface.h"
 #include "headlesslib/HeadlessFontInfo.h"
 #include "headlesslib/HeadlessFontEnumerator.h"
 #include "config.h"
@@ -81,7 +81,7 @@
 
 - (BOOL) isDrawingToScreen
 {
-  CairoSurface *surface = nil;
+  HeadlessSurface *surface = nil;
   [CGSTATE GSCurrentSurface: &surface : NULL : NULL];
   return [surface isDrawingToScreen];
 }
@@ -149,7 +149,7 @@
 
 - (void) GSCurrentDevice: (void **)device : (int *)x : (int *)y
 {
-  CairoSurface *surface;
+  HeadlessSurface *surface;
 
   [CGSTATE GSCurrentSurface: &surface : x : y];
   if (device)
@@ -160,7 +160,7 @@
 
 - (void) GSSetDevice: (void *)device : (int)x : (int)y
 {
-  CairoSurface *surface;
+  HeadlessSurface *surface;
 
   surface = [[_CAIRO_SURFACE_CLASSNAME alloc] initWithDevice: device];
 
