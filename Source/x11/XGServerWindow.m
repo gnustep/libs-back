@@ -3217,7 +3217,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 - (void) placewindow: (NSRect)rect : (int)win
 {
   NSEvent *e;
-  NSRect xVal;
+  NSRect xFrame;
   NSRect xHint;
   gswindow_device_t *window;
   NSWindow *nswin;
@@ -3233,8 +3233,10 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 
   NSDebugLLog(@"XGTrace", @"DPSplacewindow: %@ : %d", NSStringFromRect(rect),
 	      win);
+
+  xFrame = [self _OSFrameToXFrame: rect for: window];
   if (NSEqualRects(rect, window->osframe) == YES
-      && window->map_state == IsViewable)
+      && NSEqualRects(xFrame, window->xframe) == YES)
     {
       return;
     }
@@ -3244,7 +3246,8 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
       resize = YES;
       move = YES;
     }
-  else if (NSEqualPoints(rect.origin, window->osframe.origin) == NO)
+  else if (NSEqualPoints(rect.origin, window->osframe.origin) == NO
+           || NSEqualPoints(xFrame.origin, window->xframe.origin) == NO)
     {
       move = YES;
     }
@@ -3264,15 +3267,14 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
       window->siz_hints.flags = flags;
     }
 
-  xVal = [self _OSFrameToXFrame: rect for: window];
-  xHint = [self _XFrameToXHints: xVal for: window];
+  xHint = [self _XFrameToXHints: xFrame for: window];
   window->siz_hints.width = (int)xHint.size.width;
   window->siz_hints.height = (int)xHint.size.height;
   window->siz_hints.x = (int)xHint.origin.x;
   window->siz_hints.y = (int)xHint.origin.y;
 
   NSDebugLLog(@"Moving", @"Place %lu - o:%@, x:%@", window->number,
-    NSStringFromRect(rect), NSStringFromRect(xVal));
+    NSStringFromRect(rect), NSStringFromRect(xFrame));
   XMoveResizeWindow (dpy, window->ident,
     window->siz_hints.x, window->siz_hints.y,
     window->siz_hints.width, window->siz_hints.height);
@@ -3282,7 +3284,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   and we don't have to do anything when the ConfigureNotify arrives later.
   If we're wrong, the ConfigureNotify will have the exact coordinates, and
   at that point, we'll send new GSAppKitWindow* events to -gui. */
-  window->xframe = xVal;
+  window->xframe = xFrame;
 
   /* Update the hints.  Note that we do this _after_ updating xframe since
      the hint setting code needs the new xframe to work around problems

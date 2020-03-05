@@ -1,3 +1,10 @@
+2020-03-05  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (placewindow::): check window frame
+	in OpenStep and Xlib coordinate systems to decide if it was changed.
+	Rename `xVal` into more meaninful `xFrame` (holds temporary value of
+	window frame in Xlib coordiante system).
+
 2020-03-03  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Headers/x11/XGServer.h,
