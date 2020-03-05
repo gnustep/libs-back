@@ -30,13 +30,13 @@
 
 #include <GNUstepGUI/GSFontInfo.h>
 
-@class CairoFaceInfo;
+@class HeadlessFaceInfo;
 
-@interface CairoFontEnumerator : GSFontEnumerator
+@interface HeadlessFontEnumerator : GSFontEnumerator
 {
 }
 + (Class) faceInfoClass;
-+ (CairoFaceInfo *) fontWithName: (NSString *)name;
++ (HeadlessFaceInfo *) fontWithName: (NSString *)name;
 @end
 
 #endif

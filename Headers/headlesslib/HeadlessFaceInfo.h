@@ -1,11 +1,11 @@
 /*
-   CairoFontEnumerator.m
- 
+   CairoFaceInfo.h
+
    Copyright (C) 2003 Free Software Foundation, Inc.
 
    August 31, 2003
    Written by Banlu Kemiyatorn <object at gmail dot com>
-   Base on original code of Alex Malmberg
+   Base on code by Alexander Malmberg <alexander@malmberg.org>
    Rewrite: Fred Kiefer <fredkiefer@gmx.de>
    Date: Jan 2006
  
@@ -28,24 +28,17 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "headlesslib/CairoFontEnumerator.h"
-#include "headlesslib/CairoFontInfo.h"
+#ifndef HEADLESSFACEINFO_H
+#define HEADLESSFACEINFO_H
 
-@implementation CairoFontEnumerator 
+#include <Foundation/NSObject.h>
 
-+ (Class) faceInfoClass
+@interface HeadlessFaceInfo : NSObject
 {
-  return [CairoFaceInfo class];
-    }
-
-+ (CairoFaceInfo *) fontWithName: (NSString *) name
-{
-  return (CairoFaceInfo *) [super fontWithName: name];
-    }
-
-- (void)enumerateFontsAndFamilies
-{
+	void *_fontFace; 
 }
 
-@end
+- (void *)fontFace;
 
+@end
+#endif

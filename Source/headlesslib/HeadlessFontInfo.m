@@ -1,5 +1,5 @@
 /*
-   CairoFontInfo.m
+   HeadlessFontInfo.m
  
    Copyright (C) 2003 Free Software Foundation, Inc.
 
@@ -29,14 +29,14 @@
 #include "GNUstepBase/Unicode.h"
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
-#include "headlesslib/CairoFontInfo.h"
-#include "headlesslib/CairoFontEnumerator.h"
+#include "headlesslib/HeadlessFontInfo.h"
+#include "headlesslib/HeadlessFontEnumerator.h"
 
 #include <math.h>
 
 typedef void *cairo_t;
 
-@implementation CairoFontInfo 
+@implementation HeadlessFontInfo 
 
 - (BOOL) setupAttributes
 {

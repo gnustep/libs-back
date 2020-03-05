@@ -1,11 +1,14 @@
 /*
-   CairoFontInfo.h
-
+   HeadlessFontEnumerator.m
+ 
    Copyright (C) 2003 Free Software Foundation, Inc.
 
    August 31, 2003
    Written by Banlu Kemiyatorn <object at gmail dot com>
-
+   Base on original code of Alex Malmberg
+   Rewrite: Fred Kiefer <fredkiefer@gmx.de>
+   Date: Jan 2006
+ 
    This file is part of GNUstep.
 
    This library is free software; you can redistribute it and/or
@@ -25,22 +28,24 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef CairoFontInfo_h
-#define CairoFontInfo_h
+#include "headlesslib/HeadlessFontEnumerator.h"
+#include "headlesslib/HeadlessFontInfo.h"
 
-#include <GNUstepGUI/GSFontInfo.h>
-#include "headlesslib/CairoFaceInfo.h"
+@implementation HeadlessFontEnumerator 
 
-
-@interface CairoFontInfo : GSFontInfo
++ (Class) faceInfoClass
 {
-@public
-	void *_scaled;
+  return [HeadlessFaceInfo class];
 }
 
-- (void) drawGlyphs: (const NSGlyph*)glyphs
-	     length: (int)length 
-	         on: (void*)ct;
++ (HeadlessFaceInfo *) fontWithName: (NSString *) name
+{
+  return (HeadlessFaceInfo *) [super fontWithName: name];
+}
+
+- (void)enumerateFontsAndFamilies
+{
+}
+
 @end
 
-#endif

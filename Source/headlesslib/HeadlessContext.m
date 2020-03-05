@@ -35,8 +35,8 @@
 #include "headlesslib/CairoSurface.h"
 #include "headlesslib/CairoPSSurface.h"
 #include "headlesslib/CairoPDFSurface.h"
-#include "headlesslib/CairoFontInfo.h"
-#include "headlesslib/CairoFontEnumerator.h"
+#include "headlesslib/HeadlessFontInfo.h"
+#include "headlesslib/HeadlessFontEnumerator.h"
 #include "config.h"
 
 #define CGSTATE ((HeadlessGState *)gstate)
@@ -52,8 +52,8 @@
 {
   [NSGraphicsContext setDefaultContextClass: self];
 
-  [GSFontEnumerator setDefaultClass: [CairoFontEnumerator class]];
-  [GSFontInfo setDefaultClass: [CairoFontInfo class]];
+  [GSFontEnumerator setDefaultClass: [HeadlessFontEnumerator class]];
+  [GSFontInfo setDefaultClass: [HeadlessFontInfo class]];
 }
 
 + (Class) GStateClass

@@ -34,7 +34,7 @@
 #include <AppKit/NSGradient.h>
 #include <AppKit/NSGraphics.h>
 #include "headlesslib/HeadlessGState.h"
-#include "headlesslib/CairoFontInfo.h"
+#include "headlesslib/HeadlessFontInfo.h"
 #include "headlesslib/CairoSurface.h"
 #include "headlesslib/HeadlessContext.h"
 #include <math.h>

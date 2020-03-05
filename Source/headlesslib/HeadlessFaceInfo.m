@@ -28,9 +28,9 @@
    Boston, MA 02110-1301, USA.
 */
 
-#include "headlesslib/CairoFaceInfo.h"
+#include "headlesslib/HeadlessFaceInfo.h"
 
-@implementation CairoFaceInfo 
+@implementation HeadlessFaceInfo 
 
 - (void) dealloc
 {

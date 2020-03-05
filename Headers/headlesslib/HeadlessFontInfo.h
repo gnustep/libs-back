@@ -1,14 +1,11 @@
 /*
-   CairoFaceInfo.h
+   CairoFontInfo.h
 
    Copyright (C) 2003 Free Software Foundation, Inc.
 
    August 31, 2003
    Written by Banlu Kemiyatorn <object at gmail dot com>
-   Base on code by Alexander Malmberg <alexander@malmberg.org>
-   Rewrite: Fred Kiefer <fredkiefer@gmx.de>
-   Date: Jan 2006
- 
+
    This file is part of GNUstep.
 
    This library is free software; you can redistribute it and/or
@@ -28,17 +25,23 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef CAIROFACEINFO_H
-#define CAIROFACEINFO_H
+#ifndef HeadlessFontInfo_h
+#define HeadlessFontInfo_h
 
-#include <Foundation/NSObject.h>
+#include <GNUstepGUI/GSFontInfo.h>
+#include "headlesslib/HeadlessFaceInfo.h"
 
-@interface CairoFaceInfo : NSObject
+typedef void *cairo_t;
+
+@interface HeadlessFontInfo : GSFontInfo
 {
-	void *_fontFace; 
+@public
+	void *_scaled;
 }
 
-- (void *)fontFace;
-
+- (void) drawGlyphs: (const NSGlyph*)glyphs
+	     length: (int)length 
+	         on: (cairo_t*)ct;
 @end
+
 #endif
