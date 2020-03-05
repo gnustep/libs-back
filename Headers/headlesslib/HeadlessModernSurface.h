@@ -22,12 +22,12 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef XGCairoXModernSurface_h
-#define XGCairoXModernSurface_h
+#ifndef HeadlessModernSurface_h
+#define HeadlessModernSurface_h
 
 #include "headlesslib/CairoSurface.h"
 
-@interface XGCairoModernSurface : CairoSurface
+@interface HeadlessModernSurface : CairoSurface
 {
   @private
     void *_windowSurface;

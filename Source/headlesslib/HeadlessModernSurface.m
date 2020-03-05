@@ -25,11 +25,11 @@
 #include "config.h"
 #include "xheadless/XGServer.h"
 #include "xheadless/XGServerWindow.h"
-#include "headlesslib/XGCairoModernSurface.h"
+#include "headlesslib/HeadlessModernSurface.h"
 
 #define GSWINDEVICE ((gswindow_device_t *)gsDevice)
 
-@implementation XGCairoModernSurface
+@implementation HeadlessModernSurface
 
 - (id) initWithDevice: (void *)device
 {

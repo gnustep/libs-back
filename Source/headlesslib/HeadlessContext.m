@@ -33,8 +33,6 @@
 #include "headlesslib/HeadlessGState.h"
 #include "headlesslib/HeadlessContext.h"
 #include "headlesslib/CairoSurface.h"
-#include "headlesslib/CairoPSSurface.h"
-#include "headlesslib/CairoPDFSurface.h"
 #include "headlesslib/HeadlessFontInfo.h"
 #include "headlesslib/HeadlessFontEnumerator.h"
 #include "config.h"
@@ -43,8 +41,8 @@
 
 
 #define _CAIRO_GSTATE_CLASSNAME HeadlessGState
-#define _CAIRO_SURFACE_CLASSNAME XGCairoModernSurface
-#include "headlesslib/XGCairoModernSurface.h"
+#define _CAIRO_SURFACE_CLASSNAME HeadlessModernSurface
+#include "headlesslib/HeadlessModernSurface.h"
 
 @implementation HeadlessContext
 

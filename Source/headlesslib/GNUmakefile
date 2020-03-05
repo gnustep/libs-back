@@ -29,36 +29,18 @@ include ../../config.make
 SUBPROJECT_NAME=headlesslib
 
 # The Objective-C source files to be compiled
-headlesslib_OBJC_FILES = CairoSurface.m \
+headlesslib_OBJC_FILES = \
+  CairoSurface.m \
   HeadlessFontInfo.m \
   HeadlessGState.m \
   HeadlessContext.m \
   HeadlessFontEnumerator.m \
   HeadlessFaceInfo.m \
-  CairoPSSurface.m \
-  CairoPDFSurface.m \
 
 
 
-ifeq ($(BUILD_SERVER),x11)
-  ifeq ($(WITH_GLITZ),yes)
-    headlesslib_OBJC_FILES += XGCairoGlitzSurface.m
-  else
-    headlesslib_OBJC_FILES += XGCairoSurface.m XGCairoXImageSurface.m XGCairoModernSurface.m
-  endif
-else
-  ifeq ($(BUILD_SERVER),xheadless)
-    headlesslib_OBJC_FILES += XGCairoSurface.m XGCairoXImageSurface.m XGCairoModernSurface.m
-  else
-    ifeq ($(BUILD_GRAPHICS),cairo)
-      ifeq ($(WITH_GLITZ),yes)
-        headlesslib_OBJC_FILES += Win32CairoGlitzSurface.m
-      else
-        headlesslib_OBJC_FILES += Win32CairoSurface.m Win32CairoGState.m
-        # Win32CairoXImageSurface.m 
-      endif
-    endif
-  endif
+ifeq ($(BUILD_SERVER),xheadless)
+  headlesslib_OBJC_FILES += HeadlessModernSurface.m
 endif
 
 headlesslib_OBJC_FILES += 
