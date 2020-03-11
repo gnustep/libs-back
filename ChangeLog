@@ -1,3 +1,10 @@
+2020-03-11  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_createAppIconPixmaps): accept
+	WRaster context depth 24.
+	(styleoffsets::::::): do not guess offsets for miniwindow and
+	appicon they are equal to 0.0.
+
 2020-03-05  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (placewindow::): check window frame
