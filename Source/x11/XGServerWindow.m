@@ -2283,7 +2283,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 
   if ((style & NSIconWindowMask) || (style & NSMiniWindowMask))
     {
-      style = NSBorderlessWindowMask;
+      *l = *r = *t = *b = 0.0;
+      return;
     }
 
   /* Next try to get the offset information that we have obtained from
@@ -2841,7 +2842,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   height = [rep pixelsHigh];
   colors = [rep samplesPerPixel];
 
-  if (rcontext->depth != 32)
+  if (rcontext->depth != 32 && rcontext->depth != 24)
     {
       NSLog(@"Unsupported context depth %d", rcontext->depth);
       return 0;
