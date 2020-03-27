@@ -7,6 +7,20 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.28.0}
+
+This release includes a few bugfixes and a huge rework of multi monitor handling.
+
+@itemize @bullet
+@item Improved focus handling for WindowMaker interaction.
+@item Cursor improvements.
+@item Better handling of fonts with fontconfig.
+@item Simplify code that converts images for X11.
+@item art: Remove ftfont-old.m.
+@item Use Xrandr for multi monitor support.
+@end itemize
+
+@ifclear ANNOUNCE-ONLY
 @section Noteworthy changes in version @samp{0.27.0}
 
 This release includes a few bugfixes.
@@ -19,7 +33,6 @@ This release includes a few bugfixes.
 @item opal: Improve colour handling
 @end itemize
 
-@ifclear ANNOUNCE-ONLY
 @section Noteworthy changes in version @samp{0.26.2}
 
 This release contains no changes since 0.26.1. It is released to coincide
