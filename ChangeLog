@@ -1,3 +1,10 @@
+2020-04-05  Ivan Vucica  <ivan@vucica.net>
+
+	* ANNOUNCE:
+	* NEWS:
+	* README:
+	Updating documentation for the 0.28.0 release.
+
 2020-03-27 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Documentation/news.texi: Fill in some details for pending release.
