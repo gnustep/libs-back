@@ -1,3 +1,21 @@
+2020-04-05  Ivan Vucica  <ivan@vucica.net>
+
+	* ANNOUNCE:
+	* NEWS:
+	* README:
+	Updating documentation for the 0.28.0 release.
+
+2020-03-27 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Documentation/news.texi: Fill in some details for pending release.
+
+2020-03-12  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/art/GNUmakefile.preamble,
+	* Source/gsc/GNUmakefile.preamble: do not overwrite ADDITIONAL_INCLUDE_DIRS
+	value to help RPM build. In spec file ADDITIONAL_INCLUDE_DIRS can be sat
+	to subdirectories which are create by RPM build tool.
+
 2020-03-05  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (placewindow::): check window frame
@@ -131,7 +149,7 @@
 	renamed	XGServer's `screenVisual` and `screenDepth` methods.
 
 	* Source/x11/XIMInputServer.m (initWithDelegate:name:):
-	use `+xDisplay` instead	of `xCurrentDisplay`. 
+	use `+xDisplay` instead	of `xCurrentDisplay`.
 	(clientWindowRect:): ditto.
 
 	* Headers/x11/XGServerWindow.h (_gswindow_device_t):
