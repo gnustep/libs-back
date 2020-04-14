@@ -1,5 +1,5 @@
-1 ANNOUNCE
-**********
+1 Announcement
+**************
 
 This is version 0.28.0 of the GNUstep GUI Backend ('gnustep-back').
 
@@ -56,10 +56,12 @@ instructions.
 1.4 Where do I send bug reports?
 ================================
 
-Bug reports can be sent to the GNUstep bug list <bug-gnustep@gnu.org>
+Please log bug reports on the GNUstep project page
+<http://savannah.gnu.org/bugs/?group=gnustep> or send bug reports to
+<bug-gnustep@gnu.org>.
 
-1.5 Obtaining GNU Software
-==========================
+1.5 Obtaining GNUstep Software
+==============================
 
 Check out the GNUstep web site.  (<http://www.gnustep.org/>) and the GNU
 web site.  (<http://www.gnu.org/>)
