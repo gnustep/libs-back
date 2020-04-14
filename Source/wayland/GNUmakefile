@@ -1,9 +1,11 @@
 #
-#  Main makefile for GNUstep Backend win32
+#  Main makefile for GNUstep Backend wayland
 #
-#  Copyright (C) 2002 Free Software Foundation, Inc.
+#  Copyright (C) 2020 Free Software Foundation, Inc.
 #
 #  Author: Adam Fedor <fedor@gnu.org>
+#  Author: Sergio L. Pascual <slp@sinrega.org>
+#  Author: Ladislav Michl <ladis@linux-mips.org>
 #
 #  This file is part of the GNUstep Backend.
 #
