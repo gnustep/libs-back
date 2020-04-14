@@ -72,10 +72,10 @@
 #  endif /* USE_GLITZ */
 #elif BUILD_SERVER == SERVER_wayland
 #  include "wayland/WaylandServer.h"
-#  define _CAIRO_GSTATE_CLASSNAME CairoGState
 #  include "cairo/CairoGState.h"
-#  define _CAIRO_SURFACE_CLASSNAME WaylandCairoSurface
 #  include "cairo/WaylandCairoSurface.h"
+#  define _CAIRO_GSTATE_CLASSNAME CairoGState
+#  define _CAIRO_SURFACE_CLASSNAME WaylandCairoSurface
 #else
 #  error Invalid server for Cairo backend : non implemented
 #endif /* BUILD_SERVER */

@@ -121,6 +121,10 @@ create_shm_buffer(struct window *window)
 {
     struct window *window = (struct window*) gsDevice;
     NSDebugLog(@"WaylandCairoSurface: dealloc win=%d", window->window_id);
+
+    // FIXME: This is leaking memory. We need to implement counterpart to
+    // create_shm_buffer.
+
     [super dealloc];
 }
 
@@ -162,6 +166,7 @@ create_shm_buffer(struct window *window)
 
     cairo_t *cr = cairo_create(cairo_surface);
     if (width != window->width && 0) {
+        // FIXME: remove this dead fake-drawing branch.
 	NSDebugLog(@"fake drawing");
 	cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
 

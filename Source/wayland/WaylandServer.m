@@ -954,6 +954,7 @@ int NSToWayland(struct window *window, int ns_y)
     window->surface = wl_compositor_create_surface(wlconfig->compositor);
     if (!window->surface) {
 	NSDebugLog(@"can't create wayland surface");
+	free(window);
 	return 0;
     }
     wl_surface_set_user_data(window->surface, window);
@@ -1405,7 +1406,9 @@ int NSToWayland(struct window *window, int ns_y)
 	if (window) {
 	    x += window->pos_x;
 	    y += window->pos_y;
-	    win = &window->window_id;
+	    if (win) {
+              *win = &window->window_id;
+            }
 	}
     }
 
