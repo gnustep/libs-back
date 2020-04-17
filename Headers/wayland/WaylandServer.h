@@ -104,6 +104,7 @@ struct window {
     id instance;
     int window_id;
     struct wl_list link;
+    BOOL configured; // surface has been configured once
 
     float pos_x;
     float pos_y;

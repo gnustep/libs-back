@@ -197,7 +197,10 @@ create_shm_buffer(struct window *window)
 
     cairo_destroy(cr);
 
-    wl_surface_commit(window->surface);
+    NSDebugLog(@"trying to commit cairo surface for window %d", window->window_id);
+    if (window->configured)
+      wl_surface_commit(window->surface);
+    NSDebugLog(@"done trying to commit cairo surface for window %d", window->window_id);
     wl_display_dispatch_pending(window->wlconfig->display);
     wl_display_flush(window->wlconfig->display);
 

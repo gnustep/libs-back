@@ -580,6 +580,20 @@ xdg_surface_on_configure(void *data, struct xdg_surface *xdg_surface,
     NSEvent *ev = nil;
     NSWindow *nswindow = GSWindowWithNumber(window->window_id);
 
+    NSDebugLog(@"Acknowledging surface configure %p %d (window_id=%d)", xdg_surface, serial, window->window_id);
+    xdg_surface_ack_configure(xdg_surface, serial);
+    window->configured = YES;
+
+    // TODO: do we need to check that the surface has been painted to?
+    if (window->surface)
+      {
+        // TODO: is this ever going to be null when we get here?
+        wl_surface_commit(window->surface);
+        wl_display_dispatch_pending(window->wlconfig->display);
+        wl_display_flush(window->wlconfig->display);
+      }
+
+
     if (wlconfig->pointer.focus &&
 	wlconfig->pointer.focus->window_id == window->window_id) {
 	ev = [NSEvent otherEventWithType: NSAppKitDefined
@@ -635,7 +649,6 @@ xdg_surface_on_configure(void *data, struct xdg_surface *xdg_surface,
 	[nswindow sendEvent: ev];
     }
 #endif
-//    xdg_surface_ack_configure(xdg_surface, serial);
 }
 
 static const struct xdg_surface_listener xdg_surface_listener = {
