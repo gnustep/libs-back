@@ -211,35 +211,12 @@ create_shm_buffer(struct window *window)
     cairo_surface_set_device_offset(cairo_surface, 0, 0);
 
     cairo_t *cr = cairo_create(cairo_surface);
-    if (width != window->width && 0) {
-        // FIXME: remove this dead fake-drawing branch.
-	NSDebugLog(@"fake drawing");
-	cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
 
-	cairo_rectangle(cr, 0, 0, width, height);
-	cairo_set_source_rgba(cr, 0, 0, 0, 0.8);
-	cairo_fill(cr);
-
-	cairo_rectangle(cr, 10, 10, width - 20, height - 20);
-	cairo_set_source_rgba(cr, 1.0, 0, 0, 1);
-	cairo_fill(cr);
-
-	cairo_select_font_face(cr, "sans",
-			       CAIRO_FONT_SLANT_NORMAL,
-			       CAIRO_FONT_WEIGHT_NORMAL);
-	cairo_set_font_size(cr, 12);
-	cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
-	cairo_move_to(cr, 30, 30);
-	cairo_show_text(cr, "Hello, world!");
-    } else {
-	NSDebugLog(@"real drawing");
-
-	cairo_rectangle(cr, x, y, width, height);
-	cairo_clip(cr);
-	cairo_set_source_surface(cr, cairo_surface, 0, 0);
-	cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
-	cairo_paint(cr);
-    }
+    cairo_rectangle(cr, x, y, width, height);
+    cairo_clip(cr);
+    cairo_set_source_surface(cr, cairo_surface, 0, 0);
+    cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
+    cairo_paint(cr);
 
     cairo_destroy(cr);
 
