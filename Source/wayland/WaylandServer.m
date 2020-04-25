@@ -1419,27 +1419,6 @@ int NSToWayland(struct window *window, int ns_y)
     return 0;
 }
 
-/** Backends can override this method to return an array of window numbers
-    ordered front to back.  The front most window being the first object
-    in the array.
-    The default implementation returns the visible windows in an
-    unspecified order.
- */
-- (NSArray *) windowlist
-{
-  NSMutableArray *list = [NSMutableArray arrayWithArray:[NSApp windows]];
-  int c = [list count];
-
-  while (c-- > 0)
-    {
-       if (![[list objectAtIndex:c] isVisible])
-         {
-	   [list removeObjectAtIndex:c];
-         }
-    }
-  return [list valueForKey:@"windowNumber"];
-}
-
 - (int) windowdepth: (int) win
 {
     NSDebugLog(@"windowdepth");
