@@ -6,7 +6,7 @@
    Author: Sergio L. Pascual <slp@sinrega.org>
    Date: February 2016
 
-   This file is part of the GNU Objective C User Interface Library.
+   This file is part of the GNU Objective C Backend Library.
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
