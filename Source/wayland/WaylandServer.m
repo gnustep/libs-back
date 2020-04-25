@@ -689,18 +689,23 @@ handle_global(void *data, struct wl_registry *registry,
 {
     WaylandConfig *wlconfig = data;
 
+    NSDebugLog(@"wayland: registering interface '%s'", interface);
     if (strcmp(interface, xdg_wm_base_interface.name) == 0) {
 	wlconfig->wm_base = wl_registry_bind(registry, name,
 					     &xdg_wm_base_interface, 1);
+        NSDebugLog(@"wayland: found wm_base interface");
     } else if (strcmp(interface, wl_shell_interface.name) == 0) {
 	wlconfig->shell = wl_registry_bind(registry, name,
 					   &wl_shell_interface, 1);
+        NSDebugLog(@"wayland: found shell interface");
     } else if (strcmp(interface, wl_compositor_interface.name) == 0) {
 	wlconfig->compositor = wl_registry_bind(registry, name,
 						&wl_compositor_interface, 1);
+        NSDebugLog(@"wayland: found compositor interface");
     } else if (strcmp(interface, wl_shm_interface.name) == 0) {
 	wlconfig->shm = wl_registry_bind(registry, name,
 					 &wl_shm_interface, 1);
+        NSDebugLog(@"wayland: found shm interface");
 	wl_shm_add_listener(wlconfig->shm, &shm_listener, wlconfig);
     } else if (strcmp(interface, wl_output_interface.name) == 0) {
 	struct output *output = (struct output *)malloc(sizeof(struct output));
@@ -709,6 +714,7 @@ handle_global(void *data, struct wl_registry *registry,
 	output->scale = 1;
 	output->output = wl_registry_bind(registry, name, &wl_output_interface, 2);
 	output->server_output_id = name;
+        NSDebugLog(@"wayland: found output interface");
 	wl_list_insert(wlconfig->output_list.prev, &output->link);
 	wlconfig->output_count++;
 	wl_output_add_listener(output->output, &output_listener, output);
@@ -717,6 +723,7 @@ handle_global(void *data, struct wl_registry *registry,
 	wlconfig->seat_version = version;
 	wlconfig->seat = wl_registry_bind(wlconfig->registry, name,
 					  &wl_seat_interface, 1);
+        NSDebugLog(@"wayland: found seat interface");
 	wl_seat_add_listener(wlconfig->seat, &seat_listener, wlconfig);
     }
 }
