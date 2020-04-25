@@ -373,6 +373,14 @@ pointer_handle_axis(void *data, struct wl_pointer *pointer,
                               window->height - wlconfig->pointer.y);
   eventFlags = 0;
 
+  /* FIXME: we should get axis_source out of wl_pointer; however, the wl_pointer
+     is not defined in wayland-client.h. How does one get the axis_source out of
+     it to confirm the source is the physical mouse wheel? */
+#if 0
+  if (pointer->axis_source != WL_POINTER_AXIS_SOURCE_WHEEL)
+    return;
+#endif
+
   float mouse_scroll_multiplier = wlconfig->mouse_scroll_multiplier;
   /* For smooth-scroll events, we're not doing any cross-event or delta
      calculations, as is done in button event handling. */

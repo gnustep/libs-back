@@ -210,6 +210,8 @@ create_shm_buffer(struct window *window)
     cairo_surface_get_device_offset(cairo_surface, &backupOffsetX, &backupOffsetY);
     cairo_surface_set_device_offset(cairo_surface, 0, 0);
 
+    // FIXME: This seems to be creating a context to paint into cairo_surface,
+    // and then copies back into the same cairo_surface.
     cairo_t *cr = cairo_create(cairo_surface);
 
     cairo_rectangle(cr, x, y, width, height);
