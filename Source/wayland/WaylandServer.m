@@ -1483,8 +1483,21 @@ int NSToWayland(struct window *window, int ns_y)
 
 - (NSPoint) mouselocation
 {
-    NSDebugLog(@"mouselocation");
+  int aScreen = -1;
+  struct output *output;
+
+  NSDebugLog(@"mouselocation");
+
+  // FIXME: find a cleaner way to get the first element of a wl_list
+  wl_list_for_each(output, &wlconfig->output_list, link) {
+    aScreen = output->server_output_id;
+    break;
+  }
+  if (aScreen < 0)
+    // No outputs in the wl_list.
     return NSZeroPoint;
+
+  return [self mouseLocationOnScreen: aScreen window: NULL];
 }
 
 - (NSPoint) mouseLocationOnScreen: (int)aScreen window: (int *)win
