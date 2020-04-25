@@ -75,6 +75,18 @@ os_create_anonymous_file(off_t size)
     return fd;
 }
 
+static inline size_t
+shm_buffer_stride(struct window *window)
+{
+  return window->width * 4;
+}
+
+static inline size_t
+shm_buffer_size(struct window *window)
+{
+    return shm_buffer_stride(window) * window->height;
+}
+
 static cairo_surface_t *
 create_shm_buffer(struct window *window)
 {
@@ -82,8 +94,8 @@ create_shm_buffer(struct window *window)
     cairo_surface_t *surface;
     int fd, size, stride;
 
-    stride = window->width * 4;
-    size = stride * window->height;
+    stride = shm_buffer_stride(window);
+    size = shm_buffer_size(window);
 
     NSDebugLog(@"WaylandCairoSurface: creating shm buffer of %d bytes", size);
     fd = os_create_anonymous_file(size);
@@ -145,8 +157,19 @@ create_shm_buffer(struct window *window)
     struct window *window = (struct window*) gsDevice;
     NSDebugLog(@"WaylandCairoSurface: dealloc win=%d", window->window_id);
 
-    // FIXME: This is leaking memory. We need to implement counterpart to
-    // create_shm_buffer.
+    // FIXME: This is leaking memory. We need to *correctly* implement
+    // the counterpart to create_shm_buffer.
+    //
+    // For instance, this is the wrong place to destroy the cairo surface:
+    //  cairo_surface_destroy(window->surface);
+    //  window->surface = NULL;
+    // and likely to unmap the data, and destroy/release the buffer.
+    //  "Destroying the wl_buffer after wl_buffer.release does not change
+    //  the surface contents. However, if the client destroys the wl_buffer
+    //  before receiving the wl_buffer.release event, the surface contents
+    //  become undefined immediately."
+    // Hence also skipping:
+    //  munmap(window->data, shm_buffer_size(window));
 
     [super dealloc];
 }
