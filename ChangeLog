@@ -8,6 +8,7 @@
 	* Source/wayland/GNUmakefile.preamble:
 	* Source/wayland/WaylandServer.m:
 	* Source/wayland/xdg-shell-protocol.c:
+        * Source/wayland/README.md:
 	* Headers/cairo/WaylandCairoSurface.h:
 	* Headers/wayland/WaylandServer.h:
 	* Headers/wayland/xdg-shell-client-protocol.h:
