@@ -80,6 +80,8 @@ typedef struct _WaylandConfig {
     int modifiers;
 
     int seat_version;
+
+    float mouse_scroll_multiplier;
 } WaylandConfig;
 
 struct output {
@@ -128,6 +130,8 @@ struct window {
 @interface WaylandServer : GSDisplayServer
 {
     WaylandConfig *wlconfig;
+
+    BOOL _mouseInitialized;
 }
 @end
 

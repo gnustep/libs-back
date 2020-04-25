@@ -152,10 +152,13 @@ pointer_handle_enter(void *data, struct wl_pointer *pointer,
     struct window *window = wl_surface_get_user_data(surface);
     float sx = wl_fixed_to_double(sx_w);
     float sy = wl_fixed_to_double(sy_w);
+    [GSCurrentServer() initializeMouseIfRequired];
 
     wlconfig->pointer.x = sx;
     wlconfig->pointer.y = sy;
     wlconfig->pointer.focus = window;
+
+    // FIXME: Send NSMouseEntered event.
 }
 
 static void
@@ -170,11 +173,14 @@ pointer_handle_leave(void *data, struct wl_pointer *pointer,
 
     WaylandConfig *wlconfig = data;
     struct window *window = wl_surface_get_user_data(surface);
+    [GSCurrentServer() initializeMouseIfRequired];
 
     if (wlconfig->pointer.focus->window_id == window->window_id) {
 	wlconfig->pointer.focus = NULL;
 	wlconfig->pointer.serial = 0;
     }
+
+    // FIXME: Send NSMouseExited event.
 }
 
 static void
@@ -186,6 +192,8 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer,
     float sx = wl_fixed_to_double(sx_w);
     float sy = wl_fixed_to_double(sy_w);
     NSDebugLog(@"pointer_handle_motion: %fx%f", sx, sy);
+
+    [GSCurrentServer() initializeMouseIfRequired];
 
     if (wlconfig->pointer.focus && wlconfig->pointer.serial) {
 	window = wlconfig->pointer.focus;
@@ -245,13 +253,17 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
     float deltaY = 0.0;
     int clickCount = 1;
     int tick;
+    int buttonNumber;
     enum wl_pointer_button_state state = state_w;
     struct window *window = wlconfig->pointer.focus;
+
+    [GSCurrentServer() initializeMouseIfRequired];
 
     gcontext = GSCurrentContext();
     eventLocation = NSMakePoint(wlconfig->pointer.x,
 				window->height - wlconfig->pointer.y);
     eventFlags = 0;
+
     if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
 	if (button == wlconfig->pointer.last_click_button &&
 	    time - wlconfig->pointer.last_click_time < 300 &&
@@ -275,9 +287,16 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
 	case BTN_RIGHT:
 	    eventType = NSRightMouseDown;
 	    break;
+	case BTN_MIDDLE:
+	    eventType = NSOtherMouseDown;
+	    break;
+        // TODO: handle BTN_SIDE, BTN_EXTRA, BTN_FORWARD, BTN_BACK and other
+        // constants in libinput.
+        // We may just want to send NSOtherMouseDown and populate buttonNumber
+        // with the libinput constant?
 	}
 	wlconfig->pointer.serial = serial;
-    } else {
+    } else if (state == WL_POINTER_BUTTON_STATE_RELEASED) {
 	switch (button) {
 	case BTN_LEFT:
 	    eventType = NSLeftMouseUp;
@@ -285,13 +304,32 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
 	case BTN_RIGHT:
 	    eventType = NSRightMouseUp;
 	    break;
+	case BTN_MIDDLE:
+	    eventType = NSOtherMouseUp;
+	    break;
 	}
 	wlconfig->pointer.serial = 0;
+    } else {
+      NSDebugLog(@"unhandled wayland pointer state 0x%02x", state);
+      return;
     }
 
+    /* FIXME: unlike in _motion and _axis handlers, the argument used in _button
+       is the "serial" of the event, not passed and unavailable in _motion and
+       _axis handlers. Is it allowed to pass "serial" as the eventNumber: in
+       _button handler, but "time" as the eventNumber: in the _motion and _axis
+       handlers? */
     tick = serial;
 
     NSDebugLog(@"sending pointer event at: %fx%f, window=%d", wlconfig->pointer.x, wlconfig->pointer.y, window->window_id);
+
+    /* FIXME: X11 backend uses the XGetPointerMapping()-returned values from
+       its map_return argument as constants for buttonNumber. As the variant
+       with buttonNumber: seems to be a GNUstep extension, and the value
+       internal, it might be ok to just provide libinput constant as we're doing
+       here. If this is truly correct, please update this comment to document
+       the correctness of doing so. */
+    buttonNumber = button;
 
     event = [NSEvent mouseEventWithType: eventType
 			       location: eventLocation
@@ -302,9 +340,9 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
 			    eventNumber: tick
 			     clickCount: clickCount
 			       pressure: 1.0
-			   buttonNumber: 0 /* FIXME */
-				 deltaX: deltaX
-				 deltaY: deltaY
+			   buttonNumber: buttonNumber
+				 deltaX: deltaX /* FIXME unused */
+				 deltaY: deltaY /* FIXME unused */
 				 deltaZ: 0.];
 
     [GSCurrentServer() postEvent: event atStart: NO];
@@ -314,6 +352,65 @@ static void
 pointer_handle_axis(void *data, struct wl_pointer *pointer,
 		    uint32_t time, uint32_t axis, wl_fixed_t value)
 {
+  NSDebugLog(@"pointer_handle_axis: axis=%d value=%g", axis, wl_fixed_to_double(value));
+  WaylandConfig *wlconfig = data;
+  NSEvent *event;
+  NSEventType eventType;
+  NSPoint eventLocation;
+  NSGraphicsContext *gcontext;
+  unsigned int eventFlags;
+  float deltaX = 0.0;
+  float deltaY = 0.0;
+  int clickCount = 1;
+  int buttonNumber;
+
+  struct window *window = wlconfig->pointer.focus;
+
+  [GSCurrentServer() initializeMouseIfRequired];
+
+  gcontext = GSCurrentContext();
+  eventLocation = NSMakePoint(wlconfig->pointer.x,
+                              window->height - wlconfig->pointer.y);
+  eventFlags = 0;
+
+  float mouse_scroll_multiplier = wlconfig->mouse_scroll_multiplier;
+  /* For smooth-scroll events, we're not doing any cross-event or delta
+     calculations, as is done in button event handling. */
+  switch(axis)
+    {
+    case WL_POINTER_AXIS_VERTICAL_SCROLL:
+      eventType = NSScrollWheel;
+      deltaY = wl_fixed_to_double(value) * wlconfig->mouse_scroll_multiplier;
+    case WL_POINTER_AXIS_HORIZONTAL_SCROLL:
+      eventType = NSScrollWheel;
+      deltaX = wl_fixed_to_double(value) * wlconfig->mouse_scroll_multiplier;
+    }
+
+  NSDebugLog(@"sending pointer scroll at: %fx%f, value %fx%f, window=%d", wlconfig->pointer.x, wlconfig->pointer.y, deltaX, deltaY, window->window_id);
+
+  /* FIXME: X11 backend uses the XGetPointerMapping()-returned values from
+     its map_return argument as constants for buttonNumber. As the variant
+     with buttonNumber: seems to be a GNUstep extension, and the value
+     internal, it might be ok to just not provide any value here.
+     If this is truly correct, please update this comment to document
+     the correctness of doing so. */
+  buttonNumber = 0;
+
+  event = [NSEvent mouseEventWithType: eventType
+                             location: eventLocation
+                        modifierFlags: eventFlags
+                            timestamp: (NSTimeInterval) time / 1000.0
+                         windowNumber: (int)window->window_id
+                              context: gcontext
+                          eventNumber: time
+                           clickCount: clickCount
+                             pressure: 1.0
+                         buttonNumber: buttonNumber
+                               deltaX: deltaX
+                               deltaY: deltaY
+                               deltaZ: 0.];
+
+  [GSCurrentServer() postEvent: event atStart: NO];
 }
 
 static const struct wl_pointer_listener pointer_listener = {
@@ -777,6 +874,7 @@ int NSToWayland(struct window *window, int ns_y)
     wlconfig = (WaylandConfig *) malloc(sizeof(WaylandConfig));
     memset(wlconfig, 0, sizeof(WaylandConfig));
     wlconfig->last_window_id = 1;
+    wlconfig->mouse_scroll_multiplier = 1.0f;
     wl_list_init(&wlconfig->output_list);
     wl_list_init(&wlconfig->window_list);
 
@@ -1183,6 +1281,7 @@ int NSToWayland(struct window *window, int ns_y)
 
     if (0 && config->pointer.serial && config->pointer.focus &&
 	config->pointer.focus->window_id == win) {
+        // FIXME: remove dead branch
 	NSEvent *event;
 	NSEventType eventType;
 	NSPoint eventLocation;
@@ -1527,5 +1626,33 @@ int NSToWayland(struct window *window, int ns_y)
 {
     NSDebugLog(@"setIgnoreMouse");
 }
+
+- (void) initializeMouseIfRequired
+{
+  if (!_mouseInitialized)
+    [self initializeMouse];
+}
+
+- (void) initializeMouse
+{
+  _mouseInitialized = YES;
+
+  [self mouseOptionsChanged: nil];
+  [[NSDistributedNotificationCenter defaultCenter]
+    addObserver: self
+       selector: @selector(mouseOptionsChanged:)
+           name: NSUserDefaultsDidChangeNotification
+         object: nil];
+}
+
+- (void) mouseOptionsChanged: (NSNotification *)aNotif
+{
+  NSUserDefaults *defs = [NSUserDefaults standardUserDefaults];
+
+  wlconfig->mouse_scroll_multiplier = [defs integerForKey:@"GSMouseScrollMultiplier"];
+  if (wlconfig->mouse_scroll_multiplier < 0.0001f)
+    wlconfig->mouse_scroll_multiplier = 1.0f;
+}
+
 
 @end
