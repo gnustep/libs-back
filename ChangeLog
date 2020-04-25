@@ -1,3 +1,21 @@
+2020-04-25  Ivan Vucica <ivan@vucica.net>
+
+	* Source/GSBackend.m:
+	* Source/cairo/GNUmakefile:
+	* Source/cairo/CairoContext.m:
+	* Source/cairo/WaylandCairoSurface.m:
+	* Source/wayland/GNUmakefile:
+	* Source/wayland/GNUmakefile.preamble:
+	* Source/wayland/WaylandServer.m:
+	* Source/wayland/xdg-shell-protocol.c:
+	* Headers/cairo/WaylandCairoSurface.h:
+	* Headers/wayland/WaylandServer.h:
+	* Headers/wayland/xdg-shell-client-protocol.h:
+	* wayland-regenerate.h:
+	* configure:
+	* configure.ac:
+	Initial merge of the Wayland backend into the master branch.
+
 2020-04-13  Ivan Vucica <ivan@vucica.net>
 
 	* Documentation/announce.texi:
