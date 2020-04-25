@@ -802,8 +802,12 @@ int NSToWayland(struct window *window, int ns_y)
 		    format: @"Unable to get compositor"];
     }
     if (!wlconfig->wm_base) {
+        /* Note: this was merged into Weston only as of Feb 2019, and is
+           probably in Weston only as of 6.0 release, therefore not in Weston
+           5.x present in Debian buster (current stable). See Weston merge request
+           !103. */
 	[NSException raise: NSWindowServerCommunicationException
-		    format: @"Unable to get xdg-shell / xdg_wm_base"];
+		    format: @"Unable to get xdg-shell / xdg_wm_base - your Wayland compositor must support the stable XDG Shell protocol"];
     }
 
     return self;
