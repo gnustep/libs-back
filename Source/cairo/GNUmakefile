@@ -49,12 +49,20 @@ ifeq ($(BUILD_SERVER),x11)
     cairo_OBJC_FILES += XGCairoSurface.m XGCairoXImageSurface.m XGCairoModernSurface.m
   endif
 else
-  ifeq ($(BUILD_GRAPHICS),cairo)
+  ifeq ($(BUILD_SERVER),xheadless)
     ifeq ($(WITH_GLITZ),yes)
-      cairo_OBJC_FILES += Win32CairoGlitzSurface.m
+      cairo_OBJC_FILES += XGCairoGlitzSurface.m
     else
-      cairo_OBJC_FILES += Win32CairoSurface.m Win32CairoGState.m
-      # Win32CairoXImageSurface.m 
+      cairo_OBJC_FILES += XGCairoSurface.m XGCairoXImageSurface.m XGCairoModernSurface.m
+    endif
+  else
+    ifeq ($(BUILD_GRAPHICS),cairo)
+      ifeq ($(WITH_GLITZ),yes)
+        cairo_OBJC_FILES += Win32CairoGlitzSurface.m
+      else
+        cairo_OBJC_FILES += Win32CairoSurface.m Win32CairoGState.m
+        # Win32CairoXImageSurface.m 
+      endif
     endif
   endif
 endif

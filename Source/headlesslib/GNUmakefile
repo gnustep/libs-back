@@ -1,9 +1,6 @@
+#  Copyright (C) 2004 Free Software Foundation, Inc.
 #
-#  Top level makefile for GNUstep Backend
-#
-#  Copyright (C) 2002 Free Software Foundation, Inc.
-#
-#  Author: Adam Fedor <fedor@gnu.org>
+#  Author: Banlu Kemiyatorn <object at gmail dot com>
 #
 #  This file is part of the GNUstep Backend.
 #
@@ -24,45 +21,33 @@
 #  Boston, MA 02110-1301, USA.
 
 PACKAGE_NAME = gnustep-back
+GNUSTEP_LOCAL_ADDITIONAL_MAKEFILES=../../back.make
 include $(GNUSTEP_MAKEFILES)/common.make
 
-include ../config.make
+include ../../config.make
 
-include ../Version
+SUBPROJECT_NAME=headlesslib
+
+# The Objective-C source files to be compiled
+headlesslib_OBJC_FILES = \
+  HeadlessSurface.m \
+  HeadlessFontInfo.m \
+  HeadlessGState.m \
+  HeadlessContext.m \
+  HeadlessFontEnumerator.m \
+  HeadlessFaceInfo.m \
 
 
-# The library to be compiled, as a library or as a bundle
-ifeq ($(BACKEND_BUNDLE),)
-  BACKEND_FULL=$(BACKEND_NAME)
-  LIBRARY_NAME=libgnustep-$(BACKEND_FULL)
-else
-  BACKEND_FULL=$(BACKEND_NAME)-$(INTERFACE_VERSION_NUMBER)
-  BUNDLE_NAME=libgnustep-$(BACKEND_FULL)
+
+ifeq ($(BUILD_SERVER),xheadless)
+  headlesslib_OBJC_FILES += HeadlessModernSurface.m
 endif
 
-#
-# The list of subproject directories
-#
-SUBPROJECTS = gsc $(BUILD_SERVER) $(BUILD_GRAPHICS)
-
-libgnustep-$(BACKEND_FULL)_SUBPROJECTS=$(SUBPROJECTS)
-
-libgnustep-$(BACKEND_FULL)_OBJC_FILES=GSBackend.m
-
-libgnustep-$(BACKEND_FULL)_PRINCIPAL_CLASS=GSBackend
-
-libgnustep-$(BACKEND_FULL)_LOCALIZED_RESOURCE_FILES=nfontFaceNames.strings
-
-libgnustep-$(BACKEND_FULL)_LANGUAGES=English Swedish
-
-ADDITIONAL_LDFLAGS+=-v
+headlesslib_OBJC_FILES += 
 
 -include GNUmakefile.preamble
 
-ifeq ($(BACKEND_BUNDLE),)
-  include $(GNUSTEP_MAKEFILES)/library.make
-else
-  include $(GNUSTEP_MAKEFILES)/bundle.make
-endif
+include $(GNUSTEP_MAKEFILES)/subproject.make
 
 -include GNUmakefile.postamble
+
