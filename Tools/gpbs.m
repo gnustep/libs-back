@@ -1292,7 +1292,7 @@ main(int argc, char** argv, char **env)
 
       if (host == nil)
         {
-          NSLog(@"gpbs - unknown NSHost argument  ... %@ - quiting.", hostname);
+          NSLog(@"gpbs - unknown NSHost argument  ... %@ - quitting.", hostname);
           exit(EXIT_FAILURE);
         }
       a = [host names];
