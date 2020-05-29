@@ -62,7 +62,7 @@ accessibleRectForWindow (gswindow_device_t* win)
                        &ignoreUInt,
                        &ignoreUInt))
       {
-        NSDebugLLog (@"XGGeometry", @"invalide Drawable in gswindow_device");
+        NSDebugLLog (@"XGGeometry", @"invalid Drawable in gswindow_device");
         return XGMakeRect (0, 0, 0, 0);
       }
 

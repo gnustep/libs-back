@@ -804,7 +804,7 @@ _bitmap_combine_alpha(RContext *context,
           img.pro_mul = 255;
           break;
         default:
-          NSLog(@"Bizzare number of bits per sample %d", bits_per_sample);
+          NSLog(@"Bizarre number of bits per sample %d", bits_per_sample);
           return -1;
      }
 
