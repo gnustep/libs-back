@@ -46,6 +46,7 @@
 	NSString *_familyName;
 	NSCharacterSet *_characterSet;
 	BOOL _hasNoCharacterSet;
+	BOOL _patternIsResolved;
 }
 
 - (id) initWithfamilyName: (NSString *)familyName 

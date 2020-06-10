@@ -133,27 +133,32 @@
 
 - (FcPattern *) matchedPattern
 {
-  FcResult result;
-  FcPattern *resolved;
-
-  FcConfigSubstitute(NULL, _pattern, FcMatchPattern); 
-  FcDefaultSubstitute(_pattern);
-  resolved = FcFontMatch(NULL, _pattern, &result);
-
-  return resolved;
-}
-
-- (NSCharacterSet*)characterSet
-{
-  if (_characterSet == nil && !_hasNoCharacterSet)
+  if (!_patternIsResolved)
     {
       FcResult result;
       FcPattern *resolved;
-      FcCharSet *charset;
-      
+
       FcConfigSubstitute(NULL, _pattern, FcMatchPattern); 
       FcDefaultSubstitute(_pattern);
       resolved = FcFontMatch(NULL, _pattern, &result);
+      FcPatternDestroy(_pattern);
+      _pattern = resolved;
+      _patternIsResolved = YES;
+    }
+
+  // The caller expects ownership of returned pattern and will destroy it
+  FcPatternReference(_pattern);
+  return _pattern;
+}
+
+- (NSCharacterSet*) characterSet
+{
+  if (_characterSet == nil && !_hasNoCharacterSet)
+    {
+      FcPattern *resolved;
+      FcCharSet *charset;
+      
+      resolved = [self matchedPattern];
       
       if (FcResultMatch == FcPatternGetCharSet(resolved, FC_CHARSET, 0, &charset))
 	{
