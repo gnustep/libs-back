@@ -73,13 +73,13 @@ extern unsigned long XGFontPropULong(Display *dpy, XFontStruct *font_struct,
 - (void) draw: (const char*) s length: (int) len 
     onDisplay: (Display*) xdpy drawable: (Drawable) draw
 	 with: (GC) xgcntxt at: (XPoint) xp;
-- (float) widthOf: (const char*) s length: (int) len;
+- (CGFloat) widthOf: (const char*) s length: (int) len;
 - (void) setActiveFor: (Display*) xdpy gc: (GC) xgcntxt;
 
 - (void) drawGlyphs: (const NSGlyph *) glyphs length: (int) len
 	  onDisplay: (Display*) xdpy drawable: (Drawable) draw
 	       with: (GC) xgcntxt at: (XPoint) xp;
-- (float) widthOfGlyphs: (const NSGlyph *) glyphs length: (int) len;
+- (CGFloat) widthOfGlyphs: (const NSGlyph *) glyphs length: (int) len;
 
 @end
 

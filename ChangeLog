@@ -3,6 +3,9 @@
 	* Source/xlib/XGFontManager.m
 	Match return value in case of error (nil instead of NO)
 
+	* Headers/xlib/XGPrivate.h
+	Fix return value of width to CGFloat
+
 2020-06-10 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Headers/fontconfig/FCFaceInfo.h: Add instancevariable _patternIsResolved.
