@@ -106,7 +106,7 @@ cache_name()
       if ([mgr fileExistsAtPath: path isDirectory: &flag] == NO || flag == NO)
 	{
 	  NSLog(@"Library directory '%@' not available!", path);
-	  return NO;
+	  return nil;
 	}
       path = [path stringByAppendingPathComponent: @"Fonts"];
       if ([mgr fileExistsAtPath: path] == NO)
@@ -116,7 +116,7 @@ cache_name()
       if ([mgr fileExistsAtPath: path isDirectory: &flag] == NO || flag == NO)
 	{
 	  NSLog(@"Fonts directory '%@' not available!", path);
-	  return NO;
+	  return nil;
 	}
       path = [path stringByAppendingPathComponent: @"Cache"];
       if ([mgr fileExistsAtPath: path] == NO)
@@ -126,7 +126,7 @@ cache_name()
       if ([mgr fileExistsAtPath: path isDirectory: &flag] == NO || flag == NO)
 	{
 	  NSLog(@"Fonts directory '%@' not available!", path);
-	  return NO;
+	  return nil;
 	}
       cacheName = [path stringByAppendingPathComponent: file_name];
       RETAIN(cacheName);
