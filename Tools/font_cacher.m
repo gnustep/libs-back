@@ -191,9 +191,20 @@
     }
 
   mgr = [NSFileManager defaultManager];
+  if ([mgr fileExistsAtPath: path] == NO)
+    {
+      NSError *err;
+      BOOL r;
+      r = [mgr createDirectoryAtPath: path
+	       withIntermediateDirectories: YES
+			  attributes: nil
+			       error: &err];
+      if (r == NO)
+	NSLog(@"font_cacher: Library directory creation error: %@", err);
+    }
   if ([mgr fileExistsAtPath: path isDirectory: &flag] == NO || flag == NO)
     {
-      NSLog(@"Library directory '%@' not available!", path);
+      NSLog(@"font_cacher: Library directory '%@' not available!", path);
       return nil;
     }
   path = [path stringByAppendingPathComponent: @"Fonts"];

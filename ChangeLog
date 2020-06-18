@@ -1,5 +1,10 @@
 2020-06-18 Riccardo Mottola <rm@gnu.org>
 
+	* Tools/font_cacher.m:
+	If the Library directory is not found, create one for the user.
+
+2020-06-18 Riccardo Mottola <rm@gnu.org>
+
 	* Source/xlib/XGFontManager.m
 	Match return value in case of error (nil instead of NO)
 
