@@ -1,3 +1,11 @@
+2020-09-16  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m
+	(hideApplication:): send application's root window to WindowMaker(WM)
+	because it's a "group leader" that clearly identifies application
+	inside WM. WM uses XFindContext to get WApplication structure and
+	"group leader" window ID is a key to find it.
+
 2020-06-18 Riccardo Mottola <rm@gnu.org>
 
 	* Tools/font_cacher.m:
