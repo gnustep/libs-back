@@ -1611,7 +1611,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     {
       NSDebugLLog(@"XGTrace", @"WindowMaker hack: Preparing app icon window");
       _wmAppIcon =
-	[self window: NSZeroRect : NSBackingStoreBuffered
+[self window: NSZeroRect : NSBackingStoreBuffered
 		    : NSIconWindowMask : defScreen];
       [self orderwindow: NSWindowAbove : -1 : _wmAppIcon];
       NSDebugLLog(@"XGTrace", @"WindowMaker hack: icon window = %d", _wmAppIcon);
@@ -2609,7 +2609,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   window = [XGServer _windowWithTag: win];
   [self _sendRoot: window->root
              type: generic._WINDOWMAKER_WM_FUNCTION_ATOM
-           window: window->ident
+           window: ROOT
             data0: WMFHideApplication
             data1: CurrentTime
             data2: 0
