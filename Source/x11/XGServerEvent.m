@@ -1273,6 +1273,12 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                   nswin = GSWindowWithNumber(cWin->number);
                 }
             }
+          else if (xEvent.xfocus.mode != NotifyNormal)
+            {
+              /* Focus went to `None` or `PointerRoot`.
+                 Do not change window focus - window manager is in action */
+              break;
+            }
           else
             {
               nswin = nil;
