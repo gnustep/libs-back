@@ -1,3 +1,24 @@
+2020-09-17  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerEvent.m
+	(_handleTakeFocusAtom:forContext:): if application (window) receives
+	WM_TAKE_FOCUS in hidden state it means WindowMaker wants us to be
+	unhidden.
+
+	Description: There are 2 protocols defined in XGServerWindow.h:
+	WMFHideApplication and WMFHideOtherApplications. These protocols exist
+	to help GNUstep application and WindowMaker notify each other
+	about "Hide" and "Hide Others" actions. There are no protocols for
+	"unhide" action.
+
+	Test case steps:
+	1. Open application with window opened.
+	2. Hide application with "Hide" menu item.
+	3. Open WindowMaker's "Windows" menu (middle-click on desktop).
+	4. Select hidden application window.
+	Application unhides, activates, restored window is focused (receives) input
+	and "Hide" menu item unselected.
+
 2020-09-16  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m
