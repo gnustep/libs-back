@@ -1983,7 +1983,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
              state - it's time to unhide. There's no other method to
              tell us to unhide. */
           NSDebugLLog(@"Focus", @"WM take focus while hidden - unhiding.");
-          [NSApp unhide:nil];
+          [NSApp unhide: nil];
         }
       else
         {
