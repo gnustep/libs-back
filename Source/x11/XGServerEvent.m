@@ -1977,10 +1977,21 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
      events */
   if ([NSApp isHidden])
     {
-      /* This often occurs when hidding an app, since a bunch of
-         windows get hidden at once, and the WM is searching for a
-         window to take focus after each one gets hidden. */
-      NSDebugLLog(@"Focus", @"WM take focus while hiding");
+      if (generic.wm & XGWM_WINDOWMAKER)
+        {
+          /* If window receives WM_TAKE_FOCUS and application is in hidden
+             state - it's time to unhide. There's no other method to
+             tell us to unhide. */
+          NSDebugLLog(@"Focus", @"WM take focus while hidden - unhiding.");
+          [NSApp unhide: nil];
+        }
+      else
+        {
+          /* This often occurs when hidding an app, since a bunch of
+             windows get hidden at once, and the WM is searching for a
+             window to take focus after each one gets hidden. */
+          NSDebugLLog(@"Focus", @"WM take focus while hiding");
+        }
     }
   else if (cWin->ignore_take_focus == YES)
     {
