@@ -77,7 +77,7 @@
 
 
 static BOOL handlesWindowDecorations = YES;
-static int _wmAppIcon = -1;
+// static int _wmAppIcon = -1;
 
 
 #define WINDOW_WITH_TAG(windowNumber) (gswindow_device_t *)NSMapGet(windowtags, (void *)(uintptr_t)windowNumber)
@@ -1606,16 +1606,16 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
    * generates some temporary windows to determine the window frame offsets
    * and reuse the icon window once the real app icon window is allocated.
    */
-  if ((generic.wm & XGWM_WINDOWMAKER) == XGWM_WINDOWMAKER
-      && generic.flags.useWindowMakerIcons == 1)
-    {
-      NSDebugLLog(@"XGTrace", @"WindowMaker hack: Preparing app icon window");
-      _wmAppIcon =
-	[self window: NSZeroRect : NSBackingStoreBuffered
-		    : NSIconWindowMask : defScreen];
-      [self orderwindow: NSWindowAbove : -1 : _wmAppIcon];
-      NSDebugLLog(@"XGTrace", @"WindowMaker hack: icon window = %d", _wmAppIcon);
-    }
+  // if ((generic.wm & XGWM_WINDOWMAKER) == XGWM_WINDOWMAKER
+  //     && generic.flags.useWindowMakerIcons == 1)
+  //   {
+  //     NSDebugLLog(@"XGTrace", @"WindowMaker hack: Preparing app icon window");
+  //     _wmAppIcon =
+  //       [self window: NSZeroRect : NSBackingStoreBuffered
+  //       	    : NSIconWindowMask : defScreen];
+  //     [self orderwindow: NSWindowAbove : -1 : _wmAppIcon];
+  //     NSDebugLLog(@"XGTrace", @"WindowMaker hack: icon window = %d", _wmAppIcon);
+  //   }
 
   /* We need to determine the offsets between the actual decorated window
    * and the window we draw into.
@@ -1884,16 +1884,16 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   /* WindowMaker hack: Reuse the empty app icon allocated in _setupRootWindow
    * for the real app icon.
    */
-  if ((generic.wm & XGWM_WINDOWMAKER) == XGWM_WINDOWMAKER
-      && generic.flags.useWindowMakerIcons == 1
-      && (style & NSIconWindowMask) == NSIconWindowMask
-      && _wmAppIcon != -1)
-    {
-      int win = _wmAppIcon;
-      NSDebugLLog(@"XGTrace", @"WindowMaker hack: Returning window %d as app icon window", win);
-      _wmAppIcon = -1;
-      return win;
-    }
+  // if ((generic.wm & XGWM_WINDOWMAKER) == XGWM_WINDOWMAKER
+  //     && generic.flags.useWindowMakerIcons == 1
+  //     && (style & NSIconWindowMask) == NSIconWindowMask
+  //     && _wmAppIcon != -1)
+  //   {
+  //     int win = _wmAppIcon;
+  //     NSDebugLLog(@"XGTrace", @"WindowMaker hack: Returning window %d as app icon window", win);
+  //     _wmAppIcon = -1;
+  //     return win;
+  //   }
   root = [self _rootWindow];
   context = [self screenRContext];
 

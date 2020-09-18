@@ -1,3 +1,21 @@
+2020-09-18  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m
+	(_setupRootWindow, window::::): removed WindowMaker appicon hack and
+	- now unused - _wmAppIcon variable.
+
+	Description: The removed code removed creates and maps zero-sized
+	window in hope that WindowMaker will recognize app by this event and
+	create app icon window. Although when application requests window
+	for appicon through the `-window::::` method call, it returns newly
+	created and mapped window. This actually happens but application icon
+	flickers between WM icon creation and application icon window appearance.
+
+	This fix based on the fact that root application window (ROOT) is mapped
+	in `-orderwindow:::` and this is the event of application recognition
+	by WindowMaker because it is a first application window that is
+	mapped.
+
 2020-09-17  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerEvent.m
