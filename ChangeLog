@@ -1,3 +1,8 @@
+2021-01-16 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Documentation/news.texi: Fill in some details for pending release.
+	* Version: Inclease version number.
+
 2020-09-18  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m

@@ -7,6 +7,19 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.29.0}
+
+The release includes an alpha version of the wayland backend and a few
+bug fixes.
+
+@itemize @bullet
+@item Alpha version of the wayland backend.
+@item Improved focus handling for WindowMaker interaction.
+@item Speed up for font pattern resolving.
+@end itemize
+
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.28.0}
 
 This release includes a few bugfixes and a huge rework of multi monitor handling.
@@ -20,7 +33,6 @@ This release includes a few bugfixes and a huge rework of multi monitor handling
 @item Use Xrandr for multi monitor support.
 @end itemize
 
-@ifclear ANNOUNCE-ONLY
 @section Noteworthy changes in version @samp{0.27.0}
 
 This release includes a few bugfixes.
