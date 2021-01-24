@@ -77,6 +77,7 @@
 
 
 static BOOL handlesWindowDecorations = YES;
+static int _wmAppIcon = -1;
 
 #define WINDOW_WITH_TAG(windowNumber) (gswindow_device_t *)NSMapGet(windowtags, (void *)(uintptr_t)windowNumber)
 
@@ -759,6 +760,20 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     }
 
   return NO;
+}
+
+- (void) _createWMAppiconHack
+{
+  NSSize iconSize = [self iconSize];
+  
+  NSDebugLLog(@"XGTrace", @"WindowMaker hack: Preparing app icon window");
+  
+  _wmAppIcon = [self window
+                   : NSMakeRect(0, 0, iconSize.width, iconSize.height)
+                   : NSBackingStoreBuffered : NSIconWindowMask : defScreen];
+  [self orderwindow: NSWindowAbove : -1 : _wmAppIcon];
+  
+  NSDebugLLog(@"XGTrace", @"WindowMaker hack: icon window = %d", _wmAppIcon);
 }
 
 - (unsigned long*) _getExtents: (Window)win
@@ -1627,13 +1642,26 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
         }
       else
         {
-          offsets = (uint16_t *)PropGetCheckProperty(dpy,
-            DefaultRootWindow(dpy), generic._GNUSTEP_FRAME_OFFSETS_ATOM, XA_CARDINAL, 16, 60, &count);
+          offsets = (uint16_t *)PropGetCheckProperty(dpy, DefaultRootWindow(dpy),
+                                                     generic._GNUSTEP_FRAME_OFFSETS_ATOM,
+                                                     XA_CARDINAL, 16, 60, &count);
         }
 
       if (offsets == 0)
         {
           BOOL	ok = YES;
+
+          /* WindowMaker hack: We want to display our own app icon window in the
+           * icon window provided by WindowMaker. However, this only works when
+           * the icon window is the first window being mapped. For that reason,
+           * we create an empty icon window here before the code below eventually
+           * generate temporary window to determine the window frame offsets
+           * and reuse the icon window once the real app icon window is allocated.
+           */
+          if ((generic.wm & XGWM_WINDOWMAKER) && generic.flags.useWindowMakerIcons == 1)
+            {
+              [self _createWMAppiconHack];
+            }
 
           /* No offsets available on the root window ... so we test each
            * style of window to determine its offsets.
@@ -1663,7 +1691,8 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
                   off[count++] = (uint16_t)generic.offsets[i].b;
                 }
               XChangeProperty(dpy, DefaultRootWindow(dpy),
-                              generic._GNUSTEP_FRAME_OFFSETS_ATOM, XA_CARDINAL, 16, PropModeReplace,
+                              generic._GNUSTEP_FRAME_OFFSETS_ATOM,
+                              XA_CARDINAL, 16, PropModeReplace,
                               (unsigned char *)off, 60);
             }
         }
@@ -1861,6 +1890,18 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   RContext              *context;
 
   NSDebugLLog(@"XGTrace", @"DPSwindow: %@ %d", NSStringFromRect(frame), (int)type);
+  
+  /* WindowMaker hack: Reuse the empty app icon allocated in _createWMAppiconHack
+   * for the real app icon. */
+  if ((style & NSIconWindowMask) == NSIconWindowMask && _wmAppIcon != -1)
+    {
+      int win = _wmAppIcon;
+      NSDebugLLog(@"XGTrace",
+                  @"WindowMaker hack: Returning window %d as app icon window", win);
+      _wmAppIcon = -1;
+      return win;
+    }
+  
   root = [self _rootWindow];
   context = [self screenRContext];
 

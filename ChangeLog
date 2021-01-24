@@ -1,3 +1,13 @@
+2021-01-24  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m: WindowMaker doesn't support
+	_NET_REQUEST_FRAME_EXTENTS message andthe only way to determine offsets
+	is creating and mapping window.	In this case first mapped window of
+	application is not appicon window.
+	Early appicon creating inserted back as _createWMAppiconHack method and
+	called only if no other way to determine window's offsets (before call to
+	_checkStyle);appicon window size is set to size icon;
+
 2021-01-16 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Documentation/news.texi: Fill in some details for pending release.
