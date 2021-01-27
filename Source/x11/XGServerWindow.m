@@ -762,20 +762,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   return NO;
 }
 
-- (void) _createWMAppiconHack
-{
-  NSSize iconSize = [self iconSize];
-  
-  NSDebugLLog(@"XGTrace", @"WindowMaker hack: Preparing app icon window");
-  
-  _wmAppIcon = [self window
-                   : NSMakeRect(0, 0, iconSize.width, iconSize.height)
-                   : NSBackingStoreBuffered : NSIconWindowMask : defScreen];
-  [self orderwindow: NSWindowAbove : -1 : _wmAppIcon];
-  
-  NSDebugLLog(@"XGTrace", @"WindowMaker hack: icon window = %d", _wmAppIcon);
-}
-
 - (unsigned long*) _getExtents: (Window)win
 {
   int count;
@@ -872,7 +858,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   /*
    * Mark this as a GNUstep app with the current application name.
    */
-  classhint.res_name = generic.rootName;
+  classhint.res_name = "CheckWindowStyle";
   classhint.res_class = "GNUstep";
   XSetClassHint(dpy, window->ident, &classhint);
 
@@ -926,9 +912,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   // Use the globally active input mode
   window->gen_hints.flags = InputHint;
   window->gen_hints.input = False;
-  // All the windows of a GNUstep application belong to one group.
-  window->gen_hints.flags |= WindowGroupHint;
-  window->gen_hints.window_group = ROOT;
 
   /*
    * Prepare the protocols supported by the window.
@@ -1638,6 +1621,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
        */
       if ([defs boolForKey: @"GSIgnoreRootOffsets"] == YES)
         {
+          NSLog(@"Ignoring _GNUSTEP_FRAME_OFFSETS root window property.");
           offsets = 0;
         }
       else
@@ -1650,18 +1634,6 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       if (offsets == 0)
         {
           BOOL	ok = YES;
-
-          /* WindowMaker hack: We want to display our own app icon window in the
-           * icon window provided by WindowMaker. However, this only works when
-           * the icon window is the first window being mapped. For that reason,
-           * we create an empty icon window here before the code below eventually
-           * generate temporary window to determine the window frame offsets
-           * and reuse the icon window once the real app icon window is allocated.
-           */
-          if ((generic.wm & XGWM_WINDOWMAKER) && generic.flags.useWindowMakerIcons == 1)
-            {
-              [self _createWMAppiconHack];
-            }
 
           /* No offsets available on the root window ... so we test each
            * style of window to determine its offsets.

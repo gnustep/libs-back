@@ -1,3 +1,13 @@
+2021-01-27  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_checkStyle:): do not set application
+	name and WindowGroupHint to temporary window. Created window designed
+	to help get window frame offsets only - appicon window will be created
+	later. This change prevents appicon flickering on WindowMaker at
+	application start.
+	(_createWMAppiconHack, _setupRootWindow): WindowMaker hack removed in
+	favour of solution introduced in _checkStyle:.
+
 2021-01-24  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m: WindowMaker doesn't support
