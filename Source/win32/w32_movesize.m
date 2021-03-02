@@ -170,9 +170,9 @@
                   && GetClassName(hi, buf, 32) == 18
                   && strncmp(buf, "GNUstepWindowClass", 18) == 0)
                 {
-                  if (GetWindowLong(hi, OFF_ORDERED) == 1)
+                  if (GetWindowLongPtr(hi, OFF_ORDERED) == 1)
                     {
-                      hl = GetWindowLong(hi, OFF_LEVEL);
+                      hl = GetWindowLongPtr(hi, OFF_LEVEL);
                       s = [s stringByAppendingFormat: @"%d (%d)\n", hi, hl];
                     }
                 }
@@ -200,8 +200,8 @@
             {
               if (GetClassName(hi, buf, 32) == 18
                   && strncmp(buf, "GNUstepWindowClass", 18) == 0
-                  && GetWindowLong(hi, OFF_ORDERED) == 1
-                  && (hl = GetWindowLong(hi, OFF_LEVEL))
+                  && GetWindowLongPtr(hi, OFF_ORDERED) == 1
+                  && (hl = GetWindowLongPtr(hi, OFF_LEVEL))
                   > NSDesktopWindowLevel)
                 {
                   break;
@@ -220,8 +220,8 @@
                 {
                   if (GetClassName(lo, buf, 32) == 18
                       && strncmp(buf, "GNUstepWindowClass", 18) == 0
-                      && GetWindowLong(lo, OFF_ORDERED) == 1
-                      && (ll = GetWindowLong(lo, OFF_LEVEL))
+                      && GetWindowLongPtr(lo, OFF_ORDERED) == 1
+                      && (ll = GetWindowLongPtr(lo, OFF_LEVEL))
                       > NSDesktopWindowLevel)
                     {
                       break;
@@ -275,7 +275,7 @@
        * to ensure that they are at the bottom unless another
        * desktop level window is inserted below them.
        */
-      if (GetWindowLong(hwnd, OFF_LEVEL) <= NSDesktopWindowLevel)
+      if (GetWindowLongPtr(hwnd, OFF_LEVEL) <= NSDesktopWindowLevel)
         {
           inf->hwndInsertAfter = HWND_BOTTOM;
         }
@@ -284,7 +284,7 @@
 
 - (LRESULT) decodeWM_GETMINMAXINFOParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-  WIN_INTERN *win = (WIN_INTERN *)GetWindowLong(hwnd, GWL_USERDATA);
+  WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
   MINMAXINFO *mm;
 
   if (win != NULL)
