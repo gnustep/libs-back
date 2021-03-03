@@ -57,7 +57,7 @@
 
   gsDevice = device;
   GetClientRect(GSWINDEVICE, &sz);
-  win = (WIN_INTERN *)GetWindowLong(GSWINDEVICE, GWL_USERDATA);
+  win = (WIN_INTERN *)GetWindowLongPtr(GSWINDEVICE, GWLP_USERDATA);
   if (win && win->useHDC)
     {
       HGDIOBJ old;
