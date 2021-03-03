@@ -1635,10 +1635,10 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       // Borderless window request...
       if (wstyle & WS_POPUP)
       {
-        LONG    wstyleOld  = GetWindowLongPtr(hwnd, GWL_STYLE);
-        LONG    estyleOld  = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
-        LONG    wstyleNew  = (wstyleOld & ~WS_OVERLAPPEDWINDOW);
-        LONG    estyleNew  = estyleOld | WS_EX_TOOLWINDOW;
+        LONG_PTR  wstyleOld  = GetWindowLongPtr(hwnd, GWL_STYLE);
+        LONG_PTR  estyleOld  = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+        LONG_PTR  wstyleNew  = (wstyleOld & ~WS_OVERLAPPEDWINDOW);
+        LONG_PTR  estyleNew  = estyleOld | WS_EX_TOOLWINDOW;
         
         NSDebugMLLog(@"WCTrace", @"wstyles - old: %8.8X new: %8.8X\n",
                     wstyleOld, wstyleNew);
