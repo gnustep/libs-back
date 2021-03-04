@@ -39,7 +39,7 @@
 {
   if (self)
     {
-      WIN_INTERN *win = (WIN_INTERN *)GetWindowLong((HWND)device, GWL_USERDATA);
+      WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)device, GWLP_USERDATA);
       HDC         hDC = GetDC((HWND)device);
 
       // Save/set initial state...
