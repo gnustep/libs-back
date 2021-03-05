@@ -1,3 +1,20 @@
+2021-03-03 Riccardo Mottola <rm@gnu.org>
+
+	* Source/win32/WIN32Server.m:
+	actually store in a LONG_PTR the result of GetWindowLongPtr
+
+2021-03-02 Riccardo Mottola <rm@gnu.org>
+
+	* Source/win32/WIN32Server.m
+	* Source/win32/w32_create.m
+	* Source/win32/w32_general.m
+	* Source/win32/w32_movesize.m
+	* Source/win32/w32_windowdisplay.m
+	* Source/winlib/WIN32GState.m
+	* Source/cairo/Win32CairoGlitzSurface.m:
+	Consistently use 64bit safe SetWindowLongPtr/GetWindowLongPtr instead
+	of a mix with old 32bit versions.
+
 2021-01-27  Sergii Stoian  <stoyan255@gmail.com>
 
 	* Source/x11/XGServerWindow.m (_checkStyle:): do not set application
