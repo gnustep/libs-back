@@ -1,4 +1,4 @@
-2021-01-16 Fred Kiefer <FredKiefer@gmx.de>
+2021-03-12 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-styleoffsets:...:): Change NSLog
 	statement on guessing the offset into a NSDebugLLog statement.
