@@ -2284,7 +2284,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       return;
     }
 
-  NSLog(@"styleoffsets ... guessing offsets\n");
+  NSDebugLLog(@"Frame", @"styleoffsets ... guessing offsets\n");
   if ((generic.wm & XGWM_WINDOWMAKER) != 0)
     {
       *l = *r = *t = *b = 1.0;
