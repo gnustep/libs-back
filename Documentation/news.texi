@@ -16,6 +16,11 @@ bug fixes.
 @item Alpha version of the wayland backend.
 @item Improved focus handling for WindowMaker interaction.
 @item Speed up for font pattern resolving.
+@item Improved appicon behavior under WindowMaker.
+@item Prevent appicon flickering on WindowMaker at application start.
+@item On Windows, consistently use @code{GetWindowLongPtr} and
+@code{SetWindowLongPtr} in place of @code{GetWindowLong} and
+@code{SetWindowLong} for win32 and cairo for various win64 fixes.
 @end itemize
 
 @ifclear ANNOUNCE-ONLY

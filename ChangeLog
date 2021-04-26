@@ -1,3 +1,10 @@
+2020-04-26  Ivan Vucica  <ivan@vucica.net>
+
+	* ANNOUNCE:
+	* NEWS:
+	* README:
+	Updating documentation for the 0.29.0 release.
+
 2021-03-12 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/XGServerWindow.m (-styleoffsets:...:): Change NSLog
