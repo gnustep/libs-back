@@ -689,14 +689,12 @@ xdg_surface_on_configure(void *data, struct xdg_surface *xdg_surface,
     xdg_surface_ack_configure(xdg_surface, serial);
     window->configured = YES;
 
-    // TODO: do we need to check that the surface has been painted to?
-    if (window->surface)
-      {
-        // TODO: is this ever going to be null when we get here?
+
+    if(window->buffer_needs_attach) {
+        NSDebugLog(@"attach: win=%d toplevel", window->window_id);
+        wl_surface_attach(window->surface, window->buffer, 0, 0);
         wl_surface_commit(window->surface);
-        wl_display_dispatch_pending(window->wlconfig->display);
-        wl_display_flush(window->wlconfig->display);
-      }
+    }
 
 
     if (wlconfig->pointer.focus &&
@@ -1081,34 +1079,22 @@ int NSToWayland(struct window *window, int ns_y)
     window->pos_x = frame.origin.x;
     window->pos_y = NSToWayland(window, frame.origin.y);
     window->window_id = wlconfig->last_window_id;
-    window->surface = wl_compositor_create_surface(wlconfig->compositor);
-    if (!window->surface) {
-	NSDebugLog(@"can't create wayland surface");
-	free(window);
-	return 0;
-    }
-    wl_surface_set_user_data(window->surface, window);
-
-    window->xdg_surface =
-	xdg_wm_base_get_xdg_surface(wlconfig->wm_base, window->surface);
+    window->xdg_surface = NULL;
+    window->toplevel = NULL;
+    window->configured = NO;
+    window->buffer_needs_attach = NO;
 
 #if 0
-    // TODO: xdg_shell_get_xdg_surface_special() no longer exists,
-    // so we need to find another way, see *get_popup for menus
-    if (style & NSMainMenuWindowMask) {
-	NSDebugLog(@"window id=%d will be a panel", window->window_id);
-    } else if (style & NSBackgroundWindowMask) {
-	NSDebugLog(@"window id=%d will be a ?", window->window_id);
+    if (style & NSMiniWindowMask) {
+	NSDebugLog(@"window id=%d will be a NSMiniWindowMask", window->window_id);
+    } else if (style & NSIconWindowMask) {
+	NSDebugLog(@"window id=%d will be a NSIconWindowMask", window->window_id);
+    } else if (style & NSBorderlessWindowMask) {
+	NSDebugLog(@"window id=%d will be a NSBorderlessWindowMask", window->window_id);
     } else {
 	NSDebugLog(@"window id=%d will be ordinary", window->window_id);
     }
 #endif
-
-    window->toplevel = xdg_surface_get_toplevel(window->xdg_surface);
-
-    xdg_surface_set_user_data(window->xdg_surface, window);
-    xdg_surface_add_listener(window->xdg_surface,
-			     &xdg_surface_listener, window);
 
     if (window->pos_x < 0) {
 	window->pos_x = 0;
@@ -1125,18 +1111,13 @@ int NSToWayland(struct window *window, int ns_y)
     NSDebugLog(@"creating new window with id=%d: pos=%fx%f, size=%fx%f",
 	       window->window_id, window->pos_x, window->pos_y,
 	       window->width, window->height);
-    xdg_surface_set_window_geometry(window->xdg_surface,
-				    window->pos_x,
-				    window->pos_y,
-				    window->width,
-				    window->height);
-    wl_surface_commit(window->surface);
-    wl_display_flush(wlconfig->display);
 
     wl_list_insert(wlconfig->window_list.prev, &window->link);
     wlconfig->last_window_id++;
     wlconfig->window_count++;
 
+
+    // creates a buffer for the window
     [self _setWindowOwnedByServer: (int)window->window_id];
 
     if (altered) {
@@ -1156,7 +1137,49 @@ int NSToWayland(struct window *window, int ns_y)
 
     return window->window_id;
 }
+- (void) makeWindowTopLevel: (int) win
+{
+	NSDebugLog(@"makeWindowTopLevel");
 
+    struct window *window = get_window_with_id(wlconfig, win);
+    window->surface = wl_compositor_create_surface(wlconfig->compositor);
+    if (!window->surface) {
+	NSDebugLog(@"can't create wayland surface");
+	free(window);
+	return;
+    }
+    wl_surface_set_user_data(window->surface, window);
+    window->xdg_surface =
+	xdg_wm_base_get_xdg_surface(wlconfig->wm_base, window->surface);
+    window->toplevel = xdg_surface_get_toplevel(window->xdg_surface);
+    xdg_surface_add_listener(window->xdg_surface,
+			     &xdg_surface_listener, window);
+
+    xdg_surface_set_window_geometry(window->xdg_surface,
+				    window->pos_x,
+				    window->pos_y,
+				    window->width,
+				    window->height);
+
+    NSDebugLog(@"wl_surface_commit: win=%d toplevel", window->window_id);
+    wl_surface_commit(window->surface);
+	wl_display_dispatch_pending(window->wlconfig->display);
+	wl_display_flush(window->wlconfig->display);
+    return;
+
+#if 0
+    // TODO: xdg_shell_get_xdg_surface_special() no longer exists,
+    // so we need to find another way, see *get_popup for menus
+    if (style & NSMainMenuWindowMask) {
+	NSDebugLog(@"window id=%d will be a panel", window->window_id);
+    } else if (style & NSBackgroundWindowMask) {
+	NSDebugLog(@"window id=%d will be a ?", window->window_id);
+    } else {
+	NSDebugLog(@"window id=%d will be ordinary", window->window_id);
+    }
+#endif
+
+}
 - (void) termwindow: (int) win
 {
     NSDebugLog(@"termwindow: win=%d", win);
@@ -1199,7 +1222,8 @@ int NSToWayland(struct window *window, int ns_y)
     struct window *window = get_window_with_id(wlconfig, win);
     const char *cString = [window_title UTF8String];
 
-    xdg_toplevel_set_title(window->toplevel, cString);
+    if(window->toplevel)
+        xdg_toplevel_set_title(window->toplevel, cString);
 }
 
 - (void) miniwindow: (int) win
@@ -1210,6 +1234,8 @@ int NSToWayland(struct window *window, int ns_y)
 
 - (void) setWindowdevice: (int) winId forContext: (NSGraphicsContext *)ctxt
 {
+    // creates a new shm buffer
+    NSDebugLog(@"creating a new shm buffer: %d", winId);
     NSDebugLog(@"setWindowdevice: %d", winId);
     struct window *window;
 
@@ -1228,21 +1254,28 @@ int NSToWayland(struct window *window, int ns_y)
     if (op == NSWindowOut) {
 	NSDebugLog(@"orderwindow: NSWindowOut");
 	window->is_out = 1;
+    if(window->xdg_surface) {
 	xdg_surface_set_window_geometry(window->xdg_surface,
 					window->pos_x + 32000,
 					window->pos_y + 32000,
 					window->width,
 					window->height);
+    }
 	NSRect rect = NSMakeRect(0, 0,
 				 window->width, window->height);
 	[window->instance flushwindowrect:rect :window->window_id];
+    if(window->toplevel != NULL) {
+        xdg_toplevel_set_minimized(window->toplevel);
+    }
 
-	xdg_toplevel_set_minimized(window->toplevel);
 
 	wl_display_dispatch_pending(window->wlconfig->display);
 	wl_display_flush(window->wlconfig->display);
     } else /*if (window->is_out)*/ {
-	NSDebugLog(@"orderwindow: restoring to %fx%f", window->pos_x, window->pos_y);
+    if(window->toplevel == NULL) {
+        [self makeWindowTopLevel: win];
+    }
+	NSDebugLog(@"orderwindow: %d restoring to %fx%f", win, window->pos_x, window->pos_y);
 	xdg_surface_set_window_geometry(window->xdg_surface,
 					window->pos_x,
 					window->pos_y,
@@ -1325,10 +1358,13 @@ int NSToWayland(struct window *window, int ns_y)
 
 	[GSCurrentServer() postEvent: event atStart: NO];
 
-	xdg_toplevel_move(window->toplevel,
-			  config->seat,
-			  config->pointer.serial);
+	//xdg_toplevel_move(window->toplevel,
+	//		  config->seat,
+	//		  config->pointer.serial);
     } else {
+    if(window->toplevel == NULL) {
+        [self makeWindowTopLevel: win];
+    }
 	NSDebugLog(@"placewindow: oldpos=%fx%f", window->pos_x, window->pos_y);
 	NSDebugLog(@"placewindow: oldsize=%fx%f", window->width, window->height);
 	NSRect frame;
@@ -1384,8 +1420,10 @@ int NSToWayland(struct window *window, int ns_y)
 					      subtype: GSAppKitWindowResized
 						data1: rect.size.width
 						data2: rect.size.height];
+	    NSDebugLog(@"notify resize=%fx%f", rect.size.width, rect.size.height);
 	    [(GSWindowWithNumber(window->window_id)) sendEvent: ev];
-	    NSDebugLog(@"placewindow notify resized=%fx%f", rect.size.width, rect.size.height);
+	    NSDebugLog(@"notified resize=%fx%f", rect.size.width, rect.size.height);
+        // we have a new buffer
 	} else if (move == YES) {
 	    NSEvent *ev = [NSEvent otherEventWithType: NSAppKitDefined
 					     location: NSZeroPoint
@@ -1454,6 +1492,7 @@ int NSToWayland(struct window *window, int ns_y)
     struct window *window = get_window_with_id(wlconfig, win);
 
     [[GSCurrentContext() class] handleExposeRect: rect forDriver: window->wcs];
+    // [(CairoSurface *)driver handleExposeRect: rect];
 }
 
 - (void) styleoffsets: (float*) l : (float*) r : (float*) t : (float*) b
@@ -1612,10 +1651,16 @@ int NSToWayland(struct window *window, int ns_y)
     struct window *parent = get_window_with_id(wlconfig, parentWin);
     struct window *child = get_window_with_id(wlconfig, childWin);
 
+    if(!child->toplevel) {
+        return;
+    }
     if (parent) {
-	xdg_toplevel_set_parent(child->toplevel, parent->toplevel);
+        if(!parent->toplevel) {
+            return;
+        }
+        xdg_toplevel_set_parent(child->toplevel, parent->toplevel);
     } else {
-	xdg_toplevel_set_parent(child->toplevel, NULL);
+        xdg_toplevel_set_parent(child->toplevel, NULL);
     }
     xdg_toplevel_set_minimized(child->toplevel);
     wl_display_dispatch_pending(wlconfig->display);

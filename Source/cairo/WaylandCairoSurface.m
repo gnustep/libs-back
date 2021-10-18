@@ -141,12 +141,20 @@ create_shm_buffer(struct window *window)
     gsDevice = device;
 
     _surface = create_shm_buffer(window);
+    window->buffer_needs_attach = YES;
     if (_surface == NULL) {
 	NSDebugLog(@"can't create cairo surface");
 	return 0;
     }
 
-    wl_surface_attach(window->surface, window->buffer, 0, 0);
+    if(window->toplevel != NULL && window->configured) {
+        // if the window has a toplevel then it should appear on screen
+        // we can attach a buffer only if the xdg surface is configured
+        NSDebugLog(@"wl_surface_attach: win=%d toplevel_surface", window->window_id);
+        window->buffer_needs_attach = NO;
+        wl_surface_attach(window->surface, window->buffer, 0, 0);
+        wl_surface_commit(window->surface);
+    }
     window->wcs = self;
 
     return self;
@@ -176,7 +184,7 @@ create_shm_buffer(struct window *window)
 
 - (NSSize) size
 {
-    NSDebugLog(@"WaylandCairoSurface: size");
+//    NSDebugLog(@"WaylandCairoSurface: size");
     struct window *window = (struct window*) gsDevice;
     return NSMakeSize(window->width, window->height);
 }
@@ -189,7 +197,7 @@ create_shm_buffer(struct window *window)
 
 - (void) handleExposeRect: (NSRect)rect
 {
-    NSDebugLog(@"handleExposeRect");
+    NSDebugLog(@"[CairoSurface handleExposeRect]");
     struct window *window = (struct window*) gsDevice;
     cairo_surface_t *cairo_surface = _surface;
     double  backupOffsetX = 0;
@@ -199,39 +207,28 @@ create_shm_buffer(struct window *window)
     int width = NSWidth(rect);
     int height = NSHeight(rect);
 
-    NSDebugLog(@"updating region: %dx%d %dx%d", x, y, width, height);
+    NSDebugLog(@"...updating region: %dx%d %dx%d", x, y, width, height);
 
     if (cairo_surface_status(cairo_surface) != CAIRO_STATUS_SUCCESS)
     {
-	NSWarnMLog(@"cairo initial window error status: %s\n",
+	NSWarnMLog(@"...cairo initial window error status: %s\n",
 		   cairo_status_to_string(cairo_surface_status(_surface)));
     }
 
-    cairo_surface_get_device_offset(cairo_surface, &backupOffsetX, &backupOffsetY);
-    cairo_surface_set_device_offset(cairo_surface, 0, 0);
+    if (window->configured) {
+        if(window->buffer_needs_attach) {
+            window->buffer_needs_attach = NO;
+            wl_surface_attach(window->surface, window->buffer, 0, 0);
+        }
+        wl_surface_damage(window->surface, 0, 0, width, height);
+        wl_surface_commit(window->surface);
+        //wl_display_dispatch_pending(window->wlconfig->display);
+        //wl_display_flush(window->wlconfig->display);
+    } else {
+        window->buffer_needs_attach = YES;
+    }
 
-    // FIXME: This seems to be creating a context to paint into cairo_surface,
-    // and then copies back into the same cairo_surface.
-    cairo_t *cr = cairo_create(cairo_surface);
-
-    cairo_rectangle(cr, x, y, width, height);
-    cairo_clip(cr);
-    cairo_set_source_surface(cr, cairo_surface, 0, 0);
-    cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
-    cairo_paint(cr);
-
-    cairo_destroy(cr);
-
-    NSDebugLog(@"trying to commit cairo surface for window %d", window->window_id);
-    if (window->configured)
-      wl_surface_commit(window->surface);
-    NSDebugLog(@"done trying to commit cairo surface for window %d", window->window_id);
-    wl_display_dispatch_pending(window->wlconfig->display);
-    wl_display_flush(window->wlconfig->display);
-
-    cairo_surface_set_device_offset(_surface, backupOffsetX, backupOffsetY);
-
-    NSDebugLog(@"handleExposeRect exit");
+    NSDebugLog(@"[CairoSurface handleExposeRect end]");
 }
 
 @end
