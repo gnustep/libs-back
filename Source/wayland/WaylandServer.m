@@ -757,6 +757,16 @@ xdg_surface_on_configure(void *data, struct xdg_surface *xdg_surface,
 static const struct xdg_surface_listener xdg_surface_listener = {
     xdg_surface_on_configure,
 };
+static void wm_base_handle_ping(void *data, struct xdg_wm_base *xdg_wm_base,
+		uint32_t serial)
+{
+	xdg_wm_base_pong(xdg_wm_base, serial);
+}
+
+static const struct xdg_wm_base_listener wm_base_listener = {
+	.ping = wm_base_handle_ping,
+};
+
 
 #else
 static void
@@ -796,6 +806,7 @@ handle_global(void *data, struct wl_registry *registry,
     if (strcmp(interface, xdg_wm_base_interface.name) == 0) {
 	wlconfig->wm_base = wl_registry_bind(registry, name,
 					     &xdg_wm_base_interface, 1);
+    xdg_wm_base_add_listener(wlconfig->wm_base, &wm_base_listener, NULL);
         NSDebugLog(@"wayland: found wm_base interface");
     } else if (strcmp(interface, wl_shell_interface.name) == 0) {
 	wlconfig->shell = wl_registry_bind(registry, name,
@@ -1152,6 +1163,9 @@ int NSToWayland(struct window *window, int ns_y)
     window->xdg_surface =
 	xdg_wm_base_get_xdg_surface(wlconfig->wm_base, window->surface);
     window->toplevel = xdg_surface_get_toplevel(window->xdg_surface);
+
+    xdg_surface_add_listener(window->xdg_surface,
+			     &xdg_surface_listener, window);
     xdg_surface_add_listener(window->xdg_surface,
 			     &xdg_surface_listener, window);
 
