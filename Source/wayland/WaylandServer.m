@@ -1166,8 +1166,6 @@ int NSToWayland(struct window *window, int ns_y)
 
     xdg_surface_add_listener(window->xdg_surface,
 			     &xdg_surface_listener, window);
-    xdg_surface_add_listener(window->xdg_surface,
-			     &xdg_surface_listener, window);
 
     xdg_surface_set_window_geometry(window->xdg_surface,
 				    window->pos_x,

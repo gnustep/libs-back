@@ -214,18 +214,14 @@ create_shm_buffer(struct window *window)
 	NSWarnMLog(@"...cairo initial window error status: %s\n",
 		   cairo_status_to_string(cairo_surface_status(_surface)));
     }
-
+    window->buffer_needs_attach = YES;
     if (window->configured) {
-        if(window->buffer_needs_attach) {
-            window->buffer_needs_attach = NO;
-            wl_surface_attach(window->surface, window->buffer, 0, 0);
-        }
-        wl_surface_damage(window->surface, 0, 0, width, height);
+        window->buffer_needs_attach = NO;
+        wl_surface_attach(window->surface, window->buffer, 0, 0);
+        wl_surface_damage(window->surface, 0, 0, 1000, 1000);
         wl_surface_commit(window->surface);
-        //wl_display_dispatch_pending(window->wlconfig->display);
-        //wl_display_flush(window->wlconfig->display);
-    } else {
-        window->buffer_needs_attach = YES;
+        wl_display_dispatch_pending(window->wlconfig->display);
+        wl_display_flush(window->wlconfig->display);
     }
 
     NSDebugLog(@"[CairoSurface handleExposeRect end]");
