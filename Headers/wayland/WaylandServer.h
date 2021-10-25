@@ -109,7 +109,8 @@ struct window {
     int window_id;
     struct wl_list link;
     BOOL configured; // surface has been configured once
-    BOOL buffer_needs_attach; // surface has been configured once
+    BOOL buffer_needs_attach; // there is a new buffer avaialble for the surface
+    BOOL terminated; // there is a new buffer avaialble for the surface
 
     float pos_x;
     float pos_y;
@@ -139,6 +140,8 @@ struct window {
 
     BOOL _mouseInitialized;
 }
+@end
+@interface WaylandServer(Cursor)
 @end
 
 #endif /* _XGServer_h_INCLUDE */

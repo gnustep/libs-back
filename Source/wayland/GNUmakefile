@@ -45,6 +45,12 @@ wlr-layer-shell-protocol.c \
 # The Objective-C source files to be compiled
 wayland_OBJC_FILES = \
 WaylandServer.m  \
+WaylandServer+Output.m  \
+WaylandServer+Cursor.m  \
+WaylandServer+Keyboard.m  \
+WaylandServer+Seat.m  \
+WaylandServer+Xdgshell.m  \
+WaylandServer+Layershell.m  \
 
 -include GNUmakefile.preamble
 
