@@ -147,7 +147,7 @@ create_shm_buffer(struct window *window)
 	return 0;
     }
 
-    if(window->toplevel != NULL && window->configured) {
+    if(window->configured) {
         // if the window has a toplevel then it should appear on screen
         // we can attach a buffer only if the xdg surface is configured
         NSDebugLog(@"wl_surface_attach: win=%d toplevel_surface", window->window_id);
