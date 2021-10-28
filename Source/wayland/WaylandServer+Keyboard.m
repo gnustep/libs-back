@@ -75,14 +75,14 @@ keyboard_handle_enter(void *data, struct wl_keyboard *keyboard,
 		      uint32_t serial, struct wl_surface *surface,
 		      struct wl_array *keys)
 {
-    NSDebugLog(@"keyboard_handle_enter");
+    //NSDebugLog(@"keyboard_handle_enter");
 }
 
 static void
 keyboard_handle_leave(void *data, struct wl_keyboard *keyboard,
 		      uint32_t serial, struct wl_surface *surface)
 {
-    NSDebugLog(@"keyboard_handle_leave");
+    //NSDebugLog(@"keyboard_handle_leave");
 }
 
 static void
@@ -91,7 +91,7 @@ keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard,
 			  uint32_t mods_latched, uint32_t mods_locked,
 			  uint32_t group)
 {
-    NSDebugLog(@"keyboard_handle_modifiers");
+    //NSDebugLog(@"keyboard_handle_modifiers");
     WaylandConfig *wlconfig = data;
     xkb_mod_mask_t mask;
 
@@ -118,7 +118,7 @@ keyboard_handle_key(void *data, struct wl_keyboard *keyboard,
 		    uint32_t serial, uint32_t time, uint32_t key,
 		    uint32_t state_w)
 {
-    NSDebugLog(@"keyboard_handle_key: %d", key);
+    //NSDebugLog(@"keyboard_handle_key: %d", key);
     WaylandConfig *wlconfig = data;
     uint32_t code, num_syms;
     enum wl_keyboard_key_state state = state_w;
@@ -166,14 +166,14 @@ keyboard_handle_key(void *data, struct wl_keyboard *keyboard,
 
     [GSCurrentServer() postEvent: ev atStart: NO];
 
-    NSDebugLog(@"keyboard_handle_key: %@", s);
+    //NSDebugLog(@"keyboard_handle_key: %@", s);
 }
 
 static void
 keyboard_handle_repeat_info(void *data, struct wl_keyboard *keyboard,
 			    int32_t rate, int32_t delay)
 {
-    NSDebugLog(@"keyboard_handle_repeat_info");
+    //NSDebugLog(@"keyboard_handle_repeat_info");
 }
 
 const struct wl_keyboard_listener keyboard_listener = {

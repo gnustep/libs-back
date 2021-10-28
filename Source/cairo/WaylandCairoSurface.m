@@ -191,14 +191,14 @@ create_shm_buffer(struct window *window)
 
 - (void) setSurface: (cairo_surface_t*)surface
 {
-    NSDebugLog(@"WaylandCairoSurface: setSurface");
+//    NSDebugLog(@"WaylandCairoSurface: setSurface");
     _surface = surface;
 }
 
 - (void) handleExposeRect: (NSRect)rect
 {
-    NSDebugLog(@"[CairoSurface handleExposeRect]");
     struct window *window = (struct window*) gsDevice;
+    NSDebugLog(@"[CairoSurface handleExposeRect] %d", window->window_id);
     cairo_surface_t *cairo_surface = _surface;
     double  backupOffsetX = 0;
     double  backupOffsetY = 0;
@@ -207,7 +207,6 @@ create_shm_buffer(struct window *window)
     int width = NSWidth(rect);
     int height = NSHeight(rect);
 
-    NSDebugLog(@"...updating region: %dx%d %dx%d", x, y, width, height);
 
     if (cairo_surface_status(cairo_surface) != CAIRO_STATUS_SUCCESS)
     {
@@ -216,15 +215,17 @@ create_shm_buffer(struct window *window)
     }
     window->buffer_needs_attach = YES;
     if (window->configured) {
+        NSDebugLog(@"surface attach");
         window->buffer_needs_attach = NO;
         wl_surface_attach(window->surface, window->buffer, 0, 0);
         wl_surface_damage(window->surface, 0, 0, 1000, 1000);
         wl_surface_commit(window->surface);
         wl_display_dispatch_pending(window->wlconfig->display);
         wl_display_flush(window->wlconfig->display);
+        NSDebugLog(@"surface attach done");
     }
 
-    NSDebugLog(@"[CairoSurface handleExposeRect end]");
+    //NSDebugLog(@"[CairoSurface handleExposeRect end]");
 }
 
 @end

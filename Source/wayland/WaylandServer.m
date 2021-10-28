@@ -826,12 +826,12 @@ int NSToWayland(struct window *window, int ns_y)
 
 - (void) setmaxsize: (NSSize)size : (int) win
 {
-    NSDebugLog(@"setmaxsize");
+    //NSDebugLog(@"setmaxsize");
 }
 
 - (void) setminsize: (NSSize)size : (int) win
 {
-    NSDebugLog(@"setminsize");
+    //NSDebugLog(@"setminsize");
 }
 
 - (void) setresizeincrements: (NSSize)size : (int) win
@@ -845,7 +845,6 @@ int NSToWayland(struct window *window, int ns_y)
     struct window *window = get_window_with_id(wlconfig, win);
 
     [[GSCurrentContext() class] handleExposeRect: rect forDriver: window->wcs];
-    // [(CairoSurface *)driver handleExposeRect: rect];
 }
 
 - (void) styleoffsets: (float*) l : (float*) r : (float*) t : (float*) b
@@ -858,12 +857,12 @@ int NSToWayland(struct window *window, int ns_y)
 
 - (void) docedited: (int) edited : (int) win
 {
-    NSDebugLog(@"docedited");
+    //NSDebugLog(@"docedited");
 }
 
 - (void) setinputstate: (int)state : (int)win
 {
-    NSDebugLog(@"setinputstate");
+    //NSDebugLog(@"setinputstate");
 }
 
 - (void) setinputfocus: (int) win

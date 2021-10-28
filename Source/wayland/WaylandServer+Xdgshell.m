@@ -20,7 +20,7 @@ xdg_surface_on_configure(void *data, struct xdg_surface *xdg_surface,
     NSEvent *ev = nil;
     NSWindow *nswindow = GSWindowWithNumber(window->window_id);
 
-    NSDebugLog(@"Acknowledging surface configure %p %d (window_id=%d)", xdg_surface, serial, window->window_id);
+    //NSDebugLog(@"Acknowledging surface configure %p %d (window_id=%d)", xdg_surface, serial, window->window_id);
     xdg_surface_ack_configure(xdg_surface, serial);
     window->configured = YES;
 
