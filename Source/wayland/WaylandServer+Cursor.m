@@ -8,7 +8,6 @@ pointer_handle_enter(void *data, struct wl_pointer *pointer,
 		     uint32_t serial, struct wl_surface *surface,
 		     wl_fixed_t sx_w, wl_fixed_t sy_w)
 {
-    NSDebugLog(@"pointer_handle_enter");
     if (!surface) {
 	NSDebugLog(@"no surface");
 	return;
@@ -31,7 +30,6 @@ static void
 pointer_handle_leave(void *data, struct wl_pointer *pointer,
 		     uint32_t serial, struct wl_surface *surface)
 {
-    NSDebugLog(@"pointer_handle_leave");
     if (!surface) {
 	NSDebugLog(@"no surface");
 	return;
@@ -58,7 +56,6 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer,
     struct window *window;
     float sx = wl_fixed_to_double(sx_w);
     float sy = wl_fixed_to_double(sy_w);
-    NSDebugLog(@"pointer_handle_motion: %fx%f", sx, sy);
 
     [GSCurrentServer() initializeMouseIfRequired];
 
@@ -109,7 +106,6 @@ static void
 pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
 		      uint32_t time, uint32_t button, uint32_t state_w)
 {
-    NSDebugLog(@"pointer_handle_button: button=%d", button);
     WaylandConfig *wlconfig = data;
     NSEvent *event;
     NSEventType eventType;
@@ -136,7 +132,6 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
 	    time - wlconfig->pointer.last_click_time < 300 &&
 	    abs(wlconfig->pointer.x - wlconfig->pointer.last_click_x) < 3 &&
 	    abs(wlconfig->pointer.y - wlconfig->pointer.last_click_y) < 3) {
-	    NSDebugLog(@"handle_button HIT: b=%d t=%d x=%f y=%f", button, time, wlconfig->pointer.x, wlconfig->pointer.y);
 	    wlconfig->pointer.last_click_time = 0;
 	    clickCount++;
 	} else {

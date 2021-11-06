@@ -110,7 +110,7 @@ struct window {
     struct wl_list link;
     BOOL configured; // surface has been configured once
     BOOL buffer_needs_attach; // there is a new buffer avaialble for the surface
-    BOOL terminated; // there is a new buffer avaialble for the surface
+    BOOL terminated;
 
     float pos_x;
     float pos_y;

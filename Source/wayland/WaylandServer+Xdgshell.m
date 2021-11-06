@@ -21,6 +21,7 @@ xdg_surface_on_configure(void *data, struct xdg_surface *xdg_surface,
     NSWindow *nswindow = GSWindowWithNumber(window->window_id);
 
     //NSDebugLog(@"Acknowledging surface configure %p %d (window_id=%d)", xdg_surface, serial, window->window_id);
+
     xdg_surface_ack_configure(xdg_surface, serial);
     window->configured = YES;
 
@@ -46,47 +47,46 @@ xdg_surface_on_configure(void *data, struct xdg_surface *xdg_surface,
 
 	[nswindow sendEvent: ev];
     }
+}
 
-#if 0
+static void xdg_toplevel_configure(void *data, struct xdg_toplevel *xdg_toplevel,
+		int32_t width, int32_t height, struct wl_array *states) {
     struct window *window = data;
-    int moved = 0;
-    NSDebugLog(@"configure window=%d pos=%dx%d size=%dx%d",
-	       window->window_id, x, y, width, height);
-    NSDebugLog(@"current values pos=%dx%d size=%dx%d",
-	       window->pos_x, window->pos_y, window->width, window->height);
+    WaylandConfig *wlconfig = window->wlconfig;
 
-    if (!window->is_out && (window->pos_x != x || window->pos_y != y)) {
-	window->pos_x = x;
-	window->pos_y = y;
-	moved = 1;
+    NSDebugLog(@"[%d] xdg_toplevel_configure %ldx%ld",
+            window->window_id, width, height);
+
+    // the compositor can send 0.0x0.0
+    if(width == 0 || height == 0) {
+        return;
     }
+    if(window->width != width || window->height != height) {
+        window->width = width;
+        window->height = height;
 
-    xdg_surface_ack_configure(window->xdg_surface, serial);
-    NSRect rect = NSMakeRect(0, 0,
-			     window->width, window->height);
-    [window->instance flushwindowrect:rect :window->window_id];
+        xdg_surface_set_window_geometry(window->xdg_surface,
+                        0,
+                        0,
+                        window->width,
+                        window->height);
 
-    wl_display_dispatch_pending(window->wlconfig->display);
-    wl_display_flush(window->wlconfig->display);
-
-    if (moved) {
-	NSDebugLog(@"window moved, notifying AppKit");
-	NSEvent *ev = nil;
-	NSWindow *nswindow = GSWindowWithNumber(window->window_id);
-
-	ev = [NSEvent otherEventWithType: NSAppKitDefined
-				location: NSZeroPoint
-			   modifierFlags: 0
-			       timestamp: 0
-			    windowNumber: (int)window->window_id
-				 context: GSCurrentContext()
-				 subtype: GSAppKitWindowMoved
-				   data1: window->pos_x
-				   data2: WaylandToNS(window, window->pos_y)];
-
-	[nswindow sendEvent: ev];
+        NSEvent *ev = [NSEvent otherEventWithType: NSAppKitDefined
+                            location: NSMakePoint(0.0, 0.0)
+                    modifierFlags: 0
+                        timestamp: 0
+                        windowNumber: window->window_id
+                            context: GSCurrentContext()
+                            subtype: GSAppKitWindowResized
+                        data1: window->width
+                        data2: window->height];
+        [(GSWindowWithNumber(window->window_id)) sendEvent: ev];
     }
-#endif
+    NSDebugLog(@"[%d] notify resize from backend=%ldx%ld", window->window_id, width, height);
+}
+
+static void xdg_toplevel_close_handler(void *data, struct zxdg_toplevel_v6 *xdg_toplevel) {
+    NSDebugLog(@"xdg_toplevel_close_handler");
 }
 
 static void xdg_popup_configure(void *data, struct xdg_popup *xdg_popup,
@@ -94,23 +94,21 @@ static void xdg_popup_configure(void *data, struct xdg_popup *xdg_popup,
     struct window *window = data;
     WaylandConfig *wlconfig = window->wlconfig;
 
-    window->width = width;
-    window->height = height;
-
-
+    NSDebugLog(@"xdg_popup_configure");
 }
 
 static void xdg_popup_done(void *data, struct xdg_popup *xdg_popup) {
     struct window *window = data;
     WaylandConfig *wlconfig = window->wlconfig;
+    window->terminated = YES;
 	xdg_popup_destroy(xdg_popup);
-
 	wl_surface_destroy(window->surface);
 }
 
 static void wm_base_handle_ping(void *data, struct xdg_wm_base *xdg_wm_base,
 		uint32_t serial)
 {
+    NSDebugLog(@"wm_base_handle_ping");
 	xdg_wm_base_pong(xdg_wm_base, serial);
 }
 
@@ -127,3 +125,9 @@ const struct xdg_popup_listener xdg_popup_listener = {
 	.configure = xdg_popup_configure,
 	.popup_done = xdg_popup_done,
 };
+
+const struct xdg_toplevel_listener xdg_toplevel_listener = {
+	.configure = xdg_toplevel_configure,
+	.close = xdg_toplevel_close_handler,
+};
+

@@ -32,6 +32,7 @@
 #include <AppKit/DPSOperators.h>
 #include <AppKit/NSEvent.h>
 #include <AppKit/NSWindow.h>
+#include <AppKit/NSMenu.h>
 #include <AppKit/NSAnimation.h>
 #include <GNUstepGUI/GSAnimator.h>
 #include <AppKit/NSText.h>
@@ -64,6 +65,8 @@ struct wl_shm_listener shm_listener = {
 
 
 extern const struct xdg_surface_listener xdg_surface_listener;
+
+extern const struct xdg_toplevel_listener xdg_toplevel_listener;
 
 extern const struct xdg_wm_base_listener wm_base_listener;
 
@@ -156,6 +159,8 @@ int NSToWayland(struct window *window, int ns_y)
 {
     return (window->output->height - ns_y - window->height);
 }
+
+@class NSMenuPanel;
 
 @implementation WaylandServer
 
@@ -370,9 +375,13 @@ int NSToWayland(struct window *window, int ns_y)
     window->pos_x = frame.origin.x;
     window->pos_y = NSToWayland(window, frame.origin.y);
     window->window_id = wlconfig->last_window_id;
+
     window->xdg_surface = NULL;
     window->toplevel = NULL;
+    window->popup = NULL;
+    window->layer_surface = NULL;
     window->configured = NO;
+
     window->buffer_needs_attach = NO;
     window->terminated = NO;
 
@@ -425,53 +434,16 @@ int NSToWayland(struct window *window, int ns_y)
 
     return window->window_id;
 }
-- (void) makeWindowTopLevelIfNeeded: (int) win
-{
-	NSDebugLog(@"makeWindowTopLevelIfNeeded %d", win);
-    struct window *window = get_window_with_id(wlconfig, win);
 
-    if(window->toplevel != NULL || window->layer_surface != NULL) {
-        return;
-    }
-
-    if(window->surface == NULL) {
-        window->surface = wl_compositor_create_surface(wlconfig->compositor);
-        if (!window->surface) {
-        NSDebugLog(@"can't create wayland surface");
-        free(window);
-        return;
-        }
-        wl_surface_set_user_data(window->surface, window);
-    }
-    if(window->xdg_surface == NULL) {
-        window->xdg_surface =
-        xdg_wm_base_get_xdg_surface(wlconfig->wm_base, window->surface);
-        window->toplevel = xdg_surface_get_toplevel(window->xdg_surface);
-
-        xdg_surface_add_listener(window->xdg_surface,
-                    &xdg_surface_listener, window);
-
-        xdg_surface_set_window_geometry(window->xdg_surface,
-                        window->pos_x,
-                        window->pos_y,
-                        window->width,
-                        window->height);
-    }
-    //NSDebugLog(@"wl_surface_commit: win=%d toplevel", window->window_id);
-    wl_surface_commit(window->surface);
-	wl_display_dispatch_pending(window->wlconfig->display);
-	wl_display_flush(window->wlconfig->display);
-}
 - (void) termwindow: (int) win
 {
     NSDebugLog(@"termwindow: win=%d", win);
     struct window *window = get_window_with_id(wlconfig, win);
 
-    if(window->xdg_surface) {
-        //destroy_xdg_surface(window->xdg_surface);
-    }
-    wl_surface_destroy(window->surface);
-    wl_buffer_destroy(window->buffer);
+    [self destroyWindowShell: window];
+    // FIXME should wait for buffer release before detroying it
+    //
+    //wl_buffer_destroy(window->buffer);
     wl_list_remove(&window->link);
     window->terminated = YES;
 }
@@ -513,9 +485,14 @@ int NSToWayland(struct window *window, int ns_y)
 
 - (void) miniwindow: (int) win
 {
+    struct window *window = get_window_with_id(wlconfig, win);
+
     NSDebugLog(@"miniwindow");
-//	xdg_toplevel_set_minimized(window->toplevel);
-//    [self orderwindow: NSWindowOut :0 :win];
+    if(window->toplevel) {
+        xdg_toplevel_set_minimized(window->toplevel);
+    } else {
+        NSDebugLog(@"trying to miniaturize a not toplevel window");
+    }
 }
 
 - (void) setWindowdevice: (int) winId forContext: (NSGraphicsContext *)ctxt
@@ -534,50 +511,28 @@ int NSToWayland(struct window *window, int ns_y)
 
 - (void) orderwindow: (int) op : (int) otherWin : (int) win
 {
-    NSDebugLog(@"orderwindow: %d", win);
     struct window *window = get_window_with_id(wlconfig, win);
 
     if (op == NSWindowOut) {
-        NSDebugLog(@"orderwindow: NSWindowOut");
-        if(window->layer_surface) {
-            zwlr_layer_surface_v1_destroy(window->layer_surface);
-            wl_surface_destroy(window->surface);
-            window->surface = NULL;
-            window->layer_surface = NULL;
-            window->configured = NO;
-            window->is_out = 1;
+        NSDebugLog(@"orderwindow: %d NSWindowOut", win);
+        [self destroyWindowShell: window];
+
+    } else {//  NSWindowAbove || NSWindowBelow,
+
+        // currently it only create a new shell for the window which results
+        // in popping in front of the window manager
+        NSDebugLog(@"orderwindow: %d", win);
+        NSDebugLog(@"orderwindow: %d to %fx%f", win, window->pos_x, window->pos_y);
+        if([self windowSurfaceHasRole: window] == NO) {
+            [self createSurfaceShell: window];
         }
-        if(window->xdg_surface) {
-        xdg_surface_set_window_geometry(window->xdg_surface,
-                        window->pos_x + 32000,
-                        window->pos_y + 32000,
-                        window->width,
-                        window->height);
-        }
-        NSRect rect = NSMakeRect(0, 0,
+        NSRect rect = NSMakeRect(window->pos_x, window->pos_y,
                     window->width, window->height);
         [window->instance flushwindowrect:rect :window->window_id];
-        if(window->toplevel != NULL) {
-            xdg_toplevel_set_minimized(window->toplevel);
-        }
 
-        wl_display_dispatch_pending(window->wlconfig->display);
-        wl_display_flush(window->wlconfig->display);
-    } else /*if (window->is_out)*/ {
-        NSDebugLog(@"orderwindow: %d restoring to %fx%f", win, window->pos_x, window->pos_y);
-        [self makeWindowShell: win];
-	NSRect rect = NSMakeRect(0, 0,
-				 window->width, window->height);
-	[window->instance flushwindowrect:rect :window->window_id];
-
-//	xdg_toplevel_set_minimized(window->toplevel);
-//	xdg_toplevel_set_fullscreen(window->toplevel, window->output);
-
+    }
 	wl_display_dispatch_pending(window->wlconfig->display);
 	wl_display_flush(window->wlconfig->display);
-
-	window->is_out = 0;
-    }
 }
 
 - (void) movewindow: (NSPoint)loc : (int) win
@@ -601,15 +556,11 @@ int NSToWayland(struct window *window, int ns_y)
 
 - (void) placewindow: (NSRect)rect : (int) win
 {
-    NSDebugLog(@"placewindow: %d %@", win, NSStringFromRect(rect));
     struct window *window = get_window_with_id(wlconfig, win);
+
+    NSDebugLog(@"placewindow: %d %@", win, NSStringFromRect(rect));
     WaylandConfig *config = window->wlconfig;
 
-    if(window->toplevel == NULL && !window->layer_surface) {
-        [self makeWindowShell: win];
-    }
-	NSDebugLog(@"placewindow: oldpos=%fx%f", window->pos_x, window->pos_y);
-	NSDebugLog(@"placewindow: oldsize=%fx%f", window->width, window->height);
 	NSRect frame;
 	NSRect wframe;
 	BOOL resize = NO;
@@ -634,27 +585,25 @@ int NSToWayland(struct window *window, int ns_y)
 	    config->pointer.x -= (wframe.origin.x - window->pos_x);
 	}
 
-	window->width = wframe.size.width;
-	window->height = wframe.size.height;
-	window->pos_x = wframe.origin.x;
-	window->pos_y = wframe.origin.y;
+	NSDebugLog(@"[%d] placewindow: oldpos=%fx%f", win, window->pos_x, window->pos_y);
+	window->width = rect.size.width;
+	window->height = rect.size.height;
+	window->pos_x = rect.origin.x;
+	window->pos_y = NSToWayland(window, rect.origin.y);
 
-	xdg_surface_set_window_geometry(window->xdg_surface,
-					window->pos_x,
-					window->pos_y,
-					window->width,
-					window->height);
-    wl_surface_commit(window->surface);
-/*
-	NSRect flushRect = NSMakeRect(0, 0,
-				      window->width, window->height);
-*/
+
 	[window->instance flushwindowrect:rect :window->window_id];
+    if(window->xdg_surface) {
+        xdg_surface_set_window_geometry(window->xdg_surface,
+                        0, 0,
+                        window->width,
+                        window->height);
+        wl_surface_commit(window->surface);
+    }
 
-	wl_display_dispatch_pending(window->wlconfig->display);
-	wl_display_flush(window->wlconfig->display);
 
 	if (resize == YES) {
+        NSDebugLog(@"[%d] placewindow: newsize=%fx%f", win, window->width, window->height);
 	    NSEvent *ev = [NSEvent otherEventWithType: NSAppKitDefined
 					     location: rect.origin
 					modifierFlags: 0
@@ -669,21 +618,10 @@ int NSToWayland(struct window *window, int ns_y)
 	    NSDebugLog(@"notified resize=%fx%f", rect.size.width, rect.size.height);
         // we have a new buffer
 	} else if (move == YES) {
-	    NSEvent *ev = [NSEvent otherEventWithType: NSAppKitDefined
-					     location: NSZeroPoint
-					modifierFlags: 0
-					    timestamp: 0
-					 windowNumber: (int)window->window_id
-					      context: GSCurrentContext()
-					      subtype: GSAppKitWindowMoved
-						data1: rect.origin.x
-						data2: rect.origin.y];
-	    [(GSWindowWithNumber(window->window_id)) sendEvent: ev];
-	    NSDebugLog(@"placewindow notify moved=%fx%f", rect.origin.x, rect.origin.y);
 	}
+	wl_display_dispatch_pending(window->wlconfig->display);
+	wl_display_flush(window->wlconfig->display);
 
-	NSDebugLog(@"placewindow: newpos=%fx%f", window->pos_x, window->pos_y);
-	NSDebugLog(@"placewindow: newsize=%fx%f", window->width, window->height);
 }
 
 - (NSRect) windowbounds: (int) win
@@ -697,109 +635,18 @@ int NSToWayland(struct window *window, int ns_y)
 		      window->width, window->height);
 }
 
-- (void) makeMainMenu: (int) win
+
+- (void) setParentWindow: (int)parentWin
+          forChildWindow: (int)childWin
 {
-    struct window *window = get_window_with_id(wlconfig, win);
-	char *namespace = "wlroots";
-    if(!wlconfig->layer_shell) {
+    if(parentWin == 0) {
         return;
     }
-    if(window->surface == NULL) {
-        window->surface = wl_compositor_create_surface(wlconfig->compositor);
-        wl_surface_set_user_data(window->surface, window);
-    }
+    NSDebugLog(@"setParentWindow: parent=%d child=%d", parentWin, childWin);
+    struct window *parent = get_window_with_id(wlconfig, parentWin);
+    struct window *child = get_window_with_id(wlconfig, childWin);
 
-    if(window->layer_surface == NULL) {
-        window->layer_surface = zwlr_layer_shell_v1_get_layer_surface(
-                wlconfig->layer_shell,
-                window->surface,
-                window->output->output,
-                ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY,
-                namespace);
-        assert(window->layer_surface);
-        zwlr_layer_surface_v1_set_size(window->layer_surface,
-                window->width, window->height);
-        zwlr_layer_surface_v1_set_anchor(window->layer_surface,
-                ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP);
-        zwlr_layer_surface_v1_set_exclusive_zone(window->layer_surface, 1);
-        zwlr_layer_surface_v1_set_margin(window->layer_surface,
-                0, 0, 0, 0);
-        zwlr_layer_surface_v1_add_listener(window->layer_surface,
-                &layer_surface_listener, window);
-    }
-	wl_surface_commit(window->surface);
-	wl_display_roundtrip(wlconfig->display);
-}
-- (void) makeSubMenu: (int) win
-{
-    struct window *window = get_window_with_id(wlconfig, win);
-    if(!wlconfig->layer_shell) {
-        return;
-    }
-	char *namespace = "wlroots";
-    if(window->surface == NULL) {
-        window->surface = wl_compositor_create_surface(wlconfig->compositor);
-        wl_surface_set_user_data(window->surface, window);
-    }
-    if(window->layer_surface == NULL) {
-        window->layer_surface = zwlr_layer_shell_v1_get_layer_surface(
-                wlconfig->layer_shell,
-                window->surface,
-                window->output->output,
-                ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY,
-                namespace);
-
-        zwlr_layer_surface_v1_set_size(window->layer_surface,
-                window->width, window->height);
-        zwlr_layer_surface_v1_set_anchor(window->layer_surface,
-                ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT);
-        zwlr_layer_surface_v1_set_exclusive_zone(window->layer_surface, 1);
-        zwlr_layer_surface_v1_set_margin(window->layer_surface,
-                window->pos_y, 0, 0, window->pos_x);
-
-        zwlr_layer_surface_v1_add_listener(window->layer_surface,
-                &layer_surface_listener, window);
-    }
-
-	wl_surface_commit(window->surface);
-	wl_display_roundtrip(wlconfig->display);
-}
-
-- (void) makeWindowShell: (int) win
-{
-    NSLog(@"makeWindowShell %d", win);
-    struct window *window = get_window_with_id(wlconfig, win);
-    switch(window->level) {
-        case NSMainMenuWindowLevel:
-            NSDebugLog(@"NSMainMenuWindowLevel win=%d", win);
-            [self makeMainMenu: win];
-        break;
-        case NSSubmenuWindowLevel:
-            NSDebugLog(@"NSSubmenuWindowLevel win=%d", win);
-            [self makeSubMenu: win];
-        break;
-        case NSDesktopWindowLevel:
-            NSDebugLog(@"NSDesktopWindowLevel win=%d", win);
-        break;
-        case NSStatusWindowLevel:
-            NSDebugLog(@"NSStatusWindowLevel win=%d", win);
-        break;
-        case NSPopUpMenuWindowLevel:
-            NSDebugLog(@"NSPopUpMenuWindowLevel win=%d", win);
-        break;
-        case NSScreenSaverWindowLevel:
-            NSDebugLog(@"NSScreenSaverWindowLevel win=%d", win);
-        break;
-        case NSFloatingWindowLevel:
-            NSDebugLog(@"NSFloatingWindowLevel win=%d", win);
-        case NSModalPanelWindowLevel:
-            NSDebugLog(@"NSModalPanelWindowLevel win=%d", win);
-        case NSNormalWindowLevel:
-            NSDebugLog(@"NSNormalWindowLevel win=%d", win);
-            [self makeWindowTopLevelIfNeeded: win];
-
-        break;
-    }
+    [self createPopupShell: child withParentShell: parent];
 }
 
 - (void) setwindowlevel: (int) level : (int) win
@@ -808,7 +655,6 @@ int NSToWayland(struct window *window, int ns_y)
     window->level = level;
 
     NSDebugLog(@"setwindowlevel: level=%d win=%d", level, win);
-    [self makeWindowShell: win];
 }
 
 - (int) windowlevel: (int) win
@@ -841,7 +687,7 @@ int NSToWayland(struct window *window, int ns_y)
 
 - (void) flushwindowrect: (NSRect)rect : (int) win
 {
-//    NSDebugLog(@"flushwindowrect: %d %fx%f", win, NSWidth(rect), NSHeight(rect));
+    NSDebugLog(@"[%d] flushwindowrect: %f,%f %fx%f", win, NSMinX(rect), NSMinY(rect), NSWidth(rect), NSHeight(rect));
     struct window *window = get_window_with_id(wlconfig, win);
 
     [[GSCurrentContext() class] handleExposeRect: rect forDriver: window->wcs];
@@ -880,30 +726,341 @@ int NSToWayland(struct window *window, int ns_y)
     NSDebugLog(@"setshadow");
 }
 
-- (void) setParentWindow: (int)parentWin
-          forChildWindow: (int)childWin
-{
-    NSDebugLog(@"setParentWindow: parent=%d child=%d", parentWin, childWin);
-    struct window *parent = get_window_with_id(wlconfig, parentWin);
-    struct window *child = get_window_with_id(wlconfig, childWin);
+@end
 
-    if(!child->toplevel) {
+@implementation WaylandServer(SurfaceRoles)
+- (void) createSurfaceShell: (struct window *) window
+{
+    int win = window->window_id;
+    NSLog(@"createSurfaceShell %d", win);
+
+    switch(window->level) {
+        case NSMainMenuWindowLevel:
+            NSDebugLog(@"NSMainMenuWindowLevel win=%d", win);
+            [self createLayerShell: window
+                     withLayerType: ZWLR_LAYER_SHELL_V1_LAYER_TOP
+                     withNamespace:@"gnustep-mainmenu"];
+        break;
+        case NSSubmenuWindowLevel:
+            NSDebugLog(@"NSSubmenuWindowLevel win=%d", win);
+            [self createSubMenuShell: window];
+        break;
+        case NSDesktopWindowLevel:
+            NSDebugLog(@"NSDesktopWindowLevel win=%d", win);
+            [self createLayerShell: window
+                     withLayerType: ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND
+                     withNamespace:@"gnustep-desktop"];
+        break;
+        case NSPopUpMenuWindowLevel:
+            NSDebugLog(@"NSPopUpMenuWindowLevel win=%d", win);
+            [self createPopup: win];
+        break;
+        case NSScreenSaverWindowLevel:
+            NSDebugLog(@"NSScreenSaverWindowLevel win=%d", win);
+            [self createLayerShell: window
+                     withLayerType: ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY
+                     withNamespace:@"gnustep-screensaver"];
+        break;
+        case NSStatusWindowLevel:
+            NSDebugLog(@"NSStatusWindowLevel win=%d", win);
+        case NSFloatingWindowLevel:
+            NSDebugLog(@"NSFloatingWindowLevel win=%d", win);
+        case NSModalPanelWindowLevel:
+            NSDebugLog(@"NSModalPanelWindowLevel win=%d", win);
+        case NSNormalWindowLevel:
+            NSDebugLog(@"NSNormalWindowLevel win=%d", win);
+            [self createTopLevel: window];
+
+        break;
+    }
+    window->is_out = 0;
+}
+
+- (BOOL) windowSurfaceHasRole: (struct window*) window
+{
+    return window->toplevel != NULL ||
+        window->layer_surface != NULL ||
+        window->popup != NULL;
+
+}
+
+- (void) createTopLevel: (struct window*) window
+{
+    int win = window->window_id;
+	NSDebugLog(@"createTopLevel %d", win);
+
+    if([self windowSurfaceHasRole: window]) {
+        // if the role is already assigned skip
         return;
     }
-    if (parent) {
-        if(!parent->toplevel) {
-            return;
-        }
-        xdg_toplevel_set_parent(child->toplevel, parent->toplevel);
-    } else {
-        xdg_toplevel_set_parent(child->toplevel, NULL);
+
+    if(window->surface) {
+        wl_surface_destroy(window->surface);
     }
-    xdg_toplevel_set_minimized(child->toplevel);
+    window->surface = wl_compositor_create_surface(wlconfig->compositor);
+
+    if (!window->surface) {
+        NSDebugLog(@"can't create wayland surface");
+        free(window);
+        return;
+    }
+
+    wl_surface_set_user_data(window->surface, window);
+    if(window->xdg_surface == NULL) {
+        window->xdg_surface =
+        xdg_wm_base_get_xdg_surface(wlconfig->wm_base, window->surface);
+        window->toplevel = xdg_surface_get_toplevel(window->xdg_surface);
+
+        xdg_toplevel_add_listener(window->toplevel,
+                &xdg_toplevel_listener, window);
+        xdg_surface_add_listener(window->xdg_surface,
+                    &xdg_surface_listener, window);
+
+        xdg_surface_set_window_geometry(window->xdg_surface,
+                        0,
+                        0,
+                        window->width,
+                        window->height);
+    }
+
+    wl_surface_commit(window->surface);
+	wl_display_dispatch_pending(window->wlconfig->display);
+	wl_display_flush(window->wlconfig->display);
+}
+
+- (void) createLayerShell: (struct window*) window
+            withLayerType: (enum zwlr_layer_shell_v1_layer)layerType
+            withNamespace:(NSString*)namespace
+{
+    int win = window->window_id;
+
+    if([self windowSurfaceHasRole: window]) {
+        // if the role is already assigned skip
+        return;
+    }
+
+    if(!wlconfig->layer_shell) {
+        NSDebugLog(@"layer shell not supported, fallback to xdg toplevel");
+        [self createTopLevel: window];
+        return;
+    }
+
+    if(window->surface) {
+        wl_surface_destroy(window->surface);
+    }
+
+    window->surface = wl_compositor_create_surface(wlconfig->compositor);
+    wl_surface_set_user_data(window->surface, window);
+
+    const char *cString = [namespace UTF8String];
+    window->layer_surface = zwlr_layer_shell_v1_get_layer_surface(
+            wlconfig->layer_shell,
+            window->surface,
+            window->output->output,
+            layerType,
+            cString);
+    assert(window->layer_surface);
+    zwlr_layer_surface_v1_set_size(window->layer_surface,
+            window->width, window->height);
+
+    zwlr_layer_surface_v1_set_anchor(window->layer_surface,
+            ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT);
+
+    zwlr_layer_surface_v1_set_exclusive_zone(window->layer_surface, 1);
+
+    zwlr_layer_surface_v1_set_margin(window->layer_surface,
+            window->pos_y, 0, 0, window->pos_x);
+
+    NSDebugLog(@"layer margins: %f,%f,%f,%f", window->pos_y, 0.0f, 0.0f, window->pos_x);
+    zwlr_layer_surface_v1_add_listener(window->layer_surface,
+            &layer_surface_listener, window);
+
+	wl_surface_commit(window->surface);
+	wl_display_dispatch_pending(window->wlconfig->display);
+	wl_display_flush(window->wlconfig->display);
+}
+- (struct window*) getSuperMenuWindow: (struct window*) window
+{
+    NSDebugLog(@"getSuperMenuWindow");
+
+    NSMenuPanel * nswin = (GSWindowWithNumber(window->window_id));
+    if(!nswin) {
+        NSDebugLog(@"makeSubmenu can't find nswin");
+        return NULL;
+    }
+    NSMenu * menu = [nswin menu];
+    if(!menu) {
+        NSDebugLog(@"makeSubmenu can't find menu");
+        return NULL;
+
+    }
+    NSMenu * supermenu = [menu supermenu];
+    if(!supermenu) {
+        NSDebugLog(@"makeSubmenu can't find supermenu");
+        return NULL;
+    }
+    NSWindow * parent = [supermenu window];
+    if(!parent) {
+        NSDebugLog(@"makeSubmenu can't find the parent");
+        return NULL;
+    }
+
+    struct window *parentwindow = get_window_with_id(wlconfig, [parent windowNumber]);
+
+    return parentwindow;
+}
+
+- (void) createSubMenuShell: (struct window*) window
+{
+    int win = window->window_id;
+
+    if([self windowSurfaceHasRole: window]) {
+        // if the role is already assigned skip
+        return;
+    }
+
+    if(wlconfig->layer_shell) {
+    // the preferred way to create a submenu is to use an overlay
+        [self createLayerShell: window
+                    withLayerType: ZWLR_LAYER_SHELL_V1_LAYER_TOP
+                    withNamespace:@"gnustep-submenu"];
+        return;
+    } else {
+        NSDebugLog(@"layer shell not supported, fallback to xdg popup");
+
+
+    }
+    // if the layer shell is not available then we use the xdg popup
+    // for that we need a parent toplevel window
+
+    struct window * rootwindow = window;//[self getSuperMenuWindow: window];
+    struct window *parentwindow = rootwindow;
+    while(rootwindow = [self getSuperMenuWindow: parentwindow]) {
+        parentwindow = rootwindow;
+    }
+    if(!parentwindow) {
+        //[self createTopLevel: window];
+        return;
+    }
+    NSDebugLog(@"new popup: %d parent id: %d", win, parentwindow->window_id);
+    NSDebugLog(@"parent: %d [%f,%f %fx%f]", parentwindow->window_id,
+            parentwindow->pos_x, parentwindow->pos_y,
+            parentwindow->width, parentwindow->height);
+
+    [self createPopupShell: window withParentShell: parentwindow];
+}
+
+- (void) createPopup: (struct window*) window
+{
+    NSDebugLog(@"createPopup noop");
+
+}
+
+- (void) createPopupShell: (struct window *) child
+          withParentShell: (struct window *) parent
+{
+    NSDebugLog(@"createPopupShell");
+
+    if(parent->xdg_surface == NULL || parent->toplevel == NULL) {
+        NSDebugLog(@"parent surface %d is not toplevel", parent->window_id);
+        return;
+    }
+    if([self windowSurfaceHasRole: child]) {
+        [self destroySurfaceRole: child];
+    }
+
+    child->surface = wl_compositor_create_surface(wlconfig->compositor);
+    wl_surface_set_user_data(child->surface, child);
+
+    NSWindow * nswin = (GSWindowWithNumber(child->window_id));
+    CGFloat x = nswin.frame.origin.x;
+    CGFloat y = nswin.frame.origin.y;
+    CGFloat width = nswin.frame.size.width;
+    CGFloat height = nswin.frame.size.height;
+
+
+    child->xdg_surface =
+    xdg_wm_base_get_xdg_surface(wlconfig->wm_base, child->surface);
+    struct xdg_positioner * positioner =  xdg_wm_base_create_positioner(wlconfig->wm_base);
+
+    xdg_positioner_set_size(positioner, child->width, child->height);
+
+    xdg_positioner_set_anchor_rect(positioner,
+            0.0,
+            0.0,
+            parent->width,
+            parent->height
+    );
+    xdg_positioner_set_anchor(positioner, XDG_POSITIONER_ANCHOR_TOP_LEFT);
+    xdg_positioner_set_gravity(positioner, XDG_POSITIONER_GRAVITY_BOTTOM_RIGHT);
+
+    xdg_positioner_set_offset(positioner,
+        ( child->pos_x  - parent->pos_x),
+        ( child->pos_y - parent->pos_y )
+    );
+
+
+  //  NSDebugLog(@"xdg_positioner offset: %f,%f",
+  //          (child->pos_x - parent->pos_x), (child->pos_y - parent->pos_y));
+
+    child->popup = xdg_surface_get_popup(child->xdg_surface, parent->xdg_surface, positioner);
+
+    xdg_popup_add_listener(child->popup,
+                &xdg_popup_listener, child);
+    xdg_surface_add_listener(child->xdg_surface,
+                &xdg_surface_listener, child);
+
+    xdg_surface_set_window_geometry(child->xdg_surface,
+                    0,
+                    0,
+                    child->width,
+                    child->height);
+
+    NSDebugLog(@"child_geometry : %f,%f %fx%f",
+            child->pos_x - parent->pos_x,
+            child->pos_y - parent->pos_y,
+            child->width, child->height);
+	wl_surface_commit(child->surface);
     wl_display_dispatch_pending(wlconfig->display);
     wl_display_flush(wlconfig->display);
 }
 
+- (void) destroySurfaceRole: (struct window *) window
+{
+    NSDebugLog(@"destroySurfaceRole");
 
+    if(window == NULL) {
+        return;
+    }
+    if(window->layer_surface) {
+        zwlr_layer_surface_v1_destroy(window->layer_surface);
+        window->layer_surface = NULL;
+    }
+    if(window->xdg_surface) {
+        if(window->toplevel) {
+            xdg_toplevel_destroy(window->toplevel);
+            window->toplevel = NULL;
+        }
+        if(window->popup) {
+            xdg_popup_destroy(window->popup);
+            window->popup = NULL;
+        }
+        xdg_surface_destroy(window->xdg_surface);
+        window->xdg_surface = NULL;
+    }
+    window->configured = NO;
+}
 
+- (void) destroyWindowShell: (struct window *) window
+{
+    NSDebugLog(@"destroyWindowShell");
+
+    [self destroySurfaceRole: window];
+
+    window->is_out = 1;
+
+    wl_display_dispatch_pending(window->wlconfig->display);
+    wl_display_flush(window->wlconfig->display);
+}
 
 @end

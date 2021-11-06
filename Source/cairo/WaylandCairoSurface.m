@@ -199,30 +199,23 @@ create_shm_buffer(struct window *window)
 {
     struct window *window = (struct window*) gsDevice;
     NSDebugLog(@"[CairoSurface handleExposeRect] %d", window->window_id);
-    cairo_surface_t *cairo_surface = _surface;
-    double  backupOffsetX = 0;
-    double  backupOffsetY = 0;
+
     int x = NSMinX(rect);
     int y = NSMinY(rect);
     int width = NSWidth(rect);
     int height = NSHeight(rect);
 
-
-    if (cairo_surface_status(cairo_surface) != CAIRO_STATUS_SUCCESS)
-    {
-	NSWarnMLog(@"...cairo initial window error status: %s\n",
-		   cairo_status_to_string(cairo_surface_status(_surface)));
-    }
     window->buffer_needs_attach = YES;
     if (window->configured) {
-        NSDebugLog(@"surface attach");
         window->buffer_needs_attach = NO;
         wl_surface_attach(window->surface, window->buffer, 0, 0);
-        wl_surface_damage(window->surface, 0, 0, 1000, 1000);
+        NSDebugLog(@"[%d] updating region: %d,%d %dx%d", window->window_id, 0, 0, window->width, window->height);
+        // FIXME we should update only the damaged area define as x,y,width,height
+        // at the moment it doesnt work
+        wl_surface_damage(window->surface, 0, 0, window->width, window->height);
         wl_surface_commit(window->surface);
         wl_display_dispatch_pending(window->wlconfig->display);
         wl_display_flush(window->wlconfig->display);
-        NSDebugLog(@"surface attach done");
     }
 
     //NSDebugLog(@"[CairoSurface handleExposeRect end]");
