@@ -385,6 +385,9 @@ int NSToWayland(struct window *window, int ns_y)
     window->buffer_needs_attach = NO;
     window->terminated = NO;
 
+    window->moving = NO;
+    window->resizing = NO;
+
 #if 0
     if (style & NSMiniWindowMask) {
 	NSDebugLog(@"----> window id=%d will be a NSMiniWindowMask", window->window_id);

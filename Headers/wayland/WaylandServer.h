@@ -111,6 +111,8 @@ struct window {
     BOOL configured; // surface has been configured once
     BOOL buffer_needs_attach; // there is a new buffer avaialble for the surface
     BOOL terminated;
+    BOOL moving;
+    BOOL resizing;
 
     float pos_x;
     float pos_y;

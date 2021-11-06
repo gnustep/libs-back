@@ -1,5 +1,9 @@
 #include "wayland/WaylandServer.h"
 #include <AppKit/NSEvent.h>
+#include <AppKit/NSView.h>
+#include <AppKit/NSWindow.h>
+#include <AppKit/GSWindowDecorationView.h>
+#include <AppKit/GSTheme.h>
 #include <AppKit/NSApplication.h>
 #include <linux/input.h>
 
@@ -54,6 +58,9 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer,
 {
     WaylandConfig *wlconfig = data;
     struct window *window;
+    if(window->moving || window->resizing) {
+        return;
+    }
     float sx = wl_fixed_to_double(sx_w);
     float sy = wl_fixed_to_double(sy_w);
 
@@ -127,6 +134,123 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
 				window->height - wlconfig->pointer.y);
     eventFlags = 0;
 
+    if(window->toplevel) {
+        // if the window is a toplevel we check if the event is for resizing or moving the window
+        // these actions are delegated to the compositor and therefore we skip forwarding the events
+        // to the NSWindow / NSView
+
+        NSWindow * nswindow = GSWindowWithNumber(window->window_id);
+        if(nswindow != nil) {
+            GSWindowDecorationView * wd = [GSWindowDecorationView windowDecorator];
+//            NSPoint p = [[nswindow contentView] convertPoint: eventLocation fromView: nil];
+            GSTheme *theme = [GSTheme theme];
+            CGFloat titleHeight = [theme titlebarHeight];
+            CGFloat resizebarHeight = [theme resizebarHeight];
+            NSRect windowframe = [nswindow frame];
+            NSDebugLog(@"[%d] titleHeight: %f", window->window_id, titleHeight);
+            NSDebugLog(@"[%d] resizebarHeight: %f", window->window_id, resizebarHeight);
+            NSDebugLog(@"[%d] windowframe: %f,%f %fx%f", windowframe.origin.x, windowframe.origin.y,
+                    windowframe.size.width, windowframe.size.height);
+            NSDebugLog(@"[%d] eventLocation: %f,%f", window->window_id, eventLocation.x, eventLocation.y);
+
+            NSRect titleBarRect = NSZeroRect;
+            NSRect resizeBarRect = NSZeroRect;
+            NSRect closeButtonRect = NSZeroRect;
+            NSRect miniaturizeButtonRect = NSZeroRect;
+            NSUInteger styleMask = [nswindow styleMask];
+            bool hasTitleBar = NO;
+            bool hasResizeBar = NO;
+            bool hasCloseButton = NO;
+            bool hasMiniaturizeButton = NO;
+
+            // wayland controls the window move / resize
+
+            if (styleMask
+                & (NSTitledWindowMask | NSClosableWindowMask | NSMiniaturizableWindowMask)) {
+                hasTitleBar = YES;
+                titleBarRect = NSMakeRect(0.0, windowframe.size.height - titleHeight,
+                windowframe.size.width, titleHeight);
+
+                NSDebugLog(@"[%d] titleBarRect: %f,%f %fx%f", titleBarRect.origin.x, titleBarRect.origin.y,
+                        titleBarRect.size.width, titleBarRect.size.height);
+            }
+
+            if (styleMask & NSResizableWindowMask) {
+                hasResizeBar = YES;
+                float padding = 10.0;
+                resizeBarRect = NSMakeRect(-padding, -padding, windowframe.size.width + padding * 2, resizebarHeight + padding * 2);
+
+                NSDebugLog(@"[%d] resizeBarRect: %f,%f %fx%f", resizeBarRect.origin.x, resizeBarRect.origin.y,
+                        resizeBarRect.size.width, resizeBarRect.size.height);
+            }
+
+            if (styleMask & NSClosableWindowMask) {
+                hasCloseButton = YES;
+
+                closeButtonRect = NSMakeRect(windowframe.size.width - [theme titlebarButtonSize] -
+				   [theme titlebarPaddingRight], windowframe.size.height -
+				   [theme titlebarButtonSize] - [theme titlebarPaddingTop],
+				   [theme titlebarButtonSize], [theme titlebarButtonSize]);
+
+            }
+
+            if (styleMask & NSMiniaturizableWindowMask) {
+                hasMiniaturizeButton = YES;
+                miniaturizeButtonRect = NSMakeRect([theme titlebarPaddingLeft], windowframe.size.height -
+                                [theme titlebarButtonSize] - [theme titlebarPaddingTop],
+                                [theme titlebarButtonSize], [theme titlebarButtonSize]);
+            }
+
+            if (hasTitleBar &&
+                !NSPointInRect(eventLocation, closeButtonRect) &&
+                !NSPointInRect(eventLocation, miniaturizeButtonRect) &&
+                NSPointInRect(eventLocation, titleBarRect)) {
+                NSDebugLog(@"[%d] point in titleBarRect [%f,%f] [%f,%f %fx%f]",
+                        window->window_id,
+                        eventLocation.x, eventLocation.y,
+                        titleBarRect.origin.x, titleBarRect.origin.y,
+                        titleBarRect.size.width, titleBarRect.size.height);
+
+                if(state == WL_POINTER_BUTTON_STATE_PRESSED) {
+                    xdg_toplevel_move(window->toplevel, wlconfig->seat, serial);
+                    window->moving = YES;
+                    return;
+                } else {
+                    window->moving = NO;
+
+                }
+            }
+            if (hasResizeBar && NSPointInRect(eventLocation, resizeBarRect)) {
+                uint32_t edges = XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM_RIGHT;
+                NSDebugLog(@"[%d] point in resizeBarRect [%f,%f] [%f,%f %fx%f]",
+                        window->window_id,
+                        eventLocation.x, eventLocation.y,
+                        resizeBarRect.origin.x, resizeBarRect.origin.y,
+                        resizeBarRect.size.width, resizeBarRect.size.height);
+
+                if (resizeBarRect.size.width < 30 * 2
+                    && eventLocation.x < resizeBarRect.size.width / 2) {
+                    edges = XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM_LEFT;
+                } else if (eventLocation.x > resizeBarRect.size.width - 30) {
+                    edges = XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM_RIGHT;
+                } else if (eventLocation.x < 29) {
+                    edges = XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM_LEFT;
+                } else {
+                    edges = XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM;
+                }
+
+                if(state == WL_POINTER_BUTTON_STATE_PRESSED) {
+                    xdg_toplevel_resize(window->toplevel, wlconfig->seat, serial, edges);
+                    window->resizing = YES;
+                    return;
+                } else {
+                    window->resizing = NO;
+                }
+            }
+        }
+    } // endif window->toplevel
+
+
     if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
 	if (button == wlconfig->pointer.last_click_button &&
 	    time - wlconfig->pointer.last_click_time < 300 &&
@@ -172,7 +296,6 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
 	}
 	wlconfig->pointer.serial = 0;
     } else {
-      NSDebugLog(@"unhandled wayland pointer state 0x%02x", state);
       return;
     }
 
