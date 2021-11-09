@@ -500,9 +500,7 @@ int NSToWayland(struct window *window, int ns_y)
 
 - (void) setWindowdevice: (int) winId forContext: (NSGraphicsContext *)ctxt
 {
-    // creates a new shm buffer
-    NSDebugLog(@"creating a new shm buffer: %d", winId);
-    NSDebugLog(@"setWindowdevice: %d", winId);
+    NSDebugLog(@"[%d] setWindowdevice", winId);
     struct window *window;
 
     window = get_window_with_id(wlconfig, winId);
@@ -517,15 +515,14 @@ int NSToWayland(struct window *window, int ns_y)
     struct window *window = get_window_with_id(wlconfig, win);
 
     if (op == NSWindowOut) {
-        NSDebugLog(@"orderwindow: %d NSWindowOut", win);
+        NSDebugLog(@"[%d] orderwindow: NSWindowOut", win);
         [self destroyWindowShell: window];
 
     } else {//  NSWindowAbove || NSWindowBelow,
 
         // currently it only create a new shell for the window which results
         // in popping in front of the window manager
-        NSDebugLog(@"orderwindow: %d", win);
-        NSDebugLog(@"orderwindow: %d to %fx%f", win, window->pos_x, window->pos_y);
+        NSDebugLog(@"[%d] orderwindow to: %fx%f", win, window->pos_x, window->pos_y);
         if([self windowSurfaceHasRole: window] == NO) {
             [self createSurfaceShell: window];
         }
@@ -561,7 +558,7 @@ int NSToWayland(struct window *window, int ns_y)
 {
     struct window *window = get_window_with_id(wlconfig, win);
 
-    NSDebugLog(@"placewindow: %d %@", win, NSStringFromRect(rect));
+    NSDebugLog(@"[%d] placewindow: %@", win, NSStringFromRect(rect));
     WaylandConfig *config = window->wlconfig;
 
 	NSRect frame;
@@ -621,6 +618,7 @@ int NSToWayland(struct window *window, int ns_y)
 	    NSDebugLog(@"notified resize=%fx%f", rect.size.width, rect.size.height);
         // we have a new buffer
 	} else if (move == YES) {
+        NSDebugLog(@"[%d] placewindow: newpos=%fx%f", win, window->pos_x, window->pos_y);
 	}
 	wl_display_dispatch_pending(window->wlconfig->display);
 	wl_display_flush(window->wlconfig->display);
@@ -685,7 +683,7 @@ int NSToWayland(struct window *window, int ns_y)
 
 - (void) setresizeincrements: (NSSize)size : (int) win
 {
-    NSDebugLog(@"setresizeincrements");
+    //NSDebugLog(@"setresizeincrements");
 }
 
 - (void) flushwindowrect: (NSRect)rect : (int) win
@@ -716,17 +714,17 @@ int NSToWayland(struct window *window, int ns_y)
 
 - (void) setinputfocus: (int) win
 {
-    NSDebugLog(@"setinputfocus");
+    //NSDebugLog(@"setinputfocus");
 }
 
 - (void) setalpha: (float)alpha : (int) win
 {
-    NSDebugLog(@"setalpha");
+    //NSDebugLog(@"setalpha");
 }
 
 - (void) setShadow: (BOOL)hasShadow : (int)win
 {
-    NSDebugLog(@"setshadow");
+    //NSDebugLog(@"setshadow");
 }
 
 @end
@@ -735,43 +733,43 @@ int NSToWayland(struct window *window, int ns_y)
 - (void) createSurfaceShell: (struct window *) window
 {
     int win = window->window_id;
-    NSLog(@"createSurfaceShell %d", win);
+    NSDebugLog(@"[%d] createSurfaceShell", win);
 
     switch(window->level) {
         case NSMainMenuWindowLevel:
-            NSDebugLog(@"NSMainMenuWindowLevel win=%d", win);
+            NSDebugLog(@"[%d] NSMainMenuWindowLevel", win);
             [self createLayerShell: window
                      withLayerType: ZWLR_LAYER_SHELL_V1_LAYER_TOP
                      withNamespace:@"gnustep-mainmenu"];
         break;
         case NSSubmenuWindowLevel:
-            NSDebugLog(@"NSSubmenuWindowLevel win=%d", win);
+            NSDebugLog(@"[%d] NSSubmenuWindowLevel", win);
             [self createSubMenuShell: window];
         break;
         case NSDesktopWindowLevel:
-            NSDebugLog(@"NSDesktopWindowLevel win=%d", win);
+            NSDebugLog(@"[%d] NSDesktopWindowLevel", win);
             [self createLayerShell: window
                      withLayerType: ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND
                      withNamespace:@"gnustep-desktop"];
         break;
         case NSPopUpMenuWindowLevel:
-            NSDebugLog(@"NSPopUpMenuWindowLevel win=%d", win);
+            NSDebugLog(@"[%d] NSPopUpMenuWindowLevel", win);
             [self createPopup: win];
         break;
         case NSScreenSaverWindowLevel:
-            NSDebugLog(@"NSScreenSaverWindowLevel win=%d", win);
+            NSDebugLog(@"[%d] NSScreenSaverWindowLevel", win);
             [self createLayerShell: window
                      withLayerType: ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY
                      withNamespace:@"gnustep-screensaver"];
         break;
         case NSStatusWindowLevel:
-            NSDebugLog(@"NSStatusWindowLevel win=%d", win);
+            NSDebugLog(@"[%d] NSStatusWindowLevel", win);
         case NSFloatingWindowLevel:
-            NSDebugLog(@"NSFloatingWindowLevel win=%d", win);
+            NSDebugLog(@"[%d] NSFloatingWindowLevel", win);
         case NSModalPanelWindowLevel:
-            NSDebugLog(@"NSModalPanelWindowLevel win=%d", win);
+            NSDebugLog(@"[%d] NSModalPanelWindowLevel", win);
         case NSNormalWindowLevel:
-            NSDebugLog(@"NSNormalWindowLevel win=%d", win);
+            NSDebugLog(@"[%d] NSNormalWindowLevel", win);
             [self createTopLevel: window];
 
         break;
@@ -790,7 +788,7 @@ int NSToWayland(struct window *window, int ns_y)
 - (void) createTopLevel: (struct window*) window
 {
     int win = window->window_id;
-	NSDebugLog(@"createTopLevel %d", win);
+	NSDebugLog(@"[%d] createTopLevel", win);
 
     if([self windowSurfaceHasRole: window]) {
         // if the role is already assigned skip
@@ -836,6 +834,7 @@ int NSToWayland(struct window *window, int ns_y)
             withNamespace:(NSString*)namespace
 {
     int win = window->window_id;
+    NSDebugLog(@"[%d] createLayerShell: %@", win, namespace);
 
     if([self windowSurfaceHasRole: window]) {
         // if the role is already assigned skip
@@ -884,8 +883,6 @@ int NSToWayland(struct window *window, int ns_y)
 }
 - (struct window*) getSuperMenuWindow: (struct window*) window
 {
-    NSDebugLog(@"getSuperMenuWindow");
-
     NSMenuPanel * nswin = (GSWindowWithNumber(window->window_id));
     if(!nswin) {
         NSDebugLog(@"makeSubmenu can't find nswin");
@@ -1030,7 +1027,7 @@ int NSToWayland(struct window *window, int ns_y)
 
 - (void) destroySurfaceRole: (struct window *) window
 {
-    NSDebugLog(@"destroySurfaceRole");
+    NSDebugLog(@"[%d] destroySurfaceRole", window->window_id);
 
     if(window == NULL) {
         return;
@@ -1056,7 +1053,7 @@ int NSToWayland(struct window *window, int ns_y)
 
 - (void) destroyWindowShell: (struct window *) window
 {
-    NSDebugLog(@"destroyWindowShell");
+    NSDebugLog(@"[%d] destroyWindowShell", window->window_id);
 
     [self destroySurfaceRole: window];
 

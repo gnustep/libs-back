@@ -6,8 +6,8 @@ static void layer_surface_configure(void *data,
 		struct zwlr_layer_surface_v1 *surface,
 		uint32_t serial, uint32_t w, uint32_t h) {
 
-    NSDebugLog(@"configure layer");
     struct window *window = data;
+    NSDebugLog(@"[%d] layer_surface_configure", window->window_id);
     WaylandConfig *wlconfig = window->wlconfig;
 	zwlr_layer_surface_v1_ack_configure(surface, serial);
     window->configured = YES;
