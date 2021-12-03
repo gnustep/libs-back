@@ -3957,7 +3957,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
     {
       unsigned int opacity;
 
-      opacity = (unsigned int)(alpha * 0xffffffffU);
+      opacity = (unsigned int)(alpha * (float)0xffffffffU);
       XChangeProperty(window->display, window->ident, generic._NET_WM_WINDOW_OPACITY_ATOM,
 		      XA_CARDINAL, 32, PropModeReplace,
 		      (unsigned char*)&opacity, 1L);
@@ -3993,7 +3993,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   if (num)
     {
       if (*num)
-        alpha = (float)*num / 0xffffffffU;
+        alpha = (float)*num / (float)0xffffffffU;
       XFree(num);
     }
 
