@@ -52,6 +52,12 @@ struct pointer
   float		     last_click_x;
   float		     last_click_y;
 
+  uint32_t		       button;
+  NSTimeInterval	   last_timestamp;
+  enum wl_pointer_button_state button_state;
+
+  uint32_t axis_source;
+
   uint32_t	 serial;
   struct window *focus;
 };
@@ -147,8 +153,10 @@ struct window
   BOOL _mouseInitialized;
 }
 @end
+
 @interface
 WaylandServer (Cursor)
+- (void)initializeMouseIfRequired;
 @end
 
 #endif /* _WaylandServer_h_INCLUDE */
