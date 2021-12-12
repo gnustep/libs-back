@@ -1,7 +1,7 @@
 /* WaylandCairoSurface
 
-   WaylandCairoSurface - Draw with Cairo onto Wayland surfaces
-   
+   WaylandCairoShmSurface - Draw with Cairo onto Wayland surfaces
+
 
    Copyright (C) 2020 Free Software Foundation, Inc.
 
@@ -31,7 +31,7 @@
 #define _GNU_SOURCE
 
 #include "wayland/WaylandServer.h"
-#include "cairo/WaylandCairoSurface.h"
+#include "cairo/WaylandCairoShmSurface.h"
 #include <cairo/cairo.h>
 
 #include <stdlib.h>
@@ -135,7 +135,7 @@ create_shm_buffer(struct window *window)
   return surface;
 }
 
-@implementation WaylandCairoSurface
+@implementation WaylandCairoShmSurface
 
 - (id)initWithDevice:(void *)device
 {
@@ -178,7 +178,6 @@ create_shm_buffer(struct window *window)
   // the counterpart to create_shm_buffer.
   //
   // For instance, this is the wrong place to destroy the cairo surface:
-  //  cairo_surface_destroy(window->surface);
   //  window->surface = NULL;
   // and likely to unmap the data, and destroy/release the buffer.
   //  "Destroying the wl_buffer after wl_buffer.release does not change
@@ -188,6 +187,8 @@ create_shm_buffer(struct window *window)
   // Hence also skipping:
   //  munmap(window->data, shm_buffer_size(window));
 
+  cairo_surface_destroy(_surface);
+  _surface = NULL;
   [super dealloc];
 }
 
@@ -233,4 +234,9 @@ create_shm_buffer(struct window *window)
   // NSDebugLog(@"[CairoSurface handleExposeRect end]");
 }
 
+- (void)destroySurface
+{
+  // noop this is an offscreen surface
+  // no need to destroy it when not visible
+}
 @end

@@ -1,5 +1,5 @@
 /*
-   WaylandCairoSurface.h
+   WaylandCairoShmSurface.h
 
    Copyright (C) 2020 Free Software Foundation, Inc.
 
@@ -25,14 +25,15 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef WaylandCairoSurface_h
-#define WaylandCairoSurface_h
+#ifndef WaylandCairoShmSurface_h
+#define WaylandCairoShmSurface_h
 
 #include "cairo/CairoSurface.h"
 
-@interface WaylandCairoSurface : CairoSurface
+@interface WaylandCairoShmSurface : CairoSurface
 {
 }
+- (void)destroySurface;
 @end
 
 #endif
