@@ -1,7 +1,12 @@
 /* WaylandCairoSurface
 
-   WaylandCairoShmSurface - Draw with Cairo onto Wayland surfaces
-
+   WaylandCairoShmSurface - A cairo surface backed by a wayland
+   shared memory buffer.
+   After the wayland surface is configured, the buffer needs to be
+   attached to the surface. Subsequent changes to the cairo surface
+   needs to be notified to the wayland server using wl_surface_damage
+   and wl_surface_commit. The buffer is freed after the compositor
+   releases it and the cairo surface is not in use.
 
    Copyright (C) 2020 Free Software Foundation, Inc.
 
@@ -39,11 +44,59 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-#define GSWINDEVICE ((struct window *) gsDevice)
+struct pool_buffer
+{
+  int		      poolfd;
+  struct wl_shm_pool *pool;
+  struct wl_buffer   *buffer;
+  cairo_surface_t	  *surface;
+  uint32_t	      width, height;
+  void	       *data;
+  size_t	      size;
+  bool		      busy;
+};
 
-/* Linux specific version */
+static const enum wl_shm_format wl_fmt = WL_SHM_FORMAT_ARGB8888;
+static const cairo_format_t	cairo_fmt = CAIRO_FORMAT_ARGB32;
+
+static void
+finishBuffer(struct pool_buffer *buf)
+{
+  // The buffer can be deleted if it has been released by the compositor
+  // and if not used by the cairo surface
+  if(buf == NULL || buf->busy || buf->surface != NULL)
+  {
+    return;
+  }
+  if (buf->buffer)
+    {
+      wl_buffer_destroy(buf->buffer);
+    }
+  if (buf->data)
+    {
+      munmap(buf->data, buf->size);
+    }
+  free(buf);
+  return;
+}
+
+static void
+buffer_handle_release(void *data, struct wl_buffer *wl_buffer)
+{
+  struct pool_buffer *buffer = data;
+  buffer->busy = false;
+  // If the buffer was not released before dealloc
+  finishBuffer(buffer);
+}
+
+static const struct wl_buffer_listener buffer_listener = {
+  // Sent by the compositor when it's no longer using a buffer
+  .release = buffer_handle_release,
+};
+
+// Creates a file descriptor for the compositor to share pixel buffers
 static int
-os_create_anonymous_file(off_t size)
+createPoolFile(off_t size)
 {
   static const char template[] = "/gnustep-shared-XXXXXX";
   const char *path;
@@ -59,7 +112,9 @@ os_create_anonymous_file(off_t size)
 
   name = malloc(strlen(path) + sizeof(template));
   if (!name)
-    return -1;
+    {
+      return -1;
+    }
 
   strcpy(name, path);
   strcat(name, template);
@@ -80,76 +135,74 @@ os_create_anonymous_file(off_t size)
   return fd;
 }
 
-static inline size_t
-shm_buffer_stride(struct window *window)
+static struct pool_buffer *
+createBufferForWindow(struct window * window, struct wl_shm *shm)
 {
-  return window->width * 4;
-}
+  uint32_t stride = cairo_format_stride_for_width(cairo_fmt, window->width);
+  size_t   size = stride * window->height;
 
-static inline size_t
-shm_buffer_size(struct window *window)
-{
-  return shm_buffer_stride(window) * window->height;
-}
+  struct pool_buffer * buf = malloc(sizeof(struct pool_buffer));
 
-static cairo_surface_t *
-create_shm_buffer(struct window *window)
-{
-  struct wl_shm_pool *pool;
-  cairo_surface_t	  *surface;
-  int		      fd, size, stride;
-
-  stride = shm_buffer_stride(window);
-  size = shm_buffer_size(window);
-
-  NSDebugLog(@"WaylandCairoSurface: creating shm buffer of %d bytes", size);
-  fd = os_create_anonymous_file(size);
-  if (fd < 0)
+  void *data = NULL;
+  if (size > 0)
     {
-      NSLog(@"creating a buffer file for surface failed");
-      return NULL;
+      buf->poolfd = createPoolFile(size);
+      if (buf->poolfd == -1)
+        {
+          return NULL;
+        }
+
+      data
+	= mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, buf->poolfd, 0);
+      if (data == MAP_FAILED)
+        {
+          return NULL;
+        }
+
+      buf->pool = wl_shm_create_pool(shm, buf->poolfd, size);
+      buf->buffer = wl_shm_pool_create_buffer(buf->pool, 0, window->width, window->height,
+					      stride, wl_fmt);
+      wl_buffer_add_listener(buf->buffer, &buffer_listener, buf);
     }
 
-  window->data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-  if (window->data == MAP_FAILED)
-    {
-      NSLog(@"error mapping anonymous file");
-      close(fd);
-      return NULL;
-    }
+  buf->data = data;
+  buf->size = size;
+  buf->width = window->width;
+  buf->height = window->height;
+  buf->surface = cairo_image_surface_create_for_data(data, cairo_fmt, window->width, window->height, stride);
 
-  pool = wl_shm_create_pool(window->wlconfig->shm, fd, size);
-
-  surface
-    = cairo_image_surface_create_for_data(window->data, CAIRO_FORMAT_ARGB32,
-					  window->width, window->height,
-					  stride);
-
-  window->buffer
-    = wl_shm_pool_create_buffer(pool, 0, window->width, window->height, stride,
-				WL_SHM_FORMAT_ARGB8888);
-  wl_shm_pool_destroy(pool);
-
-  close(fd);
-
-  return surface;
+  wl_shm_pool_destroy(buf->pool);
+  return buf;
 }
+
 
 @implementation WaylandCairoShmSurface
-
+{
+    struct pool_buffer *pbuffer;
+}
 - (id)initWithDevice:(void *)device
 {
   struct window *window = (struct window *) device;
-  NSDebugLog(@"WaylandCairoSurface: initWithDevice win=%d", window->window_id);
+  NSDebugLog(@"WaylandCairoShmSurface: initWithDevice win=%d",
+	     window->window_id);
 
   gsDevice = device;
 
-  _surface = create_shm_buffer(window);
+  pbuffer = createBufferForWindow(window, window->wlconfig->shm);
+
+  if (pbuffer == NULL)
+    {
+      NSDebugLog(@"failed to obtain buffer");
+      return nil;
+    }
+
+  _surface = pbuffer->surface;
+
   window->buffer_needs_attach = YES;
   if (_surface == NULL)
     {
       NSDebugLog(@"can't create cairo surface");
-      return 0;
+      return nil;
     }
 
   if (window->configured)
@@ -158,10 +211,10 @@ create_shm_buffer(struct window *window)
       // this is usually done in the configure event handler
       // in case of resize of an already configured surface
       // we should reattach the new allocated buffer
-      NSDebugLog(@"wl_surface_attach: win=%d toplevel_surface",
+      NSDebugLog(@"wl_surface_attach: win=%d",
 		 window->window_id);
       window->buffer_needs_attach = NO;
-      wl_surface_attach(window->surface, window->buffer, 0, 0);
+      wl_surface_attach(window->surface, pbuffer->buffer, 0, 0);
       wl_surface_commit(window->surface);
     }
   window->wcs = self;
@@ -173,36 +226,23 @@ create_shm_buffer(struct window *window)
 {
   struct window *window = (struct window *) gsDevice;
   NSDebugLog(@"WaylandCairoSurface: dealloc win=%d", window->window_id);
-
-  // FIXME: This is leaking memory. We need to *correctly* implement
-  // the counterpart to create_shm_buffer.
-  //
-  // For instance, this is the wrong place to destroy the cairo surface:
-  //  window->surface = NULL;
-  // and likely to unmap the data, and destroy/release the buffer.
-  //  "Destroying the wl_buffer after wl_buffer.release does not change
-  //  the surface contents. However, if the client destroys the wl_buffer
-  //  before receiving the wl_buffer.release event, the surface contents
-  //  become undefined immediately."
-  // Hence also skipping:
-  //  munmap(window->data, shm_buffer_size(window));
-
   cairo_surface_destroy(_surface);
   _surface = NULL;
+  pbuffer->surface = NULL;
+  // try to free the buffer if already released by the compositor
+  finishBuffer(pbuffer);
+
   [super dealloc];
 }
 
 - (NSSize)size
 {
-  //    NSDebugLog(@"WaylandCairoSurface: size");
-  struct window *window = (struct window *) gsDevice;
-  return NSMakeSize(window->width, window->height);
-}
-
-- (void)setSurface:(cairo_surface_t *)surface
-{
-  //    NSDebugLog(@"WaylandCairoSurface: setSurface");
-  _surface = surface;
+  if (_surface == NULL)
+    {
+      return NSZeroSize;
+    }
+  return NSMakeSize(cairo_image_surface_get_width(_surface),
+		    cairo_image_surface_get_height(_surface));
 }
 
 - (void)handleExposeRect:(NSRect)rect
@@ -210,28 +250,21 @@ create_shm_buffer(struct window *window)
   struct window *window = (struct window *) gsDevice;
   NSDebugLog(@"[CairoSurface handleExposeRect] %d", window->window_id);
 
-  int x = NSMinX(rect);
-  int y = NSMinY(rect);
-  int width = NSWidth(rect);
-  int height = NSHeight(rect);
-
   window->buffer_needs_attach = YES;
 
   if (window->configured)
     {
       window->buffer_needs_attach = NO;
-      wl_surface_attach(window->surface, window->buffer, 0, 0);
-      NSDebugLog(@"[%d] updating region: %d,%d %dx%d", window->window_id, 0, 0,
+      wl_surface_attach(window->surface, pbuffer->buffer, 0, 0);
+      NSDebugLog(@"[%d] updating region: %d,%d %fx%f", window->window_id, 0, 0,
 		 window->width, window->height);
-      // FIXME we should update only the damaged area define as x,y,width,height
-      // at the moment it doesnt work
+      // FIXME we should update only the damaged area defined as x,y,width,
+      // height at the moment it doesnt work
       wl_surface_damage(window->surface, 0, 0, window->width, window->height);
       wl_surface_commit(window->surface);
       wl_display_dispatch_pending(window->wlconfig->display);
       wl_display_flush(window->wlconfig->display);
     }
-
-  // NSDebugLog(@"[CairoSurface handleExposeRect end]");
 }
 
 - (void)destroySurface

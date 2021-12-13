@@ -130,8 +130,6 @@ struct window
   int	is_out;
   int	level;
 
-  unsigned char		*data;
-  struct wl_buffer		   *buffer;
   struct wl_surface	    *surface;
   struct xdg_surface	     *xdg_surface;
   struct xdg_toplevel	      *toplevel;
@@ -139,7 +137,7 @@ struct window
   struct xdg_positioner	*positioner;
   struct zwlr_layer_surface_v1 *layer_surface;
   struct output		*output;
-  CairoSurface *wcs;
+  CairoSurface		       *wcs;
 };
 
 @interface WaylandServer : GSDisplayServer
