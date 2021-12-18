@@ -30,6 +30,21 @@
 
 #include "cairo/CairoSurface.h"
 
+struct pool_buffer
+{
+  int		      poolfd;
+  struct wl_shm_pool *pool;
+  struct wl_buffer   *buffer;
+  cairo_surface_t	  *surface;
+  uint32_t	      width, height;
+  void	       *data;
+  size_t	      size;
+  bool		      busy;
+};
+
+struct pool_buffer *
+createShmBuffer(int width, int height, struct wl_shm *shm);
+
 @interface WaylandCairoShmSurface : CairoSurface
 {
 }

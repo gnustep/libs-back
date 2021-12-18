@@ -34,6 +34,7 @@
 
 #include <GNUstepGUI/GSDisplayServer.h>
 #include <wayland-client.h>
+#include <wayland-cursor.h>
 #include <cairo/cairo.h>
 #include <xkbcommon/xkbcommon.h>
 
@@ -60,6 +61,15 @@ struct pointer
 
   uint32_t	 serial;
   struct window *focus;
+
+};
+
+struct cursor
+{
+  struct wl_cursor *cursor;
+  struct wl_surface *surface;
+  struct wl_cursor_image *image;
+  struct wl_buffer *buffer;
 };
 
 typedef struct _WaylandConfig
@@ -73,6 +83,7 @@ typedef struct _WaylandConfig
   struct wl_keyboard	     *keyboard;
   struct xdg_wm_base	     *wm_base;
   struct zwlr_layer_shell_v1 *layer_shell;
+  int seat_version;
 
   struct wl_list output_list;
   int		 output_count;
@@ -80,7 +91,20 @@ typedef struct _WaylandConfig
   int		 window_count;
   int		 last_window_id;
 
+// last event serial from pointer or keyboard
+  uint32_t	 event_serial;
+
+
+// cursor
+  struct wl_cursor_theme *cursor_theme;
+  struct cursor *cursor;
+  struct wl_surface *cursor_surface;
+
+// pointer
   struct pointer      pointer;
+  float mouse_scroll_multiplier;
+
+// keyboard
   struct xkb_context *xkb_context;
   struct
   {
@@ -92,9 +116,6 @@ typedef struct _WaylandConfig
   } xkb;
   int modifiers;
 
-  int seat_version;
-
-  float mouse_scroll_multiplier;
 } WaylandConfig;
 
 struct output
@@ -146,6 +167,8 @@ struct window
   struct output		*output;
   CairoSurface		       *wcs;
 };
+
+struct window *get_window_with_id(WaylandConfig *wlconfig, int winid);
 
 @interface WaylandServer : GSDisplayServer
 {

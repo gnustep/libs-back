@@ -657,7 +657,7 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
         [AC_MSG_ERROR([**** No xkb_context_new in libxkbcommon. Install correct version of libxkbcommon-dev or equivalent.])])
       CAIRO_LIBS="$CAIRO_LIBS $XFT_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS"
-      LIBS="-lwayland-client -lxkbcommon $LIBS"
+      LIBS="-lwayland-client -lwayland-cursor -lxkbcommon $LIBS"
     else
       AC_MSG_ERROR([Invalid Cairo installation])
     fi

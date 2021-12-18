@@ -29,9 +29,13 @@
 #import <AppKit/NSEvent.h>
 #import <AppKit/NSView.h>
 #import <AppKit/NSWindow.h>
+#import <AppKit/NSCursor.h>
+#import <AppKit/NSGraphics.h>
+#import <AppKit/NSBitmapImageRep.h>
 #import <GNUstepGUI/GSWindowDecorationView.h>
 #import <GNUstepGUI/GSTheme.h>
 #include <linux/input.h>
+#include "wayland-cursor.h"
 
 // XXX should this be configurable by the user?
 #define DOUBLECLICK_DELAY 300
@@ -53,11 +57,13 @@ pointer_handle_enter(void *data, struct wl_pointer *pointer, uint32_t serial,
   {
     return;
   }
+  [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
+
+
   NSDebugLog(@"[%d] pointer_handle_enter",window->window_id);
 
   float		 sx = wl_fixed_to_double(sx_w);
   float		 sy = wl_fixed_to_double(sy_w);
-  [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
 
   wlconfig->pointer.focus = window;
 
@@ -93,6 +99,7 @@ pointer_handle_enter(void *data, struct wl_pointer *pointer, uint32_t serial,
 
   wlconfig->pointer.x = sx;
   wlconfig->pointer.y = sy;
+  wlconfig->pointer.serial = serial;
 }
 
 static void
@@ -141,7 +148,7 @@ pointer_handle_leave(void *data, struct wl_pointer *pointer, uint32_t serial,
       [GSCurrentServer() postEvent:event atStart:NO];
 
       wlconfig->pointer.focus = NULL;
-      wlconfig->pointer.serial = 0;
+      wlconfig->pointer.serial = serial;
     }
 }
 
@@ -152,7 +159,7 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer, uint32_t time,
 {
   WaylandConfig *wlconfig = data;
   struct window *focused_window = wlconfig->pointer.focus;
-  if(window->ignoreMouse)
+  if(focused_window->ignoreMouse)
   {
     return;
   }
@@ -160,6 +167,7 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer, uint32_t time,
   float sy = wl_fixed_to_double(sy_w);
 
   wlconfig->pointer.last_timestamp = (NSTimeInterval) time / 1000.0;
+
 
   [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
 
@@ -395,6 +403,7 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
   wlconfig->pointer.button = button;
   wlconfig->pointer.button_state = state;
   wlconfig->pointer.last_timestamp = timestamp;
+  wlconfig->pointer.serial = serial;
 
 }
 
@@ -586,22 +595,132 @@ WaylandServer (Cursor)
 
 - (void)hidecursor
 {
-  NSDebugLog(@"hidecursor");
+  // to hide the cursor we set a NULL surface
+  wl_pointer_set_cursor(wlconfig->pointer.wlpointer, wlconfig->pointer.serial,
+			NULL, 0, 0);
 }
 
 - (void)showcursor
 {
-  NSDebugLog(@"showcursor");
+  // restore  the previous surface
+  wl_pointer_set_cursor(wlconfig->pointer.wlpointer, wlconfig->pointer.serial,
+			wlconfig->cursor->surface,
+			wlconfig->cursor->image->hotspot_x,
+			wlconfig->cursor->image->hotspot_y);
 }
 
 - (void)standardcursor:(int)style :(void **)cid
 {
-  NSDebugLog(@"standardcursor");
+
+  [self initializeMouseIfRequired];
+
+  char * cursor_name = "";
+
+  switch (style)
+    {
+    case GSArrowCursor:
+      cursor_name = "left_ptr";
+      break;
+    case GSIBeamCursor:
+      cursor_name = "xterm";
+      break;
+    case GSDragLinkCursor:
+      cursor_name = "dnd-link";
+      break;
+    case GSOperationNotAllowedCursor:
+      cursor_name = "X_cursor";
+      break;
+    case GSDragCopyCursor:
+      cursor_name = "dnd-copy";
+      break;
+    case GSPointingHandCursor:
+      cursor_name = "hand";
+      break;
+    case GSResizeLeftCursor:
+      cursor_name = "left_side";
+      break;
+    case GSResizeRightCursor:
+      cursor_name = "right_side";
+      break;
+    case GSResizeLeftRightCursor:
+      cursor_name = "sb_h_double_arrow";
+      break;
+    case GSCrosshairCursor:
+      cursor_name = "crosshair";
+      break;
+    case GSResizeUpCursor:
+      cursor_name = "top_side";
+      break;
+    case GSResizeDownCursor:
+      cursor_name = "bottom_side";
+      break;
+    case GSResizeUpDownCursor:
+      cursor_name = "sb_v_double_arrow";
+      break;
+    case GSDisappearingItemCursor:
+      cursor_name = "pirate";
+      break;
+    case GSContextualMenuCursor:
+      break;
+    case GSGreenArrowCursor:
+      break;
+    case GSClosedHandCursor:
+      break;
+    case GSOpenHandCursor:
+      break;
+    }
+  if (strlen(cursor_name) != 0)
+    {
+      NSDebugLog(@"load cursor from theme for style %d: %s", style,
+		 cursor_name);
+      struct cursor *wayland_cursor = malloc(sizeof(struct cursor));
+
+      wayland_cursor->cursor
+	= wl_cursor_theme_get_cursor(wlconfig->cursor_theme, cursor_name);
+
+      wayland_cursor->image = wayland_cursor->cursor->images[0];
+      wayland_cursor->buffer
+	= wl_cursor_image_get_buffer(wayland_cursor->image);
+
+      *cid = wayland_cursor;
+    }
+  else
+    {
+      NSDebugLog(@"unable to load cursor from theme for style %d", style);
+    }
 }
 
 - (void)imagecursor:(NSPoint)hotp :(NSImage *)image :(void **)cid
 {
-  NSDebugLog(@"imagecursor");
+  NSBitmapImageRep* raw_img = [NSBitmapImageRep imageRepWithData:[image TIFFRepresentation]];
+  unsigned char *data = [raw_img bitmapData];
+  NSSize imageSize = NSMakeSize(raw_img.pixelsWide, raw_img.pixelsHigh);
+  int width = imageSize.width;
+  int height = imageSize.height;
+
+  struct pool_buffer *pbuffer
+    = createShmBuffer(width, height, wlconfig->shm);
+
+  // TODO should check if the bitmaprep format is compatible
+  memcpy(pbuffer->data, data, [raw_img bytesPerPlane]);
+
+  struct cursor * wayland_cursor = malloc(sizeof(struct cursor));
+
+  struct wl_cursor * cursor = malloc(sizeof(struct wl_cursor));
+  cursor->image_count = 1;
+  cursor->name = "custom";
+  struct wl_cursor_image * cursor_image = malloc(sizeof(struct wl_cursor_image));
+  cursor->images = malloc(sizeof *cursor->images);
+  cursor->images[0] = cursor_image;
+  cursor_image->width = width;
+  cursor_image->height = height;
+  cursor_image->hotspot_x = hotp.x;
+  cursor_image->hotspot_y = hotp.y;
+
+  wayland_cursor->cursor = cursor;
+  wayland_cursor->image = cursor_image;
+  wayland_cursor->buffer = pbuffer->buffer;
+  *cid = wayland_cursor;
 }
 
 - (void)setcursorcolor:(NSColor *)fg :(NSColor *)bg :(void *)cid
@@ -613,37 +732,88 @@ WaylandServer (Cursor)
 
 - (void) recolorcursor:(NSColor *)fg :(NSColor *)bg :(void*) cid
 {
+  // TODO recolorcursor
   NSDebugLog(@"recolorcursor");
 }
 
 - (void)setcursor:(void *)cid
 {
-  NSDebugLog(@"setcursor");
+  struct cursor *wayland_cursor = cid;
+  if(wayland_cursor == NULL)
+    {
+      return;
+    }
+  if(wayland_cursor->cursor == NULL)
+    {
+      return;
+    }
+  if(wayland_cursor->image == NULL)
+    {
+      return;
+    }
+  if(wayland_cursor->buffer == NULL)
+    {
+      return;
+    }
+
+  if(wayland_cursor->surface)
+    {
+      wl_surface_destroy(wayland_cursor->surface);
+    }
+  wl_pointer_set_cursor(wlconfig->pointer.wlpointer, wlconfig->event_serial,
+            wlconfig->cursor_surface,
+            wayland_cursor->image->hotspot_x,
+            wayland_cursor->image->hotspot_y);
+
+  wl_surface_attach(wlconfig->cursor_surface, wayland_cursor->buffer, 0, 0);
+  wl_surface_damage(wlconfig->cursor_surface, 0, 0,
+                  wayland_cursor->image->width, wayland_cursor->image->height);
+  wl_surface_commit(wlconfig->cursor_surface);
+
+
+  wlconfig->cursor = wayland_cursor;
 }
 
 - (void)freecursor:(void *)cid
 {
-  NSDebugLog(@"freecursor");
+  // the cursor should be deallocated
+  struct cursor * c = cid;
+  wl_cursor_destroy(c->cursor);
+  wl_buffer_destroy(c->buffer);
+  free(cid);
 }
+
 - (void)setIgnoreMouse:(BOOL)ignoreMouse :(int)win
 {
   struct window *window = get_window_with_id(wlconfig, win);
-  if(window)
-  {
-    window->ignoreMouse = ignoreMouse;
-  }
-
+  if (window)
+    {
+      window->ignoreMouse = ignoreMouse;
+    }
 }
 
 - (void)initializeMouseIfRequired
 {
   if (!_mouseInitialized)
-    [self initializeMouse];
+    {
+      [self initializeMouse];
+    }
 }
 
 - (void)initializeMouse
 {
   _mouseInitialized = YES;
+
+  wlconfig->cursor_theme =
+    wl_cursor_theme_load(NULL, 24, wlconfig->shm);
+
+  wlconfig->cursor_surface
+    = wl_compositor_create_surface(wlconfig->compositor);
+
+  // default cursor used for show/hide
+  struct cursor *wayland_cursor;
+  [self standardcursor:GSArrowCursor :(void **)&wayland_cursor];
+  [self setcursor:wayland_cursor];
 
   [self mouseOptionsChanged:nil];
   [[NSDistributedNotificationCenter defaultCenter]
