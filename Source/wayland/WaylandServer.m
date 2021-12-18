@@ -401,6 +401,7 @@ WaylandServer (WindowOps)
 
   window->moving = NO;
   window->resizing = NO;
+  window->ignoreMouse = NO;
 
   // FIXME is this needed?
   if (window->pos_x < 0)

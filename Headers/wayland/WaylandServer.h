@@ -126,6 +126,7 @@ struct window
   BOOL terminated;
   BOOL moving;
   BOOL resizing;
+  BOOL ignoreMouse;
 
   float pos_x;
   float pos_y;

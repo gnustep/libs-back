@@ -49,7 +49,10 @@ pointer_handle_enter(void *data, struct wl_pointer *pointer, uint32_t serial,
 
   WaylandConfig *wlconfig = data;
   struct window *window = wl_surface_get_user_data(surface);
-
+  if(window->ignoreMouse)
+  {
+    return;
+  }
   NSDebugLog(@"[%d] pointer_handle_enter",window->window_id);
 
   float		 sx = wl_fixed_to_double(sx_w);
@@ -103,6 +106,10 @@ pointer_handle_leave(void *data, struct wl_pointer *pointer, uint32_t serial,
 
   WaylandConfig *wlconfig = data;
   struct window *window = wl_surface_get_user_data(surface);
+  if(window->ignoreMouse)
+  {
+    return;
+  }
   [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
 
   if (wlconfig->pointer.focus->window_id == window->window_id
@@ -145,7 +152,10 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer, uint32_t time,
 {
   WaylandConfig *wlconfig = data;
   struct window *focused_window = wlconfig->pointer.focus;
-
+  if(window->ignoreMouse)
+  {
+    return;
+  }
   float sx = wl_fixed_to_double(sx_w);
   float sy = wl_fixed_to_double(sy_w);
 
@@ -226,7 +236,10 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
   int			       buttonNumber;
   enum wl_pointer_button_state state = state_w;
   struct window		*window = wlconfig->pointer.focus;
-
+  if(window->ignoreMouse)
+  {
+    return;
+  }
   [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
 
   gcontext = GSCurrentContext();
@@ -432,6 +445,10 @@ pointer_handle_axis(void *data, struct wl_pointer *pointer, uint32_t time,
   int		     buttonNumber;
 
   struct window *window = wlconfig->pointer.focus;
+  if(window->ignoreMouse)
+  {
+    return;
+  }
 
   [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
 
@@ -610,7 +627,12 @@ WaylandServer (Cursor)
 }
 - (void)setIgnoreMouse:(BOOL)ignoreMouse :(int)win
 {
-  NSDebugLog(@"setIgnoreMouse");
+  struct window *window = get_window_with_id(wlconfig, win);
+  if(window)
+  {
+    window->ignoreMouse = ignoreMouse;
+  }
+
 }
 
 - (void)initializeMouseIfRequired
