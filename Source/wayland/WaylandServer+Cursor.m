@@ -26,6 +26,7 @@
 */
 
 #include "wayland/WaylandServer.h"
+#include "cairo/WaylandCairoShmSurface.h"
 #import <AppKit/NSEvent.h>
 #import <AppKit/NSView.h>
 #import <AppKit/NSWindow.h>
@@ -100,6 +101,7 @@ pointer_handle_enter(void *data, struct wl_pointer *pointer, uint32_t serial,
   wlconfig->pointer.x = sx;
   wlconfig->pointer.y = sy;
   wlconfig->pointer.serial = serial;
+  wlconfig->event_serial = serial;
 }
 
 static void
@@ -149,6 +151,7 @@ pointer_handle_leave(void *data, struct wl_pointer *pointer, uint32_t serial,
 
       wlconfig->pointer.focus = NULL;
       wlconfig->pointer.serial = serial;
+      wlconfig->event_serial = serial;
     }
 }
 
@@ -159,7 +162,7 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer, uint32_t time,
 {
   WaylandConfig *wlconfig = data;
   struct window *focused_window = wlconfig->pointer.focus;
-  if(focused_window->ignoreMouse)
+  if(focused_window == NULL || focused_window->ignoreMouse)
   {
     return;
   }
@@ -268,7 +271,7 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
           NSWindow *nswindow = GSWindowWithNumber(window->window_id);
           if (nswindow != nil)
             {
-              id<GSWindowDecorator> *wd = [nswindow _windowView];
+              id<GSWindowDecorator> wd = [nswindow _windowView];
 
               if ([wd pointInTitleBarRect:eventLocation])
                 {
@@ -404,22 +407,21 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
   wlconfig->pointer.button_state = state;
   wlconfig->pointer.last_timestamp = timestamp;
   wlconfig->pointer.serial = serial;
+  wlconfig->event_serial = serial;
 
 }
 
 // Discrete step information for scroll and other axes.
 static void
 pointer_handle_frame(void *data, struct wl_pointer *pointer)
-{
-
-}
+{}
 
 // Source information for scroll and other axes.
 static void
 pointer_handle_axis_source(void *data, struct wl_pointer *pointer,
 			   uint32_t axis_source)
 {
-  WaylandConfig		*wlconfig = data;
+  WaylandConfig *wlconfig = data;
   wlconfig->pointer.axis_source = axis_source;
 }
 
@@ -432,10 +434,8 @@ pointer_handle_axis_stop(void *data, struct wl_pointer *pointer, uint32_t time,
 // Discrete step information for scroll and other axes.
 static void
 pointer_handle_axis_discrete(void *data, struct wl_pointer *pointer,
-		    uint32_t axis, int discrete)
-{
-
-}
+			     uint32_t axis, int discrete)
+{}
 
 // Scroll and other axis notifications.
 static void
@@ -488,7 +488,6 @@ pointer_handle_axis(void *data, struct wl_pointer *pointer, uint32_t time,
       deltaX = wl_fixed_to_double(value) * wlconfig->mouse_scroll_multiplier;
     }
 
-
   /* FIXME: X11 backend uses the XGetPointerMapping()-returned values from
      its map_return argument as constants for buttonNumber. As the variant
      with buttonNumber: seems to be a GNUstep extension, and the value
@@ -515,11 +514,12 @@ pointer_handle_axis(void *data, struct wl_pointer *pointer, uint32_t time,
 }
 
 // the Seat category uses this listener
-const struct wl_pointer_listener pointer_listener = {
-  pointer_handle_enter,	 pointer_handle_leave, pointer_handle_motion,
-  pointer_handle_button, pointer_handle_axis, pointer_handle_frame, pointer_handle_axis_source,
-  pointer_handle_axis_stop, pointer_handle_axis_discrete
-};
+const struct wl_pointer_listener pointer_listener
+  = {pointer_handle_enter,	  pointer_handle_leave,
+     pointer_handle_motion,	  pointer_handle_button,
+     pointer_handle_axis,	  pointer_handle_frame,
+     pointer_handle_axis_source,  pointer_handle_axis_stop,
+     pointer_handle_axis_discrete};
 
 @implementation
 WaylandServer (Cursor)
@@ -545,8 +545,6 @@ WaylandServer (Cursor)
 
 - (NSPoint)mouseLocationOnScreen:(int)aScreen window:(int *)win
 {
-  //    NSDebugLog(@"mouseLocationOnScreen: %d %fx%f", win,
-  //	       wlconfig->pointer.x, wlconfig->pointer.y);
   struct window *window = wlconfig->pointer.focus;
   struct output *output;
   float		 x;
@@ -579,7 +577,7 @@ WaylandServer (Cursor)
 
 - (BOOL)capturemouse:(int)win
 {
-  NSDebugLog(@"capturemouse: %d", win);
+  // mouse capture not supported
   return NO;
 }
 
@@ -830,6 +828,8 @@ WaylandServer (Cursor)
   wlconfig->mouse_scroll_multiplier =
     [defs integerForKey:@"GSMouseScrollMultiplier"];
   if (wlconfig->mouse_scroll_multiplier < 0.0001f)
-    wlconfig->mouse_scroll_multiplier = 1.0f;
+    {
+      wlconfig->mouse_scroll_multiplier = 1.0f;
+    }
 }
 @end
