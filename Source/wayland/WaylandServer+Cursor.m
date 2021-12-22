@@ -47,17 +47,22 @@ pointer_handle_enter(void *data, struct wl_pointer *pointer, uint32_t serial,
 		     struct wl_surface *surface, wl_fixed_t sx_w,
 		     wl_fixed_t sy_w)
 {
-  if (!surface)
-    {
-      return;
-    }
-
   WaylandConfig *wlconfig = data;
+
   struct window *window = wl_surface_get_user_data(surface);
+
   if(window->ignoreMouse)
   {
     return;
   }
+
+  wlconfig->pointer.focus = window;
+
+  if(wlconfig->pointer.captured)
+  {
+    return;
+  }
+
   [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
 
 
@@ -66,11 +71,9 @@ pointer_handle_enter(void *data, struct wl_pointer *pointer, uint32_t serial,
   float		 sx = wl_fixed_to_double(sx_w);
   float		 sy = wl_fixed_to_double(sy_w);
 
-  wlconfig->pointer.focus = window;
 
-  if (wlconfig->pointer.focus && wlconfig->pointer.serial)
+  if (window && wlconfig->pointer.serial)
     {
-      window = wlconfig->pointer.focus;
       NSEvent	      *event;
       NSPoint		 eventLocation;
       NSGraphicsContext *gcontext;
@@ -108,47 +111,51 @@ static void
 pointer_handle_leave(void *data, struct wl_pointer *pointer, uint32_t serial,
 		     struct wl_surface *surface)
 {
-  if (!surface)
+  WaylandConfig *wlconfig = data;
+
+  struct window *window = wl_surface_get_user_data(surface);
+
+  if(window->ignoreMouse)
     {
       return;
     }
 
-  WaylandConfig *wlconfig = data;
-  struct window *window = wl_surface_get_user_data(surface);
-  if(window->ignoreMouse)
-  {
-    return;
-  }
+  if (wlconfig->pointer.focus == NULL)
+    {
+      return;
+    }
+
   [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
 
   if (wlconfig->pointer.focus->window_id == window->window_id
       && wlconfig->pointer.serial)
     {
-      window = wlconfig->pointer.focus;
-      NSEvent	      *event;
-      NSPoint		 eventLocation;
-      NSGraphicsContext *gcontext;
+      if(wlconfig->pointer.captured == NULL)
+        {
+            window = wlconfig->pointer.focus;
+            NSEvent	      *event;
+            NSPoint		 eventLocation;
+            NSGraphicsContext *gcontext;
 
-      gcontext = GSCurrentContext();
+            gcontext = GSCurrentContext();
 
-      eventLocation = NSMakePoint(wlconfig->pointer.x, wlconfig->pointer.y);
+            eventLocation = NSMakePoint(wlconfig->pointer.x, wlconfig->pointer.y);
+            event = [NSEvent mouseEventWithType:NSMouseExited
+                      location:eventLocation
+                      modifierFlags:0
+                      timestamp:wlconfig->pointer.last_timestamp
+                      windowNumber:window->window_id
+                        context:gcontext
+                        eventNumber:serial
+                        clickCount:0
+                      pressure:0.0
+                      buttonNumber:0
+                        deltaX:0
+                        deltaY:0
+                        deltaZ:0.];
 
-      event = [NSEvent mouseEventWithType:NSMouseExited
-                location:eventLocation
-                modifierFlags:wlconfig->modifiers
-                timestamp:wlconfig->pointer.last_timestamp
-                windowNumber:window->window_id
-                  context:gcontext
-                  eventNumber:serial
-                  clickCount:0
-                pressure:0.0
-                buttonNumber:0
-                  deltaX:0
-                  deltaY:0
-                  deltaZ:0.];
-
-      [GSCurrentServer() postEvent:event atStart:NO];
-
+            [GSCurrentServer() postEvent:event atStart:NO];
+        }
       wlconfig->pointer.focus = NULL;
       wlconfig->pointer.serial = serial;
       wlconfig->event_serial = serial;
@@ -162,6 +169,11 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer, uint32_t time,
 {
   WaylandConfig *wlconfig = data;
   struct window *focused_window = wlconfig->pointer.focus;
+
+  if(wlconfig->pointer.captured)
+  {
+    focused_window = wlconfig->pointer.captured;
+  }
   if(focused_window == NULL || focused_window->ignoreMouse)
   {
     return;
@@ -246,8 +258,15 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
   int			       tick;
   int			       buttonNumber;
   enum wl_pointer_button_state state = state_w;
+
   struct window		*window = wlconfig->pointer.focus;
-  if(window->ignoreMouse)
+
+  if(wlconfig->pointer.captured)
+  {
+    window = wlconfig->pointer.captured;
+  }
+
+  if(window == NULL || window->ignoreMouse)
   {
     return;
   }
@@ -259,9 +278,9 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
   eventFlags = wlconfig->modifiers;
   NSTimeInterval timestamp = (NSTimeInterval) time / 1000.0;
 
-
   if (state == WL_POINTER_BUTTON_STATE_PRESSED)
     {
+      wlconfig->pointer.button = button;
       if (window->toplevel)
         {
           // if the window is a toplevel we check if the event is for resizing or
@@ -344,6 +363,7 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
   else if (state == WL_POINTER_BUTTON_STATE_RELEASED)
     {
       wlconfig->pointer.serial = 0;
+      wlconfig->pointer.button = 0;
       if(window->moving)
         {
           window->moving = NO;
@@ -403,7 +423,6 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
   [GSCurrentServer() postEvent:event atStart:NO];
 
   // store button state for mouse move handlers
-  wlconfig->pointer.button = button;
   wlconfig->pointer.button_state = state;
   wlconfig->pointer.last_timestamp = timestamp;
   wlconfig->pointer.serial = serial;
@@ -577,13 +596,16 @@ WaylandServer (Cursor)
 
 - (BOOL)capturemouse:(int)win
 {
-  // mouse capture not supported
-  return NO;
+
+  struct window *window = get_window_with_id(wlconfig, win);
+  wlconfig->pointer.captured = window;
+  wlconfig->pointer.focus = window;
+  return YES;
 }
 
 - (void)releasemouse
 {
-  NSDebugLog(@"releasemouse");
+  wlconfig->pointer.captured = NULL;
 }
 
 - (void)setMouseLocation:(NSPoint)mouseLocation onScreen:(int)aScreen

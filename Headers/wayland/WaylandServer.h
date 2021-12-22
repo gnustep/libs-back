@@ -61,6 +61,7 @@ struct pointer
 
   uint32_t	 serial;
   struct window *focus;
+  struct window *captured;
 
 };
 
