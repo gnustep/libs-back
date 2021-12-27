@@ -40,9 +40,9 @@ layer_surface_configure(void *data, struct zwlr_layer_surface_v1 *surface,
   window->configured = YES;
   if (window->buffer_needs_attach)
     {
-      NSDebugLog(@"attach: win=%d layer", window->window_id);
-      wl_surface_attach(window->surface, window->buffer, 0, 0);
-      wl_surface_commit(window->surface);
+      [window->instance flushwindowrect:NSMakeRect(window->pos_x, window->pos_y,
+						   window->width, window->height
+						   ):window->window_id];
     }
 }
 

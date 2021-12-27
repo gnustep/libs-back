@@ -487,6 +487,8 @@ WaylandServer (WindowOps)
   if (window->toplevel)
     {
       xdg_toplevel_set_title(window->toplevel, cString);
+      wl_surface_commit(window->surface);
+      wl_display_flush(window->wlconfig->display);
     }
 }
 
@@ -511,7 +513,11 @@ WaylandServer (WindowOps)
   struct window *window;
 
   window = get_window_with_id(wlconfig, winId);
-
+  // FIXME we could resize the current surface instead of creating a new one
+  if (window->wcs)
+    {
+      NSDebugLog(@"[%d] window has already a surface", winId);
+    }
   GSSetDevice(ctxt, window, 0.0, window->height);
   DPSinitmatrix(ctxt);
   DPSinitclip(ctxt);
@@ -970,7 +976,6 @@ WaylandServer (SurfaceRoles)
     }
   if (!parentwindow)
     {
-      //[self createTopLevel: window];
       return;
     }
   NSDebugLog(@"new popup: %d parent id: %d", win, parentwindow->window_id);
@@ -991,7 +996,7 @@ WaylandServer (SurfaceRoles)
 {
   NSDebugLog(@"createPopupShell");
 
-  if (parent->xdg_surface == NULL || parent->toplevel == NULL)
+  if (parent->toplevel == NULL && parent->layer_surface == NULL)
     {
       NSDebugLog(@"parent surface %d is not toplevel", parent->window_id);
       return;
@@ -1025,11 +1030,13 @@ WaylandServer (SurfaceRoles)
   xdg_positioner_set_offset(positioner, (child->pos_x - parent->pos_x),
 			    (child->pos_y - parent->pos_y));
 
-  //  NSDebugLog(@"xdg_positioner offset: %f,%f",
-  //          (child->pos_x - parent->pos_x), (child->pos_y - parent->pos_y));
-
   child->popup = xdg_surface_get_popup(child->xdg_surface, parent->xdg_surface,
 				       positioner);
+
+  if (parent->layer_surface)
+    {
+      zwlr_layer_surface_v1_get_popup(parent->layer_surface, child->popup);
+    }
 
   xdg_popup_add_listener(child->popup, &xdg_popup_listener, child);
   xdg_surface_add_listener(child->xdg_surface, &xdg_surface_listener, child);
@@ -1040,8 +1047,8 @@ WaylandServer (SurfaceRoles)
   NSDebugLog(@"child_geometry : %f,%f %fx%f", child->pos_x - parent->pos_x,
 	     child->pos_y - parent->pos_y, child->width, child->height);
   wl_surface_commit(child->surface);
-  wl_display_dispatch_pending(wlconfig->display);
-  wl_display_flush(wlconfig->display);
+  wl_display_roundtrip(wlconfig->display);
+  xdg_positioner_destroy(positioner);
 }
 
 - (void)destroySurfaceRole:(struct window *)window
@@ -1071,6 +1078,10 @@ WaylandServer (SurfaceRoles)
 	}
       xdg_surface_destroy(window->xdg_surface);
       window->xdg_surface = NULL;
+    }
+  if (window->wcs)
+    {
+      [window->wcs destroySurface];
     }
   window->configured = NO;
 }

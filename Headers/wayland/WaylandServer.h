@@ -37,7 +37,8 @@
 #include <cairo/cairo.h>
 #include <xkbcommon/xkbcommon.h>
 
-#include "cairo/WaylandCairoSurface.h"
+#include "cairo/CairoSurface.h"
+
 #include "wayland/xdg-shell-client-protocol.h"
 #include "wayland/wlr-layer-shell-client-protocol.h"
 
@@ -129,8 +130,6 @@ struct window
   int	is_out;
   int	level;
 
-  unsigned char		*data;
-  struct wl_buffer		   *buffer;
   struct wl_surface	    *surface;
   struct xdg_surface	     *xdg_surface;
   struct xdg_toplevel	      *toplevel;
@@ -138,7 +137,7 @@ struct window
   struct xdg_positioner	*positioner;
   struct zwlr_layer_surface_v1 *layer_surface;
   struct output		*output;
-  WaylandCairoSurface	      *wcs;
+  CairoSurface		       *wcs;
 };
 
 @interface WaylandServer : GSDisplayServer
