@@ -7373,7 +7373,7 @@ fi
 
       CAIRO_LIBS="$CAIRO_LIBS $XFT_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS"
-      LIBS="-lwayland-client -lxkbcommon $LIBS"
+      LIBS="-lwayland-client -lwayland-cursor -lxkbcommon $LIBS"
     else
       as_fn_error $? "Invalid Cairo installation" "$LINENO" 5
     fi

@@ -44,17 +44,6 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-struct pool_buffer
-{
-  int		      poolfd;
-  struct wl_shm_pool *pool;
-  struct wl_buffer   *buffer;
-  cairo_surface_t	  *surface;
-  uint32_t	      width, height;
-  void	       *data;
-  size_t	      size;
-  bool		      busy;
-};
 
 static const enum wl_shm_format wl_fmt = WL_SHM_FORMAT_ARGB8888;
 static const cairo_format_t	cairo_fmt = CAIRO_FORMAT_ARGB32;
@@ -135,11 +124,11 @@ createPoolFile(off_t size)
   return fd;
 }
 
-static struct pool_buffer *
-createBufferForWindow(struct window * window, struct wl_shm *shm)
+struct pool_buffer *
+createShmBuffer(int width, int height, struct wl_shm *shm)
 {
-  uint32_t stride = cairo_format_stride_for_width(cairo_fmt, window->width);
-  size_t   size = stride * window->height;
+  uint32_t stride = cairo_format_stride_for_width(cairo_fmt, width);
+  size_t   size = stride * height;
 
   struct pool_buffer * buf = malloc(sizeof(struct pool_buffer));
 
@@ -160,21 +149,27 @@ createBufferForWindow(struct window * window, struct wl_shm *shm)
         }
 
       buf->pool = wl_shm_create_pool(shm, buf->poolfd, size);
-      buf->buffer = wl_shm_pool_create_buffer(buf->pool, 0, window->width, window->height,
+      buf->buffer = wl_shm_pool_create_buffer(buf->pool, 0, width, height,
 					      stride, wl_fmt);
       wl_buffer_add_listener(buf->buffer, &buffer_listener, buf);
     }
+  else
+  {
+    return NULL;
+  }
 
   buf->data = data;
   buf->size = size;
-  buf->width = window->width;
-  buf->height = window->height;
-  buf->surface = cairo_image_surface_create_for_data(data, cairo_fmt, window->width, window->height, stride);
+  buf->width = width;
+  buf->height = height;
+  buf->surface = cairo_image_surface_create_for_data(data, cairo_fmt, width, height, stride);
 
-  wl_shm_pool_destroy(buf->pool);
+  if(buf->pool)
+  {
+    wl_shm_pool_destroy(buf->pool);
+  }
   return buf;
 }
-
 
 @implementation WaylandCairoShmSurface
 {
@@ -188,7 +183,7 @@ createBufferForWindow(struct window * window, struct wl_shm *shm)
 
   gsDevice = device;
 
-  pbuffer = createBufferForWindow(window, window->wlconfig->shm);
+  pbuffer = createShmBuffer(window->width, window->height, window->wlconfig->shm);
 
   if (pbuffer == NULL)
     {

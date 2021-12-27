@@ -105,12 +105,16 @@ keyboard_handle_enter(void *data, struct wl_keyboard *keyboard, uint32_t serial,
 		      struct wl_surface *surface, struct wl_array *keys)
 {
   // NSDebugLog(@"keyboard_handle_enter");
+  WaylandConfig	*wlconfig = data;
+  wlconfig->event_serial = serial;
 }
 
 static void
 keyboard_handle_leave(void *data, struct wl_keyboard *keyboard, uint32_t serial,
 		      struct wl_surface *surface)
 {
+  WaylandConfig	*wlconfig = data;
+  wlconfig->event_serial = serial;
   // NSDebugLog(@"keyboard_handle_leave");
 }
 
@@ -122,6 +126,7 @@ keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard,
 {
   // NSDebugLog(@"keyboard_handle_modifiers");
   WaylandConfig *wlconfig = data;
+  wlconfig->event_serial = serial;
   xkb_mod_mask_t mask;
 
   /* If we're not using a keymap, then we don't handle PC-style modifiers */
@@ -148,6 +153,7 @@ keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32_t serial,
 {
   // NSDebugLog(@"keyboard_handle_key: %d", key);
   WaylandConfig		*wlconfig = data;
+  wlconfig->event_serial = serial;
   uint32_t		     code, num_syms;
   enum wl_keyboard_key_state state = state_w;
   const xkb_keysym_t	     *syms;
