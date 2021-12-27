@@ -912,7 +912,7 @@ WaylandServer (SurfaceRoles)
       NSDebugLog(@"makeSubmenu can't find nswin");
       return NULL;
     }
-  NSMenu *menu = [nswin menu];
+  NSMenu *menu = [nswin _menu];
   if (!menu)
     {
       NSDebugLog(@"makeSubmenu can't find menu");
@@ -962,7 +962,7 @@ WaylandServer (SurfaceRoles)
   // if the layer shell is not available then we use the xdg popup
   // for that we need a parent toplevel window
 
-  struct window *rootwindow = window; //[self getSuperMenuWindow: window];
+  struct window *rootwindow = window;
   struct window *parentwindow = rootwindow;
   while (rootwindow = [self getSuperMenuWindow:parentwindow])
     {
