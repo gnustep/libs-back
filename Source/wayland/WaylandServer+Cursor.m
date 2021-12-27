@@ -596,10 +596,8 @@ WaylandServer (Cursor)
 
 - (BOOL)capturemouse:(int)win
 {
-
   struct window *window = get_window_with_id(wlconfig, win);
   wlconfig->pointer.captured = window;
-  wlconfig->pointer.focus = window;
   return YES;
 }
 
