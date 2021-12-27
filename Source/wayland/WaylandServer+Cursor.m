@@ -51,17 +51,17 @@ pointer_handle_enter(void *data, struct wl_pointer *pointer, uint32_t serial,
 
   struct window *window = wl_surface_get_user_data(surface);
 
-  if(window->ignoreMouse)
-  {
-    return;
-  }
+  if (window->ignoreMouse)
+    {
+      return;
+    }
 
   wlconfig->pointer.focus = window;
 
-  if(wlconfig->pointer.captured)
-  {
-    return;
-  }
+  if (wlconfig->pointer.captured)
+    {
+      return;
+    }
 
   [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
 
@@ -115,7 +115,7 @@ pointer_handle_leave(void *data, struct wl_pointer *pointer, uint32_t serial,
 
   struct window *window = wl_surface_get_user_data(surface);
 
-  if(window->ignoreMouse)
+  if (window->ignoreMouse)
     {
       return;
     }
@@ -130,31 +130,31 @@ pointer_handle_leave(void *data, struct wl_pointer *pointer, uint32_t serial,
   if (wlconfig->pointer.focus->window_id == window->window_id
       && wlconfig->pointer.serial)
     {
-      if(wlconfig->pointer.captured == NULL)
+      if (wlconfig->pointer.captured == NULL)
         {
-            window = wlconfig->pointer.focus;
-            NSEvent	      *event;
-            NSPoint		 eventLocation;
-            NSGraphicsContext *gcontext;
+          window = wlconfig->pointer.focus;
+          NSEvent		  *event;
+          NSPoint	     eventLocation;
+          NSGraphicsContext *gcontext;
 
-            gcontext = GSCurrentContext();
+          gcontext = GSCurrentContext();
 
-            eventLocation = NSMakePoint(wlconfig->pointer.x, wlconfig->pointer.y);
-            event = [NSEvent mouseEventWithType:NSMouseExited
-                      location:eventLocation
+          eventLocation = NSMakePoint(wlconfig->pointer.x, wlconfig->pointer.y);
+          event = [NSEvent mouseEventWithType:NSMouseExited
+                          location:eventLocation
                       modifierFlags:0
-                      timestamp:wlconfig->pointer.last_timestamp
+                          timestamp:wlconfig->pointer.last_timestamp
                       windowNumber:window->window_id
-                        context:gcontext
-                        eventNumber:serial
-                        clickCount:0
-                      pressure:0.0
+                          context:gcontext
+                      eventNumber:serial
+                      clickCount:0
+                          pressure:0.0
                       buttonNumber:0
-                        deltaX:0
-                        deltaY:0
-                        deltaZ:0.];
+                          deltaX:0
+                          deltaY:0
+                          deltaZ:0.];
 
-            [GSCurrentServer() postEvent:event atStart:NO];
+          [GSCurrentServer() postEvent:event atStart:NO];
         }
       wlconfig->pointer.focus = NULL;
       wlconfig->pointer.serial = serial;
@@ -170,14 +170,14 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer, uint32_t time,
   WaylandConfig *wlconfig = data;
   struct window *focused_window = wlconfig->pointer.focus;
 
-  if(wlconfig->pointer.captured)
-  {
-    focused_window = wlconfig->pointer.captured;
-  }
-  if(focused_window == NULL || focused_window->ignoreMouse)
-  {
-    return;
-  }
+  if (wlconfig->pointer.captured)
+    {
+      focused_window = wlconfig->pointer.captured;
+    }
+  if (focused_window == NULL || focused_window->ignoreMouse)
+    {
+      return;
+    }
   float sx = wl_fixed_to_double(sx_w);
   float sy = wl_fixed_to_double(sy_w);
 
@@ -261,15 +261,15 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
 
   struct window		*window = wlconfig->pointer.focus;
 
-  if(wlconfig->pointer.captured)
-  {
-    window = wlconfig->pointer.captured;
-  }
+  if (wlconfig->pointer.captured)
+    {
+      window = wlconfig->pointer.captured;
+    }
 
-  if(window == NULL || window->ignoreMouse)
-  {
-    return;
-  }
+  if (window == NULL || window->ignoreMouse)
+    {
+      return;
+    }
   [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
 
   gcontext = GSCurrentContext();
@@ -364,12 +364,12 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
     {
       wlconfig->pointer.serial = 0;
       wlconfig->pointer.button = 0;
-      if(window->moving)
+      if (window->moving)
         {
           window->moving = NO;
           return;
         }
-      if(window->resizing)
+      if (window->resizing)
         {
           window->resizing = NO;
           return;
@@ -473,10 +473,10 @@ pointer_handle_axis(void *data, struct wl_pointer *pointer, uint32_t time,
   int		     buttonNumber;
 
   struct window *window = wlconfig->pointer.focus;
-  if(window->ignoreMouse)
-  {
-    return;
-  }
+  if (window->ignoreMouse)
+    {
+      return;
+    }
 
   [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
 
@@ -757,24 +757,24 @@ WaylandServer (Cursor)
 - (void)setcursor:(void *)cid
 {
   struct cursor *wayland_cursor = cid;
-  if(wayland_cursor == NULL)
+  if (wayland_cursor == NULL)
     {
       return;
     }
-  if(wayland_cursor->cursor == NULL)
+  if (wayland_cursor->cursor == NULL)
     {
       return;
     }
-  if(wayland_cursor->image == NULL)
+  if (wayland_cursor->image == NULL)
     {
       return;
     }
-  if(wayland_cursor->buffer == NULL)
+  if (wayland_cursor->buffer == NULL)
     {
       return;
     }
 
-  if(wayland_cursor->surface)
+  if (wayland_cursor->surface)
     {
       wl_surface_destroy(wayland_cursor->surface);
     }
