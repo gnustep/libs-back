@@ -290,7 +290,7 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
           NSWindow *nswindow = GSWindowWithNumber(window->window_id);
           if (nswindow != nil)
             {
-              id<GSWindowDecorator> wd = [nswindow _windowView];
+              GSStandardWindowDecorationView * wd = [nswindow _windowView];
 
               if ([wd pointInTitleBarRect:eventLocation])
                 {
