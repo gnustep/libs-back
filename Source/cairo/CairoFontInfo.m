@@ -48,6 +48,7 @@ void set_font_options(cairo_font_options_t *options)
   cairo_hint_metrics_t metrics = CAIRO_HINT_METRICS_ON;
   cairo_hint_style_t   style = CAIRO_HINT_STYLE_NONE;
   int hinting = [ud integerForKey: @"GSFontHinting"];
+  float scale = [ud floatForKey: @"GSScaleFactor"];
   int subpixel = 0;
 
   if (hinting == 0) 
@@ -58,7 +59,18 @@ void set_font_options(cairo_font_options_t *options)
        */
       if (nil == [ud objectForKey: @"GSFontHinting"])
         {
-          hinting = 33;
+          /*
+           * Default hinting to off if scale is set to something other than 1.0. As
+           * hinting + scaling breaks assumptions about glyph advancement made in gui.
+           */
+          if (scale == 0.0f || scale == 1.0f)
+            {
+              hinting = 33;
+            }
+          else
+            {
+              hinting = 17;
+            }
         }
     }
   
