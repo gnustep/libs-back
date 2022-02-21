@@ -1,3 +1,9 @@
+2022-02-22 Riccardo Mottola <rm@gnu.org>
+
+	* Tools/xpbs.m (xSelectionNotify:):
+	Delete property on begin and at every Notify to start and continue
+	transfer of INCR.
+
 2020-04-26  Ivan Vucica  <ivan@vucica.net>
 
 	* ANNOUNCE:

@@ -994,17 +994,22 @@ xErrorHandler(Display *d, XErrorEvent *e)
           XEvent event;
           NSMutableData	*imd = nil;
           BOOL wait = YES;
-          
+
+	  // Need to delete the property to start transfer
+	  XDeleteProperty(xDisplay, xEvent->requestor, xEvent->property);
           md = nil;
           while (wait)
             {
               XNextEvent(xDisplay, &event);
-              
+
               if (event.type == PropertyNotify)
                 {
                   if (event.xproperty.state != PropertyNewValue) continue;
-                  
+
                   imd = [self getSelectionData: xEvent type: &actual_type];
+
+		  // delete the property to get the next transfer chunk
+		  XDeleteProperty(xDisplay, xEvent->requestor, xEvent->property);
                   if (imd != nil)
                     {
                       if (md == nil)
