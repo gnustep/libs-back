@@ -358,6 +358,9 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       [self setHandlesWindowDecorations: YES];
       [self setUsesNativeTaskbar: YES];
 
+      [self isDiscoveryServiceInstalled];
+      [self isDiscoveryServiceRunning];
+
       [GSTheme theme];
       { // Check user defaults
 	NSUserDefaults	*defs;
@@ -1543,9 +1546,117 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 #endif
 }
 
+- (BOOL) isDiscoveryServiceInstalled
+{
+  return [self isServiceInstalled: @"Bonjour Service"];
+}
+
+- (BOOL) isDiscoveryServiceRunning
+{
+  return [self isServiceRunning: @"Bonjour Service"];
+}
+
 @end
 
+@implementation WIN32Server (ServiceOps)
 
+- (BOOL)isServiceInstalled: (NSString*)serviceName
+{
+  BOOL      result                = NO;
+  SC_HANDLE serviceControlManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+  
+  if (serviceControlManager == NULL)
+    {
+      NSDebugMLLog(@"WIN32", @"cannot connect to service control manager - status: %ld", GetLastError());
+      NSWarnMLog(@"cannot connect to service control manager - status: %ld", GetLastError());
+    }
+  else
+    {
+      // CHeck for service running...
+      SC_HANDLE serviceHandle = OpenService(serviceControlManager, TEXT("Bonjour Service"), SERVICE_QUERY_STATUS);
+      
+      if (serviceHandle == NULL)
+        {
+          NSDebugMLLog(@"WIN32", @"cannot open service 'Bonjour' - status: %ld", GetLastError());
+          NSWarnMLog(@"cannot open service 'Bonjour' - status: %ld", GetLastError());
+        }
+      else
+        {
+          NSDebugMLLog(@"WIN32", @"service 'Bonjour' is installed");
+          result = YES;
+          
+          // Cleanup...
+          CloseServiceHandle(serviceHandle);
+        }
+      
+      // Cleanup...
+      CloseServiceHandle(serviceControlManager);
+    }
+  
+  // return our result...
+  return result;
+}
+
+- (BOOL)isServiceRunning: (NSString*)serviceName
+{
+  BOOL      result                = NO;
+  SC_HANDLE serviceControlManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+  
+  if (serviceControlManager == NULL)
+    {
+      NSDebugMLLog(@"WIN32", @"cannot connect to service control manager - status: %ld", GetLastError());
+      NSWarnMLog(@"cannot connect to service control manager - status: %ld", GetLastError());
+    }
+  else
+    {
+      // Check for service running...
+      //TCHAR     *name          = TEXT([serviceName UTF8String]);
+      SC_HANDLE  serviceHandle = OpenService(serviceControlManager, TEXT("Bonjour Service"), SERVICE_QUERY_STATUS);
+      
+      if (serviceHandle == NULL)
+        {
+          NSDebugMLLog(@"WIN32", @"cannot open service 'Bonjour' - status: %ld", GetLastError());
+          NSWarnMLog(@"cannot open service 'Bonjour' - status: %ld", GetLastError());
+        }
+      else
+        {
+          SERVICE_STATUS_PROCESS serviceStatusInfo;
+          DWORD                  ssiSize;
+          
+          if (0 == QueryServiceStatusEx(serviceHandle, SC_STATUS_PROCESS_INFO, (LPBYTE)&serviceStatusInfo, sizeof(serviceStatusInfo), &ssiSize))
+            {
+              NSDebugMLLog(@"WIN32", @"cannot query service 'Bonjour' - status: %ld", GetLastError());
+              NSWarnMLog(@"cannot query service 'Bonjour' - status: %ld", GetLastError());
+            }
+          else
+            {
+              NSDebugMLLog(@"WIN32", @"service 'Bonjour' current state: %ld", serviceStatusInfo.dwCurrentState);
+              result = (serviceStatusInfo.dwCurrentState == SERVICE_RUNNING);
+            }
+          
+          // Cleanup...
+          CloseServiceHandle(serviceHandle);
+        }
+      
+      // Cleanup...
+      CloseServiceHandle(serviceControlManager);
+    }
+  
+  // return our result...
+  return result;
+}
+
+- (BOOL) isDiscoveryServiceInstalled
+{
+  return [self isServiceInstalled: @"Bonjour Service"];
+}
+
+- (BOOL) isDiscoveryServiceRunning
+{
+  return [self isServiceRunning: @"Bonjour Service"];
+}
+
+@end
 
 @implementation WIN32Server (WindowOps)
 
