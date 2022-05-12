@@ -187,7 +187,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 - (void) callback: (id)sender
 {
   MSG msg;
-  WINBOOL bRet; 
+  WinBOOL bRet; 
 //NSLog(@"Callback");
   while ((bRet = PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) != 0)
     { 
@@ -2303,7 +2303,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         {
           HDC     hdc = GetDC(hwnd);
           RECT    r   = GSWindowRectToMS(self, hwnd, rect);
-          WINBOOL result;
+          WinBOOL result;
 
           result = BitBlt(hdc, r.left, r.top, 
                           (r.right - r.left), (r.bottom - r.top), 
