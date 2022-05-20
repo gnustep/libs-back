@@ -187,7 +187,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 - (void) callback: (id)sender
 {
   MSG msg;
-  WinBOOL bRet; 
+  WINBOOL bRet; 
 //NSLog(@"Callback");
   while ((bRet = PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) != 0)
     { 
