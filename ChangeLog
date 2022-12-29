@@ -1,3 +1,11 @@
+2022-12-29 Richard Frith-Macdonald <rfm@gnu.org>
+
+        * ChangeLog: Update for new release
+	* ANNOUNCE:
+	* NEWS:
+	* Documentation/news.texi: Update of release notes for 0.30.0 by Fred.
+	* Version: bump to 0.30.0
+
 2022-02-22 Riccardo Mottola <rm@gnu.org>
 
 	* Tools/xpbs.m (xSelectionNotify:):

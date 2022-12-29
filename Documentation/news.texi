@@ -7,6 +7,19 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.30.0}
+
+The release includes mostly improvements for the new Wayland backend and  a few bug fixes.
+
+@itemize @bullet
+@item Improvements for the wayland backend.
+@item Don't use font hinting for cauro, when using scaling.
+@item Fix pasteboard transfer of huge data by deleting property on begin
+and at every Notify.
+@end itemize
+
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.29.0}
 
 The release includes an alpha version of the wayland backend and a few
@@ -22,8 +35,6 @@ bug fixes.
 @code{SetWindowLongPtr} in place of @code{GetWindowLong} and
 @code{SetWindowLong} for win32 and cairo for various win64 fixes.
 @end itemize
-
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.28.0}
 
