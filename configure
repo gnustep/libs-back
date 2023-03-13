@@ -5932,7 +5932,7 @@ else
 fi
 
 if test "$have_gdi32" = yes; then
-  WIN32_LIBS="-lgdi32 -lm"
+  WIN32_LIBS="-lgdi32"
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmsimg32" >&5
 $as_echo_n "checking for main in -lmsimg32... " >&6; }

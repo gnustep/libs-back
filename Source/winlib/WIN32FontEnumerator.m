@@ -33,6 +33,39 @@
 #include "winlib/WIN32FontEnumerator.h"
 #include "windows.h"
 
+
+@interface WIN32FontEnumerator (_GSPrivate_)
+
+- (NSMutableDictionary *) allFontFamilies;
+
+- (NSArray *) allFontNames;
+
+- (void) setAllFontFamilies: (NSMutableDictionary *)d;
+
+- (void) setAllFontNames: (NSArray *)a;
+
+- (NSString *) fontName;
+
+- (const CGFloat *)matrix;
+
+- (NSString *) familyName;
+
+- (NSCharacterSet *) coveredCharacterSet;
+
+- (unsigned) numberOfGlyphs;
+
+- (CGFloat) ascender;
+
+- (CGFloat) descender;
+
+- (BOOL) isFixedPitch;
+
+- (BOOL) isBaseFont;
+
+- (CGFloat) xHeight;
+
+@end
+
 @implementation WIN32FontEnumerator
 
 int win32_font_weight(LONG tmWeight)
@@ -180,13 +213,13 @@ int CALLBACK fontfamilyenum(ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEXW *lpntme,
 				     length: wcslen(lpelfe->elfFullName)];
 
   familyName = win32_font_family(fontName);
-  fontDefs = [enumer->allFontFamilies objectForKey: familyName];
+  fontDefs = [[enumer allFontFamilies] objectForKey: familyName];
   if (fontDefs == nil)
     {
       NSArray *fontDef;
 
       fontDefs = [NSMutableArray arrayWithCapacity: 10];
-      [enumer->allFontFamilies setObject: fontDefs forKey: familyName];
+      [[enumer allFontFamilies] setObject: fontDefs forKey: familyName];
       // FIXME: Need to loop over all fonts for this family
       //add_font(fontDefs, fontName, lpelfe, lpntme);
       //enumerate_font(fontDefs, familyName);
@@ -219,7 +252,7 @@ int CALLBACK fontfamilyenum(ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEXW *lpntme,
 	nil];
       [fontDefs addObject: fontDef];
 
-      [(NSMutableArray*)(enumer->allFontNames) addObject: fontName];
+      [(NSMutableArray*)([enumer allFontNames]) addObject: fontName];
     }
 
   return 1;
@@ -236,8 +269,8 @@ int CALLBACK fontfamilyenum(ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEXW *lpntme,
       int res;
       CREATE_AUTORELEASE_POOL(pool);
 
-      allFontFamilies = [[NSMutableDictionary alloc] init];
-      allFontNames  = [[NSMutableArray alloc] init];
+      [self setAllFontFamilies: [[NSMutableDictionary alloc] init]];
+      [self setAllFontNames: [[NSMutableArray alloc] init]];
 	
       hdc = GetDC(NULL);
       logfont.lfCharSet = DEFAULT_CHARSET;

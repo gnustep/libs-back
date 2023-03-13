@@ -47,7 +47,8 @@ include ./Version
 #
 # The list of subproject directories
 #
-SUBPROJECTS = Source Tools
+SUBPROJECTS = Source \
+#	Tools
 
 ifneq ($(fonts), no)
 SUBPROJECTS += Fonts

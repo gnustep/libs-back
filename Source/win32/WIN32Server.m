@@ -63,6 +63,21 @@
 
 #include <math.h>
 
+// category for accessing private ivars...
+@interface NSView (_GSPrivate_)
+
+- (struct _rFlagsType) rFlags;
+
+- (NSArray *) cursorRects;
+
+@end
+
+@interface GSTrackingRect (_GSPrivate_)
+
+- (NSRect) rectangle;
+
+@end
+
 // To update the cursor..
 static BOOL update_cursor = NO;
 static BOOL should_handle_cursor = NO;
@@ -187,7 +202,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 - (void) callback: (id)sender
 {
   MSG msg;
-  WINBOOL bRet; 
+  WinBOOL bRet; 
 //NSLog(@"Callback");
   while ((bRet = PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) != 0)
     { 
@@ -357,6 +372,9 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
       [self setHandlesWindowDecorations: YES];
       [self setUsesNativeTaskbar: YES];
+
+      [self isDiscoveryServiceInstalled];
+      [self isDiscoveryServiceRunning];
 
       [GSTheme theme];
       { // Check user defaults
@@ -1543,9 +1561,117 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 #endif
 }
 
+- (BOOL) isDiscoveryServiceInstalled
+{
+  return [self isServiceInstalled: @"Bonjour Service"];
+}
+
+- (BOOL) isDiscoveryServiceRunning
+{
+  return [self isServiceRunning: @"Bonjour Service"];
+}
+
 @end
 
+@implementation WIN32Server (ServiceOps)
 
+- (BOOL)isServiceInstalled: (NSString*)serviceName
+{
+  BOOL      result                = NO;
+  SC_HANDLE serviceControlManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+  
+  if (serviceControlManager == NULL)
+    {
+      NSDebugMLLog(@"WIN32", @"cannot connect to service control manager - status: %ld", GetLastError());
+      NSWarnMLog(@"cannot connect to service control manager - status: %ld", GetLastError());
+    }
+  else
+    {
+      // CHeck for service running...
+      SC_HANDLE serviceHandle = OpenService(serviceControlManager, TEXT("Bonjour Service"), SERVICE_QUERY_STATUS);
+      
+      if (serviceHandle == NULL)
+        {
+          NSDebugMLLog(@"WIN32", @"cannot open service 'Bonjour' - status: %ld", GetLastError());
+          NSWarnMLog(@"cannot open service 'Bonjour' - status: %ld", GetLastError());
+        }
+      else
+        {
+          NSDebugMLLog(@"WIN32", @"service 'Bonjour' is installed");
+          result = YES;
+          
+          // Cleanup...
+          CloseServiceHandle(serviceHandle);
+        }
+      
+      // Cleanup...
+      CloseServiceHandle(serviceControlManager);
+    }
+  
+  // return our result...
+  return result;
+}
+
+- (BOOL)isServiceRunning: (NSString*)serviceName
+{
+  BOOL      result                = NO;
+  SC_HANDLE serviceControlManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+  
+  if (serviceControlManager == NULL)
+    {
+      NSDebugMLLog(@"WIN32", @"cannot connect to service control manager - status: %ld", GetLastError());
+      NSWarnMLog(@"cannot connect to service control manager - status: %ld", GetLastError());
+    }
+  else
+    {
+      // Check for service running...
+      //TCHAR     *name          = TEXT([serviceName UTF8String]);
+      SC_HANDLE  serviceHandle = OpenService(serviceControlManager, TEXT("Bonjour Service"), SERVICE_QUERY_STATUS);
+      
+      if (serviceHandle == NULL)
+        {
+          NSDebugMLLog(@"WIN32", @"cannot open service 'Bonjour' - status: %ld", GetLastError());
+          NSWarnMLog(@"cannot open service 'Bonjour' - status: %ld", GetLastError());
+        }
+      else
+        {
+          SERVICE_STATUS_PROCESS serviceStatusInfo;
+          DWORD                  ssiSize;
+          
+          if (0 == QueryServiceStatusEx(serviceHandle, SC_STATUS_PROCESS_INFO, (LPBYTE)&serviceStatusInfo, sizeof(serviceStatusInfo), &ssiSize))
+            {
+              NSDebugMLLog(@"WIN32", @"cannot query service 'Bonjour' - status: %ld", GetLastError());
+              NSWarnMLog(@"cannot query service 'Bonjour' - status: %ld", GetLastError());
+            }
+          else
+            {
+              NSDebugMLLog(@"WIN32", @"service 'Bonjour' current state: %ld", serviceStatusInfo.dwCurrentState);
+              result = (serviceStatusInfo.dwCurrentState == SERVICE_RUNNING);
+            }
+          
+          // Cleanup...
+          CloseServiceHandle(serviceHandle);
+        }
+      
+      // Cleanup...
+      CloseServiceHandle(serviceControlManager);
+    }
+  
+  // return our result...
+  return result;
+}
+
+- (BOOL) isDiscoveryServiceInstalled
+{
+  return [self isServiceInstalled: @"Bonjour Service"];
+}
+
+- (BOOL) isDiscoveryServiceRunning
+{
+  return [self isServiceRunning: @"Bonjour Service"];
+}
+
+@end
 
 @implementation WIN32Server (WindowOps)
 
@@ -2192,7 +2318,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         {
           HDC     hdc = GetDC(hwnd);
           RECT    r   = GSWindowRectToMS(self, hwnd, rect);
-          WINBOOL result;
+          WinBOOL result;
 
           result = BitBlt(hdc, r.left, r.top, 
                           (r.right - r.left), (r.bottom - r.top), 
@@ -2831,9 +2957,9 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 
       subview = [[gswin contentView] hitTest: eventLocation];
       
-      if (subview != nil && subview->_rFlags.valid_rects)
+      if (subview != nil && [subview rFlags].valid_rects)
 	{
-	  NSArray *tr = subview->_cursor_rects;
+	  NSArray *tr = [subview cursorRects];
 	  NSUInteger count = [tr count];
 
 	  // Loop through cursor rectangles
@@ -2855,7 +2981,7 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 		  /*
 		   * Check for presence of point in rectangle.
 		   */
-		  now = NSMouseInRect(eventLocation, r->rectangle, NO);
+		  now = NSMouseInRect(eventLocation, [r rectangle], NO);
 
 		  // Mouse inside
 		  if (now)

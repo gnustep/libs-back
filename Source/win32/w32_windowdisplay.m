@@ -59,7 +59,7 @@ invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
   if (win->useHDC)
     {
       HDC hdc = GetDC((HWND)hwnd);
-      WINBOOL result;
+      WinBOOL result;
 
       result = BitBlt(hdc, rect.left, rect.top, 
 		      (rect.right - rect.left), (rect.bottom - rect.top), 

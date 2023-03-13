@@ -41,6 +41,66 @@ NSString *win32_font_family(NSString *fontName);
 - (BOOL) setupAttributes;
 @end
 
+@interface WIN32FontInfo (_GSPrivate_)
+
+- (void) setFontName: (NSString *)n;
+
+- (NSString *) fontName;
+
+- (void) setMatrix: (const CGFloat *)m;
+
+- (const CGFloat *)matrix;
+
+- (void) setFamilyName: (NSString *)name;
+
+- (NSString *) familyName;
+
+- (void) setCoveredCharacterSet: (NSCharacterSet *)c;
+
+- (NSCharacterSet *) coveredCharacterSet;
+
+- (void) setNumberOfGlyphs: (unsigned)n;
+
+- (unsigned) numberOfGlyphs;
+
+- (void) setAscender: (CGFloat)a;
+
+- (CGFloat) ascender;
+
+- (void) setDescender: (CGFloat)d;
+
+- (CGFloat) descender;
+
+- (void) setFixedPitch: (BOOL)f;
+
+- (BOOL) isFixedPitch;
+
+- (void) setBaseFont: (BOOL)f;
+
+- (BOOL) isBaseFont;
+
+- (void) setXHeight: (CGFloat)h;
+
+- (CGFloat) xHeight;
+
+- (void) setMaximumAdvancement: (NSSize)s;
+
+- (NSSize) maximumAdvancement;
+
+- (void) setFontBBox: (NSRect)r;
+
+- (void) setWeight: (int)w;
+
+- (int) weight;
+
+- (NSFontTraitMask) traits;
+
+- (void) setTraits: (NSFontTraitMask)t;
+
+- (void) setMostCompatibleStringEncoding: (NSStringEncoding)e;
+
+@end
+
 @implementation WIN32FontInfo
 
 - initWithFontName: (NSString*)name
@@ -54,8 +114,8 @@ NSString *win32_font_family(NSString *fontName);
     }
 
   [super init];
-  ASSIGN(fontName, name);
-  memcpy(matrix, fmatrix, sizeof(matrix));
+  [self setFontName: name]; // ASSIGN(fontName, name);
+  [self setMatrix: fmatrix]; // memcpy(matrix, fmatrix, sizeof(matrix));
 
   if (![self setupAttributes])
     {
@@ -193,7 +253,7 @@ NSLog(@"No glyph for U%d", c);
 
 - (NSCharacterSet*) coveredCharacterSet
 {
-  if (coveredCharacterSet == nil)
+  if ([super coveredCharacterSet] == nil)
     {
       NSMutableCharacterSet	*ms;
       unsigned	count; 
@@ -222,7 +282,7 @@ NSLog(@"No glyph for U%d", c);
           gs->cbThis = count;
           if ((unsigned)GetFontUnicodeRanges(hdc, gs) == count)
             {
-              numberOfGlyphs = gs->cGlyphsSupported;
+              [super setNumberOfGlyphs: gs->cGlyphsSupported];
               if (gs->flAccel == 1 /* GS_8BIT_INDICES */)
                 {
                   for (count = 0; count < gs->cRanges; count++)
@@ -250,11 +310,11 @@ NSLog(@"No glyph for U%d", c);
         }
       SelectObject(hdc, old);
       DeleteDC(hdc);
-      coveredCharacterSet = [ms copy];
+      [super setCoveredCharacterSet: [ms copy]];
       RELEASE(ms);
     }
 
-  return coveredCharacterSet;
+  return [super coveredCharacterSet];
 }
 
 - (void) drawString: (NSString*)string
@@ -266,7 +326,7 @@ NSLog(@"No glyph for U%d", c);
   old = SelectObject(hdc, hFont);
   TextOutW(hdc,
     p.x,
-    p.y - ascender,
+    p.y - [super ascender],
     (const unichar*)[string cStringUsingEncoding: NSUnicodeStringEncoding],
     [string length]); 
   SelectObject(hdc, old);
@@ -278,7 +338,7 @@ NSLog(@"No glyph for U%d", c);
   HFONT old;
 
   old = SelectObject(hdc, hFont);
-  TextOut(hdc, p.x, p.y - ascender, s, len); 
+  TextOut(hdc, p.x, p.y - [super ascender], s, len); 
   SelectObject(hdc, old);
 }
 
@@ -300,17 +360,17 @@ NSLog(@"No glyph for U%d", c);
     {
       buf[i] = (WORD)s[i];
     }
-  TextOutW(hdc, p.x, p.y - ascender, buf, len); 
+  TextOutW(hdc, p.x, p.y - [super ascender], buf, len); 
   SelectObject(hdc, old);
 }
 
 - (unsigned) numberOfglyphs
 {
-  if (coveredCharacterSet == nil)
+  if ([super coveredCharacterSet] == nil)
     {
       [self coveredCharacterSet];
     }
-  return numberOfGlyphs;
+  return [super numberOfGlyphs];
 }
 
 - (void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs
@@ -437,29 +497,29 @@ NSLog(@"No glyph for U%d", c);
   NSRange range;
 
   //NSLog(@"Creating Font %@ of size %f", fontName, matrix[0]);
-  ASSIGN(familyName, win32_font_family(fontName));
+  [self setFamilyName: win32_font_family([super fontName])]; //;ASSIGN(familyName, win32_font_family([super fontName]));
   memset(&logfont, 0, sizeof(LOGFONT));
   hdc = CreateCompatibleDC(NULL);
   // FIXME This hack gets the font size about right, but what is the real solution?
-  logfont.lfHeight = (int)(matrix[0] * 4 / 3);
+  logfont.lfHeight = (int)([self matrix][0] * 4 / 3);
   //logfont.lfHeight = -MulDiv(matrix[0], GetDeviceCaps(hdc, LOGPIXELSY), 72);
 
-  range = [fontName rangeOfString: @"Bold"];
+  range = [[self fontName] rangeOfString: @"Bold"];
   if (range.length)
     logfont.lfWeight = FW_BOLD;
 
-  range = [fontName rangeOfString: @"Italic"];
+  range = [[self fontName] rangeOfString: @"Italic"];
   if (range.length)
     logfont.lfItalic = 1; 
 
   logfont.lfQuality = DEFAULT_QUALITY;
   wcsncpy(logfont.lfFaceName,
-    (const unichar*)[familyName cStringUsingEncoding: NSUnicodeStringEncoding],
+    (const unichar*)[[super familyName] cStringUsingEncoding: NSUnicodeStringEncoding],
     LF_FACESIZE);
   hFont = CreateFontIndirectW(&logfont);
   if (!hFont)
     {
-      NSLog(@"Could not create font %@", fontName);
+      NSLog(@"Could not create font %@", [self fontName]);
       DeleteDC(hdc);
       return NO;
     }
@@ -470,35 +530,36 @@ NSLog(@"No glyph for U%d", c);
   DeleteDC(hdc);
 
   // Fill the ivars
-  isFixedPitch = TMPF_FIXED_PITCH & metric.tmPitchAndFamily;
-  isBaseFont = NO;
-  ascender = metric.tmAscent;
+  [self setFixedPitch: TMPF_FIXED_PITCH & metric.tmPitchAndFamily];
+  [self setBaseFont: NO];
+  [self setAscender: metric.tmAscent];
   //NSLog(@"Resulted in height %d and ascent %d", metric.tmHeight, metric.tmAscent);
-  descender = -metric.tmDescent;
+  [self setDescender: -metric.tmDescent];
   /* TODO */
-  xHeight = ascender * 0.5;
-  maximumAdvancement = NSMakeSize((float)metric.tmMaxCharWidth, 0.0);
+  [self setXHeight: [self ascender] * 0.5];
+  [self setMaximumAdvancement: NSMakeSize((float)metric.tmMaxCharWidth,
+					  0.0)];
 
-  fontBBox = NSMakeRect((float)(0),
-			(float)(0 - metric.tmAscent),
-			(float)metric.tmMaxCharWidth,
-			(float)metric.tmHeight);
+  [self setFontBBox: NSMakeRect((float)(0),
+				(float)(0 - metric.tmAscent),
+				(float)metric.tmMaxCharWidth,
+				(float)metric.tmHeight)];
+	
+  [self setWeight: win32_font_weight(metric.tmWeight)];
 
-  weight = win32_font_weight(metric.tmWeight);
-
-  traits = 0;
-  if (weight >= 9)
-    traits |= NSBoldFontMask;
+  [self setTraits: 0];
+  if ([self weight] >= 9)
+    [self setTraits: [self traits] | NSBoldFontMask];
   else
-    traits |= NSUnboldFontMask;
+    [self setTraits: [self traits] | NSUnboldFontMask];
 
   if (metric.tmItalic)
-    traits |= NSItalicFontMask;
+    [self setTraits: [self traits] | NSItalicFontMask];
   else
-    traits |= NSUnitalicFontMask;
+    [self setTraits: [self traits] | NSUnitalicFontMask];
 
   // FIXME Should come from metric.tmCharSet
-  mostCompatibleStringEncoding = NSISOLatin1StringEncoding;
+  [self setMostCompatibleStringEncoding: NSISOLatin1StringEncoding];
 
   return YES;
 }
