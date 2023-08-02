@@ -75,7 +75,7 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
   XGDrawMechanism drawMechanism;
 }
 
-- initForDisplay: (Display *)dpy screen: (int)screen_number;
+- (instancetype) initForDisplay: (Display *)dpy screen: (int)screen_number;
 - (XGDrawMechanism) drawMechanism;
 - (RContext *) context;
 @end

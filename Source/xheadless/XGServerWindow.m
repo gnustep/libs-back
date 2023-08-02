@@ -4,7 +4,7 @@
 
    Written by:  Adam Fedor <fedor@gnu.org>
    Date: Nov 1999
-   
+
    This file is part of GNUstep
 
    This library is free software; you can redistribute it and/or
@@ -19,8 +19,8 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
-   If not, see <http://www.gnu.org/licenses/> or write to the 
-   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   If not, see <http://www.gnu.org/licenses/> or write to the
+   Free Software Foundation, 51 Franklin Street, Fifth Floor,
    Boston, MA 02110-1301, USA.
 */
 
@@ -74,13 +74,13 @@ static int		last_win_num = 0;
 
 @interface NSBitmapImageRep (GSPrivate)
 - (NSBitmapImageRep *) _convertToFormatBitsPerSample: (NSInteger)bps
-                                     samplesPerPixel: (NSInteger)spp
-                                            hasAlpha: (BOOL)alpha
-                                            isPlanar: (BOOL)isPlanar
-                                      colorSpaceName: (NSString*)colorSpaceName
-                                        bitmapFormat: (NSBitmapFormat)bitmapFormat 
-                                         bytesPerRow: (NSInteger)rowBytes
-                                        bitsPerPixel: (NSInteger)pixelBits;
+				     samplesPerPixel: (NSInteger)spp
+					    hasAlpha: (BOOL)alpha
+					    isPlanar: (BOOL)isPlanar
+				      colorSpaceName: (NSString*)colorSpaceName
+					bitmapFormat: (NSBitmapFormat)bitmapFormat
+					 bytesPerRow: (NSInteger)rowBytes
+					bitsPerPixel: (NSInteger)pixelBits;
 @end
 
 void __objc_xgcontextwindow_linking (void)
@@ -101,7 +101,7 @@ static unsigned char*PropGetCheckProperty(Display *dpy, Window window, Atom hint
  */
 
 /*
- * Motif window hints to communicate to a window manager 
+ * Motif window hints to communicate to a window manager
  * that we want a window to have a titlebar/resize button/etc.
  */
 
@@ -169,7 +169,7 @@ typedef struct {
 @interface XGServer (WindowOps)
 - (gswindow_device_t *) _rootWindowForScreen: (int)screen;
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
-                     : (unsigned int) style : (Window) win;
+		     : (unsigned int) style : (Window) win;
 - (void) _setSupportedWMProtocols: (gswindow_device_t *) window;
 @end
 
@@ -264,12 +264,12 @@ typedef struct {
 }
 
 - (void)_sendRoot: (Window)root
-             type: (Atom)type 
-           window: (Window)window
-            data0: (long)data0
-            data1: (long)data1
-            data2: (long)data2
-            data3: (long)data3
+	     type: (Atom)type
+	   window: (Window)window
+	    data0: (long)data0
+	    data1: (long)data1
+	    data2: (long)data2
+	    data3: (long)data3
 {
 }
 
@@ -400,12 +400,12 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
  * Code to build up a NET WM icon from our application icon
  */
 
--(BOOL) _createNetIcon: (NSImage*)image 
-		result: (long**)pixeldata 
+-(BOOL) _createNetIcon: (NSImage*)image
+		result: (long**)pixeldata
 		  size: (int*)size
 {
   return NO;
-}   
+}
 
 - (void) _setNetWMIconFor: (Window) window
 {
@@ -455,13 +455,13 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
  * Return the offsets between the window content-view and it's frame
  * depending on the window style.
  */
-- (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b 
+- (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
 		     : (unsigned int) style
 {
   [self styleoffsets: l : r : t : b : style : (Window) 0];
 }
 
-- (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b 
+- (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
 		     : (unsigned int) style : (Window) win
 {
 }
@@ -506,7 +506,7 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 -(int) _createAppIconPixmaps
 {
   return 1;
-}   
+}
 
 - (void) orderwindow: (int)op : (NSInteger)otherWin : (NSInteger)winNum
 {
@@ -515,13 +515,13 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 #define ALPHA_THRESHOLD 158
 
 /* Restrict the displayed part of the window to the given image.
-   This only yields usefull results if the window is borderless and 
+   This only yields usefull results if the window is borderless and
    displays the image itself */
 - (void) restrictWindow: (NSInteger)win toImage: (NSImage*)image
 {
 }
 
-/* This method is a fast implementation of move that only works 
+/* This method is a fast implementation of move that only works
    correctly for borderless windows. Use with caution. */
 - (void) movewindow: (NSPoint)loc : (NSInteger)win
 {
@@ -668,7 +668,7 @@ xgps_cursor_mask(Display *xdpy, Drawable draw, const unsigned char *data,
 }
 
 Pixmap
-xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data, 
+xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
 		  int w, int h, int colors, XColor *fg, XColor *bg)
 {
   return None;
@@ -714,17 +714,17 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
 }
 
 - (NSWindowDepth) windowDepthForScreen: (int) screen_num
-{ 
+{
   return 0;
 }
 
 - (const NSWindowDepth *) availableDepthsForScreen: (int) screen_num
-{  
+{
   return NULL;
 }
 
 - (NSSize) resolutionForScreen: (int)screen_num
-{ 
+{
   // NOTE:
   // -gui now trusts the return value of resolutionForScreen:,
   // so if it is not {72, 72} then the entire UI will be scaled.
@@ -811,7 +811,7 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
 }
 
 - (void) setParentWindow: (NSInteger)parentWin
-          forChildWindow: (NSInteger)childWin
+	  forChildWindow: (NSInteger)childWin
 {
 }
 

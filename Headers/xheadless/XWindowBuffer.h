@@ -17,8 +17,8 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
-   If not, see <http://www.gnu.org/licenses/> or write to the 
-   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   If not, see <http://www.gnu.org/licenses/> or write to the
+   Free Software Foundation, 51 Franklin Street, Fifth Floor,
    Boston, MA 02110-1301, USA.
 */
 
@@ -124,7 +124,7 @@ Returns a _retained_ XWindowBuffer for the specified gswindow_device_t.
 The depth info is only used if a new XWindowBuffer needs to be allocated.
 */
 + windowBufferForWindow: (gswindow_device_t *)awindow
-              depthInfo: (struct XWindowBuffer_depth_info_s *)aDI;
+	      depthInfo: (struct XWindowBuffer_depth_info_s *)aDI;
 
 /*
 Note that alpha is _not_ guaranteed to exist after this has been called;
@@ -147,4 +147,3 @@ created.
 
 
 #endif
-

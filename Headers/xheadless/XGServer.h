@@ -6,7 +6,7 @@
 
    Author: Adam Fedor <fedor@gnu.org>
    Date: Mar 2002
-   
+
    This file is part of the GNUstep Backend.
 
    This library is free software; you can redistribute it and/or
@@ -21,8 +21,8 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
-   If not, see <http://www.gnu.org/licenses/> or write to the 
-   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   If not, see <http://www.gnu.org/licenses/> or write to the
+   Free Software Foundation, 51 Franklin Street, Fifth Floor,
    Boston, MA 02110-1301, USA.
 */
 
@@ -67,8 +67,8 @@ typedef enum {
 - (int) depthForScreen: (int)screen_number;
 
 - (XGDrawMechanism) drawMechanismForScreen: (int)screen_number;
-- (void) getForScreen: (int)screen_number pixelFormat: (int *)bpp_number 
-                masks: (int *)red_mask : (int *)green_mask : (int *)blue_mask;
+- (void) getForScreen: (int)screen_number pixelFormat: (int *)bpp_number
+		masks: (int *)red_mask : (int *)green_mask : (int *)blue_mask;
 - (Window) xDisplayRootWindowForScreen: (int)screen_number;
 - (XColor) xColorFromColor: (XColor)color forScreen: (int)screen_number;
 
@@ -90,7 +90,7 @@ typedef enum {
 - (NSRect) _XFrameToXHints: (NSRect)o for: (void*)window;
 @end
 
-// Public interface for the input methods.  
+// Public interface for the input methods.
 @interface XGServer (InputMethod)
 - (NSString *) inputMethodStyle;
 - (NSString *) fontSize: (int *)size;

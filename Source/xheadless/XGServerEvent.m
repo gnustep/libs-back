@@ -5,7 +5,7 @@
 
    Written by:  Adam Fedor <fedor@boulder.colorado.edu>
    Date: Nov 1998
-   
+
    This file is part of the GNU Objective C User Interface Library.
 
    This library is free software; you can redistribute it and/or
@@ -20,8 +20,8 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
-   If not, see <http://www.gnu.org/licenses/> or write to the 
-   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   If not, see <http://www.gnu.org/licenses/> or write to the
+   Free Software Foundation, 51 Franklin Street, Fifth Floor,
 */
 
 #include "config.h"
@@ -99,17 +99,17 @@ void __objc_xgcontextevent_linking (void)
 
 @interface XGServer (Private)
 - (void) receivedEvent: (void*)data
-                  type: (RunLoopEventType)type
-                 extra: (void*)extra
-               forMode: (NSString*)mode;
-- (void) setupRunLoopInputSourcesForMode: (NSString*)mode; 
+		  type: (RunLoopEventType)type
+		 extra: (void*)extra
+	       forMode: (NSString*)mode;
+- (void) setupRunLoopInputSourcesForMode: (NSString*)mode;
 - (NSDate*) timedOutEvent: (void*)data
-                     type: (RunLoopEventType)type
-                  forMode: (NSString*)mode;
+		     type: (RunLoopEventType)type
+		  forMode: (NSString*)mode;
 - (int) XGErrorHandler: (Display*)display : (XErrorEvent*)err;
 - (void) processEvent: (XEvent *) event;
-- (NSEvent *)_handleTakeFocusAtom: (XEvent)xEvent 
-        	       forContext: (NSGraphicsContext *)gcontext;
+- (NSEvent *)_handleTakeFocusAtom: (XEvent)xEvent
+		       forContext: (NSGraphicsContext *)gcontext;
 @end
 
 
@@ -122,7 +122,7 @@ XGErrorHandler(Display *display, XErrorEvent *err)
 }
 
 #if 0
-static NSEvent*process_key_event (XEvent* xEvent, XGServer* ctxt, 
+static NSEvent*process_key_event (XEvent* xEvent, XGServer* ctxt,
   NSEventType eventType, NSMutableArray *event_queue);
 
 static unichar process_char (KeySym keysym, unsigned *eventModifierFlags);
@@ -140,7 +140,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
   char *key_vector;
   int by,bi;
   int key_code = XKeysymToKeycode(xEvent->xkeymap.display, key_sym);
-  
+
   if (key_code != NoSymbol)
     {
       by = key_code / 8;
@@ -154,7 +154,7 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 
 @interface XGServer (WindowOps)
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
-                     : (unsigned int) style : (Window) win;
+		     : (unsigned int) style : (Window) win;
 - (NSRect) _XWinRectToOSWinRect: (NSRect)r for: (void*)windowNumber;
 @end
 
@@ -182,7 +182,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
   id runLoopMode = [[NSRunLoop currentRunLoop] currentMode];
 
   [fileDescriptor waitForDataInBackgroundAndNotifyForModes:
-        [NSArray arrayWithObject: runLoopMode]];
+	[NSArray arrayWithObject: runLoopMode]];
   [self receivedEvent: 0 type: 0 extra: 0 forMode: nil];
 }
 #endif
@@ -194,9 +194,9 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 }
 
 - (void) receivedEvent: (void*)data
-                  type: (RunLoopEventType)type
-                 extra: (void*)extra
-               forMode: (NSString*)mode
+		  type: (RunLoopEventType)type
+		 extra: (void*)extra
+	       forMode: (NSString*)mode
 {
 }
 
@@ -216,8 +216,8 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 /*
  * WM is asking us to take the keyboard focus
  */
-- (NSEvent *)_handleTakeFocusAtom: (XEvent)xEvent 
-                       forContext: (NSGraphicsContext *)gcontext
+- (NSEvent *)_handleTakeFocusAtom: (XEvent)xEvent
+		       forContext: (NSGraphicsContext *)gcontext
 {
   return nil;
 }
@@ -226,7 +226,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 // Return the key_sym corresponding to the user defaults string given,
 // or fallback if no default is registered.
 static KeySym key_sym_from_defaults (Display *display, NSUserDefaults *defaults,
-                       NSString *keyDefaultKey, KeySym fallback)
+		       NSString *keyDefaultKey, KeySym fallback)
 {
   return fallback;
 }
@@ -267,8 +267,8 @@ static unsigned int process_modifier_flags(unsigned int state)
 #endif
 
 - (NSDate*) timedOutEvent: (void*)data
-                     type: (RunLoopEventType)type
-                  forMode: (NSString*)mode
+		     type: (RunLoopEventType)type
+		  forMode: (NSString*)mode
 {
   return nil;
 }
@@ -304,23 +304,23 @@ static unsigned int process_modifier_flags(unsigned int state)
 }
 
 - (NSEvent*) getEventMatchingMask: (unsigned)mask
-                       beforeDate: (NSDate*)limit
-                           inMode: (NSString*)mode
-                          dequeue: (BOOL)flag
+		       beforeDate: (NSDate*)limit
+			   inMode: (NSString*)mode
+			  dequeue: (BOOL)flag
 {
   [self receivedEvent: 0 type: 0 extra: 0 forMode: nil];
   return [super getEventMatchingMask: mask
-                          beforeDate: limit
-                              inMode: mode
-                             dequeue: flag];
+			  beforeDate: limit
+			      inMode: mode
+			     dequeue: flag];
 }
 
 - (void) discardEventsMatchingMask: (unsigned)mask
-                       beforeEvent: (NSEvent*)limit
+		       beforeEvent: (NSEvent*)limit
 {
   [self receivedEvent: 0 type: 0 extra: 0 forMode: nil];
   [super discardEventsMatchingMask: mask
-                       beforeEvent: limit];
+		       beforeEvent: limit];
 }
 
 @end
@@ -333,7 +333,7 @@ static unsigned int process_modifier_flags(unsigned int state)
 
 - (void) setLastTime: (Time)last
 {
-  if (generic.lastTimeStamp == 0 
+  if (generic.lastTimeStamp == 0
       || generic.baseXServerTime + MAX_TIME_DIFF * 1000 < last)
     {
       // We have not sync'ed with the clock for at least
@@ -353,9 +353,9 @@ static unsigned int process_modifier_flags(unsigned int state)
 - (Time) lastTime
 {
   // In the case of activation via DO the lastTime is outdated and cannot be used.
-  if (generic.lastTimeStamp == 0 
+  if (generic.lastTimeStamp == 0
       || ((generic.lastTimeStamp + OUT_DATE_TIME_DIFF)
-          < [NSDate timeIntervalSinceReferenceDate]))
+	  < [NSDate timeIntervalSinceReferenceDate]))
     {
       return [[NSDate date] timeIntervalSince1970];
     }
@@ -366,4 +366,3 @@ static unsigned int process_modifier_flags(unsigned int state)
 }
 
 @end
-

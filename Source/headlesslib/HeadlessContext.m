@@ -20,8 +20,8 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
-   If not, see <http://www.gnu.org/licenses/> or write to the 
-   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   If not, see <http://www.gnu.org/licenses/> or write to the
+   Free Software Foundation, 51 Franklin Street, Fifth Floor,
    Boston, MA 02110-1301, USA.
 */
 
@@ -112,9 +112,9 @@
 
 #endif // BUILD_SERVER = SERVER_x11
 
-@end 
+@end
 
-@implementation HeadlessContext (Ops) 
+@implementation HeadlessContext (Ops)
 
 - (BOOL) isCompatibleBitmap: (NSBitmapImageRep*)bitmap
 {
@@ -169,12 +169,12 @@
 }
 
 - (void) beginPrologueBBox: (NSRect)boundingBox
-              creationDate: (NSString*)dateCreated
-                 createdBy: (NSString*)anApplication
-                     fonts: (NSString*)fontNames
-                   forWhom: (NSString*)user
-                     pages: (int)numPages
-                     title: (NSString*)aTitle
+	      creationDate: (NSString*)dateCreated
+		 createdBy: (NSString*)anApplication
+		     fonts: (NSString*)fontNames
+		   forWhom: (NSString*)user
+		     pages: (int)numPages
+		     title: (NSString*)aTitle
 {
 }
 
@@ -187,4 +187,3 @@
 
 #undef _CAIRO_SURFACE_CLASSNAME
 #undef _CAIRO_GSTATE_CLASSNAME
-

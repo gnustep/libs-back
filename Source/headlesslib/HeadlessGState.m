@@ -1,4 +1,3 @@
-
 /*
    HeadlessGState.m
 
@@ -8,7 +7,7 @@
    Written by Banlu Kemiyatorn <object at gmail dot com>
    Rewrite: Fred Kiefer <fredkiefer@gmx.de>
    Date: Jan 2006
- 
+
    This file is part of GNUstep.
 
    This library is free software; you can redistribute it and/or
@@ -23,8 +22,8 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
-   If not, see <http://www.gnu.org/licenses/> or write to the 
-   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   If not, see <http://www.gnu.org/licenses/> or write to the
+   Free Software Foundation, 51 Franklin Street, Fifth Floor,
    Boston, MA 02110-1301, USA.
 */
 
@@ -74,7 +73,7 @@
     NSZoneFree(NSDefaultMallocZone(), _base); \
   }
 
-@implementation HeadlessGState 
+@implementation HeadlessGState
 
 + (void) initialize
 {
@@ -135,7 +134,7 @@
 /*
  * Color operations
  */
-- (void) GSSetPatterColor: (NSImage*)image 
+- (void) GSSetPatterColor: (NSImage*)image
 {
   // FIXME: Create a cairo surface from the image and set it as source.
   [super GSSetPatterColor: image];
@@ -274,7 +273,7 @@
 }
 
 - (void) DPSimage: (NSAffineTransform *)matrix : (NSInteger)pixelsWide
-		 : (NSInteger)pixelsHigh : (NSInteger)bitsPerSample 
+		 : (NSInteger)pixelsHigh : (NSInteger)bitsPerSample
 		 : (NSInteger)samplesPerPixel : (NSInteger)bitsPerPixel
 		 : (NSInteger)bytesPerRow : (BOOL)isPlanar
 		 : (BOOL)hasAlpha : (NSString *)colorSpaceName
@@ -286,21 +285,21 @@
 {
 }
 
-- (void) compositeGState: (HeadlessGState *)source 
-                fromRect: (NSRect)srcRect 
-                 toPoint: (NSPoint)destPoint 
-                      op: (NSCompositingOperation)op
-                fraction: (CGFloat)delta
+- (void) compositeGState: (HeadlessGState *)source
+		fromRect: (NSRect)srcRect
+		 toPoint: (NSPoint)destPoint
+		      op: (NSCompositingOperation)op
+		fraction: (CGFloat)delta
 {
 }
 
-/** Unlike -compositeGState, -drawGSstate fully respects the AppKit CTM but 
+/** Unlike -compositeGState, -drawGSstate fully respects the AppKit CTM but
 doesn't support to use the receiver cairo target as the source. */
-- (void) drawGState: (HeadlessGState *)source 
-           fromRect: (NSRect)aRect 
-            toPoint: (NSPoint)aPoint 
-                 op: (NSCompositingOperation)op
-           fraction: (CGFloat)delta
+- (void) drawGState: (HeadlessGState *)source
+	   fromRect: (NSRect)aRect
+	    toPoint: (NSPoint)aPoint
+		 op: (NSCompositingOperation)op
+	   fraction: (CGFloat)delta
 {
 }
 
@@ -322,18 +321,18 @@ doesn't support to use the receiver cairo target as the source. */
 @implementation HeadlessGState (NSGradient)
 
 - (void) drawGradient: (NSGradient*)gradient
-           fromCenter: (NSPoint)startCenter
-               radius: (CGFloat)startRadius
-             toCenter: (NSPoint)endCenter 
-               radius: (CGFloat)endRadius
-              options: (NSUInteger)options
+	   fromCenter: (NSPoint)startCenter
+	       radius: (CGFloat)startRadius
+	     toCenter: (NSPoint)endCenter
+	       radius: (CGFloat)endRadius
+	      options: (NSUInteger)options
 {
 }
 
 - (void) drawGradient: (NSGradient*)gradient
-            fromPoint: (NSPoint)startPoint
-              toPoint: (NSPoint)endPoint
-              options: (NSUInteger)options
+	    fromPoint: (NSPoint)startPoint
+	      toPoint: (NSPoint)endPoint
+	      options: (NSUInteger)options
 {
 }
 

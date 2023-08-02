@@ -4,7 +4,7 @@
 
    Written by:  Richard Frith-Macdonald <rfm@gnu.org>
    Date: Mar 2000
-   
+
    This file is part of the GNUstep project
 
    This library is free software; you can redistribute it and/or
@@ -19,8 +19,8 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
-   If not, see <http://www.gnu.org/licenses/> or write to the 
-   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   If not, see <http://www.gnu.org/licenses/> or write to the
+   Free Software Foundation, 51 Franklin Street, Fifth Floor,
    Boston, MA 02110-1301, USA.
 */
 
@@ -90,7 +90,7 @@ typedef struct {
  * Structure containing ivars that are common to all X backend contexts.
  */
 struct XGGeneric {
-  int   		wm;
+  int			wm;
   struct {
     unsigned	useWindowMakerIcons:1;
     unsigned    appOwnsMiniwindow:1;
@@ -98,7 +98,7 @@ struct XGGeneric {
   } flags;
   // Time of last X event
   Time			lastTime;
-  // Approximate local time for last X event, used to decide 
+  // Approximate local time for last X event, used to decide
   // if the last X event time is still valid.
   NSTimeInterval lastTimeStamp;
   // last reference time on X server, used to prevent time drift between
@@ -155,4 +155,3 @@ struct XGGeneric {
 #define _NET_WM_STATE_TOGGLE        2    /* toggle property  */
 
 #endif
-

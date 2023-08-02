@@ -35,4 +35,3 @@ typedef unsigned long long XIMStyle;
 #define False          0
 
 #endif
-

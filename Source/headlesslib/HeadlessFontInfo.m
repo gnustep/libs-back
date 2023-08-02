@@ -1,6 +1,6 @@
 /*
    HeadlessFontInfo.m
- 
+
    Copyright (C) 2003 Free Software Foundation, Inc.
 
    August 31, 2003
@@ -21,8 +21,8 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
-   If not, see <http://www.gnu.org/licenses/> or write to the 
-   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   If not, see <http://www.gnu.org/licenses/> or write to the
+   Free Software Foundation, 51 Franklin Street, Fifth Floor,
    Boston, MA 02110-1301, USA.
 */
 
@@ -36,16 +36,16 @@
 
 typedef void *cairo_t;
 
-@implementation HeadlessFontInfo 
+@implementation HeadlessFontInfo
 
 - (BOOL) setupAttributes
 {
   return YES;
 }
 
-- (id) initWithFontName: (NSString *)name 
-                 matrix: (const CGFloat *)fmatrix 
-             screenFont: (BOOL)p_screenFont
+- (id) initWithFontName: (NSString *)name
+		 matrix: (const CGFloat *)fmatrix
+	     screenFont: (BOOL)p_screenFont
 {
   self = [super init];
   if (!self)
@@ -71,7 +71,7 @@ typedef void *cairo_t;
 - (BOOL) glyphIsEncoded: (NSGlyph)glyph
 {
   /* FIXME: There is no proper way to determine with the toy font API,
-     whether a glyph is supported or not. We will just ignore ligatures 
+     whether a glyph is supported or not. We will just ignore ligatures
      and report all other glyph as existing.
   return !NSEqualSizes([self advancementForGlyph: glyph], NSZeroSize);
   */
@@ -96,15 +96,15 @@ typedef void *cairo_t;
   return 0.0;
 }
 
-- (void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs 
-                              count: (int)length 
-                       toBezierPath: (NSBezierPath *)path
+- (void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs
+			      count: (int)length
+		       toBezierPath: (NSBezierPath *)path
 {
 }
 
 - (void) drawGlyphs: (const NSGlyph*)glyphs
-             length: (int)length 
-                 on: (cairo_t*)ct
+	     length: (int)length
+		 on: (cairo_t*)ct
 {
 }
 

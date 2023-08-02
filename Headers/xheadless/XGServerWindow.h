@@ -4,7 +4,7 @@
 
    Written by:  Adam Fedor <fedor@gnu.org>
    Date: Nov 1999
-   
+
    This file is part of the GNU Objective C User Interface library.
 
    This library is free software; you can redistribute it and/or
@@ -19,8 +19,8 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
-   If not, see <http://www.gnu.org/licenses/> or write to the 
-   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   If not, see <http://www.gnu.org/licenses/> or write to the
+   Free Software Foundation, 51 Franklin Street, Fifth Floor,
    Boston, MA 02110-1301, USA.
 */
 
@@ -64,7 +64,7 @@ typedef struct {
 
 #define GSDocumentEditedFlag			(1<<0)
 #define GSWindowWillResizeNotificationsFlag	(1<<1)
-#define GSWindowWillMoveNotificationsFlag 	(1<<2)
+#define GSWindowWillMoveNotificationsFlag	(1<<2)
 #define GSNoApplicationIconFlag			(1<<5)
 #define WMFHideOtherApplications		10
 #define WMFHideApplication			12

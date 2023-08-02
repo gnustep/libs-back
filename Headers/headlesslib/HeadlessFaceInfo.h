@@ -8,7 +8,7 @@
    Base on code by Alexander Malmberg <alexander@malmberg.org>
    Rewrite: Fred Kiefer <fredkiefer@gmx.de>
    Date: Jan 2006
- 
+
    This file is part of GNUstep.
 
    This library is free software; you can redistribute it and/or
@@ -23,8 +23,8 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with this library; see the file COPYING.LIB.
-   If not, see <http://www.gnu.org/licenses/> or write to the 
-   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   If not, see <http://www.gnu.org/licenses/> or write to the
+   Free Software Foundation, 51 Franklin Street, Fifth Floor,
    Boston, MA 02110-1301, USA.
 */
 
@@ -35,7 +35,7 @@
 
 @interface HeadlessFaceInfo : NSObject
 {
-	void *_fontFace; 
+	void *_fontFace;
 }
 
 - (void *)fontFace;
