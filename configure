@@ -650,8 +650,6 @@ WITH_GLX
 WITH_XFT
 XFT_LIBS
 XFT_CFLAGS
-FREETYPE_LIBS
-FREETYPE_CFLAGS
 XMU_LIBS
 XMU_CFLAGS
 XT_LIBS
@@ -731,14 +729,14 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 with_tiff_library
+enable_server
+enable_graphics
 with_x
 with_freetype
 enable_glx
 enable_xim
 enable_wgl
 enable_glitz
-enable_server
-enable_graphics
 with_name
 '
       ac_precious_vars='build_alias
@@ -760,8 +758,6 @@ XT_CFLAGS
 XT_LIBS
 XMU_CFLAGS
 XMU_LIBS
-FREETYPE_CFLAGS
-FREETYPE_LIBS
 XFT_CFLAGS
 XFT_LIBS
 CAIRO_CFLAGS
@@ -1409,12 +1405,12 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-server=SRV     Build server type: x11, xheadless, win32
+  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal
   --disable-glx           Disable GLX support
   --disable-xim           Disable XIM support
   --disable-wgl           Disable WGL support
   --enable-glitz          Enable Glitz support
-  --enable-server=SRV     Build server type: x11, win32, wayland
-  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1445,10 +1441,6 @@ Some influential environment variables:
   XT_LIBS     linker flags for XT, overriding pkg-config
   XMU_CFLAGS  C compiler flags for XMU, overriding pkg-config
   XMU_LIBS    linker flags for XMU, overriding pkg-config
-  FREETYPE_CFLAGS
-              C compiler flags for FREETYPE, overriding pkg-config
-  FREETYPE_LIBS
-              linker flags for FREETYPE, overriding pkg-config
   XFT_CFLAGS  C compiler flags for XFT, overriding pkg-config
   XFT_LIBS    linker flags for XFT, overriding pkg-config
   CAIRO_CFLAGS
@@ -3439,10 +3431,10 @@ LDFLAGS="$LDFLAGS -L$GNUSTEP_LDIR/$LIBRARY_COMBO -L$GNUSTEP_LDIR"
 #--------------------------------------------------------------------
 case "$target_os" in
   freebsd* | openbsd* )
-	      CPPFLAGS="-I/usr/pkg/include $CPPFLAGS"
-              LDFLAGS="-L/usr/pkg/lib $LDFLAGS";;
-  netbsd*)    CPPFLAGS="-I/usr/pkg/include $CPPFLAGS"
-	      LDFLAGS="-Wl,-R/usr/pkg/lib -L/usr/pkg/lib $LDFLAGS";;
+	      CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
+              LDFLAGS="$LDFLAGS -L/usr/pkg/lib";;
+  netbsd*)    CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
+	      LDFLAGS="$LDFLAGS -Wl,-R/usr/pkg/lib -L/usr/pkg/lib";;
 esac
 
 #--------------------------------------------------------------------
@@ -3748,6 +3740,37 @@ fi
 
 if test -n "$with_tiff_library"; then
   GRAPHIC_LFLAGS="$GRAPHIC_LFLAGS -L$with_tiff_library"
+fi
+
+#--------------------------------------------------------------------
+# Which projects should we build?
+#--------------------------------------------------------------------
+BUILD_SERVER=x11
+BUILD_GRAPHICS=cairo
+case $target_os in
+  *mingw32* | *mingw64* ) BUILD_SERVER=win32
+                          BUILD_GRAPHICS=winlib;;
+esac
+
+# Check whether --enable-server was given.
+if test "${enable_server+set}" = set; then :
+  enableval=$enable_server;
+else
+  enable_server=$BUILD_SERVER
+fi
+
+# Check whether --enable-graphics was given.
+if test "${enable_graphics+set}" = set; then :
+  enableval=$enable_graphics;
+else
+  enable_graphics="$BUILD_GRAPHICS"
+fi
+
+
+BUILD_SERVER=$enable_server
+BUILD_GRAPHICS="$enable_graphics"
+if test "x$BUILD_SERVER" = xxheadless; then
+  BUILD_GRAPHICS=headlesslib
 fi
 
 #--------------------------------------------------------------------
@@ -4440,7 +4463,60 @@ fi
 if test "x$no_x" = xyes; then
   set_x_paths=no
 fi
+if test "x$BUILD_SERVER" = xxheadless; then
+  set_x_paths=no
+fi
 
+if test $set_x_paths = yes; then
+  GRAPHIC_CFLAGS="$X_CFLAGS $GRAPHIC_CFLAGS"
+  CPPFLAGS="$X_CFLAGS $CPPFLAGS"
+  # Note: Don't include $X_LIBS in LDFLAGS as it may conflict with
+  # other libraries installed in /sw, /sw/lib/freetyp2/lib
+  #GRAPHIC_LFLAGS="$X_LIBS $GRAPHIC_LFLAGS"
+  # But do include it here just to find the extra x libraries
+  LDFLAGS="$X_LIBS $LDFLAGS"
+  LIBS="-lX11 $X_EXTRA_LIBS $LIBS"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lXext" >&5
+$as_echo_n "checking for main in -lXext... " >&6; }
+if ${ac_cv_lib_Xext_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lXext  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_Xext_main=yes
+else
+  ac_cv_lib_Xext_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_Xext_main" >&5
+$as_echo "$ac_cv_lib_Xext_main" >&6; }
+if test "x$ac_cv_lib_Xext_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBXEXT 1
+_ACEOF
+
+  LIBS="-lXext $LIBS"
+
+fi
+
+  if test "$HAVE_LIBXext" = no; then
 
 
 
@@ -4561,57 +4637,6 @@ $as_echo "no" >&6; }
 		PKG_CONFIG=""
 	fi
 fi
-
-if test $set_x_paths = yes; then
-  GRAPHIC_CFLAGS="$GRAPHIC_CFLAGS $X_CFLAGS"
-  CPPFLAGS="$CPPFLAGS $X_CFLAGS"
-  # Note: Don't include $X_LIBS in LDFLAGS as it may conflict with
-  # other libraries installed in /sw, /sw/lib/freetyp2/lib
-  #GRAPHIC_LFLAGS="$X_LIBS $GRAPHIC_LFLAGS"
-  # But do include it here just to find the extra x libraries
-  LDFLAGS="$LDFLAGS $X_LIBS"
-  LIBS="-lX11 $X_EXTRA_LIBS $LIBS"
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lXext" >&5
-$as_echo_n "checking for main in -lXext... " >&6; }
-if ${ac_cv_lib_Xext_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lXext  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_Xext_main=yes
-else
-  ac_cv_lib_Xext_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_Xext_main" >&5
-$as_echo "$ac_cv_lib_Xext_main" >&6; }
-if test "x$ac_cv_lib_Xext_main" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBXEXT 1
-_ACEOF
-
-  LIBS="-lXext $LIBS"
-
-fi
-
-  if test "$HAVE_LIBXext" = no; then
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xext" >&5
@@ -5143,68 +5168,6 @@ fi
 done
 
 
-  have_xrandr=no
-  for ac_header in X11/extensions/Xrandr.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "X11/extensions/Xrandr.h" "ac_cv_header_X11_extensions_Xrandr_h" "$ac_includes_default"
-if test "x$ac_cv_header_X11_extensions_Xrandr_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_X11_EXTENSIONS_XRANDR_H 1
-_ACEOF
- have_xrandr=yes
-fi
-
-done
-
-  if test $have_xrandr = yes; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XRRUpdateConfiguration in -lXrandr" >&5
-$as_echo_n "checking for XRRUpdateConfiguration in -lXrandr... " >&6; }
-if ${ac_cv_lib_Xrandr_XRRUpdateConfiguration+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lXrandr  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char XRRUpdateConfiguration ();
-int
-main ()
-{
-return XRRUpdateConfiguration ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_Xrandr_XRRUpdateConfiguration=yes
-else
-  ac_cv_lib_Xrandr_XRRUpdateConfiguration=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_Xrandr_XRRUpdateConfiguration" >&5
-$as_echo "$ac_cv_lib_Xrandr_XRRUpdateConfiguration" >&6; }
-if test "x$ac_cv_lib_Xrandr_XRRUpdateConfiguration" = xyes; then :
-
-       LIBS="-lXrandr $LIBS"
-
-$as_echo "#define HAVE_XRANDR 1" >>confdefs.h
-
-
-
-fi
-
-  fi
-
   LIBS="$X_LIBS $LIBS"
 fi
 
@@ -5276,101 +5239,12 @@ fi
 
 have_freetype=no
 if test $with_freetype = yes; then
-
-pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype2" >&5
-$as_echo_n "checking for freetype2... " >&6; }
-
-if test -n "$FREETYPE_CFLAGS"; then
-    pkg_cv_FREETYPE_CFLAGS="$FREETYPE_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"freetype2\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "freetype2") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_FREETYPE_CFLAGS=`$PKG_CONFIG --cflags "freetype2" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$FREETYPE_LIBS"; then
-    pkg_cv_FREETYPE_LIBS="$FREETYPE_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"freetype2\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "freetype2") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_FREETYPE_LIBS=`$PKG_CONFIG --libs "freetype2" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        FREETYPE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "freetype2" 2>&1`
-        else
-	        FREETYPE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "freetype2" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$FREETYPE_PKG_ERRORS" >&5
-
-	as_fn_error $? "Package requirements (freetype2) were not met:
-
-$FREETYPE_PKG_ERRORS
-
-Consider adjusting the PKG_CONFIG_PATH environment variable if you
-installed software in a non-standard prefix.
-
-Alternatively, you may set the environment variables FREETYPE_CFLAGS
-and FREETYPE_LIBS to avoid the need to call pkg-config.
-See the pkg-config man page for more details." "$LINENO" 5
-elif test $pkg_failed = untried; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
-is in your PATH or set the PKG_CONFIG environment variable to the full
-path to pkg-config.
-
-Alternatively, you may set the environment variables FREETYPE_CFLAGS
-and FREETYPE_LIBS to avoid the need to call pkg-config.
-See the pkg-config man page for more details.
-
-To get pkg-config, see <http://pkg-config.freedesktop.org/>.
-See \`config.log' for more details" "$LINENO" 5; }
-else
-	FREETYPE_CFLAGS=$pkg_cv_FREETYPE_CFLAGS
-	FREETYPE_LIBS=$pkg_cv_FREETYPE_LIBS
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-fi
+  FREETYPE_LIBS="`freetype-config --libs`"
+  FREETYPE_CFLAGS="`freetype-config --cflags`"
 
   if test x"$FREETYPE_LIBS" != x; then
     save_CPPFLAGS=${CPPFLAGS}
-    CPPFLAGS="${FREETYPE_CFLAGS} ${CPPFLAGS}"
+    CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
     ac_fn_c_check_header_mongrel "$LINENO" "ft2build.h" "ac_cv_header_ft2build_h" "$ac_includes_default"
 if test "x$ac_cv_header_ft2build_h" = xyes; then :
   have_freetype=yes
@@ -5386,6 +5260,7 @@ fi
 #--------------------------------------------------------------------
 # Extended font support & UTF8 support
 #--------------------------------------------------------------------
+PKG_XFT=no
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xft" >&5
@@ -5526,6 +5401,7 @@ fi
   LIBS=${save_LIBS}
 else
   WITH_XFT=yes
+  PKG_XFT=yes
 fi
 
 if test $WITH_XFT = yes; then
@@ -5686,7 +5562,7 @@ fi
 
 
   if test "$have_fc" = yes -a "$ac_cv_header_fontconfig_fontconfig_h" = yes; then
-    XFT_LIBS="${XFT_LIBS} -lfontconfig"
+      XFT_LIBS="${XFT_LIBS} -lfontconfig"
 
 $as_echo "#define HAVE_FC 1" >>confdefs.h
 
@@ -6179,6 +6055,7 @@ fi
 #--------------------------------------------------------------------
 # Cairo graphics libraries
 #--------------------------------------------------------------------
+PKG_CAIRO=no
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cairo" >&5
@@ -6250,6 +6127,7 @@ else
 $as_echo "yes" >&6; }
 	have_cairo=yes
 fi
+PKG_CAIRO_FT=no
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cairo-ft" >&5
@@ -6321,6 +6199,7 @@ else
 $as_echo "yes" >&6; }
 	have_cairo_ft=yes
 fi
+PKG_CAIRO_XLIB=no
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cairo-xlib" >&5
@@ -6392,6 +6271,7 @@ else
 $as_echo "yes" >&6; }
 	have_cairo_xlib=yes
 fi
+PKG_CAIRO_WIN32=no
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cairo-win32" >&5
@@ -6463,6 +6343,7 @@ else
 $as_echo "yes" >&6; }
 	have_cairo_win32=yes
 fi
+PKG_CAIRO_GLITZ=no
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cairo-glitz" >&5
@@ -6534,6 +6415,7 @@ else
 $as_echo "yes" >&6; }
 	have_cairo_glitz=yes
 fi
+PKG_FONTCONFIG=no
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fontconfig" >&5
@@ -7128,33 +7010,7 @@ WITH_WRASTER=no
 # Revert to previous flags (removing added GNUstep flags)
 CPPFLAGS=${GRAPHIC_CFLAGS}
 LDFLAGS=${GRAPHIC_LFLAGS}
-#--------------------------------------------------------------------
-# Which projects should we build?
-#--------------------------------------------------------------------
-BUILD_SERVER=x11
-BUILD_GRAPHICS=cairo
-case $target_os in
-  *mingw32* ) BUILD_SERVER=win32
-              BUILD_GRAPHICS=winlib;;
-esac
 
-# Check whether --enable-server was given.
-if test "${enable_server+set}" = set; then :
-  enableval=$enable_server;
-else
-  enable_server=$BUILD_SERVER
-fi
-
-# Check whether --enable-graphics was given.
-if test "${enable_graphics+set}" = set; then :
-  enableval=$enable_graphics;
-else
-  enable_graphics="$BUILD_GRAPHICS"
-fi
-
-
-BUILD_SERVER=$enable_server
-BUILD_GRAPHICS="$enable_graphics"
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking Backend Server" >&5
 $as_echo_n "checking Backend Server... " >&6; }
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BUILD_SERVER" >&5
@@ -7171,8 +7027,6 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
 $as_echo "$as_me: WARNING: can't find freetype, required for graphics=cairo" >&2;}
     if test $BUILD_SERVER = win32; then
       BUILD_GRAPHICS=winlib
-    elif test $BUILD_SERVER = wayland; then
-      as_fn_error $? "wayland backend requires cairo" "$LINENO" 5
     else
       BUILD_GRAPHICS=xlib
     fi
@@ -7183,8 +7037,6 @@ $as_echo "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
 $as_echo "$as_me: WARNING: can't find cairo, required for graphics=cairo!" >&2;}
     if test $BUILD_SERVER = win32; then
       BUILD_GRAPHICS=winlib
-    elif test $BUILD_SERVER = wayland; then
-      as_fn_error $? "wayland backend requires cairo" "$LINENO" 5
     else
       BUILD_GRAPHICS=art
     fi
@@ -7248,137 +7100,23 @@ $as_echo "winlib" >&6; }
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS"
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: xlib" >&5
 $as_echo "xlib" >&6; }
-    elif test $BUILD_SERVER = wayland; then
-      for ac_header in wayland-util.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "wayland-util.h" "ac_cv_header_wayland_util_h" "$ac_includes_default"
-if test "x$ac_cv_header_wayland_util_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_WAYLAND_UTIL_H 1
-_ACEOF
-
-else
-  as_fn_error $? "**** No wayland-util.h. Install libwayland-dev or equivalent." "$LINENO" 5
-fi
-
-done
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for wl_display_flush in -lwayland-client" >&5
-$as_echo_n "checking for wl_display_flush in -lwayland-client... " >&6; }
-if ${ac_cv_lib_wayland_client_wl_display_flush+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lwayland-client  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char wl_display_flush ();
-int
-main ()
-{
-return wl_display_flush ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_wayland_client_wl_display_flush=yes
-else
-  ac_cv_lib_wayland_client_wl_display_flush=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_wayland_client_wl_display_flush" >&5
-$as_echo "$ac_cv_lib_wayland_client_wl_display_flush" >&6; }
-if test "x$ac_cv_lib_wayland_client_wl_display_flush" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBWAYLAND_CLIENT 1
-_ACEOF
-
-  LIBS="-lwayland-client $LIBS"
-
-else
-  as_fn_error $? "**** No wl_display_flush in libwayland-client. Install correct version of libwayland-dev or equivalent." "$LINENO" 5
-fi
-
-      for ac_header in xkbcommon/xkbcommon.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "xkbcommon/xkbcommon.h" "ac_cv_header_xkbcommon_xkbcommon_h" "$ac_includes_default"
-if test "x$ac_cv_header_xkbcommon_xkbcommon_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_XKBCOMMON_XKBCOMMON_H 1
-_ACEOF
-
-else
-  as_fn_error $? "**** No xkbcommon/xkbcommon.h. Required for wayland. Install libxkbcommon-dev or equivalent." "$LINENO" 5
-fi
-
-done
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xkb_context_new in -lxkbcommon" >&5
-$as_echo_n "checking for xkb_context_new in -lxkbcommon... " >&6; }
-if ${ac_cv_lib_xkbcommon_xkb_context_new+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lxkbcommon  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char xkb_context_new ();
-int
-main ()
-{
-return xkb_context_new ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_xkbcommon_xkb_context_new=yes
-else
-  ac_cv_lib_xkbcommon_xkb_context_new=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_xkbcommon_xkb_context_new" >&5
-$as_echo "$ac_cv_lib_xkbcommon_xkb_context_new" >&6; }
-if test "x$ac_cv_lib_xkbcommon_xkb_context_new" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBXKBCOMMON 1
-_ACEOF
-
-  LIBS="-lxkbcommon $LIBS"
-
-else
-  as_fn_error $? "**** No xkb_context_new in libxkbcommon. Install correct version of libxkbcommon-dev or equivalent." "$LINENO" 5
-fi
-
-      CAIRO_LIBS="$CAIRO_LIBS $XFT_LIBS"
-      CAIRO_CFLAGS="$CAIRO_CFLAGS"
-      LIBS="-lwayland-client -lwayland-cursor -lxkbcommon $LIBS"
     else
       as_fn_error $? "Invalid Cairo installation" "$LINENO" 5
     fi
     LIBS="$CAIRO_LIBS $LIBS"
     CPPFLAGS="$CAIRO_CFLAGS $CPPFLAGS"
+  fi
+fi
+
+if test x"$BUILD_GRAPHICS" = "xheadlesslib"; then
+  if test $BUILD_SERVER != xheadless ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Invalid build server for headless lib: $BUILD_SERVER" >&5
+$as_echo "$as_me: WARNING: Invalid build server for headless lib: $BUILD_SERVER" >&2;}
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking headless lib" >&5
+$as_echo_n "checking headless lib... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: headlesslib" >&5
+$as_echo "headlesslib" >&6; }
   fi
 fi
 
@@ -7413,7 +7151,9 @@ $as_echo "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
     CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xxlib"; then
- LIBS="$FREETYPE_LIBS $LIBS"
+ : # Nothing to do
+elif test x"$BUILD_GRAPHICS" = "xheadlesslib"; then
+ : # Nothing to do
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
  : # Nothing to do
 elif test x"$BUILD_GRAPHICS" = "xopal"; then
@@ -7440,7 +7180,7 @@ $as_echo "$as_me: WARNING: can't find fontconfig, required for graphics=opal!" >
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: Switching to $BUILD_GRAPHICS" >&5
 $as_echo "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
-  fi
+ fi
 else
   as_fn_error $? "Invalid graphics backend $BUILD_GRAPHICS" "$LINENO" 5
 fi
@@ -7464,8 +7204,8 @@ if test $BUILD_SERVER = x11; then
     as_fn_error $? "libXext not found - required for building x11 server" "$LINENO" 5
   fi
   if test "x$WITH_GLX" = "xyes"; then
-    LIBS="$GLX_LIBS $LIBS"
-    CPPFLAGS="$GLX_CFLAGS $CPPFLAGS"
+    LIBS="$LIBS $GLX_LIBS"
+    CPPFLAGS="$CPPFLAGS $GLX_CFLAGS"
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: Warning : no OpenGL support for X11 backend" >&5
 $as_echo "$as_me: Warning : no OpenGL support for X11 backend" >&6;}
@@ -8829,15 +8569,3 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
-
-if test $BUILD_GRAPHICS = art || test $BUILD_GRAPHICS = xlib || test $BUILD_GRAPHICS = xdps; then :
-
-cat <<EOF
-## ------- ##
-## WARNING ##
-## ------- ##
-You are about to build the $BUILD_GRAPHICS backend which is deprecated
-and likely to be removed in the future.
-EOF
-
-fi
