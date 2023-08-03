@@ -35,7 +35,7 @@
 + (void) initializeBackend;
 @end
 
-#if BUILD_SERVER == SERVER_x11
+#if (BUILD_SERVER == SERVER_x11) || (BUILD_SERVER == SERVER_xheadless)
 #include <x11/XGServer.h>
 @interface XGServer (Initialize)
 + (void) initializeBackend;
@@ -70,6 +70,8 @@
   [WIN32Server initializeBackend];
 #elif BUILD_SERVER == SERVER_wayland
   [WaylandServer initializeBackend];
+#elif BUILD_SERVER == SERVER_xheadless
+  [XGServer initializeBackend];  
 #else
   [NSException raise: NSInternalInconsistencyException
 	       format: @"No Window Server configured in backend"];
@@ -93,9 +95,11 @@
 #elif (BUILD_GRAPHICS==GRAPHICS_winlib)
     context = @"WIN32Context";
 #elif (BUILD_GRAPHICS==GRAPHICS_cairo)
-    context = @"CairoContext";
-#elif (BUILD_GRAPHICS==GRAPHICS_opal)
+    context = @"CairoContext";    
+#elif (BUILD_GRAPHICS==GRAPHICS_opal)    
     context = @"OpalContext";
+#elif (BUILD_GRAPHICS==GRAPHICS_headlesslib)
+    context = @"HeadlessContext";    
 #else
 #error INVALID build graphics type
 #endif
