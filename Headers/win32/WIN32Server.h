@@ -127,9 +127,11 @@ typedef struct w32serverFlags
 
 @interface WIN32Server (w32_activate)
 
-- (LRESULT) decodeWM_MOUSEACTIVATEParams: (WPARAM)wParam : (LPARAM)lParam 
+#if 0
+- (LRESULT) decodeWM_MOUSEACTIVATEParams: (WPARAM)wParam : (LPARAM)lParam
 						: (HWND)hwnd;
-- (LRESULT) decodeWM_ACTIVEParams: (WPARAM)wParam : (LPARAM)lParam 
+#endif
+- (LRESULT) decodeWM_ACTIVEParams: (WPARAM)wParam : (LPARAM)lParam
 				 : (HWND)hwnd;
 - (LRESULT) decodeWM_ACTIVEAPPParams: (HWND)hwnd : (WPARAM)wParam 
 				    : (LPARAM)lParam;
@@ -191,6 +193,8 @@ typedef struct w32serverFlags
 - (void) decodeWM_SYSCOMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_COMMANDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 - (void) decodeWM_THEMECHANGEDParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
+- (void) decodeWM_SETCURSORParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
+- (void) decodeWM_NCMOUSELEAVEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd;
 
 @end
 

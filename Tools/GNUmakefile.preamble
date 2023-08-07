@@ -67,3 +67,4 @@ CONFIG_SYSTEM_LIB_DIR += $(GRAPHIC_LFLAGS)
 else
 ADDITIONAL_TOOL_LIBS += -lgnustep-gui -lgnustep-back $(SYSTEM_LIBS)
 endif
+

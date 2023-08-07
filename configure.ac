@@ -154,11 +154,37 @@ if test -n "$with_tiff_library"; then
 fi
 
 #--------------------------------------------------------------------
+# Which projects should we build?
+#--------------------------------------------------------------------
+BUILD_SERVER=x11
+BUILD_GRAPHICS=cairo
+case $target_os in
+  *mingw32* | *mingw64* ) BUILD_SERVER=win32
+                          BUILD_GRAPHICS=winlib;;
+esac
+
+AC_ARG_ENABLE(server, 
+  [  --enable-server=SRV     Build server type: x11, xheadless, win32],,
+  enable_server=$BUILD_SERVER)
+AC_ARG_ENABLE(graphics, 
+  [  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal],,
+  enable_graphics="$BUILD_GRAPHICS")
+
+BUILD_SERVER=$enable_server
+BUILD_GRAPHICS="$enable_graphics"
+if test "x$BUILD_SERVER" = xxheadless; then
+  BUILD_GRAPHICS=headlesslib
+fi
+
+#--------------------------------------------------------------------
 # Find for X windows
 #--------------------------------------------------------------------
 set_x_paths=yes
 AC_PATH_XTRA
 if test "x$no_x" = xyes; then
+  set_x_paths=no
+fi
+if test "x$BUILD_SERVER" = xxheadless; then
   set_x_paths=no
 fi
 
@@ -554,15 +580,6 @@ AC_SUBST(WITH_WRASTER)
 # Revert to previous flags (removing added GNUstep flags)
 CPPFLAGS=${GRAPHIC_CFLAGS}
 LDFLAGS=${GRAPHIC_LFLAGS}
-#--------------------------------------------------------------------
-# Which projects should we build?
-#--------------------------------------------------------------------
-BUILD_SERVER=x11
-BUILD_GRAPHICS=cairo
-case $target_os in
-  *mingw32* ) BUILD_SERVER=win32
-              BUILD_GRAPHICS=winlib;;
-esac
 
 AC_ARG_ENABLE(server, 
   [  --enable-server=SRV     Build server type: x11, win32, wayland],,
@@ -666,6 +683,15 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
   fi
 fi
 
+if test x"$BUILD_GRAPHICS" = "xheadlesslib"; then
+  if test $BUILD_SERVER != xheadless ; then
+    AC_MSG_WARN([Invalid build server for headless lib: $BUILD_SERVER])
+  else
+    AC_MSG_CHECKING(headless lib)
+    AC_MSG_RESULT(headlesslib)
+  fi
+fi
+
 if test x"$BUILD_GRAPHICS" = "xxdps"; then
   CPPFLAGS="-I$x_includes/X11 $CPPFLAGS"
   LIBS="-ldpstk -ldps -lpsres -lXt $X_PRE_LIBS $LIBS"
@@ -693,7 +719,9 @@ elif test x"$BUILD_GRAPHICS" = "xart"; then
     CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xxlib"; then
- LIBS="$FREETYPE_LIBS $LIBS"
+ : # Nothing to do
+elif test x"$BUILD_GRAPHICS" = "xheadlesslib"; then
+ : # Nothing to do
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
  : # Nothing to do
 elif test x"$BUILD_GRAPHICS" = "xopal"; then
@@ -716,7 +744,7 @@ elif test x"$BUILD_GRAPHICS" = "xopal"; then
       BUILD_GRAPHICS=xlib
     fi
     AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
-  fi
+ fi
 else
   AC_MSG_ERROR([Invalid graphics backend $BUILD_GRAPHICS])
 fi
@@ -760,12 +788,14 @@ AH_TOP([
 #define SERVER_x11      1
 #define SERVER_win32    2
 #define SERVER_wayland  3
+#define SERVER_xheadless 4
 #define GRAPHICS_xdps   0
 #define GRAPHICS_art    1
 #define GRAPHICS_xlib   2
 #define GRAPHICS_winlib 3
 #define GRAPHICS_cairo  4
 #define GRAPHICS_opal   5
+#define GRAPHICS_headlesslib   6
 ])
 AC_DEFINE_UNQUOTED(BUILD_SERVER,SERVER_$BUILD_SERVER,
 	[Define to type of window server to build])

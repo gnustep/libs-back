@@ -49,6 +49,13 @@ ifeq ($(BUILD_SERVER),x11)
     cairo_OBJC_FILES += XGCairoSurface.m XGCairoXImageSurface.m XGCairoModernSurface.m
   endif
 else
+  ifeq ($(BUILD_SERVER),xheadless)
+    ifeq ($(WITH_GLITZ),yes)
+      cairo_OBJC_FILES += XGCairoGlitzSurface.m
+    else
+      cairo_OBJC_FILES += XGCairoSurface.m XGCairoXImageSurface.m XGCairoModernSurface.m
+    endif
+  endif
   ifeq ($(BUILD_SERVER),wayland)
     cairo_OBJC_FILES += WaylandCairoShmSurface.m
   else

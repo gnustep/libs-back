@@ -163,174 +163,46 @@
 #endif
   return YES;
 }
+>>>>>>> upstream/master
 
 - (id) initWithFontName: (NSString *)name 
                  matrix: (const CGFloat *)fmatrix 
              screenFont: (BOOL)p_screenFont
 {
-  self = [super init];
-  if (!self)
-    return nil;
-
-  _screenFont = p_screenFont;
-  fontName = [name copy];
-  memcpy(matrix, fmatrix, sizeof(matrix));
-
-  if (_screenFont)
-    {
-      /* Round up; makes the text more legible. */
-      matrix[0] = ceil(matrix[0]);
-      if (matrix[3] < 0.0)
-        matrix[3] = floor(matrix[3]);
-      else
-        matrix[3] = ceil(matrix[3]);
-    }
-
-  if (![self setupAttributes])
-    {
-      RELEASE(self);
-      return nil;
-    }
-
-  return self;
+<<<<<<< HEAD
+  NSDebugLLog(@"OpalFontInfo", @"OpalFontInfo: instantiating font info for %@", name);
+  return [super init];
 }
-
-- (void) dealloc
-{
-#if 0
-  if (_scaled)
-    {
-      cairo_scaled_font_destroy(_scaled);
-    }
-#endif
-  [super dealloc];
-}
-
-- (BOOL) glyphIsEncoded: (NSGlyph)glyph
-{
-  CGFontRef face = [_faceInfo fontFace];
-  size_t numGlyphs = CGFontGetNumberOfGlyphs(face);
-
-  return glyph < numGlyphs;
-}
-#if 0
-static
-BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
-                                cairo_text_extents_t *ctext)
-{
-  unichar ustr[2];
-  char str[4];
-  unsigned char *b;
-  unsigned int size = 4;
-  int length = 1;
-
-  ustr[0] = glyph;
-  ustr[1] = 0;
-
-  b = (unsigned char *)str;
-  if (!GSFromUnicode(&b, &size, ustr, length, 
-                     NSUTF8StringEncoding, NULL, GSUniTerminate))
-    {
-      NSLog(@"Conversion failed for %@", 
-            [NSString stringWithCharacters: ustr length: length]);
-      return NO;
-    }
-
-  cairo_scaled_font_text_extents(scaled_font, str, ctext);
-  return cairo_scaled_font_status(scaled_font) == CAIRO_STATUS_SUCCESS;
-}
-#endif
-
-- (NSSize) advancementForGlyph: (NSGlyph)glyph
-{
-  CGFontRef face = [_faceInfo fontFace];
-  int advance = 0;
-  CGGlyph cgglyph = glyph;
-  CGFontGetGlyphAdvances(face, &cgglyph, 1, &advance);
-
-  CGFloat advanceUserSpace = [self _fontUnitToUserSpace: advance];
-
-  return NSMakeSize(advanceUserSpace, 0);
-
-#if 0
-  cairo_text_extents_t ctext;
-
-  if (_cachedSizes)
-    {
-      int entry = glyph % _cacheSize;
-
-      if (_cachedGlyphs[entry] == glyph)
-        {
-          return _cachedSizes[entry];
-        }
-      
-      if (_cairo_extents_for_NSGlyph(_scaled, glyph, &ctext))
-        {
-          _cachedGlyphs[entry] = glyph;
-          _cachedSizes[entry] = NSMakeSize(ctext.x_advance, ctext.y_advance);
-          
-          return _cachedSizes[entry];
-        }
-    }
-  else
-    {
-      if (_cairo_extents_for_NSGlyph(_scaled, glyph, &ctext))
-        {
-          return NSMakeSize(ctext.x_advance, ctext.y_advance);
-        }
-    }
-#endif
-  return NSZeroSize;
-}
-
-- (NSGlyph) glyphForCharacter: (unichar)theChar
-{
-  CGFontRef face = [_faceInfo fontFace];
-
-  CGGlyph result = OPFontGetGlyphWithCharacter(face, theChar);
-  //NSLog(@"%s: Mapped '%@' to glyph # %d", __PRETTY_FUNCTION__, str, (int)result);
-  return result;
-}
-
-- (NSGlyph) glyphWithName: (NSString *) glyphName
-{
-  CGFontRef face = [_faceInfo fontFace];
-  CGGlyph result = CGFontGetGlyphWithGlyphName(face, glyphName);
-  //  NSLog(@"%s: Mapped '%@' to glyph # %d", __PRETTY_FUNCTION__, glyphName, (int)result);
-  return result;
-}
-
 - (NSRect) boundingRectForGlyph: (NSGlyph)glyph
 {
-#if 0
-  cairo_text_extents_t ctext;
-
-  if (_cairo_extents_for_NSGlyph(_scaled, glyph, &ctext))
-    {
-      return NSMakeRect(ctext.x_bearing, ctext.y_bearing,
-                        ctext.width, ctext.height);
-    }
-#endif
-  return NSMakeRect(0,0,10,10);
+  NSDebugLLog(@"OpalFontInfo", @"OpalFontInfo: %s - %c", __PRETTY_FUNCTION__, glyph);
+  return NSMakeRect(0, 0, 10, 10);
 }
-
 - (CGFloat) widthOfString: (NSString *)string
 {
-#if 0
-  cairo_text_extents_t ctext;
+  NSDebugLLog(@"OpalFontInfo", @"OpalFontInfo: %s - %@", __PRETTY_FUNCTION__, string);
+  return [string length] * 10;
+}
+- (NSSize) advancementForGlyph: (NSGlyph)glyph
+{
+  NSDebugLLog(@"OpalFontInfo", @"OpalFontInfo: %s - %c", __PRETTY_FUNCTION__, glyph);
+  return NSMakeSize(100,100);
+}
+- (NSGlyph) glyphWithName: (NSString *) glyphName
+{
+  NSDebugLLog(@"OpalFontInfo", @"OpalFontInfo: %s - %@", __PRETTY_FUNCTION__, glyphName);
 
-  if (!string)
-    {
-      return 0.0;
-    }
-
-  cairo_scaled_font_text_extents(_scaled, [string UTF8String], &ctext);
-  if (cairo_scaled_font_status(_scaled) == CAIRO_STATUS_SUCCESS)
-    {
-      return ctext.width;
-    }
-#endif
-  return 100.0;
+  // FIXME: incorrect
+  NSGlyph g = [glyphName cString][0];
+  return g;
+}
+- (NSGlyph) glyphForCharacter: (unichar)c
+{
+  // FIXME: default in 'gui' uses -glyphIsEncoded: or otherwise
+  // returns null glyph. the default should be sufficient, and is
+  // sufficient for cairo backend.
+   
+  return c;
 }
 
 - (void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs 

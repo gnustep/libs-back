@@ -261,7 +261,7 @@ static XGGLContext *currentGLContext;
     {
       if (!glXMakeCurrent(dpy, None, NULL))
         {
-          NSDebugMLLog(@"GLX", 
+          NSDebugMLLog( @"GLX", 
                        @"Can not clear current GL context - Error %s",
                        glGetString(glGetError()));
         }

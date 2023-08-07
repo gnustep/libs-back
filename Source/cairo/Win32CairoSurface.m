@@ -31,9 +31,13 @@
 #include "win32/WIN32Server.h"
 #include <cairo-win32.h>
 
-#define GSWINDEVICE ((HWND)gsDevice)
 
 @implementation Win32CairoSurface
+
+- (HWND)gsDevice
+{
+  return (HWND)gsDevice;
+}
 
 - (id) initWithDevice: (void *)device
 {
@@ -139,7 +143,84 @@
 	    }
 	}
     }
+>>>>>>> upstream/master
 
+              // Check for error...
+              if (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS)
+                {
+                  // Output the surface create error...
+                  cairo_status_t status = cairo_surface_status(_surface);
+                  NSWarnMLog(@"surface create FAILED - status: %s\n", cairo_status_to_string(status));
+                  
+                  // Destroy the initial surface created...
+                  cairo_surface_destroy(_surface);
+                  
+                  // And deallocate ourselves...
+                  DESTROY(self);
+                  
+                  // Release the device context...
+                  ReleaseDC(device, hDC);
+                }
+            }
+          else
+#endif
+            {
+              NSSize csize = [self size];
+          
+              // This is the raw DC surface...
+              cairo_surface_t *window = cairo_win32_surface_create(hDC);
+              
+              // Check for error...
+              if (cairo_surface_status(window) != CAIRO_STATUS_SUCCESS)
+                {
+                  // Output the surface create error...
+                  cairo_status_t status = cairo_surface_status(window);
+                  NSWarnMLog(@"surface create FAILED - status: %s\n",  cairo_status_to_string(status));
+                  
+                  // And deallocate ourselves...
+                  DESTROY(self);
+                }
+              else
+                {
+                  // and this is the in-memory DC surface...surface owns its DC...
+                  // NOTE: For some reason we get an init sequence with zero width/height,
+                  //       which creates problems in the cairo layer.  It tries to clear
+                  //       the 'similar' surface it's creating, and with a zero width/height
+                  //       it incorrectly thinks the clear failed...so we will init with
+                  //       a minimum size of 1 for width/height...
+                  _surface = cairo_surface_create_similar(window, CAIRO_CONTENT_COLOR_ALPHA,
+                                                          MAX(1, csize.width),
+                                                          MAX(1, csize.height));
+
+                  // Check for error...
+                  if (cairo_surface_status(_surface) != CAIRO_STATUS_SUCCESS)
+                    {
+                      // Output the surface create error...
+                      cairo_status_t status = cairo_surface_status(_surface);
+                      NSWarnMLog(@"surface create FAILED - status: %s\n",  cairo_status_to_string(status));
+                      
+                      // Destroy the surface created...
+                      cairo_surface_destroy(_surface);
+                      
+                      // And deallocate ourselves...
+                      DESTROY(self);
+                    }
+                }
+              
+              // Destroy the initial surface created...
+              cairo_surface_destroy(window);
+              
+              // Release the device context...
+              ReleaseDC(device, hDC);
+            }
+
+          if (self)
+            {
+              // We need this for handleExposeEvent in WIN32Server...
+              win->surface = (void*)self;
+            }
+        }
+    }
   return self;
 }
 
@@ -371,3 +452,114 @@
 }
 
 @end
+
+@implementation WIN32Server (ScreenCapture)
+
+- (NSImage *) contentsOfScreen: (int)screen inRect: (NSRect)rect
+{
+  NSImage *result = nil;
+  HDC      hdc    = [self createHdcForScreen:screen];
+  
+  // We need a screen device context for this to work...
+  if (hdc == NULL)
+    {
+      NSWarnMLog(@"invalid screen request: %d", screen);
+    }
+  else
+    {
+      // Convert rect to flipped coordinates
+      NSRect    boundsForScreen = [self boundsForScreen:screen];
+      rect.origin.y             = boundsForScreen.size.height - NSMaxY(rect);
+      NSInteger width           = rect.size.width;
+      NSInteger height          = rect.size.height;
+      
+      // Create a bitmap representation for capturing the screen area...
+      NSBitmapImageRep *bmp = [[[NSBitmapImageRep alloc] initWithBitmapDataPlanes: NULL
+                                                                       pixelsWide: width
+                                                                       pixelsHigh: height
+                                                                    bitsPerSample: 8
+                                                                  samplesPerPixel: 4
+                                                                         hasAlpha: YES
+                                                                         isPlanar: NO
+                                                                   colorSpaceName: NSDeviceRGBColorSpace
+                                                                     bitmapFormat: 0
+                                                                      bytesPerRow: 0
+                                                                     bitsPerPixel: 32] autorelease];
+
+      // Create the required surfaces...
+      cairo_surface_t *src = cairo_win32_surface_create(hdc);
+      cairo_surface_t *dst = cairo_image_surface_create_for_data([bmp bitmapData],
+                                                                 CAIRO_FORMAT_ARGB32,
+                                                                 width, height,
+                                                                 [bmp bytesPerRow]);
+      
+      // Ensure we were able to generate the required surfaces...
+      if (cairo_surface_status(src) != CAIRO_STATUS_SUCCESS)
+      {
+        NSWarnMLog(@"cairo screen surface error status: %s\n",
+                   cairo_status_to_string(cairo_surface_status(src)));
+      }
+      else if (cairo_surface_status(dst) != CAIRO_STATUS_SUCCESS)
+      {
+        NSWarnMLog(@"cairo screen surface error status: %s\n",
+                   cairo_status_to_string(cairo_surface_status(dst)));
+        cairo_surface_destroy(src);
+      }
+      else
+      {
+        // Capture the requested screen rectangle...
+        cairo_t *cr = cairo_create(dst);
+        cairo_set_source_surface(cr, src, -1 * rect.origin.x, -1 * rect.origin.y);
+        cairo_paint(cr);
+        cairo_destroy(cr);
+
+        // Cleanup the cairo surfaces...
+        cairo_surface_destroy(src);
+        cairo_surface_destroy(dst);
+        
+        // Convert BGRA to RGBA
+        // Original code located in XGCairSurface.m
+        {
+          NSInteger stride;
+          NSInteger x, y;
+          unsigned char *cdata;
+          
+          stride = [bmp bytesPerRow];
+          cdata = [bmp bitmapData];
+          
+          for (y = 0; y < height; y++)
+            {
+              for (x = 0; x < width; x++)
+                {
+                  NSInteger i = (y * stride) + (x * 4);
+                  unsigned char d = cdata[i];
+                  
+#if GS_WORDS_BIGENDIAN
+                  cdata[i + 0] = cdata[i + 1];
+                  cdata[i + 1] = cdata[i + 2];
+                  cdata[i + 2] = cdata[i + 3];
+                  cdata[i + 3] = d;
+#else
+                  cdata[i + 0] = cdata[i + 2];
+                  //cdata[i + 1] = cdata[i + 1];
+                  cdata[i + 2] = d;
+                  //cdata[i + 3] = cdata[i + 3];
+#endif 
+                }
+            }
+        }
+
+        // Create the image and add the bitmap representation...
+        result = [[[NSImage alloc] initWithSize: NSMakeSize(width, height)] autorelease];
+        [result addRepresentation: bmp];
+      }
+      
+      // Cleanup the screen HDC...
+      [self deleteScreenHdc:hdc];
+    }
+  
+  // Return whatever we got...
+  return result;
+}
+@end
+

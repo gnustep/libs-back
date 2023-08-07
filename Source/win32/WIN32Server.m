@@ -26,9 +26,11 @@
    Free Software Foundation, 51 Franklin Street, Fifth Floor, 
    Boston, MA 02110-1301, USA.
 */
+#define OEMRESOURCE
 
 #include "config.h"
 #include <Foundation/NSDebug.h>
+#include <Foundation/NSData.h>
 #include <Foundation/NSString.h>
 #include <Foundation/NSArray.h>
 #include <Foundation/NSValue.h>
@@ -37,6 +39,8 @@
 #include <Foundation/NSTimer.h>
 #include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSException.h>
+#include <Foundation/NSAutoreleasePool.h>
+#include <Foundation/NSNotification.h>
 #include <AppKit/AppKitExceptions.h>
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSGraphics.h>
@@ -336,10 +340,43 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 /**
 
 */
+- (void) _dumpMonitors
+{
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"GSMonitorScreensLogs"])
+    {
+      NSInteger index = 0;
+      for (index = 0; index < [monitorInfo count]; ++index)
+        {
+          W32DisplayMonitorInfo *infoMon    = [monitorInfo objectAtIndex:index];
+          RECT                   infoRect   = [infoMon rect];
+          NSRect                 infoFrame  = [infoMon frame];
+        
+          NSLog(@"screen %ld - hMon: %ld frame:top:%ld left:%ld bottom:%ld right:%ld  frame: %@\n",
+                  index, (long)[infoMon hMonitor],
+                  infoRect.top, infoRect.left, infoRect.bottom, infoRect.right,
+                  NSStringFromRect(infoFrame));
+        }
+    }
+}
+
+- (void) _resetMonitors
+{
+  // Dump our current configuration...
+  [monitorInfo removeAllObjects];
+  
+  // Process the updated configuration...
+  EnumDisplayMonitors(NULL, NULL, (MONITORENUMPROC)LoadDisplayMonitorInfo, (LPARAM)monitorInfo);
+  
+  [self _dumpMonitors];
+  
+  // Notify the world...
+  NSNotificationCenter *notifCenter = [NSNotificationCenter defaultCenter];
+  [notifCenter postNotificationName: NSApplicationDidChangeScreenParametersNotification
+                             object: [NSApplication sharedApplication]];
+}
+
 - (id) initWithAttributes: (NSDictionary *)info
 {
-//  NSNotificationCenter	*nc = [NSNotificationCenter defaultCenter];
-
   self = [super initWithAttributes: info];
 
   if (self)
@@ -350,6 +387,11 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       monitorInfo = [[NSMutableArray alloc] init];
       EnumDisplayMonitors(NULL, NULL, (MONITORENUMPROC)LoadDisplayMonitorInfo, (LPARAM)monitorInfo);
 
+      systemCursors = RETAIN([NSMutableDictionary dictionary]);
+      monitorInfo   = RETAIN([NSMutableArray array]);
+	  listOfCursorsFailed = RETAIN([NSMutableArray array]);
+
+      [self _resetMonitors];
       [self setupRunLoopInputSourcesForMode: NSDefaultRunLoopMode]; 
       [self setupRunLoopInputSourcesForMode: NSConnectionReplyMode]; 
       [self setupRunLoopInputSourcesForMode: NSModalPanelRunLoopMode]; 
@@ -357,6 +399,9 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 
       [self setHandlesWindowDecorations: YES];
       [self setUsesNativeTaskbar: YES];
+
+      [self isDiscoveryServiceInstalled];
+      [self isDiscoveryServiceRunning];
 
       [GSTheme theme];
       { // Check user defaults
@@ -405,7 +450,7 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
   [super dealloc];
 }
 
-- (void) restrictWindow: (int)win toImage: (NSImage*)image
+- (void) restrictWindow: (NSInteger)win toImage: (NSImage*)image
 {
   //TODO [self subclassResponsibility: _cmd];
 }
@@ -431,8 +476,8 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 }
 
 - (int) findWindowAt: (NSPoint)screenLocation 
-           windowRef: (int*)windowRef 
-           excluding: (int)win
+           windowRef: (NSInteger*)windowRef
+           excluding: (NSInteger)win
 {
   HWND hwnd;
   POINT p;
@@ -595,7 +640,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
 /**
    As the number of the window is actually is handle we return this.  */
-- (void *) windowDevice: (int)win
+- (void *) windowDevice: (NSInteger)win
 {
   return (void *)win;
 }
@@ -1498,6 +1543,13 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "DEVICECHANGE", hwnd);
         break;
 	
+      case WM_DISPLAYCHANGE:
+        [self _resetMonitors];
+        NSWindow *window   = GSWindowWithNumber((NSInteger)hwnd);
+        NSString *autoname = [window frameAutosaveName];
+        [window setFrameUsingName:autoname];
+        break;
+        
       default: 
         // Process all other messages.
           NSDebugLLog(@"NSEvent", @"Got unhandled Message %d for %d", uMsg, hwnd);
@@ -1545,7 +1597,105 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
 @end
 
+@implementation WIN32Server (ServiceOps)
 
+- (BOOL)isServiceInstalled: (NSString*)serviceName
+{
+  BOOL      result                = NO;
+  SC_HANDLE serviceControlManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+  
+  if (serviceControlManager == NULL)
+    {
+      NSDebugMLLog(@"WIN32", @"cannot connect to service control manager - status: %ld", GetLastError());
+      NSWarnMLog(@"cannot connect to service control manager - status: %ld", GetLastError());
+    }
+  else
+    {
+      // CHeck for service running...
+      SC_HANDLE serviceHandle = OpenService(serviceControlManager, TEXT("Bonjour Service"), SERVICE_QUERY_STATUS);
+      
+      if (serviceHandle == NULL)
+        {
+          NSDebugMLLog(@"WIN32", @"cannot open service 'Bonjour' - status: %ld", GetLastError());
+          NSWarnMLog(@"cannot open service 'Bonjour' - status: %ld", GetLastError());
+        }
+      else
+        {
+          NSDebugMLLog(@"WIN32", @"service 'Bonjour' is installed");
+          result = YES;
+          
+          // Cleanup...
+          CloseServiceHandle(serviceHandle);
+        }
+      
+      // Cleanup...
+      CloseServiceHandle(serviceControlManager);
+    }
+  
+  // return our result...
+  return result;
+}
+
+- (BOOL)isServiceRunning: (NSString*)serviceName
+{
+  BOOL      result                = NO;
+  SC_HANDLE serviceControlManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+  
+  if (serviceControlManager == NULL)
+    {
+      NSDebugMLLog(@"WIN32", @"cannot connect to service control manager - status: %ld", GetLastError());
+      NSWarnMLog(@"cannot connect to service control manager - status: %ld", GetLastError());
+    }
+  else
+    {
+      // Check for service running...
+      //TCHAR     *name          = TEXT([serviceName UTF8String]);
+      SC_HANDLE  serviceHandle = OpenService(serviceControlManager, TEXT("Bonjour Service"), SERVICE_QUERY_STATUS);
+      
+      if (serviceHandle == NULL)
+        {
+          NSDebugMLLog(@"WIN32", @"cannot open service 'Bonjour' - status: %ld", GetLastError());
+          NSWarnMLog(@"cannot open service 'Bonjour' - status: %ld", GetLastError());
+        }
+      else
+        {
+          SERVICE_STATUS_PROCESS serviceStatusInfo;
+          DWORD                  ssiSize;
+          
+          if (0 == QueryServiceStatusEx(serviceHandle, SC_STATUS_PROCESS_INFO, (LPBYTE)&serviceStatusInfo, sizeof(serviceStatusInfo), &ssiSize))
+            {
+              NSDebugMLLog(@"WIN32", @"cannot query service 'Bonjour' - status: %ld", GetLastError());
+              NSWarnMLog(@"cannot query service 'Bonjour' - status: %ld", GetLastError());
+            }
+          else
+            {
+              NSDebugMLLog(@"WIN32", @"service 'Bonjour' current state: %ld", serviceStatusInfo.dwCurrentState);
+              result = (serviceStatusInfo.dwCurrentState == SERVICE_RUNNING);
+            }
+          
+          // Cleanup...
+          CloseServiceHandle(serviceHandle);
+        }
+      
+      // Cleanup...
+      CloseServiceHandle(serviceControlManager);
+    }
+  
+  // return our result...
+  return result;
+}
+
+- (BOOL) isDiscoveryServiceInstalled
+{
+  return [self isServiceInstalled: @"Bonjour Service"];
+}
+
+- (BOOL) isDiscoveryServiceRunning
+{
+  return [self isServiceRunning: @"Bonjour Service"];
+}
+
+@end
 
 @implementation WIN32Server (WindowOps)
 
@@ -1591,7 +1741,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
 */
 
-- (int) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style
+- (NSInteger) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style
               : (int) screen
 {
   HWND hwnd; 
@@ -1661,15 +1811,16 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   return (int)hwnd;
 }
 
-- (void) termwindow: (int) winNum
+- (void) termwindow: (NSInteger) winNum
 {
   NSDebugLLog(@"WCTrace", @"termwindow: %d", winNum);
-  if (!DestroyWindow((HWND)winNum)) {
-    NSLog(@"DestroyWindow Failed %d", GetLastError());
-  }
+  if (!DestroyWindow((HWND)winNum))
+    {
+      NSLog(@"DestroyWindow Failed %d", GetLastError());
+    }
 }
 
-- (void) stylewindow: (unsigned int)style : (int) winNum
+- (void) stylewindow: (unsigned int)style : (NSInteger) winNum
 {
   DWORD wstyle = [self windowStyleForGSStyle: style];
   DWORD estyle = [self exwindowStyleForGSStyle: style];
@@ -1687,7 +1838,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 }
 
 /** Changes window's the backing store to type */
-- (void) windowbacking: (NSBackingStoreType)type : (int) winNum
+- (void) windowbacking: (NSBackingStoreType)type : (NSInteger) winNum
 {
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)winNum, GWLP_USERDATA);
 
@@ -1733,14 +1884,14 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   win->type = type;
 }
 
-- (void) titlewindow: (NSString*)window_title : (int) winNum
+- (void) titlewindow: (NSString*)window_title : (NSInteger) winNum
 {
   NSDebugLLog(@"WTrace", @"titlewindow: %@ : %d", window_title, winNum);
   SetWindowTextW((HWND)winNum, (const unichar*)
     [window_title cStringUsingEncoding: NSUnicodeStringEncoding]);
 }
 
-- (void) miniwindow: (int) winNum
+- (void) miniwindow: (NSInteger) winNum
 {
   NSDebugLLog(@"WTrace", @"miniwindow: %d", winNum);
   ShowWindow((HWND)winNum, SW_MINIMIZE);
@@ -1752,7 +1903,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   return NO;
 }
 
-- (void) setWindowdevice: (int)winNum forContext: (NSGraphicsContext *)ctxt
+- (void) setWindowdevice: (NSInteger)winNum forContext: (NSGraphicsContext *)ctxt
 {
   RECT rect;
   float h, l, r, t, b;
@@ -1783,7 +1934,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   DPSinitclip(ctxt);
 }
 
-- (void) orderwindow: (int) op : (int) otherWin : (int) winNum
+- (void) orderwindow: (int) op : (NSInteger) otherWin : (NSInteger) winNum
 {
   int		flag = 0;
   int		foreground = 0;
@@ -2012,7 +2163,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
     }
 }
 
-- (void) movewindow: (NSPoint)loc : (int)winNum
+- (void) movewindow: (NSPoint)loc : (NSInteger)winNum
 {
   POINT p;
 
@@ -2024,7 +2175,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
                SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOSENDCHANGING);
 }
 
-- (void) placewindow: (NSRect)frame : (int) winNum
+- (void) placewindow: (NSRect)frame : (NSInteger) winNum
 {
   RECT r;
   RECT r2;
@@ -2067,13 +2218,13 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 #endif
 }
 
-- (BOOL) findwindow: (NSPoint)loc : (int) op : (int) otherWin 
+- (BOOL) findwindow: (NSPoint)loc : (int) op : (NSInteger) otherWin 
 		   : (NSPoint *)floc : (int*) winFound
 {
   return NO;
 }
 
-- (NSRect) windowbounds: (int) winNum
+- (NSRect) windowbounds: (NSInteger) winNum
 {
   RECT r;
 
@@ -2081,7 +2232,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   return MSScreenRectToGS(r);
 }
 
-- (void) setwindowlevel: (int) level : (int) winNum
+- (void) setwindowlevel: (int) level : (NSInteger) winNum
 {
   NSDebugLLog(@"WTrace", @"setwindowlevel: %d : %d", level, winNum);
   if (GetWindowLongPtr((HWND)winNum, OFF_LEVEL) != level)
@@ -2094,7 +2245,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
     }
 }
 
-- (int) windowlevel: (int) winNum
+- (int) windowlevel: (NSInteger) winNum
 {
   return GetWindowLongPtr((HWND)winNum, OFF_LEVEL);
 }
@@ -2127,22 +2278,22 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
        * FIXME We should improve the API to support all windows on server.
        */
       if (GSWindowWithNumber((int)w) != nil)
-	{
-	  [list addObject: [NSNumber numberWithInt: (int)w]];
-	}
+        {
+          [list addObject: [NSNumber numberWithInt: (int)w]];
+        }
       w = GetNextWindow(w, GW_HWNDNEXT);
     }
 
   return list;
 }
 
-- (int) windowdepth: (int) winNum
+- (int) windowdepth: (NSInteger) winNum
 {
   return 0;
 }
 
 /** Set the maximum size of the window */
-- (void) setmaxsize: (NSSize)size : (int) winNum
+- (void) setmaxsize: (NSSize)size : (NSInteger) winNum
 {
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)winNum, GWLP_USERDATA);
   POINT p;
@@ -2151,8 +2302,8 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   p.y = size.height;
   win->minmax.ptMaxTrackSize = p;
 
-  // Disable the maximize box if a maximum size is set
-  if (size.width < 10000 || size.height < 10000)
+  // If the window has resizable set on it...
+  if (GetWindowLong((HWND)winNum, GWL_STYLE) & WS_SIZEBOX)
     {
       SetWindowLongPtr((HWND)winNum, GWL_STYLE, 
           GetWindowLongPtr((HWND)winNum, GWL_STYLE) ^ WS_MAXIMIZEBOX);
@@ -2165,7 +2316,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 }
 
 /** Set the minimum size of the window */
-- (void) setminsize: (NSSize)size : (int) winNum
+- (void) setminsize: (NSSize)size : (NSInteger) winNum
 {
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr((HWND)winNum, GWLP_USERDATA);
   POINT p;
@@ -2176,11 +2327,12 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 }
 
 /** Set the resize incremenet of the window */
-- (void) setresizeincrements: (NSSize)size : (int) winNum
+- (void) setresizeincrements: (NSSize)size : (NSInteger) winNum
 {
 }
+
 /** Causes buffered graphics to be flushed to the screen */
-- (void) flushwindowrect: (NSRect)rect : (int)winNum
+- (void) flushwindowrect: (NSRect)rect : (NSInteger)winNum
 {
   HWND hwnd = (HWND)winNum;
   WIN_INTERN *win = (WIN_INTERN *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -2248,11 +2400,11 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
     }
 }
 
-- (void) docedited: (int) edited : (int) winNum
+- (void) docedited: (int) edited : (NSInteger) winNum
 {
 }
 
-- (void) setinputstate: (int)state : (int)winNum
+- (void) setinputstate: (int)state : (NSInteger)winNum
 {
   if ([self handlesWindowDecorations] == NO)
     {
@@ -2268,7 +2420,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
 /** Forces focus to the window so that all key events are sent to this
     window */
-- (void) setinputfocus: (int) winNum
+- (void) setinputfocus: (NSInteger) winNum
 {
   NSDebugLLog(@"WTrace", @"setinputfocus: %d", winNum);
   NSDebugLLog(@"Focus", @"Setting input focus to %d", winNum);
@@ -2286,7 +2438,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   SetFocus((HWND)winNum);
 }
 
-- (void) setalpha: (float)alpha: (int) win
+- (void) setalpha: (float)alpha forWindow: (NSInteger) win
 {
   if (alpha > 0.99)
     {
@@ -2309,35 +2461,68 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
   if (!GetCursorPos(&p))
     { 
-	  // Try using cursorInfo which should work in more situations
-	  CURSORINFO cursorInfo;
-	  cursorInfo.cbSize = sizeof(CURSORINFO); 
-	  if (!GetCursorInfo(&cursorInfo)) {
-		NSLog(@"GetCursorInfo failed with %d", GetLastError());
-        return NSZeroPoint;
-      }
-	  p = cursorInfo.ptScreenPos;
+      // Try using cursorInfo which should work in more situations
+      CURSORINFO cursorInfo;
+      cursorInfo.cbSize = sizeof(CURSORINFO);
+        
+      if (!GetCursorInfo(&cursorInfo))
+        {
+        
+          if ([NSCursor currentCursor])
+            {
+              BOOL cursorFound = FALSE;
+              NSImage *cursorImage = [[NSCursor currentCursor] image];
+              
+              // has the cursor already failed?
+              if (cursorImage != nil)
+                {
+                  for (NSImage *item in listOfCursorsFailed)
+                    {
+                      if (cursorImage == item)
+                        {
+                          cursorFound = TRUE;
+                          break;
+                        }
+                    }
+                
+                  // log this cursor fail entry to avoid multiple logs
+                  if (!cursorFound)
+                    {
+                      [listOfCursorsFailed addObject:cursorImage];
+                      NSLog(@"GetCursorInfo failed with %d", GetLastError());
+                    }
+                }
+            }
+            return NSZeroPoint;
+          }
+        
+        p = cursorInfo.ptScreenPos;
     }
-
+  
   return MSScreenPointToGS(p.x, p.y);
 }
 
-- (NSPoint) mouseLocationOnScreen: (int)screen window: (int *)win
+- (NSPoint) mouseLocationOnScreen: (int)screen window: (NSInteger *)win
 {
   return [self mouselocation];
 }
 
-- (BOOL) capturemouse: (int) winNum
+- (BOOL) capturemouse: (NSInteger) winNum
 {
+  HWND hwnd = (HWND)winNum;
   NSDebugLLog(@"WTrace", @"capturemouse: %d", winNum);
-  SetCapture((HWND)winNum);
-  return YES;
+  [self releasemouse];
+  SetCapture(hwnd);
+  int status = mousetracking_register(hwnd);
+  return (status == 0);
 }
 
 - (void) releasemouse
 {
   NSDebugLLog(@"WTrace", @"releasemouse");
   ReleaseCapture();
+  mousetracking_unregister();
+  SetCursor(NULL);
 }
 
 - (void) hidecursor
@@ -2376,6 +2561,12 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       case GSResizeUpDownCursor: 
         hCursor = LoadCursor(NULL, IDC_SIZENS);
         break;
+      case GSResizeNWSECursor: 
+        hCursor = LoadCursor(NULL, IDC_SIZENWSE);
+        break;
+      case GSResizeNESWCursor: 
+        hCursor = LoadCursor(NULL, IDC_SIZENESW);
+        break;
       default: 
         return;
     }
@@ -2384,16 +2575,123 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
 - (void) imagecursor: (NSPoint)hotp : (NSImage *)image : (void **)cid
 {
-  /*
-    HCURSOR cur;
-    BYTE *and;
-    BYTE *xor;
-    int w, h;
+  if (cid)
+    {
+      // Default the return cursur ID to NULL...
+      *cid = NULL;
 
-    xor = image;
-    cur = CreateCursor(hinstance, (int)hotp.x, (int)hotp.y,  (int)w, (int)h, and, xor);
-    *cid = (void*)hCursor;
-    */
+      NSBitmapImageRep *rep = getStandardBitmap(image);
+      if (rep == nil)
+        {
+          /* FIXME: We might create a blank cursor here? */
+          NSWarnMLog(@"Could not convert cursor bitmap data");
+}
+      else
+        {
+          if (hotp.x >= [rep pixelsWide])
+            hotp.x = [rep pixelsWide]-1;
+
+          if (hotp.y >= [rep pixelsHigh])
+            hotp.y = [rep pixelsHigh]-1;
+          
+          int w = [rep pixelsWide];
+          int h = [rep pixelsHigh];
+          
+          // Create a windows bitmap from the image representation's bitmap...
+          if ((w > 0) && (h > 0))
+            {
+              BITMAP    bm;
+              HDC       hDC             = GetDC(NULL);
+              HDC       hMainDC         = CreateCompatibleDC(hDC);
+              HDC       hAndMaskDC      = CreateCompatibleDC(hDC);
+              HDC       hXorMaskDC      = CreateCompatibleDC(hDC);      
+              HBITMAP   hAndMaskBitmap  = NULL;
+              HBITMAP   hXorMaskBitmap  = NULL;
+              
+              // Create the source bitmap...
+              HBITMAP hSourceBitmap = CreateBitmap(w, h, [rep numberOfPlanes], [rep bitsPerPixel], [rep bitmapData]);
+              
+              // Get the dimensions of the source bitmap
+              GetObject(hSourceBitmap, sizeof(BITMAP), &bm);
+              
+              // Create compatible bitmaps for the device context...
+              hAndMaskBitmap = CreateCompatibleBitmap(hDC, bm.bmWidth, bm.bmHeight);
+              hXorMaskBitmap = CreateCompatibleBitmap(hDC, bm.bmWidth, bm.bmHeight);
+              
+              // Select the bitmaps to DC
+              HBITMAP hOldMainBitmap    = (HBITMAP)SelectObject(hMainDC, hSourceBitmap);
+              HBITMAP hOldAndMaskBitmap = (HBITMAP)SelectObject(hAndMaskDC, hAndMaskBitmap);
+              HBITMAP hOldXorMaskBitmap = (HBITMAP)SelectObject(hXorMaskDC, hXorMaskBitmap);
+              
+              /* On windows, to calculate the color for a pixel, first an AND is done
+               * with the background and the "and" bitmap, then an XOR with the "xor"
+               * bitmap. This means that when the data in the "and" bitmap is 0, the
+               * pixel will get the color as specified in the "xor" bitmap.
+               * However, if the data in the "and" bitmap is 1, the result will be the
+               * background XOR'ed with the value in the "xor" bitmap. In case the "xor"
+               * data is completely black (0x000000) the pixel will become transparent,
+               * in case it's white (0xffffff) the pixel will become the inverse of the
+               * background color.
+               */
+
+              // Scan each pixel of the souce bitmap and create the masks
+              int y;
+              int *pixel = (int*)[rep bitmapData];
+              for(y = 0; y < bm.bmHeight; ++y)
+                {
+                  int x;
+                  for (x = 0; x < bm.bmWidth; ++x)
+                    {
+                      if (*pixel++ == 0x00000000)
+                        {
+                          SetPixel(hAndMaskDC, x, y, RGB(255, 255, 255));
+                          SetPixel(hXorMaskDC, x, y, RGB(0, 0, 0));
+                        }
+                      else
+                        {
+                          SetPixel(hAndMaskDC, x, y, RGB(0, 0, 0));
+                          SetPixel(hXorMaskDC, x, y, GetPixel(hMainDC, x, y));
+                        }
+                    }
+                }
+              
+              // Reselect the old bitmap objects...
+              SelectObject(hMainDC, hOldMainBitmap);
+              SelectObject(hAndMaskDC, hOldAndMaskBitmap);
+              SelectObject(hXorMaskDC, hOldXorMaskBitmap);
+              
+              // Create the cursor from the generated and/xor data...
+              ICONINFO iconinfo = { 0 };
+              iconinfo.fIcon    = FALSE;
+              iconinfo.xHotspot = hotp.x;
+              iconinfo.yHotspot = hotp.y;
+              iconinfo.hbmMask  = hAndMaskBitmap;
+              iconinfo.hbmColor = hXorMaskBitmap;
+              
+              // Finally, try to create the cursor...
+              *cid = CreateIconIndirect(&iconinfo);
+
+              // Cleanup the DC's...
+              DeleteDC(hXorMaskDC);
+              DeleteDC(hAndMaskDC);
+              DeleteDC(hMainDC);
+              
+              // Cleanup the bitmaps...
+              DeleteObject(hXorMaskBitmap);
+              DeleteObject(hAndMaskBitmap);
+              DeleteObject(hSourceBitmap);
+              
+              // Release the screen HDC...
+              ReleaseDC(NULL,hDC);
+              
+              // Need to save these created cursors to remove later...
+              [systemCursors setObject:[NSValue valueWithPointer:*cid] forKey:[NSValue valueWithPointer:*cid]];
+            }
+          
+          if (*cid == NULL)
+            NSWarnMLog(@"error creating cursor - status: %p", GetLastError());
+        }
+    }
 }
 
 - (void) recolorcursor: (NSColor *)fg : (NSColor *)bg : (void*) cid
@@ -2413,17 +2711,37 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
 - (void) setcursor: (void*) cid
 {
+  g_cursorId = cid;
+  if (cid == NULL)
+    cid = LoadCursor(NULL, IDC_ARROW);
   SetCursor((HCURSOR)cid);
+  if (istrackingmouse() && g_cursorId)
+    setsystemcursors(g_cursorId);
+  else
+    restoresystemcursors();
 }
 
 - (void) freecursor: (void*) cid
 {
-  // This is only allowed on non-shared cursors and we have no way of knowing that.
-  //DestroyCursor((HCURSOR)cid);
+  // This is only allowed on non-shared cursors - currently limited to ones
+  // that we create upon request...
+  HCURSOR cursorId = (HCURSOR)[systemCursors objectForKey:[NSValue valueWithPointer:(HCURSOR)cid]];
+  if (cursorId == NULL)
+    {
+      NSWarnMLog(@"trying to free a cursor not created by us: %p", cid);
+}
+  else
+    {
+      // Remove the entry and destroy the cursor...
+      [systemCursors removeObjectForKey:[NSValue valueWithPointer:(HCURSOR)cid]];
+      if (GetCursor() == cid)
+        SetCursor(NULL);
+      DestroyCursor((HCURSOR)cid);
+    }
 }
 
-- (void) setParentWindow: (int)parentWin 
-          forChildWindow: (int)childWin
+- (void) setParentWindow: (NSInteger)parentWin 
+          forChildWindow: (NSInteger)childWin
 {
   //SetParent((HWND)childWin, (HWND)parentWin);
 }
@@ -2539,32 +2857,79 @@ mask_for_keystate(BYTE *keyState)
   if (keyState[VK_CAPITAL] & 128)
     eventFlags |= NSShiftKeyMask;
 
-  if (keyState[VK_MENU] & 128)
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"USE_ALTGR_FIX"])
     {
-      if([@"Alt_R" isEqualToString: firstControl] ||
-	 [@"Alt_R" isEqualToString: secondControl])
-	eventFlags |= NSControlKeyMask;
-      else if([@"Alt_R" isEqualToString: firstCommand] ||
-	      [@"Alt_R" isEqualToString: secondCommand])
-	eventFlags |= NSCommandKeyMask;
-      else
-	eventFlags |= NSAlternateKeyMask;
+      // Left ALT Key press???
+      if (keyState[VK_LMENU] & 128)
+      {
+        if([@"Alt_L" isEqualToString: firstControl] ||
+           [@"Alt_L" isEqualToString: secondControl])
+          eventFlags |= NSControlKeyMask;
+        else if([@"Alt_L" isEqualToString: firstCommand] ||
+                [@"Alt_L" isEqualToString: secondCommand])
+          eventFlags |= NSCommandKeyMask;
+        else
+          eventFlags |= NSAlternateKeyMask;
+      }
+      
+      // Right ALT Key press???
+      if (keyState[VK_RMENU] & 128)
+      {
+        if([@"Alt_R" isEqualToString: firstControl] ||
+           [@"Alt_R" isEqualToString: secondControl])
+          eventFlags |= NSControlKeyMask;
+        else if([@"Alt_R" isEqualToString: firstCommand] ||
+                [@"Alt_R" isEqualToString: secondCommand])
+          eventFlags |= NSCommandKeyMask;
+        else
+          eventFlags |= NSAlternateKeyMask;
+      }
+      
+      if ((keyState[VK_LCONTROL] & 128) && (keyState[VK_RMENU] & 128))
+      {
+        // IGNORED - ALtGr key pressed...
+      }
+      else if ((keyState[VK_LCONTROL] & 128) || (keyState[VK_LWIN] & 128) || (keyState[VK_RWIN] & 128))
+      {
+        if([@"Control_L" isEqualToString: firstAlt] ||
+           [@"Control_L" isEqualToString: secondAlt])
+          eventFlags |= NSAlternateKeyMask;
+        else if([@"Control_L" isEqualToString: firstControl] ||
+                [@"Control_L" isEqualToString: secondControl])
+          eventFlags |= NSControlKeyMask;
+        else
+          eventFlags |= NSCommandKeyMask;
+      }
     }
-
+  else
+    {
+      if (keyState[VK_MENU] & 128)
+        {
+          if([@"Alt_R" isEqualToString: firstControl] ||
+             [@"Alt_R" isEqualToString: secondControl])
+            eventFlags |= NSControlKeyMask;
+          else if([@"Alt_R" isEqualToString: firstCommand] ||
+                  [@"Alt_R" isEqualToString: secondCommand])
+            eventFlags |= NSCommandKeyMask;
+          else
+            eventFlags |= NSAlternateKeyMask;
+        }
+      
+      if ((keyState[VK_LCONTROL] & 128) || (keyState[VK_RWIN] & 128))
+        {
+          if([@"Control_L" isEqualToString: firstAlt] ||
+             [@"Control_L" isEqualToString: secondAlt])
+            eventFlags |= NSAlternateKeyMask;
+          else if([@"Control_L" isEqualToString: firstControl] ||
+                  [@"Control_L" isEqualToString: secondControl])
+            eventFlags |= NSControlKeyMask;
+          else
+            eventFlags |= NSCommandKeyMask;
+        }
+    }
+  
   if (keyState[VK_HELP] & 128)
     eventFlags |= NSHelpKeyMask;
-
-  if ((keyState[VK_LCONTROL] & 128) || (keyState[VK_RWIN] & 128))
-    {
-      if([@"Control_L" isEqualToString: firstAlt] ||
-	 [@"Control_L" isEqualToString: secondAlt])
-	eventFlags |= NSAlternateKeyMask;
-      else if([@"Control_L" isEqualToString: firstControl] ||
-	      [@"Control_L" isEqualToString: secondControl])
-	eventFlags |= NSControlKeyMask;
-      else
-	eventFlags |= NSCommandKeyMask;
-    }
   return eventFlags;
 }
 
@@ -2679,11 +3044,24 @@ process_key_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam, NSE
   
   if (eventFlags & NSShiftKeyMask)
     ukeys = [ukeys uppercaseString];
-  
+
+  if ([keys length] == 0 && ((keyState[VK_CONTROL] & 128) || (keyState[VK_LCONTROL] & 128) || (keyState[VK_RCONTROL] & 128)))
+	{
+	  // a Control key is down, which may have caused ToUnicodeEx to return no key -- try without the control key(s)
+	  keyState[VK_CONTROL] = 0;
+	  keyState[VK_LCONTROL] = 0;
+	  keyState[VK_RCONTROL] = 0;
+	  result = ToUnicodeEx(wParam, scan, keyState, unicode, 5, 0, GetKeyboardLayout(0));
+	  keys = [NSString  stringWithCharacters: unicode length: result];
+	  ukeys = keys;
+	  if (eventFlags & NSShiftKeyMask)
+	    ukeys = [ukeys lowercaseString]; // set ukeys to unshifted version iff it's a letter
+	}
+	
   // key events should go to the key window if we have one (Windows' focus window isn't always appropriate)
-  int windowNumber = [[NSApp keyWindow] windowNumber];
+  NSInteger windowNumber = [[NSApp keyWindow] windowNumber];
   if (windowNumber == 0)
-    windowNumber  = (int)hwnd;
+    windowNumber  = (NSInteger)hwnd;
 	
   event = [NSEvent keyEventWithType: eventType
 			   location: eventLocation
@@ -3028,7 +3406,7 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
 			     location: eventLocation
 			modifierFlags: eventFlags
 			    timestamp: time
-			 windowNumber: (int)hwnd
+			 windowNumber: (NSInteger)hwnd
 			      context: gcontext
 			  eventNumber: tick
 			   clickCount: clickCount
@@ -3052,6 +3430,9 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
       return (LRESULT)NULL;
     }
 
-  return [ctxt windowEventProc: hwnd : uMsg : wParam : lParam];
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  LRESULT            status = [ctxt windowEventProc: hwnd : uMsg : wParam : lParam];
+  [pool release];
+  return status;
 }
 

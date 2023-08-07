@@ -33,6 +33,14 @@
 #include "win32/WIN32Geometry.h"
 #include <GNUstepGUI/GSTheme.h>
 
+@interface NSCursor (NSCursor_w32_General)
+
++ (NSMutableArray *) stack;
++ (void) resetStack;
+
+@end
+
+
 @implementation WIN32Server (w32_General)
 
 - (void) decodeWM_CLOSEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
@@ -44,7 +52,7 @@
 		      location: eventLocation
 		      modifierFlags: 0
 		      timestamp: 0
-		      windowNumber: (int)hwnd
+		      windowNumber: (NSInteger)hwnd
 		      context: GSCurrentContext()
 		      subtype: GSAppKitWindowClose
 		      data1: 0
@@ -141,4 +149,22 @@
   // Reactivate the theme when the host system changes it's theme...
   [[GSTheme theme] activate];
 }
+
+- (void) decodeWM_SETCURSORParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
+{
+  // Are we in a cursor rectangle?
+  if ([[NSCursor stack] count] > 0)
+    {
+	  // if so, we've already taken care of setting our cursor, otherwise
+	  // if we don't mark the event as handled, we'll let Windows handle it,
+	  // e.g. to show the resizing cursors around a windows.
+	  flags._eventHandled = YES;
+	}
+}
+
+- (void) decodeWM_NCMOUSELEAVEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
+{
+  [NSCursor resetStack];
+}
+
 @end 

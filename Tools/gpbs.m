@@ -53,6 +53,7 @@ static BOOL	is_daemon = NO;		/* Currently running as daemon.	 */
 static BOOL	auto_stop = NO;		/* Stop when all connections closed. */
 
 static NSMutableArray	*connections = nil;
+static NSTimer          *timer       = nil;           /* When to shut down. */
 
 #if defined(HAVE_SYSLOG) || defined(HAVE_SLOGF)
 #  if defined(HAVE_SLOGF)
@@ -749,27 +750,32 @@ NSMutableDictionary	*pasteboards = nil;
 }
 
 - (int) declareTypes: (bycopy NSArray*)types
-	       owner: (id)owner
-	  pasteboard: (NSPasteboard*)pb
+               owner: (id)owner
+          pasteboard: (NSPasteboard*)pb
 {
   PasteboardEntry	*old = RETAIN(current);
-  id			x = [xPbClass ownerByOsPb: name];
-
+  id               x   = [xPbClass ownerByOsPb: name];
+  
   if ([owner isProxy] == YES)
     {
       Protocol		*p = @protocol(GSPasteboardCallback);
       NSConnection	*c = [owner connectionForProxy];
-
+      
       [owner setProtocolForProxy: p];
-
+      
       /* If this is on a connection we don't know about, add it to our
        * list of pasteboard connections so that we can track its removal
        * in order to auto_stop if necessary.
        */
       if ([connections indexOfObjectIdenticalTo: c] == NSNotFound)
         {
-	  [connections addObject: c];
-	}
+          [connections addObject: c];
+          if (nil != timer)
+            {
+              [timer invalidate];
+              timer = nil;
+            }
+        }
     }
   /*
    * If neither the new nor the old owner of the pasteboard is the X
@@ -780,11 +786,11 @@ NSMutableDictionary	*pasteboards = nil;
     x = nil;
   else if (x == [old owner])
     x = nil;
-
+  
   current = [PasteboardEntry newWithTypes: types
-				    owner: owner
-				   pboard: pb
-				      ref: nextCount++];
+                                    owner: owner
+                                   pboard: pb
+                                      ref: nextCount++];
   [history addObject: current];
   RELEASE(current);
   if ([history count] > histLength)
@@ -802,7 +808,7 @@ NSMutableDictionary	*pasteboards = nil;
   if (verbose)
     {
       NSLog(@"%@ declare types '%@' version %d on %@ for %@",
-	self, types, [current refNum], pb, owner);
+            self, types, [current refNum], pb, owner);
     }
   return [current refNum];
 }
@@ -974,16 +980,27 @@ NSMutableDictionary	*pasteboards = nil;
 
 @implementation PasteboardServer
 
-- (BOOL) connection: (NSConnection*)ancestor
-  shouldMakeNewConnection: (NSConnection*)newConn;
+- (BOOL) connection: (NSConnection*)ancestor shouldMakeNewConnection: (NSConnection*)newConn;
 {
-  [[NSNotificationCenter defaultCenter]
-    addObserver: self
-       selector: @selector(connectionBecameInvalid:)
-	   name: NSConnectionDidDieNotification
-	 object: newConn];
+  [[NSNotificationCenter defaultCenter] addObserver: self
+                                           selector: @selector(connectionBecameInvalid:)
+                                               name: NSConnectionDidDieNotification
+                                             object: newConn];
   [newConn setDelegate: self];
   return YES;
+}
+
+- (void) autoStop: (NSTimer*)t
+{
+  if (t == timer)
+    {
+      timer = nil;
+    }
+  if (auto_stop == YES && [connections count] == 0)
+    {
+      // There is nothing else using this process, stop...
+      exit(EXIT_SUCCESS);
+    }
 }
 
 - (id) connectionBecameInvalid: (NSNotification*)notification
@@ -1001,14 +1018,23 @@ NSMutableDictionary	*pasteboards = nil;
       PasteboardObject	*o;
 
       while ((o = [e nextObject]) != nil)
-	{
-	  [o checkConnection: connection];
-	}
+        {
+          [o checkConnection: connection];
+        }
     }
   [connections removeObjectIdenticalTo: connection];
   if (auto_stop == YES && [connections count] == 0)
     {
-      exit(EXIT_SUCCESS);
+      if (nil != timer)
+        {
+          [timer invalidate];
+        }
+      NSTimeInterval timeout = [[NSUserDefaults standardUserDefaults] floatForKey:@"GSGPBSAutostopTimeout"];
+      timer = [NSTimer scheduledTimerWithTimeInterval: ((timeout == 0) ? 15.0 : timeout)
+                                               target: self
+                                             selector: @selector(autoStop:)
+                                             userInfo: nil
+                                              repeats: NO];
     }
   return self;
 }
@@ -1044,7 +1070,7 @@ NSMutableDictionary	*pasteboards = nil;
       /*
        * Ensure that the OS pasteboard system is initialised.
        */
-#if defined(__WIN32__) || defined(__CYGWIN__)
+#if defined(_WIN32) || defined(__CYGWIN__)
       xPbClass = NSClassFromString(@"Win32PbOwner");
 #else      
       xPbClass = NSClassFromString(@"XPbOwner");
@@ -1057,7 +1083,7 @@ NSMutableDictionary	*pasteboards = nil;
       +initializePasteboard will already have printed a warning in this case.
       */
       if (xPbClass && ![xPbClass initializePasteboard])
-	xPbClass = nil;
+        xPbClass = nil;
     }
   return self;
 }
@@ -1081,9 +1107,10 @@ ihandler(int sig)
   /*
  * Prevent recursion.
  */
-if (beenHere == YES)
-  {
-    abort();
+  if (beenHere == YES)
+    {
+      NSLog(@"%s:been here - aborting...", __PRETTY_FUNCTION__);
+      abort();
     }
   beenHere = YES;
 
@@ -1092,6 +1119,7 @@ if (beenHere == YES)
    */
   if (sig == SIGTERM)
     {
+      NSLog(@"%s:SIGTERM - aborting...", __PRETTY_FUNCTION__);
       exit(EXIT_FAILURE);
     }
 
@@ -1115,11 +1143,13 @@ if (beenHere == YES)
 
   if (action == YES)
     {
+      NSLog(@"%s:action == YES - aborting...", __PRETTY_FUNCTION__);
       abort();
     }
   else
     {
       fprintf(stderr, "gpbs killed by signal %d\n", sig);
+      NSLog(@"%s:gpbs killed by signal %d\n", __PRETTY_FUNCTION__, sig);
       exit(sig);
     }
 }
@@ -1162,9 +1192,9 @@ init(int argc, char** argv, char **env)
 	  shouldFork = NO;
 	}
       else if ([a isEqualToString: @"--verbose"] == YES)
-	{
-	  verbose++;
-	}
+        {
+          verbose++;
+        }
       else if ([a hasPrefix: @"-"] == YES)
 	{
 	  count++;	// Skip user default specification
@@ -1176,6 +1206,14 @@ init(int argc, char** argv, char **env)
 	  printf("--help	for help\n");
 	  exit(EXIT_SUCCESS);
 	}
+    }
+
+  // Override verbosity if defaults key set...
+  NSNumber *verboseLevel = [[NSUserDefaults standardUserDefaults] objectForKey:@"GSGPBSLoggingVerboseLevel"];
+  if (verboseLevel)
+    {
+      verbose = [verboseLevel integerValue];
+      NSLog(@"%s:overriding verbose level to %ld", __PRETTY_FUNCTION__, (long)verbose);
     }
 
   for (count = 0; count < NSIG; count++)
@@ -1208,16 +1246,126 @@ init(int argc, char** argv, char **env)
       t = [NSTask new];
       NS_DURING
 	{
+          NSFileHandle   *outHandle = [NSFileHandle fileHandleWithNullDevice];
+          NSFileHandle   *errHandle = [NSFileHandle fileHandleWithNullDevice];
+          NSUserDefaults *defaults  = [NSUserDefaults standardUserDefaults];
+          
 	  [args removeObjectAtIndex: 0];
 	  [args addObject: @"--daemon"];
 	  [t setLaunchPath: [[NSBundle mainBundle] executablePath]];
 	  [t setArguments: args];
 	  [t setEnvironment: [pInfo environment]];
 	  null = [NSFileHandle fileHandleWithNullDevice];
-	  [t setStandardInput: null];
-	  [t setStandardOutput: null];
-	  [t setStandardError: null];
+
+          // Default to stdin...
+          [t setStandardInput: null];
+
+          // Check whether we should configure for a log file for
+          // stdout/stderr...
+          if ([[NSUserDefaults standardUserDefaults] boolForKey:@"GSGPBSLoggingEnabled"])
+            {
+              NSFileManager *filemgr     = [NSFileManager defaultManager];
+              NSArray       *folderPaths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
+              NSString      *filepath    = [[folderPaths firstObject] stringByAppendingPathComponent:@"gpbs"];
+              BOOL           isDir       = NO;
+              NSError       *error       = nil;
+              NSLog(@"%s:log path: %@", __PRETTY_FUNCTION__, filepath);
+              
+              // Create directory if it does not exists...
+              if ([filemgr fileExistsAtPath:filepath isDirectory:&isDir] == NO)
+              {
+                if ([filemgr createDirectoryAtPath:filepath withIntermediateDirectories:YES attributes:nil error:&error] == NO)
+                {
+                  NSLog(@"%s:error creating path: %@ error: %@", __PRETTY_FUNCTION__, filepath, error);
+                }
+              }
+              
+#if 0 // TODO...
+              // Purge logfile to 3 max each...
+              NSArray *properties = [NSArray arrayWithObjects:@"NSURLCreationDateKey", nil];
+              NSArray *logfiles   = [filemgr contentsOfDirectoryAtURL:[NSURL fileURLWithPath:filepath]
+                                           includingPropertiesForKeys:properties
+                                                              options:0
+                                                                error:&error];
+              
+              if (error)
+                {
+                  NSLog(@"%s:directory contents load error: %@", __PRETTY_FUNCTION__, error);
+                }
+              else
+                {
+                  NSPredicate *predicateErr = [NSPredicate predicateWithFormat:@"path contains[c] 'err.log'"];
+                  NSPredicate *predicateOut = [NSPredicate predicateWithFormat:@"path contains[c] 'out.log'"];
+                  NSArray     *errfiles     = [logfiles filteredArrayUsingPredicate:predicateErr];
+                  NSArray     *outfiles     = [logfiles filteredArrayUsingPredicate:predicateOut];
+                  
+                  // Purge standard error log files...
+                  if (errfiles && ([errfiles count] > 1))
+                    {
+                      NSLog(@"%s:purging error log files: %@", __PRETTY_FUNCTION__, errfiles);
+                    }
+                  
+                  // Purge standard out log files...
+                  if (outfiles && ([outfiles count] > 1))
+                    {
+                      NSLog(@"%s:purging output log files: %@", __PRETTY_FUNCTION__, outfiles);
+                    }
+                }
+#endif
+              
+              if ([filemgr fileExistsAtPath:filepath isDirectory:&isDir] && isDir)
+                {
+                  NSString *filename = [defaults objectForKey:@"GSGPBSLoggingFilename"];
+                  
+                  // Default filename if user default is not set...
+                  if (filename == nil)
+                    {
+                      filename = @"gpbs";
+                    }
+                  
+                  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"GSGPBSLoggingAttachPid"] == NO)
+                    filename = [filename stringByAppendingFormat:@"_%ld",(long)getpid()];
+
+                  NSString *outfile  = [filename stringByAppendingFormat:@"_out.log"];
+                  NSString *outpath  = [filepath stringByAppendingPathComponent:outfile];
+                  NSString *errfile  = [filename stringByAppendingFormat:@"_err.log"];
+                  NSString *errpath  = [filepath stringByAppendingPathComponent:errfile];
+
+                  if ([filemgr fileExistsAtPath:outpath] == NO)
+                    if ([filemgr createFileAtPath:outpath contents:nil attributes:nil] == NO)
+                      NSLog(@"%s:error creating file at path: %@", __PRETTY_FUNCTION__, outpath);
+                  if ([filemgr fileExistsAtPath:errpath] == NO)
+                    if ([filemgr createFileAtPath:errpath contents:nil attributes:nil] == NO)
+                      NSLog(@"%s:error creating file at path: %@", __PRETTY_FUNCTION__, errpath);
+                  
+                  // Create the file handles...
+                  if (([filemgr fileExistsAtPath:outpath]) &&
+                      ([filemgr fileExistsAtPath:errpath]))
+                    {
+                      outHandle = [NSFileHandle fileHandleForWritingAtPath:[filepath stringByAppendingPathComponent:outfile]];
+                      errHandle = [NSFileHandle fileHandleForWritingAtPath:[filepath stringByAppendingPathComponent:errfile]];
+                      
+                      // Create a message with initial start date/time...
+                      NSDate   *date       = [NSDate date];
+                      NSString *dateString = [date descriptionWithCalendarFormat:nil timeZone:nil locale:nil];
+                      NSString *message    = [NSString stringWithFormat:@"GPBS Startup at %@\n", dateString];
+                      NSData   *msgdata    = [NSData dataWithBytes:[message cStringUsingEncoding:NSUTF8StringEncoding] length:[message length]];
+
+                      // Write the initial message into the file...
+                      [outHandle writeData:msgdata];
+                      [errHandle writeData:msgdata];
+                    }
+                }
+            }
+          
+          // Set standard output/error...
+	  [t setStandardOutput: outHandle];
+	  [t setStandardError: errHandle];
+          
+          // Launch...
 	  [t launch];
+          
+          // and release our hold...
 	  DESTROY(t);
 	}
       NS_HANDLER
@@ -1264,11 +1412,10 @@ main(int argc, char** argv, char **env)
   conn = [NSConnection defaultConnection];
   [conn setRootObject: server];
   [conn setDelegate: server];
-  [[NSNotificationCenter defaultCenter]
-    addObserver: server
-       selector: @selector(connectionBecameInvalid:)
-	   name: NSConnectionDidDieNotification
-	 object: (id)conn];
+  [[NSNotificationCenter defaultCenter] addObserver: server
+                                           selector: @selector(connectionBecameInvalid:)
+                                               name: NSConnectionDidDieNotification
+                                             object: (id)conn];
 
   connections = [NSMutableArray new];
 
@@ -1323,7 +1470,7 @@ main(int argc, char** argv, char **env)
     {
       NSLog(@"GNU pasteboard server startup.");
     }
-
+  
   if ([[NSUserDefaults standardUserDefaults]
 	  stringForKey: @"GSStartupNotification"])
     {
@@ -1334,6 +1481,7 @@ main(int argc, char** argv, char **env)
     }
 
   [[NSRunLoop currentRunLoop] run];
+  NSLog(@"%s:run loop completed - exiting...", __PRETTY_FUNCTION__);
   RELEASE(server);
   RELEASE(pool);
   exit(EXIT_SUCCESS);

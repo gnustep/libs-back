@@ -200,8 +200,8 @@
             {
               if (GetClassName(hi, buf, 32) == 18
                   && strncmp(buf, "GNUstepWindowClass", 18) == 0
-                  && GetWindowLongPtr(hi, OFF_ORDERED) == 1
-                  && (hl = GetWindowLongPtr(hi, OFF_LEVEL))
+                  && GetWindowLong(hi, OFF_ORDERED) == 1
+                  && (hl = GetWindowLong(hi, OFF_LEVEL))
                   > NSDesktopWindowLevel)
                 {
                   break;

@@ -482,7 +482,7 @@ BOOL AtomPresentAndPointsToItself(Display *dpy, Atom atom, Atom type)
   return NSMapGet(windowmaps, (void *)xWindow);
 }
 
-+ (gswindow_device_t *) _windowWithTag: (int)windowNumber
++ (gswindow_device_t *) _windowWithTag: (NSInteger)windowNumber
 {
   return WINDOW_WITH_TAG(windowNumber);
 }
@@ -1078,10 +1078,17 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
                   parent = new_parent;
                   repx = wattr.x;
                   repy = wattr.y;
+<<<<<<< HEAD
+                  NSDebugLLog(@"Offset", 
+                              @"QueryTree window is %lu (root %lu cwin root %lu)", 
+                        parent, root, window->root);
+                  if (!XQueryTree(dpy, parent, &root, &new_parent, 
+=======
                   NSDebugLLog(@"Offset",
                               @"QueryTree window is %lu (root %lu cwin root %lu)",
                               parent, root, window->root);
                   if (!XQueryTree(dpy, parent, &root, &new_parent,
+>>>>>>> upstream/master
                                   &children, &nchildren))
                     {
                       new_parent = None;
@@ -1703,7 +1710,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   while (NSNextMapEnumeratorPair(&enumerator, &key, (void**)&d) == YES)
     {
       if (d->display == dpy && d->ident != d->root)
-	[self termwindow: (int)(intptr_t)key];
+	[self termwindow: (NSInteger)(intptr_t)key];
     }
   NSFreeMapTable(mapcopy);
 }
@@ -1851,7 +1858,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     }
 }
 
-- (int) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style
+- (NSInteger) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style
 	      : (int)screen
 {
   gswindow_device_t	*window;
@@ -2056,7 +2063,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   return window->number;
 }
 
-- (int) nativeWindow: (void *)winref : (NSRect*)frame : (NSBackingStoreType*)type
+- (NSInteger) nativeWindow: (void *)winref : (NSRect*)frame : (NSBackingStoreType*)type
 		    : (unsigned int*)style : (int*)screen
 {
   gswindow_device_t	*window;
@@ -2173,7 +2180,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   return window->number;
 }
 
-- (void) termwindow: (int)win
+- (void) termwindow: (NSInteger)win
 {
   gswindow_device_t *window;
 
@@ -2187,7 +2194,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       return;
     }
 
-  NSDebugLLog(@"XGTrace", @"DPStermwindow: %d", win);
+  NSDebugLLog(@"XGTrace", @"DPStermwindow: %ld", (long)win);
   if (window->ic)
     {
       [inputServer ximCloseIC: window->ic];
@@ -2331,7 +2338,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     }
 }
 
-- (void) stylewindow: (unsigned int)style : (int) win
+- (void) stylewindow: (unsigned int)style : (NSInteger) win
 {
   gswindow_device_t	*window;
 
@@ -2341,7 +2348,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   if (!window)
     return;
 
-  NSDebugLLog(@"XGTrace", @"DPSstylewindow: %d : %d", style, win);
+  NSDebugLLog(@"XGTrace", @"DPSstylewindow: %d : %ld", style, (long)win);
   if (window->win_attrs.window_style != style
     || (window->win_attrs.flags & GSWindowStyleAttr) == 0)
     {
@@ -2374,7 +2381,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     }
 }
 
-- (void) setbackgroundcolor: (NSColor *)color : (int)win
+- (void) setbackgroundcolor: (NSColor *)color : (NSInteger)win
 {
   XColor xf;
   gswindow_device_t *window;
@@ -2394,7 +2401,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   XSetWindowBackground(dpy, window->ident, window->xwn_attrs.background_pixel);
 }
 
-- (void) windowbacking: (NSBackingStoreType)type : (int) win
+- (void) windowbacking: (NSBackingStoreType)type : (NSInteger) win
 {
   gswindow_device_t *window;
 
@@ -2421,7 +2428,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     }
 }
 
-- (void) titlewindow: (NSString *)window_title : (int) win
+- (void) titlewindow: (NSString *)window_title : (NSInteger) win
 {
   gswindow_device_t *window;
 
@@ -2429,7 +2436,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   if (!window)
     return;
 
-  NSDebugLLog(@"XGTrace", @"DPStitlewindow: %@ : %d", window_title, win);
+  NSDebugLLog(@"XGTrace", @"DPStitlewindow: %@ : %ld", window_title, (long)win);
   if (window_title && window->ident)
     {
       XTextProperty windowName;
@@ -2472,7 +2479,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     }
 }
 
-- (void) docedited: (int)edited : (int) win
+- (void) docedited: (int)edited : (NSInteger) win
 {
   gswindow_device_t *window;
 
@@ -2480,7 +2487,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   if (!window)
     return;
 
-  NSDebugLLog(@"XGTrace", @"DPSdocedited: %d : %d", edited, win);
+  NSDebugLLog(@"XGTrace", @"DPSdocedited: %d : %ld", edited, (long)win);
   window->win_attrs.flags |= GSExtraFlagsAttr;
   if (edited)
     {
@@ -2518,7 +2525,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   return generic.flags.appOwnsMiniwindow;
 }
 
-- (void) miniwindow: (int) win
+- (void) miniwindow: (NSInteger) win
 {
   gswindow_device_t	*window;
   XEvent e;
@@ -2528,7 +2535,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     {
       return;
     }
-  NSDebugLLog(@"XGTrace", @"DPSminiwindow: %d ", win);
+  NSDebugLLog(@"XGTrace", @"DPSminiwindow: %ld ", (long)win);
   /*
    * If we haven't already done so - set the icon window hint for this
    * window so that the GNUstep miniwindow is displayed (if supported).
@@ -2541,7 +2548,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       nswin = GSWindowWithNumber(window->number);
       if (nswin != nil)
 	{
-	  int			iNum = [[nswin counterpart] windowNumber];
+	  NSInteger			iNum = [[nswin counterpart] windowNumber];
 	  gswindow_device_t	*iconw = WINDOW_WITH_TAG(iNum);
 
 	  if (iconw != 0)
@@ -2602,17 +2609,17 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
    Make sure we have the most up-to-date window information and then
    make sure the context has our new information
 */
-- (void) setWindowdevice: (int)win forContext: (NSGraphicsContext *)ctxt
+- (void) setWindowdevice: (NSInteger)win forContext: (NSGraphicsContext *)ctxt
 {
   unsigned width, height;
   gswindow_device_t *window;
   float	t, b, l, r;
 
-  NSDebugLLog(@"XGTrace", @"DPSwindowdevice: %d ", win);
+  NSDebugLLog(@"XGTrace", @"DPSwindowdevice: %ld ", (long)win);
   window = WINDOW_WITH_TAG(win);
   if (!window)
     {
-      NSLog(@"Invalidparam: Invalid window number %d", win);
+      NSLog(@"Invalidparam: Invalid window number %ld", (long)win);
       return;
     }
 
@@ -2848,7 +2855,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   return 1;
 }
 
-- (void) orderwindow: (int)op : (int)otherWin : (int)winNum
+- (void) orderwindow: (int)op : (NSInteger)otherWin : (NSInteger)winNum
 {
   gswindow_device_t	*window;
   gswindow_device_t	*other;
@@ -2857,7 +2864,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   window = WINDOW_WITH_TAG(winNum);
   if (winNum == 0 || window == NULL)
     {
-      NSLog(@"Invalidparam: Ordering invalid window %d", winNum);
+      NSLog(@"Invalidparam: Ordering invalid window %ld", (long)winNum);
       return;
     }
 
@@ -2949,7 +2956,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 	}
     }
 
-  NSDebugLLog(@"XGTrace", @"DPSorderwindow: %d : %d : %d",op,otherWin,winNum);
+  NSDebugLLog(@"XGTrace", @"DPSorderwindow: %d : %ld : %ld",op,(long)otherWin,(long)winNum);
   level = window->win_attrs.window_level;
   if (otherWin > 0)
     {
@@ -3133,7 +3140,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 /* Restrict the displayed part of the window to the given image.
    This only yields usefull results if the window is borderless and
    displays the image itself */
-- (void) restrictWindow: (int)win toImage: (NSImage*)image
+- (void) restrictWindow: (NSInteger)win toImage: (NSImage*)image
 {
   gswindow_device_t	*window;
   Pixmap pixmap = 0;
@@ -3141,7 +3148,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   window = WINDOW_WITH_TAG(win);
   if (win == 0 || window == NULL)
     {
-      NSLog(@"Invalidparam: Restricting invalid window %d", win);
+      NSLog(@"Invalidparam: Restricting invalid window %ld", (long)win);
       return;
     }
 
@@ -3176,14 +3183,14 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 
 /* This method is a fast implementation of move that only works
    correctly for borderless windows. Use with caution. */
-- (void) movewindow: (NSPoint)loc : (int)win
+- (void) movewindow: (NSPoint)loc : (NSInteger)win
 {
   gswindow_device_t	*window;
 
   window = WINDOW_WITH_TAG(win);
   if (win == 0 || window == NULL)
     {
-      NSLog(@"Invalidparam: Moving invalid window %d", win);
+      NSLog(@"Invalidparam: Moving invalid window %ld", (long)win);
       return;
     }
 
@@ -3194,7 +3201,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   setNormalHints(dpy, window);
 }
 
-- (void) placewindow: (NSRect)rect : (int)win
+- (void) placewindow: (NSRect)rect : (NSInteger)win
 {
   NSEvent *e;
   NSRect xFrame;
@@ -3207,7 +3214,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   window = WINDOW_WITH_TAG(win);
   if (win == 0 || window == NULL)
     {
-      NSLog(@"Invalidparam: Placing invalid window %d", win);
+      NSLog(@"Invalidparam: Placing invalid window %ld", (long)win);
       return;
     }
 
@@ -3310,7 +3317,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   return NO;
 }
 
-- (NSRect) windowbounds: (int)win
+- (NSRect) windowbounds: (NSInteger)win
 {
   gswindow_device_t *window;
   int screenHeight;
@@ -3322,7 +3329,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   if (!window)
     return NSZeroRect;
 
-  NSDebugLLog(@"XGTrace", @"DPScurrentwindowbounds: %d", win);
+  NSDebugLLog(@"XGTrace", @"DPScurrentwindowbounds: %ld", (long)win);
 
   // get the current xframe of the window
   XGetGeometry(dpy, window->ident, &window->root,
@@ -3335,7 +3342,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   return rect;
 }
 
-- (void) setwindowlevel: (int)level : (int)win
+- (void) setwindowlevel: (int)level : (NSInteger)win
 {
   gswindow_device_t *window;
 
@@ -3343,7 +3350,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   if (!window)
     return;
 
-  NSDebugLLog(@"XGTrace", @"DPSsetwindowlevel: %d : %d", level, win);
+  NSDebugLLog(@"XGTrace", @"DPSsetwindowlevel: %d : %ld", level, (long)win);
   if ((int)(window->win_attrs.window_level) != level
     || (window->win_attrs.flags & GSWindowLevelAttr) == 0)
     {
@@ -3506,7 +3513,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
     }
 }
 
-- (int) windowlevel: (int)win
+- (int) windowlevel: (NSInteger)win
 {
   gswindow_device_t *window;
 
@@ -3554,7 +3561,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   return ret;
 }
 
-- (int) windowdepth: (int)win
+- (int) windowdepth: (NSInteger)win
 {
   gswindow_device_t *window;
 
@@ -3565,7 +3572,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   return window->depth;
 }
 
-- (void) setmaxsize: (NSSize)size : (int)win
+- (void) setmaxsize: (NSSize)size : (NSInteger)win
 {
   gswindow_device_t	*window;
   NSRect		r;
@@ -3583,7 +3590,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   setNormalHints(dpy, window);
 }
 
-- (void) setminsize: (NSSize)size : (int)win
+- (void) setminsize: (NSSize)size : (NSInteger)win
 {
   gswindow_device_t	*window;
   NSRect		r;
@@ -3601,7 +3608,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   setNormalHints(dpy, window);
 }
 
-- (void) setresizeincrements: (NSSize)size : (int)win
+- (void) setresizeincrements: (NSSize)size : (NSInteger)win
 {
   gswindow_device_t *window;
 
@@ -3617,7 +3624,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 }
 
 // process expose event
-- (void) _addExposedRectangle: (XRectangle)rectangle : (int)win : (BOOL) ignoreBacking
+- (void) _addExposedRectangle: (XRectangle)rectangle : (NSInteger)win : (BOOL) ignoreBacking
 {
   gswindow_device_t *window;
 
@@ -3679,7 +3686,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
     }
 }
 
-- (void) flushwindowrect: (NSRect)rect : (int)win
+- (void) flushwindowrect: (NSRect)rect : (NSInteger)win
 {
   int xi, yi, width, height;
   XGCValues values;
@@ -3690,7 +3697,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   window = WINDOW_WITH_TAG(win);
   if (win == 0 || window == NULL)
     {
-      NSLog(@"Invalidparam: Placing invalid window %d", win);
+      NSLog(@"Invalidparam: Placing invalid window %ld", (long)win);
       return;
     }
 
@@ -3754,7 +3761,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 }
 
 // handle X expose events
-- (void) _processExposedRectangles: (int)win
+- (void) _processExposedRectangles: (NSInteger)win
 {
   int n;
   gswindow_device_t *window;
@@ -3801,7 +3808,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   XSetClipMask (dpy, window->gc, None);
 }
 
-- (BOOL) capturemouse: (int)win
+- (BOOL) capturemouse: (NSInteger)win
 {
   int ret;
   gswindow_device_t *window;
@@ -3815,11 +3822,11 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 		     GrabModeAsync, GrabModeAsync, None, None, [self lastTime]);
 
   if (ret != GrabSuccess)
-    NSDebugLLog(@"XGTrace", @"Failed to grab pointer %d\n", win);
+    NSDebugLLog(@"XGTrace", @"Failed to grab pointer %ld\n", (long)win);
   else
     {
       grab_window = window;
-      NSDebugLLog(@"XGTrace", @"Grabbed pointer %d\n", win);
+      NSDebugLLog(@"XGTrace", @"Grabbed pointer %ld\n", (long)win);
     }
   return (ret == GrabSuccess) ? YES : NO;
 }
@@ -3844,17 +3851,17 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
                0, 0, 0, 0, destX, destY);
 }
 
-- (void) setinputfocus: (int)win
+- (void) setinputfocus: (NSInteger)win
 {
   gswindow_device_t *window = WINDOW_WITH_TAG(win);
 
   if (win == 0 || window == 0)
     {
-      NSDebugLLog(@"Focus", @"Setting focus to unknown win %d", win);
+      NSDebugLLog(@"Focus", @"Setting focus to unknown win %ld", (long)win);
       return;
     }
 
-  NSDebugLLog(@"XGTrace", @"DPSsetinputfocus: %d", win);
+  NSDebugLLog(@"XGTrace", @"DPSsetinputfocus: %ld", (long)win);
   /*
    * If we have an outstanding request to set focus to this window,
    * we don't want to do it again.
@@ -3885,12 +3892,12 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
  * Instruct window manager that the specified window is 'key', 'main', or
  * just a normal window.
  */
-- (void) setinputstate: (int)st : (int)win
+- (void) setinputstate: (int)st : (NSInteger)win
 {
   if (!handlesWindowDecorations)
     return;
 
-  NSDebugLLog(@"XGTrace", @"DPSsetinputstate: %d : %d", st, win);
+  NSDebugLLog(@"XGTrace", @"DPSsetinputstate: %d : %ld", st, (long)win);
   if ((generic.wm & XGWM_WINDOWMAKER) != 0)
     {
       gswindow_device_t *window = WINDOW_WITH_TAG(win);
@@ -3943,7 +3950,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 
   if (win == 0 || window == 0)
     {
-      NSDebugLLog(@"XGTrace", @"Setting alpha to unknown win %d", win);
+      NSDebugLLog(@"XGTrace", @"Setting alpha to unknown win %ld", (long)win);
       return;
     }
 
@@ -3973,7 +3980,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
     }
 }
 
-- (float) getAlpha: (int)win
+- (float) getAlpha: (NSInteger)win
 {
   gswindow_device_t *window = WINDOW_WITH_TAG(win);
   int c;
@@ -3982,7 +3989,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 
   if (win == 0 || window == 0)
     {
-      NSDebugLLog(@"XGTrace", @"Setting alpha to unknown win %d", win);
+      NSDebugLLog(@"XGTrace", @"Setting alpha to unknown win %ld", (long)win);
       return alpha;
     }
 
@@ -4005,7 +4012,7 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   return dpy;
 }
 
-- (void *) windowDevice: (int)win
+- (void *) windowDevice: (NSInteger)win
 {
   Window ptrloc;
   gswindow_device_t *window;
@@ -5033,7 +5040,6 @@ _screenSize(Display *dpy, int screen)
     {
       region = None;
     }
-
 
   XFixesSetWindowShapeRegion(dpy,
                              window->ident,

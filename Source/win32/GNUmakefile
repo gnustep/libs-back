@@ -33,6 +33,15 @@ include ../../config.make
 # The library to be compiled, as a library or as a bundle
 SUBPROJECT_NAME=win32
 
+# We NEED the base version so MSUserNotifications can compile correctly
+# We'll omit it if for some reason we couldn't get the Version file
+ifdef GNUSTEP_BASE_MAJOR_VERSION
+  ifdef GNUSTEP_BASE_MINOR_VERSION
+    #$(info building MSUserNotifications bundle...)
+    SUBPROJECTS = MSUserNotifications
+  endif
+endif
+
 win32_LOCALIZED_RESOURCE_FILES = \
 
 # The C source files to be compiled
@@ -50,8 +59,12 @@ w32_windowdisplay.m \
 w32_GLformat.m \
 w32_GLcontext.m \
 
+# Include gpbs/win32pbs in backend bundle for direct pasteboard server
+win32_OBJC_FILES += ../../Tools/win32pbs.m ../../Tools/gpbs.m
+
 -include GNUmakefile.preamble
 
 include $(GNUSTEP_MAKEFILES)/subproject.make
+include $(GNUSTEP_MAKEFILES)/aggregate.make
 
 -include GNUmakefile.postamble

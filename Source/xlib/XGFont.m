@@ -241,7 +241,7 @@ static BOOL XGInitAtoms(Display *dpy)
 
 - (CGFloat) widthOf: (const char*) s length: (int) len
 {
-  return XTextWidth(font_info, s, len);
+  return (CGFloat)XTextWidth(font_info, s, len);
 }
 
 - (CGFloat) widthOfGlyphs: (const NSGlyph *) glyphs length: (int) len
@@ -254,7 +254,7 @@ static BOOL XGInitAtoms(Display *dpy)
       buf[i] = glyphs[i];
     }
 
-  return XTextWidth(font_info, buf, len);
+  return (CGFloat)XTextWidth(font_info, buf, len);
 }
 
 - (void) setActiveFor: (Display*) xdpy gc: (GC) xgcntxt

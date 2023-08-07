@@ -28,7 +28,9 @@
 */
 
 /* Access Windows 2000 (and later) API.  Required for HWND_MESSAGE.  */
+#if !defined(WINVER)
 #define WINVER 0x500
+#endif
 
 #include <Foundation/Foundation.h>
 #include <Foundation/NSUserDefaults.h>
@@ -58,8 +60,7 @@
 
 static Win32PbOwner *wpb = nil;
 static HWND hwndNextViewer = NULL;
-LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
-                             WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK MainWndPbsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
 @implementation Win32PbOwner
@@ -98,7 +99,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   wc.cbSize = sizeof(wc);          
   //wc.style = CS_OWNDC;
   wc.style = CS_HREDRAW | CS_VREDRAW; 
-  wc.lpfnWndProc = (WNDPROC) MainWndProc; 
+  wc.lpfnWndProc = (WNDPROC) MainWndPbsProc;
   wc.cbClsExtra = 0; 
   wc.cbWndExtra = 0; 
   wc.hInstance = _hinstance; 
@@ -161,7 +162,18 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
   NSString *s;
   unsigned int len;
 
-  s = [_pb stringForType: NSStringPboardType];
+  NS_DURING
+    {
+      s = [_pb stringForType: NSStringPboardType];
+    }
+  NS_HANDLER
+    {
+      // Don't allow exceptions to propagate up
+      NSWarnMLog(@"exception: %@", localException);
+      return;
+    }
+  NS_ENDHANDLER
+  
   if (s == nil)
     {
       return;
@@ -201,7 +213,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
  */
 - (void) grapClipboard
 {
-  if (!OpenClipboard(_hwnd)) 
+  if (!OpenClipboard(_hwnd))
      {
        NSLog(@"Failed to get the Win32 clipboard. %d", GetLastError());
        return; 
@@ -349,17 +361,23 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
                   watcher: (id<RunLoopEvents>)self
                   forMode: mode];
 #else 
+  // Disable runloop watching if compiling for in-app standalone use...
+#if defined(IN_APP_PASTEBOARD_SERVER)
+#warning disabling runloop watcher for gpbs
+#else
+#warning enabling runloop watcher for gpbs
   [currentRunLoop addEvent: (void*)0
-                  type: ET_WINMSG
-                  watcher: (id<RunLoopEvents>)self
-                  forMode: mode];
+                      type: ET_WINMSG
+                   watcher: (id<RunLoopEvents>)self
+                   forMode: mode];
+
+#endif
 #endif
 }
 
 @end
 
-LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg, 
-                             WPARAM wParam, LPARAM lParam) 
+LRESULT CALLBACK MainWndPbsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 { 
   switch (uMsg) 
     { 

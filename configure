@@ -731,14 +731,14 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 with_tiff_library
+enable_server
+enable_graphics
 with_x
 with_freetype
 enable_glx
 enable_xim
 enable_wgl
 enable_glitz
-enable_server
-enable_graphics
 with_name
 '
       ac_precious_vars='build_alias
@@ -1409,12 +1409,13 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-server=SRV     Build server type: x11, xheadless, win32
+  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal
   --disable-glx           Disable GLX support
   --disable-xim           Disable XIM support
   --disable-wgl           Disable WGL support
   --enable-glitz          Enable Glitz support
   --enable-server=SRV     Build server type: x11, win32, wayland
-  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -3751,6 +3752,37 @@ if test -n "$with_tiff_library"; then
 fi
 
 #--------------------------------------------------------------------
+# Which projects should we build?
+#--------------------------------------------------------------------
+BUILD_SERVER=x11
+BUILD_GRAPHICS=cairo
+case $target_os in
+  *mingw32* | *mingw64* ) BUILD_SERVER=win32
+                          BUILD_GRAPHICS=winlib;;
+esac
+
+# Check whether --enable-server was given.
+if test "${enable_server+set}" = set; then :
+  enableval=$enable_server;
+else
+  enable_server=$BUILD_SERVER
+fi
+
+# Check whether --enable-graphics was given.
+if test "${enable_graphics+set}" = set; then :
+  enableval=$enable_graphics;
+else
+  enable_graphics="$BUILD_GRAPHICS"
+fi
+
+
+BUILD_SERVER=$enable_server
+BUILD_GRAPHICS="$enable_graphics"
+if test "x$BUILD_SERVER" = xxheadless; then
+  BUILD_GRAPHICS=headlesslib
+fi
+
+#--------------------------------------------------------------------
 # Find for X windows
 #--------------------------------------------------------------------
 set_x_paths=yes
@@ -4438,6 +4470,9 @@ fi
 fi
 
 if test "x$no_x" = xyes; then
+  set_x_paths=no
+fi
+if test "x$BUILD_SERVER" = xxheadless; then
   set_x_paths=no
 fi
 
@@ -7128,15 +7163,6 @@ WITH_WRASTER=no
 # Revert to previous flags (removing added GNUstep flags)
 CPPFLAGS=${GRAPHIC_CFLAGS}
 LDFLAGS=${GRAPHIC_LFLAGS}
-#--------------------------------------------------------------------
-# Which projects should we build?
-#--------------------------------------------------------------------
-BUILD_SERVER=x11
-BUILD_GRAPHICS=cairo
-case $target_os in
-  *mingw32* ) BUILD_SERVER=win32
-              BUILD_GRAPHICS=winlib;;
-esac
 
 # Check whether --enable-server was given.
 if test "${enable_server+set}" = set; then :
@@ -7382,6 +7408,18 @@ fi
   fi
 fi
 
+if test x"$BUILD_GRAPHICS" = "xheadlesslib"; then
+  if test $BUILD_SERVER != xheadless ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Invalid build server for headless lib: $BUILD_SERVER" >&5
+$as_echo "$as_me: WARNING: Invalid build server for headless lib: $BUILD_SERVER" >&2;}
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking headless lib" >&5
+$as_echo_n "checking headless lib... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: headlesslib" >&5
+$as_echo "headlesslib" >&6; }
+  fi
+fi
+
 if test x"$BUILD_GRAPHICS" = "xxdps"; then
   CPPFLAGS="-I$x_includes/X11 $CPPFLAGS"
   LIBS="-ldpstk -ldps -lpsres -lXt $X_PRE_LIBS $LIBS"
@@ -7413,7 +7451,9 @@ $as_echo "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
     CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xxlib"; then
- LIBS="$FREETYPE_LIBS $LIBS"
+ : # Nothing to do
+elif test x"$BUILD_GRAPHICS" = "xheadlesslib"; then
+ : # Nothing to do
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
  : # Nothing to do
 elif test x"$BUILD_GRAPHICS" = "xopal"; then
@@ -7440,7 +7480,7 @@ $as_echo "$as_me: WARNING: can't find fontconfig, required for graphics=opal!" >
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: Switching to $BUILD_GRAPHICS" >&5
 $as_echo "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
-  fi
+ fi
 else
   as_fn_error $? "Invalid graphics backend $BUILD_GRAPHICS" "$LINENO" 5
 fi

@@ -323,6 +323,9 @@ betterStyle(XIMStyle a, XIMStyle b, XIMStyle xim_requested_style)
   return 1;
 }
 
+  return 1;
+}
+
 - (void) ximClose
 {
   int i;

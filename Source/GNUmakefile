@@ -55,6 +55,8 @@ libgnustep-$(BACKEND_FULL)_LOCALIZED_RESOURCE_FILES=nfontFaceNames.strings
 
 libgnustep-$(BACKEND_FULL)_LANGUAGES=English Swedish
 
+ADDITIONAL_LDFLAGS+=-v
+
 -include GNUmakefile.preamble
 
 ifeq ($(BACKEND_BUNDLE),)
