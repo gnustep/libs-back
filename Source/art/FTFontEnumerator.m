@@ -245,8 +245,7 @@ static void add_face(NSString *family, int family_weight,
       return;
     }
 
-  fi->displayName = [[family stringByAppendingString: @" "]
-			     stringByAppendingString: faceName];
+  fi->displayName = [[NSString stringWithFormat: @"%@ %@", family, faceName] retain];
 
 
   weight = family_weight;
@@ -445,7 +444,7 @@ static void load_font_configuration(void)
       [families_pending removeAllObjects];
     }
 
-  NSDebugLLog(@"ftfont", @"got %i fonts in %i families",
+  NSDebugLLog(@"ftfont", @"got %lu fonts in %lu families",
     [fcfg_allFontNames count], [fcfg_allFontFamilies count]);
 
   if (![fcfg_allFontNames count])

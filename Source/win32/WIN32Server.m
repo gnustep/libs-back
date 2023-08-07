@@ -53,6 +53,7 @@
 #include <AppKit/NSTextField.h>
 #include <AppKit/DPSOperators.h>
 #include <GNUstepGUI/GSTheme.h>
+#include <GNUstepGUI/GSTrackingRect.h>
 
 #include "win32/WIN32Server.h"
 #include "win32/WIN32Geometry.h"
@@ -65,6 +66,11 @@
 #endif
 
 #include <math.h>
+
+// To update the cursor..
+static BOOL update_cursor = NO;
+static BOOL should_handle_cursor = NO;
+static NSCursor *current_cursor = nil;
 
 
 // Forward declarations...
@@ -85,280 +91,22 @@ static unsigned int mask_for_keystate(BYTE *keyState);
 
 @end
 
-
-@interface NSBitmapImageRep (GSPrivate)
-- (NSBitmapImageRep *) _convertToFormatBitsPerSample: (NSInteger)bps
-                                     samplesPerPixel: (NSInteger)spp
-                                            hasAlpha: (BOOL)alpha
-                                            isPlanar: (BOOL)isPlanar
-                                      colorSpaceName: (NSString*)colorSpaceName
-                                        bitmapFormat: (NSBitmapFormat)bitmapFormat 
-                                         bytesPerRow: (NSInteger)rowBytes
-                                        bitsPerPixel: (NSInteger)pixelBits;
-@end
-
-
-// Support for handling global mouse capture/release
-static HCURSOR  g_cursorId          = NULL;
-static HCURSOR  g_arrowCursorId     = NULL;
-static HCURSOR  g_ibeamCursorId     = NULL;
-static HCURSOR  g_sizeweCursorId    = NULL;
-static HCURSOR  g_sizensCursorId    = NULL;
-static HCURSOR  g_sizeneswCursorId  = NULL;
-static HCURSOR  g_sizenwseCursorId  = NULL;
-
-static HANDLE   g_handleDLL         = NULL;
-static HWND     g_hwnd_mouse        = NULL;
-static HHOOK    g_hhook_mouse       = NULL;
-static HHOOK    g_hhook_mouse_ll    = NULL;
-static HHOOK    g_hhook_keyboard_ll = NULL;
-
-void loadsystemcursors(void)
-{
-  // Need to capture the current windows system cursors
-  // These need to be copied since they are destroyed by
-  // the call to SetSystemCursor if you change them...
-  g_arrowCursorId     = CopyCursor(LoadCursor(NULL, IDC_ARROW));
-  g_ibeamCursorId     = CopyCursor(LoadCursor(NULL, IDC_IBEAM));
-  g_sizeweCursorId    = CopyCursor(LoadCursor(NULL, IDC_SIZEWE));
-  g_sizensCursorId    = CopyCursor(LoadCursor(NULL, IDC_SIZENS));
-  g_sizeneswCursorId  = CopyCursor(LoadCursor(NULL, IDC_SIZENESW));
-  g_sizenwseCursorId  = CopyCursor(LoadCursor(NULL, IDC_SIZENWSE));
-}
-
-void setsystemcursors(HCURSOR cursorId)
-{
-  NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-  if ([defaults boolForKey: @"GSDoesNotChangeSystemMouseCursors"] == NO)
-    {
-      SetSystemCursor(CopyCursor(cursorId), OCR_NORMAL);
-      SetSystemCursor(CopyCursor(cursorId), OCR_IBEAM);
-      SetSystemCursor(CopyCursor(cursorId), OCR_SIZEWE);
-      SetSystemCursor(CopyCursor(cursorId), OCR_SIZENS);
-      SetSystemCursor(CopyCursor(cursorId), OCR_SIZENESW);
-      SetSystemCursor(CopyCursor(cursorId), OCR_SIZENWSE);
-    }
-}
-
-void restoresystemcursors(void)
-{
-  NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-  if ([defaults boolForKey: @"GSDoesNotChangeSystemMouseCursors"] == NO)
-    {
-      SetSystemCursor(CopyCursor(g_arrowCursorId), OCR_NORMAL);
-      SetSystemCursor(CopyCursor(g_ibeamCursorId), OCR_IBEAM);
-      SetSystemCursor(CopyCursor(g_sizeweCursorId), OCR_SIZEWE);
-      SetSystemCursor(CopyCursor(g_sizensCursorId), OCR_SIZENS);
-      SetSystemCursor(CopyCursor(g_sizeneswCursorId), OCR_SIZENESW);
-      SetSystemCursor(CopyCursor(g_sizenwseCursorId), OCR_SIZENWSE);
-    }
-}
-
-// Need to capture the DLL instance handle....
-BOOL WINAPI DllMain(HANDLE hinstDLL, DWORD dwReason, LPVOID lpvReserved)
-{
-	switch (dwReason)
-  {
-    case DLL_PROCESS_ATTACH:
-      // Save the DLL instance handle...
-      g_handleDLL = hinstDLL;
-      break;
-      
-    case DLL_PROCESS_DETACH:
-      break;
-	}
-	return TRUE;
-}
-
-int istrackingmouse(void)
-{
-  return(g_hwnd_mouse != NULL);
-}
-
-LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
-{
-  // We need to restrict normal mouse messages during a system capture mouse
-  // sequence since we also capture the low level mouse events for global
-  // screen mouse tracking and forward them.  We COULD check here and only forward
-  // the mouse events OUTSIDE the GNUstep windows but it's just easier to limit
-  // them here and forward the low level events instead...
-  return(TRUE);
-}
-
-LRESULT CALLBACK MouseProc_LL(int nCode, WPARAM wParam, LPARAM lParam)
-{
-  // If we are doing system mouse level tracking then just send ALL low level
-  // mouse events to the registered tracking window...
-  // Don't allow mouse down/up events through the system to avoid selecting
-  // another window during this sequence...
-  if (g_hwnd_mouse)
-    {
-      if (wParam == WM_MOUSEMOVE)
-        {
-          // Move events will be forwarded to system and capture window...
-          PMSLLHOOKSTRUCT msllstruct = (PMSLLHOOKSTRUCT)lParam;
-          if (PostMessage(g_hwnd_mouse, wParam, 0, MAKELONG(msllstruct->pt.x, msllstruct->pt.y)) == 0)
-            NSWarnMLog(@"error posting mouse move message - status: %ld\n", GetLastError());
-        }
-      else if (wParam == WM_LBUTTONDOWN)
-        {
-          // Left button down events will be forwarded to capture window ONLY...
-          PMSLLHOOKSTRUCT msllstruct = (PMSLLHOOKSTRUCT)lParam;
-          if (PostMessage(g_hwnd_mouse, wParam, MK_LBUTTON, MAKELONG(msllstruct->pt.x, msllstruct->pt.y)) == 0)
-            NSWarnMLog(@"error posting mouse move message - status: %ld\n", GetLastError());
-          else
-            return(TRUE);
-        }
-      else if (wParam == WM_LBUTTONUP)
-        {
-          // Left button up events will be forwarded to capture window ONLY...
-          PMSLLHOOKSTRUCT msllstruct = (PMSLLHOOKSTRUCT)lParam;
-          if (PostMessage(g_hwnd_mouse, wParam, 0, MAKELONG(msllstruct->pt.x, msllstruct->pt.y)) == 0)
-            NSWarnMLog(@"error posting mouse move message - status: %ld\n", GetLastError());
-          else
-            return(TRUE);
-        }
-    }
-  return(CallNextHookEx(0, nCode, wParam, lParam));
-}
-
-LRESULT CALLBACK KeyboardProc_LL(int nCode, WPARAM wParam, LPARAM lParam)
-{
-  // We need to restrict normal keyboard messages during a system capture mouse
-  // sequence to avoid allowing the user to change windows and potentially start
-  // another GNUstep app before capture mouse sequence is completed...
-  PKBDLLHOOKSTRUCT kbdllstruct = (PKBDLLHOOKSTRUCT)lParam;
-  if (kbdllstruct->vkCode == VK_ESCAPE) // allow Escape key to be processed
-	return(CallNextHookEx(0, nCode, wParam, lParam));
-  return(TRUE);
-}
-
-int mousetracking_register(HWND hwnd)
-{
-  int status = 0;
-	if (g_hwnd_mouse == NULL)
-    {
-      if ((g_hhook_mouse = SetWindowsHookEx(WH_MOUSE, MouseProc, g_handleDLL, 0)) == NULL)
-        {
-          status = GetLastError();
-          NSWarnMLog(@"error registering WH_MOUSE for hwnd: %p status: %d\n", hwnd, status);
-        }
-      else if ((g_hhook_mouse_ll = SetWindowsHookEx(WH_MOUSE_LL, MouseProc_LL, g_handleDLL, 0)) == NULL)
-        {
-          status = GetLastError();
-          NSWarnMLog(@"error registering WH_MOUSE_LL for hwnd: %p status: %d\n", hwnd, status);
-          UnhookWindowsHookEx(g_hhook_mouse);
-        }
-      else if ((g_hhook_keyboard_ll = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc_LL, g_handleDLL, 0)) == NULL)
-        {
-          status = GetLastError();
-          NSWarnMLog(@"error registering WH_KEYBOARD_LL for hwnd: %p status: %d\n", hwnd, status);
-          UnhookWindowsHookEx(g_hhook_mouse);
-          UnhookWindowsHookEx(g_hhook_mouse_ll);
-        }
-      else
-        {
-          g_hwnd_mouse = hwnd;
-          if (g_cursorId)
-            setsystemcursors(g_cursorId);
-        }
-    }
-  return(status);
-}
-
-
-int mousetracking_unregister(void)
-{
-  int status = 0;
-  
-  // Remove the system hooks...
-  if (g_hhook_mouse)
-    {
-      if (UnhookWindowsHookEx(g_hhook_mouse) == 0)
-        {
-          int tmp = GetLastError();
-          NSWarnMLog(@"UnhookWindowsHookEx(g_hhook_mouse) status: %d\n", tmp);
-          if (status == 0)
-            status = tmp;
-        }
-    }
-  if (g_hhook_mouse_ll)
-    {
-      if (UnhookWindowsHookEx(g_hhook_mouse_ll) == 0)
-        {
-          int tmp = GetLastError();
-          NSWarnMLog(@"UnhookWindowsHookEx(g_hhook_mouse_ll) status: %d\n", tmp);
-          if (status == 0)
-            status = tmp;
-        }
-    }
-  if (g_hhook_keyboard_ll)
-    {
-      if (UnhookWindowsHookEx(g_hhook_keyboard_ll) == 0)
-        {
-          int tmp = GetLastError();
-          NSWarnMLog(@"UnhookWindowsHookEx(g_hhook_keyboard_ll) status: %d\n", tmp);
-          if (status == 0)
-            status = tmp;
-        }
-    }
-
-  // If the cursor was changed for the mouse capture then restore the system cursors...
-  if (g_cursorId)
-    restoresystemcursors();
-  
-  // Reset...
-  g_hwnd_mouse        = NULL;
-  g_hhook_mouse       = NULL;
-  g_hhook_mouse_ll    = NULL;
-  g_hhook_keyboard_ll = NULL;
-  
-  return(status);
-}
-
-static NSBitmapImageRep *getStandardBitmap(NSImage *image)
-{
-  NSBitmapImageRep *rep;
-  
-  if (image == nil)
-  {
-    return nil;
-  }
-  
-  rep = (NSBitmapImageRep *)[image bestRepresentationForDevice: nil];
-  if (!rep || ![rep respondsToSelector: @selector(samplesPerPixel)])
-  {
-    return nil;
-  }
-  else
-  {
-    // Convert into something usable by the backend
-    return [rep _convertToFormatBitsPerSample: 8
-                              samplesPerPixel: [rep hasAlpha] ? 4 : 3
-                                     hasAlpha: [rep hasAlpha]
-                                     isPlanar: NO
-                               colorSpaceName: NSCalibratedRGBColorSpace
-                                 bitmapFormat: 0
-                                  bytesPerRow: 0
-                                 bitsPerPixel: 0];
-  }
-}
-
 @implementation W32DisplayMonitorInfo
 
 - (id)initWithHMonitor:(HMONITOR)hMonitor rect:(LPRECT)lprcMonitor
 {
   self = [self init];
   if (self)
-  {
-    CGFloat w = lprcMonitor->right - lprcMonitor->left;
-    CGFloat h = lprcMonitor->bottom - lprcMonitor->top;
-    CGFloat x = lprcMonitor->left;
-    CGFloat y = ((lprcMonitor->top == 0) ? 0 : lprcMonitor->top - lprcMonitor->bottom);
-    _hMonitor = hMonitor;
-    _frame = NSMakeRect(x, y, w, h);
-    memcpy(&_rect, lprcMonitor, sizeof(RECT));
-  }
+    {
+      CGFloat w = lprcMonitor->right - lprcMonitor->left;
+      CGFloat h = lprcMonitor->bottom - lprcMonitor->top;
+      CGFloat x = lprcMonitor->left;
+      CGFloat y = h - lprcMonitor->bottom;
+
+      _hMonitor = hMonitor;
+      _frame = NSMakeRect(x, y, w, h);
+      memcpy(&_rect, lprcMonitor, sizeof(RECT));
+    }
   return self;
 }
 
@@ -399,59 +147,24 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
                              WPARAM wParam, LPARAM lParam);
 
 BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
-                                     HDC hdcMonitor,
-                                     LPRECT lprcMonitor,
-                                     LPARAM dwData)
+                                    HDC hdcMonitor,
+                                    LPRECT lprcMonitor,
+                                    LPARAM dwData)
 {
-  NSMutableArray        *monitors  = (NSMutableArray*)dwData;
-  W32DisplayMonitorInfo *infoMon   = [[W32DisplayMonitorInfo alloc] initWithHMonitor:hMonitor
-                                                                                rect:lprcMonitor];
-  NSUInteger             screenIdx = [monitors count];
+  NSMutableArray        *monitors = (NSMutableArray*)dwData;
+  W32DisplayMonitorInfo *info = [[W32DisplayMonitorInfo alloc] initWithHMonitor:hMonitor rect:lprcMonitor];
   
-  // Monitor information may be in any particular order...check for the one
-  // at (x,y) = (0,0)...
-  if ((lprcMonitor->top == 0) && (lprcMonitor->left == 0))
-    {
-      // Insert this one first in the array...
-      screenIdx = 0;
-      
-      // and recalculate monitor frame(s)...
-      RECT  mainRect = [infoMon rect];
-      int   index    = 0;
-      for (index = 0; index < [monitors count]; ++index)
-        {
-          // If main exists offset the additional ones..
-          W32DisplayMonitorInfo *infoMon    = [monitors objectAtIndex:index];
-          RECT                   infoRect   = [infoMon rect];
-          NSRect                 infoFrame  = [infoMon frame];
-          infoFrame.origin.y                = mainRect.bottom - infoRect.bottom;
-          [infoMon setFrame:infoFrame];
-        }
-    }
-  else
-    {
-      // else check for main monitor - additional monitors need to be offset correctly
-      // offset from this one...
-      if (monitors && [monitors count])
-        {
-          W32DisplayMonitorInfo *mainMon  = [monitors objectAtIndex:0];
-          RECT                   mainRect = [mainMon rect];
-          
-          if ((mainRect.top == 0) && (mainRect.left == 0))
-            {
-              RECT    infoRect    = [infoMon rect];
-              NSRect  infoFrame   = [infoMon frame];
-              infoFrame.origin.y  = mainRect.bottom - infoRect.bottom;
-              [infoMon setFrame:infoFrame];
-            }
-        }
-    }
-
-  // Insert this object at screen index...
-  [monitors insertObject:infoMon atIndex:screenIdx];
-
+  NSDebugLog(@"screen %ld:hdc: %ld frame:top:%ld left:%ld right:%ld bottom:%ld  frame:x:%f y:%f w:%f h:%f\n",
+        [monitors count], (long)hMonitor,
+        lprcMonitor->top, lprcMonitor->left,
+        lprcMonitor->right, lprcMonitor->bottom,
+        [info frame].origin.x, [info frame].origin.y,
+        [info frame].size.width, [info frame].size.height);
+  [monitors addObject:info];
+  
   return TRUE;
 }
+
 
 @implementation WIN32Server
 
@@ -671,9 +384,8 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
       [self _initWin32Context];
       [super initWithAttributes: info];
   
-      // Load system cursor resources for overriding system level cursors on
-      // capture and release mouse sequences...
-      loadsystemcursors();
+      monitorInfo = [[NSMutableArray alloc] init];
+      EnumDisplayMonitors(NULL, NULL, (MONITORENUMPROC)LoadDisplayMonitorInfo, (LPARAM)monitorInfo);
 
       systemCursors = RETAIN([NSMutableDictionary dictionary]);
       monitorInfo   = RETAIN([NSMutableArray array]);
@@ -735,18 +447,6 @@ BOOL CALLBACK LoadDisplayMonitorInfo(HMONITOR hMonitor,
 {
   [self _destroyWin32Context];
   RELEASE(monitorInfo);
-  if ([systemCursors count])
-  {
-    NSMutableArray *values = [[systemCursors allValues] mutableCopy];
-    while ([values count])
-    {
-      HCURSOR cursorId = [[values objectAtIndex:0] pointerValue];
-      [values removeObjectAtIndex:0];
-      [self freecursor:cursorId];
-    }
-  }
-  RELEASE(systemCursors);
-  RELEASE(listOfCursorsFailed);
   [super dealloc];
 }
 
@@ -798,8 +498,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 	EnumWindows((WNDENUMPROC)windowEnumCallback, win);
 	hwnd = foundWindowHwnd;
 
-  if (windowRef)
-    *windowRef = (int)hwnd;	// Any windows
+  *windowRef = (int)hwnd;	// Any windows
 
   return (int)hwnd;
 }
@@ -838,44 +537,59 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 - (HMONITOR) monitorHandleForScreen: (int)screen
 {
   if (screen < [monitorInfo count])
-    return [[monitorInfo objectAtIndex:screen] hMonitor];
-  NSWarnMLog(@"invalid screen number: %d", screen);
-  return NULL;
+    {
+      return [[monitorInfo objectAtIndex: screen] hMonitor];
+    }
+  else
+    {
+      NSWarnMLog(@"invalid screen number: %d", screen);
+      return NULL;
+    }
 }
 
 - (HDC) createHdcForScreen: (int)screen
 {
-  HDC      hdc      = NULL;
-  HMONITOR hMonitor = [self monitorHandleForScreen:screen];
+  HDC hdc = NULL;
+  HMONITOR hMonitor = [self monitorHandleForScreen: screen];
+
   if (hMonitor == NULL)
     {
-      NSWarnMLog(@"error obtaining monitor handle for screen: %d status: %d", screen, GetLastError());
+      NSWarnMLog(@"error obtaining monitor handle for screen: %d", screen);
     }
   else
     {
       MONITORINFOEX mix = { 0 };
-      mix.cbSize        = sizeof(MONITORINFOEX);
-      
+      mix.cbSize = sizeof(MONITORINFOEX);
+
       if (GetMonitorInfo(hMonitor, (LPMONITORINFO)&mix) == 0)
-        {
-          NSWarnMLog(@"error obtaining monitor info for screen: %d status: %d", screen, GetLastError());
-        }
+	{
+          NSWarnMLog(@"error obtaining monitor info for screen: %d status: %d",
+                     screen, GetLastError());
+ 	}
       else
-        {
+ 	{
           hdc = CreateDC("DISPLAY", mix.szDevice, NULL, NULL);
           if (hdc == NULL)
-            NSWarnMLog(@"error creating HDC for screen: %d - status: %d", screen, GetLastError());
-        }
+            {
+              NSWarnMLog(@"error creating HDC for screen: %d - status: %d",
+                         screen, GetLastError());
+            }
+ 	}
     }
+
   return hdc;
 }
-
+	
 - (void) deleteScreenHdc: (HDC)hdc
 {
   if (hdc == NULL)
-    NSWarnMLog(@"HDC is NULL");
+    {
+      NSWarnMLog(@"HDC is NULL");
+    }
   else
-    DeleteDC(hdc);
+    {
+      DeleteDC(hdc);
+    }
 }
 
 - (NSWindowDepth) windowDepthForScreen: (int)screen
@@ -1192,191 +906,224 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 - (LRESULT) imnMessage: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
 {
   HIMC immc = ImmGetContext(hwnd);
-  if (immc)
-  {
-    switch (wParam)
+  switch (wParam)
     {
-      case IMN_CLOSESTATUSWINDOW:
+    case IMN_CLOSESTATUSWINDOW:
       {
-        ImmNotifyIME(immc, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
-#if defined(USE_SYSTEM_CARET)
-        HideCaret(hwnd);
-        DestroyCaret();
-#endif
-        break;
+	NSDebugLog(@"IMN_CLOSESTATUSWINDOW: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+		    hwnd, wParam, lParam, immc);
+	if (immc)
+	  {
+	    ImmNotifyIME(immc, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
+	    HideCaret(hwnd);
+	    DestroyCaret();
+	  }
+	break;
       }
-
-      case IMN_SETOPENSTATUS:
+      
+    case IMN_SETOPENSTATUS:
       {
-        {
-          IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-          if (imeInfo == NULL)
-          {
-            NSWarnMLog(@"IMN_SETOPENSTATUS: IME info pointer is NULL\n");
-          }
-          else
-          {
-            if (ImmGetOpenStatus(immc))
-            {
-              if (imeInfo->isOpened == NO)
-              {
-                // Restore previous information...
+	NSDebugLog(@"IMN_SETOPENSTATUS: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+		    hwnd, wParam, lParam, immc);
+	if (immc)
+	  {
+	    NSDebugLog(@"IMN_SETOPENSTATUS: openstatus: %d\n", ImmGetOpenStatus(immc));
+	    
+	    IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+	    if (imeInfo == NULL)
+	      {
+		NSDebugLog(@"IMN_SETOPENSTATUS: IME info pointer is NULL\n");
+	      }
+	    else
+	      {
+		if (ImmGetOpenStatus(immc))
+		  {
+		    if (imeInfo->isOpened == NO)
+		      {
+			// Restore previous information...
 #if defined(IME_SAVERESTORE_COMPOSITIONINFO)
-                [self restoreCompositionInfoForWindow: hwnd];
+			[self restoreCompositionInfoForWindow: hwnd];
 #else
-                ImmNotifyIME(immc, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
+			ImmNotifyIME(immc, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
 #endif
-              }
-            }
-            else if (imeInfo->isOpened == YES)
-            {
-              // Save current information...
-              [self saveCompositionInfoForWindow: hwnd];
-            }
-            
-            // Save state...
-            imeInfo->isOpened = ImmGetOpenStatus(immc);
-          }
-          
+		      }
+		  }
+		else if (imeInfo->isOpened == YES)
+		  {
+		    // Save current information...
+		    [self saveCompositionInfoForWindow: hwnd];
+		  }
+		
+		// Save state...
+		imeInfo->isOpened = ImmGetOpenStatus(immc);
+	      }
+	    
 #if defined(USE_SYSTEM_CARET)
-          if (ImmGetOpenStatus(immc))
-            ShowCaret(hwnd);
-          else
-            HideCaret(hwnd);
-#else
-          flags._eventHandled = YES;
+	    if (ImmGetOpenStatus(immc))
+	      ShowCaret(hwnd);
+	    else
+	      HideCaret(hwnd);
 #endif
-
+	    
 #if defined(IME_SETCOMPOSITIONFONT)
-          {
-            LOGFONT logFont;
-            ImmGetCompositionFont(immc, &logFont);
-            LOGFONT newFont = logFont;
-            newFont.lfCharSet = ((logFont.lfCharSet == DEFAULT_CHARSET) ? OEM_CHARSET : DEFAULT_CHARSET);
-            ImmSetCompositionFont(immc, &newFont);
-            NSWarnMLog(@"IMN_SETOPENSTATUS: changing logfont from: %d to: %d\n", logFont.lfCharSet, newFont.lfCharSet);
-          }
+	    {
+	      LOGFONT logFont;
+	      ImmGetCompositionFont(immc, &logFont);
+	      LOGFONT newFont = logFont;
+	      newFont.lfCharSet = ((logFont.lfCharSet == DEFAULT_CHARSET) ? OEM_CHARSET : DEFAULT_CHARSET);
+	      ImmSetCompositionFont(immc, &newFont);
+	      NSDebugLog(@"IMN_SETOPENSTATUS: changing logfont from: %d to: %d\n", logFont.lfCharSet, newFont.lfCharSet);
+	    }
 #endif
-        }
-        break;
+	  }
+	break;
       }
-
-      case IMN_OPENSTATUSWINDOW:
+      
+    case IMN_OPENSTATUSWINDOW:
       {
-        {
-          LOGFONT logFont;
-          {
-            ImmGetCompositionFont(immc, &logFont);
-          }
+	NSDebugLog(@"IMN_OPENSTATUSWINDOW: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+		    hwnd, wParam, lParam, immc);
+	if (immc)
+	  {
+	    NSDebugLog(@"IMN_OPENSTATUSWINDOW: openstatus: %d\n", ImmGetOpenStatus(immc));
+	    LOGFONT logFont;
+	    {
+	      ImmGetCompositionFont(immc, &logFont);
+	      NSDebugLog(@"IMN_OPENSTATUSWINDOW: logfont - width: %d height: %d\n",
+			  logFont.lfWidth, logFont.lfHeight);
+	    }
 #if defined(USE_SYSTEM_CARET)
-          CreateCaret(hwnd, NULL, logFont.lfWidth, logFont.lfHeight);
-          if (ImmGetOpenStatus(immc))
-            ShowCaret(hwnd);
-          else
-            HideCaret(hwnd);
-#else
-          flags._eventHandled = YES;
+	    CreateCaret(hwnd, NULL, logFont.lfWidth, logFont.lfHeight);
+	    if (ImmGetOpenStatus(immc))
+	      ShowCaret(hwnd);
+	    else
+	      HideCaret(hwnd);
 #endif
-        }
-        break;
+	  }
+	break;
       }
-
-      case IMN_CHANGECANDIDATE:
-      case IMN_CLOSECANDIDATE:
-      case IMN_OPENCANDIDATE:
-        break;
-
-      case IMN_SETCONVERSIONMODE:
+      
+    case IMN_CHANGECANDIDATE:
+      NSDebugLog(@"IMN_CHANGECANDIDATE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    case IMN_CLOSECANDIDATE:
+      NSDebugLog(@"IMN_CLOSECANDIDATE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    case IMN_OPENCANDIDATE:
+      NSDebugLog(@"IMN_OPENCANDIDATE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    case IMN_SETCONVERSIONMODE:
       {
-        {
-          DWORD conversion;
-          DWORD sentence;
-          if (ImmGetConversionStatus(immc, &conversion, &sentence) == 0)
-            NSWarnMLog(@"IMN_SETCONVERSIONMODE: error getting conversion status: %d\n", GetLastError());
-        }
-        break;
+	NSDebugLog(@"IMN_SETCONVERSIONMODE: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+		    hwnd, wParam, lParam, immc);
+	if (immc)
+	  {
+	    DWORD conversion;
+	    DWORD sentence;
+	    if (ImmGetConversionStatus(immc, &conversion, &sentence) == 0)
+	      NSDebugLog(@"IMN_SETCONVERSIONMODE: error getting conversion status: %d\n", GetLastError());
+	    else
+	      NSDebugLog(@"IMN_SETCONVERSIONMODE: conversion: %p sentence: %p\n", conversion, sentence);
+	  }
+	break;
       }
-
-      case IMN_SETSENTENCEMODE:
+      
+    case IMN_SETSENTENCEMODE:
       {
-        {
-          DWORD conversion;
-          DWORD sentence;
-          if (ImmGetConversionStatus(immc, &conversion, &sentence) == 0)
-            NSWarnMLog(@"IMN_SETSENTENCEMODE: error getting conversion status: %d\n", GetLastError());
-        }
-        break;
+	NSDebugLog(@"IMN_SETSENTENCEMODE: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+		    hwnd, wParam, lParam, immc);
+	if (immc)
+	  {
+	    DWORD conversion;
+	    DWORD sentence;
+	    if (ImmGetConversionStatus(immc, &conversion, &sentence) == 0)
+	      NSDebugLog(@"IMN_SETSENTENCEMODE: error getting conversion status: %d\n", GetLastError());
+	    else
+	      NSDebugLog(@"IMN_SETSENTENCEMODE: conversion: %p sentence: %p\n", conversion, sentence);
+	  }
+	break;
       }
-
-      case IMN_SETCANDIDATEPOS:
-        break;
-
-      case IMN_SETCOMPOSITIONFONT:
+      
+    case IMN_SETCANDIDATEPOS:
+      NSDebugLog(@"IMN_SETCANDIDATEPOS: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    case IMN_SETCOMPOSITIONFONT:
       {
+	NSDebugLog(@"IMN_SETCOMPOSITIONFONT: hwnd: %p wParam: %p lParam: %p immc: %p\n",
+		    hwnd, wParam, lParam, immc);
+	if (immc)
+	  {
 #if defined(IME_SETCOMPOSITIONFONT)
-        LOGFONT logFont;
-        ImmGetCompositionFont(immc, &logFont);
-        NSWarnMLog(@"IMN_SETCOMPOSITIONFONT: new character set: %d\n", logFont.lfCharSet);
+	    {
+	      LOGFONT logFont;
+	      ImmGetCompositionFont(immc, &logFont);
+	      NSDebugLog(@"IMN_SETCOMPOSITIONFONT: new character set: %d\n", logFont.lfCharSet);
+	    }
 #endif
-        break;
+	  }
+	break;
       }
-        
-      case IMN_SETCOMPOSITIONWINDOW:
-      case IMN_SETSTATUSWINDOWPOS:
-      case IMN_GUIDELINE:
-      case IMN_PRIVATE:
-        
-      default:
-#if 0
-        NSWarnMLog(@"Unknown IMN message %p: hwnd: %p wParam: %p lParam: %p\n", wParam, hwnd, wParam, lParam);
-#endif
-        break;
+      
+    case IMN_SETCOMPOSITIONWINDOW:
+      NSDebugLog(@"IMN_SETCOMPOSITIONWINDOW: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    case IMN_SETSTATUSWINDOWPOS:
+      NSDebugLog(@"IMN_SETSTATUSWINDOWPOS: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    case IMN_GUIDELINE:
+      NSDebugLog(@"IMN_GUIDELINE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    case IMN_PRIVATE:
+      NSDebugLog(@"IMN_PRIVATE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+      break;
+      
+    default:
+      NSDebugLog(@"Unknown IMN message: %p hwnd: %p\n", wParam, hwnd);
+      break;
     }
-    
-    // Release the IME context...
-    ImmReleaseContext(hwnd, immc);
-  }
+  
+  // Release the IME context...
+  ImmReleaseContext(hwnd, immc);
   
   return 0;
 }
 
-- (void) sendKeys: (NSString*)keys : (NSString*)ukeys : (unsigned short)keyCode : (NSPoint)location
-                 : (BYTE*)keyState : (BOOL)repeat : (int)windowNumber
+- (NSEvent*)imeCompositionMessage: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
 {
-  NSGraphicsContext *gcontext   = GSCurrentContext();
-  LONG               ltime      = GetMessageTime();
-  NSTimeInterval     time       = ltime / 1000.0f;
-  unsigned int       eventFlags = mask_for_keystate(keyState);
-
-  // Create a NSKeyDown message...
-  NSEvent *ev = [NSEvent keyEventWithType: NSKeyDown
-                                 location: location
-                            modifierFlags: eventFlags
-                                timestamp: time
-                             windowNumber: windowNumber
-                                  context: gcontext
-                               characters: keys
-              charactersIgnoringModifiers: ukeys
-                                isARepeat: repeat
-                                  keyCode: keyCode];
+  NSDebugLog(@"WM_IME_COMPOSITION: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+  HIMC immc = ImmGetContext(hwnd);
+  if (immc == 0)
+    {
+      NSWarnMLog(@"IMMContext is NULL\n");
+    }
+  else if (lParam & GCS_RESULTSTR)
+    {
+      // Update our composition string information...
+      LONG length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, NULL, 0);
+      NSDebugLog(@"length: %d\n", length);
+      if (length)
+	{
+	  TCHAR composition[length+sizeof(TCHAR)];
+	  length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, &composition, length);
+	  {
+	    int index;
+	    for (index = 0; index < length; ++index)
+	      NSDebugLog(@"%2.2X ", composition[index]);
+	  }
+	  NSDebugLog(@"composition (uKeys): %@\n",
+		      [NSString stringWithCharacters: (unichar*)composition length: length]);
+	}
+      ImmReleaseContext(hwnd, immc);
+    }
   
-  // Post it...
-  [GSCurrentServer() postEvent: ev atStart: NO];
-  
-  // then an associated NSKeyUp message...
-  ev = [NSEvent keyEventWithType: NSKeyUp
-                        location: location
-                   modifierFlags: eventFlags
-                       timestamp: time
-                    windowNumber: windowNumber
-                         context: gcontext
-                      characters: keys
-     charactersIgnoringModifiers: ukeys
-                       isARepeat: repeat
-                         keyCode: keyCode];
-  
-  // Post it...
-  [GSCurrentServer() postEvent: ev atStart: NO];
+  return 0;
 }
 
 - (LRESULT) imeCharacter: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
@@ -1387,199 +1134,83 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   GetKeyboardState(keyState);
   
   // key events should go to the key window if we have one (Windows' focus window isn't always appropriate)
-  NSInteger windowNumber = [[NSApp keyWindow] windowNumber];
+  int windowNumber = [[NSApp keyWindow] windowNumber];
   if (windowNumber == 0)
-    windowNumber = (NSInteger)hwnd;
+    windowNumber = (int)hwnd;
   
-  /* FIXME: How do you guarantee a context is associated with an event? */
-  BOOL               repeat   = (lParam & 0xFFFF) > 1;
-  DWORD              pos      = GetMessagePos();
-  NSPoint            location = MSWindowPointToGS(self, hwnd,  GET_X_LPARAM(pos), GET_Y_LPARAM(pos));
-  NSString          *keys     = [NSString  stringWithCharacters: (unichar*)&wParam length: 1];
-  NSString          *ukeys    = [NSString  stringWithCharacters: (unichar*)&wParam  length: 1];
-  unsigned short     keyCode  = (unsigned short)wParam;
+  /* FIXME: How do you guarentee a context is associated with an event? */
+  NSGraphicsContext *gcontext      = GSCurrentContext();
+  LONG               ltime         = GetMessageTime();
+  NSTimeInterval     time          = ltime / 1000.0f;
+  BOOL               repeat        = (lParam & 0xFFFF) != 0;
+  unsigned int       eventFlags    = mask_for_keystate(keyState);
+  DWORD              pos           = GetMessagePos();
+  NSPoint            eventLocation = MSWindowPointToGS(self, hwnd,  GET_X_LPARAM(pos), GET_Y_LPARAM(pos));
+  NSString          *keys          = [NSString  stringWithCharacters: (unichar*)&wParam length: 1];
+  NSString          *ukeys         = [NSString  stringWithCharacters: (unichar*)&wParam  length: 1];
   
-  // Send the key sequence message(s)...
-  [self sendKeys: keys : ukeys : keyCode : location : keyState : repeat : windowNumber];
+  // Create a NSKeyDown message...
+  NSEvent *ev = [NSEvent keyEventWithType: NSKeyDown
+                                 location: eventLocation
+                            modifierFlags: eventFlags
+                                timestamp: time
+                             windowNumber: windowNumber
+                                  context: gcontext
+                               characters: keys
+              charactersIgnoringModifiers: ukeys
+                                isARepeat: repeat
+                                  keyCode: wParam];
+  
+  // Post it...
+  [GSCurrentServer() postEvent: ev atStart: NO];
+  
+  // then an associated NSKeyUp message...
+  ev = [NSEvent keyEventWithType: NSKeyUp
+                        location: eventLocation
+                   modifierFlags: eventFlags
+                       timestamp: time
+                    windowNumber: windowNumber
+                         context: gcontext
+                      characters: keys
+     charactersIgnoringModifiers: ukeys
+                       isARepeat: repeat
+                         keyCode: wParam];
+  
+  // Post it...
+  [GSCurrentServer() postEvent: ev atStart: NO];
   
   return 0;
-}
-
-- (LRESULT) sendDeleteCharacter: (HWND)hwnd
-{
-  WPARAM  wParam  = 0x8;
-  LPARAM  lParam  = 0x1;
-  unichar uChar   = 0x7f;
-  
-  BYTE keyState[256];
-  
-  // Get the current key states...
-  GetKeyboardState(keyState);
-  
-  // key events should go to the key window if we have one (Windows' focus window isn't always appropriate)
-  NSInteger windowNumber = [[NSApp keyWindow] windowNumber];
-  if (windowNumber == 0)
-    windowNumber = (NSInteger)hwnd;
-  
-  /* FIXME: How do you guarantee a context is associated with an event? */
-  BOOL               repeat   = (lParam & 0xFFFF) > 1;
-  DWORD              pos      = GetMessagePos();
-  NSPoint            location = MSWindowPointToGS(self, hwnd,  GET_X_LPARAM(pos), GET_Y_LPARAM(pos));
-  NSString          *keys     = [NSString  stringWithCharacters: (unichar*)&uChar length: 1];
-  NSString          *ukeys    = [NSString  stringWithCharacters: (unichar*)&uChar length: 1];
-  unsigned short     keyCode  = (unsigned short)wParam;
-  
-  // Send the key sequence message(s)...
-  [self sendKeys: keys : ukeys : keyCode : location : keyState : repeat : windowNumber];
-  
-  return 0;
-}
-
-- (void)startImeComposition: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
-{
-  // Setup for handling the IME composition sequence...
-  NSUserDefaults *defaults             = [NSUserDefaults standardUserDefaults];
-  BOOL            useCompositionWindow = [defaults boolForKey: @"GSUsesDefaultImeComposition"];
-  IME_INFO_T     *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-  if (imeInfo)
-    {
-      imeInfo->isComposing          = YES;
-      imeInfo->useCompositionWindow = useCompositionWindow;
-    }
-  flags._eventHandled = (useCompositionWindow == NO);
-}
-
-- (void)endImeComposition: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
-{
-  // Terminate the IME composition sequence...
-  IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-  if (imeInfo)
-    {
-      imeInfo->isComposing          = NO;
-      imeInfo->useCompositionWindow = NO;
-      HIMC immc = ImmGetContext(hwnd);
-      if (ImmGetCompositionStringW(immc, GCS_RESULTSTR, NULL, 0) == 0)
-        imeInfo->inProgress = 0;
-    }
-}
-
-// composition is expected as a pointer to UNICHARs
-// length is expected as size in BYTES not UNICHAR
-// deleteLength is expected as number of characters to delete
-- (void)updateImeCompositionToHWnd: (HWND)hwnd
-                       composition: (PTCHAR)composition
-                            length: (int)length
-                      deleteLength: (int)deleteLength
-{
-  // We need to delete the last character sent for the current comosition...
-  while (deleteLength--)
-    [self sendDeleteCharacter: hwnd];
-  
-  // Send updated composition character...
-  {
-    int      index = 0;
-    unichar *ptr   = (unichar*)composition;
-    for (index = 0; index < (length/2); ++index, ++ptr)
-      [self imeCharacter: hwnd : *ptr : 1];
-  }
-}
-
-- (void)imeCompositionMessage: (HWND)hwnd : (WPARAM)wParam : (LPARAM)lParam
-{
-  // Process the IME composition sequence...
-  IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-  if (imeInfo && imeInfo->isComposing && (imeInfo->useCompositionWindow == NO))
-    {
-      HIMC immc = ImmGetContext(hwnd);
-      if (immc == 0)
-        {
-          NSWarnMLog(@"IMMContext is NULL\n");
-        }
-      else if (lParam & GCS_RESULTSTR)
-        {
-          // Update our composition string information...
-          LONG length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, NULL, 0);
-          if (length)
-            {
-              TCHAR composition[length+sizeof(TCHAR)];
-              length = ImmGetCompositionStringW(immc, GCS_RESULTSTR, &composition, length);
-              composition[ length ] = '\0';
-
-              IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-              if (imeInfo == NULL)
-              {
-                NSWarnMLog(@"imeInfo is missing!!!");
-              }
-              else
-              {
-                // Update with resulting composition...
-                [self updateImeCompositionToHWnd: hwnd composition:composition
-                                          length: length
-                                    deleteLength: imeInfo->inProgress];
-                
-                // Update our in progress indicator to show that we finished...
-                imeInfo->inProgress = 0;
-              }
-            }
-          ImmReleaseContext(hwnd, immc);
-        }
-      else if (lParam & GCS_COMPSTR)
-        {
-          // Update our composition string information...
-          LONG length = ImmGetCompositionStringW(immc, GCS_COMPSTR, NULL, 0);
-          if (length) // && (length == 2))
-            {
-              TCHAR composition[length+sizeof(TCHAR)];
-              length = ImmGetCompositionStringW(immc, GCS_COMPSTR, &composition, length);
-              composition[length] = '\0';
-              
-              // We need to delete the last character sent for the current comosition...
-              IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-              if (imeInfo == NULL)
-              {
-                NSWarnMLog(@"imeInfo is missing!!!");
-              }
-              else
-              {
-                // Update with in progress composition...
-                [self updateImeCompositionToHWnd: hwnd
-                                     composition: composition
-                                          length: length
-                                    deleteLength: imeInfo->inProgress];
-                
-                // Update our in progress indicator...
-                imeInfo->inProgress = length / 2;
-              }
-            }
-          ImmReleaseContext(hwnd, immc);
-        }
-    }
 }
 
 - (LRESULT) windowEventProc: (HWND)hwnd : (UINT)uMsg
 		       : (WPARAM)wParam : (LPARAM)lParam
 {
-  //NSLog(@"Win32 Event: %x", uMsg);
   NSEvent *ev = nil;
 
   [self setFlagsforEventLoop: hwnd];
  
   switch (uMsg)
     {
-	case WM_MOUSELEAVE:
-	case WM_NCMOUSELEAVE:
-    case WM_NCMOUSEMOVE:
-	  // We have an issue where we're not getting enough
-	  // mouse move events when the mouse is moving very
-	  // fast, and therefore occasionally found ourselves
-	  // with a cursor set for a rectangle that we've left.
-	  // To get around that, we reset the cursor stack when
-	  // we hit the non-client area. It is not a good
-	  // permanent solution, but solves most of our issues
-	  // for now.
-      [self decodeWM_NCMOUSELEAVEParams: wParam : lParam : hwnd]; 
-      break;
-		
+      case WM_MOUSELEAVE:
+	{
+	  /* If the cursor leave the window remove the GNUstep cursors, send
+	   * the appropriate message and tell GNUstep stop handling
+	   * the cursor.
+	   */
+	  NSEvent *e;
+	  e = [NSEvent otherEventWithType: NSAppKitDefined
+				 location: NSMakePoint(-1,-1)
+			    modifierFlags: 0
+				timestamp: 0
+			     windowNumber: (int)hwnd
+				  context: GSCurrentContext()
+				  subtype: GSAppKitWindowLeave
+				    data1: 0
+				    data2: 0];
+	  [GSCurrentServer() postEvent: e atStart: YES];
+	  should_handle_cursor = NO;
+	}
+	break;
       case WM_SIZING:
         return [self decodeWM_SIZINGParams: hwnd : wParam : lParam];
         break;
@@ -1652,9 +1283,15 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         else
           [self decodeWM_KILLFOCUSParams: wParam : lParam : hwnd]; 
         break;
-      case WM_SETCURSOR: 
-        if (wParam == (int)hwnd)
-          [self decodeWM_SETCURSORParams: wParam : lParam : hwnd]; 
+      case WM_SETCURSOR:
+	if (wParam == (int)hwnd)
+	  {
+	    // Check if GNUstep should handle the cursor.
+	    if (should_handle_cursor)
+	      {
+		flags._eventHandled = YES;
+	      }
+	  }
         break;
       case WM_QUERYOPEN: 
         [self decodeWM_QUERYOPENParams: wParam : lParam : hwnd]; 
@@ -1684,9 +1321,29 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         break;
       case WM_APP: 
         break;  
-      case WM_ENTERMENULOOP: 
-        break;
-      case WM_EXITMENULOOP: 
+      case WM_ENTERMENULOOP:
+	/* If the user open a native contextual menu (a non GNUstep window)
+	 * send the appropriate message and tell GNUstep stop handling
+	 * the cursor.
+	 */
+	if (wParam)
+	  {
+	    NSEvent *e;
+	    [GSWindowWithNumber((int)hwnd) resetCursorRects];
+	    e = [NSEvent otherEventWithType: NSAppKitDefined
+				   location: NSMakePoint(-1,-1)
+			      modifierFlags: 0
+				  timestamp: 0
+			       windowNumber: (int)hwnd
+				    context: GSCurrentContext()
+				    subtype: GSAppKitWindowLeave
+				    data1: 0
+				      data2: 0];
+	    [GSCurrentServer() postEvent: e atStart: YES];
+	    should_handle_cursor = NO;
+	  }
+	break;
+      case WM_EXITMENULOOP:
         break;
       case WM_INITMENU: 
         break;
@@ -1727,12 +1384,12 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       case WM_NULL: 
         break; 
 	
-//      case WM_NCHITTEST: //MOUSE
-//        NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCHITTEST", hwnd);
-//        break;
-//      case WM_NCMOUSEMOVE: //MOUSE
-//        NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCMOUSEMOVE", hwnd);
-//        break;
+      case WM_NCHITTEST: //MOUSE
+        NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCHITTEST", hwnd);
+        break;
+      case WM_NCMOUSEMOVE: //MOUSE
+	NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCMOUSEMOVE", hwnd);
+	break;
       case WM_NCLBUTTONDOWN:  //MOUSE
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "NCLBUTTONDOWN", hwnd);
         break;
@@ -1795,79 +1452,83 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         [self imnMessage: hwnd : wParam : lParam];
         break;
       case WM_IME_REQUEST:
+        NSDebugLog(@"WM_IME_REQUEST: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         break;
       case WM_IME_SELECT:
+        NSDebugLog(@"WM_IME_SELECT: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         break;
       case WM_IME_SETCONTEXT:
+        NSDebugLog(@"WM_IME_SETCONTEXT: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         break;
       case WM_IME_STARTCOMPOSITION:
       {
-        // Setup for handling the IME composition sequence...
-        [self startImeComposition: hwnd : wParam : lParam];
+        NSDebugLog(@"WM_IME_STARTCOMPOSITION: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+        if (imeInfo)
+          imeInfo->isComposing = YES;
         break;
       }
       case WM_IME_ENDCOMPOSITION:
       {
-        // Terminate the IME composition sequence...
-        [self endImeComposition: hwnd : wParam : lParam];
+        NSDebugLog(@"WM_IME_ENDCOMPOSITION: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
+        if (imeInfo)
+          imeInfo->isComposing = NO;
         break;
       }
       case WM_IME_COMPOSITION:
       {
-        // Process the IME composition sequence...
-        [self imeCompositionMessage: hwnd : wParam : lParam];
-        break;
-      }
-        
-      case WM_IME_COMPOSITIONFULL:
-        break;
-        
-      case WM_IME_KEYDOWN:
-      {
-        // Handle the IME keystroke input...
         IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-        if (imeInfo->useCompositionWindow && (wParam == 0xd)) // Carriage return...
-          {
-            HIMC immc = ImmGetContext(hwnd);
-            if (immc)
-              {
-                // If currently in a composition sequence in the IMM...
-                ImmNotifyIME(immc, NI_COMPOSITIONSTR, CPS_COMPLETE, 0);
-                
-                // Release the context...
-                ImmReleaseContext(hwnd, immc);
-              }
-            flags._eventHandled = YES;
-          }
+        if (imeInfo && imeInfo->isComposing)
+          ev = [self imeCompositionMessage: hwnd : wParam : lParam];
         break;
       }
+      case WM_IME_COMPOSITIONFULL:
+        NSDebugLog(@"WM_IME_COMPOSITIONFULL: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        break;
+      case WM_IME_KEYDOWN:
+        NSDebugLog(@"WM_IME_KEYDOWN: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
+        if (wParam == 0xd) // Carriage return...
+        {
+          HIMC immc = ImmGetContext(hwnd);
+          if (immc)
+          {
+            // If currently in a composition sequence in the IMM...
+            ImmNotifyIME(immc, NI_COMPOSITIONSTR, CPS_COMPLETE, 0);
+            
+            // Release the context...
+            ImmReleaseContext(hwnd, immc);
+          }
+        }
+        
+        // Don't pass this message on for processing...
+        flags._eventHandled = YES;
+        break;
       case WM_IME_KEYUP:
+        NSDebugLog(@"WM_IME_KEYUP: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         break;
       case WM_IME_CHAR:
-      {
-        // IME character completed...if we are handling the composition window duties
-        // in-window then delete the last composition character sent (if sent), and send
-        // completed composed character...
-        IME_INFO_T *imeInfo = (IME_INFO_T*)GetWindowLongPtr(hwnd, IME_INFO);
-        if (imeInfo)
-          imeInfo->inProgress = 0;
-        return 0;
+        return [self imeCharacter: hwnd : wParam : lParam];
         break;
-      }
         
       case WM_CHAR:
+        NSDebugLog(@"WM_CHAR: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         break;
         
       case WM_INPUTLANGCHANGEREQUEST:
+        NSDebugLog(@"WM_INPUTLANGCHANGEREQUEST: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         break;
       case WM_INPUTLANGCHANGE:
+        NSDebugLog(@"WM_INPUTLANGCHANGE: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         break;
         
       case WM_KEYDOWN:  //KEYBOARD
+        NSDebugLog(@"WM_KEYDOWN: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KEYDOWN", hwnd);
         ev = process_key_event(self, hwnd, wParam, lParam, NSKeyDown);
         break;
       case WM_KEYUP:  //KEYBOARD
+        NSDebugLog(@"WM_KEYUP: hwnd: %p wParam: %p lParam: %p\n", hwnd, wParam, lParam);
         NSDebugLLog(@"NSEvent", @"Got Message %s for %d", "KEYUP", hwnd);
         ev = process_key_event(self, hwnd, wParam, lParam, NSKeyUp);
         break;
@@ -2124,10 +1785,10 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       // Borderless window request...
       if (wstyle & WS_POPUP)
       {
-        LONG    wstyleOld  = GetWindowLong(hwnd, GWL_STYLE);
-        LONG    estyleOld  = GetWindowLong(hwnd, GWL_EXSTYLE);
-        LONG    wstyleNew  = (wstyleOld & ~WS_OVERLAPPEDWINDOW);
-        LONG    estyleNew  = estyleOld | WS_EX_TOOLWINDOW;
+        LONG_PTR  wstyleOld  = GetWindowLongPtr(hwnd, GWL_STYLE);
+        LONG_PTR  estyleOld  = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+        LONG_PTR  wstyleNew  = (wstyleOld & ~WS_OVERLAPPEDWINDOW);
+        LONG_PTR  estyleNew  = estyleOld | WS_EX_TOOLWINDOW;
         
         NSDebugMLLog(@"WCTrace", @"wstyles - old: %8.8X new: %8.8X\n",
                     wstyleOld, wstyleNew);
@@ -2135,8 +1796,8 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
                     estyleOld, estyleNew);
         
         // Modify window style parameters and update the window information...
-        SetWindowLong(hwnd, GWL_STYLE, wstyleNew);
-        SetWindowLong(hwnd, GWL_EXSTYLE, estyleNew);
+        SetWindowLongPtr(hwnd, GWL_STYLE, wstyleNew);
+        SetWindowLongPtr(hwnd, GWL_EXSTYLE, estyleNew);
         SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
                      SWP_FRAMECHANGED | SWP_NOSENDCHANGING | SWP_NOREPOSITION |
                      SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
@@ -2145,9 +1806,9 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
       SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
 
-      [self _setWindowOwnedByServer: (NSInteger)hwnd];
+      [self _setWindowOwnedByServer: (int)hwnd];
     }
-  return (NSInteger)hwnd;
+  return (int)hwnd;
 }
 
 - (void) termwindow: (NSInteger) winNum
@@ -2168,8 +1829,8 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 	   @"-stylewindow: : called when [self handlesWindowDecorations] == NO");
 
   NSDebugLLog(@"WTrace", @"stylewindow: %d : %d", style, winNum);
-  SetWindowLong((HWND)winNum, GWL_STYLE, wstyle);
-  SetWindowLong((HWND)winNum, GWL_EXSTYLE, estyle);
+  SetWindowLongPtr((HWND)winNum, GWL_STYLE, wstyle);
+  SetWindowLongPtr((HWND)winNum, GWL_EXSTYLE, estyle);
 }
 
 - (void) setbackgroundcolor: (NSColor *)color : (int)win
@@ -2250,24 +1911,24 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
   NSDebugLLog(@"WTrace", @"windowdevice: %d", winNum);
   window = GSWindowWithNumber(winNum);
-  RECT desktop;
-  const HWND hDesktop = GetDesktopWindow();
-  GetWindowRect(hDesktop, &desktop);
-  float screenWidth = desktop.right;
-  float screenHeight = desktop.bottom;
-    
-  if (([window styleMask] & (~NSUnscaledWindowMask) & (~NSFullScreenWindowMask) & (~NSWindowStyleMaskFullScreen)) == 0 && ([window frame].size.width >= screenWidth || [window frame].size.height >= screenHeight)) {
-	h = [window frame].size.height;
-	b = 0;
-	l = 0;
-  }
-  else {
-    GetClientRect((HWND)winNum, &rect);
-	h = rect.bottom - rect.top;
-   [self styleoffsets: &l : &r : &t : &b : [window styleMask]];
-   
-  }
+
+  /* FIXME:
+   * The windows with autodisplay set to NO aren't displayed correctly on
+   * Windows, no matter the backing store type used. And trying to redisplay
+   * these windows here in the server not takes effect. So if the window
+   * have set autodisplay to NO, we change it to YES before create the window.
+   * This problem affects the tooltips, but this solution is different to
+   * the one used in the TestPlant branch. Because that solution involves
+   * changes in the side of GUI.
+   */
+  if (![window isAutodisplay])
+    {
+      [window setAutodisplay: YES];
+    }
   
+  GetClientRect((HWND)winNum, &rect);
+  h = rect.bottom - rect.top;
+  [self styleoffsets: &l : &r : &t : &b : [window styleMask]];
   GSSetDevice(ctxt, (void*)winNum, l, h + b);
   DPSinitmatrix(ctxt);
   DPSinitclip(ctxt);
@@ -2307,7 +1968,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 
   if (op == NSWindowOut)
     {
-      SetWindowLong((HWND)winNum, OFF_ORDERED, 0);
+      SetWindowLongPtr((HWND)winNum, OFF_ORDERED, 0);
       ShowWindow((HWND)winNum, SW_HIDE);
       return;
     }
@@ -2325,10 +1986,10 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
     }
 
   ShowWindow((HWND)winNum, flag);
-  SetWindowLong((HWND)winNum, OFF_ORDERED, 1);
+  SetWindowLongPtr((HWND)winNum, OFF_ORDERED, 1);
   
   // Process window leveling...
-  level = GetWindowLong((HWND)winNum, OFF_LEVEL);
+  level = GetWindowLongPtr((HWND)winNum, OFF_LEVEL);
 
   if (otherWin <= 0)
     {
@@ -2353,14 +2014,14 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       /* Put this on the same window level as the window we are ordering
        * it against.
        */
-      otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
+      otherLevel = GetWindowLongPtr((HWND)otherWin, OFF_LEVEL);
       if (level != otherLevel)
         {
           NSDebugLLog(@"WTrace",
             @"orderwindow: implicitly set level of %d (%d) to that of %d (%d)",
             winNum, level, otherWin, otherLevel);
                 level = otherLevel;
-          SetWindowLong((HWND)winNum, OFF_LEVEL, level);
+          SetWindowLongPtr((HWND)winNum, OFF_LEVEL, level);
         }
     }
 
@@ -2407,9 +2068,9 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
             && GetClassName((HWND)otherWin, buf, 32) == 18
             && strncmp(buf, "GNUstepWindowClass", 18) == 0)
             {
-              if (GetWindowLong((HWND)otherWin, OFF_ORDERED) == 1)
+              if (GetWindowLongPtr((HWND)otherWin, OFF_ORDERED) == 1)
                 {
-                  otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
+                  otherLevel = GetWindowLongPtr((HWND)otherWin, OFF_LEVEL);
                   NSDebugLLog(@"WTrace", @"orderwindow: found gnustep window %d (%d)",
                               otherWin, otherLevel);
                   if (otherLevel >= level)
@@ -2468,7 +2129,6 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
         NSDebugMLLog(@"WError", @"SetForegroundWindow error for HWND: %p\n", winNum);
       _enableCallbacks = YES;
     }
-  
   /* For debug log window stack.
    */
   if (GSDebugSet(@"WTrace") == YES)
@@ -2491,9 +2151,9 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
             && GetClassName((HWND)otherWin, buf, 32) == 18
             && strncmp(buf, "GNUstepWindowClass", 18) == 0)
             {
-              if (GetWindowLong((HWND)otherWin, OFF_ORDERED) == 1)
+              if (GetWindowLongPtr((HWND)otherWin, OFF_ORDERED) == 1)
                 {
-                  otherLevel = GetWindowLong((HWND)otherWin, OFF_LEVEL);
+                  otherLevel = GetWindowLongPtr((HWND)otherWin, OFF_LEVEL);
                   s = [s stringByAppendingFormat:
                     @"%d (%d)\n", otherWin, otherLevel];
                 }
@@ -2575,19 +2235,19 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 - (void) setwindowlevel: (int) level : (NSInteger) winNum
 {
   NSDebugLLog(@"WTrace", @"setwindowlevel: %d : %d", level, winNum);
-  if (GetWindowLong((HWND)winNum, OFF_LEVEL) != level)
+  if (GetWindowLongPtr((HWND)winNum, OFF_LEVEL) != level)
     {
-      SetWindowLong((HWND)winNum, OFF_LEVEL, level);
-      if (GetWindowLong((HWND)winNum, OFF_ORDERED) == YES)
-        {
-                [self orderwindow: NSWindowAbove : 0 : winNum];
-        }
+      SetWindowLongPtr((HWND)winNum, OFF_LEVEL, level);
+      if (GetWindowLongPtr((HWND)winNum, OFF_ORDERED) == YES)
+	{
+          [self orderwindow: NSWindowAbove : 0 : winNum];
+	}
     }
 }
 
 - (int) windowlevel: (NSInteger) winNum
 {
-  return GetWindowLong((HWND)winNum, OFF_LEVEL);
+  return GetWindowLongPtr((HWND)winNum, OFF_LEVEL);
 }
 
 - (NSArray *) windowlist
@@ -2645,17 +2305,13 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   // If the window has resizable set on it...
   if (GetWindowLong((HWND)winNum, GWL_STYLE) & WS_SIZEBOX)
     {
-      // Disable the maximize box if a maximum size is set
-      if (size.width < 10000 || size.height < 10000)
-        {
-          SetWindowLong((HWND)winNum, GWL_STYLE,
-              GetWindowLong((HWND)winNum, GWL_STYLE) ^ WS_MAXIMIZEBOX);
-        }
-      else
-        {
-          SetWindowLong((HWND)winNum, GWL_STYLE,
-              GetWindowLong((HWND)winNum, GWL_STYLE) | WS_MAXIMIZEBOX);
-        }
+      SetWindowLongPtr((HWND)winNum, GWL_STYLE, 
+          GetWindowLongPtr((HWND)winNum, GWL_STYLE) ^ WS_MAXIMIZEBOX);
+    }
+  else
+    {
+      SetWindowLongPtr((HWND)winNum, GWL_STYLE, 
+          GetWindowLongPtr((HWND)winNum, GWL_STYLE) | WS_MAXIMIZEBOX);
     }
 }
 
@@ -2786,15 +2442,15 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 {
   if (alpha > 0.99)
     {
-      SetWindowLong((HWND)win, GWL_EXSTYLE,
-                    GetWindowLong((HWND)win, GWL_EXSTYLE) & ~WS_EX_LAYERED);
+      SetWindowLongPtr((HWND)win, GWL_EXSTYLE,
+                    GetWindowLongPtr((HWND)win, GWL_EXSTYLE) & ~WS_EX_LAYERED);
       RedrawWindow((HWND)win, NULL, NULL, 
                    RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
     }
   else
     {
-      SetWindowLong((HWND)win, GWL_EXSTYLE,
-                    GetWindowLong((HWND)win, GWL_EXSTYLE) | WS_EX_LAYERED);
+      SetWindowLongPtr((HWND)win, GWL_EXSTYLE, 
+                    GetWindowLongPtr((HWND)win, GWL_EXSTYLE) | WS_EX_LAYERED);
       SetLayeredWindowAttributes((HWND)win, 0, 255 * alpha, LWA_ALPHA);
     }
 }
@@ -3090,17 +2746,17 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   //SetParent((HWND)childWin, (HWND)parentWin);
 }
 
-- (void) setIgnoreMouse: (BOOL)ignoreMouse : (NSInteger)win
+- (void) setIgnoreMouse: (BOOL)ignoreMouse : (int)win
 {
-  int extendedStyle = GetWindowLong((HWND)win, GWL_EXSTYLE);
+  int extendedStyle = GetWindowLongPtr((HWND)win, GWL_EXSTYLE);
 
   if (ignoreMouse)
     {
-      SetWindowLong((HWND)win, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT);
+      SetWindowLongPtr((HWND)win, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT);
     }
   else
     {
-      SetWindowLong((HWND)win, GWL_EXSTYLE, extendedStyle & ~WS_EX_TRANSPARENT);
+      SetWindowLongPtr((HWND)win, GWL_EXSTYLE, extendedStyle & ~WS_EX_TRANSPARENT);
     }
 }
 
@@ -3489,6 +3145,118 @@ process_mouse_event(WIN32Server *svr, HWND hwnd, WPARAM wParam, LPARAM lParam,
       eventFlags |= NSHelpKeyMask;
     }
   // What about other modifiers?
+
+  /* Currently GNUstep only proccess events inside the windows (contentview).
+   * So we should check if this is the first movement inside the window.
+   * And should consider also the case when this is the last movement inside
+   * the window.
+   */
+  if (!should_handle_cursor)
+    {
+      /* If this is the first movement inside the window, tell GNUstep
+       * that should handle the cursor and that should check if the
+       * cursor needs be updated. 
+       */
+      should_handle_cursor = YES;
+      update_cursor = YES;
+
+      /* We also starts tracking the mouse, so we receive the
+       * message WM_MOUSELEAVE when the mouse leaves the client area.
+       */
+      TRACKMOUSEEVENT tme;
+      tme.cbSize = sizeof(tme);
+      tme.dwFlags = TME_LEAVE;
+      tme.hwndTrack = hwnd;
+      TrackMouseEvent(&tme);
+      
+      /* If there are a previous cursor available (maybe a cursor that
+       * represent a tool) set it as the cursor. If not, set an arrow
+       * cursor (this is necessary because if the cursor is updated to,
+       * for example, an I Beam cursor, there will not be a default cursor
+       * to display when the user moves the mouse over, for example, an
+       * scrollbar).
+       */
+      if (current_cursor != nil)
+	{
+	  [current_cursor set];
+	  current_cursor = nil;
+	}
+      else
+	{
+	  [[NSCursor arrowCursor] set];
+	}
+    }
+  else
+    {
+      /* If the cursor is not associated to a tracking rectangle, not in
+       * the push/pop stack, save this. We do this for the case when, for
+       * example, the user choose a tool in a Tools window which sets a
+       * cursor for the tool and this cursor should be preserved between
+       * different windows.
+       */
+      if ([NSCursor count] == 0 &&
+	  ![current_cursor isEqual: [NSCursor currentCursor]])
+	{
+	  ASSIGN(current_cursor, [NSCursor currentCursor]);
+	}
+    }
+
+  // Check if we need update the cursor.
+  if (update_cursor)
+    {
+      NSView *subview = nil;
+      NSWindow *gswin = GSWindowWithNumber((int)hwnd);
+
+      subview = [[gswin contentView] hitTest: eventLocation];
+      
+      if (subview != nil && subview->_rFlags.valid_rects)
+	{
+	  NSArray *tr = subview->_cursor_rects;
+	  NSUInteger count = [tr count];
+
+	  // Loop through cursor rectangles
+	  if (count > 0)
+	    {
+	      GSTrackingRect *rects[count];
+	      NSUInteger i;
+
+	      [tr getObjects: rects];
+
+	      for (i = 0; i < count; ++i)
+		{
+		  GSTrackingRect *r = rects[i];
+		  BOOL now;
+
+		  if ([r isValid] == NO)
+		    continue;
+
+		  /*
+		   * Check for presence of point in rectangle.
+		   */
+		  now = NSMouseInRect(eventLocation, r->rectangle, NO);
+
+		  // Mouse inside
+		  if (now)
+		    {
+		      NSEvent *e;
+
+		      e = [NSEvent enterExitEventWithType: NSCursorUpdate
+						 location: eventLocation
+					    modifierFlags: eventFlags
+						timestamp: 0
+					     windowNumber: (int)hwnd
+						  context: gcontext
+					      eventNumber: 0
+					   trackingNumber: (int)YES
+						 userData: (void*)r];
+		      [GSCurrentServer() postEvent: e atStart: YES];
+		      //NSLog(@"Add enter event %@ for view %@ rect %@", e, theView, NSStringFromRect(r->rectangle));
+		    }
+		}
+	    }
+	}
+      update_cursor = NO;
+    }
 
   if (eventType == NSScrollWheel)
     {

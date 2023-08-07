@@ -32,7 +32,7 @@
 
 #ifdef X_HAVE_UTF8_STRING
 
-#define XSERVER [XGServer currentXDisplay]
+#define XSERVER [XGServer xDisplay]
 
 typedef struct _UTF8Str {
     char    *data;

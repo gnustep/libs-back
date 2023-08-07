@@ -36,12 +36,12 @@
 + (Class) faceInfoClass
 {
   return [CairoFaceInfo class];
-    }
+}
 
 + (CairoFaceInfo *) fontWithName: (NSString *) name
 {
   return (CairoFaceInfo *) [super fontWithName: name];
-    }
+}
 
 @end
 

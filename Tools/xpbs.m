@@ -994,17 +994,22 @@ xErrorHandler(Display *d, XErrorEvent *e)
           XEvent event;
           NSMutableData	*imd = nil;
           BOOL wait = YES;
-          
+
+	  // Need to delete the property to start transfer
+	  XDeleteProperty(xDisplay, xEvent->requestor, xEvent->property);
           md = nil;
           while (wait)
             {
               XNextEvent(xDisplay, &event);
-              
+
               if (event.type == PropertyNotify)
                 {
                   if (event.xproperty.state != PropertyNewValue) continue;
-                  
+
                   imd = [self getSelectionData: xEvent type: &actual_type];
+
+		  // delete the property to get the next transfer chunk
+		  XDeleteProperty(xDisplay, xEvent->requestor, xEvent->property);
                   if (imd != nil)
                     {
                       if (md == nil)
@@ -1156,7 +1161,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
   if (xEvent->target == XG_TARGETS)
     {
       unsigned	numTypes = 0;
-      Atom	xTypes[10];
+      // ATTENTION: Increase this array when adding more types
+      Atom	xTypes[16];
       
       /*
        * The requestor wants a list of the types we can supply it with.

@@ -502,7 +502,7 @@ static BOOL function_setup(NSDictionary * d, function_t *f)
     f->encode = NULL;
     free(f->decode);
     f->decode = NULL;
-    NSDebugLLog(@"GSArt -shfill", @"Need %i bytes of data, DataSource only has %i bytes.", 
+    NSDebugLLog(@"GSArt -shfill", @"Need %i bytes of data, DataSource only has %lu bytes.", 
       j, [data length]);
     return NO;
   }

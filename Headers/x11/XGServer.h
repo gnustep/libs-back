@@ -52,29 +52,42 @@ typedef enum {
   XGDM_PORTABLE
 } XGDrawMechanism;
 
+typedef struct MonitorDevice {
+  int screen_id;
+  NSWindowDepth depth;
+  NSSize resolution;
+  NSRect frame;
+} MonitorDevice;
+
 @interface XGServer : GSDisplayServer
 {
   Display           *dpy;
   int               defScreen;
+  NSSize            xScreenSize;
   NSMapTable        *screenList;
   Window	    grabWindow;
   struct XGGeneric  generic;
   id                inputServer;
+  int               randrEventBase;
+  int               randrErrorBase;
+  MonitorDevice     *monitors;
+  unsigned          monitorsCount;
 }
 
-+ (Display*) currentXDisplay;
-- (Display*) xDisplay;
++ (Display *) xDisplay;
+- (Display *) xDisplay;
+- (Window) xDisplayRootWindow;
 - (Window) xAppRootWindow;
+- (NSSize) xScreenSize;
 
-- (void *) xrContextForScreen: (int)screen_number;
-- (Visual *) visualForScreen: (int)screen_number;
-- (int) depthForScreen: (int)screen_number;
+- (void *) screenRContext;
+- (Visual *) screenVisual;
+- (int) screenDepth;
+- (XGDrawMechanism) screenDrawMechanism;
 
-- (XGDrawMechanism) drawMechanismForScreen: (int)screen_number;
 - (void) getForScreen: (int)screen_number pixelFormat: (int *)bpp_number 
                 masks: (int *)red_mask : (int *)green_mask : (int *)blue_mask;
-- (Window) xDisplayRootWindowForScreen: (int)screen_number;
-- (XColor) xColorFromColor: (XColor)color forScreen: (int)screen_number;
+- (XColor) xColorFromColor: (XColor)color;
 
 + (void) waitAllContexts;
 @end
@@ -92,6 +105,8 @@ typedef enum {
 - (NSRect) _OSFrameToXHints: (NSRect)o for: (void*)window;
 - (NSRect) _XFrameToOSFrame: (NSRect)x for: (void*)window;
 - (NSRect) _XFrameToXHints: (NSRect)o for: (void*)window;
+
+- (NSString *) windowManagerName;
 @end
 
 // Public interface for the input methods.  

@@ -51,21 +51,34 @@
 
 static BOOL	is_daemon = NO;		/* Currently running as daemon.	 */
 static BOOL	auto_stop = NO;		/* Stop when all connections closed. */
-static char	ebuf[2048];
 
 static NSMutableArray	*connections = nil;
 static NSTimer          *timer       = nil;           /* When to shut down. */
 
-#ifdef HAVE_SYSLOG
-
+#if defined(HAVE_SYSLOG) || defined(HAVE_SLOGF)
+#  if defined(HAVE_SLOGF)
+#    include <sys/slogcodes.h>
+#    include <sys/slog.h>
+#    define LOG_CRIT _SLOG_CRITICAL
+#    define LOG_DEBUG _SLOG_DEBUG1
+#    define LOG_ERR _SLOG_ERROR
+#    define LOG_INFO _SLOG_INFO
+#    define LOG_WARNING _SLOG_WARNING
+#    define syslog(prio, msg,...) slogf(_SLOG_SETCODE(_SLOG_SYSLOG, 0), prio, msg, __VA_ARGS__)
+#  endif
 static int	log_priority = LOG_DEBUG;
 
 static void
-gpbs_log (int prio)
+gpbs_log (int prio, const char *ebuf)
 {
   if (is_daemon)
     {
-      syslog (log_priority | prio, ebuf);
+#   if defined(HAVE_SLOGF)
+	  // Let's not have 0 as the value for prio. It means "shutdown" on QNX
+      syslog (prio ? prio : log_priority, "%s", ebuf);
+#   else
+      syslog (log_priority | prio, "%s", ebuf);
+#   endif
     }
   else if (prio == LOG_INFO)
     {
@@ -82,7 +95,7 @@ gpbs_log (int prio)
     {
       if (is_daemon)
 	{
-	  syslog (LOG_CRIT, "exiting.");
+	  syslog (LOG_CRIT, "%s", "exiting.");
 	}
       else
      	{
@@ -100,7 +113,7 @@ gpbs_log (int prio)
 #define LOG_INFO	0
 #define LOG_WARNING	0
 void
-gpbs_log (int prio)
+gpbs_log (int prio, const char *ebuf)
 {
   write (2, ebuf, strlen (ebuf));
   write (2, "\n", 1);
@@ -1357,7 +1370,7 @@ init(int argc, char** argv, char **env)
 	}
       NS_HANDLER
 	{
-	  gpbs_log(LOG_CRIT);
+	  gpbs_log(LOG_CRIT, [[localException description] UTF8String]);
 	  DESTROY(t);
 	}
       NS_ENDHANDLER
@@ -1426,7 +1439,7 @@ main(int argc, char** argv, char **env)
 
       if (host == nil)
         {
-          NSLog(@"gpbs - unknown NSHost argument  ... %@ - quiting.", hostname);
+          NSLog(@"gpbs - unknown NSHost argument  ... %@ - quitting.", hostname);
           exit(EXIT_FAILURE);
         }
       a = [host names];

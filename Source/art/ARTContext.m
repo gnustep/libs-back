@@ -23,18 +23,18 @@
 */
 
 
-#include <Foundation/NSDebug.h>
-#include <Foundation/NSDictionary.h>
-#include <Foundation/NSUserDefaults.h>
-#include <AppKit/NSBitmapImageRep.h>
-#include <AppKit/NSGraphics.h>
+#import <Foundation/NSDebug.h>
+#import <Foundation/NSDictionary.h>
+#import <Foundation/NSUserDefaults.h>
+#import <AppKit/NSBitmapImageRep.h>
+#import <AppKit/NSGraphics.h>
 
-#include "ARTGState.h"
-#include "blit.h"
-#include "ftfont.h"
+#import "ARTGState.h"
+#import "blit.h"
+#import "ftfont.h"
 
 #ifndef RDS
-#include "x11/XWindowBuffer.h"
+#import "x11/XWindowBuffer.h"
 #endif
 
 @implementation ARTContext
@@ -70,7 +70,7 @@
   gswindow_device_t *gs_win;
 
   gs_win = device;
-  [(XGServer *)server getForScreen: gs_win->screen pixelFormat: &bpp 
+  [(XGServer *)server getForScreen: gs_win->screen_id pixelFormat: &bpp 
                 masks: &red_mask : &green_mask : &blue_mask];
 #endif
   artcontext_setup_draw_info(&DI, red_mask, green_mask, blue_mask, bpp);

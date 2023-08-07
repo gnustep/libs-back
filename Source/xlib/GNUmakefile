@@ -44,7 +44,10 @@ XGFontSetFontInfo.m \
 linking.m
 
 ifeq ($(WITH_XFT),yes)
-xlib_OBJC_FILES += GSXftFontInfo.m
+xlib_OBJC_FILES += GSXftFontInfo.m \
+		   ../fontconfig/FCFontInfo.m \
+		   ../fontconfig/FCFontEnumerator.m \
+		   ../fontconfig/FCFaceInfo.m
 endif
 
 -include GNUmakefile.preamble

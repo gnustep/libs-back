@@ -778,6 +778,7 @@ _bitmap_combine_alpha(RContext *context,
    */
    switch (bits_per_sample)
      {
+        case 16:
         case 8:
           img.pro_mul = 1;
           break;
@@ -803,7 +804,7 @@ _bitmap_combine_alpha(RContext *context,
           img.pro_mul = 255;
           break;
         default:
-          NSLog(@"Bizzare number of bits per sample %d", bits_per_sample);
+          NSLog(@"Bizarre number of bits per sample %d", bits_per_sample);
           return -1;
      }
 
@@ -1261,7 +1262,7 @@ _pixmap_read_alpha(RContext *context,
     }
   else
     {
-      unsigned		row;
+      unsigned row;
       unsigned long pixels[CSIZE];
       XColor colors[CSIZE];
       BOOL empty[CSIZE];
@@ -1279,7 +1280,7 @@ _pixmap_read_alpha(RContext *context,
        */
       pixel = (unsigned long)-1;	// Never valid?
 
-       for (row = 0; row < srect.height; row++)
+      for (row = 0; row < srect.height; row++)
 	{
 	  unsigned	col;
 

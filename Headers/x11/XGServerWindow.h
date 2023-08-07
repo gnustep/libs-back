@@ -72,7 +72,7 @@ typedef struct {
 #define WMFHideOtherApplications		10
 #define WMFHideApplication			12
 
-#define GSMaxWMProtocols 5
+#define GSMaxWMProtocols 6
 
 /* Graphics Driver protocol. Setup in [NSGraphicsContext-contextDevice:] */
 enum {
@@ -84,8 +84,9 @@ typedef struct _gswindow_device_t {
   Display               *display;      /* Display this window is on */
   Window                ident;         /* Window handle */
   Window                root;          /* Handle of root window */
-  Window		parent;        /* Handle of parent window */
-  int                   screen;        /* Screeen this window is on */
+  Window                parent;        /* Handle of parent window */
+  int                   screen_id;     /* Screeen this window is on */
+  int                   monitor_id;    /* Physical monitor this window is on */
   GC                    gc;            /* GC for drawing */
   long                  number;        /* Globally unique identifier */
   unsigned int          depth;         /* Window depth */
@@ -94,7 +95,8 @@ typedef struct _gswindow_device_t {
   int                   visibility;    /* X visibility */
   int                   wm_state;      /* X WM state */
   NSBackingStoreType    type;          /* Backing type */
-  NSRect                xframe;        /* Window frame */
+  NSRect                xframe;        /* Window frame in X11 coordinates */
+  NSRect                osframe;       /* Window frame in OpenStep coordinates */
 
   unsigned int          buffer_width;  /* Size in pixels of the current buffers. */
   unsigned int          buffer_height;

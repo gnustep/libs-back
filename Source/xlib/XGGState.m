@@ -186,8 +186,8 @@ static Region emptyRegion;
 
   /* We know the current server sent us this */
   srv = (XGServer *)GSCurrentServer();
-  context = [srv xrContextForScreen: gs_win->screen];
-  drawMechanism = [srv drawMechanismForScreen: gs_win->screen];
+  context = [srv screenRContext];
+  drawMechanism = [srv screenDrawMechanism];
 
   if (gs_win != NULL && gs_win->alpha_buffer != 0)
     {

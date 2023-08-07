@@ -71,7 +71,7 @@
   SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)win);
   SetWindowLongPtr(hwnd, IME_INFO, (LONG_PTR)ime);
 
-  [self windowbacking: type : (NSInteger)hwnd];
+  [self windowbacking: type : (int)hwnd];
 
   // Find the icon file, assume it has the same name as the "icon" which
   // was specified in the bundle's dictionary...

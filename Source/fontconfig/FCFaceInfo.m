@@ -67,6 +67,39 @@
   return _familyName;
 }
 
+- (NSString *) displayName
+{
+  char *fcname;
+
+#ifdef FC_POSTSCRIPT_NAME
+  char  *fcpsname;
+#endif
+
+  /*
+    If fullname && fullname != psname, use fullname as displayname.
+    This works around some weird Adobe OpenType fonts which contain their
+    PostScript name in their "human-readable name" field.
+
+    So, set the fullname as displayName (now AKA VisibleName) only
+    if it's not the same as whatever the postscript name is.
+  */
+  if (FcPatternGetString(_pattern, FC_FULLNAME, 0, (FcChar8 **)&fcname) == FcResultMatch
+#ifdef FC_POSTSCRIPT_NAME
+      && FcPatternGetString(_pattern, FC_POSTSCRIPT_NAME, 0, (FcChar8 **)&fcpsname) == FcResultMatch
+      && strcmp (fcpsname, fcname)
+#endif
+     )
+    {
+      return [NSString stringWithUTF8String: fcname];
+    }
+  else if (FcPatternGetString(_pattern, FC_STYLE, 0, (FcChar8 **)&fcname) == FcResultMatch)
+    {
+      return [NSString stringWithFormat: @"%@ %@", _familyName,
+              [NSString stringWithUTF8String: fcname]];
+    }
+  return _familyName;
+}
+
 - (int) weight
 {
   return _weight;
@@ -100,27 +133,32 @@
 
 - (FcPattern *) matchedPattern
 {
-  FcResult result;
-  FcPattern *resolved;
-
-  FcConfigSubstitute(NULL, _pattern, FcMatchPattern); 
-  FcDefaultSubstitute(_pattern);
-  resolved = FcFontMatch(NULL, _pattern, &result);
-
-  return resolved;
-}
-
-- (NSCharacterSet*)characterSet
-{
-  if (_characterSet == nil && !_hasNoCharacterSet)
+  if (!_patternIsResolved)
     {
       FcResult result;
       FcPattern *resolved;
-      FcCharSet *charset;
-      
+
       FcConfigSubstitute(NULL, _pattern, FcMatchPattern); 
       FcDefaultSubstitute(_pattern);
       resolved = FcFontMatch(NULL, _pattern, &result);
+      FcPatternDestroy(_pattern);
+      _pattern = resolved;
+      _patternIsResolved = YES;
+    }
+
+  // The caller expects ownership of returned pattern and will destroy it
+  FcPatternReference(_pattern);
+  return _pattern;
+}
+
+- (NSCharacterSet*) characterSet
+{
+  if (_characterSet == nil && !_hasNoCharacterSet)
+    {
+      FcPattern *resolved;
+      FcCharSet *charset;
+      
+      resolved = [self matchedPattern];
       
       if (FcResultMatch == FcPatternGetCharSet(resolved, FC_CHARSET, 0, &charset))
 	{

@@ -83,6 +83,12 @@
 #    define _CAIRO_SURFACE_CLASSNAME Win32CairoSurface
 #    include "cairo/Win32CairoSurface.h"
 #  endif /* USE_GLITZ */
+#elif BUILD_SERVER == SERVER_wayland
+#  include "wayland/WaylandServer.h"
+#  include "cairo/CairoGState.h"
+#  include "cairo/WaylandCairoShmSurface.h"
+#  define _CAIRO_GSTATE_CLASSNAME CairoGState
+#  define _CAIRO_SURFACE_CLASSNAME WaylandCairoShmSurface
 #else
 #  error Invalid server for Cairo backend : non implemented
 #endif /* BUILD_SERVER */
@@ -110,16 +116,6 @@
 - (BOOL) supportsDrawGState
 {
   return YES;
-}
-
-- (id) initWithContextInfo: (NSDictionary *)info
-{
-  self = [super initWithContextInfo:info];
-  if (self)
-  {
-    [self setImageInterpolation:NSImageInterpolationDefault];
-  }
-  return(self);
 }
 
 - (BOOL) isDrawingToScreen
@@ -162,7 +158,7 @@
       GetClientRect(hwnd, &rect);
       NSRect  frame = MSWindowRectToGS((WIN32Server*)GSCurrentServer(), hwnd, rect);
       [[self class] handleExposeRect: frame forDriver: surface];
-}
+    }
 #endif
 }
 

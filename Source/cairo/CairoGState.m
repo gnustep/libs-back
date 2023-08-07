@@ -386,9 +386,8 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
 {
   if (_ct)
     {
-      cairo_matrix_t saved_matrix;
       cairo_matrix_t local_matrix;
-      NSPoint        p = [path currentPoint];
+      NSAffineTransformStruct matrix = [ctm transformStruct];
       device_color_t c;
 
       c = strokeColor;
@@ -396,16 +395,19 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
       // The underlying concept does not allow to determine if alpha is set or not.
       cairo_set_source_rgba(_ct, c.field[0], c.field[1], c.field[2], c.field[AINDEX]);
 
-      cairo_get_matrix(_ct, &saved_matrix);
+      [self _setPoint];
+      cairo_save(_ct);
+      cairo_matrix_init(&local_matrix, matrix.m11, 0, 0,
+                        matrix.m22, 0, 0);
+      cairo_transform(_ct, &local_matrix);
+      // Undo the flip
+      cairo_matrix_init_scale(&local_matrix, 1, -1);
+      cairo_matrix_translate(&local_matrix, 0,  -[_surface size].height);
+      cairo_transform(_ct, &local_matrix);
 
-      cairo_matrix_init_scale(&local_matrix, 1, 1);
-      cairo_matrix_translate(&local_matrix, 0, [_surface size].height-(p.y*2));
-      cairo_set_matrix(_ct, &local_matrix);
-
-      cairo_move_to(_ct, p.x, p.y);
       cairo_show_text(_ct, s);
 
-      cairo_set_matrix(_ct, &saved_matrix);
+      cairo_restore(_ct);
     }
 }
 
@@ -881,6 +883,8 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
   dict = [NSMutableDictionary dictionaryWithDictionary: baseDict];
 
   [dict setObject: [NSValue valueWithSize: ssize] forKey: @"Size"];
+
+  [dict setObject: [NSValue valueWithSize: ssize] forKey: @"Size"];
   
   matrix = [self GSCurrentCTM];
   [matrix translateXBy: -r.origin.x - offset.x 
@@ -941,7 +945,7 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
       *dataPixel = ((*dataPixel & 0x000000FF) << 16)    // ___B -> _B__
                     | ((*dataPixel & 0x00FF0000) >> 16) // _R__ -> ___R
                     | (*dataPixel & 0xFF00FF00);        // A_G_ -> A_G_
-#endif 
+#endif
 
       dataPixel++; 
     }

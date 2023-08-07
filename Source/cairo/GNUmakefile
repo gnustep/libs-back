@@ -55,6 +55,9 @@ else
     else
       cairo_OBJC_FILES += XGCairoSurface.m XGCairoXImageSurface.m XGCairoModernSurface.m
     endif
+  endif
+  ifeq ($(BUILD_SERVER),wayland)
+    cairo_OBJC_FILES += WaylandCairoShmSurface.m
   else
     ifeq ($(BUILD_GRAPHICS),cairo)
       ifeq ($(WITH_GLITZ),yes)

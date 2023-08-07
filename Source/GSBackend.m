@@ -45,6 +45,11 @@
 @interface WIN32Server (Initialize)
 + (void) initializeBackend;
 @end
+#elif BUILD_SERVER == SERVER_wayland
+#include <wayland/WaylandServer.h>
+@interface WaylandServer (Initialize)
++ (void) initializeBackend;
+@end
 #endif
 
 /* Call the correct initalization routines for the choosen
@@ -65,6 +70,8 @@
   [XGServer initializeBackend];
 #elif BUILD_SERVER == SERVER_win32
   [WIN32Server initializeBackend];
+#elif BUILD_SERVER == SERVER_wayland
+  [WaylandServer initializeBackend];
 #else
   [NSException raise: NSInternalInconsistencyException
 	       format: @"No Window Server configured in backend"];

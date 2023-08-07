@@ -130,10 +130,14 @@
     in the current color */
 - (void) setColor: (device_color_t *)color state: (color_state_t)cState
 {
-  if (cState & COLOR_FILL)
-    fillColor = *color;
-  if (cState & COLOR_STROKE)
-    strokeColor = *color;
+  if ((cState & COLOR_FILL) && (&fillColor != color))
+    {
+      fillColor = *color;
+    }
+  if ((cState & COLOR_STROKE) && (&strokeColor != color))
+    {
+      strokeColor = *color;
+    }
   cstate = cState;
   DESTROY(pattern);
 }
@@ -1249,7 +1253,7 @@ typedef enum {
       out[0] = out[1] = out[2] = 0.0;
       for (x = NSMinX(rect); x < NSMaxX(rect); x++)
         {
-          char r, g, b, a;
+          unsigned char r, g, b, a;
             
           [function eval: in : out];
      
@@ -1332,11 +1336,11 @@ typedef enum {
   endPoint = NSMakePoint(NSMaxX(rect), NSMaxY(rect));
 
   for (point.y = startPoint.y; point.y < endPoint.y; point.y += size.height)
-        {
+    {
       for (point.x = startPoint.x; point.x < endPoint.x; point.x += size.width)
         {
 	  [color_pattern compositeToPoint: [ictm transformPoint: point]
-                         operation: NSCompositeSourceOver];
+                                operation: NSCompositeSourceOver];
         }
     }
   RELEASE(ictm);

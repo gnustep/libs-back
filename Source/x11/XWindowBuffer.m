@@ -222,8 +222,8 @@ no_xshm:
   visual = DefaultVisual(wi->display, DefaultScreen(wi->display));
 #else
   // Better to get the used visual from the XGServer.
-  visual = [(XGServer*)GSCurrentServer() visualForScreen: awindow->screen];
-  drawing_depth = [(XGServer*)GSCurrentServer() depthForScreen: awindow->screen];
+  visual = [(XGServer*)GSCurrentServer() screenVisual];
+  drawing_depth = [(XGServer*)GSCurrentServer() screenDepth];
 #endif
 
   /* TODO: resolve properly.
@@ -645,7 +645,7 @@ static int warn = 0;
         while (XCheckTypedEvent(window->display,
           XShmGetEventBase(window->display) + ShmCompletion, &e))
           {
-            [isa _gotShmCompletion: ((XShmCompletionEvent *)&e)->drawable];
+            [[self class] _gotShmCompletion: ((XShmCompletionEvent *)&e)->drawable];
           }
       }
     }

@@ -47,14 +47,14 @@
 /* Size of the dragged window */
 #define	DWZ	48
 
-#define XDPY  [XGServer currentXDisplay]
+#define XDPY  [XGServer xDisplay]
 
 #define SLIDE_TIME_STEP   .02   /* in seconds */
 #define SLIDE_NR_OF_STEPS 20  
 
 #define	DRAGWINDEV [XGServer _windowWithTag: [_window windowNumber]]
 #define	XX(P)	(P.x)
-#define	XY(P)	(DisplayHeight(XDPY, DRAGWINDEV->screen) - P.y)
+#define	XY(P)	([(XGServer *)GSCurrentServer() xScreenSize].height - P.y)
 
 @interface XGRawWindow : NSWindow
 @end
@@ -334,7 +334,7 @@ static	XGDragView	*sharedDragView = nil;
   -1        if we can only find the X window that we are dragging
   None      if there is no X window that accepts drag and drop.
 */
-- (Window) _xWindowAcceptingDnDDescendentOf: (Window) parent 
+- (Window) _xWindowAcceptingDnDDescendentOf: (Window) parent
                                    ignoring: (Window) ident
 				     underX: (int) x 
 					  Y: (int) y
@@ -371,9 +371,9 @@ static	XGDragView	*sharedDragView = nil;
           // at the same place. Try all of them.
           if ((result != (Window)-1) && (result != (Window) None))
             {
-            break;
+              break;
+            }
         }
-    }
     }
 
   if (children)
@@ -428,7 +428,7 @@ static	XGDragView	*sharedDragView = nil;
   NSCountedSet		*drag_set = [self dragTypesForWindow: win];
 
   winNum = [win windowNumber];
-  window = [isa _windowWithTag: winNum];
+  window = [[self class] _windowWithTag: winNum];
 
   GSEnsureDndIsInitialized ();
 

@@ -7,13 +7,115 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.30.0}
+
+The release includes mostly improvements for the new Wayland backend and  a few bug fixes.
+
+@itemize @bullet
+@item Improvements for the wayland backend.
+@item Don't use font hinting for cauro, when using scaling.
+@item Fix pasteboard transfer of huge data by deleting property on begin
+and at every Notify.
+@end itemize
+
+@ifclear ANNOUNCE-ONLY
+
+@section Noteworthy changes in version @samp{0.29.0}
+
+The release includes an alpha version of the wayland backend and a few
+bug fixes.
+
+@itemize @bullet
+@item Alpha version of the wayland backend.
+@item Improved focus handling for WindowMaker interaction.
+@item Speed up for font pattern resolving.
+@item Improved appicon behavior under WindowMaker.
+@item Prevent appicon flickering on WindowMaker at application start.
+@item On Windows, consistently use @code{GetWindowLongPtr} and
+@code{SetWindowLongPtr} in place of @code{GetWindowLong} and
+@code{SetWindowLong} for win32 and cairo for various win64 fixes.
+@end itemize
+
+@section Noteworthy changes in version @samp{0.28.0}
+
+This release includes a few bugfixes and a huge rework of multi monitor handling.
+
+@itemize @bullet
+@item Improved focus handling for WindowMaker interaction.
+@item Cursor improvements.
+@item Better handling of fonts with fontconfig.
+@item Simplify code that converts images for X11.
+@item art: Remove ftfont-old.m.
+@item Use Xrandr for multi monitor support.
+@end itemize
+
+@section Noteworthy changes in version @samp{0.27.0}
+
+This release includes a few bugfixes.
+
+@itemize @bullet
+@item configure: Improve configuration.
+@item xlib: Improve xft font classes.
+@item x11: Enable drawing in secondary threads.
+@item x11: Better handling of atoms. Method to get the window manager.
+@item opal: Improve colour handling
+@end itemize
+
+@section Noteworthy changes in version @samp{0.26.2}
+
+This release contains no changes since 0.26.1. It is released to coincide
+with gnustep-gui 0.26.2, which has important bugfixes related to printing.
+
+@section Noteworthy changes in version @samp{0.26.1}
+
+This release contains no changes since 0.26.0. It is released to coincide
+with gnustep-gui 0.26.1, released to mark gnustep-base 1.25.1 as the
+requirement for gnustep-gui.
+
+@section Noteworthy changes in version @samp{0.26.0}
+
+This release includes a few bugfixes, as well as compatibility improvements
+as a result of GSoC 2017 project.
+
+@itemize @bullet
+@item opal: Bridging categories between Opal and GNUstep GUI. Added onto NSColor, NSImage and NSImageRep.
+@item cairo: Get -DPSshow: to work on scaled windows.
+@item opal: Allow creating a NSGraphicsContext with a custom graphics port, other than a CGContext.
+@item misc: Fix reported static analyser warnings.
+@end itemize
+
+@section Noteworthy changes in version @samp{0.25.1}
+
+Small fixes and cleanups.
+
+@section Noteworthy changes in version @samp{0.25.0}
+
+Support for pattern phase, compositing operation, image interpolation and antialiasing per gstate.
+
+Improvements to Win32 code.
+
+Fix application menus under WindowMaker.
+
+Various fixes.
+
+@section Noteworthy changes in version @samp{0.24.1}
+
+Improvements in win32 display and mouse tracking.
+
+Various minor bugfixes and cleanups.
+
+
+@section Noteworthy changes in version @samp{0.24.0}
+
+Added experimental Opal backend.
+
+Allow for ARGB visual for OpenGL.
+
 @section Noteworthy changes in version @samp{0.23.0}
 
 Added cairo support for ms-windows.
 
 Updated for NSInteger/CGFloat support
-
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.22.0}
 

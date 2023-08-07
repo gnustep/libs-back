@@ -51,30 +51,30 @@
 
   if (cachedVersion == -1)
     {
-  Display * display = [(XGServer *)GSCurrentServer() xDisplay];
-  NSDictionary * attributes = [GSCurrentServer() attributes];
-  NSString * sn = [attributes objectForKey: GSScreenNumber];
-
-  // This is due to some OpenGL drivers reporting a lower overall GLX version than they actually implement.
+      Display * display = [(XGServer *)GSCurrentServer() xDisplay];
+      NSDictionary * attributes = [GSCurrentServer() attributes];
+      NSString * sn = [attributes objectForKey: GSScreenNumber];
+      
+      // This is due to some OpenGL drivers reporting a lower overall GLX version than they actually implement.
       NSString *glxServerVersion = 
         [NSString stringWithFormat:@"%s", glXQueryServerString(display, [sn intValue], GLX_VERSION)];
       NSString *glxClientVersion =
         [NSString stringWithFormat:@"%s", glXGetClientString(display, GLX_VERSION)];
-  float serverversion = [glxServerVersion floatValue];
-  float clientversion = [glxClientVersion floatValue];
-  float serverIntegerPart;
-  float clientIntegerPart;
-  float fracServer = modff(serverversion, &serverIntegerPart);
-  float fracClient = modff(clientversion, &clientIntegerPart);
-
-  if ( serverIntegerPart == 1.0f && clientIntegerPart == 1.0f )
-    {
-      fracServer = rintf(fracServer * 10.0f);
-      fracClient = rintf(fracClient * 10.0f);
-
-      NSDebugMLLog(@"GLX", @"server %f client %f", fracServer, fracClient );
+      float serverversion = [glxServerVersion floatValue];
+      float clientversion = [glxClientVersion floatValue];
+      float serverIntegerPart;
+      float clientIntegerPart;
+      float fracServer = modff(serverversion, &serverIntegerPart);
+      float fracClient = modff(clientversion, &clientIntegerPart);
+      
+      if ( serverIntegerPart == 1.0f && clientIntegerPart == 1.0f )
+        {
+          fracServer = rintf(fracServer * 10.0f);
+          fracClient = rintf(fracClient * 10.0f);
+          
+          NSDebugMLLog(@"GLX", @"server %f client %f", fracServer, fracClient);
           cachedVersion = (int)MIN(fracServer, fracClient);
-    }
+        }
     }
 
   return cachedVersion;
@@ -237,31 +237,31 @@ do \
             }
 
           case NSOpenGLPFAWindow:
-			{
+            {
               drawable_type |= GLX_WINDOW_BIT;
               break;
-			}
+            }
           case NSOpenGLPFAPixelBuffer:
-			{ 
+            { 
               drawable_type |= GLX_PBUFFER_BIT;
               break;
-			}
+            }
           case NSOpenGLPFAOffScreen:
-			{
+            {
               drawable_type |= GLX_PIXMAP_BIT;
               break;
-			}
+            }
 
           //can not be handled by X11
           case NSOpenGLPFAMinimumPolicy:
-			{
+            {
               break;
-			}
+            }
           // can not be handled by X11
           case NSOpenGLPFAMaximumPolicy:
-			{
+            {
               break;
-			}
+            }
           // Not supported, would be a lot of work to implement.
           case NSOpenGLPFAFullScreen:
             {
@@ -309,7 +309,7 @@ do \
           case NSOpenGLPFASampleAlpha:
             break;
         }
-      ptr ++;
+      ptr++;
     }
 
   if ( drawable_type )
@@ -373,11 +373,11 @@ do \
         }
       #endif
 
-      if(!visualinfo && configurationCount > 0)
-      {
-        visualinfo = glXGetVisualFromFBConfig(display,fbconfig[0]);
-        pickedFBConfig = 0;
-      }
+      if (!visualinfo && configurationCount > 0)
+        {
+          visualinfo = glXGetVisualFromFBConfig(display,fbconfig[0]);
+          pickedFBConfig = 0;
+        }
     }
   else
     {
@@ -403,7 +403,7 @@ do \
 
 - (Display *) display
 {
-    return display;
+  return display;
 }
 
 - (XVisualInfo *) visualinfo

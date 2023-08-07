@@ -61,7 +61,7 @@
 - (id) initWithDelegate: (id)aDelegate
 		   name: (NSString *)name
 {
-  Display *dpy = [XGServer currentXDisplay];
+  Display *dpy = [XGServer xDisplay];
   return [self initWithDelegate: aDelegate display: dpy name: name];
 }
 
@@ -311,13 +311,16 @@ betterStyle(XIMStyle a, XIMStyle b, XIMStyle xim_requested_style)
     {
       xim_style = betterStyle(xim_style, styles->supported_styles[i],
 			      xim_requested_style);
-	}
+    }
   XFree(styles);
 
   if (xim_style == 0)
     {
       NSLog(@"XIM: no supported styles found");
-  return 0;
+      return 0;    
+    }
+  
+  return 1;
 }
 
   return 1;
@@ -380,7 +383,7 @@ betterStyle(XIMStyle a, XIMStyle b, XIMStyle xim_requested_style)
     }
   else if (xim_style == OffTheSpotStyle || xim_style == OverTheSpotStyle)
     {
-      Display	    *dpy = [XGServer currentXDisplay];
+      Display	    *dpy = [XGServer xDisplay];
       XFontSet	    font_set;
       char	    **missing_charset;
       int	    num_missing_charset;
@@ -556,7 +559,7 @@ finish:
 
   if (XGetICValues(xics[num_xics - 1], XNClientWindow, &win, NULL))
     return NO;
-  dpy = [XGServer currentXDisplay];
+  dpy = [XGServer xDisplay];
   if (XTranslateCoordinates(dpy, win, DefaultRootWindow(dpy), 0, 0,
 			    &abs_x, &abs_y, &dummy) == 0)
     return NO;

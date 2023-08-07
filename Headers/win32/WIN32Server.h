@@ -56,6 +56,12 @@
 #include <config.h>
 #include <windows.h>
 
+/* MINGW64 hack to build */
+#ifdef __MINGW64__
+#undef GWL_USERDATA
+#define GWL_USERDATA GWLP_USERDATA 
+#endif
+
 /*
  This standard windows macros are missing in MinGW.  The definition
  here is almost correct, but will fail for multi monitor systems
@@ -95,8 +101,6 @@ typedef struct w32serverFlags
   HWND currentActive;
   HICON  currentAppIcon;
   NSMutableArray *monitorInfo;
-  NSMutableDictionary *systemCursors;
-  NSMutableArray *listOfCursorsFailed;
 }
 
 - (BOOL) handlesWindowDecorations;
@@ -200,10 +204,10 @@ typedef struct w32serverFlags
 
 enum _WIN_EXTRA_BYTES
 {
-  OFF_LEVEL       = 0,                          // Value
-  OFF_ORDERED     = OFF_LEVEL + sizeof(LONG),   // Value
-  IME_INFO        = OFF_ORDERED + sizeof(LONG), // Pointer
-  WIN_EXTRABYTES  = IME_INFO + sizeof(LONG_PTR) // Pointer
+  OFF_LEVEL       = 0,
+  OFF_ORDERED     = OFF_LEVEL + sizeof(DWORD),
+  IME_INFO        = OFF_ORDERED + sizeof(DWORD),
+  WIN_EXTRABYTES  = IME_INFO + sizeof(DWORD)
 };
 
 
@@ -213,8 +217,6 @@ typedef struct IME_INFO_S
 {
   DWORD   isOpened;
   BOOL    isComposing;
-  UINT    inProgress;
-  BOOL    useCompositionWindow;
   
   LPVOID  readString;
   DWORD   readStringLength;

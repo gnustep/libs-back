@@ -250,16 +250,16 @@ static XGGLContext *currentGLContext;
 
   if ([XGGLPixelFormat glxMinorVersion] >= 3)
     {
-      if ( !glXMakeContextCurrent(dpy, None, None, NULL) )
+      if (!glXMakeContextCurrent(dpy, None, None, NULL))
         {
-          NSDebugMLLog( @"GLX", 
+          NSDebugMLLog(@"GLX", 
                        @"Cannot clear current GL context - Error %s",
                        glGetString(glGetError()));
         }
     }
   else
     {
-      if ( !glXMakeCurrent(dpy, None, NULL) )
+      if (!glXMakeCurrent(dpy, None, NULL))
         {
           NSDebugMLLog( @"GLX", 
                        @"Can not clear current GL context - Error %s",
@@ -329,9 +329,9 @@ static XGGLContext *currentGLContext;
                  glx_context, mask);
 
   error = glGetError();
-  if ( error != GL_NO_ERROR )
+  if (error != GL_NO_ERROR)
     {
-      NSDebugMLLog( @"GLX", 
+      NSDebugMLLog(@"GLX", 
                    @"Cannot copy GL context %@ from context %@ - Error %s",
                    self, context, glGetString(error));
     }
@@ -381,7 +381,7 @@ static XGGLContext *currentGLContext;
 }
 
 - (id)initWithFormat: (NSOpenGLPixelFormat *)_format 
-	    shareContext: (NSOpenGLContext *)share
+        shareContext: (NSOpenGLContext *)share
 {
   self = [super init];
 
@@ -439,7 +439,7 @@ static XGGLContext *currentGLContext;
 
   if ([XGGLPixelFormat glxMinorVersion] >= 3)
     {
-      if ( !glXMakeContextCurrent(dpy, glx_drawable, glx_drawable, glx_context) )
+      if (!glXMakeContextCurrent(dpy, glx_drawable, glx_drawable, glx_context) )
         {
           NSDebugMLLog(@"GLX", @"Cannot make GL context %@ current - Error %s",
                        self, glGetString(glGetError()));
@@ -447,7 +447,7 @@ static XGGLContext *currentGLContext;
     }
   else
     {
-      if ( !glXMakeCurrent(dpy, glx_drawable, glx_context) )
+      if (!glXMakeCurrent(dpy, glx_drawable, glx_context) )
         {
           NSDebugMLLog(@"GLX", @"Cannot make GL context %@ current - Error %s",
                        self, glGetString(glGetError()));

@@ -1,7 +1,7 @@
 /*
    XGServerEvent - Window/Event code for X11 backends.
 
-   Copyright (C) 1998,1999 Free Software Foundation, Inc.
+   Copyright (C) 1998-2015 Free Software Foundation, Inc.
 
    Written by:  Adam Fedor <fedor@boulder.colorado.edu>
    Date: Nov 1998
@@ -32,6 +32,7 @@
 #include <AppKit/NSMenu.h>
 #include <AppKit/NSPasteboard.h>
 #include <AppKit/NSWindow.h>
+#include <AppKit/NSScreen.h>
 #include <Foundation/NSException.h>
 #include <Foundation/NSArray.h>
 #include <Foundation/NSDictionary.h>
@@ -42,6 +43,7 @@
 #include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSRunLoop.h>
 #include <Foundation/NSDebug.h>
+#include <Foundation/NSDistributedNotificationCenter.h>
 
 #include "x11/XGServerWindow.h"
 #include "x11/XGInputServer.h"
@@ -53,6 +55,9 @@
 #include "wraster.h"
 #else
 #include "x11/wraster.h"
+#endif
+#ifdef HAVE_XRANDR
+#include <X11/extensions/Xrandr.h>
 #endif
 
 #include "math.h"
@@ -89,7 +94,15 @@ static KeySym _help_keysyms[2];
 static BOOL _is_keyboard_initialized = NO;
 static BOOL _mod_ignore_shift = NO;
 
-static BOOL next_event_is_a_keyrepeat;
+/*
+  Mouse properties. In comments below specified defaults key and default value.
+*/
+static NSInteger   clickTime;             // "GSDoubleClickTime" - milisecond (250)
+static NSInteger   clickMove;             // "GSMouseMoveThreshold" - in pixels (3)
+static NSInteger   mouseScrollMultiplier; // "GSMouseScrollMultiplier" - times (1)
+static NSEventType menuMouseButton;       // "GSMenuButtonEvent" - (NSRightMouseButon)
+static BOOL        menuButtonEnabled;     // "GSMenuButtonEnabled" - BOOL
+static BOOL        swapMouseButtons;      // YES if "GSMenuButtonEvent" == NSLeftMouseButton
 
 void __objc_xgcontextevent_linking (void)
 {
@@ -129,7 +142,8 @@ XGErrorHandler(Display *display, XErrorEvent *err)
 }
 
 static NSEvent*process_key_event (XEvent* xEvent, XGServer* ctxt, 
-  NSEventType eventType, NSMutableArray *event_queue);
+                                  NSEventType eventType, 
+                                  NSMutableArray *event_queue, BOOL keyRepeat);
 
 static unichar process_char (KeySym keysym, unsigned *eventModifierFlags);
 
@@ -329,14 +343,60 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
   return o;
 }
 
+- (void) mouseOptionsChanged: (NSNotification *)aNotif
+{
+  NSUserDefaults *defs = [NSUserDefaults standardUserDefaults];
+
+  clickTime = [defs integerForKey:@"GSDoubleClickTime"];
+  if (clickTime < 200)
+    clickTime = 300;
+  
+  clickMove = [defs integerForKey:@"GSMouseMoveThreshold"];
+  if (clickMove < 3)
+    clickMove = 3;
+
+  mouseScrollMultiplier = [defs integerForKey:@"GSMouseScrollMultiplier"];
+  if (mouseScrollMultiplier == 0)
+    mouseScrollMultiplier = 1;
+
+  if ([defs objectForKey:@"GSMenuButtonEnabled"])
+    menuButtonEnabled = [defs boolForKey:@"GSMenuButtonEnabled"];
+  else
+    menuButtonEnabled = YES;
+
+  if ([defs objectForKey:@"GSMenuButtonEvent"])
+    menuMouseButton = [defs integerForKey:@"GSMenuButtonEvent"];
+  else
+    menuMouseButton = NSRightMouseDown;
+  
+  switch (menuMouseButton)
+    {
+    case NSLeftMouseDown:
+      swapMouseButtons = YES;
+      break;
+    default:
+      swapMouseButtons = NO;
+      break;
+    }
+}
+
+- (void) initializeMouse
+{
+  [self mouseOptionsChanged: nil];
+  [[NSDistributedNotificationCenter defaultCenter]
+    addObserver: self
+       selector: @selector(mouseOptionsChanged:)
+           name: NSUserDefaultsDidChangeNotification
+         object: nil];
+}
 
 - (void) processEvent: (XEvent *) event
 {
   static int clickCount = 1;
   static unsigned int eventFlags;
+  static NSPoint eventLocation;
   NSEvent *e = nil;
   XEvent xEvent;
-  static NSPoint eventLocation;
   NSWindow *nswin;
   Window xWin;
   NSEventType eventType;
@@ -367,21 +427,21 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
          */
         {
           BOOL incrementCount = YES;
-
-#define CLICK_TIME 300
-#define CLICK_MOVE 3
+          
+          if (clickTime == 0) [self initializeMouse];
+         
           if (xEvent.xbutton.time
-            >= (unsigned long)(generic.lastClick + CLICK_TIME))
+            >= (unsigned long)(generic.lastClick + clickTime))
             incrementCount = NO;
           else if (generic.lastClickWindow != xEvent.xbutton.window)
             incrementCount = NO;
-          else if ((generic.lastClickX - xEvent.xbutton.x) > CLICK_MOVE)
+          else if ((generic.lastClickX - xEvent.xbutton.x) > clickMove)
             incrementCount = NO;
-          else if ((generic.lastClickX - xEvent.xbutton.x) < -CLICK_MOVE)
+          else if ((generic.lastClickX - xEvent.xbutton.x) < -clickMove)
             incrementCount = NO;
-          else if ((generic.lastClickY - xEvent.xbutton.y) > CLICK_MOVE)
+          else if ((generic.lastClickY - xEvent.xbutton.y) > clickMove)
             incrementCount = NO;
-          else if ((generic.lastClickY - xEvent.xbutton.y) < -CLICK_MOVE)
+          else if ((generic.lastClickY - xEvent.xbutton.y) < -clickMove)
             incrementCount = NO;
 
           if (incrementCount == YES)
@@ -408,46 +468,62 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 
         if (xEvent.xbutton.button == generic.lMouse)
           {
-            eventType = NSLeftMouseDown;
-            buttonNumber = generic.lMouse;
+            if (swapMouseButtons)
+              {
+                eventType = NSRightMouseDown;
+                buttonNumber = generic.rMouse;
+              }
+            else
+              {
+                eventType = NSLeftMouseDown;
+                buttonNumber = generic.lMouse;
+              }
           }
         else if (xEvent.xbutton.button == generic.rMouse
-          && generic.rMouse != 0)
+                 && generic.rMouse != 0)
           {
-            eventType = NSRightMouseDown;
-            buttonNumber = generic.rMouse;
+            if (swapMouseButtons)
+              {
+                eventType = NSLeftMouseDown;
+                buttonNumber = generic.lMouse;
+              }
+            else
+              {
+                eventType = NSRightMouseDown;
+                buttonNumber = generic.rMouse;
+              }
           }
         else if (xEvent.xbutton.button == generic.mMouse
-          && generic.mMouse != 0)
+                 && generic.mMouse != 0)
           {
             eventType = NSOtherMouseDown;
             buttonNumber = generic.mMouse;
           }
         else if (xEvent.xbutton.button == generic.upMouse
-          && generic.upMouse != 0)
+                 && generic.upMouse != 0)
           {
-            deltaY = 1.;
+            deltaY = 1. * mouseScrollMultiplier;
             eventType = NSScrollWheel;
             buttonNumber = generic.upMouse;
           }
         else if (xEvent.xbutton.button == generic.downMouse
-          && generic.downMouse != 0)
+                 && generic.downMouse != 0)
           {
-            deltaY = -1.;
+            deltaY = -1. * mouseScrollMultiplier;
             eventType = NSScrollWheel;
             buttonNumber = generic.downMouse;
           }
         else if (xEvent.xbutton.button == generic.scrollLeftMouse
-          && generic.scrollLeftMouse != 0)
+                 && generic.scrollLeftMouse != 0)
           {
-            deltaX = -1.;
+            deltaX = -1. * mouseScrollMultiplier;
             eventType = NSScrollWheel;
             buttonNumber = generic.scrollLeftMouse;
           }
         else if (xEvent.xbutton.button == generic.scrollRightMouse
-          && generic.scrollRightMouse != 0)
+                 && generic.scrollRightMouse != 0)
           {
-            deltaX = 1.;
+            deltaX = 1. * mouseScrollMultiplier;
             eventType = NSScrollWheel;
             buttonNumber = generic.scrollRightMouse;
           }
@@ -455,6 +531,9 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
           {
             break;                /* Unknown button */
           }
+
+        if (menuButtonEnabled == NO && eventType == menuMouseButton)
+          break; // disabled menu button was pressed
 
         eventFlags = process_modifier_flags(xEvent.xbutton.state);
         // if pointer is grabbed use grab window
@@ -473,10 +552,10 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             /*
              * We must hand over control of our icon/miniwindow
              * to Window Maker.
-                 */
+             */
             if ((cWin->win_attrs.window_style
-              & (NSMiniWindowMask | NSIconWindowMask)) != 0
-              && eventType == NSLeftMouseDown && clickCount == 1)
+                 & (NSMiniWindowMask | NSIconWindowMask)) != 0
+                && eventType == NSLeftMouseDown)
               {
                 if (cWin->parent == None)
                   break;
@@ -485,7 +564,8 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                 XSendEvent(dpy, cWin->parent, True,
                            ButtonPressMask, &xEvent);
                 XFlush(dpy);
-                break;
+                if (clickCount == 1)
+                  break;
               }
           }
 
@@ -511,17 +591,33 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         [self setLastTime: xEvent.xbutton.time];
         if (xEvent.xbutton.button == generic.lMouse)
           {
-            eventType = NSLeftMouseUp;
-            buttonNumber = generic.lMouse;
+            if (swapMouseButtons)
+              {
+                eventType = NSRightMouseUp;
+                buttonNumber = generic.rMouse;
+              }
+            else
+              {
+                eventType = NSLeftMouseUp;
+                buttonNumber = generic.lMouse;
+              }
           }
         else if (xEvent.xbutton.button == generic.rMouse
-          && generic.rMouse != 0)
+                 && generic.rMouse != 0)
           {
-            eventType = NSRightMouseUp;
-            buttonNumber = generic.rMouse;
+            if (swapMouseButtons)
+              {
+                eventType = NSLeftMouseUp;
+                buttonNumber = generic.lMouse;
+              }
+            else
+              {
+                eventType = NSRightMouseUp;
+                buttonNumber = generic.rMouse;
+              }
           }
         else if (xEvent.xbutton.button == generic.mMouse
-          && generic.mMouse != 0)
+                 && generic.mMouse != 0)
           {
             eventType = NSOtherMouseUp;
             buttonNumber = generic.mMouse;
@@ -531,6 +627,9 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             // we ignore release of scrollUp or scrollDown
             break;                /* Unknown button */
           }
+        
+        if (menuButtonEnabled == NO && eventType == menuMouseButton)
+          break; // disabled menu button was released
 
         eventFlags = process_modifier_flags(xEvent.xbutton.state);
         // if pointer is grabbed use grab window
@@ -584,13 +683,13 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             }
           if (cWin == 0)
             break;
-          if (xEvent.xclient.message_type == generic.protocols_atom)
+          if (xEvent.xclient.message_type == generic.WM_PROTOCOLS_ATOM)
             {
               [self setLastTime: (Time)xEvent.xclient.data.l[1]];
               NSDebugLLog(@"NSEvent", @"WM Protocol - %s\n",
                           XGetAtomName(dpy, xEvent.xclient.data.l[0]));
 
-              if ((Atom)xEvent.xclient.data.l[0] == generic.delete_win_atom)
+              if ((Atom)xEvent.xclient.data.l[0] == generic.WM_DELETE_WINDOW_ATOM)
                 {
                   /*
                    * WM is asking us to close a window
@@ -607,7 +706,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                                data2: 0];
                 }
               else if ((Atom)xEvent.xclient.data.l[0]
-                == generic.miniaturize_atom)
+                == generic._GNUSTEP_WM_MINIATURIZE_WINDOW_ATOM)
                 {
 		  NSDebugLLog(@"Miniaturize", @"%lu miniaturized", cWin->number);
                   eventLocation = NSMakePoint(0,0);
@@ -622,22 +721,37 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                                data2: 0];
                 }
               else if ((Atom)xEvent.xclient.data.l[0]
-                == generic.take_focus_atom)
+                       == generic._GNUSTEP_WM_HIDE_APP_ATOM)
+                {
+                  NSDebugLLog(@"Hide", @"%lu application will be hidden", cWin->number);
+                  eventLocation = NSMakePoint(0,0);
+                  e = [NSEvent otherEventWithType: NSAppKitDefined
+                                         location: eventLocation
+                                    modifierFlags: 0
+                                        timestamp: 0
+                                     windowNumber: cWin->number
+                                          context: gcontext
+                                          subtype: GSAppKitAppHide
+                                            data1: 0
+                                            data2: 0];
+                }              
+              else if ((Atom)xEvent.xclient.data.l[0]
+                == generic.WM_TAKE_FOCUS_ATOM)
                 {
                   e = [self _handleTakeFocusAtom: xEvent 
                                       forContext: gcontext];
                 }
               else if ((Atom)xEvent.xclient.data.l[0]
-                == generic.net_wm_ping_atom)
+                == generic._NET_WM_PING_ATOM)
                 {
-                  xEvent.xclient.window = RootWindow(dpy, cWin->screen);
+                  xEvent.xclient.window = RootWindow(dpy, cWin->screen_id);
                   XSendEvent(dpy, xEvent.xclient.window, False, 
                     (SubstructureRedirectMask | SubstructureNotifyMask), 
                     &xEvent);
                 }
-#ifdef HAVE_LIBXEXT
+#ifdef HAVE_X11_EXTENSIONS_SYNC_H
 	      else if ((Atom)xEvent.xclient.data.l[0]
-		== generic.net_wm_sync_request_atom)
+		== generic._NET_WM_SYNC_REQUEST_ATOM)
 		{
 		  cWin->net_wm_sync_request_counter_value_low = (Atom)xEvent.xclient.data.l[2];
 		  cWin->net_wm_sync_request_counter_value_high = (Atom)xEvent.xclient.data.l[3];
@@ -682,7 +796,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                 send ConfigureNotify events for app icons.
               */
               XTranslateCoordinates(dpy, xEvent.xclient.window,
-                                    RootWindow(dpy, cWin->screen),
+                                    RootWindow(dpy, cWin->screen_id),
                                     0, 0,
                                     &root_x, &root_y,
                                     &root_child);
@@ -851,7 +965,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                 int root_x, root_y;
                 Window root_child;
                 XTranslateCoordinates(dpy, xEvent.xconfigure.window,
-                                      RootWindow(dpy, cWin->screen),
+                                      RootWindow(dpy, cWin->screen_id),
                                       0, 0,
                                       &root_x, &root_y,
                                       &root_child);
@@ -915,6 +1029,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             if (!NSEqualPoints(r.origin, x.origin))
               {
 		NSEvent *r;
+                NSWindow *window;
 
                 r = [NSEvent otherEventWithType: NSAppKitDefined
                              location: eventLocation
@@ -931,7 +1046,12 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 		 * the programa can move/resize the window while we send
 		 * this event, causing a confusion.
 		 */
-		[[NSApp windowWithWindowNumber: cWin->number] sendEvent: r];
+                window = [NSApp windowWithWindowNumber: cWin->number];
+                [window sendEvent: r];
+                /* Update monitor_id of the backend window.
+                   NSWindow may change screen pointer while processing
+                   the event. */
+                cWin->monitor_id = [[window screen] screenNumber];
               }
           }	
         break;
@@ -1020,8 +1140,6 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         NSDebugLLog(@"NSEvent", @"%lu Expose\n",
                     xEvent.xexpose.window);
         {
-          BOOL isSubWindow = NO;
-
           if (cWin == 0 || xEvent.xexpose.window != cWin->ident)
             {
               generic.cachedWindow
@@ -1029,6 +1147,8 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             }
           // sub-window ?
 	  /*
+          BOOL isSubWindow = NO;
+
             {
               Window xw;
               xw = xEvent.xexpose.window;
@@ -1065,7 +1185,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
               NSDebugLLog(@"NSEvent", @"Expose frame %d %d %d %d\n",
                           rectangle.x, rectangle.y,
                           rectangle.width, rectangle.height);
-#if 1
+#if 0
               // ignore backing if sub-window
               [self _addExposedRectangle: rectangle : cWin->number : isSubWindow];
 
@@ -1195,24 +1315,59 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                     xEvent.xgravity.window);
         break;
 
-            // a key has been pressed
+        // a key has been pressed
       case KeyPress:
         NSDebugLLog(@"NSEvent", @"%lu KeyPress\n",
                     xEvent.xkey.window);
         [self setLastTime: xEvent.xkey.time];
-        e = process_key_event (&xEvent, self, NSKeyDown, event_queue);
+        e = process_key_event (&xEvent, self, NSKeyDown, event_queue, NO);
         break;
 
-            // a key has been released
+        // a key has been released
       case KeyRelease:
         NSDebugLLog(@"NSEvent", @"%lu KeyRelease\n",
                     xEvent.xkey.window);
         [self setLastTime: xEvent.xkey.time];
-        e = process_key_event (&xEvent, self, NSKeyUp, event_queue);
+
+        /*
+          For key repeats X creates two corresponding KeyRelease/KeyPress events.
+          So, first we check for the KeyRelease event, take a look at the next
+          event in the queue and look if they are a matching KeyRelease/KeyPress
+          pair. If so, we ignore the current KeyRelease event.
+        */
+        if (XEventsQueued(dpy, QueuedAfterReading))
+          {
+            XEvent nev;
+            XPeekEvent(dpy, &nev);
+
+            if (nev.type == KeyPress && 
+                nev.xkey.window == xEvent.xkey.window &&
+                nev.xkey.time == xEvent.xkey.time &&
+                nev.xkey.keycode == xEvent.xkey.keycode)
+              {
+                // Ignore the current KeyRelease event.
+              }
+            else
+              {
+                /*
+                if (nev.type == ClientMessage)
+                  {
+                    NSDebugLLog(@"NSEvent", @"Next event ClientMessage type %ld %s",
+                                xEvent.xclient.message_type, 
+                                XGetAtomName(dpy, xEvent.xclient.message_type));
+                  }
+                */
+                e = process_key_event(&xEvent, self, NSKeyUp, event_queue, NO);
+              }
+          }
+        else
+          {
+            e = process_key_event(&xEvent, self, NSKeyUp, event_queue, NO);
+          }
         break;
 
-            // reports the state of the keyboard when pointer or
-            // focus enters a window
+        // reports the state of the keyboard when pointer or
+        // focus enters a window
       case KeymapNotify:
         {
           if (_is_keyboard_initialized == NO)
@@ -1436,7 +1591,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         NSDebugLLog(@"NSEvent", @"%lu PropertyNotify - '%s'\n",
                     xEvent.xproperty.window,
                     XGetAtomName(dpy, xEvent.xproperty.atom));
-	if (xEvent.xproperty.atom == generic.wm_state_atom)
+	if (xEvent.xproperty.atom == generic.WM_STATE_ATOM)
 	  {
 	    if (cWin == 0 || xEvent.xproperty.window != cWin->ident)
 	      {
@@ -1471,7 +1626,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 			 [self _ewmh_isHidden: xEvent.xproperty.window] == YES))
 		      {
 			/* Same event as when we get ClientMessage with the
-			 * atom equal to generic.miniaturize_atom
+			 * atom equal to generic._GNUSTEP_WM_MINIATURIZE_WINDOW_ATOM
 			 */
 			NSDebugLLog(@"Miniaturize", @"%lu miniaturized",
 				    cWin->number);
@@ -1676,8 +1831,8 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
  * of type 'long' or 'unsigned long' even on machines where those types
  * hold 64bit values.
  */
-                XChangeProperty(dpy, cWin->ident, generic.win_decor_atom, 
-                                generic.win_decor_atom, 32, PropModeReplace, 
+                XChangeProperty(dpy, cWin->ident, generic._GNUSTEP_WM_ATTR_ATOM,
+                                generic._GNUSTEP_WM_ATTR_ATOM, 32, PropModeReplace,
                                 (unsigned char *)&cWin->win_attrs,
                                 sizeof(GNUstepWMAttributes)/sizeof(CARD32));
               }
@@ -1709,27 +1864,19 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
           NSArray *types = [pb types];
           NSData *data = nil;
           Atom xType = xEvent.xselectionrequest.target;
-          static Atom XG_UTF8_STRING = None;
-          static Atom XG_TEXT = None;
 
-          if (XG_UTF8_STRING == None)
-            {
-              XG_UTF8_STRING = XInternAtom(dpy, "UTF8_STRING", False);
-              XG_TEXT = XInternAtom(dpy, "TEXT", False);
-            }
-
-          if (((xType == XG_UTF8_STRING) || 
+          if (((xType == generic.UTF8_STRING_ATOM) || 
                (xType == XA_STRING) || 
-               (xType == XG_TEXT)) &&
+               (xType == generic.TEXT_ATOM)) &&
               [types containsObject: NSStringPboardType])
             {
               NSString *s = [pb stringForType: NSStringPboardType];
 
-              if (xType == XG_UTF8_STRING)
+              if (xType == generic.UTF8_STRING_ATOM)
                 {
                   data = [s dataUsingEncoding: NSUTF8StringEncoding];
                 }
-              else if ((xType == XA_STRING) || (xType == XG_TEXT))
+              else if ((xType == XA_STRING) || (xType == generic.TEXT_ATOM))
                 {
                   data = [s dataUsingEncoding: NSISOLatin1StringEncoding];
                 }
@@ -1758,6 +1905,25 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             break;
           }
 #endif
+#ifdef HAVE_XRANDR
+        int randr_event_type = randrEventBase + RRScreenChangeNotify;
+        if (xEvent.type == randr_event_type
+            && (xEvent.xconfigure.window == RootWindow(dpy, defScreen)))
+          {
+            // Check if other RandR events are waiting in the queue.
+            XSync(dpy, 0);
+            while (XCheckTypedEvent(dpy, randr_event_type, &xEvent)) {;}
+                    
+            XRRUpdateConfiguration(event);
+            // Regenerate NSScreens
+            [NSScreen resetScreens];
+            // Notify application about screen parameters change
+            [[NSNotificationCenter defaultCenter]
+                      postNotificationName: NSApplicationDidChangeScreenParametersNotification
+                                    object: NSApp];
+          }
+        break;
+#endif
         NSLog(@"Received an untrapped event\n");
         break;
     }
@@ -1774,21 +1940,15 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 - (NSEvent *)_handleTakeFocusAtom: (XEvent)xEvent 
                        forContext: (NSGraphicsContext *)gcontext
 {
-  int key_num;
-  NSWindow *key_win;
+  NSWindow *keyWindow = [NSApp keyWindow];
+  int key_num = [keyWindow windowNumber];
   NSEvent *e = nil;
-  key_win = [NSApp keyWindow];
-  key_num = [key_win windowNumber];
-  NSDebugLLog(@"Focus", @"take focus:%lu (current=%lu key=%d)",
-              cWin->number, generic.currentFocusWindow, key_num);
-
-  /* Sometimes window managers lose the setinputfocus on the key window
-   * e.g. when ordering out a window with focus then ordering in the key window.   
-   * it might search for a window until one accepts its take focus request.
-   */
-  if (key_num == cWin->number)
-    cWin->ignore_take_focus = NO;
   
+  NSDebugLLog(@"Focus",
+              @"TakeFocus received by: %li (%lu) (focused = %lu, key = %d)",
+              cWin->number, xEvent.xfocus.window,
+              generic.currentFocusWindow, key_num);
+
   /* Invalidate the previous request. It's possible the app lost focus
      before this request was fufilled and we are being focused again,
      or ??? */
@@ -1796,6 +1956,20 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
     generic.focusRequestNumber = 0;
     generic.desiredFocusWindow = 0;
   }
+  
+  /* Sometimes window managers lose the setinputfocus on the key window
+   * e.g. when ordering out a window with focus then ordering in the key window.   
+   * it might search for a window until one accepts its take focus request.
+   */
+  if (key_num == 0)
+    {
+      cWin->ignore_take_focus = NO;
+    }
+  else if (cWin->number == [[[NSApp mainMenu] window] windowNumber])
+    {
+      cWin->ignore_take_focus = NO;
+    }
+
   /* We'd like to send this event directly to the front-end to handle,
      but the front-end polls events so slowly compared the speed at
      which X events could potentially come that we could easily get
@@ -1803,10 +1977,21 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
      events */
   if ([NSApp isHidden])
     {
-      /* This often occurs when hidding an app, since a bunch of
-         windows get hidden at once, and the WM is searching for a
-         window to take focus after each one gets hidden. */
-      NSDebugLLog(@"Focus", @"WM take focus while hiding");
+      if (generic.wm & XGWM_WINDOWMAKER)
+        {
+          /* If window receives WM_TAKE_FOCUS and application is in hidden
+             state - it's time to unhide. There's no other method to
+             tell us to unhide. */
+          NSDebugLLog(@"Focus", @"WM take focus while hidden - unhiding.");
+          [NSApp unhide: nil];
+        }
+      else
+        {
+          /* This often occurs when hidding an app, since a bunch of
+             windows get hidden at once, and the WM is searching for a
+             window to take focus after each one gets hidden. */
+          NSDebugLLog(@"Focus", @"WM take focus while hiding");
+        }
     }
   else if (cWin->ignore_take_focus == YES)
     {
@@ -1816,23 +2001,31 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
   else if (cWin->number == key_num)
     {
       NSDebugLLog(@"Focus", @"Reasserting key window");
-      [GSServerForWindow(key_win) setinputfocus: key_num];
+      [GSServerForWindow(keyWindow) setinputfocus: key_num];
     }
   else if (key_num 
            && cWin->number == [[[NSApp mainMenu] window] windowNumber])
     {
+      gswindow_device_t *key_window = [XGServer _windowWithTag:key_num];
       /* This might occur when the window manager just wants someone
          to become key, so it tells the main menu (typically the first
          menu in the list), but since we already have a window that
          was key before, use that instead */
       NSDebugLLog(@"Focus", @"Key window is already %d", key_num);
-      [GSServerForWindow(key_win) setinputfocus: key_num];
+      if (key_window->map_state == IsUnmapped) {
+        /* `key_window` was unmapped by window manager. 
+           this window and `key_window` are on the different workspace. */
+        [GSServerForWindow(keyWindow) setinputfocus: cWin->number];
+      }
+      else {
+        [GSServerForWindow(keyWindow) setinputfocus: key_num];
+      }
     }
   else
     {
       NSPoint eventLocation;
       /*
-       * Here the app asked for this (if key_win==nil) or there was a
+       * Here the app asked for this (if keyWindow==nil) or there was a
        * click on the title bar or some other reason (window mapped,
        * etc). We don't necessarily want to forward the event for the
        * last reason but we just have to deal with that since we can
@@ -1890,7 +2083,7 @@ static void
 initialize_keyboard (void)
 {
   NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-  Display *display = [XGServer currentXDisplay];
+  Display *display = [XGServer xDisplay];
 
   // Below must be stored and checked as keysyms, not keycodes, since
   // more than one keycode may be mapped t the same keysym
@@ -1964,7 +2157,7 @@ set_up_num_lock (void)
     ShiftMask, LockMask, ControlMask, Mod1Mask, 
     Mod2Mask, Mod3Mask, Mod4Mask, Mod5Mask
   };
-  Display *display = [XGServer currentXDisplay];
+  Display *display = [XGServer xDisplay];
   KeyCode _num_lock_keycode;
   
   // Get NumLock keycode
@@ -2014,7 +2207,7 @@ keysym_is_X_modifier (KeySym keysym)
 
 static NSEvent*
 process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
-  NSMutableArray *event_queue)
+                   NSMutableArray *event_queue, BOOL keyRepeat)
 {
   NSString *keys, *ukeys;
   KeySym keysym;
@@ -2031,8 +2224,6 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
   int alt_key = 0;
   int help_key = 0;
   KeySym modKeysym;  // process modifier independently of shift, etc.
-  XEvent next_event;
-  BOOL keyRepeat = NO;
   
   if (_is_keyboard_initialized == NO)
     initialize_keyboard ();
@@ -2178,34 +2369,6 @@ process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType,
   if (keysym_is_X_modifier (keysym))
     {
       eventType = NSFlagsChanged;
-    }
-
-
-    /*
-    For key repeats X creates two corresponding KeyRelease/KeyPress events.
-    So, first we check for the KeyRelease event, take a look at the next
-    event in the queue and look if they are a matching KeyRelease/KeyPress
-    pair. If so, we mark the current KeyRelease event as a KeyRepeat, and
-    set "next_event_is_a_keyrepeat" to "YES" so that we know that the next
-    event is a repeat too.
-    */
-  if ( next_event_is_a_keyrepeat == YES )
-    {
-        keyRepeat = YES;
-        next_event_is_a_keyrepeat = NO;
-    }
-  else if( XEventsQueued( [context xDisplay], QueuedAfterReading ) )
-    {
-      XPeekEvent( [context xDisplay], &next_event );
-      if( next_event.type == KeyPress &&
-          next_event.xkey.window == xEvent->xkey.window &&
-          next_event.xkey.keycode == xEvent->xkey.keycode &&
-          next_event.xkey.time == xEvent->xkey.time )
-        {
-          // Do not report anything for this event
-          keyRepeat = YES;
-          next_event_is_a_keyrepeat = YES;
-        }
     }
 
 
@@ -2522,12 +2685,16 @@ process_modifier_flags(unsigned int state)
   BOOL ok;
   NSPoint p;
   int height;
-  int screen_number;
-  
-  screen_number = (screen >= 0) ? screen : defScreen;
-  ok = XQueryPointer (dpy, [self xDisplayRootWindowForScreen: screen_number],
-    &rootWin, &childWin, &currentX, &currentY, &winX, &winY, &mask);
+  int screen_id;
+
+  ok = XQueryPointer (dpy, [self xDisplayRootWindow],
+                      &rootWin, &childWin, &currentX, &currentY,
+                      &winX, &winY, &mask);
   p = NSMakePoint(-1,-1);
+  /* FIXME: After multi-monitor support will be implemented `screen` method 
+     parameter doesn't make sense. The `if{}` block should be removed since 
+     we have only one screen and mouse can't be placed on "wrong" screen. 
+     Also actually we need `height` of the whole Xlib screen (defScreen). */
   if (ok == False)
     {
       /* Mouse not on the specified screen_number */
@@ -2537,8 +2704,8 @@ process_modifier_flags(unsigned int state)
         {
           return p;
         }
-      screen_number = XScreenNumberOfScreen(attribs.screen);
-      if (screen >= 0 && screen != screen_number)
+      screen_id = XScreenNumberOfScreen(attribs.screen);
+      if (screen >= 0 && screen != screen_id)
         {
           /* Mouse not on the requred screen, return an invalid point */
           return p;
@@ -2546,7 +2713,9 @@ process_modifier_flags(unsigned int state)
       height = attribs.height;
     }
   else
-    height = DisplayHeight(dpy, screen_number);
+    {
+      height = xScreenSize.height;
+    }
   p = NSMakePoint(currentX, height - currentY);
   if (win)
     {

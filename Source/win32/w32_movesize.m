@@ -48,7 +48,7 @@
 			      location: eventLocation
 			 modifierFlags: 0
 			     timestamp: 0
-			  windowNumber: (NSInteger)hwnd
+			  windowNumber: (int)hwnd
 			       context: GSCurrentContext()
 			       subtype: GSAppKitWindowMoved
 				 data1: rect.origin.x
@@ -105,7 +105,7 @@
                                   location: eventLocation
                              modifierFlags: 0
                                  timestamp: 0
-                              windowNumber: (NSInteger)hwnd
+                              windowNumber: (int)hwnd
                                    context: GSCurrentContext()
                                    subtype: GSAppKitWindowResized
                                      data1: rect.size.width
@@ -170,9 +170,9 @@
                   && GetClassName(hi, buf, 32) == 18
                   && strncmp(buf, "GNUstepWindowClass", 18) == 0)
                 {
-                  if (GetWindowLong(hi, OFF_ORDERED) == 1)
+                  if (GetWindowLongPtr(hi, OFF_ORDERED) == 1)
                     {
-                      hl = GetWindowLong(hi, OFF_LEVEL);
+                      hl = GetWindowLongPtr(hi, OFF_LEVEL);
                       s = [s stringByAppendingFormat: @"%d (%d)\n", hi, hl];
                     }
                 }
@@ -220,8 +220,8 @@
                 {
                   if (GetClassName(lo, buf, 32) == 18
                       && strncmp(buf, "GNUstepWindowClass", 18) == 0
-                      && GetWindowLong(lo, OFF_ORDERED) == 1
-                      && (ll = GetWindowLong(lo, OFF_LEVEL))
+                      && GetWindowLongPtr(lo, OFF_ORDERED) == 1
+                      && (ll = GetWindowLongPtr(lo, OFF_LEVEL))
                       > NSDesktopWindowLevel)
                     {
                       break;
@@ -275,7 +275,7 @@
        * to ensure that they are at the bottom unless another
        * desktop level window is inserted below them.
        */
-      if (GetWindowLong(hwnd, OFF_LEVEL) <= NSDesktopWindowLevel)
+      if (GetWindowLongPtr(hwnd, OFF_LEVEL) <= NSDesktopWindowLevel)
         {
           inf->hwndInsertAfter = HWND_BOTTOM;
         }
@@ -305,16 +305,6 @@
 
 - (LRESULT) decodeWM_EXITSIZEMOVEParams: (WPARAM)wParam : (LPARAM)lParam : (HWND)hwnd
 {
-  // may have a small bug here note it for follow up
-  /*
-        decodeWM_MOVE and decodeWM_SIZE will send event if they have one.
-        no posting is needed.
-    */
-  [self resizeBackingStoreFor: hwnd];
-//  [self decodeWM_MOVEParams:hwnd :wParam :lParam];
-//  [self decodeWM_SIZEParams:hwnd :wParam :lParam];
-
-  //Make sure DefWindowProc gets called
   return DefWindowProc(hwnd, WM_EXITSIZEMOVE, wParam, lParam);
 }
 

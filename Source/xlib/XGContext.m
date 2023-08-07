@@ -88,9 +88,7 @@
       ([ud boolForKey: @"GSFontAntiAlias"]))
     {
       fontClass = [GSXftFontInfo class];
-#ifdef HAVE_FC
-      fontEnumerator = [FcFontEnumerator class];      
-#endif
+      fontEnumerator = [GSXftFontEnumerator class];
     }
 #endif
   enableFontSet = [ud boolForKey: @"GSXEnableFontSet"];

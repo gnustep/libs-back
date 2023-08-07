@@ -1,60 +1,1839 @@
-2015-11-23  Doug Simons <doug.simons@testplant.com>
+2022-12-29 Richard Frith-Macdonald <rfm@gnu.org>
 
-	* Source/win32/WIN32Server.m : Allow the Escape key to go through
-	while still blocking other keys during a capture mouse sequence.
+        * ChangeLog: Update for new release
+	* ANNOUNCE:
+	* NEWS:
+	* Documentation/news.texi: Update of release notes for 0.30.0 by Fred.
+	* Version: bump to 0.30.0
 
-2014-07-09  Doug Simons <doug.simons@testplant.com>
+2022-02-22 Riccardo Mottola <rm@gnu.org>
 
-	* Source/win32/WIN32Server.m : Fix process_key_event to set
-	keys and ukeys correctly when control key is down so key
-	equivalents like Ctrl-(Shift)-+ will be recognized.
+	* Tools/xpbs.m (xSelectionNotify:):
+	Delete property on begin and at every Notify to start and continue
+	transfer of INCR.
 
-2013-10-21  Frank Le Grand <frank.legrand@testplant.com>
+2020-04-26  Ivan Vucica  <ivan@vucica.net>
 
-    * Source/win32/WIN32Server.m 
-    * Source/win32/WIN32Server.h
-	* Source/win32/win32_general.m: Reset the cursors stack
-	  when we are on a non-client area of a window. This is 
-	  a workaround for an issue where we're not getting enough
-	  mouse move events when the mouse is moving very fast, 
-	  and therefore occasionally find ourselves stuck with a
-	  cursor set for a rectangle that we've left.
+	* ANNOUNCE:
+	* NEWS:
+	* README:
+	Updating documentation for the 0.29.0 release.
 
-2013-10-03  Frank Le Grand <frank.legrand@testplant.com>
+2021-03-12 Fred Kiefer <FredKiefer@gmx.de>
 
-    * Source/win32/WIN32Server.m 
-    * Source/win32/WIN32Server.h
-	* Source/win32/win32_general.m: Fixed processing of
-	WM_SETCURSOR: We now mark the event as handled in our
-	NSCursor stack is not empty, indicating that we're in a cursor
-	rectangle and we don't want Windows to set the cursor.
-	  
-2013-08-18  Frank Le Grand <frank.legrand@testplant.com>
+	* Source/x11/XGServerWindow.m (-styleoffsets:...:): Change NSLog
+	statement on guessing the offset into a NSDebugLLog statement.
 
-    * Source/win32/WIN32Server.m : We're now processing the Windows
-	  event WM_SETCURSOR to prevent Windows from resetting the mouse
-	  cursor after a mouse move.
-	  
-2013-08-08  Frank Le Grand <frank.legrand@testplant.com>
+2021-03-03 Riccardo Mottola <rm@gnu.org>
 
-    Merged changes from Trunk (since rev 35217) to TestPlant branch.
-    Some files were partially merged to pull changes from Trunk and
-    remain with large numbers of diffs (Source/win32/WIN32Server.m,
-    Source/cairo/Win32CairoSurface.m, Source/cairo/CairoContext.m)
+	* Source/win32/WIN32Server.m:
+	actually store in a LONG_PTR the result of GetWindowLongPtr
 
-2013-01-10  Doug Simons <doug.simons@testplant.com>
+2021-03-02 Riccardo Mottola <rm@gnu.org>
 
-	* Source/win32/w32_general.m : Fix a bug that could cause a modal run loop to
-	lock up if the modal window is closed by clicking the close button.
+	* Source/win32/WIN32Server.m
+	* Source/win32/w32_create.m
+	* Source/win32/w32_general.m
+	* Source/win32/w32_movesize.m
+	* Source/win32/w32_windowdisplay.m
+	* Source/winlib/WIN32GState.m
+	* Source/cairo/Win32CairoGlitzSurface.m:
+	Consistently use 64bit safe SetWindowLongPtr/GetWindowLongPtr instead
+	of a mix with old 32bit versions.
+
+2021-01-27  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_checkStyle:): do not set application
+	name and WindowGroupHint to temporary window. Created window designed
+	to help get window frame offsets only - appicon window will be created
+	later. This change prevents appicon flickering on WindowMaker at
+	application start.
+	(_createWMAppiconHack, _setupRootWindow): WindowMaker hack removed in
+	favour of solution introduced in _checkStyle:.
+
+2021-01-24  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m: WindowMaker doesn't support
+	_NET_REQUEST_FRAME_EXTENTS message andthe only way to determine offsets
+	is creating and mapping window.	In this case first mapped window of
+	application is not appicon window.
+	Early appicon creating inserted back as _createWMAppiconHack method and
+	called only if no other way to determine window's offsets (before call to
+	_checkStyle);appicon window size is set to size icon;
+
+2021-01-16 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Documentation/news.texi: Fill in some details for pending release.
+	* Version: Inclease version number.
+
+2020-09-18  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m
+	(_setupRootWindow, window::::): removed WindowMaker appicon hack and
+	- now unused - _wmAppIcon variable.
+
+	Description: The removed code removed creates and maps zero-sized
+	window in hope that WindowMaker will recognize app by this event and
+	create app icon window. Although when application requests window
+	for appicon through the `-window::::` method call, it returns newly
+	created and mapped window. This actually happens but application icon
+	flickers between WM icon creation and application icon window appearance.
+
+	This fix based on the fact that root application window (ROOT) is mapped
+	in `-orderwindow:::` and this is the event of application recognition
+	by WindowMaker because it is a first application window that is
+	mapped.
+
+2020-09-17  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerEvent.m
+	(_handleTakeFocusAtom:forContext:): if application (window) receives
+	WM_TAKE_FOCUS in hidden state it means WindowMaker wants us to be
+	unhidden.
+
+	Description: There are 2 protocols defined in XGServerWindow.h:
+	WMFHideApplication and WMFHideOtherApplications. These protocols exist
+	to help GNUstep application and WindowMaker notify each other
+	about "Hide" and "Hide Others" actions. There are no protocols for
+	"unhide" action.
+
+	Test case steps:
+	1. Open application with window opened.
+	2. Hide application with "Hide" menu item.
+	3. Open WindowMaker's "Windows" menu (middle-click on desktop).
+	4. Select hidden application window.
+	Application unhides, activates, restored window is focused (receives) input
+	and "Hide" menu item unselected.
+
+2020-09-16  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m
+	(hideApplication:): send application's root window to WindowMaker(WM)
+	because it's a "group leader" that clearly identifies application
+	inside WM. WM uses XFindContext to get WApplication structure and
+	"group leader" window ID is a key to find it.
+
+2020-06-18 Riccardo Mottola <rm@gnu.org>
+
+	* Tools/font_cacher.m:
+	If the Library directory is not found, create one for the user.
+
+2020-06-18 Riccardo Mottola <rm@gnu.org>
+
+	* Source/xlib/XGFontManager.m
+	Match return value in case of error (nil instead of NO)
+
+	* Headers/xlib/XGPrivate.h
+	Fix return value of width to CGFloat
+
+2020-06-10 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/fontconfig/FCFaceInfo.h: Add instancevariable _patternIsResolved.
+	* Source/fontconfig/FCFaceInfo.m (-matchedPattern): Cache the
+	resolved pattern and return this. The method characterSet now uses
+	this cached pattern.
+	Patch by Josh Freeman <gnustep_lists@twilightedge.com>
+
+2020-04-25  Ivan Vucica <ivan@vucica.net>
+
+	* Source/GSBackend.m:
+	* Source/cairo/GNUmakefile:
+	* Source/cairo/CairoContext.m:
+	* Source/cairo/WaylandCairoSurface.m:
+	* Source/wayland/GNUmakefile:
+	* Source/wayland/GNUmakefile.preamble:
+	* Source/wayland/WaylandServer.m:
+	* Source/wayland/xdg-shell-protocol.c:
+        * Source/wayland/README.md:
+	* Headers/cairo/WaylandCairoSurface.h:
+	* Headers/wayland/WaylandServer.h:
+	* Headers/wayland/xdg-shell-client-protocol.h:
+	* wayland-regenerate.h:
+	* configure:
+	* configure.ac:
+	Initial merge of the Wayland backend into the master branch.
+
+2020-04-13  Ivan Vucica <ivan@vucica.net>
+
+	* Documentation/announce.texi:
+	* ANNOUNCE:
+	Normalize the accompanying text for the release announcement across
+	core packages: standardize chapter name and GPG information.
+
+2020-04-05  Ivan Vucica  <ivan@vucica.net>
+
+	* ANNOUNCE:
+	* NEWS:
+	* README:
+	Updating documentation for the 0.28.0 release.
+
+2020-03-27 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Documentation/news.texi: Fill in some details for pending release.
+
+2020-03-12  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/art/GNUmakefile.preamble,
+	* Source/gsc/GNUmakefile.preamble: do not overwrite ADDITIONAL_INCLUDE_DIRS
+	value to help RPM build. In spec file ADDITIONAL_INCLUDE_DIRS can be sat
+	to subdirectories which are create by RPM build tool.
+
+2020-03-05  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (placewindow::): check window frame
+	in OpenStep and Xlib coordinate systems to decide if it was changed.
+	Rename `xVal` into more meaninful `xFrame` (holds temporary value of
+	window frame in Xlib coordiante system).
+
+2020-03-03  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Headers/x11/XGServer.h,
+	* Source/x11/XGServer.m (xScreenSize): new primitive method.
+
+	* Source/x11/XGDragView.m (XY): use new primitive method to get Xlib
+	screen height. Fixes broken DnD on vertically aligned monitors.
+
+2020-03-01  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (placewindow::): call XMoveResizeWindow
+	even if specified frame is equal current. No events will be send to
+	-gui for this case but X11 window position will be refreshed. It fixes
+	misplacement of image in slideImage:from:to: (second and all subsequent
+	calls).
+
+2020-02-26  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Headers/x11/XGServerWindow.h (_gswindow_device_t): new structure
+	memeber was added - `osframe`. This member intended to hold cached frame
+	of windows in OpenStep coordinate system. This makes backend more
+	reliable to the cases when gui changes NSWindow's _frame ivar before
+	call to backend methods which make windows placement.
+
+	* Source/x11/XGServerWindow.m (placewindow::): use `osframe` structure
+	member to decide if window change position or size. Removed usage of
+	temporary `frame` (used only for making desicion).
+
+2020-02-24  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (placewindow::): use window->xframe
+	as current window frame instead of NSWindow's frame because
+	`_frame` ivar may be already changed to desired value.
+
+2020-02-21 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_createAppIconPixmaps): Made
+	preconditions of new code explicit.
+	* Source/x11/XGServerWindow.m (-orderwindow:::): Set icon pixmap
+	only for WindowMaker.
+
+2020-02-20  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Headers/x11/XGServer.h (GSDisplayServer): added new ivar xScreenSize
+	to hold Xlib screen size dimensions.
+
+	* Source/x11/XGServerWindow.m:
+	(_OSFrameToXFrame:for:): use xScreenSize instead of DisplayHeight.
+	(_OSFrameToXHints:for:): ditto.
+	(_XFrameToOSFrame:for:): ditto.
+	(movewindow::): ditto.
+	(_screenSize): new static function to get dimensions of Xlib screen from
+	root window.
+	(screenList): use xScreenSize instead of DisplayHeight/DisplayWidth.
+
+2020-02-14 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (screenList): Clean up
+	implementation again.
+
+2020-02-12  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (screenList): revert back to old code
+	logic: if XRandR available but can't get screens info for some reasons,
+	return array with one element (Xlib screen).
+
+2020-02-11  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (screenList): Transform screen
+	origin into unflipped (OpenStep) coordinate system for XRandR capable
+	systems. After this change windows and screen will use the same start
+	of coordinate system for their origins.
+
+2020-02-08 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m,
+	* Source/xlib/XGFont.m,
+	* Source/xlib/XGFontManager.m,
+	* Source/xlib/XGFontSetFontInfo.m,
+	* Source/xlib/XGGState.m,
+	* Source/xlib/XGGeometry.m : Fixes after Xrandr change to get xlib
+	backend to compile again.
+
+2020-02-08 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (screenList): Clean up implementation.
+
+2020-02-07  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_XFrameToOSFrame:for:): use Xlib
+	screen height instead of monitor's because we convert coordinates
+	from Xlib area.
+	(movewindow::): use Xlib screen height because we're operating in
+	Xlib coordinate system.
+	(screenList): fill monitor depth with value returned by
+	windowPathForScreen with monitor at index 0 (screen_id already set so
+	method will get correct screen_id).
+
+	* Source/x11/XGServerEvent.m (processEvent:): fixed indentaion.
+
+2020-02-07 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (swapColors): Made code more
+	explicit and removed additional copy before calling this function.
+	This function should now do what the comment above it says.
+	(alphaMaskForImage): Slightly cleaner code.
+	* Source/x11/XGServerEvent.m: Prevent compiler warning by moving method.
+
+2020-02-07  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_OSFrameToXFrame:for:):,
+	(_OSFrameToXHints:for:): use Xlib screen height instead of monitor's
+	because we convert coordinates to Xlib area.
+
+	* Source/x11/XGServerEvent.m (processEvent:): update monitor_id from
+	NSWindow's screen number (it could change after event processing).
+	(mouseLocationOnScreen:window:): use Xlib screen height instead of
+	monitor's. Added comment to code that should be probably removed
+	later.
+
+2020-02-03  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XWindowBuffer.m (windowBufferForWindow:depthInfo:): use
+	renamed	XGServer's `screenVisual` and `screenDepth` methods.
+
+	* Source/x11/XIMInputServer.m (initWithDelegate:name:):
+	use `+xDisplay` instead	of `xCurrentDisplay`.
+	(clientWindowRect:): ditto.
+
+	* Headers/x11/XGServerWindow.h (_gswindow_device_t):
+	renamed `screen` to `screen_id`. `monitor_id` element was added -
+	this is an index of element in MonitorDevice array.
+	* Source/x11/XGServerWindow.m:
+	Removed `screen` parameter from methods which contains it in name.
+	Methods were renamed to remove `Screen` and `FromScreen`.
+	(_OSFrameToXFrame:for:): use `monitor_id` instead of `screen`.
+	(_OSFrameToXHints:for:): ditto.
+	(_XFrameToOSFrame:for:): ditto.
+	(_checkStyle:): use renamed methods and `screen_id` window structure
+	element.
+	(_rootWindow): renamed from _rootWindowForScreen:, use `defScreen`
+	instead of removed parameter `screen`, set window structure element
+	`monitor_id` to 0.
+	(_createBuffer:): use `screen_id` window structure.
+	(window::::): use renamed methods, `defScreen`, `screen_id` and
+	`monitor_id` window scructure elements.
+	(nativeWindow:::::): ditto.
+	(setbackgroundcolor::): ditto.
+	(miniwindow:): ditto.
+	(_createAppIconPixmaps): removed unused `screen` local variable, use
+	renamed `screenRContext` method.
+	(orderwindow:::): use `screen_id` window structure element.
+	(movewindow::): use `screen_id` window structure element as a parameter
+	to `boundsForScreen`.
+	(windowbounds:): ditto.
+	(windowlist): use renamed `_rootWindow` method.
+	(setMouseLocation:onScreen:): user renamed methods.
+	(_blankCursor): ditto.
+	(imagecursor:::): ditto
+	(recolorcursor:::): ditto.
+	(screenList): change with assumption that Xlib screen is one per application.
+	Failback code to RandR-related always creates arrays with one element (no
+	enumeration needed). Create `monitor` structure in failback (non-RandR) code.
+	Use `screen_id` MonitorDevice structure element to hold	Xlib screen ID.
+	(windowDepthForScreen:): assume that `screen` parameter is a Xlib screen ID,
+	simplify code - `screen` will be used with RandR or not.
+	(availableDepthsForScreen:): changed with assumption that `screen` is a index
+	of element in `monitors` structure.
+
+	* Source/x11/XGServerEvent.m:
+	use renamed methods and `screen_id` window structure element.
+
+	* Headers/x11/XGServer.h
+	Removed `screen` parameter from methods which contains it in name.
+	Methods were renamed to remove `Screen` and `FromScreen`.
+	(MonitorDevice): `screen_id` was added.
+
+	* Source/x11/XGServer.m:
+	use `screen_id` and rename mathods according to XGServer,h.
+	(_initXContext): initialize `monitors` array early here before first
+	use (calls to XGServerWindow methods).
+
+	* Source/x11/XGDragView.m (XDPY): use `monitor_id` in `boundForScreen:`
+	call.
+
+	* Source/cairo/XGCairoSurface.m: use `xDisplayRootWindow` XGServer's method.
+
+	* Source/art/ARTContext.m (setupDrawInfo:): use `xDisplayRootWindow`
+	XGServer's method.
+
+
+2020-01-31  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (boundsForScreen:): check for number of
+	XRandR's ouputs.
+
+2020-01-31  Riccardo Mottola <rm@gnu.org>
+
+	* Source/x11/XGServerWindow.m (boundsForScreen:):
+	Check if Xrandr did not succeed and provide fallback.
+
+2020-01-31  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (screenList): join RandR and non-RandR
+	code. Failback to Xlib generic method if any no RandR available or
+	RandR function call was unsuccessful. In Xlib generic method fill in
+	monitors array with values.
+	(boundsForScreen:): use values from cached `monitors` array since
+	-screenList fills it on both cases with or without RandR available.
+
+2020-01-30  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Headers/x11/XGServer.h: new structure `MonitorDevice` and ivar
+	`monitors`for holding cache of monitor's parameters (depth, resolution,
+	frame). New ivar `monitorsCount` - holds number of items in `monitors` for
+	RandR or X11 screen count otherwise.
+	* Source/x11/XGServerWindow.m (screenList): new method for RandR mode -
+	enumerates monitors and caches their parameters. Returns array of monitors'
+	indices to get access to monitors` items.
+	(boundsForScreen:): use cached `frame` parameter of specified monitor.
+	Use `monitorsCount` instead of ScreenCount().
+	(windowDepthForScreen:): renamed method parameter; append `x_` prefix to
+	`Screen *` internal variable; validate `screen` parameter value; use
+	`defScreen` for RandR enabled code.
+	(availableDepthsForScreen:): ditto.
+	(resolutionForScreen:): renamed method parameter; validate `screen`
+	parameter value.
+	(boundsForScreen:): renamed method parameter.
+
+	* Source/x11/XGServer.m (dealloc): free `monitors` if it was used.
+
+2020-01-26  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (boundsForScreen:): use `screen` variable
+	to identify output in RandR screen resources. Use `boundsRect` local
+	variable as return vaalue storage. Cleanup.
+
+	* Source/x11/XGServerEvent.m (processEvent:),
+	* Source/x11/XGServer.m (_initXContext): catch and process RandR event
+	on default screen.
+
+2020-01-24  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_OSFrameToXFrame:for:): use
+	-boundsForScreen: to get correct screen dimensions if RandR is supported.
+	(_OSFrameToXHints:for:): ditto.
+	(_XFrameToOSFrame:for:): ditto.
+	(movewindow::): ditto.
+	(windowbounds:): ditto.
+	(setMouseLocation:onScreen:): ditto.
+	* Source/x11/XGDragView.m: ditto.
+
+	* Source/x11/XGServerEvent.m (processEvent:): destroy NSScreen screens
+	list to be regenereated on next call. This change updates ivars of
+	NSScreen (_frame, _depth) by recreating NSScreen instances.
+	(mouseLocationOnScreen:window:): use -boundsForScreen: to get correct
+	screen dimensions if RandR is supported.
+
+2020-01-23  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Headers/x11/XGServer.h (GSDisplayServer): RandR event and error base
+	ivars were added.
+	* Source/x11/XGServer.m (_initXContext): get RandR event and error base.
+	* Source/x11/XGServerWindow.m (boundsForScreen:): if Xrandr support
+	enabled get screen dimensions using Xrandr objects.
+	* Source/x11/XGServerEvent.m (processEvent:): process Xrandr event and
+	send NSApplicationDidChangeScreenParametersNotification.
+	* Source/x11/XGServer.m	(_initXContext): subscribe to the Xrandr event.
+
+2020-01-22  Sergii Stoian  <stoyan255@gmail.com>
+
+	* configure.ac: check for availability of Xrandr library.
+	* config.h.in: added default value for Xrandr usage.
+	* configure: regenerate.
+
+2020-01-17  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/art/shfill.m:,
+	* Source/art/path.m:,
+	* Source/art/image.m (DPSimage:::::::::::):
+	fixed type formatting specifiers.
+
+	* Source/art/ftfont.m: removed include to ftfont-old.m.
+	(drawString:at::to::::::::color::::transform:deltas:::widthChar:drawinfo:):,
+	(drawGlyphs::at::to::::::color::::transform:drawinfo:):,
+	(drawGlyphs::at::to::::::alpha::color::::transform:drawinfo:):,
+	(bezierpath_funcs):,
+	fixed type formatting specifiers; moved interface declaration of FTFontInfo
+	to ftfont.h; removed GCCism.
+
+	* Source/art/ftfont.h: moved interface declaration of FTFontInfo here.
+	* Source/art/composite.m: fixed type formatting specifiers.
+	* Source/art/FTFontEnumerator.m (load_font_configuration): fixed type
+	formatting specifiers.
+
+2020-01-16  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerEvent.m (_handleTakeFocusAtom:forContext:): use
+	lowerCamelCase for objects and underscores for primitive types;
+	do not ignore TakeFocus request if no key window was set
+	and main application menu receives request.
+
+2020-01-14  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (alphaMaskForImage): renamed from
+	image_mask().
+	(swapColors): new function to convert colors from ARGB order into RGBA
+	(big-endian systems) or BGRA (little-endian systems).
+	(_createAppIconPixmaps): use swapColors() and remove unused code.
+	(restrictWindow:toImage:): use alphaMaskForImage().
+	(imagecursor:::): use swapColors() and remove unused code.
+	(ALPHA_THRESHOLD): removed duplicate of definition.
+
+2020-01-13  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_createNetIcon:result:size:): fixed
+	off-by-one mistake during alpha handling. Enable disabled code and
+	remove temprorary one.
+	(window::::): set NetWM icon to window for all EWMH capable WMs even
+	it's WindowMaker.
+	(image_mask): new function to create alpha mask for image. It's based
+	on xgps_cursor_mask() code with additional argument `alpha_treshold`.
+	This function may be used for images (alpha_treshold == 0) with real
+	alpha mask and for cursors (if no Xcursor library is used - no alpha
+	is used, no shadows in cursors, alpha_treshold == 158 is used to cut
+	transparent pixels).
+	(_createAppIconPixmaps): icon pixmap creation rewritten to support
+	images with alpha channel using wraster functions. Use image_mask().
+	(restrictWindow:toImage:): use image_mask() instead of
+	xgps_cursor_mask().
+	(xgps_cursor_mask): removed as image_mask() replaced it.
+	Guard xgps_cursor_image( with #if - will not be compiled if Xcursor
+	is used.
+	(imagecursor:::): use image_mask() instead of xgps_cursor_mask().
+
+2019-12-24 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoFontInfo.m: Revert to the old defaults for
+	hinting and allow for all possible values to be set.
+
+2019-05-19 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoFontInfo.m,
+	* Source/fontconfig/FCFontEnumerator.m: Small cleanup of last pull
+	request.
+
+2019-05-19 Fred Kiefer <FredKiefer@gmx.de>
+
+	* .gitignore: Add copied files as they should never be commited.
+	* Headers/fontconfig/FCFaceInfo.h: Add method displaName.
+	* Source/art/FTFontEnumerator.m: Retain the display name.
+	* Source/fontconfig/FCFaceInfo.m,
+	* Source/fontconfig/FCFontInfo.m,
+	* Source/art/ftfont.m: Implement the method displayName.
+	* Source/cairo/CairoFontInfo.m: Enable font hinting and use
+	subpixel antialias if the variable back-art-subpixel-text is set.
+	* Source/fontconfig/FCFontEnumerator.m: Better handling of font
+	names, weight and the order of fonts.
+	Merged huge pull request by Jeff Teunissen <deek@d2dc.net>
+
+2019-04-20  Sergii Stoian  <stoyan255@ukr.net>
+
+	* Source/x11/XGServerWindow.m (standardcursor::): Getting of
+	XC_fleur as GSCloseHandCursor was removed because it loads in
+	NSCursor as image.
+
+2019-04-18  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (standardcursor::): revert resizing
+	cursor names to the old values upon request of project owner.
+
+2019-04-17  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m (getStandardBitmap): send `bitmapFormat`
+	to _convertToFormatBitsPerSample::::::::. Fixes display of colored
+	mouse cursor images.
+	(standardcursor::): cleanup in Xlib cursors handling. Additional
+	cursor types were added: GSClosedHandCursor, GSOpenHandCursor.
+	Removed GSDisappearingItemCursor type handling - it loads in NSCursor
+	from image.
+
+2019-04-12  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerEvent.m (mouseOptionsChanged:): change double-click
+	minimum value to 200 and default to 300.
+
+2019-04-11  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerEvent.m (processEvent:): do not send event if
+	disabled menu mouse button was released.
+
+2019-04-11  Sergii Stoian  <stoyan255@ukr.net>
+
+	* Source/x11/XGServerEvent.m (initializeMouse): new method. Calls
+	-mouseOptionsChanged: and setups observer for defaults changes.
+	(mouseOptionsChanged:): new method. Read mouse properties from user
+	defaults.
+	(processEvent:): respect mouse options on ButtonPress and
+	ButtonRelease events.
+
+	* Source/x11/XGServer.m (dealloc): remove notification observer.
+
+2019-04-06  Sergii Stoian  <stoyan255@ukr.net>
+
+	* Source/x11/XGServerWindow.m (hideApplication:): new method name for
+	`hidewindow`.
+
+2019-04-05  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Headers/x11/XGServerWindow.h (GSMaxWMProtocols): increased number to support
+	WMFHideApplication.
+	* Headers/x11/XGGeneric.h: Atoms _WINDOWMAKER_WM_FUNCTION, _GNUSTEP_WM_HIDE_APP
+	were added.
+
+	* Source/x11/XGServerWindow.m (_setSupportedWMProtocols:): added
+	_GNUSTEP_WM_HIDE_APP protocol suport to the window protocols.
+	(hidewindow:): implementation of GSDisplayServer method.
+	* Source/x11/XGServerEvent.m (processEvent:): process _GNUSTEP_WM_HIDE_APP
+	client message.
+
+2019-04-04  Sergii Stoian  <stoyan255@ukr.net>
+
+	* Source/x11/XGServerEvent.m (processEvent:):
+	Send double-click on appicon to the WindowMaker.
+
+2019-04-02  Sergii Stoian  <stoyan255@gmail.com>
+
+	* Source/x11/XGServerWindow.m:
+	(orderwindow:::) Map application icon window without focus flickering
+	for applications executed with argument `-autolaunch YES` in WindowMaker
+	environment.
+
+2019-03-26 Sergii Stoian <stoyan255@gmail.com>
+	* Source/x11/XGServerWindow.m:
+	(setwindowlevel::) Set `Utility` window type for NSFloatingWindowLevel.
+
+2019-01-04 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Documentation/news.texi: Fill in some details for pending release.
+
+2019-01-04 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/opal/OpalGState.m: Add colour handling for all the
+	different colour spaces.
+
+2018-12-31 Pavel Shlyak <pvshlyak@edu.hse.ru>
+
+	* Source/x11/convert.c: Don't leak memory on error handling
+
+2018-12-02 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSGState.m (-setColor:state:): Don't copy values onto themselves.
+
+2018-09-16  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/opal/OpalContext.m (-initWithGraphicsPort:flipped:): Implement.
+	* Source/opal/OpalContext.m (-GSSetDevice:::): Get height from
+	surface if no y value is given.
+	* Source/opal/OpalSurface.m: Rewrite to handle the case where
+	device is not set.
+
+2018-07-16  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (_setupRootWindow): Make sure the
+	root name variable is null terminated.
+
+2018-06-20  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m: Check for bytes_after_ret in
+	PropGetCheckProperty. Attempt to improve the window border detection.
+	Based on idea by Tom MacSween <Tom.MacSween@crins-sinrc.ca>
+
+2018-05-01  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/x11/XGGeneric.h: Move all atoms in XGGeneric data structure.
+	* Source/x11/XGServerEvent.m,
+	* Source/x11/XGServerWindow.m: Use atoms from XGGeneric.
+	* Headers/x11/XGServer.h,
+	* Source/x11/XGServerEvent.m (-windowManagerName): New method to
+	get the name of the window manager.
+
+2018-03-03 Riccardo Mottola <rm@gnu.org>
+
+	* configure.ac
+	* configure
+	Be consistent in prepending flags to existing LDFLAGS and CPPLFLAGS.
+
+2018-02-25  Yavor Doganov  <yavor@gnu.org>
+
+	* Tools/font_cacher.1: New file.
+	* Tools/GNUmakefile: Build font_cacher only if WITH_XFT=no.
+	Install the manpage conditionally.
+	* configure.ac: Add deprecation warning for art/xlib/xdps.
+	* configure: Regenerate.
+
+2018-02-09  Yavor Doganov  <yavor@gnu.org>
+
+	* Source/x11/XGServer.m (_initXContext): Call XInitThreads to
+	enable drawing in secondary threads.
+
+2018-02-05  Yavor Doganov  <yavor@gnu.org>
+
+	* Headers/xlib/GSXftFontInfo.h (GSXftFontInfo): Inherit from
+	the FCFontInfo class.
+	(GSXftFaceInfo, GSXftFontEnumerator): New classes inheriting from
+	FCFaceInfo and FCFontEnumerator.
+	* Source/xlib/GSXftFontInfo.m: Assume fontconfig is available;
+	remove HAVE_FC define and !HAVE_FC code.
+	(allFonts): Remove.
+	(FcFont, FcFontEnumerator): Remove implementations.
+	(GSXftFontEnumerator): Override +faceInfoClass and +fontWithName:.
+	(Ones, coveredCharacterSet): Remove, not needed anymore.
+	(advancementForGlyph:): Add support for glyph caching.
+	(setupAttributes): Obtain pattern from the GSXftFaceInfo
+	instance.  Remove unnecessary code for setting ivars already set
+	by the superclass.  Set lineHeight to capHeight.
+	* Source/xlib/XGContext.m (initializeBackend) [HAVE_XFT]: Remove
+	HAVE_FC conditional.  Set fontEnumerator to GSXftFontEnumerator.
+	* Source/xlib/GNUmakefile (xlib_OBJC_FILES): Add fontconfig files
+	in the WITH_XFT conditional.
+
+2018-01-21  Yavor Doganov  <yavor@gnu.org>
+
+	* configure.ac: Add FREETYPE_LIBS to LIBS when building xlib.
+	* configure: Regenerate
+
+2018-01-20  Yavor Doganov  <yavor@gnu.org>
+
+	* configure.ac: Detect freetype with PKG_CHECK_MODULES.
+	* configure: Regenerate.
+
+2018-01-03  Yavor Doganov  <yavor@gnu.org>
+
+	* pkg.m4: Update to serial 12.
+	* configure.ac: Use PKG_PROG_PKG_CONFIG to detect pkg-config.
+	Remove all PKG_* shell variables.
+	* configure: Regenerate.
+
+2018-01-01  Ivan Vucica <ivan@vucica.net>
+
+	* ANNOUNCE
+	* Documentation/news.texi
+	* NEWS
+	* README
+	* Version:
+	Releasing 0.26.2 to coincide with the -gui release.
+
+2017-12-21  Ivan Vucica <ivan@vucica.net>
+
+	* ANNOUNCE
+	* Documentation/news.texi
+	* README
+	* Version
+	* NEWS:
+	Releasing 0.26.1 to coincide with the -gui release.
+
+2017-12-10  Ivan Vucica <ivan@vucica.net>
+
+	* ANNOUNCE
+	* Documentation/news.texi
+	* README:
+	Added release notes to news.texi and regenerated the rest for
+	0.26.0 release.
+
+2017-10-01  Ivan Vucica <ivan@vucica.net>
+
+	* Documentation/news.texi:
+	Add stub 0.26.0 entry.
+
+	* Version:
+	Bump to 0.26.0.
+
+2017-07-17  Daniel Ferreira <dtf@stanford.edu>
+
+	* Source/opal/GNUmakefile: add OpalBridge.m to project.
+	* Source/opal/OpalBridge.m:
+	Implement a bridge between NSColor and CGColorRef and a stub for a
+	bridge between NSImage and CGImageRef. This improves compatibility with
+	Quartz.
+
+2017-07-17  Daniel Ferreira <dtf@stanford.edu>
+
+	* Headers/opal/OpalSurface.h
+	* Source/opal/OpalContext.m
+	* Source/opal/OpalSurface.m:
+	In Quartz, the "graphics port" bound to an NSGraphicsContext (subclassed
+	by OpalContext) is a CGContext. We currently initialize one in
+	OpalSurface if it does not exist, however we do not allow the client to
+	initialize a graphics context with a custom graphics port, which should
+	be allowed. We have enabled this feature.
+
+2017-07-31  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-DPSshow:): Get DPSshow: to work on
+	scaled windows.
+
+2017-04-16  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSGState.m
+	* Source/x11/XGDragView.m
+	* Source/x11/XGServerWindow.m
+	* Source/x11/XWindowBuffer.m
+	Fix some clang static analyser warnings reported by
+	Sebastian Reitenbach <sebastia@l00-bugdead-prods.de>.
+
+2017-04-04  Ivan Vucica <ivan@vucica.net>
+
+	* Releasing 0.25.1.
+
+2017-01-17  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/x11/XGGeneric.h: Remove obsolte atom.
+	* Source/x11/XGServerWindow.m: Clean up code.
+	* Source/x11/XGServerWindow.m (-setwindowlevel::): Try to set
+	better level for tool tip windows.
+
+2017-01-08  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_checkStyle:): Ignore invalid
+	border information.
+
+2016-08-02  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/opal/OpalFontInfo.m
+	Correct the calculation of line height.
+	* Source/opal/OpalGState.m
+	Adjust font placement to changed height.
+	* Source/opal/OpalSurface.m
+	Better debug output.
+
+2016-07-15  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSStreamContext.m:
+	Output the Postscript font name.
+
+2016-06-16  Ivan Vucica <ivan@vucica.net>
+
+        * ANNOUNCE:
+        * NEWS:
+        * README:
+        * Version:
+	Releasing 0.25.0.
+
+2016-04-28  Ivan Vucica <ivan@vucica.net>
+
+	* Headers/cairo/Win32CairoGState.h:
+	Partially applying r39615 from testplant branch to fix a build
+	error on MinGW.
+	Patch by Seong-Gu Lee <sgleehd@gmail.com>.
+
+2016-04-06  Ivan Vucica <ivan@vucica.net>
+
+	* Source/gsc/GSGState.m:
+	Remove extraneous semicolons.
+	Patch by mlytwyn (cherrypicked from testplant branch, r39614).
+
+	* Source/cairo/Win32CairoGState.m:
+	Implement dealloc/copyWithZone on Win32CairoGState instance.
+	Patch by mlytwyn (cherrypicked from testplant branch, r39618).
+
+	* Source/gsc/GSGState.m:
+	Add return type 'id' to -[GSGState copyWithZone:] method definition.
+	Patch by mlytwyn (cherrypicked from testplant branch, r39619).
+
+2016-03-01  Seong Gu Lee <sgleehd@gmail.com>
+
+	* Headers/win32/WIN32Server.h: tweak for compilation on 64bit windows
+
+2015-12-13  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/opal/OpalFontInfo.m
+	Prevent a compiler warning.
+	* Source/opal/OpalGState.m
+	* Source/opal/OpalSurface.m
+	Correct the bitmap flags used.
+	Add a few missing function calls.
+
+2015-11-25 Riccardo Mottola <rm@gnu.org>
+
+	* configure
+	* configure.ac
+	* config.h.in
+	Specifically check for X11/extensions/sync.
+
+	* Headers/x11/XGServer.h
+	* Headers/x11/XGServerWindow.h
+	* Source/x11/XGServer.m
+	* Source/x11/XGServerEvent.m
+	* Source/x11/XGServerWindow.m
+	Enable Sync only on explicit presence of sync.h, not just Xext.
+
+
+2015-11-13  Wolfgang Lux  <wolfgang.lux@gmail.com>
+
+	* Source/x11/XGServerWindow.m (_setupRootWindow, window::::):
+	Create an empty app icon window before eventually checking the
+	window frame offsets when using WindowMaker. This fixes the issue
+	that the first GNUstep application started under WindowMaker did
+	not get a proper application menu.
+
+2015-11-03  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerEvent.m (-processEvent:): For repeated keys
+	only eat up the KeyRelease events and pass on all KeyPress.
+
+2015-10-28  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-GSReadRect:, -DPSimage:..:):
+	Drawing speedup for slow machines.
+	Patch by Josh Freeman <gnustep_lists@twilightedge.com>
+
+2015-10-16  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerEvent.m (-processEvent:): Move repeate key
+	detection from process_key_event() to here to enable filtering out
+	keyUp events as Cocoa does.
+
+2015-10-09  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSContext.m: Set some defaults.
+
+2015-10-03  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/gsc/GSGState.h
+	* Source/gsc/GSContext.m
+	* Source/gsc/GSGState.m
+	* Source/cairo/CairoGState.m
+	Implement per gstate methods for antialias, patternPhase and
+	compositingOperation.
+
+2015-09-20  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m: Preliminary support for anti alias
+	setting for path drawing.
+
+2015-08-13  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m (process_char):
+	Fix bug that caused F11 keypresses to become F12.
+	Patch by Adam Fox <adam.fox@testplant.com>
+
+2015-06-05  Fred Kiefer <FredKiefer@gmx.de>
+
+        * configure.ac: Fix configure for mingw
+        * configure: Regenerated
+	Patch by Marcian Lytwyn <marcian.lytwyn@advcsi.com>
+
+2015-05-26 Sebastian Reitenbach <sebastia@l00-bugdead-prods.de>
+
+	* Source/cairo/CairoGState.m
+	  abs -> fabs
+	* Source/x11/XGGLContext.m
+	  format string fix
+	* Headers/x11/XGOpenGL.h
+	  glxminorversion is int, not long int
+
+2015-05-22  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m: Add support for image interpolation
+	setting in context.
+	Patch by Josh Freeman <gnustep_lists@twilightedge.com>
+
+2015-05-22  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSGState.m (_fillRect:withPattern:): Add support for
+	patternPhase.
+	Patch by Josh Freeman <gnustep_lists@twilightedge.com>
+
+2015-05-18 Riccardo Mottola <rm@gnu.org>
+
+	* GNUmakefile.postamble
+	Correctly run config.status again.
+
+2015-05-16  Richard Frith-Macdonald <rfm@gnu.org>
+
+        * Documentation/news.texi:
+        * ANNOUNCE:
+        * NEWS:
+        * README:
+        * Version:
+	Bugfix release 0.24.1
+
+2015-05-13 Riccardo Mottola <rm@gnu.org>
+
+        * configure.ac
+        Copied from base: only warn if compiler is different from the one
+	configured in make
+        * configure
+        regenerated
+
+2015-05-12 Riccardo Mottola <rm@gnu.org>
+
+	* configure.ac
+	pick up gnustep make configured CC, CPP, CXX and check they are
+	consistent with how make was configured
+	* configure
+	regenerated
+
+2015-03-31  Germán Arias <germanandre@gmx.es>
+
+	* Source/win32/WIN32Server.m (-windowEventProc:, -process_mouse_event:):
+	Start tracking the mouse at the first mouse movement (as suggested in
+	a note at MSDN documentation) so the window receives the WM_MOUSELEAVE
+	message when the mouse leave the client area. I don't use the message
+	WM_NCMOUSEMOVE, as suggested by Fred, because when the user moves
+	fast the mouse this messages is not generated. But we receive the
+	WM_MOUSELEAVE message no matter if the mouse move fast or not. This
+	approach make unnecessary handle the message WM_NCMOUSEMOVE. I also
+	remove a redundant line in WM_MOUSELEAVE.
+
+2015-03-23  Germán Arias <germanandre@gmx.es>
+
+	* Source/win32/WIN32Server.m (-windowEventProc:, -process_mouse_event:):
+	Add code to handle the case when the mouse leave the window, move over
+	a nonclient area, update the cursor or when the user open a
+	contextual menu. Also handle the first mouse movement inside the
+	window and save the cursor if we should preserve it between different
+	windows. Sometimes there is a problem with the cursor if the user
+	open a contextual menu after resize the window. But this seems
+	other issue.
+
+2015-03-22  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerEvent.m (-processEvent:): Reenable Richard's
+	frontend based expose code.
+	* Source/x11/XGServerWindow.m (-window::::, -_checkStyle:): Don't
+	use CWBackPixel, as the window background may be different.
+
+2015-03-21  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/x11/XGGeneric.h
+	* Source/x11/XGServerWindow.m: Correct name for atom
+	net_wm_state_modal_atom. Use this atom to try to set the state for
+	dialog windows to modal.
+
+2015-02-27  Germán Arias <germanandre@gmx.es>
+
+	* Source/cairo/CairoContext.m (-flushGraphics:):
+	* Source/cairo/Win32CairoSurface.m (-initWithDevice:): Apply fix
+	from TestPlant branch to solve problem with windows with backing
+	store type NSBackingStoreRetained, which are not displayed correclty
+	on MS Windows. With this fix those windows are displayed as
+	buffered windows.
+	* Source/win32/WIN32Server.m (-setWindowdevice:forContext:): The
+	windows with autodisplay set to NO aren't displayed correctly on
+	Windows, no matter the backing store type used. And trying to
+	redisplay these windows here in the server not takes effect. So if
+	the window have set autodisplay to NO, we change it to YES before
+	create the window. This problem affects the tooltips, but this
+	solution is different to the one used in the TestPlant branch.
+	Because that solution involves changes in the side of GUI.
+
+2014-10-25  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-compositeGState:...fraction:):
+	Disable workaround for cairo > 1.8 for cairo > 1.13.
+	Patch by Edwin Ancaer <eancaer@gmail.com>
+
+2014-05-24  Fred Kiefer <FredKiefer@gmx.de>
+
+	* configure.ac: Fix wrong assumption about Xft's .pc file that
+	leads to build failure with -Wl,--no-undefined.
+	Patch by Yavor Doganov  <yavor@gnu.org>
+
+2014-05-07  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/gpbs.m: Revert last change and correct the implementation
+	and usage of gpbs_log.
+
+2014-05-06  Ivan Vucica <ivan@vucica.net>
+
+	* Tools/gpbs.m: Removed barely used, overly complex and almost
+	certainly buggy logging code.
+
+2014-05-05  Ivan Vucica <ivan@vucica.net>
+
+	* ChangeLog: Corrected year for some recent commits.
+	* GNUmakefile: Added use of Master/deb.make.
+	* gnustep-back.spec.in: Added some details needed for Debian
+	packaging.
+
+2014-01-27  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/WIN32Server.m (LoadDisplayMonitorInfo):
+	Switch monitor logging to Debug level.
+	Patch by Jonathan Gillaspie <jonathan.gillaspie@testplant.com>
+
+2014-01-19  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/art/blit.m(MPRE): Remove compiler warning.
+	* Source/art/image.m(-DPSimage:::::::::::): Correct parameter
+	types. Fixes bug #41274.
+
+2014-01-08  Fred Kiefer <FredKiefer@gmx.de>
+
+	* configure: Remove duplicate addition of Xext.
+	* configure.ac: Regenerate.
+
+2014-01-05 Niels Grewe <niels.grewe@halbordnung.de>
+
+	* Source/x11/XGServerWindow.m: Remove redundant method.
+
+2014-01-05  Fred Kiefer <FredKiefer@gmx.de>
+
+        * Source/x11/XGServerWindow.m(-_checkStyle:): Change NSLog into
+	NSDebugLLog.
+
+2014-01-01 Niels Grewe <niels.grewe@halbordnung.de>
+
+        * Source/x11/XGServerWindow.m: Implement method to get
+	the XWindow ID of the a window from its window number.
+
+2013-12-29  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m (-GSSetFont:),
+	* Source/cairo/CairoFaceInfo.m (-drawGlyphs:...): Use scaled font
+	directly.
+
+2013-12-26  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/xlib/GSXftFontInfo.m
+	* Source/xlib/XGFontManager.m
+	* Source/xlib/XGBitmap.m: Remove some compiler warnings.
+
+2013-12-24  Richard Frith-Macdonald <rfm@gnu.org>
+
+        * Version: bump to 0.24.0
+
+2013-12-23  Fred Kiefer <FredKiefer@gmx.de>
+
+        * Update release notes to prepare for upcoming release.
+
+2013-12-23  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoFaceInfo.m (-fontFace): Warn about the usage
+	of non-scalable fonts.
+
+2013-12-18  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-_createBuffer, -windowbacking::,
+	-setWindowdevice:forContext:): Move code from last patch around a bit.
+
+2013-12-18  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/x11/XGServerWindow.m (-_createBuffer): Fix a big
+	memory leak noticed by Riccardo with the cairo backend,
+	by #ifdef-ing out this method when using cairo.
+
+2013-12-13  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGDragView.m (-_xWindowAcceptingDnDDescendentOf:...):
+	Correct to work with kwin window decoration.
+
+2013-12-13  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Tools/xpbs.m (-xProvideSelection:): Leave enough space for all
+	possible types.
+	* Source/x11/XGDragView.m: Simplify D&D window detection code.
+
+2013-09-29  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/opal/OpalSurface.h
+	* Source/opal/OpalSurface.m: Make the -device method public.
+	* Headers/opal/OpalContext.h: Remove method definitions.
+	* Source/opal/OpalContext.m: Limit the accepted image types.
+
+2013-09-29  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/opal/OpalSurface.h
+	* Source/opal/OpalSurface.m: Remove compiler warnings.
+	* Source/opal/OpalContext.m: Move -flushGraphics method to here.
+	* Source/opal/OpalGState.m: Simplify -DPSimage. Evaluate CGCTX
+	only once per method.
+
+2013-09-29  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/opal/OpalGState.h: Clean up to reduce warnings.
+	* Source/opal/OpalGState.m: Add missing path and matrix methods.
+	Remove warnings. Remove unneeded code. Reorder code to allow for
+	easier comparison with GSGState.
+	* Source/opal/OpalContext.m: Add missing includes to get shm
+	completion working. Adjust to changes in OpalGState.
+
+2013-09-23  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/opal/OpalGState.m: move variable declaration outside
+	of for loop
+
+2013-09-23  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalGState.m:
+	Fixed a compile error (extra #endif).
+
+	Added -DPSsetdash:::.
+
+	Added stub -DPSsetstrokeadjust:.
+
+2013-09-23  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalGState.m:
+	* Source/opal/OpalSurface.m:
+	Cutting down on junk code and unneeded output.
+
+2013-09-23  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalContext.m:
+	Once again pretending we're not drawing on screen. This is a temporary
+	fix for -DPSimage:.
+
+	-DPSgsave is now passed on to current gstate before GSContext is given
+	chance to replace it.
+
+	Changes relating to rename of OpalSurface and OpalGState methods
+	-cgContext to -CGContext.
+
+	* Source/opal/OpalGState.m:
+	Apparently mostly functional -compositeGState:. Includes disabled
+	modification of code from CairoGState.
+
+	Apparently functional -drawGState.
+
+	-DPSsetlinecap: stub (need to match linecap constants.)
+	-DPSsetmiterlimit:.
+
+	Extended -copyWithZone: to assign a 'default' OpalGStateRef to the
+	newly copied gstate in case we currently have no context. This is
+	done by creating a context and copying whatever's in that context
+	onto the new OpalGState.
+
+	Improved -DPSinitgraphics by setting the device offset that was
+	set here and calling CGContextSaveGState() as many times as it
+	was supposed to be called while CGContext did not exist. Noted
+	that we should, instead of recreating contexts, just reset the
+	internal GState of Opal.
+
+	Added -GSSetCTM:.
+
+	-flushGraphics no longer 'flushes' rect 0,0,1024,1024. Now it instead
+	queries surface for its size.
+
+	In case surface exists but not the CGContext, -DPSgsave creates it.
+	Otherwise, it records that gsave should be run upon context
+	creation.
+
+	Added -DPSsetlinewidth:.
+
+	Changes relating to rename of OpalSurface and OpalGState methods
+	-cgContext to -CGContext.
+
+	* Source/opal/OpalSurface.m:
+	Added reminder of how we should handle recreation of CGContexts.
+
+	Disabled non-doublebuffered windows. (We always need a backing
+	CGBitmapContext so we can implement -compositeGState: and -drawGState:.
+
+	Added accessors -x11CGContext and -backingCGContext.
+
+	Fixed bug where sometimes we'd get incorrect expose values and would
+	try to incorrectly copy the backing image, stretching the resulting
+	on-screen image.
+
+	Added -size accessor.
+
+	* Headers/opal/OpalGState.h:
+	Some accessors. _CGContextSaveGStatesOnContextCreation ivar.
+
+	* Headers/opal/OpalSurface.h:
+	New and renamed accessors.
+
+2013-09-19  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalContext.m:
+	Added GState switcher -DPSsetgstate:. See description of
+	_opGState in OpalGState.h.
+
+	* Headers/opal/OpalGState.h:
+	Added _opGState i-var and relevant accessors.
+
+	* Source/opal/OpalGState.m:
+	Instead of yellow rectangle, -compositeGState:... method *should*
+	now be painting doublebuffered content from the 'other' GState,
+	but sadly does not. This needs debugging.
+
+	Implemented -copyWithZone:. See description of _opGState in
+	OpalGState.h to see how and why is _opGState used in this class,
+	how it is being copied and why it's alright to keep it nil during
+	-init and even after -DPSinitgraphics, but needs to be set in
+	-copyWithZone:.
+
+	Added -setOPGState: and -OPGState accessors for the _opGState
+	field.
+
+2013-09-18  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalSurface.m:
+	Enabled doublebuffering. Fixed some debug code, disabled some other
+	debug code.
+
+2013-09-17  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/opal/OpalFontInfo.m: Use new OPFontGetGlyphWithCharacter to
+	properly look up the glyph for a character.
+
+2013-09-17  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalFontInfo.m:
+	Removed some dead code.
+
+	* Source/opal/OpalGState.m:
+	Fixed erroneous offset of glyphs by taking -defaultLineHeightForFont,
+	multiplying by 0.66, and adding that to pt.y. No idea why 0.66
+	is the right number.
+
+2013-09-17  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalContext.m:
+	Added note that -supportsDrawGState should be implemented.
+
+	* Source/opal/OpalGState.m:
+	Fixed temporary code for painting colored rectangles in place of text.
+	Partially fixed -GSShowGlyphsWithAdvances::: by removing temporary code
+	for painting colored rectangles, and by setting text matrix in
+	GSSetFont:.
+
+2013-09-17  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/opal/OpalFontInfo.m: Move font space to user space conversion
+	to a separate method. Implement -glyphIsEncoded:, -advancementForGlyph:,
+	-glyphForCharacter:, -glyphWithName:.
+
+	For -boundingRectForGlyph:, and -widthOfString:, return fake, fixed
+	values.
+	* Source/opal/OpalContext.m: Fix -isDrawingToScreen implementation;
+	it now returns YES. This has the unfortunate side effect of breaking
+	image drawing... but, on the positive side, causes NSLayoutManager
+	to make calls to GSShowGlyphsWithAdvances in batches of up to
+	16 glyphs, instead of one at a time...!
+	* Source/opal/OpalGState.m: Implement -GSSetFont:, and make
+	-GSShowGlyphsWithAdvances: call CGContextShowGlyphsWithAdvances
+
+	Overall state is glyphs are drawn.. they appear upside down,
+	and the glyph runs only seem to draw at (0, 0).
+
+2013-09-17  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalFontInfo.m:
+	Fixed scale of metrics by using unitsPerEm and pointSize.
+
+2013-09-17  Ivan Vucica <ivan@vucica.net>
+
+	* configure:
+	* configure.ac:
+	Added fontconfig and freetype as dependencies for Opal. configure
+	script is not actually regenerated from configure.ac and contains
+	a simplified piece of code which just appends relevant options to
+	CPPFLAGS and LIBS.
+
+	* Source/opal/GNUmakefile:
+	Added fontconfig/ implementation files, like it was done in cairo
+	backend.
+
+	* Headers/opal/OpalFaceInfo.h:
+	* Source/opal/OpalFaceInfo.m:
+	Now copied from CairoFaceInfo and modified to use Core Graphics.
+
+	* Headers/opal/OpalFontInfo.h:
+	* Source/opal/OpalFontInfo.m:
+	Now copied from CairoFontInfo. Starting modifying to use the Core
+	Graphics. Currently font metrics are not correctly scaled.
+
+	* Source/opal/OpalFontEnumerator.m:
+	* Headers/opal/OpalFontEnumerator.h:
+	Now copied from CairoFaceInfo. Modified to use the classes in the
+	Opal backend.
+
+	* Source/opal/OpalGState.m:
+	Added DPSrlineto:: and DPSrmoveto::.
+
+	* Source/fontconfig/FCFontInfo.m:
+	* Headers/fontconfig/FCFontInfo.h:
+	Removed a cairo-backend-specific method.
+
+2013-09-10  Ivan Vucica <ivan@vucica.net>
+
+	* Source/fontconfig/FCFontInfo.m:
+	* Source/fontconfig/FCFontEnumerator.m:
+	* Source/fontconfig/FCFaceInfo.m:
+	* Headers/fontconfig/FCFontInfo.h:
+	* Headers/fontconfig/FCFontEnumerator.h:
+	* Headers/fontconfig/FCFaceInfo.h:
+	* Source/cairo/CairoFontEnumerator.m:
+	* Source/cairo/CairoFaceInfo.m:
+	* Source/cairo/CairoFontInfo.m:
+	* Headers/cairo/CairoFontInfo.h:
+	* Headers/cairo/CairoFontEnumerator.h:
+	* Headers/cairo/CairoFaceInfo.h:
+	In preparation for reusing this code in the Opal backend,
+	moved fontconfig code to a dedicated set of classes that are now
+	superclasses of Cairo backend's font classes.
+
+	* Source/cairo/GNUmakefile:
+	Added fontconfig font classes directly to GNUmakefile for Cairo
+	backend.
+
+	It would be better if these had something like their own distinct
+	GNUmakefile that produces a static library which would then be
+	linked into Cairo. But the only backends that will use this are,
+	for now, Cairo and Opal. So the ugliness and extra maintenance
+	in case more classes are added should be, for now, acceptable.
+
+	* Source/cairo/CairoGState.m:
+	Fixed a mistake in a NSDebugMLLog() call's format. A percentage
+	symbol was placed before word "self", resulting in compiler's
+	interpretation as "%s".
+
+2013-09-10  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/x11/XIMInputServer.m: If the requested XIM
+	style (the GSXIMInputMethodStyle user default) is not available,
+	fall back to using a stlye that both the X server and
+	GNUstep support, if any. Also, add support for NoneStyle, which
+	is for simple input methods that don't have any visualization.
+	Problem reported and tested by Riccardo.
+
+2013-09-09  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalFontInfo.m:
+	Implemented -defaultLineHeightForFont, the key to getting
+	GNUstep layouting system to use information provided in
+	-advancementForGlyph:.
+
+	Without that, the textcontainer->linefrags does not get
+	created.
+
+2013-09-08  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGGLContext.m,
+	* Source/x11/XGGLFormat.m: Better error reporting by converting
+	glGetError() to a string.
+
+2013-08-21  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/x11/XIMInputServer.m: Add the setlocale(LC_CTYPE, "") call
+	back that I removed last year (r35152).
+
+	I tested the fcitx input method, and without the setlocale call,
+	XOpenIM would fail. I'm not sure what the best plan is in the long
+	term, I wanted to avoid calling setlocale from the core frameworks
+	but in this case xlib seems to require it.
+
+2013-08-02  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalContext.m:
+	Implementation of -graphicsPort that returns a CGContext
+
+	* Source/opal/OpalGState.m:
+	-Stubs for -DPSsetlinejoin:, -DPSsetlinecap:, -DPSsetmiterlimit:
+	-Implementation of -DPSimage::::::::::: for 32-bit RGB colorspaces
+
+2013-07-29  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSContext.m: Replace isa with object_getClass().
+
+2013-07-25  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalContext.m:
+	Pushing -DPSgsave: and -DPSgrestore: to OpalGState.
+
+	* Source/opal/OpalSurface.m:
+	-Disabled doublebuffering temporarily.
+	-Work on fixing doublebuffering, including creating subimage
+	 properly.
+	-Richer debug image output code, plus saving as PNGs.
+
+	* Source/opal/OpalGState.m:
+	-DPSfill
+	-Setting color now also sets stroke color.
+	-Corrected name for -DPSgsave and -DPSgrestore.
+	-Implemented -saveClip, -restoreClip.
+	-Implemented -DPSeoclip and -DPSeofill.
+	-Added dummy DPSshow:, GSShowText:: etc.
+	-Implemented -DPScurrentpoint:: so that superclass's
+	 DPSrlineto:: works.
+
+	* Headers/opal/OpalSurface.h:
+	Added -createCGContexts to header to fix a warning.
+
+2013-07-24  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/win32/w32_movesize.m (-decodeWM_EXITSIZEMOVEParams:::):
+	Remove code that caused missing windows content.
+	* Source/cairo/CairoContext.m (-flushGraphics): Add experimental
+	flush code for Windows.
+	* Source/cairo/Win32CairoSurface.m (-initWithDevice:, -dealloc):
+	Clean up HDC handling. Based on patch by Marcian Lytwyn <marcian.lytwyn@advcsi.com>
+
+2013-07-24  Ivan Vucica <ivan@vucica.net>
+
+	* configure.ac:
+	* configure:
+	Opal backend depends on both Opal and CoreBase. Added
+	CoreBase to list of libraries we link with.
+
+	* Source/opal/OpalFontInfo.m:
+	* Source/opal/OpalFontEnumerator.m:
+	Switched to NSDebugLLog().
+
+	* Source/opal/OpalGState.m:
+	-Switched to NSDebugLLog().
+	-Fixed DPSimage method's conversion of NSAffineTransform to
+	 CGAffineTransform
+	-Implemented GSCurrentCTM
+	-Implemented flushGraphics
+	-Implemented DPSsavegstate and DPSrestoregstate
+
+	* Source/opal/OpalSurface.m:
+	-Switched to NSDebugLLog().
+	-Fixed section that is supposed to write out the debug image.
+
+2013-07-21  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalFontInfo.m:
+	* Source/opal/OpalFontEnumerator.m:
+	Some hacks to figure out how NSMenuItem's width is determined,
+	and how the supported glyphs are determined.
+
+	* Source/opal/OpalGState.m:
+	Various method implementations and fixes.
+
+	* Source/opal/OpalSurface.m:
+	Enabled doublebuffered code path, now that Opal's endianess
+	problem is fixed. Creation of CGContext factored out of
+	initializer into a method that can be called whenever needed
+	to recreate the context.
+
+2013-07-15  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalFontEnumerator.m:
+	* Source/opal/OpalFontInfo.m:
+	More dummy font code, trying to get wider menu items et al.
+
+	* Source/opal/OpalSurface.m:
+	* Source/opal/OpalContext.m:
+	* Headers/opal/OpalSurface.h:
+	Work on getting backing store support to work.
+
+	* Source/opal/OpalGState.m:
+	* Headers/opal/OpalGState.h:
+	Implementation of a lot of drawing and matrix methods.
+
+2013-07-11  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalContext.m:
+	Once the surface is created in context, it's also set as
+	the active surface of the GState.
+
+	* Source/opal/OpalGState.m:
+	Blocked some superclass methods from running. Added debug
+	output. Added call to dummy paint method in OpalSurface.
+
+	* Source/opal/OpalSurface.m:
+	* Headers/opal/OpalSurface.h:
+	* Headers/opal/OpalGState.h:
+	Opal context is now created in the surface. Added a dummy
+	draw method.
+
+	* configure.ac:
+	* configure:
+	Ensured linking with the Opal library.
+
+2013-07-08  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-setIgnoreMouse::): Completely
+	rewrite this method to use Xfixes.
+	* Source/win32/WIN32Server.m (-setIgnoreMouse::): Implement a
+	Windows version of this method.
+
+2013-07-08  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m (-setIgnoreMouse::): New method that
+	allows to ignore mouse events for a window.
+
+2013-07-04  Richard Frith-Macdonald <rfm@gnu.org>
+
+        * Tools/GNUmakefile.preamble:
+        * Source/GNUmakefile.preamble:
+        Fix order of use of library and header directories.
+
+2013-07-03  Ivan Vucica <ivan@vucica.net>
+
+	* Source/x11/XGGLFormat.m:
+	* Headers/x11/XGOpenGL.h:
+	ARGB visual is only picked if NSOpenGLPFAAlphaSize is
+	specified in the pixel format.
+
+2013-07-03  Ivan Vucica <ivan@vucica.net>
+
+	* Source/x11/XGGLContext.m:
+	* Source/x11/XGGLFormat.m:
+	* Headers/x11/XGOpenGL.h:
+	OpenGL context under X11 now picks up the best possible
+	framebuffer that includes an alpha mask in the X visual info.
+	The code is currently disabled as it needs more debugging.
+
+2013-06-27  German A. Arias <german@xelalug.org>
+
+	* Source/x11/XGServerEvent.m (-processEvent:): Don't add events
+	WindowResized and WindowMoved in event_queue, to don't delay its
+	sent. Instead, send these directly to the window. If not, the
+	programa can move/resize the window while we send these events,
+	causing a confusion.
+
+2013-06-25  Ivan Vucica <ivan@vucica.net>
+
+	* Source/opal/OpalFontInfo.m:
+	* Source/opal/OpalContext.m:
+	* Source/opal/OpalGState.m:
+	* Source/opal/OpalFontEnumerator.m:
+	* Source/opal/OpalSurface.m:
+	* Headers/opal/OpalFontInfo.h:
+	* Headers/opal/OpalContext.h:
+	* Headers/opal/OpalGState.h:
+	* Headers/opal/OpalFontEnumerator.h:
+	* Headers/opal/OpalSurface.h:
+	Minimal code for dummy graphics backend now implemented for
+	Opal backend.
+
+2013-06-23  Ivan Vucica <ivan@vucica.net>
+
+	* config.h.in:
+	* configure.ac:
+	* configure:
+	* Source/GSBackend.m:
+	Added Opal backend to appropriate places (avoiding rebuild of
+	configure and config.h.in).
+
+	* Source/opal/OpalPSSurface.m:
+	* Source/opal/GNUmakefile:
+	* Source/opal/OpalFontInfo.m:
+	* Source/opal/OpalPDFSurface.m:
+	* Source/opal/OpalContext.m:
+	* Source/opal/OpalGState.m:
+	* Source/opal/OpalFontEnumerator.m:
+	* Source/opal/OpalSurface.m:
+	* Source/opal/OpalFaceInfo.m:
+	Added dummy files for the Opal backend.
+
+2013-05-11  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/Win32CairoSurface.m (-initWithDevice:): Make safer
+	against the surface being deallocated during this method.
+	* Source/cairo/Win32CairoSurface.m
+	(WIN32Server-contentsOfScreen:inRect:): Screen grabbing code.
+	* Headers/win32/WIN32Server.h,
+	* Source/win32/WIN32Server.m (-monitorHandleForScreen:,
+	-createHdcForScreen:, deleteScreenHdc:): Add helper methods for screen grabbing.
+	Patch by Marcian Lytwyn <marcian.lytwyn@advcsi.com>
+
+2013-04-24 23:10-EDT Gregory John Casamento <greg.casamento@gmail.com>
+
+	* Source/cairo/CairoGState.m: Added code in -drawGradient:
+	fromPoint:toPoint:options: to handle gradients for colorspaces
+	other than NSCalibratedRGBColorSpace, NSDeviceRGBColorSpace,
+	NSCalibratedWhiteColorSpace, NSDeviceWhiteColorSpace,
+	NSCalibratedBlackColorSpace, NSDeviceBlackColorSpace.  The
+	previous implementation assumed RGB based colorspaces only.
+
+2012-03-01  Richard Frith-Macdonald <rfm@gnu.org>
+
+        * Version ... bump subminor number in preparation for next release.
+
+2012-03-01  Richard Frith-Macdonald <rfm@gnu.org>
+
+        Make release
+        * Version 0.23.0
+        * Update release notes
+
+2013-02-18  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/XGServerWindow.m
+	Fix compiler warnings reported by
+	Sebastian Reitenbach <sebastia@l00-bugdead-prods.de>
+
+2013-02-16  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/gsc/GSContext.m
+	* Source/x11/XGServerWindow.m
+	Adopt to changes in gui.
+
+2013-02-10  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/cairo/CairoGState.h
+	* Source/cairo/CairoGState.m
+	* Source/cairo/XGCairoXImageSurface.m
+	* Source/gsc/GSContext.m
+	* Source/gsc/GSStreamContext.m
+	* Source/gsc/GSStreamGState.m
+	* Source/x11/XGServerWindow.m
+	* Source/x11/XGDragView.m:
+	Silence warnings from clang.
+
+2013-02-01  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/winlib/WIN32Context.m(-isCompatibleBitmap): Add
+	missing varible.
+
+2013-02-01  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/gsc/GSGState.h
+	* Headers/gsc/GSGStateOps.h
+	* Headers/gsc/GSStreamGState.h
+	* Source/art/ARTGState.m
+	* Source/art/composite.m
+	* Source/art/ftfont-old.m
+	* Source/art/ftfont.h
+	* Source/art/ftfont.m
+	* Source/art/path.m
+	* Source/cairo/CairoGState.m
+	* Source/gsc/GSContext.m
+	* Source/gsc/GSGState.m
+	* Source/gsc/GSStreamContext.m
+	* Source/winlib/WIN32GState.m
+	* Source/xlib/XGGState.m: Adopt to CGFloat changes in DPS/PS
+	functions of gui.
+
+2013-02-01  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoGState.m
+	* Source/gsc/GSGState.m
+	* Source/gsc/GSStreamContext.m
+	* Source/winlib/WIN32GState.m: Adopt to CGFloat changes on NSBezierPath.
+
+2013-01-27  Fred Kiefer  <FredKiefer@gmx.de>
+
+	* Source/gsc/GSContext.m
+	* Source/cairo/CairoContext.m
+	* Source/art/ARTContext.m
+	* Source/xlib/XGContext.m
+	* Source/winlib/WIN32Context.m: Move the bitmap conversion
+	code from cairo to the gsc class. Add a new method to detect
+	incompatible image formats and implement that for all backends.
+	* Source/winlib/WIN32GState.m (GSCreateBitmap): Improve the
+	handling of device black/white colour space.
+
+2013-01-11  Fred Kiefer  <FredKiefer@gmx.de>
+
+	* Source/win32/w32_general.m (-decodeWM_CLOSEParams:::): Post the
+	close event instead of sending it directly to the window.
+	Patch by Doug Simons <doug.simons@testplant.com>
+
+2013-01-05 00:54-EST Gregory John Casamento <greg.casamento@gmail.com>
+	Merging changes made by Marcian Lytwyn
+
+	* Tools/win32pbs.m: (+ownerByOsPb:) compare against name
+	instead of pasteboard object to prevent condition where
+	paste works only once as observed on Windows.
+	(MainWindowProc) Add code to handle WM_RENDERALLFORMATS as documented
+	on MSDN here: http://msdn.microsoft.com/en-us/library/windows/desktop/ms649029(v=vs.85).aspx
+
+2012-12-31  Fred Kiefer  <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoFntInfo.m (-drawGlyphs:..., -setupAttributes):
+	Invert the value of matrix[2]. See bug #30493
+
+2012-11-26 12:56-EST Gregory John Casamento <greg.casamento@gmail.com>
+
+	* Headers/cairo/Win32CairoGState.h
+	* Source/cairo/Win32CairoGState.m: Add missing files for windows.
+
+2012-11-26 00:37-EST Gregory John Casamento <greg.casamento@gmail.com>
+
+	* ChangeLog
+	* config.h.in
+	* configure
+	* configure.ac
+	* Headers/win32/WIN32Server.h
+	* Source/cairo/CairoContext.m
+	* Source/cairo/CairoGState.m
+	* Source/cairo/CairoPDFSurface.m
+	* Source/cairo/GNUmakefile
+	* Source/cairo/Win32CairoSurface.m
+	* Source/GSBackend.m
+	* Source/gsc/GSGState.m
+	* Source/win32/w32_create.m
+	* Source/win32/w32_general.m
+	* Source/win32/w32_GLcontext.m
+	* Source/win32/w32_movesize.m
+	* Source/win32/w32_windowdisplay.m
+	* Source/win32/WIN32Server.m
+	* Source/winlib/GNUmakefile.preamble: Merge of all testplant
+	branch changes to trunk for Cairo changes.  Did code cleanup to
+	make the code conform to coding standards.
 
 2012-10-24  Doug Simons <doug.simons@testplant.com>
 
 	* Source/win32/WIN32Server.m : Fix findWindowAt:windowRef:excluding:
 	to skip windows with the ignoresMouseEvents property set.
 
+2012-10-14  Fred Kiefer  <FredKiefer@gmx.de>
+
+	* Source/win32/w32_create.m (-decodeWM_CREATEParams:::): Call
+	windowbacking:: instead of handling backingstore here.
+	Merge some changes from testplant branch
+	* Source/win32/WIN32Server.m : Fix for fatal exceptions when a nil
+	mouse event tried to post
+	Patch by Jonathan Gillaspie <jonathan.gillaspie@testplant.com>
+	* Source/gsc/GSGState.m (-description),
+	* Source/cairo/CairoGState.m (-description): Add this method.
+	* Headers/win32/WIN32Server.h - Added a mutable array for storing
+	multiple screen information from GDI screen lookup
+	* Source/win32/WIN32Server.m - Added startup sequence to invoke
+	GDI functions to look up multiple screen/monitor information
+	* Source/gsc/GSGState.m: Fix compiler warnings
+	Patch by Marcian Lytwyn <marcian.lytwyn@advcsi.com>
+
 2012-10-10  Jonathan Gillaspie <jonathan.gillaspie@testplant.com>
 
-	* Source/win32/WIN32Server.m : Fix for fatal exceptions when a nil mouse event tried to post
+	* Source/win32/WIN32Server.m : Fix for fatal exceptions when a
+	nil mouse event tried to post
+
+2012-09-28  Fred Kiefer  <FredKiefer@gmx.de>
+
+	* Source/gsc/GSStreamContext.m (-GSShowGlyphsWithAdvances:): Add
+	missing method.
+
+2012-09-26  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* Source/cairo/CairoPDFSurface.m:
+	* Source/cairo/CairoContext.m:
+	* Source/cairo/CairoSurface.m:
+	* Source/cairo/CairoPSSurface.m:
+	* Headers/cairo/CairoSurface.h: Add a -isDrawingToScreen method
+	to CairoSurface. Returns NO for PDF/PS surfaces, yes for others.
+	Use it to implement -[CairoContext isDrawingToScreen], so that
+	-[NSGraphicsContext isDrawingToScreen] will return the correct
+	value.
+
+2012-09-21  Wolfgang Lux  <wolfgang.lux@gmail.com>
+
+	* Source/x11/XGServerWindow.m (-imagecursor:::): Fix Xcursor
+	specific code for big endian machines.
+
+2012-08-17 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/cairo/CairoFontEnumerator.m: Allow for Windows default
+	fonts.
+	* Source/win32/w32_GLcontext.m,
+	* Source/x11/XGGLContext.m: Implement 10.6 methods to get/set the
+	CGLContextObj.
 
 2012-08-08  Marcian Lytwyn <marcian.lytwyn@advcsi.com>
 
@@ -80,15 +1859,21 @@
 	* Source/win32/WIN32Server.m - Added startup sequence to invoke
 	  GDI functions to look up multiple screen/monitor information
 
+2012-06-21  Eric Wasylishen  <ewasylishen@gmail.com>
+
+	* configure.ac: use AC_CHECK_LIB to check for cairo if pkg-config
+	is not available
+	* configure: regenerate
+
 2012-05-14  Quentin Mathe  <quentin.mathe@gmail.com>
 
-	* Source/gsc/GSContext.m (+initialize): Protected +initialize from being 
-	called multiple times because of subclasses. As a result, this 
-	eliminates a gtable memory leak (e.g. +initialize sent to both GSContext 
-	and CairoContext at backend initialization time), and prevents the 
-	gstate stack to be reset while still in use (e.g. the program enumerates 
-	classes at runtime and sends messages to them... +initialize might be 
-	sent to GSStreamContext in such a case). 
+	* Source/gsc/GSContext.m (+initialize): Protected +initialize from being
+	called multiple times because of subclasses. As a result, this
+	eliminates a gtable memory leak (e.g. +initialize sent to both GSContext
+	and CairoContext at backend initialization time), and prevents the
+	gstate stack to be reset while still in use (e.g. the program enumerates
+	classes at runtime and sends messages to them... +initialize might be
+	sent to GSStreamContext in such a case).
 
 2012-05-12  Eric Wasylishen  <ewasylishen@gmail.com>
 
@@ -152,7 +1937,7 @@
 
 2012-01-23  Eric Wasylishen  <ewasylishen@gmail.com>
 
-	* Source/cairo/CairoFontInfo.m (-setupAttributes):
+	* Source/cairo/CairoFntInfo.m (-setupAttributes):
 	use CAIRO_HINT_METRICS_ON instead of CAIRO_HINT_METRICS_OFF,
 	otherwise some text is cut of (e.g. quit Ink with unsaved
 	changes, the "t" in "Quit" in the dialog is cut off)
@@ -6125,4 +7910,3 @@ Thu Apr 11 22:24:01 2002  Nicola Pero  <n.pero@mi.flashnet.it>
 2002-03-27  Adam Fedor  <fedor@gnu.org>
 
 	* Version: Initial version (most code extracted from xgps).
-

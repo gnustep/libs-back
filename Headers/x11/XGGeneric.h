@@ -34,45 +34,159 @@ typedef	enum {
   XGWM_UNKNOWN = 0,
   XGWM_WINDOWMAKER = 1,
   XGWM_GNOME = 2,
-  XGWM_KDE = 4,
   XGWM_EWMH = 8
 } XGWMProtocols;
 
-typedef struct {
-  Atom win_type_atom;
-  Atom win_desktop_atom;
-  Atom win_normal_atom;
-  Atom win_floating_atom;
-  Atom win_menu_atom;
-  Atom win_dock_atom;
-  Atom win_modal_atom;
-  Atom win_utility_atom;
-  Atom win_splash_atom;
-  Atom win_override_atom;
-  Atom win_topmenu_atom;
-  Atom win_popup_menu_atom;
-  Atom win_dropdown_menu_atom;
-  Atom win_tooltip_atom;
-  Atom win_notification_atom;
-  Atom win_combo_atom;
-  Atom win_dnd_atom;
-} XGWMWinTypes;
+static char *atom_names[] = {
+  "TEXT",
+  "UTF8_STRING",
+  "WM_PROTOCOLS",
+  "WM_TAKE_FOCUS",
+  "WM_DELETE_WINDOW",
+  "WM_STATE",
+  "_NET_WM_PING",
+  "_NET_WM_SYNC_REQUEST",
+  "_NET_WM_SYNC_REQUEST_COUNTER",
+  "_NET_WM_WINDOW_TYPE",
+  "_NET_WM_WINDOW_TYPE_DESKTOP",
+  "_NET_WM_WINDOW_TYPE_DOCK",
+  "_NET_WM_WINDOW_TYPE_TOOLBAR",
+  "_NET_WM_WINDOW_TYPE_MENU",
+  "_NET_WM_WINDOW_TYPE_DIALOG",
+  "_NET_WM_WINDOW_TYPE_NORMAL",
+  // New in wmspec 1.2
+  "_NET_WM_WINDOW_TYPE_UTILITY",
+  "_NET_WM_WINDOW_TYPE_SPLASH",
+  // New in wmspec 1.4
+  "_NET_WM_WINDOW_TYPE_POPUP_MENU",
+  "_NET_WM_WINDOW_TYPE_DROPDOWN_MENU",
+  "_NET_WM_WINDOW_TYPE_TOOLTIP",
+  "_NET_WM_WINDOW_TYPE_NOTIFICATION",
+  "_NET_WM_WINDOW_TYPE_COMBO",
+  "_NET_WM_WINDOW_TYPE_DND",
+  //KDE extensions
+  "_KDE_NET_WM_WINDOW_TYPE_OVERRIDE",
+  // Window state
+  "_NET_WM_STATE",
+  "_NET_WM_STATE_MODAL",
+  "_NET_WM_STATE_STICKY",
+  "_NET_WM_STATE_MAXIMIZED_VERT",
+  "_NET_WM_STATE_MAXIMIZED_HORZ",
+  "_NET_WM_STATE_SHADED",
+  "_NET_WM_STATE_SKIP_TASKBAR",
+  "_NET_WM_STATE_SKIP_PAGER",
+  "_NET_WM_STATE_HIDDEN",
+  "_NET_WM_STATE_FULLSCREEN",
+  "_NET_WM_STATE_ABOVE",
+  "_NET_WM_STATE_BELOW",
+  "_NET_WM_STATE_DEMANDS_ATTENTION",
+  "_NET_WM_NAME",
+  "_NET_WM_PID",
+  "_NET_WM_ICON",
+  "_NET_WM_ICON_NAME",
+  "_NET_WM_DESKTOP",
+  "_NET_WM_WINDOW_SHADOW",
+  "_NET_WM_USER_TIME",
+  "_NET_WM_WINDOW_OPACITY",
+  "_MOTIF_WM_HINTS",
+  "_NET_SUPPORTED",
+  "_NET_FRAME_EXTENTS",
+  "_NET_REQUEST_FRAME_EXTENTS",
+  "_KDE_NET_WM_FRAME_STRUT",
+  "_WIN_SUPPORTING_WM_CHECK",
+  "_NET_SUPPORTING_WM_CHECK",
+  "_NET_DESKTOP_NAMES",
+  "_NET_CURRENT_DESKTOP",
+  "_NET_NUMBER_OF_DESKTOPS",
+  "_NET_CLIENT_LIST_STACKING",
+  "_NET_ACTIVE_WINDOW",
+  "_WIN_LAYER",
+  "_WINDOWMAKER_WM_PROTOCOLS",
+  "_WINDOWMAKER_NOTICEBOARD",
+  "_WINDOWMAKER_ICON_TILE",
+  "_WINDOWMAKER_WM_FUNCTION",
+  "_RGBA_IMAGE",
+  "_GNUSTEP_WM_MINIATURIZE_WINDOW",
+  "_GNUSTEP_WM_HIDE_APP",
+  "_GNUSTEP_WM_ATTR",
+  "_GNUSTEP_TITLEBAR_STATE",
+  "_GNUSTEP_FRAME_OFFSETS",
+  "WM_IGNORE_FOCUS_EVENTS"
+ };
 
-typedef struct {
-  Atom net_wm_state_atom;
-  Atom net_wm_state_modal_atom;
-  Atom net_wm_state_sticky_atom;
-  Atom net_wm_state_maximized_vert_atom;
-  Atom net_wm_state_maximized_horz_atom;
-  Atom net_wm_state_shaded_atom;
-  Atom net_wm_state_skip_taskbar_atom;
-  Atom net_wm_state_skip_pager_atom;
-  Atom net_wm_state_hidden_atom;
-  Atom net_wm_state_fullscreen_atom;
-  Atom net_wm_state_above_atom;
-  Atom net_wm_state_below_atom;
-  Atom net_wm_state_demands_attention_atom;
-} XGWMNetStates;
+/*
+ * Macros to access elements in atom_names array.
+ */
+#define TEXT_ATOM                              atoms[0]
+#define UTF8_STRING_ATOM                       atoms[1]
+#define WM_PROTOCOLS_ATOM                      atoms[2]
+#define WM_TAKE_FOCUS_ATOM                     atoms[3]
+#define WM_DELETE_WINDOW_ATOM                  atoms[4]
+#define WM_STATE_ATOM                          atoms[5]
+#define _NET_WM_PING_ATOM                      atoms[6]
+#define _NET_WM_SYNC_REQUEST_ATOM              atoms[7]
+#define _NET_WM_SYNC_REQUEST_COUNTER_ATOM      atoms[8]
+#define _NET_WM_WINDOW_TYPE_ATOM               atoms[9]
+#define _NET_WM_WINDOW_TYPE_DESKTOP_ATOM       atoms[10]
+#define _NET_WM_WINDOW_TYPE_DOCK_ATOM          atoms[11]
+#define _NET_WM_WINDOW_TYPE_TOOLBAR_ATOM       atoms[12]
+#define _NET_WM_WINDOW_TYPE_MENU_ATOM          atoms[13]
+#define _NET_WM_WINDOW_TYPE_DIALOG_ATOM        atoms[14]
+#define _NET_WM_WINDOW_TYPE_NORMAL_ATOM        atoms[15]
+#define _NET_WM_WINDOW_TYPE_UTILITY_ATOM       atoms[16]
+#define _NET_WM_WINDOW_TYPE_SPLASH_ATOM        atoms[17]
+#define _NET_WM_WINDOW_TYPE_POPUP_MENU_ATOM    atoms[18]
+#define _NET_WM_WINDOW_TYPE_DROPDOWN_MENU_ATOM atoms[19]
+#define _NET_WM_WINDOW_TYPE_TOOLTIP_ATOM       atoms[20]
+#define _NET_WM_WINDOW_TYPE_NOTIFICATION_ATOM  atoms[21]
+#define _NET_WM_WINDOW_TYPE_COMBO_ATOM         atoms[22]
+#define _NET_WM_WINDOW_TYPE_DND_ATOM           atoms[23]
+#define _KDE_NET_WM_WINDOW_TYPE_OVERRIDE_ATOM  atoms[24]
+#define _NET_WM_STATE_ATOM                     atoms[25]
+#define _NET_WM_STATE_MODAL_ATOM               atoms[26]
+#define _NET_WM_STATE_STICKY_ATOM              atoms[27]
+#define _NET_WM_STATE_MAXIMIZED_VERT_ATOM      atoms[28]
+#define _NET_WM_STATE_MAXIMIZED_HORZ_ATOM      atoms[29]
+#define _NET_WM_STATE_SHADED_ATOM              atoms[30]
+#define _NET_WM_STATE_SKIP_TASKBAR_ATOM        atoms[31]
+#define _NET_WM_STATE_SKIP_PAGER_ATOM          atoms[32]
+#define _NET_WM_STATE_HIDDEN_ATOM              atoms[33]
+#define _NET_WM_STATE_FULLSCREEN_ATOM          atoms[34]
+#define _NET_WM_STATE_ABOVE_ATOM               atoms[35]
+#define _NET_WM_STATE_BELOW_ATOM               atoms[36]
+#define _NET_WM_STATE_DEMANDS_ATTENTION_ATOM   atoms[37]
+#define _NET_WM_NAME_ATOM                      atoms[38]
+#define _NET_WM_PID_ATOM                       atoms[39]
+#define _NET_WM_ICON_ATOM                      atoms[40]
+#define _NET_WM_ICON_NAME_ATOM                 atoms[41]
+#define _NET_WM_DESKTOP_ATOM                   atoms[42]
+#define _NET_WM_WINDOW_SHADOW_ATOM             atoms[43]
+#define _NET_WM_USER_TIME_ATOM                 atoms[44]
+#define _NET_WM_WINDOW_OPACITY_ATOM            atoms[45]
+#define _MOTIF_WM_HINTS_ATOM                   atoms[46]
+#define _NET_SUPPORTED_ATOM                    atoms[47]
+#define _NET_FRAME_EXTENTS_ATOM                atoms[48]
+#define _NET_REQUEST_FRAME_EXTENTS_ATOM        atoms[49]
+#define _KDE_NET_WM_FRAME_STRUT_ATOM           atoms[50]
+#define _WIN_SUPPORTING_WM_CHECK_ATOM          atoms[51]
+#define _NET_SUPPORTING_WM_CHECK_ATOM          atoms[52]
+#define _NET_DESKTOP_NAMES_ATOM                atoms[53]
+#define _NET_CURRENT_DESKTOP_ATOM              atoms[54]
+#define _NET_NUMBER_OF_DESKTOPS_ATOM           atoms[55]
+#define _NET_CLIENT_LIST_STACKING_ATOM         atoms[56]
+#define _NET_ACTIVE_WINDOW_ATOM                atoms[57]
+#define _WIN_LAYER_ATOM                        atoms[58]
+#define _WINDOWMAKER_WM_PROTOCOLS_ATOM         atoms[59]
+#define _WINDOWMAKER_NOTICEBOARD_ATOM          atoms[60]
+#define _WINDOWMAKER_ICON_TILE_ATOM            atoms[61]
+#define _WINDOWMAKER_WM_FUNCTION_ATOM          atoms[62]
+#define _RGBA_IMAGE_ATOM                       atoms[63]
+#define _GNUSTEP_WM_MINIATURIZE_WINDOW_ATOM    atoms[64]
+#define _GNUSTEP_WM_HIDE_APP_ATOM              atoms[65]
+#define _GNUSTEP_WM_ATTR_ATOM                  atoms[66]
+#define _GNUSTEP_TITLEBAR_STATE_ATOM           atoms[67]
+#define _GNUSTEP_FRAME_OFFSETS_ATOM            atoms[68]
+#define WM_IGNORE_FOCUS_EVENTS_ATOM            atoms[69]
 
 /*
  * Frame offsets for window inside parent decoration window.
@@ -108,16 +222,7 @@ struct XGGeneric {
   int			lastClickX;
   int			lastClickY;
   Time			lastMotion;
-  Atom			protocols_atom;
-  Atom			delete_win_atom;
-  Atom			take_focus_atom;
-  Atom			wm_state_atom;
-  Atom			net_wm_ping_atom;
-  Atom                  net_wm_sync_request_atom;
-  Atom                  net_wm_sync_request_counter_atom;
-  Atom			miniaturize_atom;
-  Atom			win_decor_atom;
-  Atom			titlebar_state_atom;
+  // Name for application root window.
   char			*rootName;
   long			currentFocusWindow;
   long			desiredFocusWindow;
@@ -135,8 +240,7 @@ struct XGGeneric {
   Window		appRootWindow;
   void			*cachedWindow;	// last gswindow_device_t used.
   Offsets		offsets[16];
-  XGWMWinTypes          wintypes;
-  XGWMNetStates		netstates;
+  Atom atoms[sizeof(atom_names)/sizeof(char*)];
 };
 
 /* GNOME Window layers */

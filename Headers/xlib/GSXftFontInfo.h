@@ -33,14 +33,18 @@
 #include <X11/Xft/Xft.h>
 #undef id
 
-#import <GNUstepGUI/GSFontInfo.h>
+#import "fontconfig/FCFontInfo.h"
+#import "fontconfig/FCFontEnumerator.h"
 
-@interface FcFontEnumerator : GSFontEnumerator
-{
-}
+@interface GSXftFaceInfo : FCFaceInfo
 @end
 
-@interface GSXftFontInfo : GSFontInfo
+@interface GSXftFontEnumerator : FCFontEnumerator
++ (Class) faceInfoClass;
++ (GSXftFaceInfo *) fontWithName: (NSString *)name;
+@end
+
+@interface GSXftFontInfo : FCFontInfo
 {
   XftFont *font_info;
 }

@@ -35,6 +35,99 @@
 #include <math.h>
 #include <cairo-ft.h>
 
+#include FT_FREETYPE_H
+#include FT_SFNT_NAMES_H
+#include FT_TRUETYPE_TABLES_H
+#include FT_TYPE1_TABLES_H
+#include <fontconfig/fontconfig.h>
+#include <fontconfig/fcfreetype.h>
+
+void set_font_options(cairo_font_options_t *options)
+{
+  NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+  cairo_hint_metrics_t metrics = CAIRO_HINT_METRICS_ON;
+  cairo_hint_style_t   style = CAIRO_HINT_STYLE_NONE;
+  int hinting = [ud integerForKey: @"GSFontHinting"];
+  float scale = [ud floatForKey: @"GSScaleFactor"];
+  int subpixel = 0;
+
+  if (hinting == 0) 
+    {
+      /*
+       * This could be on purpose or a missing value.
+       * In the later case use the defaults.
+       */
+      if (nil == [ud objectForKey: @"GSFontHinting"])
+        {
+          /*
+           * Default hinting to off if scale is set to something other than 1.0. As
+           * hinting + scaling breaks assumptions about glyph advancement made in gui.
+           */
+          if (scale == 0.0f || scale == 1.0f)
+            {
+              hinting = 33;
+            }
+          else
+            {
+              hinting = 17;
+            }
+        }
+    }
+  
+  /*
+   * This part is only here to debug disabling the use of hinting for
+   * metrics, because doing so causes menus to get cut off on the right.
+   */
+  switch (hinting >> 4)
+    {
+    case 0:
+      metrics = CAIRO_HINT_METRICS_DEFAULT;
+      break;
+    case 1:
+      metrics = CAIRO_HINT_METRICS_OFF;
+      break;
+    case 2:
+      metrics = CAIRO_HINT_METRICS_ON;
+      break;
+    }
+  
+  switch (hinting & 0x0f)
+    {
+    case 0:
+      style = CAIRO_HINT_STYLE_DEFAULT;
+      break;
+    case 1:
+      style = CAIRO_HINT_STYLE_NONE;
+      break;
+    case 2:
+      style = CAIRO_HINT_STYLE_SLIGHT;
+      break;
+    case 3:
+      style = CAIRO_HINT_STYLE_MEDIUM;
+      break;
+    case 4:
+      style = CAIRO_HINT_STYLE_FULL;
+      break;
+    }
+  
+  cairo_font_options_set_hint_metrics(options, metrics);
+  cairo_font_options_set_hint_style(options, style);
+
+  if ((subpixel = [ud integerForKey: @"back-art-subpixel-text"]))
+    {
+      cairo_font_options_set_antialias(options, CAIRO_ANTIALIAS_SUBPIXEL);
+
+      if (subpixel == 2)
+        {
+          cairo_font_options_set_subpixel_order(options, CAIRO_SUBPIXEL_ORDER_BGR);
+        }
+      else
+        {
+          cairo_font_options_set_subpixel_order(options, CAIRO_SUBPIXEL_ORDER_RGB);
+        }
+    }
+}
+
 @implementation CairoFontInfo 
 
 - (BOOL) setupAttributes
@@ -70,17 +163,8 @@
     {
       return NO;
     }
-
-  // We must not leave the hinting settings as their defaults,
-  // because if we did, that would mean using the surface defaults
-  // which might or might not use hinting (xlib does by default.)
-  //
-  // Since we make measurements outside of the context of a surface
-  // (-advancementForGlyph:), we need to ensure that the same
-  // hinting settings are used there as when we draw. For now,
-  // just force hinting to be off.
-  cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_ON);
-  cairo_font_options_set_hint_style(options, CAIRO_HINT_STYLE_NONE);
+  
+  set_font_options(options);
 
   _scaled = cairo_scaled_font_create(face, &font_matrix, &ctm, options);
   cairo_font_options_destroy(options);
@@ -159,15 +243,38 @@
 
 - (BOOL) glyphIsEncoded: (NSGlyph)glyph
 {
-  /* FIXME: There is no proper way to determine with the toy font API,
-     whether a glyph is supported or not. We will just ignore ligatures 
-     and report all other glyph as existing.
-  return !NSEqualSizes([self advancementForGlyph: glyph], NSZeroSize);
-  */
-  if ((glyph >= 0xFB00) && (glyph <= 0xFB05))
-    return NO;
-  else
-    return YES;
+  BOOL val = NO;
+
+  if (_scaled)
+    {
+      FT_Face face = cairo_ft_scaled_font_lock_face(_scaled);
+      if (FT_Get_Char_Index (face, glyph) != 0)
+	{
+	  val = YES;
+	}
+
+      cairo_ft_scaled_font_unlock_face(_scaled);
+    }
+  return val;
+}
+
+- (NSGlyph) glyphWithName: (NSString *)glyphName
+{
+  NSGlyph val = NSNullGlyph;
+  FT_String *name = (FT_String *)[glyphName UTF8String];
+
+  if (_scaled)
+    {
+      FT_Face face = cairo_ft_scaled_font_lock_face(_scaled);
+      if (FT_Has_PS_Glyph_Names(face))
+	{
+	  val = (NSGlyph) FT_Get_Name_Index(face, name);
+	}
+
+      cairo_ft_scaled_font_unlock_face(_scaled);
+    }
+
+  return val;
 }
 
 static
@@ -240,6 +347,12 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
 
   return NSZeroRect;
 }
+
+- (NSString *) displayName
+{
+	return [_faceInfo displayName];
+}
+
 
 - (CGFloat) widthOfString: (NSString *)string
 {
