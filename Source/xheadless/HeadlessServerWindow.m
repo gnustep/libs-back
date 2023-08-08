@@ -207,7 +207,7 @@ typedef struct {
   return NSMapGet(windowmaps, (void *)xWindow);
 }
 
-+ (gswindow_device_t *) _windowWithTag: (NSInteger)windowNumber
++ (gswindow_device_t *) _windowWithTag: (int)windowNumber
 {
   return WINDOW_WITH_TAG(windowNumber);
 }
@@ -411,7 +411,7 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 {
 }
 
-- (NSInteger) window: (NSRect)frame
+- (int) window: (NSRect)frame
 		    : (NSBackingStoreType)type
 		    : (unsigned int)style
 		    : (int)screen
@@ -444,13 +444,13 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   return window->number;
 }
 
-- (NSInteger) nativeWindow: (void *)winref : (NSRect*)frame : (NSBackingStoreType*)type
+- (int) nativeWindow: (void *)winref : (NSRect*)frame : (NSBackingStoreType*)type
 		    : (unsigned int*)style : (int*)screen
 {
   return 0;
 }
 
-- (void) termwindow: (NSInteger)win
+- (void) termwindow: (int)win
 {
 }
 
@@ -469,23 +469,23 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 {
 }
 
-- (void) stylewindow: (unsigned int)style : (NSInteger) win
+- (void) stylewindow: (unsigned int)style : (int) win
 {
 }
 
-- (void) setbackgroundcolor: (NSColor *)color : (NSInteger)win
+- (void) setbackgroundcolor: (NSColor *)color : (int)win
 {
 }
 
-- (void) windowbacking: (NSBackingStoreType)type : (NSInteger) win
+- (void) windowbacking: (NSBackingStoreType)type : (int) win
 {
 }
 
-- (void) titlewindow: (NSString *)window_title : (NSInteger) win
+- (void) titlewindow: (NSString *)window_title : (int) win
 {
 }
 
-- (void) docedited: (int)edited : (NSInteger) win
+- (void) docedited: (int)edited : (int) win
 {
 }
 
@@ -494,7 +494,7 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   return generic.flags.appOwnsMiniwindow;
 }
 
-- (void) miniwindow: (NSInteger) win
+- (void) miniwindow: (int) win
 {
 }
 
@@ -502,7 +502,7 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
    Make sure we have the most up-to-date window information and then
    make sure the context has our new information
 */
-- (void) setWindowdevice: (NSInteger)win forContext: (NSGraphicsContext *)ctxt
+- (void) setWindowdevice: (int)win forContext: (NSGraphicsContext *)ctxt
 {
 }
 
@@ -511,7 +511,7 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   return 1;
 }
 
-- (void) orderwindow: (int)op : (NSInteger)otherWin : (NSInteger)winNum
+- (void) orderwindow: (int)op : (int)otherWin : (int)winNum
 {
 }
 
@@ -520,37 +520,37 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 /* Restrict the displayed part of the window to the given image.
    This only yields usefull results if the window is borderless and
    displays the image itself */
-- (void) restrictWindow: (NSInteger)win toImage: (NSImage*)image
+- (void) restrictWindow: (int)win toImage: (NSImage*)image
 {
 }
 
 /* This method is a fast implementation of move that only works
    correctly for borderless windows. Use with caution. */
-- (void) movewindow: (NSPoint)loc : (NSInteger)win
+- (void) movewindow: (NSPoint)loc : (int)win
 {
 }
 
-- (void) placewindow: (NSRect)rect : (NSInteger)win
+- (void) placewindow: (NSRect)rect : (int)win
 {
 }
 
-- (BOOL) findwindow: (NSPoint)loc : (int) op : (NSInteger) otherWin : (NSPoint *)floc
+- (BOOL) findwindow: (NSPoint)loc : (int) op : (int) otherWin : (NSPoint *)floc
 : (int*) winFound
 {
   return NO;
 }
 
-- (NSRect) windowbounds: (NSInteger)win
+- (NSRect) windowbounds: (int)win
 {
 
   return NSMakeRect(0, 0, 0, 0);
 }
 
-- (void) setwindowlevel: (int)level : (NSInteger)win
+- (void) setwindowlevel: (int)level : (int)win
 {
 }
 
-- (int) windowlevel: (NSInteger)win
+- (int) windowlevel: (int)win
 {
   return 0;
 }
@@ -560,38 +560,38 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   return [NSMutableArray array];
 }
 
-- (int) windowdepth: (NSInteger)win
+- (int) windowdepth: (int)win
 {
     return 0;
 }
 
-- (void) setmaxsize: (NSSize)size : (NSInteger)win
+- (void) setmaxsize: (NSSize)size : (int)win
 {
 }
 
-- (void) setminsize: (NSSize)size : (NSInteger)win
+- (void) setminsize: (NSSize)size : (int)win
 {
 }
 
-- (void) setresizeincrements: (NSSize)size : (NSInteger)win
+- (void) setresizeincrements: (NSSize)size : (int)win
 {
 }
 
 // process expose event
-- (void) _addExposedRectangle: (XRectangle)rectangle : (NSInteger)win : (BOOL) ignoreBacking
+- (void) _addExposedRectangle: (XRectangle)rectangle : (int)win : (BOOL) ignoreBacking
 {
 }
 
-- (void) flushwindowrect: (NSRect)rect : (NSInteger)win
+- (void) flushwindowrect: (NSRect)rect : (int)win
 {
 }
 
 // handle X expose events
-- (void) _processExposedRectangles: (NSInteger)win
+- (void) _processExposedRectangles: (int)win
 {
 }
 
-- (BOOL) capturemouse: (NSInteger)win
+- (BOOL) capturemouse: (int)win
 {
   return NO;
 }
@@ -600,7 +600,7 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 {
 }
 
-- (void) setinputfocus: (NSInteger)win
+- (void) setinputfocus: (int)win
 {
 }
 
@@ -608,16 +608,16 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
  * Instruct window manager that the specified window is 'key', 'main', or
  * just a normal window.
  */
-- (void) setinputstate: (int)st : (NSInteger)win
+- (void) setinputstate: (int)st : (int)win
 {
 }
 
 /** Sets the transparancy value for the whole window */
-- (void) setalpha: (float)alpha : (NSInteger) win
+- (void) setalpha: (float)alpha : (int) win
 {
 }
 
-- (float) getAlpha: (NSInteger)win
+- (float) getAlpha: (int)win
 {
   return 1;
 }
@@ -627,7 +627,7 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   return dpy;
 }
 
-- (void *) windowDevice: (NSInteger)win
+- (void *) windowDevice: (int)win
 {
   return (void *)NULL;
 }
@@ -813,8 +813,8 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
   return NO;
 }
 
-- (void) setParentWindow: (NSInteger)parentWin
-	  forChildWindow: (NSInteger)childWin
+- (void) setParentWindow: (int)parentWin
+	  forChildWindow: (int)childWin
 {
 }
 

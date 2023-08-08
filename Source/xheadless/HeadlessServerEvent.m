@@ -298,7 +298,7 @@ static unsigned int process_modifier_flags(unsigned int state)
   return [self mouseLocationOnScreen: defScreen window: NULL];
 }
 
-- (NSPoint) mouseLocationOnScreen: (int)screen window: (NSInteger *)win
+- (NSPoint) mouseLocationOnScreen: (int)screen window: (int *)win
 {
   return NSMakePoint(0, 0);
 }

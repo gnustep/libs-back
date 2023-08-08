@@ -125,6 +125,7 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
    GSDisplayServer(EventOps) category. The last section 
    </unit>
 */
+
 @implementation HeadlessServer 
 
 /* Initialize AppKit backend */
