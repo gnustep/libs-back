@@ -34,9 +34,9 @@ SUBPROJECT_NAME=xheadless
 
 # The Objective-C source files to be compiled
 xheadless_OBJC_FILES = \
-XGServer.m \
-XGServerEvent.m \
-XGServerWindow.m \
+HeadlessServer.m \
+HeadlessServerEvent.m \
+HeadlessServerWindow.m \
 
 -include GNUmakefile.preamble
 

@@ -24,10 +24,10 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef _XGServerWindow_h_INCLUDE
-#define _XGServerWindow_h_INCLUDE
+#ifndef _HeadlessServerWindow_h_INCLUDE
+#define _HeadlessServerWindow_h_INCLUDE
 
-#include <xheadless/XGServer.h>
+#include <xheadless/HeadlessServer.h>
 
 /*
  * WindowMaker window manager interaction
@@ -123,7 +123,7 @@ typedef struct _gswindow_device_t {
 
 #define GET_XDRAWABLE(win)  ((win)->buffer ? (win)->buffer: (win)->ident)
 
-@interface XGServer (DPSWindow)
+@interface HeadlessServer (DPSWindow)
 + (gswindow_device_t *) _windowForXWindow: (Window)xWindow;
 + (gswindow_device_t *) _windowForXParent: (Window)xWindow;
 + (gswindow_device_t *) _windowWithTag: (NSInteger)windowNumber;

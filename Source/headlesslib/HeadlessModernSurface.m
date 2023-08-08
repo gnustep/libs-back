@@ -23,8 +23,8 @@
 */
 
 #include "config.h"
-#include "xheadless/XGServer.h"
-#include "xheadless/XGServerWindow.h"
+#include "xheadless/HeadlessServer.h"
+#include "xheadless/HeadlessServerWindow.h"
 #include "headlesslib/HeadlessModernSurface.h"
 
 #define GSWINDEVICE ((gswindow_device_t *)gsDevice)

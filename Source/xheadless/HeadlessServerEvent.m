@@ -1,5 +1,5 @@
 /*
-   XGServerEvent - Window/Event code for X11 backends.
+   HeadlessServerEvent - Window/Event code for X11 backends.
 
    Copyright (C) 1998,1999 Free Software Foundation, Inc.
 
@@ -44,9 +44,9 @@
 #include <Foundation/NSDebug.h>
 
 #include "xheadless/XHeadless.h"
-#include "xheadless/XGServerWindow.h"
-#include "xheadless/XGInputServer.h"
-#include "xheadless/XGGeneric.h"
+#include "xheadless/HeadlessServerWindow.h"
+#include "xheadless/HeadlessInputServer.h"
+#include "xheadless/HeadlessGeneric.h"
 
 #include "math.h"
 
@@ -97,7 +97,7 @@ void __objc_xgcontextevent_linking (void)
 @end
 #endif
 
-@interface XGServer (Private)
+@interface HeadlessServer (Private)
 - (void) receivedEvent: (void*)data
 		  type: (RunLoopEventType)type
 		 extra: (void*)extra
@@ -106,7 +106,7 @@ void __objc_xgcontextevent_linking (void)
 - (NSDate*) timedOutEvent: (void*)data
 		     type: (RunLoopEventType)type
 		  forMode: (NSString*)mode;
-- (int) XGErrorHandler: (Display*)display : (XErrorEvent*)err;
+- (int) HeadlessErrorHandler: (Display*)display : (XErrorEvent*)err;
 - (void) processEvent: (XEvent *) event;
 - (NSEvent *)_handleTakeFocusAtom: (XEvent)xEvent
 		       forContext: (NSGraphicsContext *)gcontext;
@@ -114,15 +114,15 @@ void __objc_xgcontextevent_linking (void)
 
 
 int
-XGErrorHandler(Display *display, XErrorEvent *err)
+HeadlessErrorHandler(Display *display, XErrorEvent *err)
 {
-  XGServer *ctxt = (XGServer*)GSCurrentServer();
+  HeadlessServer *ctxt = (HeadlessServer*)GSCurrentServer();
 
-  return [ctxt XGErrorHandler: display : err];
+  return [ctxt HeadlessErrorHandler: display : err];
 }
 
 #if 0
-static NSEvent*process_key_event (XEvent* xEvent, XGServer* ctxt,
+static NSEvent*process_key_event (XEvent* xEvent, HeadlessServer* ctxt,
   NSEventType eventType, NSMutableArray *event_queue);
 
 static unichar process_char (KeySym keysym, unsigned *eventModifierFlags);
@@ -152,15 +152,15 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
 }
 #endif
 
-@interface XGServer (WindowOps)
+@interface HeadlessServer (WindowOps)
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
 		     : (unsigned int) style : (Window) win;
 - (NSRect) _XWinRectToOSWinRect: (NSRect)r for: (void*)windowNumber;
 @end
 
-@implementation XGServer (EventOps)
+@implementation HeadlessServer (EventOps)
 
-- (int) XGErrorHandler: (Display*)display : (XErrorEvent*)err
+- (int) HeadlessErrorHandler: (Display*)display : (XErrorEvent*)err
 {
   return 0;
 }
@@ -248,7 +248,7 @@ static BOOL keysym_is_X_modifier (KeySym keysym)
   return NO;
 }
 
-static NSEvent* process_key_event (XEvent* xEvent, XGServer* context, NSEventType eventType, NSMutableArray *event_queue)
+static NSEvent* process_key_event (XEvent* xEvent, HeadlessServer* context, NSEventType eventType, NSMutableArray *event_queue)
 {
   return nil;
 }
@@ -281,14 +281,14 @@ static unsigned int process_modifier_flags(unsigned int state)
 
 @end
 
-@implementation XGServer (XSync)
+@implementation HeadlessServer (XSync)
 - (BOOL) xSyncMap: (void*)windowHandle
 {
   return NO;
 }
 @end
 
-@implementation XGServer (X11Ops)
+@implementation HeadlessServer (X11Ops)
 
 /*
  * Return mouse location in base coords ignoring the event loop
@@ -325,7 +325,7 @@ static unsigned int process_modifier_flags(unsigned int state)
 
 @end
 
-@implementation XGServer (TimeKeeping)
+@implementation HeadlessServer (TimeKeeping)
 // Sync time with X server every 10 seconds
 #define MAX_TIME_DIFF 10
 // Regard an X time stamp as valid for half a second

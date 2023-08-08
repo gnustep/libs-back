@@ -1,4 +1,4 @@
-/* <title>XGServer</title>
+/* <title>HeadlessServer</title>
 
    <abstract>Backend server using the X11.</abstract>
 
@@ -26,14 +26,14 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef _XGServer_h_INCLUDE
-#define _XGServer_h_INCLUDE
+#ifndef _HeadlessServer_h_INCLUDE
+#define _HeadlessServer_h_INCLUDE
 
 #include "config.h"
 
 #include <GNUstepGUI/GSDisplayServer.h>
 #include "XHeadless.h"
-#include "XGGeneric.h"
+#include "HeadlessGeneric.h"
 
 /*
  * Enumerated type to say how we should draw pixels to the X display - used
@@ -48,13 +48,13 @@ typedef enum {
   XGDM_PORTABLE
 } XGDrawMechanism;
 
-@interface XGServer : GSDisplayServer
+@interface HeadlessServer : GSDisplayServer
 {
   Display           *dpy;
   int               defScreen;
   NSMapTable        *screenList;
   Window	    grabWindow;
-  struct XGGeneric  generic;
+  struct HeadlessGeneric  generic;
   id                inputServer;
 }
 
@@ -79,11 +79,11 @@ typedef enum {
  * Synchronize with X event queue - soak up events.
  * Waits for up to 1 second for event.
  */
-@interface XGServer (XSync)
+@interface HeadlessServer (XSync)
 - (BOOL) xSyncMap: (void*)window;
 @end
 
-@interface XGServer (XGGeneric)
+@interface HeadlessServer (HeadlessGeneric)
 - (NSRect) _OSFrameToXFrame: (NSRect)o for: (void*)window;
 - (NSRect) _OSFrameToXHints: (NSRect)o for: (void*)window;
 - (NSRect) _XFrameToOSFrame: (NSRect)x for: (void*)window;
@@ -91,7 +91,7 @@ typedef enum {
 @end
 
 // Public interface for the input methods.
-@interface XGServer (InputMethod)
+@interface HeadlessServer (InputMethod)
 - (NSString *) inputMethodStyle;
 - (NSString *) fontSize: (int *)size;
 - (BOOL) clientWindowRect: (NSRect *)rect;
@@ -105,9 +105,9 @@ typedef enum {
 - (BOOL) setPreeditSpot: (NSPoint *)p;
 @end
 
-@interface XGServer (TimeKeeping)
+@interface HeadlessServer (TimeKeeping)
 - (void) setLastTime: (Time)last;
 - (Time) lastTime;
 @end
 
-#endif /* _XGServer_h_INCLUDE */
+#endif /* _HeadlessServer_h_INCLUDE */

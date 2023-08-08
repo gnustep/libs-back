@@ -24,8 +24,8 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef	INCLUDED_XGGENERIC_H
-#define	INCLUDED_XGGENERIC_H
+#ifndef	INCLUDED_HeadlessGENERIC_H
+#define	INCLUDED_HeadlessGENERIC_H
 
 #include "XHeadless.h"
 /*
@@ -89,7 +89,7 @@ typedef struct {
 /*
  * Structure containing ivars that are common to all X backend contexts.
  */
-struct XGGeneric {
+struct HeadlessGeneric {
   int			wm;
   struct {
     unsigned	useWindowMakerIcons:1;

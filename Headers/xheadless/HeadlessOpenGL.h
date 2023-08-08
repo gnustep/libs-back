@@ -1,5 +1,5 @@
 /*	-*-ObjC-*- */
-/* XGOpenGL - openGL management using glX
+/* HeadlessOpenGL - openGL management using glX
 
    Copyright (C) 2002 Free Software Foundation, Inc.
 
@@ -25,8 +25,8 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef _GNUstep_H_XGOpenGL_
-#define _GNUstep_H_XGOpenGL_
+#ifndef _GNUstep_H_HeadlessOpenGL_
+#define _GNUstep_H_HeadlessOpenGL_
 
 #include <AppKit/NSOpenGL.h>
 
@@ -37,16 +37,16 @@
 #undef BOOL
 
 @class NSView;
-@class XGXSubWindow;
-@class XGGLPixelFormat;
+@class HeadlessXSubWindow;
+@class HeadlessGLPixelFormat;
 
-@interface XGGLContext : NSOpenGLContext
+@interface HeadlessGLContext : NSOpenGLContext
 {
   int glxminorversion;
   GLXContext        glx_context;
   GLXWindow         glx_drawable;
-  XGXSubWindow     *xSubWindow;
-  XGGLPixelFormat  *pixelFormat;
+  HeadlessXSubWindow     *xSubWindow;
+  HeadlessGLPixelFormat  *pixelFormat;
   BOOL              saved_ignores_backing;
 }
 
@@ -54,7 +54,7 @@
 
 @end
 
-@interface XGGLPixelFormat : NSOpenGLPixelFormat
+@interface HeadlessGLPixelFormat : NSOpenGLPixelFormat
 {
   Display * display;
   int glxminorversion;
@@ -71,7 +71,7 @@
 + (int) glxMinorVersion;
 - (Display *) display;
 - (XVisualInfo *) visualinfo;
-- (GLXContext) createGLXContext: (XGGLContext *)share;
+- (GLXContext) createGLXContext: (HeadlessGLContext *)share;
 - (GLXWindow) drawableForWindow: (Window)xwindowid;
 
 @end

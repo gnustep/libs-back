@@ -49,10 +49,10 @@
 #include <unistd.h>
 #endif
 
-#include <xheadless/XGServerWindow.h>
-#include <xheadless/XGGeneric.h>
+#include <xheadless/HeadlessServerWindow.h>
+#include <xheadless/HeadlessGeneric.h>
 #include <xheadless/XWindowBuffer.h>
-#include <xheadless/XGServer.h>
+#include <xheadless/HeadlessServer.h>
 
 #define	ROOT generic.appRootWindow
 
@@ -166,14 +166,14 @@ typedef struct {
 }
 @end
 
-@interface XGServer (WindowOps)
+@interface HeadlessServer (WindowOps)
 - (gswindow_device_t *) _rootWindowForScreen: (int)screen;
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
 		     : (unsigned int) style : (Window) win;
 - (void) _setSupportedWMProtocols: (gswindow_device_t *) window;
 @end
 
-@implementation XGServer (WindowOps)
+@implementation HeadlessServer (WindowOps)
 
 - (BOOL) handlesWindowDecorations
 {

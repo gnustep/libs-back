@@ -1,4 +1,4 @@
-/* XGInputServer - Keyboard input handling
+/* HeadlessInputServer - Keyboard input handling
 
    Copyright (C) 2002 Free Software Foundation, Inc.
 
@@ -24,11 +24,11 @@
    Boston, MA 02110-1301, USA.
 */
 
-#ifndef _GNUstep_H_XGInputServer
-#define _GNUstep_H_XGInputServer
+#ifndef _GNUstep_H_HeadlessInputServer
+#define _GNUstep_H_HeadlessInputServer
 
 #include <AppKit/NSInputServer.h>
-#include <xheadless/XGServerWindow.h>
+#include <xheadless/HeadlessServerWindow.h>
 
 @protocol XInputFiltering
 - (BOOL) filterEvent: (XEvent *)event;

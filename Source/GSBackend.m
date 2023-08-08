@@ -35,7 +35,7 @@
 + (void) initializeBackend;
 @end
 
-#if (BUILD_SERVER == SERVER_x11) || (BUILD_SERVER == SERVER_xheadless)
+#if BUILD_SERVER == SERVER_x11
 #include <x11/XGServer.h>
 @interface XGServer (Initialize)
 + (void) initializeBackend;
@@ -48,6 +48,11 @@
 #elif BUILD_SERVER == SERVER_wayland
 #include <wayland/WaylandServer.h>
 @interface WaylandServer (Initialize)
++ (void) initializeBackend;
+@end
+#elif BUILD_SERVER == SERVER_xheadless
+#include <xheadless/HeadlessServer.h>
+@interface HeadlessServer (Initialize)
 + (void) initializeBackend;
 @end
 #endif
@@ -71,7 +76,7 @@
 #elif BUILD_SERVER == SERVER_wayland
   [WaylandServer initializeBackend];
 #elif BUILD_SERVER == SERVER_xheadless
-  [XGServer initializeBackend];  
+  [HeadlessServer initializeBackend];  
 #else
   [NSException raise: NSInternalInconsistencyException
 	       format: @"No Window Server configured in backend"];

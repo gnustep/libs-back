@@ -1,5 +1,5 @@
 /* -*- mode:ObjC -*-
-   XGServer - X11 Server Class
+   HeadlessServer - X11 Server Class
 
    Copyright (C) 1998,2002 Free Software Foundation, Inc.
 
@@ -56,20 +56,20 @@ terminate(int sig)
     }
 }
 
-#include "xheadless/XGServer.h"
-#include "xheadless/XGInputServer.h"
+#include "xheadless/HeadlessServer.h"
+#include "xheadless/HeadlessInputServer.h"
 
 extern int XGErrorHandler(Display *display, XErrorEvent *err);
 
-@interface XGServer (Window)
+@interface HeadlessServer (Window)
 - (void) _setupRootWindow;
 @end
 
-@interface XGServer (Private)
+@interface HeadlessServer (Private)
 - (void) setupRunLoopInputSourcesForMode: (NSString*)mode; 
 @end
 
-@interface XGScreenContext : NSObject
+@interface HeadlessScreenContext : NSObject
 {
   RContext *rcontext;
   XGDrawMechanism drawMechanism;
@@ -80,7 +80,7 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
 - (RContext *) context;
 @end
 
-@implementation XGScreenContext
+@implementation HeadlessScreenContext
 
 - (RContextAttributes *) _getXDefaults
 {
@@ -112,9 +112,9 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
 
 /**
    <unit>
-   <heading>XGServer</heading>
+   <heading>HeadlessServer</heading>
 
-   <p> XGServer is a concrete subclass of GSDisplayServer that handles
+   <p> HeadlessServer is a concrete subclass of GSDisplayServer that handles
    X-Window client communications. The class is broken into four sections.
    The main class handles setting up and closing down the display, as well
    as providing wrapper methods to access display and screen pointers. The
@@ -125,13 +125,13 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
    GSDisplayServer(EventOps) category. The last section 
    </unit>
 */
-@implementation XGServer 
+@implementation HeadlessServer 
 
 /* Initialize AppKit backend */
 + (void) initializeBackend
 {
   NSDebugLog(@"Initializing GNUstep x11 backend.\n");
-  [GSDisplayServer setDefaultServerClass: [XGServer class]];
+  [GSDisplayServer setDefaultServerClass: [HeadlessServer class]];
   signal(SIGTERM, terminate);
   signal(SIGINT, terminate);
 }
@@ -142,7 +142,7 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
 */
 + (Display*) currentXDisplay
 {
-  return [(XGServer*)GSCurrentServer() xDisplay];
+  return [(HeadlessServer*)GSCurrentServer() xDisplay];
 }
 
 - (id) _initXContext
@@ -237,7 +237,7 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
   return dpy;
 }
 
-- (XGScreenContext *) _screenContextForScreen: (int)screen_number
+- (HeadlessScreenContext *) _screenContextForScreen: (int)screen_number
 {
   return nil;
 }
@@ -333,7 +333,7 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
 
 @end
 
-@implementation XGServer (InputMethod)
+@implementation HeadlessServer (InputMethod)
 - (NSString *) inputMethodStyle
 {
   return nil;
