@@ -31,6 +31,9 @@
 #include "headlesslib/HeadlessFontEnumerator.h"
 #include "headlesslib/HeadlessFontInfo.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wobjc-method-access"
+
 @implementation HeadlessFontEnumerator
 
 + (Class) faceInfoClass
@@ -48,3 +51,5 @@
 }
 
 @end
+
+#pragma GCC diagnostic pop

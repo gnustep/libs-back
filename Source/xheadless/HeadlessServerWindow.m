@@ -89,12 +89,12 @@ void __objc_xgcontextwindow_linking (void)
 
 /*
  * The next two functions derived from WindowMaker by Alfredo K. Kojima
- */
 static unsigned char*PropGetCheckProperty(Display *dpy, Window window, Atom hint, Atom type,
 		     int format, int count, int *retCount)
 {
   return NULL;
 }
+ */
 
 /*
  * Setting Motif Hints for Window Managers (Nicola Pero, July 2000)
@@ -411,7 +411,10 @@ Bool _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 {
 }
 
-- (NSInteger) window: (NSRect)frame : (NSBackingStoreType)type : (unsigned int)style : (int)screen
+- (NSInteger) window: (NSRect)frame
+		    : (NSBackingStoreType)type
+		    : (unsigned int)style
+		    : (int)screen
 {
   gswindow_device_t	*window;
 

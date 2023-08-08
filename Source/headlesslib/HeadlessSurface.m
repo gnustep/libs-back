@@ -55,10 +55,15 @@
   [self subclassResponsibility:_cmd];
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmismatched-return-types"
+
 - (cairo_surface_t *) surface
 {
   return _surface;
 }
+
+#pragma GCC diagnostic pop
 
 - (void) handleExposeRect: (NSRect)rect
 {
