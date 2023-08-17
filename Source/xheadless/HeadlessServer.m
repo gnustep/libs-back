@@ -1,10 +1,12 @@
 /* -*- mode:ObjC -*-
    HeadlessServer - X11 Server Class
 
-   Copyright (C) 1998,2002 Free Software Foundation, Inc.
+   Copyright (C) 1998,2002,2023 Free Software Foundation, Inc.
 
-   Written by:  Adam Fedor <fedor@gnu.org>
-   Date: Mar 2002
+   Re-written by: Gregory John Casamento <greg.casamento@gmail.com>
+   Based on work by: Marcian Lytwyn <gnustep@advcsi.com> for Keysight
+   Based on work Written by:  Adam Fedor <fedor@gnu.org>
+   Date: Mar 2002, Aug 2023
    
    This file is part of the GNU Objective C User Interface Library.
 

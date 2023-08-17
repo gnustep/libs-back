@@ -1,10 +1,12 @@
 /*
    HeadlessServerEvent - Window/Event code for X11 backends.
 
-   Copyright (C) 1998,1999 Free Software Foundation, Inc.
+   Copyright (C) 1998,2002,2023 Free Software Foundation, Inc.
 
-   Written by:  Adam Fedor <fedor@boulder.colorado.edu>
-   Date: Nov 1998
+   Re-written by: Gregory John Casamento <greg.casamento@gmail.com>
+   Based on work by: Marcian Lytwyn <gnustep@advcsi.com> for Keysight
+   Based on work Written by:  Adam Fedor <fedor@gnu.org>
+   Date: 1998, Nov 1999, Aug 2023
 
    This file is part of the GNU Objective C User Interface Library.
 

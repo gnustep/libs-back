@@ -1,10 +1,12 @@
 /* XGServerWindows - methods for window/screen handling
 
-   Copyright (C) 1999 Free Software Foundation, Inc.
+   Copyright (C) 1998,2002,2023 Free Software Foundation, Inc.
 
-   Written by:  Adam Fedor <fedor@gnu.org>
-   Date: Nov 1999
-
+   Re-written by: Gregory John Casamento <greg.casamento@gmail.com>
+   Based on work by: Marcian Lytwyn <gnustep@advcsi.com> for Keysight
+   Based on work Written by:  Adam Fedor <fedor@gnu.org>
+   Date: Nov 1999, Aug 2023
+   
    This file is part of GNUstep
 
    This library is free software; you can redistribute it and/or
