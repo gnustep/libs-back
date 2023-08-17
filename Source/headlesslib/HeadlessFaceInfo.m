@@ -1,10 +1,13 @@
 /*
-   CairoFaceInfo.m
+   HwadlessFaceInfo.m
 
-   Copyright (C) 2003 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2023 Free Software Foundation, Inc.
 
+   August 17, 2023
+   Re-written by Gregory Casamento <greg.casamento@gmail.com>
+   Based on work Marcian Lytwyn <gnustep@advcsi.com>
    August 31, 2003
-   Written by Banlu Kemiyatorn <object at gmail dot com>
+   Originally Written by Banlu Kemiyatorn <object at gmail dot com>
    Base on original code of Alex Malmberg
    Rewrite: Fred Kiefer <fredkiefer@gmx.de>
    Date: Jan 2006

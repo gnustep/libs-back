@@ -1,10 +1,13 @@
 /*
    HeadlessContext.m
 
-   Copyright (C) 2003 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2023 Free Software Foundation, Inc.
 
+   August 17, 2023
+   Re-written by Gregory Casamento <greg.casamento@gmail.com>
+   Based on work by Marcian Lytwyn <gnustep@advcsi.com>
    August 31, 2003
-   Written by Banlu Kemiyatorn <object at gmail dot com>
+   Originally Written by Banlu Kemiyatorn <object at gmail dot com>
 
    This file is part of GNUstep.
 

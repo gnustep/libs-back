@@ -1,7 +1,9 @@
 /*
-   Copyright (C) 2011 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2023 Free Software Foundation, Inc.
 
-   Author: Eric Wasylishen <ewasylishen@gmail.com>
+   Re-writen by Gregory Casamento <greg.casamento@gmail.com>
+   Based on work by Marcian Lytwyn <gnustep@advcsi.com>
+   Based on Author: Eric Wasylishen <ewasylishen@gmail.com>
 
    This file is part of GNUstep.
 

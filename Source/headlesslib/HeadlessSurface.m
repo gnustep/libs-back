@@ -1,7 +1,9 @@
 /*
-   Copyright (C) 2004 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2023 Free Software Foundation, Inc.
 
-   Author: Banlu Kemiyatorn <object at gmail dot com>
+   Re-writen by Gregory Casamento <greg.casamento@gmail.com>
+   Based on work by Marcian Lytwyn <gnustep@advcsi.com>
+   Based on work by Author: Banlu Kemiyatorn <object at gmail dot com>
 
    This file is part of GNUstep.
 
