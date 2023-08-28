@@ -129,10 +129,10 @@ LDFLAGS="$LDFLAGS -L$GNUSTEP_LDIR/$LIBRARY_COMBO -L$GNUSTEP_LDIR"
 #--------------------------------------------------------------------
 case "$target_os" in
   freebsd* | openbsd* )   
-	      CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
-              LDFLAGS="$LDFLAGS -L/usr/pkg/lib";;
-  netbsd*)    CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
-	      LDFLAGS="$LDFLAGS -Wl,-R/usr/pkg/lib -L/usr/pkg/lib";;
+	      CPPFLAGS="-I/usr/pkg/include $CPPFLAGS"
+              LDFLAGS="-L/usr/pkg/lib $LDFLAGS";;
+  netbsd*)    CPPFLAGS="-I/usr/pkg/include $CPPFLAGS"
+	      LDFLAGS="-Wl,-R/usr/pkg/lib -L/usr/pkg/lib $LDFLAGS";;
 esac
 
 #--------------------------------------------------------------------
@@ -154,29 +154,6 @@ if test -n "$with_tiff_library"; then
 fi
 
 #--------------------------------------------------------------------
-# Which projects should we build?
-#--------------------------------------------------------------------
-BUILD_SERVER=x11
-BUILD_GRAPHICS=cairo
-case $target_os in
-  *mingw32* | *mingw64* ) BUILD_SERVER=win32
-                          BUILD_GRAPHICS=winlib;;
-esac
-
-AC_ARG_ENABLE(server, 
-  [  --enable-server=SRV     Build server type: x11, xheadless, win32],,
-  enable_server=$BUILD_SERVER)
-AC_ARG_ENABLE(graphics, 
-  [  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal],,
-  enable_graphics="$BUILD_GRAPHICS")
-
-BUILD_SERVER=$enable_server
-BUILD_GRAPHICS="$enable_graphics"
-if test "x$BUILD_SERVER" = xxheadless; then
-  BUILD_GRAPHICS=headlesslib
-fi
-
-#--------------------------------------------------------------------
 # Find for X windows
 #--------------------------------------------------------------------
 set_x_paths=yes
@@ -188,14 +165,16 @@ if test "x$BUILD_SERVER" = xxheadless; then
   set_x_paths=no
 fi
 
+PKG_PROG_PKG_CONFIG
+
 if test $set_x_paths = yes; then
-  GRAPHIC_CFLAGS="$X_CFLAGS $GRAPHIC_CFLAGS"
-  CPPFLAGS="$X_CFLAGS $CPPFLAGS"
+  GRAPHIC_CFLAGS="$GRAPHIC_CFLAGS $X_CFLAGS"
+  CPPFLAGS="$CPPFLAGS $X_CFLAGS"
   # Note: Don't include $X_LIBS in LDFLAGS as it may conflict with
   # other libraries installed in /sw, /sw/lib/freetyp2/lib
   #GRAPHIC_LFLAGS="$X_LIBS $GRAPHIC_LFLAGS"
   # But do include it here just to find the extra x libraries 
-  LDFLAGS="$X_LIBS $LDFLAGS"
+  LDFLAGS="$LDFLAGS $X_LIBS"
   LIBS="-lX11 $X_EXTRA_LIBS $LIBS"
 
   AC_CHECK_LIB(Xext, main)
@@ -244,6 +223,17 @@ if test $set_x_paths = yes; then
    #include <X11/Xutil.h>
   ])
 
+  have_xrandr=no
+  AC_CHECK_HEADERS(X11/extensions/Xrandr.h, have_xrandr=yes,,)
+  if test $have_xrandr = yes; then
+  AC_CHECK_LIB(Xrandr, XRRUpdateConfiguration,
+    [
+       LIBS="-lXrandr $LIBS"
+       AC_DEFINE(HAVE_XRANDR, 1, [Define to enable Xrandr support])
+    ]
+    ,)
+  fi
+
   LIBS="$X_LIBS $LIBS"
 fi
 AC_SUBST(X_PRE_LIBS)
@@ -284,12 +274,11 @@ AC_ARG_WITH(freetype,
 
 have_freetype=no
 if test $with_freetype = yes; then
-  FREETYPE_LIBS="`freetype-config --libs`"
-  FREETYPE_CFLAGS="`freetype-config --cflags`"
+  PKG_CHECK_MODULES([FREETYPE], [freetype2])
 
   if test x"$FREETYPE_LIBS" != x; then
     save_CPPFLAGS=${CPPFLAGS}
-    CPPFLAGS="${CPPFLAGS} ${FREETYPE_CFLAGS}"
+    CPPFLAGS="${FREETYPE_CFLAGS} ${CPPFLAGS}"
     AC_CHECK_HEADER(ft2build.h,have_freetype=yes, have_freetype=no)
     CPPFLAGS="${save_CPPFLAGS}"
   fi
@@ -298,7 +287,6 @@ fi
 #--------------------------------------------------------------------
 # Extended font support & UTF8 support
 #--------------------------------------------------------------------
-PKG_XFT=no
 PKG_CHECK_MODULES(XFT, xft, WITH_XFT=yes, WITH_XFT=no)
 
 if test $WITH_XFT = no; then
@@ -320,7 +308,6 @@ if test $WITH_XFT = no; then
   LIBS=${save_LIBS}
 else
   WITH_XFT=yes
-  PKG_XFT=yes
 fi
 
 if test $WITH_XFT = yes; then
@@ -339,7 +326,7 @@ if test $WITH_XFT = yes; then
   AC_CHECK_LIB(fontconfig, FcPatternCreate, have_fc=yes, have_fc=no)
   AC_CHECK_HEADER(fontconfig/fontconfig.h)
   if test "$have_fc" = yes -a "$ac_cv_header_fontconfig_fontconfig_h" = yes; then
-      XFT_LIBS="${XFT_LIBS} -lfontconfig"
+    XFT_LIBS="${XFT_LIBS} -lfontconfig"
     AC_DEFINE(HAVE_FC,1,[Define if you have FcPatternCreate])
   fi
   CPPFLAGS=${save_CPPFLAGS}
@@ -478,17 +465,11 @@ fi
 #--------------------------------------------------------------------
 # Cairo graphics libraries
 #--------------------------------------------------------------------
-PKG_CAIRO=no
 PKG_CHECK_MODULES(CAIRO, cairo, have_cairo=yes, have_cairo=no)
-PKG_CAIRO_FT=no
 PKG_CHECK_MODULES(CAIRO_FT, cairo-ft, have_cairo_ft=yes, have_cairo_ft=no)
-PKG_CAIRO_XLIB=no
 PKG_CHECK_MODULES(CAIRO_XLIB, cairo-xlib, have_cairo_xlib=yes, have_cairo_xlib=no)
-PKG_CAIRO_WIN32=no
 PKG_CHECK_MODULES(CAIRO_WIN32, cairo-win32, have_cairo_win32=yes, have_cairo_win32=no)
-PKG_CAIRO_GLITZ=no
 PKG_CHECK_MODULES(CAIRO_GLITZ, cairo-glitz, have_cairo_glitz=yes, have_cairo_glitz=no)
-PKG_FONTCONFIG=no
 PKG_CHECK_MODULES(FONTCONFIG, fontconfig, have_fontconfig=yes, have_fontconfig=no)
 
 if test "$have_cairo" = no; then
@@ -576,6 +557,30 @@ AC_SUBST(WITH_WRASTER)
 # Revert to previous flags (removing added GNUstep flags)
 CPPFLAGS=${GRAPHIC_CFLAGS}
 LDFLAGS=${GRAPHIC_LFLAGS}
+#--------------------------------------------------------------------
+# Which projects should we build?
+#--------------------------------------------------------------------
+BUILD_SERVER=x11
+BUILD_GRAPHICS=cairo
+case $target_os in
+  *mingw32* ) BUILD_SERVER=win32
+              BUILD_GRAPHICS=winlib;;
+esac
+
+AC_ARG_ENABLE(server, 
+  [  --enable-server=SRV     Build server type: x11, win32, wayland, xheadless],,
+  enable_server=$BUILD_SERVER)
+AC_ARG_ENABLE(graphics, 
+  [  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal, headlesslib],,
+  enable_graphics="$BUILD_GRAPHICS")
+
+BUILD_SERVER=$enable_server
+BUILD_GRAPHICS="$enable_graphics"
+
+# Force the graphics to be headless if the server is...
+if test "x$BUILD_SERVER" = xxheadless; then
+  BUILD_GRAPHICS=headlesslib
+fi
 
 AC_MSG_CHECKING(Backend Server)
 AC_MSG_RESULT($BUILD_SERVER)
@@ -588,6 +593,8 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
     AC_MSG_WARN([can't find freetype, required for graphics=cairo])
     if test $BUILD_SERVER = win32; then
       BUILD_GRAPHICS=winlib
+    elif test $BUILD_SERVER = wayland; then
+      AC_MSG_ERROR([wayland backend requires cairo])
     else
       BUILD_GRAPHICS=xlib
     fi
@@ -596,6 +603,8 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
     AC_MSG_WARN([can't find cairo, required for graphics=cairo!])
     if test $BUILD_SERVER = win32; then
       BUILD_GRAPHICS=winlib
+    elif test $BUILD_SERVER = wayland; then
+      AC_MSG_ERROR([wayland backend requires cairo])
     else
       BUILD_GRAPHICS=art
     fi
@@ -646,6 +655,18 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
       CAIRO_LIBS="$CAIRO_LIBS $CAIRO_XLIB_LIBS $XFT_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS $CAIRO_XLIB_CFLAGS"
       AC_MSG_RESULT(xlib)
+    elif test $BUILD_SERVER = wayland; then
+      AC_CHECK_HEADERS(wayland-util.h,,
+        [AC_MSG_ERROR([**** No wayland-util.h. Install libwayland-dev or equivalent.])])
+      AC_CHECK_LIB(wayland-client, wl_display_flush,,
+        [AC_MSG_ERROR([**** No wl_display_flush in libwayland-client. Install correct version of libwayland-dev or equivalent.])])
+      AC_CHECK_HEADERS(xkbcommon/xkbcommon.h,,
+        [AC_MSG_ERROR([**** No xkbcommon/xkbcommon.h. Required for wayland. Install libxkbcommon-dev or equivalent.])])
+      AC_CHECK_LIB(xkbcommon, xkb_context_new,,
+        [AC_MSG_ERROR([**** No xkb_context_new in libxkbcommon. Install correct version of libxkbcommon-dev or equivalent.])])
+      CAIRO_LIBS="$CAIRO_LIBS $XFT_LIBS"
+      CAIRO_CFLAGS="$CAIRO_CFLAGS"
+      LIBS="-lwayland-client -lwayland-cursor -lxkbcommon $LIBS"
     else
       AC_MSG_ERROR([Invalid Cairo installation])
     fi
@@ -655,13 +676,14 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
 fi
 
 if test x"$BUILD_GRAPHICS" = "xheadlesslib"; then
-  if test $BUILD_SERVER != xheadless ; then
-    AC_MSG_WARN([Invalid build server for headless lib: $BUILD_SERVER])
-  else
-    AC_MSG_CHECKING(headless lib)
-    AC_MSG_RESULT(headlesslib)
-  fi
+   if test $BUILD_SERVER != xheadless; then
+      AC_MSG_WARN([Invalid build server for headless lib: $BUILD_SERVER])
+   else
+      AC_MSG_CHECKING(headless lib)
+      AC_MSG_RESULT(headlesslib)
+   fi
 fi
+
 
 if test x"$BUILD_GRAPHICS" = "xxdps"; then
   CPPFLAGS="-I$x_includes/X11 $CPPFLAGS"
@@ -690,7 +712,7 @@ elif test x"$BUILD_GRAPHICS" = "xart"; then
     CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xxlib"; then
- : # Nothing to do
+ LIBS="$FREETYPE_LIBS $LIBS"
 elif test x"$BUILD_GRAPHICS" = "xheadlesslib"; then
  : # Nothing to do
 elif test x"$BUILD_GRAPHICS" = "xwinlib"; then
@@ -715,7 +737,7 @@ elif test x"$BUILD_GRAPHICS" = "xopal"; then
       BUILD_GRAPHICS=xlib
     fi
     AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
- fi
+  fi
 else
   AC_MSG_ERROR([Invalid graphics backend $BUILD_GRAPHICS])
 fi
@@ -739,8 +761,8 @@ if test $BUILD_SERVER = x11; then
     AC_MSG_ERROR([libXext not found - required for building x11 server])
   fi
   if test "x$WITH_GLX" = "xyes"; then
-    LIBS="$LIBS $GLX_LIBS"
-    CPPFLAGS="$CPPFLAGS $GLX_CFLAGS"
+    LIBS="$GLX_LIBS $LIBS"
+    CPPFLAGS="$GLX_CFLAGS $CPPFLAGS"
   else
     AC_MSG_NOTICE([Warning : no OpenGL support for X11 backend])
   fi
@@ -756,16 +778,17 @@ if test $BUILD_SERVER = win32; then
 fi
 
 AH_TOP([
-#define SERVER_x11      1
-#define SERVER_win32    2
-#define SERVER_xheadless 3
-#define GRAPHICS_xdps   0
-#define GRAPHICS_art    1
-#define GRAPHICS_xlib   2
-#define GRAPHICS_winlib 3
-#define GRAPHICS_cairo  4
-#define GRAPHICS_opal   5
-#define GRAPHICS_headlesslib   6
+#define SERVER_x11           1
+#define SERVER_win32         2
+#define SERVER_wayland       3
+#define SERVER_xheadless     4
+#define GRAPHICS_xdps        0
+#define GRAPHICS_art         1
+#define GRAPHICS_xlib        2
+#define GRAPHICS_winlib      3
+#define GRAPHICS_cairo       4
+#define GRAPHICS_opal        5
+#define GRAPHICS_headlesslib 6
 ])
 AC_DEFINE_UNQUOTED(BUILD_SERVER,SERVER_$BUILD_SERVER,
 	[Define to type of window server to build])
@@ -810,3 +833,11 @@ AC_SUBST(BACKEND_NAME)
 
 AC_CONFIG_FILES([back.make config.make])
 AC_OUTPUT
+
+AS_IF([test $BUILD_GRAPHICS = art || test $BUILD_GRAPHICS = xlib || test $BUILD_GRAPHICS = xdps], [
+cat <<EOF
+m4_text_box([WARNING])
+You are about to build the $BUILD_GRAPHICS backend which is deprecated
+and likely to be removed in the future.
+EOF
+])
