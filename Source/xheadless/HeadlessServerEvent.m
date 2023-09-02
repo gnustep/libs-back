@@ -123,37 +123,6 @@ HeadlessErrorHandler(Display *display, XErrorEvent *err)
   return [ctxt HeadlessErrorHandler: display : err];
 }
 
-#if 0
-static NSEvent*process_key_event (XEvent* xEvent, HeadlessServer* ctxt,
-  NSEventType eventType, NSMutableArray *event_queue);
-
-static unichar process_char (KeySym keysym, unsigned *eventModifierFlags);
-
-static unsigned process_modifier_flags(unsigned int state);
-
-static void initialize_keyboard (void);
-
-static void set_up_num_lock (void);
-
-// checks whether a GNUstep modifier (key_sym) is pressed when we're only able
-// to check whether X keycodes are pressed in xEvent->xkeymap;
-static int check_modifier (XEvent *xEvent, KeySym key_sym)
-{
-  char *key_vector;
-  int by,bi;
-  int key_code = XKeysymToKeycode(xEvent->xkeymap.display, key_sym);
-
-  if (key_code != NoSymbol)
-    {
-      by = key_code / 8;
-      bi = key_code % 8;
-      key_vector = xEvent->xkeymap.key_vector;
-      return (key_vector[by] & (1 << bi));
-    }
-  return 0;
-}
-#endif
-
 @interface HeadlessServer (WindowOps)
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
 		     : (unsigned int) style : (Window) win;

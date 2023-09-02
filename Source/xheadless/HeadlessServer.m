@@ -117,14 +117,12 @@ extern int XGErrorHandler(Display *display, XErrorEvent *err);
    <heading>HeadlessServer</heading>
 
    <p> HeadlessServer is a concrete subclass of GSDisplayServer that handles
-   X-Window client communications. The class is broken into four sections.
-   The main class handles setting up and closing down the display, as well
-   as providing wrapper methods to access display and screen pointers. The
-   WindowOps category handles window creating, display, movement, and
-   other functions detailed in the GSDisplayServer(WindowOps) category.
-   The EventOps category handles events received from X-Windows and the
-   window manager. It implements the methods defined in the
-   GSDisplayServer(EventOps) category. The last section 
+   events and interactions for the headless server.  The purpose of the headless
+   server is to allow apps which would normally have an interface under X to 
+   show no visible windows.  This is useful for testing or for running applications
+   on machines that have no display available, but where the application needs to run.
+   This also can be used in continuous integration to test an application in the
+   background.
    </unit>
 */
 
