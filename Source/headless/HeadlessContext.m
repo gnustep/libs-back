@@ -19,8 +19,24 @@
 
 #include "config.h"
 
-#include "Headless/HeadlessContext.h"
+#include "headless/HeadlessContext.h"
+#include "headless/HeadlessFontInfo.h"
+#include "headless/HeadlessFontEnumerator.h"
+#include "headless/HeadlessGState.h"
 
 @implementation HeadlessContext
+
++ (void) initializeBackend
+{
+  [NSGraphicsContext setDefaultContextClass: self];
+
+  [GSFontEnumerator setDefaultClass: [HeadlessFontEnumerator class]];
+  [GSFontInfo setDefaultClass: [HeadlessFontInfo class]];
+}
+
++ (Class) GStateClass
+{
+  return [HeadlessGState class];
+}
 
 @end

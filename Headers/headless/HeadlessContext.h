@@ -23,8 +23,6 @@
 #include "gsc/GSContext.h"
 
 @interface HeadlessContext : GSContext
-{
-}
 @end
 
-#endif
+#endif /* HeadlessContext_h_INCLUDE */

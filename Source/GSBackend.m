@@ -75,7 +75,7 @@
   [WIN32Server initializeBackend];
 #elif BUILD_SERVER == SERVER_wayland
   [WaylandServer initializeBackend];
-#elif BUILD_SERVER == SERVER_xheadless
+#elif BUILD_SERVER == SERVER_headless
   [HeadlessServer initializeBackend];
 #else
   [NSException raise: NSInternalInconsistencyException

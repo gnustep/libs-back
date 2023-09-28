@@ -30,10 +30,16 @@ include $(GNUSTEP_MAKEFILES)/common.make
 include ../../config.make
 
 # The library to be compiled, as a library or as a bundle
-SUBPROJECT_NAME=xheadless
+SUBPROJECT_NAME=headless
 
 # The Objective-C source files to be compiled
-xheadless_OBJC_FILES = 
+headless_OBJC_FILES = \
+HeadlessContext.m \
+HeadlessServer.m \
+HeadlessFontInfo.m \
+HeadlessFontEnumerator.m \
+HeadlessFaceInfo.m \
+HeadlessGState.m
 
 -include GNUmakefile.preamble
 
