@@ -14,6 +14,16 @@ jobs:
     # don't run pull requests from local branches twice
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
 
+    strategy:
+      matrix:
+        include:
+          - server: x11
+            graphics: cairo
+          - server: x11
+            graphics: xlib
+          - server: headless
+            graphics: headless
+
     env:
       DEBIAN_FRONTEND: noninteractive
 
@@ -28,7 +38,7 @@ jobs:
       - name: Build source
         run: |
           . /usr/share/GNUstep/Makefiles/GNUstep.sh
-          ./configure
+          ./configure --enable-server=${{ matrix.server }} --enable-graphics=${{ matrix.graphics }}
           make && make install
 
       - name: Run tests
