@@ -1,0 +1,37 @@
+on:
+  push:
+  pull_request:
+
+jobs:
+  ########### Linux ###########
+  linux:
+    name: ci
+    runs-on: ubuntu-latest
+
+    container:
+      image: ubuntu:22.04
+
+    # don't run pull requests from local branches twice
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+
+    env:
+      DEBIAN_FRONTEND: noninteractive
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install packages
+        run: |
+          apt-get -q -y update
+          apt-get -q -y install libgnustep-gui-dev libfreetype-dev libcairo2-dev libxt-dev pkg-config build-essential
+
+      - name: Build source
+        run: |
+          . /usr/share/GNUstep/Makefiles/GNUstep.sh
+          ./configure
+          make && make install
+
+      - name: Run tests
+        run: |
+          . /usr/share/GNUstep/Makefiles/GNUstep.sh
+          make check
