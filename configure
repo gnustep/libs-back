@@ -1438,8 +1438,8 @@ Optional Features:
   --disable-xim           Disable XIM support
   --disable-wgl           Disable WGL support
   --enable-glitz          Enable Glitz support
-  --enable-server=SRV     Build server type: x11, win32, wayland
-  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal
+  --enable-server=SRV     Build server type: x11, win32, wayland, headless
+  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal, headless
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -7826,8 +7826,6 @@ fi
       CAIRO_LIBS="$CAIRO_LIBS $XFT_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS"
       LIBS="-lwayland-client -lwayland-cursor -lxkbcommon $LIBS"
-    else
-      as_fn_error $? "Invalid Cairo installation" "$LINENO" 5
     fi
     LIBS="$CAIRO_LIBS $LIBS"
     CPPFLAGS="$CAIRO_CFLAGS $CPPFLAGS"
@@ -7893,6 +7891,8 @@ printf "%s\n" "$as_me: WARNING: can't find fontconfig, required for graphics=opa
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Switching to $BUILD_GRAPHICS" >&5
 printf "%s\n" "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
   fi
+elif test x"$BUILD_GRAPHICS" = "xheadless"; then
+ : # Nothing to do
 else
   as_fn_error $? "Invalid graphics backend $BUILD_GRAPHICS" "$LINENO" 5
 fi
