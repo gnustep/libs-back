@@ -43,7 +43,7 @@ endif
 #
 # The list of subproject directories
 #
-SUBPROJECTS = gsc $(BUILD_SERVER) $(BUILD_GRAPHICS)
+SUBPROJECTS = $(sort gsc $(BUILD_SERVER) $(BUILD_GRAPHICS))
 
 libgnustep-$(BACKEND_FULL)_SUBPROJECTS=$(SUBPROJECTS)
 
