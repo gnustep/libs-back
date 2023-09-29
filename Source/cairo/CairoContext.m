@@ -57,6 +57,19 @@
 #  endif /* USE_GLITZ */
 #  include "x11/XGServerWindow.h"
 #  include "x11/XWindowBuffer.h"
+#elif BUILD_SERVER == SERVER_xheadless
+#  include "cairo/CairoGState.h"
+#  include "x11/XGServer.h"
+#  define _CAIRO_GSTATE_CLASSNAME CairoGState
+#  ifdef USE_GLITZ
+#    define _CAIRO_SURFACE_CLASSNAME XGCairoGlitzSurface
+#    include "cairo/XGCairoGlitzSurface.h"
+#  else
+#    define _CAIRO_SURFACE_CLASSNAME XGCairoModernSurface
+#    include "cairo/XGCairoModernSurface.h"
+#  endif /* USE_GLITZ */
+#  include "x11/XGServerWindow.h"
+#  include "x11/XWindowBuffer.h"
 #elif BUILD_SERVER == SERVER_win32
 #  include "cairo/Win32CairoGState.h"
 #  include <windows.h>
