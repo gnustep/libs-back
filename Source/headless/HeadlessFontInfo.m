@@ -33,11 +33,6 @@
 
 @implementation HeadlessFontInfo
 
-- (BOOL) setupAttributes
-{
-  return YES;
-}
-
 - (id) initWithFontName: (NSString *)name
 		 matrix: (const CGFloat *)fmatrix
 	     screenFont: (BOOL)p_screenFont
@@ -46,14 +41,13 @@
   if (!self)
     return nil;
 
+#ifndef _MSC_VER
+  // Accessing instance variables across module boundaries is not supported by the Visual Studio
+  // toolchain; this could be implemented using e.g. setFontName: and setMatrix: method on the
+  // base case. 
   fontName = [name copy];
   memcpy(matrix, fmatrix, sizeof(matrix));
-
-  if (![self setupAttributes])
-    {
-      RELEASE(self);
-      return nil;
-    }
+#endif
 
   return self;
 }
@@ -65,10 +59,7 @@
 
 - (BOOL) glyphIsEncoded: (NSGlyph)glyph
 {
-  if ((glyph >= 0xFB00) && (glyph <= 0xFB05))
-    return NO;
-  else
-    return YES;
+  return NO;
 }
 
 - (NSSize) advancementForGlyph: (NSGlyph)glyph
