@@ -1,15 +1,17 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 
-#define SERVER_x11      1
-#define SERVER_win32    2
-#define SERVER_wayland  3
-#define GRAPHICS_xdps   0
-#define GRAPHICS_art    1
-#define GRAPHICS_xlib   2
-#define GRAPHICS_winlib 3
-#define GRAPHICS_cairo  4
-#define GRAPHICS_opal   5
+#define SERVER_x11        1
+#define SERVER_win32      2
+#define SERVER_wayland    3
+#define SERVER_headless   4
+#define GRAPHICS_xdps     0
+#define GRAPHICS_art      1
+#define GRAPHICS_xlib     2
+#define GRAPHICS_winlib   3
+#define GRAPHICS_cairo    4
+#define GRAPHICS_opal     5
+#define GRAPHICS_headless 6
 
 
 /* Define to type of graphics context to build */
@@ -42,11 +44,17 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the `wayland-client' library (-lwayland-client). */
+#undef HAVE_LIBWAYLAND_CLIENT
+
 /* Define to 1 if you have the `Xext' library (-lXext). */
 #undef HAVE_LIBXEXT
 
 /* Define to 1 if you have the `Xft' library (-lXft). */
 #undef HAVE_LIBXFT
+
+/* Define to 1 if you have the `xkbcommon' library (-lxkbcommon). */
+#undef HAVE_LIBXKBCOMMON
 
 /* Define to 1 if you have the `Xmu' library (-lXmu). */
 #undef HAVE_LIBXMU
@@ -54,14 +62,14 @@
 /* Define to 1 if you have the `Xt' library (-lXt). */
 #undef HAVE_LIBXT
 
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
-
 /* Define to 1 if you have the `shmctl' function. */
 #undef HAVE_SHMCTL
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
@@ -93,6 +101,9 @@
 /* Define if you have XftDrawStringUtf8 */
 #undef HAVE_UTF8
 
+/* Define to 1 if you have the <wayland-util.h> header file. */
+#undef HAVE_WAYLAND_UTIL_H
+
 /* Define if you have the wgl library */
 #undef HAVE_WGL
 
@@ -101,6 +112,9 @@
 
 /* Define to 1 if you have the <X11/extensions/sync.h> header file. */
 #undef HAVE_X11_EXTENSIONS_SYNC_H
+
+/* Define to 1 if you have the <X11/extensions/Xrandr.h> header file. */
+#undef HAVE_X11_EXTENSIONS_XRANDR_H
 
 /* Define to 1 if you have the <X11/extensions/XShm.h> header file. */
 #undef HAVE_X11_EXTENSIONS_XSHM_H
@@ -118,14 +132,17 @@
 /* Define to 1 if you have 'XInternAtoms' function. */
 #undef HAVE_XINTERNATOMS
 
+/* Define to 1 if you have the <xkbcommon/xkbcommon.h> header file. */
+#undef HAVE_XKBCOMMON_XKBCOMMON_H
+
+/* Define to enable Xrandr support */
+#undef HAVE_XRANDR
+
 /* Define to enable Xshape support */
 #undef HAVE_XSHAPE
 
 /* Define to 1 if you have the `Xutf8LookupString' function. */
 #undef HAVE_XUTF8LOOKUPSTRING
-
-/* Define to enable Xrandr support */
-#undef HAVE_XRANDR
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
@@ -145,7 +162,9 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
 /* Define to enable glitz support */

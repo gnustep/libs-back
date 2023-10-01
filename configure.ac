@@ -565,10 +565,10 @@ case $target_os in
 esac
 
 AC_ARG_ENABLE(server, 
-  [  --enable-server=SRV     Build server type: x11, win32, wayland],,
+  [  --enable-server=SRV     Build server type: x11, win32, wayland, headless],,
   enable_server=$BUILD_SERVER)
 AC_ARG_ENABLE(graphics, 
-  [  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal],,
+  [  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal, headless],,
   enable_graphics="$BUILD_GRAPHICS")
 
 BUILD_SERVER=$enable_server
@@ -658,8 +658,6 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
       CAIRO_LIBS="$CAIRO_LIBS $XFT_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS"
       LIBS="-lwayland-client -lwayland-cursor -lxkbcommon $LIBS"
-    else
-      AC_MSG_ERROR([Invalid Cairo installation])
     fi
     LIBS="$CAIRO_LIBS $LIBS"
     CPPFLAGS="$CAIRO_CFLAGS $CPPFLAGS"
@@ -717,6 +715,8 @@ elif test x"$BUILD_GRAPHICS" = "xopal"; then
     fi
     AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
   fi
+elif test x"$BUILD_GRAPHICS" = "xheadless"; then
+ : # Nothing to do
 else
   AC_MSG_ERROR([Invalid graphics backend $BUILD_GRAPHICS])
 fi
@@ -757,15 +757,17 @@ if test $BUILD_SERVER = win32; then
 fi
 
 AH_TOP([
-#define SERVER_x11      1
-#define SERVER_win32    2
-#define SERVER_wayland  3
-#define GRAPHICS_xdps   0
-#define GRAPHICS_art    1
-#define GRAPHICS_xlib   2
-#define GRAPHICS_winlib 3
-#define GRAPHICS_cairo  4
-#define GRAPHICS_opal   5
+#define SERVER_x11        1
+#define SERVER_win32      2
+#define SERVER_wayland    3
+#define SERVER_headless   4
+#define GRAPHICS_xdps     0
+#define GRAPHICS_art      1
+#define GRAPHICS_xlib     2
+#define GRAPHICS_winlib   3
+#define GRAPHICS_cairo    4
+#define GRAPHICS_opal     5
+#define GRAPHICS_headless 6
 ])
 AC_DEFINE_UNQUOTED(BUILD_SERVER,SERVER_$BUILD_SERVER,
 	[Define to type of window server to build])
