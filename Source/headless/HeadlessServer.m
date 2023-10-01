@@ -1,26 +1,27 @@
-/* HeadlessServer.m - Headless Server
- * 
- *  Copyright (c) 2023 Keysight Technologies
- *  Copyright (C) 1998,2002,2023 Free Software Foundation, Inc.
- *
- *  Re-written by: Gregory John Casamento <greg.casamento@gmail.com>
- *  Based on work by: Marcian Lytwyn <gnustep@advcsi.com> for Keysight
- *  Based on work Written by:  Adam Fedor <fedor@gnu.org>
- *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Library General Public
- *  License as published by the Free Software Foundation; either
- *  version 2 of the License, or (at your option) any later version.
- *  
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Library General Public License for more details.
- *  
- *  You should have received a copy of the GNU Library General Public
- *  License along with this library; if not, write to the Free
- *  Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
+/*
+   HeadlessServer.m
+
+   Copyright (C) 1998,2002,2023 Free Software Foundation, Inc.
+
+   Based on work by: Marcian Lytwyn <gnustep@advcsi.com> for Keysight
+   Based on work by: Adam Fedor <fedor@gnu.org>
+
+   This library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2 of the License, or (at your option) any later version.
+
+   This library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this library; see the file COPYING.LIB.
+   If not, see <http://www.gnu.org/licenses/> or write to the 
+   Free Software Foundation, 51 Franklin Street, Fifth Floor, 
+   Boston, MA 02110-1301, USA.
+*/
 
 #include "config.h"
 
