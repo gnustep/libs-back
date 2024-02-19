@@ -884,6 +884,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
 
 - (NSMutableData*) getSelectionData: (XSelectionEvent*)xEvent
                                type: (Atom*)type
+			       size: (long)max
 {
   int		status;
   unsigned char	*data;
@@ -896,6 +897,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
   unsigned long	number_items;
   NSMutableData	*md = nil;
 
+  if (max > long_length) long_length = max;
   /*
    * Read data from property identified in SelectionNotify event.
    */
@@ -995,54 +997,63 @@ xErrorHandler(Display *d, XErrorEvent *e)
     }
   [self setWaitingForSelection: 0];
 
-  md = [self getSelectionData: xEvent type: &actual_type];
+  md = [self getSelectionData: xEvent type: &actual_type size: 0];
 
   if (md != nil)
     {
       if (actual_type == XG_INCR)
         {
           XEvent	event;
-          NSMutableData	*imd = nil;
           BOOL		wait = YES;
 	  unsigned	count = 0;
+	  int32_t	size;
 
 	  // Need to delete the property to start transfer
 	  XDeleteProperty(xDisplay, xEvent->requestor, xEvent->property);
-          md = nil;
+	  memcpy(&size, [md bytes], 4);
+	  NSDebugMLLog(@"INCR",
+	    @"Size for INCR chunks is %u bytes.", (unsigned)size);
+          [md setLength: 0];
           while (wait)
             {
               XNextEvent(xDisplay, &event);
 
-              if (event.type == PropertyNotify)
+              if (event.type == PropertyNotify
+	        && event.xproperty.state == PropertyNewValue)
                 {
-                  if (event.xproperty.state != PropertyNewValue) continue;
+		  ENTER_POOL
+		  NSMutableData	*imd;
 
-                  imd = [self getSelectionData: xEvent type: &actual_type];
+                  imd = [self getSelectionData: xEvent
+					  type: &actual_type
+					  size: size];
 
-		  // delete the property to get the next transfer chunk
-		  XDeleteProperty(xDisplay, xEvent->requestor, xEvent->property);
+		  /* Delete the property to get the next transfer chunk
+		   * or clean up if the end of transfer was indicated by
+		   * an empty chunk.
+		   */
+		  XDeleteProperty(xDisplay,
+		    xEvent->requestor, xEvent->property);
                   if (imd != nil)
                     {
-		      NSDebugMLLog(@"Pbs",
+		      NSDebugMLLog(@"INCR",
 			@"Retrieved %lu bytes type '%s' from X selection.", 
-			(unsigned long)[md length],
+			(unsigned long)[imd length],
 			XGetAtomName(xDisplay, actual_type));
 		      count++;
-                      if (md == nil)
-                        {
-                          md = imd;
-                        }
-                      else
-                        {
-                          [md appendData: imd];
-                        }
+		      [md appendData: imd];
                     }
                   else
                     {
                       wait = NO;
                     }
+		  LEAVE_POOL
                 }
             }
+	  if ([md length] == 0)
+	    {
+	      md = nil;
+	    }
           NSDebugMLLog(@"Pbs",
 	    @"Retrieved %lu bytes type '%s' in %u chunks from X selection.", 
 	    (unsigned long)[md length], XGetAtomName(xDisplay, actual_type),
