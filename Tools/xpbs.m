@@ -661,7 +661,7 @@ static int              xFixesEventBase;
        * appropriate property of our application root window.
        */
       XConvertSelection(xDisplay, [self xPb], xType,
-                        [self xPb], xAppWin, whenRequested);
+	[self xPb], xAppWin, whenRequested);
       XFlush(xDisplay);
       
       /*
@@ -674,8 +674,8 @@ static int              xFixesEventBase;
        */
       limit = [NSDate dateWithTimeIntervalSinceNow: 20.0];
       [self setWaitingForSelection: whenRequested];
-      while (XQLength(xDisplay) > 0 &&
-             [self waitingForSelection] == whenRequested)
+      while (XQLength(xDisplay) > 0
+	&& [self waitingForSelection] == whenRequested)
         {
           XEvent xEvent;
 
@@ -812,7 +812,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
   targets = (Atom*)[data bytes];
   types = [NSMutableArray arrayWithCapacity: count];
 
-  NSDebugLLog(@"Pbs", @"%@ availableTypes: %d types available", [[self osPb] name], count);
+  NSDebugLLog(@"Pbs", @"%@ availableTypes: %d types available",
+    [[self osPb] name], count);
 
   for (i = 0; i < count; i++)
     {
@@ -832,8 +833,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
           [types addObject: NSFilenamesPboardType];
         }
       else if ((type == XG_MIME_RTF)
-               || (type == XG_MIME_APP_RTF)
-	       || (type == XG_MIME_TEXT_RICHTEXT))
+        || (type == XG_MIME_APP_RTF)
+        || (type == XG_MIME_TEXT_RICHTEXT))
         {
           [types addObject: NSRTFPboardType];
         }
@@ -886,10 +887,10 @@ xErrorHandler(Display *d, XErrorEvent *e)
 {
   int		status;
   unsigned char	*data;
-  long long_offset = 0L;
-  long long_length = FULL_LENGTH;
-  Atom req_type = AnyPropertyType;
-  Atom actual_type;
+  long		long_offset = 0L;
+  long 		long_length = FULL_LENGTH;
+  Atom 		req_type = AnyPropertyType;
+  Atom 		actual_type;
   int		actual_format;
   unsigned long	bytes_remaining;
   unsigned long	number_items;
@@ -912,11 +913,13 @@ xErrorHandler(Display *d, XErrorEvent *e)
                                   &number_items,
                                   &bytes_remaining,
                                   &data);
-      
+
+      char *name = XGetAtomName(xDisplay, actual_type);
+      NSDebugLLog(@"Pbs", @"offset %ld length %ld rtype %lu atype %lu %s aformat %d nitems %lu remain %lu.", long_offset, long_length, req_type, actual_type, name, actual_format, number_items, bytes_remaining);
       if ((status == Success) && (number_items > 0))
         {
           long count;
-	  NSDebugLLog(@"Pbs", @"getSelectionData number_items %d", number_items);
+
 	  if (actual_type == XA_ATOM)
 	    {
 	      // xlib will report an actual_format of 32, even if
@@ -986,7 +989,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
 
   if ([self waitingForSelection] > xEvent->time)
     {
-      NSDebugLLog(@"Pbs", @"Unexpected selection notify - time %lu.", xEvent->time);
+      NSDebugLLog(@"Pbs",
+	@"Unexpected selection notify - time %lu.", xEvent->time);
       return;
     }
   [self setWaitingForSelection: 0];
@@ -997,9 +1001,10 @@ xErrorHandler(Display *d, XErrorEvent *e)
     {
       if (actual_type == XG_INCR)
         {
-          XEvent event;
+          XEvent	event;
           NSMutableData	*imd = nil;
-          BOOL wait = YES;
+          BOOL		wait = YES;
+	  unsigned	count = 0;
 
 	  // Need to delete the property to start transfer
 	  XDeleteProperty(xDisplay, xEvent->requestor, xEvent->property);
@@ -1018,6 +1023,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
 		  XDeleteProperty(xDisplay, xEvent->requestor, xEvent->property);
                   if (imd != nil)
                     {
+		      NSDebugMLLog(@"Pbs",
+			@"Retrieved %lu bytes type '%s' from X selection.", 
+			(unsigned long)[md length],
+			XGetAtomName(xDisplay, actual_type));
+		      count++;
                       if (md == nil)
                         {
                           md = imd;
@@ -1033,7 +1043,17 @@ xErrorHandler(Display *d, XErrorEvent *e)
                     }
                 }
             }
+          NSDebugMLLog(@"Pbs",
+	    @"Retrieved %lu bytes type '%s' in %u chunks from X selection.", 
+	    (unsigned long)[md length], XGetAtomName(xDisplay, actual_type),
+	    count);
         }
+      else
+	{
+          NSDebugMLLog(@"Pbs",
+	    @"Retrieved %lu bytes type '%s' in single chunk from X selection.", 
+	    (unsigned long)[md length], XGetAtomName(xDisplay, actual_type));
+	}
     }
   
   if (md != nil)
@@ -1054,8 +1074,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
             }
         }
       else if ((actual_type == XA_STRING)
-               || (actual_type == XG_TEXT)
-               || (actual_type == XG_MIME_PLAIN))
+        || (actual_type == XG_TEXT)
+        || (actual_type == XG_MIME_PLAIN))
         {
           NSString	*s;
           NSData	*d;
@@ -1090,8 +1110,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
           RELEASE(url);
         }
       else if ((actual_type == XG_MIME_RTF)
-               || (actual_type == XG_MIME_APP_RTF)
-	       || (actual_type == XG_MIME_TEXT_RICHTEXT))
+        || (actual_type == XG_MIME_APP_RTF)
+        || (actual_type == XG_MIME_TEXT_RICHTEXT))
         {
           [self setData: md];
         }
@@ -1681,7 +1701,7 @@ static DndClass dnd;
   Atom mType = XInternAtom(xDisplay, [mime cString], False);
 
   [self setData: nil];
-	[self requestData: mType];
+  [self requestData: mType];
   [pb setData: [self data] forType: type];
 }
 
