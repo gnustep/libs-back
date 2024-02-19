@@ -419,6 +419,7 @@ static int              xFixesEventBase;
 #if HAVE_XFIXES
       if (xEvent->type == xFixesEventBase + XFixesSelectionNotify)
        {
+	 NSDebugLLog(@"Pbs", @"XFixesSelectionNotify.");
          [self xFixesSelectionNotify: (XFixesSelectionNotifyEvent*)xEvent];
          break;
        }
@@ -475,6 +476,7 @@ static int              xFixesEventBase;
 
   if (xEvent->time != 0)
     {
+      NSDebugLLog(@"Pbs", @"Property notify time: %lu", (unsigned long)xEvent->time);
       [o setTimeOfLastAppend: xEvent->time];
     }
 }
@@ -702,6 +704,7 @@ static int              xFixesEventBase;
 {
   [self setData: nil];
 
+  NSDebugLLog(@"Pbs", @"pasteboard: provideDataForType:%@", type);
   /*
    *	If this gets called, a GNUstep object wants the pasteboard contents
    *	and a plain old X application is providing them, so we must grab
@@ -730,6 +733,7 @@ static int              xFixesEventBase;
     }
   else if ([type isEqual: NSTIFFPboardType])
     {
+      NSDebugLLog(@"Pbs", @"pasteboard: provideDataForType: - requestData XG_MIME_TIFF");
       [self requestData: XG_MIME_TIFF];
     }
   // FIXME: Support more types
@@ -870,6 +874,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
  */
 - (void) xSelectionClear
 {
+  NSDebugLLog(@"Pbs", @"xpbs - xSelectionClear");
   // FIXME: This will cause -pasteboardChangedOwner: to be called, which will
   // take ownership of the X selection. That is probably wrong...
   [_pb declareTypes: [self availableTypes] owner: self];
@@ -911,6 +916,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
       if ((status == Success) && (number_items > 0))
         {
           long count;
+	  NSDebugLLog(@"Pbs", @"getSelectionData number_items %d", number_items);
 	  if (actual_type == XA_ATOM)
 	    {
 	      // xlib will report an actual_format of 32, even if
@@ -1115,8 +1121,6 @@ xErrorHandler(Display *d, XErrorEvent *e)
   BOOL			status;
 
   status = [self xProvideSelection: xEvent];
-  if (!status)
-    NSDebugLLog(@"Pbs", @"Could not provide selection upon request.");
 
   /*
    * Set up the selection notify information from the event information
@@ -1144,7 +1148,10 @@ xErrorHandler(Display *d, XErrorEvent *e)
    * knows the request failed.
    */
   if (status == NO)
-    notify_event.property = None;
+    {
+      NSDebugLLog(@"Pbs", @"Could not provide selection upon request.");
+      notify_event.property = None;
+    }
 
   XSendEvent(xEvent->display, xEvent->requestor, False, 0L,
     (XEvent*)&notify_event);
