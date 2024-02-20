@@ -916,8 +916,15 @@ xErrorHandler(Display *d, XErrorEvent *e)
                                   &bytes_remaining,
                                   &data);
 
-      char *name = XGetAtomName(xDisplay, actual_type);
-      NSDebugLLog(@"Pbs", @"offset %ld length %ld rtype %lu atype %lu %s aformat %d nitems %lu remain %lu.", long_offset, long_length, req_type, actual_type, name, actual_format, number_items, bytes_remaining);
+      if (GSDebugSet(@"Pbs"))
+	{
+	  char *name = XGetAtomName(xDisplay, actual_type);
+	  NSLog(@"offset %ld length %ld rtype %lu atype %lu %s aformat"
+	    @" %d nitems %lu remain %lu.",
+	    long_offset, long_length, req_type, actual_type, name,
+	    actual_format, number_items, bytes_remaining);
+	  XFree(name);
+	}
       if ((status == Success) && (number_items > 0))
         {
           long count;
@@ -1001,11 +1008,12 @@ xErrorHandler(Display *d, XErrorEvent *e)
 
   if (md != nil)
     {
+      unsigned	count = 0;
+
       if (actual_type == XG_INCR)
         {
           XEvent	event;
           BOOL		wait = YES;
-	  unsigned	count = 0;
 	  int32_t	size;
 
 	  // Need to delete the property to start transfer
@@ -1036,10 +1044,14 @@ xErrorHandler(Display *d, XErrorEvent *e)
 		    xEvent->requestor, xEvent->property);
                   if (imd != nil)
                     {
-		      NSDebugMLLog(@"INCR",
-			@"Retrieved %lu bytes type '%s' from X selection.", 
-			(unsigned long)[imd length],
-			XGetAtomName(xDisplay, actual_type));
+		      if (GSDebugSet(@"INCR"))
+			{
+			  char *name = XGetAtomName(xDisplay, actual_type);
+			  NSLog(@"Retrieved %lu bytes type '%s'"
+			    @" from X selection.", 
+			    (unsigned long)[imd length], name);
+			  XFree(name);
+			}
 		      count++;
 		      [md appendData: imd];
                     }
@@ -1054,16 +1066,24 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	    {
 	      md = nil;
 	    }
-          NSDebugMLLog(@"Pbs",
-	    @"Retrieved %lu bytes type '%s' in %u chunks from X selection.", 
-	    (unsigned long)[md length], XGetAtomName(xDisplay, actual_type),
-	    count);
         }
-      else
+      if (GSDebugSet(@"Pbs"))
 	{
-          NSDebugMLLog(@"Pbs",
-	    @"Retrieved %lu bytes type '%s' in single chunk from X selection.", 
-	    (unsigned long)[md length], XGetAtomName(xDisplay, actual_type));
+	  char *name = XGetAtomName(xDisplay, actual_type);
+
+	  if (count > 1)
+	    {
+	      NSLog(@"Retrieved %lu bytes type '%s' in %u chunks"
+		@" from X selection.",
+		(unsigned long)[md length], name, count);
+	    }
+	  else
+	    {
+	      NSLog(@"Retrieved %lu bytes type '%s' in single chunk"
+		@" from X selection.",
+		(unsigned long)[md length], name);
+	    }
+	  XFree(name);
 	}
     }
   
