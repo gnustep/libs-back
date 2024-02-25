@@ -720,7 +720,6 @@ static int              xFixesEventBase;
     }
   else if ([type isEqual: NSFilenamesPboardType])
     {
-
       [self requestData: XG_FILE_NAME];
     }
   else if ([type isEqual: NSRTFPboardType])
@@ -942,26 +941,29 @@ xErrorHandler(Display *d, XErrorEvent *e)
             
           if (md == nil)
             {
-              md = [[NSMutableData alloc] initWithBytes: (void *)data
-                                          length: count];  
+	      /* data buffer needs to be big enough for the whole property
+	       */
+              md = [[NSMutableData alloc]
+		initWithCapacity: count + bytes_remaining];
               req_type = actual_type;
             }
-          else
-            {
-              if (req_type != actual_type)
-                {
-                  char *req_name = XGetAtomName(xDisplay, req_type);
-                  char *act_name = XGetAtomName(xDisplay, actual_type);
-                  
-                  NSLog(@"Selection changed type from %s to %s.", 
-                        req_name, act_name);
-                  XFree(req_name);
-                  XFree(act_name);
-                  RELEASE(md);
-                  return nil;
-                }
-              [md appendBytes: (void *)data length: count];
+          else if (req_type != actual_type)
+	    {
+	      char *req_name = XGetAtomName(xDisplay, req_type);
+	      char *act_name = XGetAtomName(xDisplay, actual_type);
+	      
+	      NSLog(@"Selection changed type from %s to %s.", 
+		    req_name, act_name);
+	      XFree(req_name);
+	      XFree(act_name);
+	      RELEASE(md);
+	      if (data)
+		{
+		  XFree(data);
+		}
+	      return nil;
             }
+          [md appendBytes: (void *)data length: count];
           
           long_offset += count / 4;
           if (data)
