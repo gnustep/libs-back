@@ -129,6 +129,23 @@ static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 
 
 
+@interface	Incremental : NSObject
+{
+  const char	*pname;
+  const char	*tname;
+@public
+  NSData	*data;
+  NSInteger	offset;
+  int		format;
+  int		chunk;
+  Atom		xType;
+  Window	window;
+  Atom		property;
+}
++ (Incremental*) incrProperty: (Atom)p forRequestor: (Window)w create: (BOOL)c;
+- (void) destroy;
+@end
+
 @interface	XPbOwner : NSObject
 {
   NSPasteboard	*_pb;
@@ -177,7 +194,7 @@ static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 #endif
 - (BOOL) xProvideSelection: (XSelectionRequestEvent*)xEvent;
 - (Time) xTimeByAppending;
-- (BOOL) xSendData: (unsigned char*) data format: (int) format 
+- (BOOL) xSendData: (NSData*) data format: (int) format 
 	     items: (int) numItems type: (Atom) xType
 		to: (Window) window property: (Atom) property;
 @end
@@ -461,11 +478,43 @@ static int              xFixesEventBase;
   o = [self ownerByXPb: xEvent->atom];
   if (o == nil)
     {
-      char *name = XGetAtomName(xDisplay, xEvent->atom);
-      NSDebugLLog(@"Pbs", @"Property notify for unknown property - '%s'.",
-                  name);
-      XFree(name);
-      return;
+      Incremental	*i;
+
+      i = [Incremental incrProperty: xEvent->atom
+		       forRequestor: xEvent->window
+			     create: NO];
+      if (i)
+	{
+	  if (PropertyDelete == xEvent->state)
+	    {
+	      NSUInteger	length = [i->data length];
+	      NSUInteger	remain = length - i->offset;
+	      NSUInteger	size = (remain > i->chunk) ? i->chunk : remain;
+
+	      NSDebugLLog(@"Pbs", @"Sending %@", i);
+	      XChangeProperty(xDisplay, i->window, i->property,
+		i->xType, i->format, PropModeReplace,
+		((const unsigned char *)[i->data bytes]) + i->offset,
+		(((int)size * 8) / i->format));
+	      i->offset += size;
+	      if (0 == size)
+		{
+		  /* We just sent the final (empty) part of the data.
+		   */
+		  NSDebugLLog(@"Pbs", @"Destroy %@", i);
+		  [i destroy];
+		}
+	    }
+	  return;
+	}
+      else
+	{
+	  char *name = XGetAtomName(xDisplay, xEvent->atom);
+	  NSDebugLLog(@"Pbs", @"Property notify for unknown property - '%s'.",
+		      name);
+	  XFree(name);
+	  return;
+	}
     }
 
   if (xEvent->window != (Window)xAppWin)
@@ -474,9 +523,10 @@ static int              xFixesEventBase;
       return;
     }
 
-  if (xEvent->time != 0)
+  if (xEvent->time > 0)
     {
-      NSDebugLLog(@"Pbs", @"Property notify time: %lu", (unsigned long)xEvent->time);
+      NSDebugLLog(@"Pbs",
+	@"Property append notify time: %lu", (unsigned long)xEvent->time);
       [o setTimeOfLastAppend: xEvent->time];
     }
 }
@@ -778,11 +828,33 @@ static int              xFixesEventBase;
   return _xPb;
 }
 
-static BOOL appendFailure;
+static BOOL		changePropertyFailure;
+static XErrorEvent	changePropertyError;
 static int
 xErrorHandler(Display *d, XErrorEvent *e)
 {
-  appendFailure = YES;
+  changePropertyFailure = YES;
+  changePropertyError = *e;
+
+  if (GSDebugSet(@"Pbs"))
+    {
+      char	buf[256];
+
+      buf[sizeof(buf)-1] = '\0';
+      XGetErrorText(d, e->error_code, buf, sizeof(buf)-1);
+      NSLog(@"xErrorHandler type %d: %s (%d)\n"
+	@"\tResource ID: 0x%lx\n"
+	@"\tSerial Num: %lu\n"
+	@"\tError code: %u\n"
+	@"\tRequest op code: %u major, %u minor",
+	e->type, buf, e->error_code,
+	e->resourceid,
+	e->serial,
+	e->error_code,
+	e->request_code,
+	e->minor_code);
+    }
+
   return 0;
 }
 
@@ -903,17 +975,17 @@ xErrorHandler(Display *d, XErrorEvent *e)
   do
     {
       status = XGetWindowProperty(xDisplay,
-                                  xEvent->requestor,
-                                  xEvent->property,
-                                  long_offset,         // offset
-                                  long_length,
-                                  False,               // Aug 2011 - changed to False (don't delete property)
-                                  req_type,
-                                  &actual_type,
-                                  &actual_format,
-                                  &number_items,
-                                  &bytes_remaining,
-                                  &data);
+	xEvent->requestor,
+	xEvent->property,
+	long_offset,         // offset
+	long_length,
+	False,               // Aug 2011 - changed to False (don't delete property)
+	req_type,
+	&actual_type,
+	&actual_format,
+	&number_items,
+	&bytes_remaining,
+	&data);
 
       if (GSDebugSet(@"Pbs"))
 	{
@@ -1214,9 +1286,18 @@ xErrorHandler(Display *d, XErrorEvent *e)
 {
   NSArray	*types = [_pb types];
   Atom		xType = XG_NULL;
-  unsigned char	*data = 0;
+  NSData	*data = nil;
   int		format = 0;
   int		numItems = 0;
+
+  if (GSDebugSet(@"Pbs"))
+    {
+      char *t = XGetAtomName(xDisplay, xEvent->target);
+
+      NSLog(@"xProvideSelection: %s (%lud)",
+	t, xEvent->target);
+      XFree(t);
+    }
 
   if (xEvent->target == XG_TARGETS)
     {
@@ -1265,65 +1346,44 @@ xErrorHandler(Display *d, XErrorEvent *e)
       xType = XA_ATOM;
       format = 32;
       numItems = numTypes;
-      data = malloc(numTypes*sizeof(Atom));
-      memcpy(data, xTypes, numTypes*sizeof(Atom));
+      data = [NSData dataWithBytes: (const void*)xTypes
+      			    length: numTypes*sizeof(Atom)];
     }
   else if (xEvent->target == XG_TIMESTAMP)
     {
       xType = XA_INTEGER;
       format = 32;
       numItems = 1;
-      data = malloc(sizeof(int));
-      memcpy(data, &_timeOfSetSelectionOwner, sizeof(int));      
+      data = [NSData dataWithBytes: (const void*)_timeOfSetSelectionOwner
+      			    length: sizeof(_timeOfSetSelectionOwner)];
     }
   else if (xEvent->target == XG_USER)
     {
-      NSString *s = NSUserName();
-      NSData *d = nil;
+      NSString	*s = NSUserName();
       
       xType = XG_TEXT;
       format = 8;
-      d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
-      if (d != nil)
-        {
-          numItems = [d length];
-          data = malloc(numItems + 1);
-          if (data)
-            [d getBytes: data];
-        }
+      data = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+      numItems = [data length];
     }
   else if (xEvent->target == XG_OWNER_OS)
     {
-      NSString *s = [[NSProcessInfo processInfo] operatingSystemName];
-      NSData *d = nil;
+      NSString	*s = [[NSProcessInfo processInfo] operatingSystemName];
       
       xType = XG_TEXT;
       format = 8;
-      d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
-      if (d != nil)
-        {
-          numItems = [d length];
-          data = malloc(numItems + 1);
-          if (data)
-            [d getBytes: data];
-        }
+      data = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+      numItems = [data length];
     }
   else if ((xEvent->target == XG_HOST_NAME) 
-           || (xEvent->target == XG_HOSTNAME))
+    || (xEvent->target == XG_HOSTNAME))
     {
-      NSString *s = [[NSProcessInfo processInfo] hostName];
-      NSData *d = nil;
+      NSString	*s = [[NSProcessInfo processInfo] hostName];
       
       xType = XG_TEXT;
       format = 8;
-      d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
-      if (d != nil)
-        {
-          numItems = [d length];
-          data = malloc(numItems + 1);
-          if (data)
-            [d getBytes: data];
-        }
+      data = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+      numItems = [data length];
     }
   else if (xEvent->target == AnyPropertyType)
     {
@@ -1398,10 +1458,10 @@ xErrorHandler(Display *d, XErrorEvent *e)
           }
       }
     }
-  else if ((xEvent->target == XG_COMPOUND_TEXT) &&
-	   [types containsObject: NSStringPboardType])
+  else if ((xEvent->target == XG_COMPOUND_TEXT)
+    && [types containsObject: NSStringPboardType])
     {
-      NSString *s = [_pb stringForType: NSStringPboardType];
+      NSString	*s = [_pb stringForType: NSStringPboardType];
       const char *d;
       int status;
 
@@ -1417,21 +1477,24 @@ xErrorHandler(Display *d, XErrorEvent *e)
                                              XCompoundTextStyle, &textProperty);
           if (status == Success)
             {
+	      NSMutableData	*m;
+
               NSAssert(textProperty.format == 8, @"textProperty.format == 8");
               numItems = textProperty.nitems;
-              data = malloc(numItems + 1);
-              memcpy(data, textProperty.value, numItems + 1);
+              m = [NSMutableData dataWithCapacity: numItems + 1];
+	      [m setLength: numItems + 1];
+              memcpy([m mutableBytes], textProperty.value, numItems + 1);
               XFree((void *)textProperty.value);
+	      data = m;
             }
         }
     }
-  else if (((xEvent->target == XG_UTF8_STRING) || 
-            (xEvent->target == XA_STRING) || 
-            (xEvent->target == XG_TEXT)) &&
-           [types containsObject: NSStringPboardType])
+  else if (((xEvent->target == XG_UTF8_STRING)
+      || (xEvent->target == XA_STRING)
+      || (xEvent->target == XG_TEXT))
+    && [types containsObject: NSStringPboardType])
     {
-      NSString *s = [_pb stringForType: NSStringPboardType];
-      NSData *d = nil;
+      NSString	*s = [_pb stringForType: NSStringPboardType];
 
       xType = xEvent->target;
       format = 8;
@@ -1442,75 +1505,48 @@ xErrorHandler(Display *d, XErrorEvent *e)
        */
       if (xType == XG_UTF8_STRING)
         {
-          d = [s dataUsingEncoding: NSUTF8StringEncoding];
+          data = [s dataUsingEncoding: NSUTF8StringEncoding];
         }
       else if ((xType == XA_STRING) || (xType == XG_TEXT))
         {
-          d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+          data = [s dataUsingEncoding: NSISOLatin1StringEncoding];
         }
 
-      if (d != nil)
-        {
-          numItems = [d length];
-          data = malloc(numItems + 1);
-          if (data)
-            [d getBytes: data];
-        }
+      numItems = [data length];
     }
-  else if ((xEvent->target == XG_FILE_NAME) &&
-	   [types containsObject: NSFilenamesPboardType])
+  else if ((xEvent->target == XG_FILE_NAME)
+    && [types containsObject: NSFilenamesPboardType])
     {
       NSArray	*names = [_pb propertyListForType: NSFilenamesPboardType];
-      NSString *file = [[names lastObject] stringByStandardizingPath];
-      NSURL *url = [[NSURL alloc] initWithScheme: NSURLFileScheme
-                                  host: @"localhost"
-                                  path: file];
-      NSString *s = [url absoluteString];
-      NSData *d;
+      NSString	*file = [[names lastObject] stringByStandardizingPath];
+      NSURL	*url = [[NSURL alloc] initWithScheme: NSURLFileScheme
+						host: @"localhost"
+						path: file];
+      NSString	*s = [url absoluteString];
 
       RELEASE(url);
-      d = [s dataUsingEncoding: NSISOLatin1StringEncoding];
+      data = [s dataUsingEncoding: NSISOLatin1StringEncoding];
       xType = xEvent->target;
       format = 8;
-      if (d != nil)
-        {
-          numItems = [d length];
-          data = malloc(numItems + 1);
-          if (data)
-            [d getBytes: data];
-        }
+      numItems = [data length];
     }
   else if (((xEvent->target == XG_MIME_RTF) 
-            || (xEvent->target == XG_MIME_APP_RTF)
-	    || (xEvent->target == XG_MIME_TEXT_RICHTEXT))
-           && [types containsObject: NSRTFPboardType])
+      || (xEvent->target == XG_MIME_APP_RTF)
+      || (xEvent->target == XG_MIME_TEXT_RICHTEXT))
+    && [types containsObject: NSRTFPboardType])
     {
-      NSData *d = [_pb dataForType: NSRTFPboardType];
-
+      data = [_pb dataForType: NSRTFPboardType];
       xType = xEvent->target;
       format = 8;
-      if (d != nil)
-        {
-          numItems = [d length];
-          data = malloc(numItems + 1);
-          if (data)
-            [d getBytes: data];
-        }
+      numItems = [data length];
     }
-  else if ((xEvent->target == XG_MIME_TIFF) &&
-	   [types containsObject: NSTIFFPboardType])
+  else if ((xEvent->target == XG_MIME_TIFF)
+    && [types containsObject: NSTIFFPboardType])
     {
-      NSData *d = [_pb dataForType: NSTIFFPboardType];
-
+      data = [_pb dataForType: NSTIFFPboardType];
       xType = xEvent->target;
       format = 8;
-      if (d != nil)
-        {
-          numItems = [d length];
-          data = malloc(numItems + 1);
-          if (data)
-            [d getBytes: data];
-        }
+      numItems = [data length];
     }
   // FIXME: Support more types
   else
@@ -1526,11 +1562,36 @@ xErrorHandler(Display *d, XErrorEvent *e)
                to: xEvent->requestor property: xEvent->property];
 }
 
-- (BOOL) xSendData: (unsigned char*) data format: (int) format 
+- (BOOL) xSendData: (NSData*) data format: (int) format 
              items: (int) numItems type: (Atom) xType
                 to: (Window) window property: (Atom) property
 {
-  BOOL status = NO;
+  static int32_t	chunk = 0;
+  BOOL			status = NO;
+
+  if (GSDebugSet(@"Pbs"))
+    {
+      char *t = XGetAtomName(xDisplay, xType);
+      char *p = XGetAtomName(xDisplay, property);
+
+      NSLog(@"xSendData:format:items:type:to:property:"
+	@" %d, %d, '%s' (%lu), %lu, '%s' (%lu)",
+	format, numItems, t, xType, window, p, property);
+      XFree(p);
+      XFree(t);
+    }
+
+  /* Assume properties ebigger than a quarter of the maximum
+   * request size need to use INCR (ICCCM section 2.5)
+   */
+  if (0 == chunk)
+    {
+      chunk = XExtendedMaxRequestSize(xDisplay) / 4;
+      if (0 == chunk)
+	{
+	  chunk = XMaxRequestSize(xDisplay) / 4;
+	}
+    }
   
   /*
    * If we have managed to convert data of the appropritate type, we must now
@@ -1539,34 +1600,38 @@ xErrorHandler(Display *d, XErrorEvent *e)
    * manager puts a limit on the data size we can use.
    * This is not thread-safe - but I think that's a general problem with X.
    */
-  if (data != 0 && numItems != 0 && format != 0)
+  if (data && numItems != 0 && format != 0)
     {
-      int	(*oldHandler)(Display*, XErrorEvent*);
-      int	mode = PropModeReplace;
-      int	pos = 0;
-      int	maxItems = 4096 * 8 / format;
+      int	maxItems = chunk * 8 / format;
 
-      appendFailure = NO;
-      oldHandler = XSetErrorHandler(xErrorHandler);
+      if (numItems > maxItems)
+	{
+	  Incremental	*i;
 
-      while (appendFailure == NO && pos < numItems)
-        {
-          if (pos + maxItems > numItems)
-            {
-              maxItems = numItems - pos;
-            }
+	  /* We have too much data to set in the property in one go,
+	   * so we use the INCR protocol to send chunks.
+	   */
+	  i = [Incremental incrProperty: property
+			   forRequestor: window
+				 create: YES];
+	  ASSIGN(i->data, data);
+	  i->offset = 0;
+	  i->format = format;
+	  i->chunk = chunk;
+	  i->xType = xType;
+
+	  NSDebugLLog(@"Pbs", @"Starting %@", i);
+
+	  XChangeProperty(xDisplay, window, property,
+	    XG_INCR, 32, PropModeReplace, (const unsigned char*)&chunk, 1);
+	}
+      else
+	{
           XChangeProperty(xDisplay, window, property,
-                          xType, format, mode, &data[pos*format/8], maxItems);
-          mode = PropModeAppend;
-          pos += maxItems;
-          XSync(xDisplay, False);
+	    xType, format, PropModeReplace,
+	    (const unsigned char *)[data bytes], numItems);
         }
-      free(data);
-      XSetErrorHandler(oldHandler);
-      if (appendFailure == NO)
-        {
-          status = YES;
-        }
+      status = YES;
     }
   return status;
 }
@@ -1635,6 +1700,78 @@ xErrorHandler(Display *d, XErrorEvent *e)
   return whenRequested;
 }
 
+@end
+
+@implementation	Incremental
+
+static NSMutableArray	*active = nil;
+
++ (Incremental*) incrProperty: (Atom)p forRequestor: (Window)w create: (BOOL)c
+{
+  NSUInteger	pos = [active count];
+  Incremental	*i = nil;
+
+  while (pos-- > 0)
+    {
+      i = [active objectAtIndex: pos]; 
+      if (i->window == w && i->property == p)
+	{
+	  return AUTORELEASE(RETAIN(i));
+	}
+    }
+  i = nil;
+  if (c)
+    {
+      if (nil == active)
+	{
+	  active = [NSMutableArray new];
+	}
+      i = [self new];
+      i->window = w;
+      i->property = p;
+      [active addObject: i];
+
+      /* We need property deletion events from the window.
+       */
+      XSelectInput(xDisplay, i->window, PropertyChangeMask);
+    }
+  return AUTORELEASE(i);
+}
+
+- (void) dealloc
+{
+  RELEASE(data);
+  if (pname) XFree((void*)pname);
+  if (tname) XFree((void*)tname);
+  DEALLOC
+}
+
+- (NSString*) description
+{
+  if (pname == NULL)
+    {
+      pname = XGetAtomName(xDisplay, property);
+    }
+  if (tname == NULL)
+    {
+      tname = XGetAtomName(xDisplay, xType);
+    }
+  return [NSString stringWithFormat:
+    @"<INCR %s %s window %lu offset %llu in %llu>",
+    tname, pname, window, (unsigned long long)offset, 
+    (unsigned long long)[data length]];
+}
+
+- (void) destroy
+{
+  if (window != xAppWin)
+    {
+      /* No longer interested in events from this window.
+       */
+      XSelectInput(xDisplay, xAppWin, 0);
+    }
+  [active removeObjectIdenticalTo: self];
+}
 @end
 
 
