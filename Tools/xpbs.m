@@ -129,11 +129,13 @@ static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 
 
 
+/* Encapsulate state information for incremental transfer of data to property.
+ */
 @interface	Incremental : NSObject
 {
+  NSTimeInterval	start;
   const char	*pname;
   const char	*tname;
-@public
   NSData	*data;
   NSInteger	offset;
   int		format;
@@ -142,8 +144,11 @@ static Atom atoms[sizeof(atom_names)/sizeof(char*)];
   Window	window;
   Atom		property;
 }
-+ (Incremental*) incrProperty: (Atom)p forRequestor: (Window)w create: (BOOL)c;
-- (void) destroy;
++ (Incremental*) findINCR: (Atom)p for: (Window)w;
++ (Incremental*) makeINCR: (Atom)p for: (Window)w;
+- (void) abort;
+- (void) propertyDeleted;
+- (void) setData: (NSData*)d type: (Atom)t format: (int)f chunk: (int)c;
 @end
 
 @interface	XPbOwner : NSObject
@@ -480,30 +485,12 @@ static int              xFixesEventBase;
     {
       Incremental	*i;
 
-      i = [Incremental incrProperty: xEvent->atom
-		       forRequestor: xEvent->window
-			     create: NO];
+      i = [Incremental findINCR: xEvent->atom for: xEvent->window];
       if (i)
 	{
 	  if (PropertyDelete == xEvent->state)
 	    {
-	      NSUInteger	length = [i->data length];
-	      NSUInteger	remain = length - i->offset;
-	      NSUInteger	size = (remain > i->chunk) ? i->chunk : remain;
-
-	      NSDebugLLog(@"Pbs", @"Sending %@", i);
-	      XChangeProperty(xDisplay, i->window, i->property,
-		i->xType, i->format, PropModeReplace,
-		((const unsigned char *)[i->data bytes]) + i->offset,
-		(((int)size * 8) / i->format));
-	      i->offset += size;
-	      if (0 == size)
-		{
-		  /* We just sent the final (empty) part of the data.
-		   */
-		  NSDebugLLog(@"Pbs", @"Destroy %@", i);
-		  [i destroy];
-		}
+	      [i propertyDeleted];
 	    }
 	  return;
 	}
@@ -1610,17 +1597,15 @@ xErrorHandler(Display *d, XErrorEvent *e)
 
 	  /* We have too much data to set in the property in one go,
 	   * so we use the INCR protocol to send chunks.
+	   * If there's a transfer in progress, we need to restart,
+	   * otherwise we create a new one.
 	   */
-	  i = [Incremental incrProperty: property
-			   forRequestor: window
-				 create: YES];
-	  ASSIGN(i->data, data);
-	  i->offset = 0;
-	  i->format = format;
-	  i->chunk = chunk;
-	  i->xType = xType;
-
-	  NSDebugLLog(@"Pbs", @"Starting %@", i);
+	  i = [Incremental findINCR: property for: window];
+	  if (nil == i)
+	    {
+	      i = [Incremental makeINCR: property for: window];
+	    }
+	  [i setData: data type: xType format: format chunk: chunk];
 
 	  XChangeProperty(xDisplay, window, property,
 	    XG_INCR, 32, PropModeReplace, (const unsigned char*)&chunk, 1);
@@ -1706,36 +1691,56 @@ xErrorHandler(Display *d, XErrorEvent *e)
 
 static NSMutableArray	*active = nil;
 
-+ (Incremental*) incrProperty: (Atom)p forRequestor: (Window)w create: (BOOL)c
++ (Incremental*) findINCR: (Atom)p for: (Window)w
 {
-  NSUInteger	pos = [active count];
-  Incremental	*i = nil;
+  NSUInteger		pos = [active count];
+  NSTimeInterval	now = [NSDate timeIntervalSinceReferenceDate];
 
   while (pos-- > 0)
     {
-      i = [active objectAtIndex: pos]; 
+      Incremental	*i = [active objectAtIndex: pos]; 
+
       if (i->window == w && i->property == p)
 	{
 	  return AUTORELEASE(RETAIN(i));
 	}
-    }
-  i = nil;
-  if (c)
-    {
-      if (nil == active)
+      if (now - i->start > 60.0)
 	{
-	  active = [NSMutableArray new];
+	  [i abort];
 	}
-      i = [self new];
-      i->window = w;
-      i->property = p;
-      [active addObject: i];
-
-      /* We need property deletion events from the window.
-       */
-      XSelectInput(xDisplay, i->window, PropertyChangeMask);
     }
+  return nil;
+}
+
++ (Incremental*) makeINCR: (Atom)p for: (Window)w
+{
+  Incremental	*i = [self new];
+
+  i->window = w;
+  i->property = p;
+  if (nil == active)
+    {
+      active = [NSMutableArray new];
+    }
+  [active addObject: i];
+
+  /* We need property deletion events from the window.
+   */
+  XSelectInput(xDisplay, i->window, PropertyChangeMask);
   return AUTORELEASE(i);
+}
+
+- (void) abort
+{
+  NSDebugLLog(@"Pbs", @"Aborting %@", self);
+  XChangeProperty(xDisplay, window, property,
+    xType, format, PropModeReplace,
+    (const unsigned char *)"", 0);
+  if (window != xAppWin)
+    {
+      XSelectInput(xDisplay, window, 0);
+    }
+  [active removeObjectIdenticalTo: self];
 }
 
 - (void) dealloc
@@ -1762,16 +1767,48 @@ static NSMutableArray	*active = nil;
     (unsigned long long)[data length]];
 }
 
-- (void) destroy
+/* When the other end deletes the property we can add a new chunk of data.
+ * After the last chunk of data, we add an empty chunk to mark the end of
+ * the transfer.
+ */
+- (void) propertyDeleted
 {
-  if (window != xAppWin)
+  NSUInteger	length = [data length];
+  NSUInteger	remain = length - offset;
+  NSUInteger	size = (remain > chunk) ? chunk : remain;
+
+  NSDebugLLog(@"Pbs", @"Sending %@", self);
+  XChangeProperty(xDisplay, window, property,
+    xType, format, PropModeReplace,
+    ((const unsigned char *)[data bytes]) + offset,
+    (((int)size * 8) / format));
+  offset += size;
+  if (0 == size)
     {
-      /* No longer interested in events from this window.
+      /* We just sent the final (empty) part of the data.
        */
-      XSelectInput(xDisplay, xAppWin, 0);
+      NSDebugLLog(@"Pbs", @"Completed %@", self);
+      if (window != xAppWin)
+	{
+	  /* No longer interested in events from this window.
+	   */
+	  XSelectInput(xDisplay, window, 0);
+	}
+      [active removeObjectIdenticalTo: self];
     }
-  [active removeObjectIdenticalTo: self];
 }
+
+- (void) setData: (NSData*)d type: (Atom)t format: (int)f chunk: (int)c
+{
+  start = [NSDate timeIntervalSinceReferenceDate];
+  ASSIGN(data, d);
+  offset = 0;
+  format = f;
+  chunk = c;
+  xType = t;
+  NSDebugLLog(@"Pbs", @"Starting %@", self);
+}
+
 @end
 
 
