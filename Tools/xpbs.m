@@ -133,21 +133,36 @@ static Atom atoms[sizeof(atom_names)/sizeof(char*)];
  */
 @interface	Incremental : NSObject
 {
-  NSTimeInterval	start;
-  const char	*pname;
-  const char	*tname;
-  NSData	*data;
-  NSInteger	offset;
-  int		format;
-  int		chunk;
-  Atom		xType;
-  Window	window;
-  Atom		property;
+  NSTimeInterval	start;		/* Timestamp start of transfer */
+  const char		*pname;		/* The target property name */
+  const char		*tname; 	/* The data type */
+  NSData		*data;		/* Data to be transferred */
+  NSInteger		offset;		/* Bytes sent so far */
+  int			format;		/* X format; 8, 16, or 32 bit values */
+  int			chunk;		/* Max bytes per change */
+  Atom			xType;		/* The data type atom */
+  Atom			property;	/* The property atom */
+  Window		window;		/* The target window */
 }
+
+/* Find an active transfer object for a trget property and window.
+ */
 + (Incremental*) findINCR: (Atom)p for: (Window)w;
+
+/* Create an active transfer object for a trget property and window.
+ */
 + (Incremental*) makeINCR: (Atom)p for: (Window)w;
+
+/* Abort a transfer by setting the target property to an empty value.
+ */
 - (void) abort;
+
+/* deal with a property deletion event ... transfer the next chunk.
+ */
 - (void) propertyDeleted;
+
+/* Set up a transfer.
+ */
 - (void) setData: (NSData*)d type: (Atom)t format: (int)f chunk: (int)c;
 @end
 
@@ -223,7 +238,9 @@ static Window		xAppWin;
 static NSMapTable	*ownByX;
 static NSMapTable	*ownByO;
 static NSString		*xWaitMode = @"XPasteboardWaitMode";
+#if HAVE_XFIXES
 static int              xFixesEventBase;
+#endif
 
 @implementation	XPbOwner
 
@@ -964,9 +981,9 @@ xErrorHandler(Display *d, XErrorEvent *e)
       status = XGetWindowProperty(xDisplay,
 	xEvent->requestor,
 	xEvent->property,
-	long_offset,         // offset
+	long_offset,
 	long_length,
-	False,               // Aug 2011 - changed to False (don't delete property)
+	True,			// delete after read (iff bytes_remaining == 0)
 	req_type,
 	&actual_type,
 	&actual_format,
@@ -1077,8 +1094,9 @@ xErrorHandler(Display *d, XErrorEvent *e)
           BOOL		wait = YES;
 	  int32_t	size;
 
-	  // Need to delete the property to start transfer
-	  XDeleteProperty(xDisplay, xEvent->requestor, xEvent->property);
+	  /* The -getSelectionData:type:size: method already deleted the
+	   * property so the remote end should know it can start sending.
+	   */
 	  memcpy(&size, [md bytes], 4);
 	  NSDebugMLLog(@"INCR",
 	    @"Size for INCR chunks is %u bytes.", (unsigned)size);
@@ -1096,14 +1114,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
                   imd = [self getSelectionData: xEvent
 					  type: &actual_type
 					  size: size];
-
-		  /* Delete the property to get the next transfer chunk
-		   * or clean up if the end of transfer was indicated by
-		   * an empty chunk.
+		  /* Getting the property data also deletes the property,
+		   * telling the other end to send the next chunk.
+		   * An empty chunk indicates end of transfer.
 		   */
-		  XDeleteProperty(xDisplay,
-		    xEvent->requestor, xEvent->property);
-                  if (imd != nil)
+                  if ([imd length] > 0)
                     {
 		      if (GSDebugSet(@"INCR"))
 			{
@@ -1332,9 +1347,29 @@ xErrorHandler(Display *d, XErrorEvent *e)
 
       xType = XA_ATOM;
       format = 32;
-      numItems = numTypes;
       data = [NSData dataWithBytes: (const void*)xTypes
       			    length: numTypes*sizeof(Atom)];
+      numItems = numTypes;
+      if (GSDebugSet(@"Pbs"))
+	{
+	  NSMutableString	*m;
+	  int			i;
+	  Atom			*a = (Atom*)[data bytes];  
+
+	  m = [NSMutableString stringWithCapacity: numItems * 20];
+	  for (i = 0; i < numItems; i++)
+	    {
+	      char	*t = XGetAtomName(xDisplay, a[i]);
+	
+	      if (i > 0)
+		{
+		  [m appendString: @","];
+		}
+	      [m appendFormat: @"%s", t];
+	      XFree(t);
+	    }
+	  NSLog(@"TARGETS supplies %@ for %@", m, types);
+	}
     }
   else if (xEvent->target == XG_TIMESTAMP)
     {
@@ -1568,7 +1603,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
       XFree(t);
     }
 
-  /* Assume properties ebigger than a quarter of the maximum
+  /* Assume properties bigger than a quarter of the maximum
    * request size need to use INCR (ICCCM section 2.5)
    */
   if (0 == chunk)
