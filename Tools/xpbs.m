@@ -940,6 +940,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	}
     }
 
+  NSDebugLLog(@"Pbs", @"Available types: %@ ", types);
   return types;
 }
 
