@@ -958,12 +958,14 @@ xErrorHandler(Display *d, XErrorEvent *e)
   [self setOwnedByOpenStep: NO];
 }
 
-- (NSMutableData*) getSelectionData: (XSelectionEvent*)xEvent
-                               type: (Atom*)type
-			       size: (long)max
+- (long) getSelectionData: (XSelectionEvent*)xEvent
+		     type: (Atom*)type
+		     size: (long)max
+		     into: (NSMutableData*)md
 {
   int		status;
   unsigned char	*data;
+  long		bytes_added = 0L;
   long		long_offset = 0L;
   long 		long_length = FULL_LENGTH;
   Atom 		req_type = AnyPropertyType;
@@ -971,7 +973,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
   int		actual_format;
   unsigned long	bytes_remaining;
   unsigned long	number_items;
-  NSMutableData	*md = nil;
+  BOOL		initial = YES;
 
   if (max > long_length) long_length = max;
   /*
@@ -1016,12 +1018,20 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	      count = number_items * actual_format / 8;
 	    }
             
-          if (md == nil)
+          if (initial)
             {
+	      NSUInteger	capacity = [md capacity];
+	      int		space = capacity - [md length];
+	      int		need = count + bytes_remaining;
+
 	      /* data buffer needs to be big enough for the whole property
 	       */
-              md = [[NSMutableData alloc]
-		initWithCapacity: count + bytes_remaining];
+	      initial = NO;
+	      if (space < need)
+		{
+		  capacity += need - space;
+		  [md setCapacity: capacity];
+		}
               req_type = actual_type;
             }
           else if (req_type != actual_type)
@@ -1033,15 +1043,14 @@ xErrorHandler(Display *d, XErrorEvent *e)
 		    req_name, act_name);
 	      XFree(req_name);
 	      XFree(act_name);
-	      RELEASE(md);
 	      if (data)
 		{
 		  XFree(data);
 		}
-	      return nil;
+	      return 0;
             }
           [md appendBytes: (void *)data length: count];
-          
+          bytes_added += count;
           long_offset += count / 4;
           if (data)
             {
@@ -1054,19 +1063,18 @@ xErrorHandler(Display *d, XErrorEvent *e)
   if (status == Success)
     {
       *type = actual_type;
-      return AUTORELEASE(md);
+      return bytes_added;
     }
   else
     {
-      RELEASE(md);
-      return nil;
+      return 0;
     }
 }
 
 - (void) xSelectionNotify: (XSelectionEvent*)xEvent
 {
   Atom actual_type;
-  NSMutableData	*md = nil;
+  NSMutableData	*md;
 
   if (xEvent->property == (Atom)None)
     {
@@ -1083,9 +1091,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
     }
   [self setWaitingForSelection: 0];
 
-  md = [self getSelectionData: xEvent type: &actual_type size: 0];
-
-  if (md != nil)
+  md = [NSMutableData dataWithCapacity: FULL_LENGTH];
+  if ([self getSelectionData: xEvent type: &actual_type size: 0 into: md] > 0)
     {
       unsigned	count = 0;
 
@@ -1102,6 +1109,15 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	  NSDebugMLLog(@"INCR",
 	    @"Size for INCR chunks is %u bytes.", (unsigned)size);
           [md setLength: 0];
+
+	  /* We expect to read multiple chunks, so to avoid excessive
+	   * reallocation of memory we grow the buffer to be big enough
+	   * to hold ten of them.
+	   */
+	  if (size * 10 > [md capacity])
+	    {
+	      [md setCapacity: size * 10];
+	    }
           while (wait)
             {
               XNextEvent(xDisplay, &event);
@@ -1109,34 +1125,30 @@ xErrorHandler(Display *d, XErrorEvent *e)
               if (event.type == PropertyNotify
 	        && event.xproperty.state == PropertyNewValue)
                 {
-		  ENTER_POOL
-		  NSMutableData	*imd;
+		  long	length;
 
-                  imd = [self getSelectionData: xEvent
-					  type: &actual_type
-					  size: size];
 		  /* Getting the property data also deletes the property,
 		   * telling the other end to send the next chunk.
 		   * An empty chunk indicates end of transfer.
 		   */
-                  if ([imd length] > 0)
+                  if ((length = [self getSelectionData: xEvent
+						  type: &actual_type
+						  size: size
+						  into: md]) > 0)
                     {
 		      if (GSDebugSet(@"INCR"))
 			{
 			  char *name = XGetAtomName(xDisplay, actual_type);
-			  NSLog(@"Retrieved %lu bytes type '%s'"
-			    @" from X selection.", 
-			    (unsigned long)[imd length], name);
+			  NSLog(@"Retrieved %ld bytes type '%s'"
+			    @" from X selection.", length, name);
 			  XFree(name);
 			}
 		      count++;
-		      [md appendData: imd];
                     }
                   else
                     {
                       wait = NO;
                     }
-		  LEAVE_POOL
                 }
             }
 	  if ([md length] == 0)
@@ -1164,7 +1176,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	}
     }
   
-  if (md != nil)
+  if ([md length] > 0)
     {
       // Convert data to text string.
       if (actual_type == XG_UTF8_STRING)
