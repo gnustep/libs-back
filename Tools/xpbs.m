@@ -905,7 +905,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	|| (type == XG_MIME_PLAIN))
         {
 	  if (nil == txt)
-	    txt = [NSMutableString stringWithFormat: @" string:%s", name];
+	    txt = [NSMutableString stringWithFormat: @"\n\tstring:%s", name];
 	  else
 	    [txt appendFormat: @",%s", name];
           [types addObject: NSStringPboardType];
@@ -919,7 +919,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
         || (type == XG_MIME_TEXT_RICHTEXT))
         {
 	  if (nil == rtf)
-	    rtf = [NSMutableString stringWithFormat: @" rich-text:%s", name];
+	    rtf = [NSMutableString stringWithFormat: @"\n\trich-text:%s", name];
 	  else
 	    [rtf appendFormat: @",%s", name];
           [types addObject: NSRTFPboardType];
@@ -938,7 +938,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	{
 	  // Standard types
 	  if (nil == std)
-	    std = [NSMutableString stringWithFormat: @" standard:%s", name];
+	    std = [NSMutableString stringWithFormat: @"\n\tstandard:%s", name];
 	  else
 	    [std appendFormat: @",%s", name];
         }
@@ -946,7 +946,10 @@ xErrorHandler(Display *d, XErrorEvent *e)
       else
 	{
 	  if (nil == bad)
-	    bad = [NSMutableString stringWithFormat: @" unsupported:%s", name];
+	    {
+	      bad = [NSMutableString stringWithFormat:
+		@"\n\tunsupported:%s", name];
+	    }
 	  else
 	    [bad appendFormat: @",%s", name];
           // FIXME: We should rather add this type to the
@@ -955,7 +958,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
       XFree(name);
     }
 
-  NSDebugLLog(@"Pbs", @"%@ availableTypes: %d types available: %@%@%@%@%@",
+  NSDebugLLog(@"Pbs", @"%@ availableTypes: %d types\n\tavailable: %@%@%@%@%@",
     [[self osPb] name], count, types,
     (txt ? txt : @""), (rtf ? rtf : @""), (std ? std : @""), (bad ? bad : @""));
 
