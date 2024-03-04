@@ -869,11 +869,15 @@ xErrorHandler(Display *d, XErrorEvent *e)
  */
 - (NSArray*) availableTypes
 {
-  NSMutableArray *types;
-  NSData *data;
-  unsigned int count;
-  unsigned int i;
-  Atom *targets;
+  NSMutableArray	*types;
+  NSData 		*data;
+  NSMutableString	*txt = nil;
+  NSMutableString	*rtf = nil;
+  NSMutableString	*std = nil;
+  NSMutableString	*bad = nil;
+  unsigned int		count;
+  unsigned int		i;
+  Atom			*targets;
 
   NSDebugLLog(@"Pbs", @"%@ availableTypes called", [[self osPb] name]);
 
@@ -887,20 +891,23 @@ xErrorHandler(Display *d, XErrorEvent *e)
   targets = (Atom*)[data bytes];
   types = [NSMutableArray arrayWithCapacity: count];
 
-  NSDebugLLog(@"Pbs", @"%@ availableTypes: %d types available",
-    [[self osPb] name], count);
-
   for (i = 0; i < count; i++)
     {
-      Atom type;
+      Atom 	type;
+      char	*name;
 
       type = targets[i];
+      name = XGetAtomName(xDisplay, type);
 
       if ((type == XG_UTF8_STRING) 
-          || (type == XA_STRING)
-          || (type == XG_TEXT)
-          || (type == XG_MIME_PLAIN))
+	|| (type == XA_STRING)
+	|| (type == XG_TEXT)
+	|| (type == XG_MIME_PLAIN))
         {
+	  if (nil == txt)
+	    txt = [NSMutableString stringWithFormat: @" string:%s", name];
+	  else
+	    [txt appendFormat: @",%s", name];
           [types addObject: NSStringPboardType];
         }
       else if (type == XG_FILE_NAME)
@@ -911,6 +918,10 @@ xErrorHandler(Display *d, XErrorEvent *e)
         || (type == XG_MIME_APP_RTF)
         || (type == XG_MIME_TEXT_RICHTEXT))
         {
+	  if (nil == rtf)
+	    rtf = [NSMutableString stringWithFormat: @" rich-text:%s", name];
+	  else
+	    [rtf appendFormat: @",%s", name];
           [types addObject: NSRTFPboardType];
         }
       else if (type == XG_MIME_TIFF)
@@ -918,29 +929,36 @@ xErrorHandler(Display *d, XErrorEvent *e)
           [types addObject: NSTIFFPboardType];
         }
       else if ((type == XG_TARGETS)
-               || (type == XG_TIMESTAMP)
-               || (type == XG_OWNER_OS)
-               || (type == XG_USER)
-               || (type == XG_HOST_NAME)
-               || (type == XG_HOSTNAME)
-               || (type == XG_MULTIPLE))
-        {
-            // Standard types
+	|| (type == XG_TIMESTAMP)
+	|| (type == XG_OWNER_OS)
+	|| (type == XG_USER)
+	|| (type == XG_HOST_NAME)
+	|| (type == XG_HOSTNAME)
+	|| (type == XG_MULTIPLE))
+	{
+	  // Standard types
+	  if (nil == std)
+	    std = [NSMutableString stringWithFormat: @" standard:%s", name];
+	  else
+	    [std appendFormat: @",%s", name];
         }
       // FIXME: Support more types
       else
 	{
-          char *name = XGetAtomName(xDisplay, type);
-
+	  if (nil == bad)
+	    bad = [NSMutableString stringWithFormat: @" unsupported:%s", name];
+	  else
+	    [bad appendFormat: @",%s", name];
           // FIXME: We should rather add this type to the
           // pasteboard as a string.
-          NSDebugLLog(@"Pbs", @"Unsupported selection type '%s' available", 
-                      name);
-          XFree(name);
 	}
+      XFree(name);
     }
 
-  NSDebugLLog(@"Pbs", @"Available types: %@ ", types);
+  NSDebugLLog(@"Pbs", @"%@ availableTypes: %d types available: %@%@%@%@%@",
+    [[self osPb] name], count, types,
+    (txt ? txt : @""), (rtf ? rtf : @""), (std ? std : @""), (bad ? bad : @""));
+
   return types;
 }
 
