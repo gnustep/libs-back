@@ -789,6 +789,11 @@ static int              xFixesEventBase;
       NSDebugLLog(@"Pbs", @"pasteboard: provideDataForType: - requestData XG_MIME_TIFF");
       [self requestData: XG_MIME_TIFF];
     }
+  else if ([type isEqual: NSPasteboardTypePNG])
+    {
+      NSDebugLLog(@"Pbs", @"pasteboard: provideDataForType: - requestData XG_MIME_PNG");
+      [self requestData: XG_MIME_PNG];
+    }
   // FIXME: Support more types
   else
     {
@@ -928,6 +933,10 @@ xErrorHandler(Display *d, XErrorEvent *e)
         {
           [types addObject: NSTIFFPboardType];
         }
+      else if (type == XG_MIME_PNG)
+        {
+          [types addObject: NSPasteboardTypePNG];
+        }
       else if ((type == XG_TARGETS)
 	|| (type == XG_TIMESTAMP)
 	|| (type == XG_OWNER_OS)
@@ -955,9 +964,10 @@ xErrorHandler(Display *d, XErrorEvent *e)
       XFree(name);
     }
 
-  NSDebugLLog(@"Pbs", @"%@ availableTypes: %d types available: %@%@%@%@%@",
-    [[self osPb] name], count, types,
-    (txt ? txt : @""), (rtf ? rtf : @""), (std ? std : @""), (bad ? bad : @""));
+  NSDebugLLog(@"Pbs", @"%@ availableTypes: %d types available: ",
+              [[self osPb] name], count, types);
+  NSDebugLLog(@"Pbs", @"\t%@\n\t%@\n\t%@\n\t%@",
+              (txt ? (NSString *)txt : @""), (rtf ? (NSString *)rtf : @""), (std ? (NSString *)std : @""), (bad ? (NSString *)bad : @""));
 
   return types;
 }
@@ -1257,6 +1267,10 @@ xErrorHandler(Display *d, XErrorEvent *e)
         {
           [self setData: md];
         }
+      else if (actual_type == XG_MIME_PNG)
+        {
+          [self setData: md];
+        }
       else if (actual_type == XA_ATOM)
         {
           // Used when requesting TARGETS to get available types
@@ -1374,6 +1388,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
       if ([types containsObject: NSTIFFPboardType])
         {
           xTypes[numTypes++] = XG_MIME_TIFF;
+        }
+
+      if ([types containsObject: NSPasteboardTypePNG])
+        {
+          xTypes[numTypes++] = XG_MIME_PNG;
         }
 
       xType = XA_ATOM;
@@ -1597,6 +1616,14 @@ xErrorHandler(Display *d, XErrorEvent *e)
     && [types containsObject: NSTIFFPboardType])
     {
       data = [_pb dataForType: NSTIFFPboardType];
+      xType = xEvent->target;
+      format = 8;
+      numItems = [data length];
+    }
+  else if ((xEvent->target == XG_MIME_PNG)
+    && [types containsObject: NSPasteboardTypePNG])
+    {
+      data = [_pb dataForType: NSPasteboardTypePNG];
       xType = xEvent->target;
       format = 8;
       numItems = [data length];
