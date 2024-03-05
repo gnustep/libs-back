@@ -811,9 +811,16 @@ static int              xFixesEventBase;
 
 - (void) pasteboard: (NSPasteboard*)pb provideDataForType: (NSString*)type
 {
+  Atom	xType = 0;
+  BOOL	debug = GSDebugSet(@"Pbs");
+
+  if (debug)
+    {
+      NSLog(@"Enter [%@ -pasteboard:provideDataForType:] %@, %@",
+	[[self osPb] name], pb, type);
+    }
   [self setData: nil];
 
-  NSDebugLLog(@"Pbs", @"pasteboard: provideDataForType:%@", type);
   /*
    *	If this gets called, a GNUstep object wants the pasteboard contents
    *	and a plain old X application is providing them, so we must grab
@@ -821,30 +828,30 @@ static int              xFixesEventBase;
    */
   if ([type isEqual: NSStringPboardType])
     {
-      [self requestData: XG_UTF8_STRING];
+      [self requestData: (xType = XG_UTF8_STRING)];
       if ([self data] == nil)
-        [self requestData: XG_MIME_UTF8];
+        [self requestData: (xType = XG_MIME_UTF8)];
       if ([self data] == nil)
-        [self requestData: XA_STRING];
+        [self requestData: (xType = XA_STRING)];
       if ([self data] == nil)
-        [self requestData: XG_TEXT];
+        [self requestData: (xType = XG_TEXT)];
     }
   else if ([type isEqual: NSFilenamesPboardType])
     {
-      [self requestData: XG_FILE_NAME];
+      [self requestData: (xType = XG_FILE_NAME)];
     }
   else if ([type isEqual: NSRTFPboardType])
     {
-      [self requestData: XG_MIME_RTF];
+      [self requestData: (xType = XG_MIME_RTF)];
       if ([self data] == nil)
-        [self requestData: XG_MIME_APP_RTF];
+        [self requestData: (xType = XG_MIME_APP_RTF)];
       if ([self data] == nil)
-        [self requestData: XG_MIME_TEXT_RICHTEXT];
+        [self requestData: (xType = XG_MIME_TEXT_RICHTEXT)];
     }
   else if ([type isEqual: NSTIFFPboardType])
     {
       NSDebugLLog(@"Pbs", @"pasteboard: provideDataForType: - requestData XG_MIME_TIFF");
-      [self requestData: XG_MIME_TIFF];
+      [self requestData: (xType = XG_MIME_TIFF)];
     }
   // FIXME: Support more types
   else
@@ -852,6 +859,14 @@ static int              xFixesEventBase;
       NSDebugLLog(@"Pbs", @"Request for non-string info from X pasteboard: %@", type);
     }
   [pb setData: [self data] forType: type];
+  if (debug)
+    {
+      char	*name = XGetAtomName(xDisplay, xType);
+
+      NSLog(@"Exit [%@ -pasteboard:provideDataForType:] %s",
+	[[self osPb] name], name);
+      XFree(name);
+    }
 }
 
 - (void) setData: (NSData*)obj
@@ -939,7 +954,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
 
   if (debug)
     {
-      NSLog(@"%@ -availableTypes entry", [[self osPb] name]);
+      NSLog(@"Enter [%@ -availableTypes]", [[self osPb] name]);
     }
 
   [self setData: nil];
@@ -949,7 +964,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
     {
       if (debug)
 	{
-	  NSLog(@"%@ -availableTypes exit: 0", [[self osPb] name]);
+	  NSLog(@"Exit [%@ -availableTypes]\n\tNo types found.",
+	    [[self osPb] name]);
 	}
       return [NSArray array];
     }
@@ -1003,11 +1019,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
 
   if (debug)
     {
-      NSLog(@"%@ -availableTypes exit: %u\n"
-	@"\tmapped: %u, duplicates: %u, standard: %u, unsupported: %u\n"
+      NSLog(@"Exit [%@ -availableTypes]\n"
+	@"\tmapped:%u, duplicates:%u, standard:%u, unsupported:%u, total:%u\n"
 	@"\tavailable: %@\n\tunsupported: (%@)",
-	[[self osPb] name], count,
-	(unsigned)[types count], duplicates, standard, unsupported,
+	[[self osPb] name], (unsigned)[types count],
+	duplicates, standard, unsupported, (unsigned)count,
 	types, bad ? (id)bad : (id)@"");
     }
 
