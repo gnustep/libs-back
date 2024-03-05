@@ -82,7 +82,8 @@ static char *atom_names[] = {
   "image/png",
   "image/svg",
   "application/rtf",
-  "text/richtext"
+  "text/richtext",
+  "text/plain;charset=utf-8"
 };
 static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 
@@ -126,6 +127,60 @@ static Atom atoms[sizeof(atom_names)/sizeof(char*)];
 #define XG_MIME_SVG       atoms[33]
 #define XG_MIME_APP_RTF   atoms[34]
 #define XG_MIME_TEXT_RICHTEXT atoms[35]
+#define XG_MIME_UTF8		atoms[36]
+
+/** Return the GNUstep pasteboard type corresponding to the given atom
+ * or nil if there is no corresponding type.
+ * As a special case, return an empty string for special pasteboard types
+ * that supply X system information.
+ */
+static NSString *
+NSPasteboardTypeFromAtom(Atom type)
+{
+  if (XG_UTF8_STRING == type
+    || XA_STRING == type
+    || XG_TEXT == type
+    || XG_MIME_PLAIN == type
+    || XG_MIME_UTF8 == type)
+    {
+      return NSStringPboardType;
+    }
+
+  if (XG_FILE_NAME == type)
+    {
+      return NSFilenamesPboardType;
+    }
+
+  if (XG_MIME_RTF == type
+    || XG_MIME_APP_RTF == type
+    || XG_MIME_TEXT_RICHTEXT == type)
+    {
+      return NSRTFPboardType;
+    }
+
+  if (XG_MIME_PNG == type)
+    {
+      return NSPasteboardTypePNG;
+    }
+
+  if (XG_MIME_TIFF == type)
+    {
+      return NSTIFFPboardType;
+    }
+
+  if (XG_TARGETS == type
+    || XG_TIMESTAMP == type
+    || XG_OWNER_OS == type
+    || XG_USER == type
+    || XG_HOST_NAME == type
+    || XG_HOSTNAME == type
+    || XG_MULTIPLE == type)
+    {
+      return @"";	// X standard type
+    }
+
+  return nil;		// Unsupported type
+}
 
 
 
@@ -768,6 +823,8 @@ static int              xFixesEventBase;
     {
       [self requestData: XG_UTF8_STRING];
       if ([self data] == nil)
+        [self requestData: XG_MIME_UTF8];
+      if ([self data] == nil)
         [self requestData: XA_STRING];
       if ([self data] == nil)
         [self requestData: XG_TEXT];
@@ -871,21 +928,31 @@ xErrorHandler(Display *d, XErrorEvent *e)
 {
   NSMutableArray	*types;
   NSData 		*data;
-  NSMutableString	*txt = nil;
-  NSMutableString	*rtf = nil;
-  NSMutableString	*std = nil;
+  unsigned		duplicates = 0;
+  unsigned		standard = 0;
+  unsigned		unsupported = 0;
   NSMutableString	*bad = nil;
   unsigned int		count;
   unsigned int		i;
   Atom			*targets;
+  BOOL			debug = GSDebugSet(@"Pbs");
 
-  NSDebugLLog(@"Pbs", @"%@ availableTypes called", [[self osPb] name]);
+  if (debug)
+    {
+      NSLog(@"%@ -availableTypes entry", [[self osPb] name]);
+    }
 
   [self setData: nil];
   [self requestData: XG_TARGETS];
   data = [self data];
-  if (data == nil)
-    return [NSArray arrayWithObject: NSStringPboardType];
+  if (nil == data)
+    {
+      if (debug)
+	{
+	  NSLog(@"%@ -availableTypes exit: 0", [[self osPb] name]);
+	}
+      return [NSArray array];
+    }
 
   count = [data length] / sizeof(Atom);
   targets = (Atom*)[data bytes];
@@ -893,74 +960,56 @@ xErrorHandler(Display *d, XErrorEvent *e)
 
   for (i = 0; i < count; i++)
     {
+      NSString	*pbType;
       Atom 	type;
-      char	*name;
 
       type = targets[i];
-      name = XGetAtomName(xDisplay, type);
-
-      if ((type == XG_UTF8_STRING) 
-	|| (type == XA_STRING)
-	|| (type == XG_TEXT)
-	|| (type == XG_MIME_PLAIN))
-        {
-	  if (nil == txt)
-	    txt = [NSMutableString stringWithFormat: @"\n\tstring:%s", name];
-	  else
-	    [txt appendFormat: @",%s", name];
-          [types addObject: NSStringPboardType];
-        }
-      else if (type == XG_FILE_NAME)
-        {
-          [types addObject: NSFilenamesPboardType];
-        }
-      else if ((type == XG_MIME_RTF)
-        || (type == XG_MIME_APP_RTF)
-        || (type == XG_MIME_TEXT_RICHTEXT))
-        {
-	  if (nil == rtf)
-	    rtf = [NSMutableString stringWithFormat: @"\n\trich-text:%s", name];
-	  else
-	    [rtf appendFormat: @",%s", name];
-          [types addObject: NSRTFPboardType];
-        }
-      else if (type == XG_MIME_TIFF)
-        {
-          [types addObject: NSTIFFPboardType];
-        }
-      else if ((type == XG_TARGETS)
-	|| (type == XG_TIMESTAMP)
-	|| (type == XG_OWNER_OS)
-	|| (type == XG_USER)
-	|| (type == XG_HOST_NAME)
-	|| (type == XG_HOSTNAME)
-	|| (type == XG_MULTIPLE))
+      pbType = NSPasteboardTypeFromAtom(type);
+      if ([pbType length] > 0)
 	{
-	  // Standard types
-	  if (nil == std)
-	    std = [NSMutableString stringWithFormat: @"\n\tstandard:%s", name];
-	  else
-	    [std appendFormat: @",%s", name];
-        }
-      // FIXME: Support more types
-      else
-	{
-	  if (nil == bad)
+	  if ([types containsObject: pbType])
 	    {
-	      bad = [NSMutableString stringWithFormat:
-		@"\n\tunsupported:%s", name];
+	      duplicates++;
 	    }
 	  else
-	    [bad appendFormat: @",%s", name];
-          // FIXME: We should rather add this type to the
-          // pasteboard as a string.
+	    {
+	      [types addObject: pbType];
+	    }
 	}
-      XFree(name);
+      else if (debug)
+	{
+	  if (nil == pbType)
+	    {
+	      char	*name = XGetAtomName(xDisplay, type);
+
+	      if (nil == bad)
+		{
+		  bad = [NSMutableString stringWithFormat:
+		    @"%s", name];
+		}
+	      else
+		{
+		  [bad appendFormat: @",%s", name];
+		}
+	      XFree(name);
+	      unsupported++;
+	    }
+	  else
+	    {
+	      standard++;
+	    }
+	}
     }
 
-  NSDebugLLog(@"Pbs", @"%@ availableTypes: %d types\n\tavailable: %@%@%@%@%@",
-    [[self osPb] name], count, types,
-    (txt ? txt : @""), (rtf ? rtf : @""), (std ? std : @""), (bad ? bad : @""));
+  if (debug)
+    {
+      NSLog(@"%@ -availableTypes exit: %u\n"
+	@"\tmapped: %u, duplicates: %u, standard: %u, unsupported: %u\n"
+	@"\tavailable: %@\n\tunsupported: (%@)",
+	[[self osPb] name], count,
+	(unsigned)[types count], duplicates, standard, unsupported,
+	types, bad ? (id)bad : (id)@"");
+    }
 
   return types;
 }
@@ -1200,7 +1249,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
   if ([md length] > 0)
     {
       // Convert data to text string.
-      if (actual_type == XG_UTF8_STRING)
+      if (actual_type == XG_UTF8_STRING
+	|| actual_type == XG_MIME_UTF8)
         {
           NSString	*s;
           NSData	*d;
@@ -1339,7 +1389,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
     {
       unsigned	numTypes = 0;
       // ATTENTION: Increase this array when adding more types
-      Atom	xTypes[16];
+      Atom	xTypes[17];
       
       /*
        * The requestor wants a list of the types we can supply it with.
@@ -1360,6 +1410,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
           xTypes[numTypes++] = XG_COMPOUND_TEXT;
           xTypes[numTypes++] = XA_STRING;
           xTypes[numTypes++] = XG_TEXT;
+          xTypes[numTypes++] = XG_MIME_UTF8;
         }
       
       if ([types containsObject: NSFilenamesPboardType])
@@ -1547,7 +1598,8 @@ xErrorHandler(Display *d, XErrorEvent *e)
     }
   else if (((xEvent->target == XG_UTF8_STRING)
       || (xEvent->target == XA_STRING)
-      || (xEvent->target == XG_TEXT))
+      || (xEvent->target == XG_TEXT)
+      || (xEvent->target == XG_MIME_UTF8))
     && [types containsObject: NSStringPboardType])
     {
       NSString	*s = [_pb stringForType: NSStringPboardType];
@@ -1559,7 +1611,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
        * Now we know what type of data is required - so get it from the
        * pasteboard and convert to a format X can understand.
        */
-      if (xType == XG_UTF8_STRING)
+      if (xType == XG_UTF8_STRING || xType == XG_MIME_UTF8)
         {
           data = [s dataUsingEncoding: NSUTF8StringEncoding];
         }
