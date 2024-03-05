@@ -853,6 +853,11 @@ static int              xFixesEventBase;
       NSDebugLLog(@"Pbs", @"pasteboard: provideDataForType: - requestData XG_MIME_TIFF");
       [self requestData: (xType = XG_MIME_TIFF)];
     }
+  else if ([type isEqual: NSPasteboardTypePNG])
+    {
+      NSDebugLLog(@"Pbs", @"pasteboard: provideDataForType: - requestData XG_MIME_PNG");
+      [self requestData: XG_MIME_PNG];
+    }
   // FIXME: Support more types
   else
     {
@@ -1326,6 +1331,10 @@ xErrorHandler(Display *d, XErrorEvent *e)
         {
           [self setData: md];
         }
+      else if (actual_type == XG_MIME_PNG)
+        {
+          [self setData: md];
+        }
       else if (actual_type == XA_ATOM)
         {
           // Used when requesting TARGETS to get available types
@@ -1405,7 +1414,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
     {
       unsigned	numTypes = 0;
       // ATTENTION: Increase this array when adding more types
-      Atom	xTypes[17];
+      Atom	xTypes[18];
       
       /*
        * The requestor wants a list of the types we can supply it with.
@@ -1444,6 +1453,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
       if ([types containsObject: NSTIFFPboardType])
         {
           xTypes[numTypes++] = XG_MIME_TIFF;
+        }
+
+      if ([types containsObject: NSPasteboardTypePNG])
+        {
+          xTypes[numTypes++] = XG_MIME_PNG;
         }
 
       xType = XA_ATOM;
@@ -1532,6 +1546,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
       else if ([types containsObject: NSTIFFPboardType])
         {
           xEvent->target = XG_MIME_TIFF;
+          [self xProvideSelection: xEvent];
+        }
+      else if ([types containsObject: NSPasteboardTypePNG])
+        {
+          xEvent->target = XG_MIME_PNG;
           [self xProvideSelection: xEvent];
         }
     }
@@ -1668,6 +1687,14 @@ xErrorHandler(Display *d, XErrorEvent *e)
     && [types containsObject: NSTIFFPboardType])
     {
       data = [_pb dataForType: NSTIFFPboardType];
+      xType = xEvent->target;
+      format = 8;
+      numItems = [data length];
+    }
+  else if ((xEvent->target == XG_MIME_PNG)
+    && [types containsObject: NSPasteboardTypePNG])
+    {
+      data = [_pb dataForType: NSPasteboardTypePNG];
       xType = xEvent->target;
       format = 8;
       numItems = [data length];
