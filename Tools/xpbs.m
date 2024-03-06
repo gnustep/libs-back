@@ -166,6 +166,11 @@ NSPasteboardTypeFromAtom(Atom type)
       return NSHTMLPboardType;
     }
 
+  if (XG_MIME_URI == type)
+    {
+      return NSURLPboardType;
+    }
+
   if (XG_MIME_PDF == type)
     {
       return NSPasteboardTypePDF;
@@ -879,6 +884,10 @@ static int              xFixesEventBase;
     {
       [self requestData: (xType = XG_MIME_HTML)];
     }
+  else if ([type isEqual: NSURLPboardType])
+    {
+      [self requestData: (xType = XG_MIME_URI)];
+    }
   // FIXME: Support more types
   else
     {
@@ -1353,6 +1362,10 @@ xErrorHandler(Display *d, XErrorEvent *e)
         {
           [self setData: md];
         }
+      else if (actual_type == XG_MIME_URI)
+        {
+          [self setData: md];
+        }
       else if (actual_type == XG_MIME_TIFF)
         {
           [self setData: md];
@@ -1444,7 +1457,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
     {
       unsigned	numTypes = 0;
       // ATTENTION: Increase this array when adding more types
-      Atom	xTypes[21];
+      Atom	xTypes[22];
       
       /*
        * The requestor wants a list of the types we can supply it with.
@@ -1484,6 +1497,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
         {
           xTypes[numTypes++] = XG_MIME_HTML;
           xTypes[numTypes++] = XG_MIME_XHTML;
+        }
+
+      if ([types containsObject: NSURLPboardType])
+        {
+          xTypes[numTypes++] = XG_MIME_URI;
         }
 
       if ([types containsObject: NSTIFFPboardType])
@@ -1602,6 +1620,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
       else if ([types containsObject: NSHTMLPboardType])
         {
           xEvent->target = XG_MIME_HTML;
+          [self xProvideSelection: xEvent];
+        }
+      else if ([types containsObject: NSURLPboardType])
+        {
+          xEvent->target = XG_MIME_URI;
           [self xProvideSelection: xEvent];
         }
     }
@@ -1739,6 +1762,14 @@ xErrorHandler(Display *d, XErrorEvent *e)
     && [types containsObject: NSHTMLPboardType])
     {
       data = [_pb dataForType: NSHTMLPboardType];
+      xType = xEvent->target;
+      format = 8;
+      numItems = [data length];
+    }
+  else if ((xEvent->target == XG_MIME_URI) 
+    && [types containsObject: NSURLPboardType])
+    {
+      data = [_pb dataForType: NSURLPboardType];
       xType = xEvent->target;
       format = 8;
       numItems = [data length];
