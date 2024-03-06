@@ -160,6 +160,12 @@ NSPasteboardTypeFromAtom(Atom type)
       return NSRTFPboardType;
     }
 
+  if (XG_MIME_HTML == type
+    || XG_MIME_XHTML == type)
+    {
+      return NSHTMLPboardType;
+    }
+
   if (XG_MIME_PDF == type)
     {
       return NSPasteboardTypePDF;
@@ -869,6 +875,10 @@ static int              xFixesEventBase;
     {
       [self requestData: (xType = XG_MIME_PDF)];
     }
+  else if ([type isEqual: NSHTMLPboardType])
+    {
+      [self requestData: (xType = XG_MIME_HTML)];
+    }
   // FIXME: Support more types
   else
     {
@@ -1338,6 +1348,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
         {
           [self setData: md];
         }
+      else if ((actual_type == XG_MIME_HTML)
+        || (actual_type == XG_MIME_XHTML))
+        {
+          [self setData: md];
+        }
       else if (actual_type == XG_MIME_TIFF)
         {
           [self setData: md];
@@ -1429,7 +1444,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
     {
       unsigned	numTypes = 0;
       // ATTENTION: Increase this array when adding more types
-      Atom	xTypes[19];
+      Atom	xTypes[21];
       
       /*
        * The requestor wants a list of the types we can supply it with.
@@ -1463,6 +1478,12 @@ xErrorHandler(Display *d, XErrorEvent *e)
           xTypes[numTypes++] = XG_MIME_RTF;
           xTypes[numTypes++] = XG_MIME_APP_RTF;
 	  xTypes[numTypes++] = XG_MIME_TEXT_RICHTEXT;
+        }
+
+      if ([types containsObject: NSHTMLPboardType])
+        {
+          xTypes[numTypes++] = XG_MIME_HTML;
+          xTypes[numTypes++] = XG_MIME_XHTML;
         }
 
       if ([types containsObject: NSTIFFPboardType])
@@ -1576,6 +1597,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
       else if ([types containsObject: NSPasteboardTypePNG])
         {
           xEvent->target = XG_MIME_PNG;
+          [self xProvideSelection: xEvent];
+        }
+      else if ([types containsObject: NSHTMLPboardType])
+        {
+          xEvent->target = XG_MIME_HTML;
           [self xProvideSelection: xEvent];
         }
     }
@@ -1704,6 +1730,15 @@ xErrorHandler(Display *d, XErrorEvent *e)
     && [types containsObject: NSRTFPboardType])
     {
       data = [_pb dataForType: NSRTFPboardType];
+      xType = xEvent->target;
+      format = 8;
+      numItems = [data length];
+    }
+  else if (((xEvent->target == XG_MIME_HTML) 
+      || (xEvent->target == XG_MIME_XHTML))
+    && [types containsObject: NSHTMLPboardType])
+    {
+      data = [_pb dataForType: NSHTMLPboardType];
       xType = xEvent->target;
       format = 8;
       numItems = [data length];
