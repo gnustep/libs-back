@@ -176,6 +176,11 @@ NSPasteboardTypeFromAtom(Atom type)
       return NSPasteboardTypePDF;
     }
 
+  if (XG_MIME_PS == type)
+    {
+      return NSPostScriptPboardType;
+    }
+
   if (XG_MIME_PNG == type)
     {
       return NSPasteboardTypePNG;
@@ -880,6 +885,10 @@ static int              xFixesEventBase;
     {
       [self requestData: (xType = XG_MIME_PDF)];
     }
+  else if ([type isEqual: NSPostScriptPboardType])
+    {
+      [self requestData: (xType = XG_MIME_PS)];
+    }
   else if ([type isEqual: NSHTMLPboardType])
     {
       [self requestData: (xType = XG_MIME_HTML)];
@@ -1374,6 +1383,10 @@ xErrorHandler(Display *d, XErrorEvent *e)
         {
           [self setData: md];
         }
+      else if (actual_type == XG_MIME_PS)
+        {
+          [self setData: md];
+        }
       else if (actual_type == XG_MIME_PNG)
         {
           [self setData: md];
@@ -1457,7 +1470,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
     {
       unsigned	numTypes = 0;
       // ATTENTION: Increase this array when adding more types
-      Atom	xTypes[22];
+      Atom	xTypes[23];
       
       /*
        * The requestor wants a list of the types we can supply it with.
@@ -1512,6 +1525,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
       if ([types containsObject: NSPasteboardTypePDF])
         {
           xTypes[numTypes++] = XG_MIME_PDF;
+        }
+
+      if ([types containsObject: NSPostScriptPboardType])
+        {
+          xTypes[numTypes++] = XG_MIME_PS;
         }
 
       if ([types containsObject: NSPasteboardTypePNG])
@@ -1610,6 +1628,11 @@ xErrorHandler(Display *d, XErrorEvent *e)
       else if ([types containsObject: NSPasteboardTypePDF])
         {
           xEvent->target = XG_MIME_PDF;
+          [self xProvideSelection: xEvent];
+        }
+      else if ([types containsObject: NSPostScriptPboardType])
+        {
+          xEvent->target = XG_MIME_PS;
           [self xProvideSelection: xEvent];
         }
       else if ([types containsObject: NSPasteboardTypePNG])
@@ -1786,6 +1809,14 @@ xErrorHandler(Display *d, XErrorEvent *e)
     && [types containsObject: NSPasteboardTypePDF])
     {
       data = [_pb dataForType: NSPasteboardTypePDF];
+      xType = xEvent->target;
+      format = 8;
+      numItems = [data length];
+    }
+  else if ((xEvent->target == XG_MIME_PS)
+    && [types containsObject: NSPostScriptPboardType])
+    {
+      data = [_pb dataForType: NSPostScriptPboardType];
       xType = xEvent->target;
       format = 8;
       numItems = [data length];
