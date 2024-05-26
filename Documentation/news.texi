@@ -7,6 +7,18 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.31.0}
+
+The release includes mostly improvements for pasteboard handling and a few bug fixes.
+
+@itemize @bullet
+@item Improve font name creation.
+@item Add headless backend.
+@item Add CI pipeline.
+@end itemize
+
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.30.0}
 
 The release includes mostly improvements for the new Wayland backend and  a few bug fixes.
@@ -18,7 +30,6 @@ The release includes mostly improvements for the new Wayland backend and  a few 
 and at every Notify.
 @end itemize
 
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.29.0}
 
