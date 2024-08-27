@@ -31,6 +31,7 @@
 #include <linux/input.h>
 #include <AppKit/NSText.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 static void
 keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard,
