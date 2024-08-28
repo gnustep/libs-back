@@ -28,7 +28,6 @@
 #include "wayland/WaylandServer.h"
 #include <AppKit/NSEvent.h>
 #include <AppKit/NSApplication.h>
-#include <AppKit/NSWindow.h>
 #include <AppKit/NSGraphics.h>
 
 static void
