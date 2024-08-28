@@ -781,7 +781,7 @@ WaylandServer (SurfaceRoles)
       break;
     case NSPopUpMenuWindowLevel:
       NSDebugLog(@"[%d] NSPopUpMenuWindowLevel", win);
-      [self createPopup:win];
+      [self createPopup:window];
       break;
     case NSScreenSaverWindowLevel:
       NSDebugLog(@"[%d] NSScreenSaverWindowLevel", win);

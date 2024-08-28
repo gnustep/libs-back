@@ -38,6 +38,8 @@
 #include <linux/input.h>
 #include "wayland-cursor.h"
 
+extern void wl_cursor_destroy(struct wl_cursor *cursor);
+
 // XXX should this be configurable by the user?
 #define DOUBLECLICK_DELAY 300
 #define DOUBLECLICK_MOVE_THREASHOLD 3
