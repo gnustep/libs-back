@@ -29,9 +29,7 @@
 #include <AppKit/NSEvent.h>
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSWindow.h>
-
-// Ensure the function GSWindowWithNumber is declared or included from the appropriate header
-NSWindow *GSWindowWithNumber(int window_id);
+#include <AppKit/NSGraphics.h>
 
 static void
 xdg_surface_on_configure(void *data, struct xdg_surface *xdg_surface,
