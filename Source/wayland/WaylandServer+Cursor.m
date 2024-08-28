@@ -38,7 +38,6 @@
 #include <linux/input.h>
 #include "wayland-cursor.h"
 
-// Added extern declaration to resolve implicit function declaration error
 extern void wl_cursor_destroy(struct wl_cursor *cursor);
 
 // XXX should this be configurable by the user?
@@ -799,7 +798,7 @@ WaylandServer (Cursor)
 {
   // the cursor should be deallocated
   struct cursor * c = cid;
-  wl_cursor_destroy(c->cursor); // Ensure wl_cursor_destroy is declared and defined
+  wl_cursor_destroy(c->cursor);
   wl_buffer_destroy(c->buffer);
   free(cid);
 }
