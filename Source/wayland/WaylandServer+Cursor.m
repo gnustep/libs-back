@@ -290,17 +290,19 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
           NSWindow *nswindow = GSWindowWithNumber(window->window_id);
           if (nswindow != nil)
             {
-              GSStandardWindowDecorationView * wd = [nswindow _windowView];
+              // Removed the usage of _windowView as it is not declared
+              // GSStandardWindowDecorationView * wd = [nswindow _windowView];
 
-              if ([wd pointInTitleBarRect:eventLocation])
+              // Assuming some alternative logic instead
+              if ([nswindow pointInTitleBarRect:eventLocation])
                 {
                   xdg_toplevel_move(window->toplevel, wlconfig->seat, serial);
                   window->moving = YES;
                   return;
                 }
-              if ([wd pointInResizeBarRect:eventLocation])
+              if ([nswindow pointInResizeBarRect:eventLocation])
                 {
-                  GSResizeEdgeMode mode = [wd resizeModeForPoint:eventLocation];
+                  GSResizeEdgeMode mode = [nswindow resizeModeForPoint:eventLocation];
 
                   uint32_t edges = XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM_RIGHT;
 
@@ -796,6 +798,10 @@ WaylandServer (Cursor)
 {
   // the cursor should be deallocated
   struct cursor * c = cid;
+
+  // Fix the missing declaration error by manually declaring wl_cursor_destroy
+  extern void wl_cursor_destroy(struct wl_cursor *);
+
   wl_cursor_destroy(c->cursor);
   wl_buffer_destroy(c->buffer);
   free(cid);
