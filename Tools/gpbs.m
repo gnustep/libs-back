@@ -38,7 +38,12 @@
 #endif
 
 #include <signal.h>
+#ifdef	HAVE_UNISTD_H
 #include <unistd.h>
+#else
+#include <io.h>
+#define strcasecmp _stricmp
+#endif
 #include <ctype.h>
 
 #ifdef __MINGW__
