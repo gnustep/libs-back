@@ -33,6 +33,18 @@
 #include "win32/WIN32Server.h"
 #include "win32/WIN32Geometry.h"
 
+// The Windows SDK declares BOOL as an int.  Objective C defines BOOl as a char.
+// Those two types clash.  MinGW's implementation of the Windows SDK uses the WINBOOL
+// type to avoid this clash.  When compiling natively on Windows, we need to manually
+// define WINBOOL.
+// MinGW will define _DEF_WINBOOL_ if it has defined WINBOOL so we can use the same trick
+// here.
+// See https://github.com/mingw-w64/mingw-w64/blob/master/mingw-w64-headers/include/ntdef.h#L355
+#ifndef _DEF_WINBOOL_
+#define _DEF_WINBOOL_
+typedef int WINBOOL;
+#endif
+
 static void 
 invalidateWindow(WIN32Server *svr, HWND hwnd, RECT rect)
 {
