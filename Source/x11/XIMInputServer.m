@@ -151,11 +151,17 @@
     {
       /* Always returns a Latin-1 string according to the manpage */
       count = XLookupString (event, buf, BUF_LEN, &keysym, NULL);
-      if (count)
+      if (count == 1)
 	{
 	  keys = [[[NSString alloc] initWithBytes: buf
 					   length: count
 					 encoding: NSISOLatin1StringEncoding] autorelease];
+	}
+      else if (count > 1) // manpage lies and we suppose UTF-8
+	{
+	  keys = [[[NSString alloc] initWithBytes: buf
+					   length: count
+					 encoding: NSUTF8StringEncoding] autorelease];
 	}
 
       if (keysymptr)
