@@ -803,6 +803,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   XEvent		xEvent;
   unsigned long		*extents;
   Offsets		*o = generic.offsets + (style & 15);
+  int			windowIdent;
   int			repp = 0;
   int			repx = 0;
   int			repy = 0;
@@ -1131,6 +1132,11 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
         }
     }
 
+  /* Calling termwindow should cause the window to be destroyed,
+   * so we need to take a copy of the window identifier to check
+   * for events left in the queue about that window.
+   */
+  windowIdent = window->ident;
   [self termwindow: window->number];
   XSync(dpy, False);
   while (XPending(dpy) > 0)
@@ -1138,7 +1144,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       XNextEvent(dpy, &xEvent);
       NSDebugLLog(@"Offset", @"Destroying ... event %d window %lu\n",
                   xEvent.type, xEvent.xany.window);
-      if (xEvent.xany.window != window->ident)
+      if (xEvent.xany.window != windowIdent)
         {
           continue;
         }
