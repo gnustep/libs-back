@@ -7,6 +7,19 @@
 @include version.texi
 @end ifset
 
+@section Noteworthy changes in version @samp{0.32.0}
+
+The release includes mostly bug fixes.
+
+@itemize @bullet
+@item Make window termination saver.
+@item Use default interpolation in Cairo.
+@item Allow UTF-8 input from XLookupString.
+@item Improve building on MS Windows.
+@end itemize
+
+@ifclear ANNOUNCE-ONLY
+
 @section Noteworthy changes in version @samp{0.31.0}
 
 The release includes mostly improvements for pasteboard handling and a few bug fixes.
@@ -17,7 +30,6 @@ The release includes mostly improvements for pasteboard handling and a few bug f
 @item Add CI pipeline.
 @end itemize
 
-@ifclear ANNOUNCE-ONLY
 
 @section Noteworthy changes in version @samp{0.30.0}
 
