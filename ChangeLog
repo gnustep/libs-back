@@ -1,3 +1,12 @@
+2025-02-11 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* ANNOUNCE:
+	* INSTALL:
+	* NEWS:
+	* README:
+	* Version: bump to 0.32.0
+	New release
+
 2024-05-26 Fred Kiefer <FredKiefer@gmx.de>
 
         * ChangeLog: Update for new release

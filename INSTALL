@@ -5,7 +5,7 @@
 ================
 
 This file documents the installation of the GNUstep Backend Library,
-'gnustep-back'.  If you are installing this package as part of the
+‘gnustep-back’.  If you are installing this package as part of the
 GNUstep core package, read the file GNUstep-HOWTO for more complete
 instructions on how to install the entire GNUstep package (including
 this library).  GNUstep-HOWTO is located at <http://www.gnustep.org>
@@ -15,9 +15,9 @@ this library).  GNUstep-HOWTO is located at <http://www.gnustep.org>
 1.2 Configuration
 =================
 
-Configuration is performed by running the 'configure' program at a shell
+Configuration is performed by running the ‘configure’ program at a shell
 prompt.  You may want to use some of the optional arguments to the
-'configure' program.  Type 'configure --help' for a list.  GNUstep
+‘configure’ program.  Type ‘configure --help’ for a list.  GNUstep
 specific options are at the end of this list (if any).
 
    The backend comes with several different window server and graphics
@@ -27,7 +27,7 @@ choose the art graphical drawing implementation, run
 
      configure --enable-graphics=art
 
-   Type 'configure --help' for a list of graphical drawing
+   Type ‘configure --help’ for a list of graphical drawing
 implementations.
 
    You can also change the name of the backend when configuring it.
@@ -52,8 +52,8 @@ program:
 
 To compile this library, type make.  After this is complete, type make
 install (make sure you are the root user).  Some additional options you
-can use with make are 'debug=yes' to make a debugging version of the
-library and 'shared=no' to make a static version of the library.  See
+can use with make are ‘debug=yes’ to make a debugging version of the
+library and ‘shared=no’ to make a static version of the library.  See
 the gstep-make package for more information on these options.
 
 1.4 Installing
