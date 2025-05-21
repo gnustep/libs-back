@@ -1,3 +1,8 @@
+2025-05-21 Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/x11/scale.c,
+	* Source/x11/xutil.c: Update function declaration to modern C.
+
 2025-02-11 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* ANNOUNCE:
