@@ -294,6 +294,17 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
             {
               GSStandardWindowDecorationView * wd = [nswindow _windowView];
 
+              NSButton *closeBtn = [nswindow standardWindowButton: NSWindowCloseButton];
+              if (closeBtn)
+              {
+                  NSPoint local = [closeBtn convertPoint: eventLocation fromView: nil];
+                  if (NSPointInRect(local, [closeBtn bounds]))
+                  {
+                      [nswindow performClose: nil];
+                      return;
+                  }
+              }
+
               if ([wd pointInTitleBarRect:eventLocation])
                 {
                   xdg_toplevel_move(window->toplevel, wlconfig->seat, serial);
