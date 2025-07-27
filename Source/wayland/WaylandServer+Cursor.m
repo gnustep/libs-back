@@ -504,9 +504,11 @@ pointer_handle_axis(void *data, struct wl_pointer *pointer, uint32_t time,
     case WL_POINTER_AXIS_VERTICAL_SCROLL:
       eventType = NSScrollWheel;
       deltaY = wl_fixed_to_double(value) * wlconfig->mouse_scroll_multiplier;
+      break;
     case WL_POINTER_AXIS_HORIZONTAL_SCROLL:
       eventType = NSScrollWheel;
       deltaX = wl_fixed_to_double(value) * wlconfig->mouse_scroll_multiplier;
+      break;
     }
 
   /* FIXME: X11 backend uses the XGetPointerMapping()-returned values from
