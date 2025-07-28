@@ -137,6 +137,8 @@ static const struct wl_registry_listener registry_listener = {
     handle_global, handle_global_remove};
 
 struct window *get_window_with_id(WaylandConfig *wlconfig, int winid) {
+  /* This can return NULL. A relevant note has been added to the docstring
+   * in the header. Callers should be handling this. */
   struct window *window;
 
   wl_list_for_each(window, &wlconfig->window_list, link) {
