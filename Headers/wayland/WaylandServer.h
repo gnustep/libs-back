@@ -169,6 +169,13 @@ struct window
   CairoSurface		       *wcs;
 };
 
+/* get_window_with_id returns the known window with the passed ID, or NULL.
+ *
+ * NULL is returned when the passed window is not known; for example, the
+ * window has been '->terminated' and was removed from the window_list already,
+ * but something has referred to its ID. It is the responsibility of the caller
+ * to handle the case where NULL is used.
+ */
 struct window *get_window_with_id(WaylandConfig *wlconfig, int winid);
 
 @interface WaylandServer : GSDisplayServer
