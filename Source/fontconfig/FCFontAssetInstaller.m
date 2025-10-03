@@ -229,17 +229,68 @@
   return YES;
 }
 
-- (NSString *) systemFontsDirectory
-{
-  return @"/usr/local/share/fonts";
-}
-
 - (NSString *) userFontsDirectory
 {
+  NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+  NSString *fontsPath = [defaults stringForKey: @"GSUserFontsDirectory"];
   NSString *homeDir = NSHomeDirectory();
 
-  // Generic Unix/other systems
-  return [homeDir stringByAppendingPathComponent: @".fonts"];
+  // If the default isn't set, discover it...
+  if (fontsPath == nil)
+    {
+      NSProcessInfo *procInfo = [NSProcessInfo processInfo];
+      NSString *osName = [procInfo operatingSystemName];
+
+      if ([osName isEqualToString: @"NSWindowsNTOperatingSystem"]
+	  || [osName isEqualToString: @"NSWindows95OperatingSystem"])
+	{
+	  NSString *winDir = [NSString stringWithUTF8String: getenv("USERPROFILE")];
+	  fontsPath = [winDir stringByAppendingPathComponent: @"Fonts"];
+	}
+      else if ([osName isEqualToString: @"NSMACHOperatingSystem"])
+	{
+	  fontsPath = [homeDir stringByAppendingPathComponent: @"Library"];
+	  fontsPath = [fontsPath stringByAppendingPathComponent: @"Fonts"];
+	}
+      else // Assume linux/unix
+	{
+	  fontsPath = [homeDir stringByAppendingPathComponent: @".fonts"];
+	}
+    }
+  
+  return fontsPath;
+
+}
+
+- (NSString *) systemFontsDirectory
+{
+  NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+  NSString *fontsPath = [defaults stringForKey: @"GSSystemFontsDirectory"];
+
+  // If the default isn't set, discover it...
+  if (fontsPath == nil)
+    {
+      NSProcessInfo *procInfo = [NSProcessInfo processInfo];
+      NSString *osName = [procInfo operatingSystemName];
+
+      if ([osName isEqualToString: @"NSWindowsNTOperatingSystem"]
+	  || [osName isEqualToString: @"NSWindows95OperatingSystem"])
+	{
+	  NSString *winDir = [NSString stringWithUTF8String: getenv("WINDIR")];
+	  fontsPath = [winDir stringByAppendingPathComponent: @"Fonts"];
+	}
+      else if ([osName isEqualToString: @"NSMACHOperatingSystem"])
+	{
+	  fontsPath = @"/Library/Fonts";
+	}
+      else // Assume linux/unix
+	{
+	  fontsPath = @"/usr/local/share/fonts";
+	}
+    }
+  
+  return fontsPath;
+
 }
 
 @end
