@@ -34,12 +34,14 @@ cairo_OBJC_FILES = CairoSurface.m \
   CairoGState.m \
   CairoContext.m \
   CairoFontEnumerator.m \
+  CairoFontAssetInstaller.m \
   CairoFaceInfo.m \
   CairoPSSurface.m \
   CairoPDFSurface.m \
   ../fontconfig/FCFaceInfo.m \
   ../fontconfig/FCFontEnumerator.m \
   ../fontconfig/FCFontInfo.m \
+  ../fontconfig/FCFontAssetInstaller.m \
 
 
 ifeq ($(BUILD_SERVER),x11)

@@ -36,6 +36,8 @@
 #include "cairo/CairoPDFSurface.h"
 #include "cairo/CairoFontInfo.h"
 #include "cairo/CairoFontEnumerator.h"
+#include "cairo/CairoFontAssetInstaller.h"
+
 #include "config.h"
 
 #define CGSTATE ((CairoGState *)gstate)
@@ -88,6 +90,7 @@
 
   [GSFontEnumerator setDefaultClass: [CairoFontEnumerator class]];
   [GSFontInfo setDefaultClass: [CairoFontInfo class]];
+  [GSFontAssetInstaller setDefaultClass: [CairoFontAssetInstaller class]];
 }
 
 + (Class) GStateClass
