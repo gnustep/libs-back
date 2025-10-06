@@ -27,24 +27,9 @@
 
 @implementation FCFontAssetInstaller
 
-- (instancetype) initWithFontPath: (NSString *)path
+- (BOOL) validateFontPath: (NSString *)fontPath error: (NSError **)error
 {
-  self = [super init];
-  if (self != nil)
-    {
-      ASSIGN(_fontPath, path);
-    }
-  return self;
-}
-
-- (instancetype) init
-{
-  return [self initWithFontPath: nil];
-}
-
-- (BOOL) validateFontError: (NSError **)error
-{
-  if (_fontPath == nil)
+  if (fontPath == nil)
     {
       if (error != NULL)
 	{
@@ -58,7 +43,7 @@
     }
 
   // Check if file exists
-  if (![[NSFileManager defaultManager] fileExistsAtPath: _fontPath])
+  if (![[NSFileManager defaultManager] fileExistsAtPath: fontPath])
     {
       if (error != NULL)
 	{
@@ -72,7 +57,7 @@
     }
 
   // Basic validation - check file size and magic bytes
-  NSData *fontData = [NSData dataWithContentsOfFile: _fontPath];
+  NSData *fontData = [NSData dataWithContentsOfFile: fontPath];
   if (fontData == nil || [fontData length] < 12)
     {
       if (error != NULL)
@@ -113,9 +98,9 @@
   return NO;
 }
 
-- (BOOL) installFontError: (NSError **)error
+- (BOOL) installFontPath: (NSString *)fontPath error: (NSError **)error
 {
-  if (_fontPath == nil)
+  if (fontPath == nil)
     {
       if (error != NULL)
 	{
@@ -128,7 +113,7 @@
       return NO;
     }
 
-  NSString *filename = [_fontPath lastPathComponent];
+  NSString *filename = [fontPath lastPathComponent];
   NSString *destinationDir;
 
   // Determine installation directory based on options
@@ -181,7 +166,7 @@
       [[NSFileManager defaultManager] removeItemAtPath: destinationPath error: nil];
     }
 
-  if (![[NSFileManager defaultManager] copyItemAtPath: _fontPath
+  if (![[NSFileManager defaultManager] copyItemAtPath: fontPath
 					       toPath: destinationPath
 						error: &copyError])
     {
