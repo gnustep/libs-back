@@ -26,18 +26,9 @@
 #define FCFONTASSETINSTALLER_H
 
 #import <Foundation/NSObject.h>
+#import <GNUstepGUI/GSFontAssetInstaller.h>
 
-@interface FCFontAssetInstaller : NSObject
-{
-  NSString *_fontPath;
-}
-
-- (instancetype) initWithFontPath: (NSString *)path;
-- (BOOL) validateFontError: (NSError **)error;
-- (BOOL) installFontError: (NSError **)error;
-- (NSString *) systemFontsDirectory;
-- (NSString *) userFontsDirectory;
-
+@interface FCFontAssetInstaller : GSFontAssetInstaller
 @end
 
 #endif

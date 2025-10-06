@@ -244,8 +244,8 @@
       if ([osName isEqualToString: @"NSWindowsNTOperatingSystem"]
 	  || [osName isEqualToString: @"NSWindows95OperatingSystem"])
 	{
-	  NSString *winDir = [NSString stringWithUTF8String: getenv("USERPROFILE")];
-	  fontsPath = [winDir stringByAppendingPathComponent: @"Fonts"];
+	  NSString *dir = [NSString stringWithUTF8String: getenv("USERPROFILE")];
+	  fontsPath = [dir stringByAppendingPathComponent: @"Fonts"];
 	}
       else if ([osName isEqualToString: @"NSMACHOperatingSystem"])
 	{
@@ -276,8 +276,8 @@
       if ([osName isEqualToString: @"NSWindowsNTOperatingSystem"]
 	  || [osName isEqualToString: @"NSWindows95OperatingSystem"])
 	{
-	  NSString *winDir = [NSString stringWithUTF8String: getenv("WINDIR")];
-	  fontsPath = [winDir stringByAppendingPathComponent: @"Fonts"];
+	  NSString *dir = [NSString stringWithUTF8String: getenv("WINDIR")];
+	  fontsPath = [dir stringByAppendingPathComponent: @"Fonts"];
 	}
       else if ([osName isEqualToString: @"NSMACHOperatingSystem"])
 	{
