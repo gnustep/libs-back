@@ -1,4 +1,4 @@
-/* Implementation of class FCFontAssetInstaller
+/* Interface of class FCFontAssetInstaller
    Copyright (C) 2024 Free Software Foundation, Inc.
 
    By: Gregory John Casamento <greg.casamento@gmail.com>
