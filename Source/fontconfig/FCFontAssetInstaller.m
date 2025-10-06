@@ -206,7 +206,7 @@
   NS_DURING
     {
       NSTask *task = [[NSTask alloc] init];
-      [task setLaunchPath: @"/usr/bin/fc-cache"];
+      [task setLaunchPath: @"fc-cache"];
       [task setArguments: [NSArray arrayWithObject: @"-f"]];
       [task launch];
       [task waitUntilExit];
