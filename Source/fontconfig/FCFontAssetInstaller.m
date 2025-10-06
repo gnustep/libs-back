@@ -116,13 +116,8 @@
   NSString *filename = [fontPath lastPathComponent];
   NSString *destinationDir;
 
-  // Determine installation directory based on options
-  destinationDir = [self systemFontsDirectory];
-  if (destinationDir == nil)
-    {
-      destinationDir = [self userFontsDirectory];
-    }
-
+  // Determine installation directory...
+  destinationDir = [self userFontsDirectory];
   if (destinationDir == nil)
     {
       if (error != NULL)
