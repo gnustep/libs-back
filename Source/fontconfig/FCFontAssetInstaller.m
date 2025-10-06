@@ -254,7 +254,9 @@
 	}
       else // Assume linux/unix
 	{
-	  fontsPath = [homeDir stringByAppendingPathComponent: @".fonts"];
+	  fontsPath = [homeDir stringByAppendingPathComponent: @".local"];
+	  fontsPath = [fontsPath stringByAppendingPathComponent: @"share"];
+	  fontsPath = [fontsPath stringByAppendingPathComponent: @"fonts"];
 	}
     }
   
