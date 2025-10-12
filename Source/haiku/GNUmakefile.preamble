@@ -1,0 +1,20 @@
+#
+#  GNUmakefile.preamble for Haiku Backend
+#
+#  Copyright (C) 2025 Free Software Foundation, Inc.
+#
+#  This file is part of the GNUstep Backend.
+
+# Additional compiler flags for Haiku
+ADDITIONAL_CPPFLAGS += -DHAIKU_BACKEND
+
+# We need C++ compilation for Haiku API integration
+ADDITIONAL_CPPFLAGS += -x objective-c++
+
+# Haiku system headers
+ADDITIONAL_CPPFLAGS += -I/system/develop/headers/be
+ADDITIONAL_CPPFLAGS += -I/system/develop/headers/cpp  
+ADDITIONAL_CPPFLAGS += -I/system/develop/headers/posix
+
+# Haiku libraries
+ADDITIONAL_LDFLAGS += -lbe -lroot -ltranslation

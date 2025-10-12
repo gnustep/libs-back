@@ -562,10 +562,12 @@ BUILD_GRAPHICS=cairo
 case $target_os in
   *mingw32* ) BUILD_SERVER=win32
               BUILD_GRAPHICS=winlib;;
+  *haiku* ) BUILD_SERVER=haiku
+            BUILD_GRAPHICS=cairo;;
 esac
 
 AC_ARG_ENABLE(server, 
-  [  --enable-server=SRV     Build server type: x11, win32, wayland, headless],,
+  [  --enable-server=SRV     Build server type: x11, win32, wayland, headless, haiku],,
   enable_server=$BUILD_SERVER)
 AC_ARG_ENABLE(graphics, 
   [  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal, headless],,
@@ -754,6 +756,13 @@ if test $BUILD_SERVER = win32; then
   else
     AC_MSG_NOTICE([Warning : no OpenGL support for win32 backend])
   fi
+fi
+
+if test $BUILD_SERVER = haiku; then
+  # Haiku-specific configuration
+  AC_MSG_NOTICE([Configuring for Haiku backend])
+  LIBS="$LIBS -lbe -lroot -ltranslation"
+  CPPFLAGS="$CPPFLAGS -I/system/develop/headers/be -I/system/develop/headers/cpp -I/system/develop/headers/posix"
 fi
 
 AH_TOP([
