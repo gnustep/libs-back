@@ -4465,6 +4465,68 @@ _screenSize(Display *dpy, int screen)
   return scrSize;
 }
   
+static NSArray *
+_workAreas(Display *dpy, Window root)
+{
+  Atom		workarea_atom;
+  Atom		type;
+  int		format;
+  int		status;
+  unsigned long	*items;
+  unsigned long	nitems;
+  unsigned long	bytes_after;
+  unsigned char *data = NULL;
+  unsigned	count;
+  unsigned	index;
+  NSMutableArray	*array;
+
+  workarea_atom = XInternAtom(dpy, "_NET_WORKAREA", False);
+  status = XGetWindowProperty(dpy, root, workarea_atom,
+    0,                      /* offset */
+    (~0L),                  /* read all items */
+    False,
+    XA_CARDINAL,
+    &type,
+    &format,
+    &nitems,
+    &bytes_after,
+    &data
+  );
+
+  if (status != Success || !data)
+    {
+      NSLog(@"Failed to get _NET_WORKAREA\n");
+      return nil;
+    }
+  if (format != 32)
+    {
+      XFree(data);
+      return nil;
+    }
+
+  items = (unsigned long *)data;
+  count = nitems / 4;
+  array = [NSMutableArray arrayWithCapacity: count];
+  for (index = 0; index < count; index++)
+    {
+      NSRect	frame;
+
+      frame.origin.x = (uint32_t)*items++;
+      frame.origin.y = (uint32_t)*items++;
+      frame.size.width = (uint32_t)*items++;
+      frame.size.height = (uint32_t)*items++;
+      // X coordinates need to be flipped to OpenStep coordinates
+      if (frame.origin.y > 0.0)
+	{
+	  frame.size.height -= frame.origin.y;
+	  frame.origin.y = 0.0;
+	}
+      [array addObject: [NSValue valueWithRect: frame]];
+    }
+  XFree(data);
+  return array;
+}
+
 
 /* This method assumes that we deal with one X11 screen - `defScreen`.
    Basically it means that we have DISPLAY variable set to `:0.0`.
@@ -4478,6 +4540,7 @@ _screenSize(Display *dpy, int screen)
    We map XRandR monitors (outputs) to NSScreen. */
 - (NSArray *)screenList
 {
+  NSArray	*workAreas;
   xScreenSize = _screenSize(dpy, defScreen);
 
   monitorsCount = 0;
@@ -4565,6 +4628,19 @@ _screenSize(Display *dpy, int screen)
   monitors[0].depth = [self windowDepthForScreen: 0];
   monitors[0].resolution = [self resolutionForScreen: defScreen];
   monitors[0].frame = NSMakeRect(0, 0, xScreenSize.width, xScreenSize.height);
+
+  workAreas = _workAreas(dpy, [self xDisplayRootWindow]);
+  if ([workAreas count] > 0)
+    {
+      NSRect	first = [[workAreas firstObject] rectValue];
+
+/*
+      NSLog(@"Replace %@ with %@",
+	NSStringFromRect(monitors[0].frame),
+	NSStringFromRect(first));
+ */
+      monitors[0].frame = first;
+    }
   return [NSArray arrayWithObject: [NSNumber numberWithInt: defScreen]];
 }
 
