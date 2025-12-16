@@ -1084,7 +1084,7 @@ WaylandServer (SurfaceRoles)
     }
   if (window->wcs)
     {
-      [window->wcs destroySurface];
+    //  [window->wcs destroySurface];
     }
   window->configured = NO;
 }
