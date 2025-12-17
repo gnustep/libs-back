@@ -4464,7 +4464,12 @@ _screenSize(Display *dpy, int screen)
 
   return scrSize;
 }
-  
+
+/* Gets the work areas (if the window manager supports _NET_WORKAREA) of the
+ * monitors/screens for the display.  These are supposed to be the extents of
+ * the screen that we can use without trspassing on areas reservced for the
+ * window manager.
+ */
 static NSArray *
 _workAreas(Display *dpy, Window root)
 {
@@ -4540,17 +4545,18 @@ _workAreas(Display *dpy, Window root)
    We map XRandR monitors (outputs) to NSScreen. */
 - (NSArray *)screenList
 {
-  NSArray	*workAreas;
+  Window        root = [self xDisplayRootWindow];
+  NSArray	*workAreas = _workAreas(dpy, root);
   xScreenSize = _screenSize(dpy, defScreen);
 
   monitorsCount = 0;
-  if (monitors != NULL) {
-    NSZoneFree([self zone], monitors);
-    monitors = NULL;
-  }
+  if (monitors != NULL)
+    {
+      NSZoneFree([self zone], monitors);
+      monitors = NULL;
+    }
   
 #ifdef HAVE_XRANDR
-  Window              root = [self xDisplayRootWindow];
   XRRScreenResources *screen_res = XRRGetScreenResources(dpy, root);
 
   if (screen_res != NULL)
@@ -4560,38 +4566,58 @@ _workAreas(Display *dpy, Window root)
         {
           int             i;
           int             mi;
-          NSMutableArray *tmpScreens = [NSMutableArray arrayWithCapacity: monitorsCount];
+          NSMutableArray *tmpScreens;
           RROutput        primary_output = XRRGetOutputPrimary(dpy, root);
 
-          monitors = NSZoneMalloc([self zone], monitorsCount * sizeof(MonitorDevice));
+          tmpScreens = [NSMutableArray arrayWithCapacity: monitorsCount];
+
+          monitors = NSZoneMalloc([self zone],
+	    monitorsCount * sizeof(MonitorDevice));
 
           for (i = 0, mi = 0; i < screen_res->noutput; i++)
             {
               XRROutputInfo *output_info;
               
-              output_info = XRRGetOutputInfo(dpy, screen_res, screen_res->outputs[i]);
+              output_info = XRRGetOutputInfo(dpy,
+		screen_res, screen_res->outputs[i]);
               if (output_info->crtc)
                 {
                   XRRCrtcInfo *crtc_info;
                   
-                  crtc_info = XRRGetCrtcInfo(dpy, screen_res, output_info->crtc);
+                  crtc_info = XRRGetCrtcInfo(dpy,
+		    screen_res, output_info->crtc);
                   
                   monitors[mi].screen_id = defScreen;
                   monitors[mi].depth = [self windowDepthForScreen: mi];
-                  monitors[mi].resolution = [self resolutionForScreen: defScreen];
-                  /* Transform coordinates from Xlib (flipped) to OpenStep (unflippped). 
-                     Windows and screens should have the same coordinate system. */
-                  monitors[mi].frame =
-                    NSMakeRect(crtc_info->x,
-                               xScreenSize.height - crtc_info->height - crtc_info->y,
-                               crtc_info->width,
-                               crtc_info->height);
+                  monitors[mi].resolution
+		    = [self resolutionForScreen: defScreen];
+		  if ([workAreas count] > mi)
+		    {
+		      monitors[mi].frame = 
+			[[workAreas objectAtIndex: mi] rectValue];
+		    }
+		  else
+		    {
+		      /* Transform coordinates from Xlib (flipped)
+		       * to OpenStep (unflipped). 
+		       * Windows and screens should have the same
+		       * coordinate system.
+		       */
+		      monitors[mi].frame =
+			NSMakeRect(crtc_info->x,
+			  xScreenSize.height - crtc_info->height - crtc_info->y,
+			  crtc_info->width,
+			  crtc_info->height);
+		    }
                   /* Add monitor ID (index in monitors array).
-                     Put primary monitor ID at index 0 since NSScreen get this as main 
-                     screen if application has no key window. */
+                   * Put primary monitor ID at index 0 since
+		   * NSScreen gets this as main screen if application
+		   * has no key window.
+		   */
                   if (screen_res->outputs[i] == primary_output)
                     {
-                      [tmpScreens insertObject: [NSNumber numberWithInt: mi] atIndex: 0];
+                      [tmpScreens insertObject: [NSNumber numberWithInt: mi]
+				       atIndex: 0];
                     }
                   else
                     {
@@ -4629,17 +4655,9 @@ _workAreas(Display *dpy, Window root)
   monitors[0].resolution = [self resolutionForScreen: defScreen];
   monitors[0].frame = NSMakeRect(0, 0, xScreenSize.width, xScreenSize.height);
 
-  workAreas = _workAreas(dpy, [self xDisplayRootWindow]);
   if ([workAreas count] > 0)
     {
-      NSRect	first = [[workAreas firstObject] rectValue];
-
-/*
-      NSLog(@"Replace %@ with %@",
-	NSStringFromRect(monitors[0].frame),
-	NSStringFromRect(first));
- */
-      monitors[0].frame = first;
+      monitors[0].frame = [[workAreas firstObject] rectValue];
     }
   return [NSArray arrayWithObject: [NSNumber numberWithInt: defScreen]];
 }
@@ -4891,8 +4909,7 @@ _workAreas(Display *dpy, Window root)
   unsigned int number = 0;
 
   num = (unsigned int*)PropGetCheckProperty(dpy, RootWindow(dpy, screen),
-                                            generic._NET_CURRENT_DESKTOP_ATOM, XA_CARDINAL,
-                                            32, 1, &c);
+    generic._NET_CURRENT_DESKTOP_ATOM, XA_CARDINAL, 32, 1, &c);
 
   if (num)
     {
@@ -4927,8 +4944,7 @@ _workAreas(Display *dpy, Window root)
     return 0;
 
   num = (unsigned int*)PropGetCheckProperty(dpy, window->ident,
-                                            generic._NET_WM_DESKTOP_ATOM, XA_CARDINAL,
-                                            32, 1, &c);
+    generic._NET_WM_DESKTOP_ATOM, XA_CARDINAL, 32, 1, &c);
 
   if (num)
     {
