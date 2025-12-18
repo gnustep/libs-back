@@ -89,7 +89,7 @@ static NSMapTable *windowmaps = NULL;
 static NSMapTable *windowtags = NULL;
 
 /* Track used window numbers */
-static int		last_win_num = 0;
+static int	last_win_num = 0;
 
 @interface NSCursor (BackendPrivate)
 - (void *)_cid;
@@ -1439,14 +1439,16 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
    * Set up standard atoms.
    */
 #ifdef HAVE_XINTERNATOMS
-   XInternAtoms(dpy, atom_names, sizeof(atom_names)/sizeof(char*),
-                False, generic.atoms);
+  XInternAtoms(dpy, atom_names, sizeof(atom_names)/sizeof(char*),
+    False, generic.atoms);
 #else
-   {
-     int atomCount;
+  {
+    int count;
 
-     for (atomCount = 0; atomCount < sizeof(atom_names)/sizeof(char*); atomCount++)
-       generic.atoms[atomCount] = XInternAtom(dpy, atom_names[atomCount], False);
+    for (count = 0; count < sizeof(atom_names)/sizeof(char*); count++)
+      {
+        generic.atoms[count] = XInternAtom(dpy, atom_names[count], False);
+      }
    }
 #endif
 
@@ -1580,9 +1582,9 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
  * hold 64bit values.
  */
     XChangeProperty(dpy, ROOT,
-                    generic._GNUSTEP_WM_ATTR_ATOM, generic._GNUSTEP_WM_ATTR_ATOM,
-                    32, PropModeReplace, (unsigned char *)&win_attrs,
-                    sizeof(GNUstepWMAttributes)/sizeof(CARD32));
+      generic._GNUSTEP_WM_ATTR_ATOM, generic._GNUSTEP_WM_ATTR_ATOM,
+      32, PropModeReplace, (unsigned char *)&win_attrs,
+      sizeof(GNUstepWMAttributes)/sizeof(CARD32));
   }
 
   if ((generic.wm & XGWM_EWMH) != 0)
@@ -1595,11 +1597,12 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
  * hold 64bit values.
  */
       XChangeProperty(dpy, ROOT,
-		      generic._NET_WM_PID_ATOM, XA_CARDINAL,
-		      32, PropModeReplace,
-		      (unsigned char*)&pid, 1);
+	generic._NET_WM_PID_ATOM, XA_CARDINAL,
+	32, PropModeReplace,
+	(unsigned char*)&pid, 1);
       // FIXME: Need to set WM_CLIENT_MACHINE as well.
     }
+
 
   /* We need to determine the offsets between the actual decorated window
    * and the window we draw into.
@@ -1632,9 +1635,9 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
         }
       else
         {
-          offsets = (uint16_t *)PropGetCheckProperty(dpy, DefaultRootWindow(dpy),
-                                                     generic._GNUSTEP_FRAME_OFFSETS_ATOM,
-                                                     XA_CARDINAL, 16, 60, &count);
+          offsets = (uint16_t *)PropGetCheckProperty(dpy,
+	    DefaultRootWindow(dpy), generic._GNUSTEP_FRAME_OFFSETS_ATOM,
+	    XA_CARDINAL, 16, 60, &count);
         }
 
       if (offsets == 0)
@@ -1924,6 +1927,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
    * It could be done for popup windows, but at this point we don't know
    * about the usage of the window.
    */
+
   window->xwn_attrs.override_redirect = False;
 
   window->ident = XCreateWindow(dpy, window->root,
@@ -2869,6 +2873,37 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 
   if (op != NSWindowOut)
     {
+      static BOOL	beenHere = NO;
+
+      /* To tell the window manager that our window corresponds to
+       * a particular task we must pass it the DESKTOP_STARTUP_ID
+       * by setting it as a property of the first toplevel window
+       * made visible.
+       * (issue #62 on github)
+       */
+      if (NO == beenHere)
+	{
+	  NSProcessInfo	*p = [NSProcessInfo processInfo];
+	  NSDictionary	*e = [p environment];
+	  NSString	*s = [e objectForKey: @"DESKTOP_STARTUP_ID"];
+
+	  beenHere = YES;
+	  if ([s length] > 0)
+	    {
+	      const char	*ptr = [s UTF8String];
+
+	      XChangeProperty(dpy, window->ident,
+		XInternAtom(dpy, "_NET_STARTUP_ID", False),
+		generic.UTF8_STRING_ATOM,
+		8,
+		PropModeReplace,
+		(unsigned char *)ptr,
+		strlen(ptr)
+	      );
+	      [p setValue: nil inEnvironment: @"DESKTOP_STARTUP_ID"];
+	    }
+	}
+
       /*
        * Some window managers ignore any hints and properties until the
        * window is actually mapped, so we need to set them all up
