@@ -57,7 +57,7 @@ xdg_surface_on_configure(void *data, struct xdg_surface *xdg_surface,
       // But, a free here should on its own be fine as long as everyone
       // passes around the window ID and does not store a ptr to window itself.
       NSDebugLog(@"deleting window win=%d", window->window_id);
-      free(window);
+//      free(window);
       return;
     }
 
@@ -151,9 +151,16 @@ static void
 xdg_popup_done(void *data, struct xdg_popup *xdg_popup)
 {
   struct window *window = data;
+
   window->terminated = YES;
+  wl_list_remove(&window->link);
+
+  if (window->popup == xdg_popup) window->popup = NULL;
   xdg_popup_destroy(xdg_popup);
+/*
   wl_surface_destroy(window->surface);
+  window->surface = NULL;
+*/
 }
 
 static void

@@ -41,6 +41,7 @@
 #include "cairo/CairoSurface.h"
 
 #include "wayland/xdg-shell-client-protocol.h"
+#include "wayland/xdg-activation-client-protocol.h"
 #include "wayland/wlr-layer-shell-client-protocol.h"
 
 struct pointer
@@ -75,15 +76,16 @@ struct cursor
 
 typedef struct _WaylandConfig
 {
-  struct wl_display	    *display;
-  struct wl_registry	     *registry;
-  struct wl_compositor       *compositor;
-  struct wl_shell		  *shell;
-  struct wl_shm		*shm;
-  struct wl_seat		 *seat;
-  struct wl_keyboard	     *keyboard;
-  struct xdg_wm_base	     *wm_base;
-  struct zwlr_layer_shell_v1 *layer_shell;
+  struct wl_display	    	*display;
+  struct wl_registry	     	*registry;
+  struct wl_compositor       	*compositor;
+  struct wl_shell		*shell;
+  struct wl_shm			*shm;
+  struct wl_seat		*seat;
+  struct wl_keyboard	     	*keyboard;
+  struct xdg_wm_base	     	*wm_base;
+  struct xdg_activation_v1	*activation;
+  struct zwlr_layer_shell_v1 	*layer_shell;
   int seat_version;
 
   struct wl_list output_list;
@@ -159,14 +161,14 @@ struct window
   int	is_out;
   int	level;
 
-  struct wl_surface	    *surface;
-  struct xdg_surface	     *xdg_surface;
-  struct xdg_toplevel	      *toplevel;
-  struct xdg_popup		   *popup;
-  struct xdg_positioner	*positioner;
-  struct zwlr_layer_surface_v1 *layer_surface;
-  struct output		*output;
-  CairoSurface		       *wcs;
+  struct wl_surface	    	*surface;
+  struct xdg_surface	     	*xdg_surface;
+  struct xdg_toplevel	      	*toplevel;
+  struct xdg_popup		*popup;
+  struct xdg_positioner		*positioner;
+  struct zwlr_layer_surface_v1 	*layer_surface;
+  struct output			*output;
+  CairoSurface		       	*wcs;
 };
 
 /* get_window_with_id returns the known window with the passed ID, or NULL.

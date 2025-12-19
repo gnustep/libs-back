@@ -81,6 +81,12 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name,
       xdg_wm_base_add_listener(wlconfig->wm_base, &wm_base_listener, NULL);
       NSDebugLog(@"wayland: found wm_base interface");
     }
+  else if (strcmp(interface, xdg_activation_v1_interface.name) == 0)
+    {
+      wlconfig->activation = wl_registry_bind(registry, name,
+	&xdg_activation_v1_interface, 1);
+      NSDebugLog(@"wayland: found activation interface");
+    }
   else if (strcmp(interface, wl_shell_interface.name) == 0)
     {
       wlconfig->shell
@@ -164,16 +170,62 @@ NSToWayland(struct window *window, int ns_y)
 
 @class NSMenuPanel;
 
+@interface WaylandServer (SurfaceRoles)
+
+- (void) createSurfaceShell: (struct window *)window;
+
+- (BOOL) windowSurfaceHasRole: (struct window *)window;
+
+- (void) createTopLevel: (struct window *)window;
+
+- (void) createLayerShell: (struct window *)window
+	   withLayerType: (enum zwlr_layer_shell_v1_layer)layerType
+	   withNamespace: (NSString *)namespace;
+
+- (struct window *) getSuperMenuWindow: (struct window *)window;
+
+- (void) createSubMenuShell: (struct window *)window;
+
+- (void) createPopup: (struct window *)window;
+
+- (void) createPopupShell: (struct window *)child
+	  withParentShell: (struct window *)parent;
+
+- (void) destroySurfaceRole: (struct window *)window;
+
+- (void) destroyWindowShell: (struct window *)window;
+
+@end
 @implementation WaylandServer
 
 /* Initialize AppKit backend */
-+ (void)initializeBackend
++ (void) initializeBackend
 {
   NSDebugLog(@"Initializing GNUstep Wayland backend");
-  [GSDisplayServer setDefaultServerClass:[WaylandServer class]];
+  [GSDisplayServer setDefaultServerClass: self];
 }
 
-- (id)_initWaylandContext
+- (void) _didFinishLaunching: (NSNotification*)n
+{
+  NSApplication	*app = [NSApplication sharedApplication];
+  NSWindow	*w = [app keyWindow];
+
+  if (nil == w)
+    {
+      w = [app mainWindow];
+    }
+  if (w)
+    {
+      NSDictionary	*env = [[NSProcessInfo processInfo] environment];
+      NSString		*tok = [env objectForKey: @"XDG_ACTIVATION_TOKEN"];
+
+      if (tok)
+	{
+	}
+    }
+}
+
+- (id) _initWaylandContext
 {
   wlconfig = (WaylandConfig *) malloc(sizeof(WaylandConfig));
   memset(wlconfig, 0, sizeof(WaylandConfig));
@@ -247,11 +299,17 @@ NSToWayland(struct window *window, int ns_y)
 		   forMode:mode];
 }
 
-- (id)initWithAttributes:(NSDictionary *)info
+- (id) initWithAttributes:(NSDictionary *)info
 {
   NSDebugLog(@"WaylandServer initWithAttributes");
   [super initWithAttributes:info];
   [self _initWaylandContext];
+
+  [[NSNotificationCenter defaultCenter]
+        addObserver: self
+           selector: @selector(_didFinishLaunching:)
+               name: NSApplicationDidFinishLaunchingNotification
+             object: nil];
 
   [self setupRunLoopInputSourcesForMode:NSDefaultRunLoopMode];
   [self setupRunLoopInputSourcesForMode:NSConnectionReplyMode];
@@ -544,7 +602,15 @@ WaylandServer (WindowOps)
 		 window->pos_y);
       if ([self windowSurfaceHasRole:window] == NO)
 	{
-	  [self createSurfaceShell:window];
+	  [self createSurfaceShell: window];
+	  /* Creating a popup shell could have resulted in the popup running
+	   * and its window being destroyed ... refetch it to find out.
+	   */
+          window = get_window_with_id(wlconfig, win);
+	  if (0 == window)
+	    {
+	      return;
+	    }
 	}
       NSRect rect = NSMakeRect(window->pos_x, window->pos_y, window->width,
 			       window->height);
@@ -597,57 +663,57 @@ WaylandServer (WindowOps)
       move = YES;
     }
 
-	wframe = [self _OSFrameToWFrame: rect for: window];
+  wframe = [self _OSFrameToWFrame: rect for: window];
 
-	if (config->pointer.focus
-	    && config->pointer.focus->window_id == window->window_id)
-	  {
-	    config->pointer.y -= (wframe.origin.y - window->pos_y);
-	    config->pointer.x -= (wframe.origin.x - window->pos_x);
-	  }
+  if (config->pointer.focus
+    && config->pointer.focus->window_id == window->window_id)
+    {
+      config->pointer.y -= (wframe.origin.y - window->pos_y);
+      config->pointer.x -= (wframe.origin.x - window->pos_x);
+    }
 
-	NSDebugLog(@"[%d] placewindow: oldpos=%fx%f", win, window->pos_x,
-		   window->pos_y);
-	window->width = rect.size.width;
-	window->height = rect.size.height;
-	window->pos_x = rect.origin.x;
-	window->pos_y = NSToWayland(window, rect.origin.y);
+  NSDebugLog(@"[%d] placewindow: oldpos=%fx%f", win, window->pos_x,
+	     window->pos_y);
+  window->width = rect.size.width;
+  window->height = rect.size.height;
+  window->pos_x = rect.origin.x;
+  window->pos_y = NSToWayland(window, rect.origin.y);
 
-	[window->instance flushwindowrect:rect:window->window_id];
-	if (window->xdg_surface)
-	  {
-	    xdg_surface_set_window_geometry(window->xdg_surface, 0, 0,
-					    window->width, window->height);
-	    wl_surface_commit(window->surface);
-	  }
+  [window->instance flushwindowrect:rect:window->window_id];
+  if (window->xdg_surface)
+    {
+      xdg_surface_set_window_geometry(window->xdg_surface, 0, 0,
+				      window->width, window->height);
+      wl_surface_commit(window->surface);
+    }
 
-	if (resize == YES)
-	  {
-	    NSDebugLog(@"[%d] placewindow: newsize=%fx%f", win, window->width,
-		       window->height);
-	    NSEvent *ev = [NSEvent otherEventWithType:NSAppKitDefined
-					     location:rect.origin
-					modifierFlags:0
-					    timestamp:0
-					 windowNumber:win
-					      context:GSCurrentContext()
-					      subtype:GSAppKitWindowResized
-						data1:rect.size.width
-						data2:rect.size.height];
-	    NSDebugLog(@"notify resize=%fx%f", rect.size.width,
-		       rect.size.height);
-	    [(GSWindowWithNumber(window->window_id)) sendEvent:ev];
-	    NSDebugLog(@"notified resize=%fx%f", rect.size.width,
-		       rect.size.height);
-	    // we have a new buffer
-	  }
-	else if (move == YES)
-	  {
-	    NSDebugLog(@"[%d] placewindow: newpos=%fx%f", win, window->pos_x,
-		       window->pos_y);
-	  }
-	wl_display_dispatch_pending(window->wlconfig->display);
-	wl_display_flush(window->wlconfig->display);
+  if (resize == YES)
+    {
+      NSDebugLog(@"[%d] placewindow: newsize=%fx%f", win, window->width,
+		 window->height);
+      NSEvent *ev = [NSEvent otherEventWithType:NSAppKitDefined
+				       location:rect.origin
+				  modifierFlags:0
+				      timestamp:0
+				   windowNumber:win
+					context:GSCurrentContext()
+					subtype:GSAppKitWindowResized
+					  data1:rect.size.width
+					  data2:rect.size.height];
+      NSDebugLog(@"notify resize=%fx%f", rect.size.width,
+		 rect.size.height);
+      [(GSWindowWithNumber(window->window_id)) sendEvent:ev];
+      NSDebugLog(@"notified resize=%fx%f", rect.size.width,
+		 rect.size.height);
+      // we have a new buffer
+    }
+  else if (move == YES)
+    {
+      NSDebugLog(@"[%d] placewindow: newpos=%fx%f", win, window->pos_x,
+		 window->pos_y);
+    }
+  wl_display_dispatch_pending(window->wlconfig->display);
+  wl_display_flush(window->wlconfig->display);
 }
 
 - (NSRect)windowbounds:(int)win
@@ -756,8 +822,31 @@ WaylandServer (WindowOps)
 
 @end
 
-@implementation
-WaylandServer (SurfaceRoles)
+@implementation WaylandServer (SurfaceRoles)
+
+/* For the first top-level surface we should send the activation token if
+ * there is one and if the activation protocvol is available.
+ */
+static void
+activateIfNecessary(struct window *window)
+{
+  static BOOL	beenHere = NO;
+
+  if (NO == beenHere)
+    {
+      NSDictionary	*env = [[NSProcessInfo processInfo] environment];
+      NSString		*tok = [env objectForKey: @"XDG_ACTIVATION_TOKEN"];
+
+      beenHere = YES;
+      if (window->wlconfig->activation && [tok length] > 0)
+	{
+	  xdg_activation_v1_activate(
+	    window->wlconfig->activation, [tok UTF8String], window->surface);
+	}
+    }
+}
+
+
 - (void)createSurfaceShell:(struct window *)window
 {
   int win = window->window_id;
@@ -812,7 +901,7 @@ WaylandServer (SurfaceRoles)
 	 || window->popup != NULL;
 }
 
-- (void)createTopLevel:(struct window *)window
+- (void) createTopLevel: (struct window *)window
 {
   int win = window->window_id;
   NSDebugLog(@"[%d] createTopLevel", win);
@@ -851,6 +940,8 @@ WaylandServer (SurfaceRoles)
       xdg_surface_set_window_geometry(window->xdg_surface, 0, 0, window->width,
 				      window->height);
     }
+
+  activateIfNecessary(window);
 
   wl_surface_commit(window->surface);
   wl_display_dispatch_pending(window->wlconfig->display);
@@ -913,6 +1004,7 @@ WaylandServer (SurfaceRoles)
   wl_display_dispatch_pending(window->wlconfig->display);
   wl_display_flush(window->wlconfig->display);
 }
+
 - (struct window *)getSuperMenuWindow:(struct window *)window
 {
   NSMenuPanel *nswin = (GSWindowWithNumber(window->window_id));
@@ -1089,7 +1181,7 @@ WaylandServer (SurfaceRoles)
   window->configured = NO;
 }
 
-- (void)destroyWindowShell:(struct window *)window
+- (void) destroyWindowShell: (struct window *)window
 {
   NSDebugLog(@"[%d] destroyWindowShell", window->window_id);
 

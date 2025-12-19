@@ -41,6 +41,7 @@ wayland_LOCALIZED_RESOURCE_FILES = \
 wayland_C_FILES = \
 xdg-shell-protocol.c \
 wlr-layer-shell-protocol.c \
+xdg-activation-protocol.c \
 
 # The Objective-C source files to be compiled
 wayland_OBJC_FILES = \
