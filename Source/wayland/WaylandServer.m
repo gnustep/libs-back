@@ -233,6 +233,7 @@ NSToWayland(struct window *window, int ns_y)
   wlconfig->mouse_scroll_multiplier = 1.0f;
   wl_list_init(&wlconfig->output_list);
   wl_list_init(&wlconfig->window_list);
+  wl_list_init(&wlconfig->window_dead);
 
   wlconfig->display = wl_display_connect(NULL);
   if (!wlconfig->display)
@@ -272,19 +273,32 @@ NSToWayland(struct window *window, int ns_y)
   return self;
 }
 
-- (void)receivedEvent:(void *)data
-		 type:(RunLoopEventType)type
-		extra:(void *)extra
-	      forMode:(NSString *)mode
+- (void) receivedEvent: (void*)data
+		  type: (RunLoopEventType)type
+		 extra: (void*)extra
+	       forMode: (NSString*)mode
 {
   if (type == ET_RDESC)
     {
+      struct window	*pos;
+      struct window	*tmp;
+
       //	NSDebugLog(@"receivedEvent ET_RDESC");
       if (wl_display_dispatch(wlconfig->display) == -1)
         {
-        [NSException raise:NSWindowServerCommunicationException
-                format:@"Connection to Wayland Server lost"];
+          [NSException raise: NSWindowServerCommunicationException
+		      format: @"Connection to Wayland Server lost"];
         }
+
+      /* Dead windows should be freed now that we are in the event loop
+       * rather than in a callback from other code.
+       */
+      wl_list_for_each_safe(pos, tmp, &wlconfig->window_dead, link)
+	{
+	  wl_list_remove(&pos->link);
+  	  NSDebugLog(@"destroyed window: win=%d", pos->window_id);
+	  free(pos);
+	}
     }
 }
 
@@ -402,10 +416,10 @@ NSToWayland(struct window *window, int ns_y)
 @implementation
 WaylandServer (WindowOps)
 
-- (int)window:(NSRect)
-	frame:(NSBackingStoreType)type
-	     :(unsigned int)style
-	     :(int)screen
+- (int) window: (NSRect)frame
+	      : (NSBackingStoreType)type
+	      : (unsigned int)style
+	      : (int)screen
 {
   NSDebugLog(@"window: screen=%d frame=%@", screen, NSStringFromRect(frame));
   struct window *window;
@@ -501,7 +515,7 @@ WaylandServer (WindowOps)
   return window->window_id;
 }
 
-- (void)termwindow:(int)win
+- (void) termwindow: (int)win
 {
   NSDebugLog(@"termwindow: win=%d", win);
   struct window *window = get_window_with_id(wlconfig, win);
@@ -510,15 +524,20 @@ WaylandServer (WindowOps)
   // FIXME should wait for buffer release before detroying it
   //
   // wl_buffer_destroy(window->buffer);
+
+  /* We mark the window as terminated, and move it to the 'dead' list.
+   * The memory should be freed later when it is safe to do so.
+   */
   wl_list_remove(&window->link);
+  wl_list_insert(wlconfig->window_dead.prev, &window->link);
   window->terminated = YES;
 }
 
-- (int)nativeWindow:(void *)
-	     winref:(NSRect *)frame
-		   :(NSBackingStoreType *)type
-		   :(unsigned int *)style
-		   :(int *)screen
+- (int) nativeWindow: (void*)winref
+		    : (NSRect*)frame
+		    : (NSBackingStoreType*)type
+		    : (unsigned int*)style
+		    : (int*)screen
 {
   NSDebugLog(@"nativeWindow");
   return 0;
@@ -588,6 +607,7 @@ WaylandServer (WindowOps)
 {
   struct window *window = get_window_with_id(wlconfig, win);
 
+  if (nil == window) return;
   if (op == NSWindowOut)
     {
       NSDebugLog(@"[%d] orderwindow: NSWindowOut", win);

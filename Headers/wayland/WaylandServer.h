@@ -92,6 +92,7 @@ typedef struct _WaylandConfig
   int		 output_count;
   struct wl_list window_list;
   int		 window_count;
+  struct wl_list window_dead;	// terminated wndows to be freed
   int		 last_window_id;
 
 // last event serial from pointer or keyboard

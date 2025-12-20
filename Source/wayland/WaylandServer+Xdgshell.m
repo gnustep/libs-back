@@ -40,24 +40,9 @@ xdg_surface_on_configure(void *data, struct xdg_surface *xdg_surface,
 
   if (window->terminated == YES)
     {
-      // 'struct window' is defined in Headers/wayland/WaylandServer.
-      //
-      // window->terminated should only be true after
-      // -[WaylandServer(WindowOps) termwindow:(int)win] sets this to true
-      // after invoking -[WaylandServer destroyWindowShell:window] and
-      // using wl_list_remove(&window->link);.
-      //
-      // We do not expect 'window' to be referenced again, since
-      // -destroyWindowShell: invokes wl_display_dispatch_pending(...) and
-      // wl_display_flush(...);. On the off chance it does, first, we may want
-      // to patch every single invocation of get_window_with_id() that may
-      // currently be ignoring the case where NULL may be returned, and
-      // possibly crashing for that reason.
-      //
-      // But, a free here should on its own be fine as long as everyone
-      // passes around the window ID and does not store a ptr to window itself.
-      NSDebugLog(@"deleting window win=%d", window->window_id);
-//      free(window);
+      NSDebugLog(@"event on terminated window win=%d ignored",
+	window->window_id);
+      xdg_surface_ack_configure(xdg_surface, serial);
       return;
     }
 
@@ -152,15 +137,28 @@ xdg_popup_done(void *data, struct xdg_popup *xdg_popup)
 {
   struct window *window = data;
 
-  window->terminated = YES;
-  wl_list_remove(&window->link);
-
-  if (window->popup == xdg_popup) window->popup = NULL;
+  NSCAssert(window->popup == xdg_popup, NSInternalInconsistencyException);
   xdg_popup_destroy(xdg_popup);
-/*
-  wl_surface_destroy(window->surface);
-  window->surface = NULL;
-*/
+  window->popup = NULL;
+
+  if (window->xdg_surface)
+    {
+      xdg_surface_destroy(window->xdg_surface);
+      window->xdg_surface = NULL;
+    }
+
+  if (window->surface)
+    {
+      wl_surface_destroy(window->surface);
+      window->surface = NULL;
+    }
+
+  /* We mark the window as terminated, and move it to the 'dead' list.
+   * The memory should be freed later when it is safe to do so.
+   */
+  wl_list_remove(&window->link);
+  wl_list_insert(window->wlconfig->window_dead.prev, &window->link);
+  window->terminated = YES;
 }
 
 static void
