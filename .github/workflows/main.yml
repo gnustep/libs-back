@@ -44,7 +44,13 @@ jobs:
         build-essential
         git
         pkg-config
+        libgnutls28-dev
+        libffi-dev
         libicu-dev
+        libxml2-dev
+        libxslt1-dev
+        libssl-dev
+        gnutls-bin
         libtiff-dev
         libjpeg-dev
         libgnustep-base-dev
