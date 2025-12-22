@@ -32,6 +32,8 @@ jobs:
 
     env:
       DEBIAN_FRONTEND: noninteractive
+      SRC_PATH: ${{ github.workspace }}/source
+      DEPS_PATH: ${{ github.workspace }}/dependencies
 
     steps:
       - uses: actions/checkout@v3
