@@ -36,7 +36,7 @@ jobs:
         build-essential
         git
         pkg-config
-        icu-devel
+        libicu-dev
         libtiff-dev
         libjpeg-dev
         libgnustep-base-dev
