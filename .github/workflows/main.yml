@@ -31,7 +31,7 @@ jobs:
             graphics: headless
 
     env: 
-     APT_PACKAGES: >-
+      APT_PACKAGES: >-
         build-essential
         pkg-config
         libtiff-dev
@@ -39,12 +39,16 @@ jobs:
         libgnustep-base-dev
         libfreetype-dev
 
-     # packages for xlib runtime
-     APT_PACKAGES_cairo: >-
+      # packages for xlib runtime
+      APT_PACKAGES_xlib: >-
         libxt-dev
         
-     # packages for cairo runtime
-     APT_PACKAGES_cairo: >-
+      # packages for cairo runtime
+      APT_PACKAGES_cairo: >-
+        libcairo2-dev
+
+      # packages for headless runtime
+      APT_PACKAGES_headless: >-
         libcairo2-dev 
   
       DEBIAN_FRONTEND: noninteractive
