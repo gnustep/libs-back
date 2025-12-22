@@ -1,6 +1,12 @@
 on:
   push:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      libs_gui_branch:
+        description: "libs-gui branch"
+        default: "master"
+        required: true
 
 jobs:
   ########### Linux ###########
@@ -33,7 +39,12 @@ jobs:
       - name: Install packages
         run: |
           apt-get -q -y update
-          apt-get -q -y install libgnustep-gui-dev libfreetype-dev libcairo2-dev libxt-dev pkg-config build-essential
+          apt-get -q -y install libgnustep-base-dev libfreetype-dev libcairo2-dev libxt-dev pkg-config build-essential
+
+      - name: Install dependencies
+        env:
+          LIBS_GUI_BRANCH: ${{github.event.inputs.libs_gui_branch}}
+        run: ./.github/scripts/dependencies.sh
 
       - name: Build source
         run: |
