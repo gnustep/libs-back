@@ -30,7 +30,23 @@ jobs:
           - server: headless
             graphics: headless
 
-    env:
+    env: 
+     APT_PACKAGES: >-
+        build-essential
+        pkg-config
+        libtiff-dev
+        libjpeg-dev
+        libgnustep-base-dev
+        libfreetype-dev
+
+     # packages for xlib runtime
+     APT_PACKAGES_cairo: >-
+        libxt-dev
+        
+     # packages for cairo runtime
+     APT_PACKAGES_cairo: >-
+        libcairo2-dev 
+  
       DEBIAN_FRONTEND: noninteractive
       SRC_PATH: ${{ github.workspace }}/source
       DEPS_PATH: ${{ github.workspace }}/dependencies
@@ -41,7 +57,7 @@ jobs:
       - name: Install packages
         run: |
           apt-get -q -y update
-          apt-get -q -y install libgnustep-base-dev libfreetype-dev libcairo2-dev libxt-dev pkg-config build-essential
+          apt-get -q -y install $APT_PACKAGES $APT_PACKAGES_${{ matrix.graphics }}
 
       - name: Install dependencies
         env:
