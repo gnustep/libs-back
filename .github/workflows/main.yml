@@ -3,6 +3,14 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
+      tools_make_branch:
+        description: "tools-make branch"
+        default: "master"
+        required: true
+      libs_base_branch:
+        description: "libs-base branch"
+        default: "master"
+        required: true
       libs_gui_branch:
         description: "libs-gui branch"
         default: "master"
@@ -57,6 +65,7 @@ jobs:
       DEBIAN_FRONTEND: noninteractive
       SRC_PATH: ${{ github.workspace }}/source
       DEPS_PATH: ${{ github.workspace }}/dependencies
+      INSTALL_PATH: ${{ github.workspace }}/build
 
     steps:
       - uses: actions/checkout@v3
@@ -68,16 +77,18 @@ jobs:
 
       - name: Install dependencies
         env:
+          TOOLS_MAKE_BRANCH: ${{github.event.inputs.tools_make_branch}}
+          LIBS_BASE_BRANCH: ${{github.event.inputs.libs_base_branch}}
           LIBS_GUI_BRANCH: ${{github.event.inputs.libs_gui_branch}}
         run: ./.github/scripts/dependencies.sh
 
       - name: Build source
         run: |
-          . /usr/share/GNUstep/Makefiles/GNUstep.sh
+          . $INSTALL_PATH/share/GNUstep/Makefiles/GNUstep.sh
           ./configure --enable-server=${{ matrix.server }} --enable-graphics=${{ matrix.graphics }}
           make && make install
 
       - name: Run tests
         run: |
-          . /usr/share/GNUstep/Makefiles/GNUstep.sh
+          . $INSTALL_PATH/share/GNUstep/Makefiles/GNUstep.sh
           make check
