@@ -33,6 +33,7 @@ jobs:
     env: 
       APT_PACKAGES: >-
         build-essential
+        git
         pkg-config
         libtiff-dev
         libjpeg-dev
