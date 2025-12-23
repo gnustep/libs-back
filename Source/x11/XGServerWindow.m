@@ -2900,7 +2900,17 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 		(unsigned char *)ptr,
 		strlen(ptr)
 	      );
-	      [p setValue: nil inEnvironment: @"DESKTOP_STARTUP_ID"];
+	      /* Ideally we should remove the value from the environment to
+	       * prevent any other library from acting on it.  There is no
+	       * OpenStep/Cocoa APIU to do that, but we can use an extension
+	       * from GNUstepBase if available.
+	       */
+	      if ([p respondsToSelector: @selector(setValue:inEnvironment:)])
+		{
+		  [p performSelector: @selector(setValue:inEnvironment:)
+			  withObject: nil
+			  withObject: @"DESKTOP_STARTUP_ID"];
+		}
 	    }
 	}
 
