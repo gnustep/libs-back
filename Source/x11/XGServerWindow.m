@@ -1939,10 +1939,11 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 				&window->xwn_attrs);
 
   /*
-   * Mark this as a GNUstep app with the current application name.
+   * Mark the window as the application with name & class so the WM can group it
    */
+  const char *procName = [[[NSProcessInfo processInfo] processName] UTF8String];
   classhint.res_name = generic.rootName;
-  classhint.res_class = "GNUstep";
+  classhint.res_class = (char *)procName;
   XSetClassHint(dpy, window->ident, &classhint);
 
   window->map_state = IsUnmapped;
