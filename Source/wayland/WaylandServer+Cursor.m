@@ -28,6 +28,7 @@
 #include "wayland/WaylandServer.h"
 #include "cairo/WaylandCairoShmSurface.h"
 #import <AppKit/NSEvent.h>
+#import <AppKit/NSImage.h>
 #import <AppKit/NSView.h>
 #import <AppKit/NSWindow.h>
 #import <AppKit/NSCursor.h>
@@ -695,11 +696,11 @@ WaylandServer (Cursor)
     {
       NSDebugLog(@"load cursor from theme for style %d: %s", style,
 		 cursor_name);
-      struct cursor *wayland_cursor = malloc(sizeof(struct cursor));
+      struct cursor *wayland_cursor = calloc(1, sizeof(struct cursor));
 
       wayland_cursor->cursor
 	= wl_cursor_theme_get_cursor(wlconfig->cursor_theme, cursor_name);
-
+      NSAssert(wayland_cursor->cursor, NSInternalInconsistencyException);
       wayland_cursor->image = wayland_cursor->cursor->images[0];
       wayland_cursor->buffer
 	= wl_cursor_image_get_buffer(wayland_cursor->image);

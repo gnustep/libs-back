@@ -1,6 +1,20 @@
 on:
   push:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      tools_make_branch:
+        description: "tools-make branch"
+        default: "master"
+        required: true
+      libs_base_branch:
+        description: "libs-base branch"
+        default: "master"
+        required: true
+      libs_gui_branch:
+        description: "libs-gui branch"
+        default: "master"
+        required: true
 
 jobs:
   ########### Linux ###########
@@ -15,6 +29,7 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
 
     strategy:
+      fail-fast: false
       matrix:
         include:
           - server: x11
@@ -24,8 +39,40 @@ jobs:
           - server: headless
             graphics: headless
 
-    env:
+    env: 
+      APT_PACKAGES: >-
+        build-essential
+        git
+        pkg-config
+        libgnutls28-dev
+        libffi-dev
+        libicu-dev
+        libxml2-dev
+        libxslt1-dev
+        libssl-dev
+        gnutls-bin
+        libtiff-dev
+        libjpeg-dev
+        libgnustep-base-dev
+        libfreetype-dev
+
+      # packages for xlib runtime
+      APT_PACKAGES_xlib: >-
+        libxt-dev
+        
+      # packages for cairo runtime
+      APT_PACKAGES_cairo: >-
+        libxt-dev
+        libcairo2-dev
+
+      # packages for headless runtime
+      APT_PACKAGES_headless: >-
+        libcairo2-dev 
+  
       DEBIAN_FRONTEND: noninteractive
+      SRC_PATH: ${{ github.workspace }}/source
+      DEPS_PATH: ${{ github.workspace }}/dependencies
+      INSTALL_PATH: ${{ github.workspace }}/build
 
     steps:
       - uses: actions/checkout@v3
@@ -33,15 +80,22 @@ jobs:
       - name: Install packages
         run: |
           apt-get -q -y update
-          apt-get -q -y install libgnustep-gui-dev libfreetype-dev libcairo2-dev libxt-dev pkg-config build-essential
+          apt-get -q -y install $APT_PACKAGES $APT_PACKAGES_${{ matrix.graphics }}
+
+      - name: Install dependencies
+        env:
+          TOOLS_MAKE_BRANCH: ${{github.event.inputs.tools_make_branch}}
+          LIBS_BASE_BRANCH: ${{github.event.inputs.libs_base_branch}}
+          LIBS_GUI_BRANCH: ${{github.event.inputs.libs_gui_branch}}
+        run: ./.github/scripts/dependencies.sh
 
       - name: Build source
         run: |
-          . /usr/share/GNUstep/Makefiles/GNUstep.sh
+          . $INSTALL_PATH/share/GNUstep/Makefiles/GNUstep.sh
           ./configure --enable-server=${{ matrix.server }} --enable-graphics=${{ matrix.graphics }}
           make && make install
 
       - name: Run tests
         run: |
-          . /usr/share/GNUstep/Makefiles/GNUstep.sh
+          . $INSTALL_PATH/share/GNUstep/Makefiles/GNUstep.sh
           make check

@@ -1,13 +1,25 @@
+
+2025-12-18 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/x11/XGServer.m:
+	* Source/x11/XGServerWindow.m:
+	If DESKTOP_STARTUP_ID environment variable is present, set it as the
+	_NET_STARTUP_ID property of the first window we make visible (to tell
+	the WM we are starting up) and, when launch completes, send a message
+	to the root window to tell it that startup is over.
+	This is an attempt to fix issue  #62 on github by implementing the
+	XDG startup notification mechanism.
+
 2025-12-17 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGServerWindow.m:
 	Implement support for _NET_WORKAREA as suggested by Fred
-
+  
 2025-05-21 Fred Kiefer <FredKiefer@gmx.de>
 
 	* Source/x11/scale.c,
 	* Source/x11/xutil.c: Update function declaration to modern C.
-
+  
 2025-02-11 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* ANNOUNCE:

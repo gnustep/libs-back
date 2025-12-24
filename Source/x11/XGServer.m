@@ -382,6 +382,48 @@ _parse_display_name(NSString *name, int *dn, int *sn)
   return [(XGServer*)GSCurrentServer() xDisplay];
 }
 
+static NSString	*startupID = nil;
+
+- (void) _didFinishLaunching: (NSNotification*)n
+{
+  /* To tell the window manager that we have completed launching we must
+   * send a _NET_STARTUP_INFO_END message telling it that startup has ended
+   * for the DESKTOP_STARTUP_ID (issue #62 on github)
+   */
+  if (startupID)
+    {
+      const char	*startup_id = [startupID UTF8String];
+      Window		root = RootWindow(dpy, defScreen);
+      Atom 		atom = XInternAtom(dpy, "_NET_STARTUP_INFO_END", False);
+      int		len = strlen(startup_id);
+      char 		*msg = malloc(len + 12);
+      int		pos = 0;
+
+      snprintf(msg, len+12, "remove: ID=%s", startup_id);
+      len = strlen(msg) + 1;
+
+      while (pos < len)
+	{
+	  int		chunk;
+	  XEvent	ev = {0};
+
+	  ev.xclient.type = ClientMessage;
+	  ev.xclient.window = root;
+	  ev.xclient.message_type = atom;
+	  ev.xclient.format = 8;
+
+	  chunk = (len - pos > 20) ? 20 : (len - pos);
+	  memcpy(ev.xclient.data.b, msg + pos, chunk);
+
+	  XSendEvent(dpy, root, False, PropertyChangeMask, &ev);
+	  pos += chunk;
+	}
+      XFlush(dpy);
+
+      DESTROY(startupID);
+    }
+}
+
 - (id) _initXContext
 {
   int screen_id, display_id;
@@ -489,6 +531,17 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 {
   [super initWithAttributes: info];
   [self _initXContext];
+
+  ASSIGN(startupID, [[[NSProcessInfo processInfo] environment]
+    objectForKey: @"DESKTOP_STARTUP_ID"]);
+  if (startupID)
+    {
+      [[NSNotificationCenter defaultCenter]
+	    addObserver: self
+	       selector: @selector(_didFinishLaunching:)
+		   name: NSApplicationDidFinishLaunchingNotification
+		 object: nil];
+    }
 
   [self setupRunLoopInputSourcesForMode: NSDefaultRunLoopMode]; 
   [self setupRunLoopInputSourcesForMode: NSConnectionReplyMode]; 
