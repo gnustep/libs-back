@@ -4511,10 +4511,17 @@ _screenSize(Display *dpy, int screen)
   return scrSize;
 }
 
-/* Gets the work areas (if the window manager supports _NET_WORKAREA) of the
- * monitors/screens for the display.  These are supposed to be the extents of
- * the screen that we can use without trspassing on areas reservced for the
- * window manager.
+/* An X server may have multiple physical monitors organised in some way to
+ * make up the whole display.  When XRANDR is available each physical monitor
+ * corresponds to an NSScreen,  but without that there is a single NSScreen
+ * corresponding to the composite display.
+ * The window managers provide the _NET_WORKAREA property which returns the
+ * usable area of the composite display, so this information is only usable
+ * when either XRANDR is not available or there is only one physical monitor
+ * and therefore only one NSScreen.
+ * Where the window manager provides multiple virtual work areas, _NET_WORKAREA
+ * may define multiple rectangles, but all refer to the same display/NSScreen.
+ * Returns nil if no information is available.
  */
 static NSArray *
 _workAreas(Display *dpy, Window root)
@@ -4557,6 +4564,12 @@ _workAreas(Display *dpy, Window root)
 
   items = (unsigned long *)data;
   count = nitems / 4;
+  if (0 == count)
+    {
+      XFree(data);
+      return nil;
+    }
+
   array = [NSMutableArray arrayWithCapacity: count];
   for (index = 0; index < count; index++)
     {
@@ -4620,7 +4633,7 @@ _workAreas(Display *dpy, Window root)
           monitors = NSZoneMalloc([self zone],
 	    monitorsCount * sizeof(MonitorDevice));
 
-          for (i = 0, mi = 0; i < screen_res->noutput; i++)
+          for (i = 0, mi = 0; i < monitorsCount; i++)
             {
               XRROutputInfo *output_info;
               
@@ -4637,10 +4650,15 @@ _workAreas(Display *dpy, Window root)
                   monitors[mi].depth = [self windowDepthForScreen: mi];
                   monitors[mi].resolution
 		    = [self resolutionForScreen: defScreen];
-		  if ([workAreas count] > mi)
+
+		  /* We can only use the work area provided by _NET_WORKAREA
+		   * if we have a single screen/monitor, because that property
+		   * refers to coordinates in the composite display formed by
+		   * all the available monitors.
+		   */
+		  if (1 == monitorsCount && workAreas != nil)
 		    {
-		      monitors[mi].frame = 
-			[[workAreas objectAtIndex: mi] rectValue];
+		      monitors[0].frame = [[workAreas firstObject] rectValue];
 		    }
 		  else
 		    {
@@ -4701,7 +4719,7 @@ _workAreas(Display *dpy, Window root)
   monitors[0].resolution = [self resolutionForScreen: defScreen];
   monitors[0].frame = NSMakeRect(0, 0, xScreenSize.width, xScreenSize.height);
 
-  if ([workAreas count] > 0)
+  if (workAreas != nil)
     {
       monitors[0].frame = [[workAreas firstObject] rectValue];
     }
