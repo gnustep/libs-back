@@ -149,6 +149,7 @@ struct window
   BOOL moving;
   BOOL resizing;
   BOOL ignoreMouse;
+  BOOL usesOpenGL;
 
   float pos_x;
   float pos_y;

@@ -44,25 +44,25 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the `wayland-client' library (-lwayland-client). */
+/* Define to 1 if you have the 'wayland-client' library (-lwayland-client). */
 #undef HAVE_LIBWAYLAND_CLIENT
 
-/* Define to 1 if you have the `Xext' library (-lXext). */
+/* Define to 1 if you have the 'Xext' library (-lXext). */
 #undef HAVE_LIBXEXT
 
-/* Define to 1 if you have the `Xft' library (-lXft). */
+/* Define to 1 if you have the 'Xft' library (-lXft). */
 #undef HAVE_LIBXFT
 
-/* Define to 1 if you have the `xkbcommon' library (-lxkbcommon). */
+/* Define to 1 if you have the 'xkbcommon' library (-lxkbcommon). */
 #undef HAVE_LIBXKBCOMMON
 
-/* Define to 1 if you have the `Xmu' library (-lXmu). */
+/* Define to 1 if you have the 'Xmu' library (-lXmu). */
 #undef HAVE_LIBXMU
 
-/* Define to 1 if you have the `Xt' library (-lXt). */
+/* Define to 1 if you have the 'Xt' library (-lXt). */
 #undef HAVE_LIBXT
 
-/* Define to 1 if you have the `shmctl' function. */
+/* Define to 1 if you have the 'shmctl' function. */
 #undef HAVE_SHMCTL
 
 /* Define to 1 if you have the <stdint.h> header file. */
@@ -80,7 +80,7 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
-/* Define to 1 if you have the `syslog' function. */
+/* Define to 1 if you have the 'syslog' function. */
 #undef HAVE_SYSLOG
 
 /* Define to 1 if you have the <syslog.h> header file. */
@@ -95,7 +95,7 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define to 1 if you have the `usleep' function. */
+/* Define to 1 if you have the 'usleep' function. */
 #undef HAVE_USLEEP
 
 /* Define if you have XftDrawStringUtf8 */
@@ -141,7 +141,7 @@
 /* Define to enable Xshape support */
 #undef HAVE_XSHAPE
 
-/* Define to 1 if you have the `Xutf8LookupString' function. */
+/* Define to 1 if you have the 'Xutf8LookupString' function. */
 #undef HAVE_XUTF8LOOKUPSTRING
 
 /* Define to the address where bug reports for this package should be sent. */
@@ -162,7 +162,7 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Define to 1 if all of the C90 standard headers exist (not just the ones
+/* Define to 1 if all of the C89 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
 #undef STDC_HEADERS

@@ -46,6 +46,7 @@
 #include <sys/mman.h>
 
 #include "wayland/WaylandServer.h"
+#include "wayland/WaylandOpenGL.h"
 
 extern const struct wl_output_listener output_listener;
 
@@ -337,6 +338,16 @@ NSToWayland(struct window *window, int ns_y)
   NSDebugLog(@"beep");
 }
 
+- glContextClass
+{
+  return [WaylandGLContext class];
+}
+
+- glPixelFormatClass
+{
+  return [WaylandGLPixelFormat class];
+}
+
 @end
 
 @implementation
@@ -402,6 +413,7 @@ WaylandServer (WindowOps)
   window->moving = NO;
   window->resizing = NO;
   window->ignoreMouse = NO;
+  window->usesOpenGL = NO;
 
   // FIXME is this needed?
   if (window->pos_x < 0)
@@ -712,6 +724,16 @@ WaylandServer (WindowOps)
   NSDebugLog(@"[%d] flushwindowrect: %f,%f %fx%f", win, NSMinX(rect),
 	     NSMinY(rect), NSWidth(rect), NSHeight(rect));
   struct window *window = get_window_with_id(wlconfig, win);
+  if (window == NULL)
+    {
+      return;
+    }
+
+  if (window->usesOpenGL)
+    {
+      NSDebugLog(@"[%d] skipping cairo flush for OpenGL-backed window", win);
+      return;
+    }
 
   [[GSCurrentContext() class] handleExposeRect:rect forDriver:window->wcs];
 }

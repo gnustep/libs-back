@@ -51,6 +51,8 @@ WaylandServer+Keyboard.m  \
 WaylandServer+Seat.m  \
 WaylandServer+Xdgshell.m  \
 WaylandServer+Layershell.m  \
+WaylandGLContext.m  \
+WaylandGLPixelFormat.m  \
 
 -include GNUmakefile.preamble
 
