@@ -91,9 +91,9 @@ static WaylandGLContext *currentGLContext;
       return YES;
     }
 
-  if (_window == NULL)
+  if (_window == NULL && [self _attachToWindowIfNeeded] == NO)
     {
-      [self _attachToWindowIfNeeded];
+      return NO;
     }
 
   wlDisplay = NULL;
@@ -174,7 +174,6 @@ static WaylandGLContext *currentGLContext;
   newWindow = (struct window *)[server windowDevice:[window windowNumber]];
   if (newWindow == NULL)
     {
-      NSDebugMLLog(@"OpenGL", @"No wayland window device found for view %@", _view);
       return NO;
     }
 
@@ -285,8 +284,6 @@ static WaylandGLContext *currentGLContext;
       _eglDisplay = ((WaylandGLContext *)share)->_eglDisplay;
     }
 
-  _pixelFormat = RETAIN(format);
-
   return self;
 }
 
@@ -340,7 +337,10 @@ static WaylandGLContext *currentGLContext;
                   format:@"GL Context has no view attached, cannot be made current"];
     }
 
-  [self _attachToWindowIfNeeded];
+  if ([self _attachToWindowIfNeeded] == NO)
+    {
+      return;
+    }
 
   if ([self _ensureDisplayAndContextWithShare:_shareContext] == NO)
     {
