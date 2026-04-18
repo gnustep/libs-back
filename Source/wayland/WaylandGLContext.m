@@ -91,6 +91,11 @@ static WaylandGLContext *currentGLContext;
       return YES;
     }
 
+  if (_window == NULL)
+    {
+      [self _attachToWindowIfNeeded];
+    }
+
   wlDisplay = NULL;
   if (_window != NULL && _window->wlconfig != NULL)
     {
@@ -145,6 +150,45 @@ static WaylandGLContext *currentGLContext;
       return NO;
     }
 
+  return YES;
+}
+
+- (BOOL)_attachToWindowIfNeeded
+{
+  GSDisplayServer *server;
+  NSWindow *window;
+  struct window *newWindow;
+
+  if (_view == nil)
+    {
+      return NO;
+    }
+
+  window = [_view window];
+  if (window == nil)
+    {
+      return NO;
+    }
+
+  server = GSCurrentServer();
+  newWindow = (struct window *)[server windowDevice:[window windowNumber]];
+  if (newWindow == NULL)
+    {
+      NSDebugMLLog(@"OpenGL", @"No wayland window device found for view %@", _view);
+      return NO;
+    }
+
+  if (_window != newWindow)
+    {
+      if (_window != NULL)
+        {
+          _window->usesOpenGL = NO;
+        }
+      _window = newWindow;
+      [self _destroySurface];
+    }
+
+  _window->usesOpenGL = YES;
   return YES;
 }
 
@@ -253,9 +297,6 @@ static WaylandGLContext *currentGLContext;
 
 - (void)setView:(NSView *)view
 {
-  GSDisplayServer *server;
-  NSWindow *window;
-
   if (view == nil)
     {
       [NSException raise:NSInvalidArgumentException
@@ -264,24 +305,10 @@ static WaylandGLContext *currentGLContext;
 
   ASSIGN(_view, view);
 
-  window = [view window];
-  if (window == nil)
+  if ([self _attachToWindowIfNeeded] == NO)
     {
       return;
     }
-
-  server = GSCurrentServer();
-  _window = (struct window *)[server windowDevice:[window windowNumber]];
-
-  if (_window == NULL)
-    {
-      NSDebugMLLog(@"OpenGL", @"No wayland window device found for view %@", view);
-      return;
-    }
-
-  _window->usesOpenGL = YES;
-
-  [self _destroySurface];
 
   if ([self _ensureDisplayAndContextWithShare:_shareContext] == NO)
     {
@@ -312,6 +339,8 @@ static WaylandGLContext *currentGLContext;
       [NSException raise:NSGenericException
                   format:@"GL Context has no view attached, cannot be made current"];
     }
+
+  [self _attachToWindowIfNeeded];
 
   if ([self _ensureDisplayAndContextWithShare:_shareContext] == NO)
     {
@@ -348,6 +377,8 @@ static WaylandGLContext *currentGLContext;
 
 - (void)update
 {
+  [self _attachToWindowIfNeeded];
+
   if (_eglWindow != NULL && _window != NULL)
     {
       wl_egl_window_resize(_eglWindow,
