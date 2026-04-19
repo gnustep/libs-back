@@ -693,7 +693,7 @@ WaylandServer (Cursor)
     {
       NSDebugLog(@"load cursor from theme for style %d: %s", style,
 		 cursor_name);
-      struct cursor *wayland_cursor = malloc(sizeof(struct cursor));
+      struct cursor *wayland_cursor = calloc(1, sizeof(struct cursor));
 
       wayland_cursor->cursor
 	= wl_cursor_theme_get_cursor(wlconfig->cursor_theme, cursor_name);
@@ -724,9 +724,9 @@ WaylandServer (Cursor)
   // TODO should check if the bitmaprep format is compatible
   memcpy(pbuffer->data, data, [raw_img bytesPerPlane]);
 
-  struct cursor * wayland_cursor = malloc(sizeof(struct cursor));
+  struct cursor *wayland_cursor = calloc(1, sizeof(struct cursor));
 
-  struct wl_cursor * cursor = malloc(sizeof(struct wl_cursor));
+  struct wl_cursor *cursor = calloc(1, sizeof(struct wl_cursor));
   cursor->image_count = 1;
   cursor->name = "custom";
   struct wl_cursor_image * cursor_image = malloc(sizeof(struct wl_cursor_image));
@@ -776,10 +776,6 @@ WaylandServer (Cursor)
       return;
     }
 
-  if (wayland_cursor->surface)
-    {
-      wl_surface_destroy(wayland_cursor->surface);
-    }
   wl_pointer_set_cursor(wlconfig->pointer.wlpointer, wlconfig->event_serial,
             wlconfig->cursor_surface,
             wayland_cursor->image->hotspot_x,
