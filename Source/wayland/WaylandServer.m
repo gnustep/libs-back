@@ -129,6 +129,12 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name,
       NSDebugLog(@"wayland: found seat interface");
       wl_seat_add_listener(wlconfig->seat, &seat_listener, wlconfig);
     }
+  else if (strcmp(interface, wl_subcompositor_interface.name) == 0)
+    {
+      wlconfig->subcompositor
+	= wl_registry_bind(registry, name, &wl_subcompositor_interface, 1);
+      NSDebugLog(@"wayland: found subcompositor interface");
+    }
 }
 
 static void handle_global_remove(void *data, struct wl_registry *registry,
@@ -329,8 +335,8 @@ NSToWayland(struct window *window, int ns_y)
 
 - (void *)windowDevice:(int)win
 {
-  NSDebugLog(@"windowDevice");
-  return NULL;
+  NSDebugLog(@"windowDevice: %d", win);
+  return get_window_with_id(wlconfig, win);
 }
 
 - (void)beep

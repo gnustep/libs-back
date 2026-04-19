@@ -84,6 +84,7 @@ typedef struct _WaylandConfig
   struct wl_keyboard	     *keyboard;
   struct xdg_wm_base	     *wm_base;
   struct zwlr_layer_shell_v1 *layer_shell;
+  struct wl_subcompositor    *subcompositor;
   int seat_version;
 
   struct wl_list output_list;

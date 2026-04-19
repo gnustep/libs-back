@@ -38,6 +38,8 @@ struct window;
   NSView *_view;
   NSOpenGLContext *_shareContext;
   struct window *_window;
+  struct wl_surface *_glSurface;
+  struct wl_subsurface *_glSubsurface;
   struct wl_egl_window *_eglWindow;
   EGLDisplay _eglDisplay;
   EGLContext _eglContext;

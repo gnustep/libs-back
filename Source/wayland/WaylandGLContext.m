@@ -32,6 +32,7 @@
 
 #include <EGL/egl.h>
 #include <wayland-egl.h>
+#include <wayland-client-protocol.h>
 
 #include "wayland/WaylandServer.h"
 #include "wayland/WaylandOpenGL.h"
@@ -191,20 +192,83 @@ static WaylandGLContext *currentGLContext;
   return YES;
 }
 
+- (void)_computeViewGeometry:(NSRect *)outFrame
+{
+  NSRect frame = [_view convertRect:[_view bounds] toView:nil];
+  /* AppKit Y-up → Wayland Y-down: flip origin.y relative to window height */
+  frame.origin.y = _window->height - NSMaxY(frame);
+  *outFrame = frame;
+}
+
 - (BOOL)_ensureSurface
 {
   EGLConfig eglConfig;
+  NSRect viewFrame;
+  struct wl_surface *renderSurface;
+  int subW, subH, subX, subY;
 
   if (_window == NULL || _window->surface == NULL)
     {
       return NO;
     }
 
+  [self _computeViewGeometry:&viewFrame];
+  subX = (int)NSMinX(viewFrame);
+  subY = (int)NSMinY(viewFrame);
+  subW = (int)NSWidth(viewFrame);
+  subH = (int)NSHeight(viewFrame);
+  if (subW <= 0 || subH <= 0)
+    {
+      return NO;
+    }
+
+  if (_glSurface == NULL)
+    {
+      WaylandConfig *wlconfig = _window->wlconfig;
+
+      if (wlconfig->subcompositor == NULL)
+        {
+          NSDebugMLLog(@"OpenGL",
+                       @"wl_subcompositor not available; "
+                       @"falling back to window surface (single GL view only)");
+          renderSurface = _window->surface;
+        }
+      else
+        {
+          _glSurface = wl_compositor_create_surface(wlconfig->compositor);
+          if (_glSurface == NULL)
+            {
+              NSDebugMLLog(@"OpenGL", @"wl_compositor_create_surface for GL view failed");
+              return NO;
+            }
+
+          _glSubsurface = wl_subcompositor_get_subsurface(
+              wlconfig->subcompositor, _glSurface, _window->surface);
+          if (_glSubsurface == NULL)
+            {
+              NSDebugMLLog(@"OpenGL", @"wl_subcompositor_get_subsurface failed");
+              wl_surface_destroy(_glSurface);
+              _glSurface = NULL;
+              return NO;
+            }
+
+          wl_subsurface_set_desync(_glSubsurface);
+          wl_subsurface_set_position(_glSubsurface, subX, subY);
+          /* Commit parent so the compositor registers the new subsurface */
+          wl_surface_commit(_window->surface);
+          wl_display_flush(wlconfig->display);
+
+          renderSurface = _glSurface;
+        }
+    }
+  else
+    {
+      renderSurface = _glSurface;
+    }
+
   if (_eglWindow == NULL)
     {
-      _eglWindow = wl_egl_window_create(_window->surface,
-                                        (int)_window->width,
-                                        (int)_window->height);
+      _eglWindow = wl_egl_window_create(renderSurface, subW, subH);
       if (_eglWindow == NULL)
         {
           NSDebugMLLog(@"OpenGL", @"wl_egl_window_create failed");
@@ -250,6 +314,18 @@ static WaylandGLContext *currentGLContext;
       wl_egl_window_destroy(_eglWindow);
       _eglWindow = NULL;
     }
+
+  if (_glSubsurface != NULL)
+    {
+      wl_subsurface_destroy(_glSubsurface);
+      _glSubsurface = NULL;
+    }
+
+  if (_glSurface != NULL)
+    {
+      wl_surface_destroy(_glSurface);
+      _glSurface = NULL;
+    }
 }
 
 - (id)initWithFormat:(NSOpenGLPixelFormat *)format
@@ -273,6 +349,8 @@ static WaylandGLContext *currentGLContext;
   _eglContext = EGL_NO_CONTEXT;
   _eglSurface = EGL_NO_SURFACE;
   _eglWindow = NULL;
+  _glSurface = NULL;
+  _glSubsurface = NULL;
   _window = NULL;
   _swapInterval = 1;
 
@@ -377,15 +455,30 @@ static WaylandGLContext *currentGLContext;
 
 - (void)update
 {
+  NSRect viewFrame;
+
   [self _attachToWindowIfNeeded];
 
-  if (_eglWindow != NULL && _window != NULL)
+  if (_eglWindow == NULL || _window == NULL)
     {
-      wl_egl_window_resize(_eglWindow,
-                           (int)_window->width,
-                           (int)_window->height,
-                           0,
-                           0);
+      return;
+    }
+
+  [self _computeViewGeometry:&viewFrame];
+
+  wl_egl_window_resize(_eglWindow,
+                       (int)NSWidth(viewFrame),
+                       (int)NSHeight(viewFrame),
+                       0,
+                       0);
+
+  if (_glSubsurface != NULL)
+    {
+      wl_subsurface_set_position(_glSubsurface,
+                                 (int)NSMinX(viewFrame),
+                                 (int)NSMinY(viewFrame));
+      wl_surface_commit(_window->surface);
+      wl_display_flush(_window->wlconfig->display);
     }
 }
 
