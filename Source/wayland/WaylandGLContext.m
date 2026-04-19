@@ -254,6 +254,8 @@ static WaylandGLContext *currentGLContext;
 
           wl_subsurface_set_desync(_glSubsurface);
           wl_subsurface_set_position(_glSubsurface, subX, subY);
+          /* Route input events on this subsurface to the parent window */
+          wl_surface_set_user_data(_glSurface, _window);
           /* Commit parent so the compositor registers the new subsurface */
           wl_surface_commit(_window->surface);
           wl_display_flush(wlconfig->display);
