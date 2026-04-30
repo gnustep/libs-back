@@ -106,6 +106,9 @@ typedef struct _WaylandConfig
   struct pointer      pointer;
   float mouse_scroll_multiplier;
 
+// keyboard focus (set by keyboard_handle_enter/leave)
+  struct window      *keyboard_focus;
+
 // keyboard
   struct xkb_context *xkb_context;
   struct
@@ -178,12 +181,30 @@ struct window *get_window_with_id(WaylandConfig *wlconfig, int winid);
   WaylandConfig *wlconfig;
 
   BOOL _mouseInitialized;
+  id   inputServer;
 }
 @end
 
-@interface
-WaylandServer (Cursor)
-- (void)initializeMouseIfRequired;
+@interface WaylandServer (Cursor)
+- (void) initializeMouseIfRequired;
+@end
+
+@interface WaylandServer (DragAndDrop)
+- (id <NSDraggingInfo>) dragInfo;
+- (BOOL) addDragTypes: (NSArray *)types toWindow: (NSWindow *)win;
+- (BOOL) removeDragTypes: (NSArray *)types fromWindow: (NSWindow *)win;
+@end
+
+@interface WaylandServer (InputMethod)
+- (NSString *) inputMethodStyle;
+- (NSString *) fontSize: (int *)size;
+- (BOOL) clientWindowRect: (NSRect *)rect;
+- (BOOL) statusArea: (NSRect *)rect;
+- (BOOL) preeditArea: (NSRect *)rect;
+- (BOOL) preeditSpot: (NSPoint *)p;
+- (BOOL) setStatusArea: (NSRect *)rect;
+- (BOOL) setPreeditArea: (NSRect *)rect;
+- (BOOL) setPreeditSpot: (NSPoint *)p;
 @end
 
 #endif /* _WaylandServer_h_INCLUDE */

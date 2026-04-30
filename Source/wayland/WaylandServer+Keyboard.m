@@ -28,6 +28,8 @@
 #include "wayland/WaylandServer.h"
 #include <AppKit/NSEvent.h>
 #include <AppKit/NSApplication.h>
+#include <AppKit/NSGraphics.h>
+#include <AppKit/NSWindow.h>
 #include <linux/input.h>
 #include <AppKit/NSText.h>
 #include <sys/mman.h>
@@ -105,18 +107,59 @@ static void
 keyboard_handle_enter(void *data, struct wl_keyboard *keyboard, uint32_t serial,
 		      struct wl_surface *surface, struct wl_array *keys)
 {
-  // NSDebugLog(@"keyboard_handle_enter");
-  WaylandConfig	*wlconfig = data;
+  NSDebugLog(@"keyboard_handle_enter");
+  WaylandConfig *wlconfig = data;
   wlconfig->event_serial = serial;
+
+  struct window *window = wl_surface_get_user_data(surface);
+  if (!window)
+    return;
+
+  wlconfig->keyboard_focus = window;
+
+  NSWindow *nswindow = GSWindowWithNumber(window->window_id);
+  if (!nswindow)
+    return;
+
+  NSEvent *ev = [NSEvent otherEventWithType:NSAppKitDefined
+				   location:NSZeroPoint
+			      modifierFlags:0
+				  timestamp:0
+			       windowNumber:window->window_id
+				    context:GSCurrentContext()
+				    subtype:GSAppKitWindowFocusIn
+				      data1:0
+				      data2:0];
+  [nswindow sendEvent:ev];
 }
 
 static void
 keyboard_handle_leave(void *data, struct wl_keyboard *keyboard, uint32_t serial,
 		      struct wl_surface *surface)
 {
-  WaylandConfig	*wlconfig = data;
+  NSDebugLog(@"keyboard_handle_leave");
+  WaylandConfig *wlconfig = data;
   wlconfig->event_serial = serial;
-  // NSDebugLog(@"keyboard_handle_leave");
+
+  if (!wlconfig->keyboard_focus)
+    return;
+
+  NSWindow *nswindow = GSWindowWithNumber(wlconfig->keyboard_focus->window_id);
+  if (nswindow)
+    {
+      NSEvent *ev = [NSEvent otherEventWithType:NSAppKitDefined
+				       location:NSZeroPoint
+				  modifierFlags:0
+				      timestamp:0
+				   windowNumber:wlconfig->keyboard_focus->window_id
+					context:GSCurrentContext()
+					subtype:GSAppKitWindowFocusOut
+					  data1:0
+					  data2:0];
+      [nswindow sendEvent:ev];
+    }
+
+  wlconfig->keyboard_focus = NULL;
 }
 
 static void
@@ -159,8 +202,12 @@ keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32_t serial,
   enum wl_keyboard_key_state state = state_w;
   const xkb_keysym_t	     *syms;
   xkb_keysym_t		     sym;
-  struct window		*window = wlconfig->pointer.focus;
 
+  /* Key events follow keyboard focus, not pointer position. Fall back to
+     pointer focus only when the compositor hasn't sent keyboard_enter yet. */
+  struct window *window = wlconfig->keyboard_focus
+			    ? wlconfig->keyboard_focus
+			    : wlconfig->pointer.focus;
   if (!window)
     return;
 

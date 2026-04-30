@@ -47,6 +47,7 @@
 
 #include "wayland/WaylandServer.h"
 #include "wayland/WaylandOpenGL.h"
+#include "wayland/WaylandInputServer.h"
 
 extern const struct wl_output_listener output_listener;
 
@@ -222,6 +223,9 @@ NSToWayland(struct window *window, int ns_y)
 	       @"compositor must support the stable XDG Shell protocol"];
     }
 
+  inputServer = [[WaylandInputServer allocWithZone: [self zone]]
+		   initWithDelegate: nil name: @"WaylandInput"];
+
   return self;
 }
 
@@ -269,6 +273,7 @@ NSToWayland(struct window *window, int ns_y)
 - (void)dealloc
 {
   NSDebugLog(@"Destroying Wayland Server");
+  DESTROY(inputServer);
   [super dealloc];
 }
 
@@ -352,6 +357,64 @@ NSToWayland(struct window *window, int ns_y)
 - glPixelFormatClass
 {
   return [WaylandGLPixelFormat class];
+}
+
+@end
+
+@implementation WaylandServer (InputMethod)
+
+- (NSString *) inputMethodStyle
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer inputMethodStyle] : nil;
+}
+
+- (NSString *) fontSize: (int *)size
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer fontSize: size] : nil;
+}
+
+- (BOOL) clientWindowRect: (NSRect *)rect
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer clientWindowRect: rect] : NO;
+}
+
+- (BOOL) statusArea: (NSRect *)rect
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer statusArea: rect] : NO;
+}
+
+- (BOOL) preeditArea: (NSRect *)rect
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer preeditArea: rect] : NO;
+}
+
+- (BOOL) preeditSpot: (NSPoint *)p
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer preeditSpot: p] : NO;
+}
+
+- (BOOL) setStatusArea: (NSRect *)rect
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer setStatusArea: rect] : NO;
+}
+
+- (BOOL) setPreeditArea: (NSRect *)rect
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer setPreeditArea: rect] : NO;
+}
+
+- (BOOL) setPreeditSpot: (NSPoint *)p
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer setPreeditSpot: p] : NO;
 }
 
 @end
@@ -464,6 +527,14 @@ WaylandServer (WindowOps)
   NSDebugLog(@"termwindow: win=%d", win);
   struct window *window = get_window_with_id(wlconfig, win);
 
+  /* Clear any stale focus references to avoid dangling pointers. */
+  if (wlconfig->keyboard_focus == window)
+    wlconfig->keyboard_focus = NULL;
+  if (wlconfig->pointer.focus == window)
+    wlconfig->pointer.focus = NULL;
+  if (wlconfig->pointer.captured == window)
+    wlconfig->pointer.captured = NULL;
+
   [self destroyWindowShell:window];
   // FIXME should wait for buffer release before detroying it
   //
@@ -572,7 +643,27 @@ WaylandServer (WindowOps)
 
 - (void)movewindow:(NSPoint)loc:(int)win
 {
-  NSDebugLog(@"movewindow");
+  NSDebugLog(@"[%d] movewindow: %f,%f", win, loc.x, loc.y);
+  struct window *window = get_window_with_id(wlconfig, win);
+  if (!window)
+    return;
+
+  window->pos_x = loc.x;
+  window->pos_y = NSToWayland(window, (int) loc.y);
+
+  /* Layer-shell surfaces are positioned via top/left margins from their
+     anchor point (ANCHOR_TOP | ANCHOR_LEFT), so we can reposition them
+     by updating the margins and committing.  XDG toplevels are positioned
+     by the compositor and cannot be moved from the client side. */
+  if (window->layer_surface)
+    {
+      zwlr_layer_surface_v1_set_margin(window->layer_surface,
+				       (int32_t) window->pos_y,
+				       0, 0,
+				       (int32_t) window->pos_x);
+      wl_surface_commit(window->surface);
+      wl_display_flush(wlconfig->display);
+    }
 }
 
 - (NSRect) _OSFrameToWFrame: (NSRect)o for: (void*)win

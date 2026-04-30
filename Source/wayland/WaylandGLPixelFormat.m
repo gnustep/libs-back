@@ -107,10 +107,22 @@ _isAttributeWithValue(NSOpenGLPixelFormatAttribute attr)
   EGLint stencilSize = 8;
   EGLint sampleBuffers = 0;
   EGLint samples = 0;
-  EGLint renderableType = EGL_OPENGL_BIT;
-#ifdef EGL_OPENGL_ES2_BIT
-  renderableType |= EGL_OPENGL_ES2_BIT;
-#endif
+  /* Match the renderable type to the API that was bound with eglBindAPI()
+     before this call.  Requesting both EGL_OPENGL_BIT|EGL_OPENGL_ES2_BIT
+     requires a single config to support both APIs simultaneously, which
+     most drivers do not provide, causing eglChooseConfig to return 0
+     configs and the context creation to fail. */
+  EGLint renderableType;
+  switch (eglQueryAPI())
+    {
+      case EGL_OPENGL_ES_API:
+        renderableType = EGL_OPENGL_ES2_BIT;
+        break;
+      case EGL_OPENGL_API:
+      default:
+        renderableType = EGL_OPENGL_BIT;
+        break;
+    }
   EGLConfig config = NULL;
   EGLint configCount = 0;
   NSUInteger i;

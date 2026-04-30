@@ -31,8 +31,12 @@
 #include <AppKit/NSView.h>
 
 #include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 #include <wayland-egl.h>
 #include <wayland-client-protocol.h>
+#include <string.h>
 
 #include "wayland/WaylandServer.h"
 #include "wayland/WaylandOpenGL.h"
@@ -188,15 +192,29 @@ static WaylandGLContext *currentGLContext;
       [self _destroySurface];
     }
 
-  _window->usesOpenGL = YES;
   return YES;
 }
 
 - (void)_computeViewGeometry:(NSRect *)outFrame
 {
-  NSRect frame = [_view convertRect:[_view bounds] toView:nil];
+  NSRect bounds = [_view bounds];
+  NSRect frame = [_view convertRect:bounds toView:nil];
   /* AppKit Y-up → Wayland Y-down: flip origin.y relative to window height */
   frame.origin.y = _window->height - NSMaxY(frame);
+
+  static BOOL _loggedOnce = NO;
+  if (!_loggedOnce)
+    {
+      _loggedOnce = YES;
+      NSLog(@"WaylandGL: _computeViewGeometry:"
+            @" viewBounds=%@ convertedFrame=%@ windowH=%.0f"
+            @" → waylandFrame=%@",
+            NSStringFromRect(bounds),
+            NSStringFromRect([_view convertRect:bounds toView:nil]),
+            (double)_window->height,
+            NSStringFromRect(frame));
+    }
+
   *outFrame = frame;
 }
 
@@ -228,17 +246,16 @@ static WaylandGLContext *currentGLContext;
 
       if (wlconfig->subcompositor == NULL)
         {
-          NSDebugMLLog(@"OpenGL",
-                       @"wl_subcompositor not available; "
-                       @"falling back to window surface (single GL view only)");
+          NSLog(@"WaylandGL: _ensureSurface: no subcompositor — using window surface directly");
           renderSurface = _window->surface;
+          _window->usesOpenGL = YES;
         }
       else
         {
           _glSurface = wl_compositor_create_surface(wlconfig->compositor);
           if (_glSurface == NULL)
             {
-              NSDebugMLLog(@"OpenGL", @"wl_compositor_create_surface for GL view failed");
+              NSLog(@"WaylandGL: _ensureSurface: wl_compositor_create_surface failed");
               return NO;
             }
 
@@ -246,7 +263,7 @@ static WaylandGLContext *currentGLContext;
               wlconfig->subcompositor, _glSurface, _window->surface);
           if (_glSubsurface == NULL)
             {
-              NSDebugMLLog(@"OpenGL", @"wl_subcompositor_get_subsurface failed");
+              NSLog(@"WaylandGL: _ensureSurface: wl_subcompositor_get_subsurface failed");
               wl_surface_destroy(_glSurface);
               _glSurface = NULL;
               return NO;
@@ -254,12 +271,12 @@ static WaylandGLContext *currentGLContext;
 
           wl_subsurface_set_desync(_glSubsurface);
           wl_subsurface_set_position(_glSubsurface, subX, subY);
-          /* Route input events on this subsurface to the parent window */
           wl_surface_set_user_data(_glSurface, _window);
-          /* Commit parent so the compositor registers the new subsurface */
           wl_surface_commit(_window->surface);
           wl_display_flush(wlconfig->display);
 
+          NSLog(@"WaylandGL: _ensureSurface: subsurface created glSurface=%p pos=(%d,%d) size=(%dx%d)",
+                _glSurface, subX, subY, subW, subH);
           renderSurface = _glSurface;
         }
     }
@@ -291,7 +308,7 @@ static WaylandGLContext *currentGLContext;
 
   if (_eglSurface == EGL_NO_SURFACE)
     {
-      NSDebugMLLog(@"OpenGL", @"eglCreateWindowSurface failed");
+      NSLog(@"WaylandGL: _ensureSurface: eglCreateWindowSurface failed (0x%x)", eglGetError());
       return NO;
     }
 
@@ -300,6 +317,8 @@ static WaylandGLContext *currentGLContext;
       eglSwapInterval(_eglDisplay, _swapInterval);
     }
 
+  NSLog(@"WaylandGL: _ensureSurface: EGL surface ready eglSurface=%p eglWindow=%p",
+        _eglSurface, _eglWindow);
   return YES;
 }
 
@@ -330,6 +349,173 @@ static WaylandGLContext *currentGLContext;
     }
 }
 
+- (void)_loadExtensions
+{
+  const char *eglExts;
+  const char *glExts;
+
+  if (_eglDisplay == EGL_NO_DISPLAY || _eglContext == EGL_NO_CONTEXT)
+    return;
+
+  _extensionsLoaded = YES;
+
+  eglExts = eglQueryString(_eglDisplay, EGL_EXTENSIONS);
+  if (eglExts == NULL)
+    eglExts = "";
+
+  if (strstr(eglExts, "EGL_EXT_image_dma_buf_import") != NULL)
+    {
+      _pfnCreateImageKHR = (PFNEGLCREATEIMAGEKHRPROC)
+          eglGetProcAddress("eglCreateImageKHR");
+      _pfnDestroyImageKHR = (PFNEGLDESTROYIMAGEKHRPROC)
+          eglGetProcAddress("eglDestroyImageKHR");
+      if (_pfnCreateImageKHR != NULL && _pfnDestroyImageKHR != NULL)
+        {
+          _hasDmaBufImport = YES;
+          NSDebugMLLog(@"OpenGL", @"WaylandGL: EGL_EXT_image_dma_buf_import available");
+        }
+    }
+
+  if (_hasDmaBufImport
+      && strstr(eglExts, "EGL_EXT_image_dma_buf_import_modifiers") != NULL)
+    {
+      _pfnQueryDmaBufFormats = (PFNEGLQUERYDMABUFFORMATSEXTPROC)
+          eglGetProcAddress("eglQueryDmaBufFormatsEXT");
+      _pfnQueryDmaBufModifiers = (PFNEGLQUERYDMABUFMODIFIERSEXTPROC)
+          eglGetProcAddress("eglQueryDmaBufModifiersEXT");
+      if (_pfnQueryDmaBufFormats != NULL && _pfnQueryDmaBufModifiers != NULL)
+        {
+          _hasDmaBufImportModifiers = YES;
+          NSDebugMLLog(@"OpenGL", @"WaylandGL: EGL_EXT_image_dma_buf_import_modifiers available");
+        }
+    }
+
+  /* GL_OES_EGL_image + GL_OES_EGL_image_external — needs a current context */
+  glExts = (const char *)glGetString(GL_EXTENSIONS);
+  if (glExts == NULL)
+    glExts = "";
+
+  if (strstr(glExts, "GL_OES_EGL_image") != NULL)
+    {
+      void *pfn = (void *)eglGetProcAddress("glEGLImageTargetTexture2DOES");
+      if (pfn != NULL)
+        {
+          _pfnGLImageTargetTexture2D = pfn;
+          _hasExternalTexture = YES;
+          NSDebugMLLog(@"OpenGL", @"WaylandGL: GL_OES_EGL_image_external available");
+        }
+    }
+}
+
+- (BOOL)supportsDmaBufImport
+{
+  return _hasDmaBufImport;
+}
+
+- (BOOL)supportsExternalTexture
+{
+  return _hasExternalTexture;
+}
+
+- (EGLDisplay)eglDisplay
+{
+  return _eglDisplay;
+}
+
+- (EGLImageKHR)createEGLImageFromDmaBufFd:(int)fd
+                                     width:(int)width
+                                    height:(int)height
+                                    stride:(int)stride
+                                    offset:(int)offset
+                                    fourcc:(uint32_t)fourcc
+{
+  EGLint attrs[] = {
+    EGL_WIDTH,                     (EGLint)width,
+    EGL_HEIGHT,                    (EGLint)height,
+    EGL_LINUX_DRM_FOURCC_EXT,      (EGLint)fourcc,
+    EGL_DMA_BUF_PLANE0_FD_EXT,     (EGLint)fd,
+    EGL_DMA_BUF_PLANE0_OFFSET_EXT, (EGLint)offset,
+    EGL_DMA_BUF_PLANE0_PITCH_EXT,  (EGLint)stride,
+    EGL_NONE
+  };
+  EGLImageKHR image;
+
+  if (!_hasDmaBufImport || _pfnCreateImageKHR == NULL
+      || _eglDisplay == EGL_NO_DISPLAY)
+    return EGL_NO_IMAGE_KHR;
+
+  image = _pfnCreateImageKHR(_eglDisplay, EGL_NO_CONTEXT,
+                              EGL_LINUX_DMA_BUF_EXT,
+                              (EGLClientBuffer)NULL, attrs);
+  if (image == EGL_NO_IMAGE_KHR)
+    NSDebugMLLog(@"OpenGL", @"WaylandGL: eglCreateImageKHR(dma-buf) failed: 0x%x",
+                 eglGetError());
+  return image;
+}
+
+- (EGLImageKHR)createEGLImageFromDmaBufFd:(int)fd
+                                     width:(int)width
+                                    height:(int)height
+                                    stride:(int)stride
+                                    offset:(int)offset
+                                    fourcc:(uint32_t)fourcc
+                                  modifier:(uint64_t)modifier
+{
+  EGLint modLo = (EGLint)(modifier & 0xFFFFFFFFu);
+  EGLint modHi = (EGLint)(modifier >> 32);
+  EGLint attrs[] = {
+    EGL_WIDTH,                          (EGLint)width,
+    EGL_HEIGHT,                         (EGLint)height,
+    EGL_LINUX_DRM_FOURCC_EXT,           (EGLint)fourcc,
+    EGL_DMA_BUF_PLANE0_FD_EXT,          (EGLint)fd,
+    EGL_DMA_BUF_PLANE0_OFFSET_EXT,      (EGLint)offset,
+    EGL_DMA_BUF_PLANE0_PITCH_EXT,       (EGLint)stride,
+    EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT, modLo,
+    EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT, modHi,
+    EGL_NONE
+  };
+  EGLImageKHR image;
+
+  if (!_hasDmaBufImport || _pfnCreateImageKHR == NULL
+      || _eglDisplay == EGL_NO_DISPLAY)
+    return EGL_NO_IMAGE_KHR;
+
+  if (!_hasDmaBufImportModifiers)
+    {
+      NSDebugMLLog(@"OpenGL",
+                   @"WaylandGL: modifier requested but EGL_EXT_image_dma_buf_import_modifiers unavailable");
+      return EGL_NO_IMAGE_KHR;
+    }
+
+  image = _pfnCreateImageKHR(_eglDisplay, EGL_NO_CONTEXT,
+                              EGL_LINUX_DMA_BUF_EXT,
+                              (EGLClientBuffer)NULL, attrs);
+  if (image == EGL_NO_IMAGE_KHR)
+    NSDebugMLLog(@"OpenGL",
+                 @"WaylandGL: eglCreateImageKHR(dma-buf+modifier) failed: 0x%x",
+                 eglGetError());
+  return image;
+}
+
+- (void)destroyEGLImage:(EGLImageKHR)image
+{
+  if (image == EGL_NO_IMAGE_KHR || _pfnDestroyImageKHR == NULL
+      || _eglDisplay == EGL_NO_DISPLAY)
+    return;
+  _pfnDestroyImageKHR(_eglDisplay, image);
+}
+
+- (void)bindEGLImage:(EGLImageKHR)image toExternalTexture:(unsigned int)texId
+{
+  typedef void (*TargetTex2DOES)(GLenum, GLeglImageOES);
+  TargetTex2DOES fn = (TargetTex2DOES)_pfnGLImageTargetTexture2D;
+
+  if (image == EGL_NO_IMAGE_KHR || fn == NULL)
+    return;
+  glBindTexture(GL_TEXTURE_EXTERNAL_OES, texId);
+  fn(GL_TEXTURE_EXTERNAL_OES, (GLeglImageOES)image);
+}
+
 - (id)initWithFormat:(NSOpenGLPixelFormat *)format
         shareContext:(NSOpenGLContext *)share
 {
@@ -354,7 +540,19 @@ static WaylandGLContext *currentGLContext;
   _glSurface = NULL;
   _glSubsurface = NULL;
   _window = NULL;
-  _swapInterval = 1;
+  _extensionsLoaded = NO;
+  _hasDmaBufImport = NO;
+  _hasDmaBufImportModifiers = NO;
+  _hasExternalTexture = NO;
+  _pfnCreateImageKHR = NULL;
+  _pfnDestroyImageKHR = NULL;
+  _pfnQueryDmaBufFormats = NULL;
+  _pfnQueryDmaBufModifiers = NULL;
+  _pfnGLImageTargetTexture2D = NULL;
+  /* Default to unthrottled swaps.  With vsync=1 eglSwapBuffers blocks on the
+     compositor frame callback, which starves the main run loop when called
+     from a timer.  Apps that want vsync can set NSOpenGLCPSwapInterval = 1. */
+  _swapInterval = 0;
 
   _pixelFormat = RETAIN(format);
   _shareContext = RETAIN(share);
@@ -438,6 +636,9 @@ static WaylandGLContext *currentGLContext;
       return;
     }
 
+  if (!_extensionsLoaded)
+    [self _loadExtensions];
+
   currentGLContext = self;
 }
 
@@ -445,10 +646,16 @@ static WaylandGLContext *currentGLContext;
 {
   if (_eglDisplay == EGL_NO_DISPLAY || _eglSurface == EGL_NO_SURFACE)
     {
+      NSLog(@"WaylandGL: flushBuffer: skipped — no EGL display/surface");
       return;
     }
 
-  eglSwapBuffers(_eglDisplay, _eglSurface);
+  static NSUInteger _swapCount = 0;
+  EGLBoolean ok = eglSwapBuffers(_eglDisplay, _eglSurface);
+  if (++_swapCount <= 5 || _swapCount % 90 == 0)
+    NSLog(@"WaylandGL: flushBuffer: eglSwapBuffers #%lu result=%d err=0x%x",
+          (unsigned long)_swapCount, (int)ok, ok ? 0 : eglGetError());
+
   if (_window != NULL && _window->wlconfig != NULL)
     {
       wl_display_flush(_window->wlconfig->display);
