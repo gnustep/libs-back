@@ -53,6 +53,8 @@ WaylandServer+Xdgshell.m  \
 WaylandServer+Layershell.m  \
 WaylandGLContext.m  \
 WaylandGLPixelFormat.m  \
+WaylandInputServer.m  \
+WaylandDragView.m  \
 
 -include GNUmakefile.preamble
 

@@ -45,9 +45,6 @@ xdg_surface_on_configure(void *data, struct xdg_surface *xdg_surface,
       return;
     }
 
-  NSEvent  *ev = nil;
-  NSWindow *nswindow = GSWindowWithNumber(window->window_id);
-
   // NSDebugLog(@"Acknowledging surface configure %p %d (window_id=%d)",
   // xdg_surface, serial, window->window_id);
 
@@ -60,22 +57,11 @@ xdg_surface_on_configure(void *data, struct xdg_surface *xdg_surface,
                                                    window->width, window->height)
                                       :window->window_id];
     }
-
-  if (window->wlconfig->pointer.focus
-      && window->wlconfig->pointer.focus->window_id == window->window_id)
-    {
-      ev = [NSEvent otherEventWithType:NSAppKitDefined
-                              location:NSZeroPoint
-                         modifierFlags:0
-                             timestamp:0
-                          windowNumber:(int) window->window_id
-                               context:GSCurrentContext()
-                               subtype:GSAppKitWindowFocusIn
-                                 data1:0
-                                 data2:0];
-
-      [nswindow sendEvent:ev];
-    }
+  /* Keyboard focus is now handled exclusively by keyboard_handle_enter/leave,
+     which correctly tracks what the compositor has granted.  Sending
+     GSAppKitWindowFocusIn here based on pointer position was wrong: it could
+     steal key-window status from a modal dialog simply because the mouse
+     cursor happened to be over the reconfigured window. */
 }
 
 static void
