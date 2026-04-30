@@ -166,7 +166,6 @@
 }
 
 - (void) GSSetDevice: (void *)device
-
                     : (int)x
                     : (int)y
 {
