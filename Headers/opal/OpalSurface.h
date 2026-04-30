@@ -42,6 +42,7 @@
 
 - (CGContextRef) backingCGContext;
 - (CGContextRef) x11CGContext;
+- (void) ensureX11Context;
 - (void) handleExposeRect: (NSRect)rect;
 - (BOOL) isDrawingToScreen;
 @end
