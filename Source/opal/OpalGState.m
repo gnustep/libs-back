@@ -1245,22 +1245,12 @@ doesn't support to use the receiver cairo target as the source. */
       CGFloat location;
       [gradient getColor: &color location: &location atIndex: i];
       NSColor *rgb = [color colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
-      if (rgb)
-        {
-          components[i*4+0] = [rgb redComponent];
-          components[i*4+1] = [rgb greenComponent];
-          components[i*4+2] = [rgb blueComponent];
-          components[i*4+3] = [rgb alphaComponent];
-        }
-      else
-        {
-          // Fallback for non-RGB colors
-          CGFloat w = [color whiteComponent];
-          components[i*4+0] = w;
-          components[i*4+1] = w;
-          components[i*4+2] = w;
-          components[i*4+3] = [color alphaComponent];
-        }
+      if (rgb == nil)
+        rgb = [NSColor blackColor];
+      components[i*4+0] = [rgb redComponent];
+      components[i*4+1] = [rgb greenComponent];
+      components[i*4+2] = [rgb blueComponent];
+      components[i*4+3] = [rgb alphaComponent];
       locations[i] = location;
     }
 
@@ -1307,21 +1297,12 @@ doesn't support to use the receiver cairo target as the source. */
       CGFloat location;
       [gradient getColor: &color location: &location atIndex: i];
       NSColor *rgb = [color colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
-      if (rgb)
-        {
-          components[i*4+0] = [rgb redComponent];
-          components[i*4+1] = [rgb greenComponent];
-          components[i*4+2] = [rgb blueComponent];
-          components[i*4+3] = [rgb alphaComponent];
-        }
-      else
-        {
-          CGFloat w = [color whiteComponent];
-          components[i*4+0] = w;
-          components[i*4+1] = w;
-          components[i*4+2] = w;
-          components[i*4+3] = [color alphaComponent];
-        }
+      if (rgb == nil)
+        rgb = [NSColor blackColor];
+      components[i*4+0] = [rgb redComponent];
+      components[i*4+1] = [rgb greenComponent];
+      components[i*4+2] = [rgb blueComponent];
+      components[i*4+3] = [rgb alphaComponent];
       locations[i] = location;
     }
 
