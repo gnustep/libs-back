@@ -1224,20 +1224,14 @@ doesn't support to use the receiver cairo target as the source. */
 
 
 // Gradient rendering using CoreGraphics CGGradient API
-- (void) drawGradient: (NSGradient*)gradient
-            fromPoint: (NSPoint)startPoint
-              toPoint: (NSPoint)endPoint
-              options: (NSUInteger)options
+static CGGradientRef OpalCreateGradientFromNSGradient(NSGradient *gradient)
 {
-  CGContextRef ctx = CGCTX;
-  if (!ctx || !gradient) return;
-
   NSInteger stops = [gradient numberOfColorStops];
-  if (stops == 0) return;
+  if (stops == 0) return NULL;
 
   CGFloat *components = malloc(sizeof(CGFloat) * stops * 4);
   CGFloat *locations = malloc(sizeof(CGFloat) * stops);
-  if (!components || !locations) { free(components); free(locations); return; }
+  if (!components || !locations) { free(components); free(locations); return NULL; }
 
   for (int i = 0; i < stops; i++)
     {
@@ -1260,6 +1254,18 @@ doesn't support to use the receiver cairo target as the source. */
   free(components);
   free(locations);
 
+  return grad;
+}
+
+- (void) drawGradient: (NSGradient*)gradient
+            fromPoint: (NSPoint)startPoint
+              toPoint: (NSPoint)endPoint
+              options: (NSUInteger)options
+{
+  CGContextRef ctx = CGCTX;
+  if (!ctx || !gradient) return;
+
+  CGGradientRef grad = OpalCreateGradientFromNSGradient(gradient);
   if (grad)
     {
       // CGContext already applies CTM to gradient coordinates,
@@ -1284,34 +1290,7 @@ doesn't support to use the receiver cairo target as the source. */
   CGContextRef ctx = CGCTX;
   if (!ctx || !gradient) return;
 
-  NSInteger stops = [gradient numberOfColorStops];
-  if (stops == 0) return;
-
-  CGFloat *components = malloc(sizeof(CGFloat) * stops * 4);
-  CGFloat *locations = malloc(sizeof(CGFloat) * stops);
-  if (!components || !locations) { free(components); free(locations); return; }
-
-  for (int i = 0; i < stops; i++)
-    {
-      NSColor *color;
-      CGFloat location;
-      [gradient getColor: &color location: &location atIndex: i];
-      NSColor *rgb = [color colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
-      if (rgb == nil)
-        rgb = [NSColor blackColor];
-      components[i*4+0] = [rgb redComponent];
-      components[i*4+1] = [rgb greenComponent];
-      components[i*4+2] = [rgb blueComponent];
-      components[i*4+3] = [rgb alphaComponent];
-      locations[i] = location;
-    }
-
-  CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
-  CGGradientRef grad = CGGradientCreateWithColorComponents(cs, components, locations, stops);
-  CGColorSpaceRelease(cs);
-  free(components);
-  free(locations);
-
+  CGGradientRef grad = OpalCreateGradientFromNSGradient(gradient);
   if (grad)
     {
       // CGContext already applies CTM to gradient coordinates
