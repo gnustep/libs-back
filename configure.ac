@@ -26,9 +26,9 @@
 builtin(include, pkg.m4)dnl
 
 AC_INIT
-AC_PREREQ(2.57)
+AC_PREREQ([2.73])
 AC_CONFIG_SRCDIR([back.make.in])
-AC_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS([config.h])
 
 # If GNUSTEP_MAKEFILES is undefined, try to use gnustep-config to determine it.
 if test -z "$GNUSTEP_MAKEFILES"; then
@@ -319,7 +319,7 @@ if test $WITH_XFT = yes; then
     AC_DEFINE(HAVE_UTF8,1,[Define if you have XftDrawStringUtf8])
   fi
   AC_CHECK_LIB(Xft, XftPatternGetString, have_xftpgs=yes, have_xftpgs=no)
-  AC_HAVE_FUNCS(Xutf8LookupString)
+  AC_CHECK_FUNCS([Xutf8LookupString])
   AC_CHECK_LIB(fontconfig, FcPatternCreate, have_fc=yes, have_fc=no)
   AC_CHECK_HEADER(fontconfig/fontconfig.h)
   if test "$have_fc" = yes -a "$ac_cv_header_fontconfig_fontconfig_h" = yes; then
@@ -371,7 +371,7 @@ fi
 #--------------------------------------------------------------------
 # Functions
 #--------------------------------------------------------------------
-AC_HAVE_FUNCS(usleep)
+AC_CHECK_FUNCS([usleep])
 
 have_xshm=no
 AC_CHECK_HEADERS(X11/extensions/XShm.h,
@@ -424,8 +424,7 @@ if test "x$enable_wgl" = "xyes"; then
 
      save_libs="$LIBS"
      LIBS="$WGL_LIBS"
-     AC_TRY_LINK([#include <windows.h>], [ wglCreateContext(0); ],
-	   [use_wgl=yes], [use_wgl=no])
+     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <windows.h>]], [[ wglCreateContext(0); ]])],[use_wgl=yes],[use_wgl=no])
      LIBS="$save_libs"
      AC_MSG_RESULT([$use_wgl])
      WITH_WGL=$use_wgl
