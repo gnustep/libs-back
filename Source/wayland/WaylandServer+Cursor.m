@@ -28,6 +28,7 @@
 #include "wayland/WaylandServer.h"
 #include "cairo/WaylandCairoShmSurface.h"
 #import <AppKit/NSEvent.h>
+#import <AppKit/NSImage.h>
 #import <AppKit/NSView.h>
 #import <AppKit/NSWindow.h>
 #import <AppKit/NSCursor.h>
@@ -548,9 +549,11 @@ pointer_handle_axis(void *data, struct wl_pointer *pointer, uint32_t time,
     case WL_POINTER_AXIS_VERTICAL_SCROLL:
       eventType = NSScrollWheel;
       deltaY = wl_fixed_to_double(value) * wlconfig->mouse_scroll_multiplier;
+      break;
     case WL_POINTER_AXIS_HORIZONTAL_SCROLL:
       eventType = NSScrollWheel;
       deltaX = wl_fixed_to_double(value) * wlconfig->mouse_scroll_multiplier;
+      break;
     }
 
   /* FIXME: X11 backend uses the XGetPointerMapping()-returned values from
@@ -741,7 +744,7 @@ WaylandServer (Cursor)
 
       wayland_cursor->cursor
 	= wl_cursor_theme_get_cursor(wlconfig->cursor_theme, cursor_name);
-
+      NSAssert(wayland_cursor->cursor, NSInternalInconsistencyException);
       wayland_cursor->image = wayland_cursor->cursor->images[0];
       wayland_cursor->buffer
 	= wl_cursor_image_get_buffer(wayland_cursor->image);

@@ -42,7 +42,7 @@
 
 static int shmError;
 
-static int (*oldErrorHandler)();
+static int (*oldErrorHandler)(Display*, XErrorEvent*);
 
 static int
 errorHandler(Display *dpy, XErrorEvent *err)

@@ -1,10 +1,10 @@
 /*
-   OpalSurface.h
+   CairoFontAssetInstaller.h
 
-   Copyright (C) 2013 Free Software Foundation, Inc.
+   Copyright (C) 2003 Free Software Foundation, Inc.
 
-   Author: Ivan Vucica <ivan@vucica.net>
-   Date: June 2013
+   By: Gregory John Casamento <greg.casamento@gmail.com>
+   Date: October 4, 2025
 
    This file is part of GNUstep.
 
@@ -25,24 +25,12 @@
    Boston, MA 02110-1301, USA.
 */
 
-#import <Foundation/Foundation.h>
-#import <CoreGraphics/CoreGraphics.h>
+#ifndef CairoFontAssetInstaller_h
+#define CairoFontAssetInstaller_h
 
-@interface OpalSurface : NSObject
-{
-  struct _gswindow_device_t * _gsWindowDevice;
-  CGContextRef _backingCGContext;
-  CGContextRef _x11CGContext;
-}
+#include "fontconfig/FCFontAssetInstaller.h"
 
-- (id) initWithDevice: (void *)device context: (CGContextRef)ctx;
-- (void *)device;
-- (CGContextRef) CGContext;
-- (NSSize) size;
-
-- (CGContextRef) backingCGContext;
-- (CGContextRef) x11CGContext;
-- (void) ensureX11Context;
-- (void) handleExposeRect: (NSRect)rect;
-- (BOOL) isDrawingToScreen;
+@interface CairoFontAssetInstaller : FCFontAssetInstaller
 @end
+
+#endif

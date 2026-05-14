@@ -118,16 +118,40 @@
       return NO;
     }
 
-  // We must not leave the hinting settings as their defaults,
-  // because if we did, that would mean using the surface defaults
-  // which might or might not use hinting (xlib does by default.)
-  //
-  // Since we make measurements outside of the context of a surface
-  // (-advancementForGlyph:), we need to ensure that the same
-  // hinting settings are used there as when we draw. For now,
-  // just force hinting to be off.
-  cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_ON);
-  cairo_font_options_set_hint_style(options, CAIRO_HINT_STYLE_NONE);
+  {
+    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+    cairo_hint_metrics_t metrics = CAIRO_HINT_METRICS_ON;
+    cairo_hint_style_t style = CAIRO_HINT_STYLE_NONE;
+    int hinting = [ud integerForKey: @"GSFontHinting"];
+    cairo_antialias_t antialias = CAIRO_ANTIALIAS_DEFAULT;
+    if (hinting == 0)
+      {
+        float scaleFactor = [ud floatForKey: @"GSScaleFactor"];
+        if (scaleFactor != 0.0 && scaleFactor != 1.0)
+          hinting = 33;
+        else
+          hinting = 17;
+      }
+    switch (hinting >> 4)
+      {
+        case 0: metrics = CAIRO_HINT_METRICS_DEFAULT; break;
+        case 1: metrics = CAIRO_HINT_METRICS_ON; break;
+        case 2: metrics = CAIRO_HINT_METRICS_OFF; break;
+      }
+    switch (hinting & 0x0f)
+      {
+        case 0: style = CAIRO_HINT_STYLE_DEFAULT; break;
+        case 1: style = CAIRO_HINT_STYLE_NONE; break;
+        case 2: style = CAIRO_HINT_STYLE_SLIGHT; break;
+        case 3: style = CAIRO_HINT_STYLE_MEDIUM; break;
+        case 4: style = CAIRO_HINT_STYLE_FULL; break;
+      }
+    cairo_font_options_set_hint_metrics(options, metrics);
+    cairo_font_options_set_hint_style(options, style);
+    if ([ud objectForKey: @"back_art_subpixel_text"])
+      antialias = CAIRO_ANTIALIAS_SUBPIXEL;
+    cairo_font_options_set_antialias(options, antialias);
+  }
 
   _scaled = cairo_scaled_font_create(face, &font_matrix, &ctm, options);
   cairo_font_options_destroy(options);
@@ -302,35 +326,39 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
 
 - (NSRect) boundingRectForGlyph: (NSGlyph)glyph
 {
-#if 0
-  cairo_text_extents_t ctext;
-
-  if (_cairo_extents_for_NSGlyph(_scaled, glyph, &ctext))
+  // Use glyph advance as approximation for bounding rect
+  CGGlyph cgGlyph = (CGGlyph)glyph;
+  int advance = 0;
+  if (_faceInfo && [_faceInfo fontFace])
     {
-      return NSMakeRect(ctext.x_bearing, ctext.y_bearing,
-                        ctext.width, ctext.height);
+      CGFontGetGlyphAdvances([_faceInfo fontFace], &cgGlyph, 1, &advance);
+      int unitsPerEm = CGFontGetUnitsPerEm([_faceInfo fontFace]);
+      if (unitsPerEm > 0)
+        {
+          CGFloat scale = matrix[0] / (CGFloat)unitsPerEm;
+          CGFloat w = advance * scale;
+          return NSMakeRect(0, descender, w, ascender - descender);
+        }
     }
-#endif
-  return NSMakeRect(0,0,10,10);
+  return NSMakeRect(0, descender, matrix[0] * 0.6, ascender - descender);
 }
 
 - (CGFloat) widthOfString: (NSString *)string
 {
-#if 0
-  cairo_text_extents_t ctext;
+  if (!string || [string length] == 0)
+    return 0.0;
 
-  if (!string)
+  // Sum glyph advances for the string
+  CGFloat totalWidth = 0;
+  NSUInteger len = [string length];
+  for (NSUInteger i = 0; i < len; i++)
     {
-      return 0.0;
+      unichar ch = [string characterAtIndex: i];
+      NSGlyph g = [self glyphForCharacter: ch];
+      NSSize adv = [self advancementForGlyph: g];
+      totalWidth += adv.width;
     }
-
-  cairo_scaled_font_text_extents(_scaled, [string UTF8String], &ctext);
-  if (cairo_scaled_font_status(_scaled) == CAIRO_STATUS_SUCCESS)
-    {
-      return ctext.width;
-    }
-#endif
-  return 100.0;
+  return totalWidth;
 }
 
 - (void) appendBezierPathWithGlyphs: (NSGlyph *)glyphs 
