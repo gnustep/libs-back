@@ -10,7 +10,7 @@ This plan turns the identified feature gaps into an execution roadmap, ordered b
 
 ### Tasks
 1. Add targeted debug categories for Wayland DnD, IME, pointer buttons, scroll axes, output changes.
-2. Add an integration harness script to run basic backend smoke tests under a Wayland compositor (Weston/headless where possible).
+2. Add an integration harness script to run basic backend smoke tests under ambrosia Wayland compositor.
 3. Capture current behavior snapshots for:
    - local drag/drop
    - external drag/drop
