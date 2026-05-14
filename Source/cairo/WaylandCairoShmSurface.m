@@ -172,9 +172,6 @@ createShmBuffer(int width, int height, struct wl_shm *shm)
 }
 
 @implementation WaylandCairoShmSurface
-{
-    struct pool_buffer *pbuffer;
-}
 - (id)initWithDevice:(void *)device
 {
   struct window *window = (struct window *) device;

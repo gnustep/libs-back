@@ -26,6 +26,7 @@
 */
 
 #include "wayland/WaylandServer.h"
+#include <Foundation/NSDebug.h>
 #include <AppKit/NSEvent.h>
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSGraphics.h>
@@ -39,7 +40,6 @@ static void
 keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard,
 		       uint32_t format, int fd, uint32_t size)
 {
-  NSDebugLog(@"keyboard_handle_keymap");
   WaylandConfig	*wlconfig = data;
   struct xkb_keymap *keymap;
   struct xkb_state  *state;
@@ -95,6 +95,8 @@ keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard,
   wlconfig->xkb.keymap = keymap;
   wlconfig->xkb.state = state;
 
+  NSDebugFLLog(@"WaylandIME", @"keyboard_handle_keymap: XKB keymap loaded (size=%u)", size);
+
   wlconfig->xkb.control_mask
     = 1 << xkb_keymap_mod_get_index(wlconfig->xkb.keymap, "Control");
   wlconfig->xkb.alt_mask
@@ -107,9 +109,9 @@ static void
 keyboard_handle_enter(void *data, struct wl_keyboard *keyboard, uint32_t serial,
 		      struct wl_surface *surface, struct wl_array *keys)
 {
-  NSDebugLog(@"keyboard_handle_enter");
   WaylandConfig *wlconfig = data;
   wlconfig->event_serial = serial;
+  NSDebugFLLog(@"WaylandIME", @"keyboard_handle_enter: serial=%u", serial);
 
   struct window *window = wl_surface_get_user_data(surface);
   if (!window)
@@ -137,9 +139,9 @@ static void
 keyboard_handle_leave(void *data, struct wl_keyboard *keyboard, uint32_t serial,
 		      struct wl_surface *surface)
 {
-  NSDebugLog(@"keyboard_handle_leave");
   WaylandConfig *wlconfig = data;
   wlconfig->event_serial = serial;
+  NSDebugFLLog(@"WaylandIME", @"keyboard_handle_leave: serial=%u", serial);
 
   if (!wlconfig->keyboard_focus)
     return;

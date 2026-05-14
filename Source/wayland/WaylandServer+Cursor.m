@@ -27,6 +27,7 @@
 
 #include "wayland/WaylandServer.h"
 #include "cairo/WaylandCairoShmSurface.h"
+#include <Foundation/NSDebug.h>
 #import <AppKit/NSEvent.h>
 #import <AppKit/NSImage.h>
 #import <AppKit/NSView.h>
@@ -103,7 +104,8 @@ pointer_handle_enter(void *data, struct wl_pointer *pointer, uint32_t serial,
 
   [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
 
-  NSDebugLog(@"[%d] pointer_handle_enter",window->window_id);
+  NSDebugFLLog(@"WaylandPointer", @"[%d] pointer_handle_enter sx=%g sy=%g",
+               window->window_id, sx, sy);
 
 
   if (window && wlconfig->pointer.serial)
@@ -401,10 +403,14 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
           case BTN_MIDDLE:
             eventType = NSOtherMouseDown;
             break;
-          // TODO: handle BTN_SIDE, BTN_EXTRA, BTN_FORWARD, BTN_BACK and other
-          // constants in libinput.
-          // We may just want to send NSOtherMouseDown and populate buttonNumber
-          // with the libinput constant?
+          /* TODO: handle BTN_SIDE, BTN_EXTRA, BTN_FORWARD, BTN_BACK and other
+           * constants in libinput. Map to NSOtherMouseDown with appropriate
+           * buttonNumber per Milestone 3 of wayland_feature_implementation_plan. */
+          default:
+            NSDebugFLLog(@"WaylandPointer",
+                         @"pointer_handle_button: unhandled button=0x%x state=%u",
+                         button, state_w);
+            return;
         }
     }
   else if (state == WL_POINTER_BUTTON_STATE_RELEASED)
@@ -432,6 +438,11 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
           case BTN_MIDDLE:
             eventType = NSOtherMouseUp;
             break;
+          default:
+            NSDebugFLLog(@"WaylandPointer",
+                         @"pointer_handle_button: unhandled button=0x%x state=%u",
+                         button, state_w);
+            return;
         }
     }
   else
@@ -477,31 +488,39 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
 
 }
 
-// Discrete step information for scroll and other axes.
+/* Groups axis events for the same logical frame.
+ * TODO (Milestone 3): accumulate per-frame deltas before dispatching. */
 static void
 pointer_handle_frame(void *data, struct wl_pointer *pointer)
-{}
+{
+  NSDebugFLLog(@"WaylandScroll", @"pointer_handle_frame");
+}
 
-// Source information for scroll and other axes.
 static void
 pointer_handle_axis_source(void *data, struct wl_pointer *pointer,
 			   uint32_t axis_source)
 {
   WaylandConfig *wlconfig = data;
   wlconfig->pointer.axis_source = axis_source;
+  NSDebugFLLog(@"WaylandScroll", @"pointer_handle_axis_source: source=%u", axis_source);
 }
 
-// Stop notification for scroll and other axes.
+/* TODO (Milestone 3): emit momentum-phase stop event to AppKit. */
 static void
 pointer_handle_axis_stop(void *data, struct wl_pointer *pointer, uint32_t time,
 			 uint32_t axis)
-{}
+{
+  NSDebugFLLog(@"WaylandScroll", @"pointer_handle_axis_stop: time=%u axis=%u", time, axis);
+}
 
-// Discrete step information for scroll and other axes.
+/* TODO (Milestone 3): include discrete step count in scroll event. */
 static void
 pointer_handle_axis_discrete(void *data, struct wl_pointer *pointer,
 			     uint32_t axis, int discrete)
-{}
+{
+  NSDebugFLLog(@"WaylandScroll", @"pointer_handle_axis_discrete: axis=%u discrete=%d",
+               axis, discrete);
+}
 
 // Scroll and other axis notifications.
 static void
@@ -534,11 +553,14 @@ pointer_handle_axis(void *data, struct wl_pointer *pointer, uint32_t time,
 
   if (wlconfig->pointer.axis_source != WL_POINTER_AXIS_SOURCE_WHEEL)
   {
-    //axis_source == WL POINTER AXIS SOURCE FINGER
-    //axis_source == WL POINTER AXIS SOURCE CONTINUOUS
-    // XXX the scroll is from trackpad we should calculate
-    // the momentumPhase
-    NSDebugLog(@"touch scroll");
+    /* axis_source == WL_POINTER_AXIS_SOURCE_FINGER or CONTINUOUS:
+     * scroll is from a touchpad — momentum phase should be set per
+     * Milestone 3 of wayland_feature_implementation_plan.          */
+    NSDebugFLLog(@"WaylandScroll",
+                 @"pointer_handle_axis: touch/continuous scroll axis=%u "
+                 @"value=%g source=%u",
+                 axis, wl_fixed_to_double(value),
+                 wlconfig->pointer.axis_source);
   }
 
   //float mouse_scroll_multiplier = wlconfig->mouse_scroll_multiplier;
@@ -657,7 +679,7 @@ WaylandServer (Cursor)
 
 - (void)setMouseLocation:(NSPoint)mouseLocation onScreen:(int)aScreen
 {
-  NSDebugLog(@"setMouseLocation: not supported");
+  NSDebugMLLog(@"WaylandPointer", @"setMouseLocation: not supported on Wayland");
 }
 
 - (void)hidecursor
@@ -738,8 +760,8 @@ WaylandServer (Cursor)
     }
   if (strlen(cursor_name) != 0)
     {
-      NSDebugLog(@"load cursor from theme for style %d: %s", style,
-		 cursor_name);
+      NSDebugMLLog(@"WaylandPointer", @"load cursor from theme for style %d: %s", style,
+		   cursor_name);
       struct cursor *wayland_cursor = calloc(1, sizeof(struct cursor));
 
       wayland_cursor->cursor
@@ -753,7 +775,7 @@ WaylandServer (Cursor)
     }
   else
     {
-      NSDebugLog(@"unable to load cursor from theme for style %d", style);
+      NSDebugMLLog(@"WaylandPointer", @"unable to load cursor from theme for style %d", style);
     }
 }
 
@@ -799,8 +821,8 @@ WaylandServer (Cursor)
 
 - (void) recolorcursor:(NSColor *)fg :(NSColor *)bg :(void*) cid
 {
-  // TODO recolorcursor
-  NSDebugLog(@"recolorcursor");
+  /* TODO: implement cursor recolouring on Wayland */
+  NSDebugMLLog(@"WaylandPointer", @"recolorcursor: not yet implemented");
 }
 
 - (void)setcursor:(void *)cid

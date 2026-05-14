@@ -40,7 +40,7 @@
   delegate = aDelegate;
   ASSIGN(server_name, name);
   focused_window_id = 0;
-  NSDebugLog(@"WaylandInputServer: initialized");
+  NSDebugMLLog(@"WaylandIME", @"WaylandInputServer: initialized");
   return self;
 }
 
@@ -53,7 +53,7 @@
 - (void) setFocusedWindowId: (int)windowId
 {
   focused_window_id = windowId;
-  NSDebugLog(@"WaylandInputServer: focused window id = %d", windowId);
+  NSDebugMLLog(@"WaylandIME", @"WaylandInputServer: focused window id = %d", windowId);
 }
 
 - (int) focusedWindowId
@@ -76,8 +76,8 @@
   if (window != nil)
     {
       focused_window_id = [window windowNumber];
-      NSDebugLog(@"WaylandInputServer: conversation changed, focused window = %d",
-		 focused_window_id);
+      NSDebugMLLog(@"WaylandIME", @"WaylandInputServer: conversation changed, focused window = %d",
+		   focused_window_id);
     }
 }
 

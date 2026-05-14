@@ -36,6 +36,12 @@
 - (void) updateDragInfoFromEvent: (NSEvent *)event;
 - (void) resetDragInfo;
 
+/** Set up NSDraggingInfo state for an inbound drag from an external app.
+ *  Called from the wl_data_device.enter C callback before posting
+ *  GSAppKitDraggingEnter to the target window. */
+- (void) setupInboundDragWithPasteboard: (NSPasteboard *)pb
+                              operation: (NSDragOperation)op;
+
 @end
 
 #endif /* _WaylandDragView_h_INCLUDE */

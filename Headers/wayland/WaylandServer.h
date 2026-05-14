@@ -128,6 +128,26 @@ typedef struct _WaylandConfig
   } xkb;
   int modifiers;
 
+  /* wl_data_device — selection and drag-and-drop */
+  struct wl_data_device_manager *data_device_manager;
+  struct wl_data_device         *data_device;
+  int                            data_device_manager_version;
+
+  /* DnD outbound: we are the drag source */
+  struct wl_data_source *dnd_source;    /* NULL when no outbound drag is active */
+
+  /* DnD inbound: pending/current offer from an external app */
+  struct wl_data_offer  *dnd_offer;
+  char                 **dnd_offer_mimes;     /* strdup'd, NULL when empty */
+  int                    dnd_offer_mime_count;
+  int                    dnd_offer_mime_cap;
+  uint32_t               dnd_offer_source_actions;
+  uint32_t               dnd_current_action;
+  float                  dnd_x;               /* surface-local cursor pos */
+  float                  dnd_y;
+  struct window         *dnd_target;          /* GNUstep window under cursor */
+  BOOL                   dnd_incoming;        /* YES between enter and leave/drop */
+
 } WaylandConfig;
 
 struct output

@@ -26,13 +26,13 @@
 */
 
 #include "wayland/WaylandServer.h"
+#include <Foundation/NSDebug.h>
 
 static void
 handle_geometry(void *data, struct wl_output *wl_output, int x, int y,
 		int physical_width, int physical_height, int subpixel,
 		const char *make, const char *model, int transform)
 {
-  NSDebugLog(@"handle_geometry");
   struct output *output = data;
 
   output->alloc_x = x;
@@ -46,35 +46,42 @@ handle_geometry(void *data, struct wl_output *wl_output, int x, int y,
   if (output->model)
     free(output->model);
   output->model = strdup(model);
+
+  NSDebugFLLog(@"WaylandOutput",
+               @"handle_geometry: output @(%d,%d) physical=%dx%dmm "
+               @"transform=%d make=%s model=%s",
+               x, y, physical_width, physical_height, transform, make, model);
 }
 
 static void
 handle_done(void *data, struct wl_output *wl_output)
 {
-  NSDebugLog(@"handle_done");
+  NSDebugFLLog(@"WaylandOutput", @"handle_done: output configuration committed");
 }
 
 static void
 handle_scale(void *data, struct wl_output *wl_output, int32_t scale)
 {
-  NSDebugLog(@"handle_scale");
   struct output *output = data;
 
   output->scale = scale;
+  NSDebugFLLog(@"WaylandOutput", @"handle_scale: scale=%d", scale);
 }
 
 static void
 handle_mode(void *data, struct wl_output *wl_output, uint32_t flags, int width,
 	    int height, int refresh)
 {
-  NSDebugLog(@"handle_mode");
   struct output *output = data;
 
+  NSDebugFLLog(@"WaylandOutput", @"handle_mode: flags=0x%x size=%dx%d refresh=%dHz",
+               flags, width, height, refresh / 1000);
   if (flags & WL_OUTPUT_MODE_CURRENT)
     {
       output->width = width;
       output->height = height /*- 30*/;
-      NSDebugLog(@"handle_mode output=%dx%d", width, height);
+      NSDebugFLLog(@"WaylandOutput", @"handle_mode: current output size set to %dx%d",
+                   width, height);
 
       //  XXX - Should we implement this?
       //        if (display->output_configure_handler)

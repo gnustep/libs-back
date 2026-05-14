@@ -50,8 +50,8 @@
 #include "wayland/WaylandInputServer.h"
 
 extern const struct wl_output_listener output_listener;
-
 extern const struct wl_seat_listener seat_listener;
+extern const struct wl_data_device_listener data_device_listener;
 
 static void
 shm_format(void *data, struct wl_shm *wl_shm, uint32_t format)
@@ -146,6 +146,14 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name,
 	= wl_registry_bind(registry, name, &zxdg_decoration_manager_v1_interface, 1);
       NSDebugLog(@"wayland: found xdg-decoration-manager interface");
     }
+  else if (strcmp(interface, wl_data_device_manager_interface.name) == 0)
+    {
+      uint32_t v = (version < 3) ? version : 3;
+      wlconfig->data_device_manager_version = v;
+      wlconfig->data_device_manager
+	= wl_registry_bind(registry, name, &wl_data_device_manager_interface, v);
+      NSDebugLog(@"wayland: found wl_data_device_manager (version %u)", v);
+    }
 }
 
 static void handle_global_remove(void *data, struct wl_registry *registry,
@@ -217,6 +225,19 @@ NSToWayland(struct window *window, int ns_y)
 
   wl_display_dispatch(wlconfig->display);
   wl_display_roundtrip(wlconfig->display);
+
+  /* Get a data device now that both seat and data_device_manager are bound. */
+  if (wlconfig->data_device_manager && wlconfig->seat)
+    {
+      wlconfig->data_device = wl_data_device_manager_get_data_device(
+          wlconfig->data_device_manager, wlconfig->seat);
+      if (wlconfig->data_device)
+        {
+          wl_data_device_add_listener(wlconfig->data_device,
+                                      &data_device_listener, wlconfig);
+          NSDebugLog(@"wayland: wl_data_device created");
+        }
+    }
 
   if (!wlconfig->compositor)
     {
