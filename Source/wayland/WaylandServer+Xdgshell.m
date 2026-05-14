@@ -29,6 +29,8 @@
 #include <AppKit/NSEvent.h>
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSGraphics.h>
+#include <AppKit/NSWindow.h>
+#include <GNUstepGUI/GSDisplayServer.h>
 
 static void
 xdg_surface_on_configure(void *data, struct xdg_surface *xdg_surface,
@@ -41,6 +43,7 @@ xdg_surface_on_configure(void *data, struct xdg_surface *xdg_surface,
   if (window->terminated == YES)
     {
       NSDebugLog(@"deleting window win=%d", window->window_id);
+      wl_list_remove(&window->link);
       free(window);
       return;
     }
@@ -115,15 +118,73 @@ xdg_popup_configure(void *data, struct xdg_popup *xdg_popup, int32_t x,
 
   NSDebugLog(@"[%d] xdg_popup_configure [%d,%d %dx%d]", window->window_id, x, y,
              width, height);
+
+  /* The compositor reports the popup's actual position (in parent surface
+   * coords) and size.  Sync window->pos_x/pos_y so GNUstep's NSWindow frame
+   * matches where the compositor actually placed the popup.  Without this,
+   * locationForSubmenu: uses a stale frame and submenus appear offset.      */
+  if (window->parent_id)
+    {
+      struct window *parent
+        = get_window_with_id(window->wlconfig, window->parent_id);
+      if (parent && window->output)
+        {
+          window->pos_x = parent->pos_x + x;
+          window->pos_y = parent->pos_y + y;
+
+          if (width > 0)
+            window->width = width;
+          if (height > 0)
+            window->height = height;
+
+          NSWindow *nswin = GSWindowWithNumber(window->window_id);
+          if (nswin)
+            {
+              NSEvent *ev = [NSEvent
+                otherEventWithType:NSAppKitDefined
+                           location:NSMakePoint(0, 0)
+                      modifierFlags:0
+                          timestamp:0
+                       windowNumber:window->window_id
+                            context:GSCurrentContext()
+                            subtype:GSAppKitWindowMoved
+                              data1:window->pos_x
+                              data2:WaylandToNS(window, window->pos_y)];
+              [nswin sendEvent:ev];
+            }
+        }
+    }
 }
 
 static void
 xdg_popup_done(void *data, struct xdg_popup *xdg_popup)
 {
   struct window *window = data;
-  window->terminated = YES;
+
+  /* Destroy the popup role (required by the protocol after popup_done),
+   * then destroy the xdg_surface and wl_surface in the correct order.
+   * NULL all pointers immediately so that destroySurfaceRole: (called
+   * when GNUstep eventually orders the window out) does not attempt a
+   * second destroy on already-freed Wayland proxy objects.  A double
+   * destroy causes a Wayland protocol error, which disconnects the
+   * compositor session and closes every window including modal dialogs. */
   xdg_popup_destroy(xdg_popup);
-  wl_surface_destroy(window->surface);
+  window->popup = NULL;
+
+  if (window->xdg_surface)
+    {
+      xdg_surface_destroy(window->xdg_surface);
+      window->xdg_surface = NULL;
+    }
+
+  if (window->surface)
+    {
+      wl_surface_destroy(window->surface);
+      window->surface = NULL;
+    }
+
+  window->configured = NO;
+  window->terminated = YES;
 }
 
 static void

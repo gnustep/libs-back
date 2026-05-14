@@ -42,6 +42,7 @@
 
 #include "wayland/xdg-shell-client-protocol.h"
 #include "wayland/wlr-layer-shell-client-protocol.h"
+#include "wayland/xdg-decoration-unstable-v1-client-protocol.h"
 
 struct pointer
 {
@@ -75,16 +76,17 @@ struct cursor
 
 typedef struct _WaylandConfig
 {
-  struct wl_display	    *display;
-  struct wl_registry	     *registry;
-  struct wl_compositor       *compositor;
-  struct wl_shell		  *shell;
-  struct wl_shm		*shm;
-  struct wl_seat		 *seat;
-  struct wl_keyboard	     *keyboard;
-  struct xdg_wm_base	     *wm_base;
-  struct zwlr_layer_shell_v1 *layer_shell;
-  struct wl_subcompositor    *subcompositor;
+  struct wl_display                 *display;
+  struct wl_registry                *registry;
+  struct wl_compositor              *compositor;
+  struct wl_shell                   *shell;
+  struct wl_shm	                    *shm;
+  struct wl_seat                    *seat;
+  struct wl_keyboard                *keyboard;
+  struct xdg_wm_base                *wm_base;
+  struct zwlr_layer_shell_v1        *layer_shell;
+  struct wl_subcompositor           *subcompositor;
+  struct zxdg_decoration_manager_v1 *decoration_manager;
   int seat_version;
 
   struct wl_list output_list;
@@ -95,6 +97,11 @@ typedef struct _WaylandConfig
 
 // last event serial from pointer or keyboard
   uint32_t	 event_serial;
+
+// cursor global position tracking (output-relative, Wayland Y-down)
+  BOOL   cursor_global_valid;
+  float  cursor_global_x;
+  float  cursor_global_y;
 
 
 // cursor
@@ -154,6 +161,7 @@ struct window
   BOOL resizing;
   BOOL ignoreMouse;
   BOOL usesOpenGL;
+  BOOL global_pos_known;   // saved_pos_x/y hold a reliable output-relative origin
 
   float pos_x;
   float pos_y;
@@ -164,17 +172,21 @@ struct window
   int	is_out;
   int	level;
 
-  struct wl_surface	    *surface;
-  struct xdg_surface	     *xdg_surface;
-  struct xdg_toplevel	      *toplevel;
-  struct xdg_popup		   *popup;
-  struct xdg_positioner	*positioner;
+  int   parent_id;
+
+  struct wl_surface            *surface;
+  struct xdg_surface           *xdg_surface;
+  struct xdg_toplevel          *toplevel;
+  struct xdg_popup             *popup;
+  struct xdg_positioner	       *positioner;
   struct zwlr_layer_surface_v1 *layer_surface;
-  struct output		*output;
+  struct zxdg_toplevel_decoration_v1    *decoration;
+  struct output		       *output;
   CairoSurface		       *wcs;
 };
 
 struct window *get_window_with_id(WaylandConfig *wlconfig, int winid);
+float WaylandToNS(struct window *window, float wl_y);
 
 @interface WaylandServer : GSDisplayServer
 {

@@ -69,6 +69,10 @@ extern const struct zwlr_layer_surface_v1_listener layer_surface_listener;
 
 extern const struct xdg_popup_listener xdg_popup_listener;
 
+extern const struct zxdg_toplevel_decoration_v1_listener toplevel_decoration_listener;
+
+static BOOL handlesWindowDecorations = NO;
+
 static void
 handle_global(void *data, struct wl_registry *registry, uint32_t name,
 	      const char *interface, uint32_t version)
@@ -135,6 +139,12 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name,
       wlconfig->subcompositor
 	= wl_registry_bind(registry, name, &wl_subcompositor_interface, 1);
       NSDebugLog(@"wayland: found subcompositor interface");
+    }
+  else if (strcmp(interface, zxdg_decoration_manager_v1_interface.name) == 0)
+    {
+      wlconfig->decoration_manager
+	= wl_registry_bind(registry, name, &zxdg_decoration_manager_v1_interface, 1);
+      NSDebugLog(@"wayland: found xdg-decoration-manager interface");
     }
 }
 
@@ -223,6 +233,23 @@ NSToWayland(struct window *window, int ns_y)
 	       @"compositor must support the stable XDG Shell protocol"];
     }
 
+  /* Determine decoration mode. Default: use SSD if the compositor supports it.
+     The user can override with GSBackHandlesWindowDecorations in defaults.   */
+  NSUserDefaults *defs = [NSUserDefaults standardUserDefaults];
+  if ([defs objectForKey: @"GSBackHandlesWindowDecorations"])
+    {
+      handlesWindowDecorations
+        = [defs boolForKey: @"GSBackHandlesWindowDecorations"];
+    }
+  else
+    {
+      handlesWindowDecorations = (wlconfig->decoration_manager != NULL);
+    }
+  NSDebugLog(@"wayland: handlesWindowDecorations=%s (decoration_manager=%s)",
+             handlesWindowDecorations ? "YES" : "NO",
+             wlconfig->decoration_manager ? "available" : "not available");
+
+
   inputServer = [[WaylandInputServer allocWithZone: [self zone]]
 		   initWithDelegate: nil name: @"WaylandInput"];
 
@@ -273,13 +300,18 @@ NSToWayland(struct window *window, int ns_y)
 - (void)dealloc
 {
   NSDebugLog(@"Destroying Wayland Server");
+  if (wlconfig->decoration_manager)
+    {
+      zxdg_decoration_manager_v1_destroy(wlconfig->decoration_manager);
+      wlconfig->decoration_manager = NULL;
+    }
   DESTROY(inputServer);
   [super dealloc];
 }
 
 - (BOOL)handlesWindowDecorations
 {
-  return NO;
+  return handlesWindowDecorations;
 }
 
 - (void)restrictWindow:(int)win toImage:(NSImage *)image
@@ -483,6 +515,7 @@ WaylandServer (WindowOps)
   window->resizing = NO;
   window->ignoreMouse = NO;
   window->usesOpenGL = NO;
+  window->global_pos_known = NO;
 
   // FIXME is this needed?
   if (window->pos_x < 0)
@@ -776,8 +809,35 @@ WaylandServer (WindowOps)
   NSDebugLog(@"setParentWindow: parent=%d child=%d", parentWin, childWin);
   struct window *parent = get_window_with_id(wlconfig, parentWin);
   struct window *child = get_window_with_id(wlconfig, childWin);
+  if (!parent || !child)
+    {
+      return;
+    }
 
-  [self createPopupShell:child withParentShell:parent];
+  if (child->level == NSPopUpMenuWindowLevel)
+    {
+      /* NSPopUpMenuWindowLevel is a NOOP in createSurfaceShell; create the
+       * xdg_popup here so the compositor handles grab and dismiss.           */
+      [self createPopupShell:child withParentShell:parent];
+      return;
+    }
+
+  if (child->level == NSSubmenuWindowLevel)
+    {
+      /* Submenus are created by createSubMenuShell (layer shell preferred).
+       * Only fall back to xdg_popup if no role has been assigned yet.        */
+      if (![self windowSurfaceHasRole:child])
+        [self createPopupShell:child withParentShell:parent];
+      return;
+    }
+
+  /* Panels, dialogs, and other transient toplevels: record the parent and
+   * call xdg_toplevel_set_parent.  Never use xdg_popup here — xdg_popup
+   * auto-dismisses when pointer focus leaves the surface, which closes
+   * dialogs as soon as the mouse moves to another window.                  */
+  child->parent_id = parentWin;
+  if (child->toplevel && parent->toplevel)
+    xdg_toplevel_set_parent(child->toplevel, parent->toplevel);
 }
 
 - (void)setwindowlevel:(int)level:(int)win
@@ -900,7 +960,59 @@ WaylandServer (SurfaceRoles)
       break;
     case NSPopUpMenuWindowLevel:
       NSDebugLog(@"[%d] NSPopUpMenuWindowLevel", win);
-      [self createPopup:window];
+      /* Use layer shell so the menu can extend beyond the parent window's
+       * surface without losing pointer events.  xdg_popup clips event
+       * delivery to the parent surface bounds on many compositors, which
+       * breaks tracking when the menu extends outside the parent window.
+       * NSPopUpButton popups go through setParentWindow:forChildWindow:
+       * before orderwindow and already have a surface role by the time
+       * createSurfaceShell is reached, so this path is only taken for
+       * right-click context menus (displayTransient).
+       *
+       * Before creating the surface, translate window->pos_x/y from
+       * GNUstep's assumed coordinates into accurate output-relative
+       * coordinates by adding the delta between the key window's inferred
+       * global origin (saved_pos_x/y, tracked via cursor enter events) and
+       * GNUstep's assumed origin (pos_x/y).  Then notify GNUstep of the
+       * corrected frame so that locationForSubmenu: and other screen-
+       * coordinate queries work correctly for any submenus.              */
+      if (wlconfig->layer_shell)
+        {
+          NSWindow *keyWin = [NSApp keyWindow];
+          if (keyWin && (int)[keyWin windowNumber] != win)
+            {
+              struct window *kwin =
+                get_window_with_id(wlconfig, (int)[keyWin windowNumber]);
+              if (kwin && kwin->global_pos_known)
+                {
+                  float dx = kwin->saved_pos_x - kwin->pos_x;
+                  float dy = kwin->saved_pos_y - kwin->pos_y;
+                  window->pos_x += dx;
+                  window->pos_y += dy;
+                  NSWindow *nswin = GSWindowWithNumber(win);
+                  if (nswin)
+                    {
+                      NSEvent *ev =
+                        [NSEvent otherEventWithType:NSAppKitDefined
+                                           location:NSZeroPoint
+                                      modifierFlags:0
+                                          timestamp:0
+                                       windowNumber:win
+                                            context:GSCurrentContext()
+                                            subtype:GSAppKitWindowMoved
+                                              data1:window->pos_x
+                                              data2:WaylandToNS(window,
+                                                     window->pos_y)];
+                      [nswin sendEvent:ev];
+                    }
+                }
+            }
+          [self createLayerShell:window
+                   withLayerType:ZWLR_LAYER_SHELL_V1_LAYER_TOP
+                   withNamespace:@"gnustep-popup"];
+        }
+      else
+        [self createTopLevel:window];
       break;
     case NSScreenSaverWindowLevel:
       NSDebugLog(@"[%d] NSScreenSaverWindowLevel", win);
@@ -964,6 +1076,26 @@ WaylandServer (SurfaceRoles)
 				window);
       xdg_surface_add_listener(window->xdg_surface, &xdg_surface_listener,
 			       window);
+
+      /* Apply transient-parent relationship.
+       *
+       * Priority 1: explicit parent from setParentWindow: (sheets, child panels).
+       * Priority 2: implicit parent for modal panels — set to the keyboard-focused
+       *   window so the Ambrosia compositor can protect the dialog from focus
+       *   steals even when no explicit addChildWindow: call was made (e.g. the
+       *   standalone [NSOpenPanel runModal] case).                              */
+      {
+        struct window *parent = NULL;
+        if (window->parent_id)
+          parent = get_window_with_id(wlconfig, window->parent_id);
+        else if (window->level == NSModalPanelWindowLevel
+                 && wlconfig->keyboard_focus != NULL
+                 && wlconfig->keyboard_focus != window)
+          parent = wlconfig->keyboard_focus;
+
+        if (parent && parent->toplevel)
+          xdg_toplevel_set_parent(window->toplevel, parent->toplevel);
+      }
 
       xdg_surface_set_window_geometry(window->xdg_surface, 0, 0, window->width,
 				      window->height);
@@ -1069,40 +1201,33 @@ WaylandServer (SurfaceRoles)
 
   if ([self windowSurfaceHasRole:window])
     {
-      // if the role is already assigned skip
       return;
     }
 
+  /* Use layer shell so the submenu can extend beyond any parent surface
+   * without losing pointer events.  xdg_popup clips event delivery to
+   * the parent surface bounds, which breaks tracking when the submenu
+   * extends to the right or below the parent menu's surface.            */
   if (wlconfig->layer_shell)
     {
-      // the preferred way to create a submenu is to use an overlay
       [self createLayerShell:window
-	       withLayerType:ZWLR_LAYER_SHELL_V1_LAYER_TOP
-	       withNamespace:@"gnustep-submenu"];
+               withLayerType:ZWLR_LAYER_SHELL_V1_LAYER_TOP
+               withNamespace:@"gnustep-submenu"];
       return;
     }
-  else
-    {
-      NSDebugLog(@"layer shell not supported, fallback to xdg popup");
-    }
-  // if the layer shell is not available then we use the xdg popup
-  // for that we need a parent toplevel window
 
+  /* No layer shell: fall back to xdg_popup under the nearest parent
+   * menu surface.                                                       */
+  NSDebugLog(@"layer shell not supported, fallback to xdg popup");
   struct window *rootwindow = window;
   struct window *parentwindow = rootwindow;
-  while (rootwindow = [self getSuperMenuWindow:parentwindow])
+  while ((rootwindow = [self getSuperMenuWindow:parentwindow]))
     {
       parentwindow = rootwindow;
     }
   if (!parentwindow)
-    {
-      return;
-    }
+    return;
   NSDebugLog(@"new popup: %d parent id: %d", win, parentwindow->window_id);
-  NSDebugLog(@"parent: %d [%f,%f %fx%f]", parentwindow->window_id,
-	     parentwindow->pos_x, parentwindow->pos_y, parentwindow->width,
-	     parentwindow->height);
-
   [self createPopupShell:window withParentShell:parentwindow];
 }
 
@@ -1116,15 +1241,18 @@ WaylandServer (SurfaceRoles)
 {
   NSDebugLog(@"createPopupShell");
 
-  if (parent->toplevel == NULL && parent->layer_surface == NULL)
+  if (parent->toplevel == NULL && parent->layer_surface == NULL
+      && parent->popup == NULL)
     {
-      NSDebugLog(@"parent surface %d is not toplevel", parent->window_id);
+      NSDebugLog(@"parent surface %d has no surface role", parent->window_id);
       return;
     }
   if ([self windowSurfaceHasRole:child])
     {
       [self destroySurfaceRole:child];
     }
+
+  child->parent_id = parent->window_id;
 
   child->surface = wl_compositor_create_surface(wlconfig->compositor);
   wl_surface_set_user_data(child->surface, child);
@@ -1152,6 +1280,12 @@ WaylandServer (SurfaceRoles)
 
   child->popup = xdg_surface_get_popup(child->xdg_surface, parent->xdg_surface,
 				       positioner);
+
+  /* Grab pointer/keyboard so the compositor auto-dismisses the popup on
+   * outside clicks and delivers events to it.  Only grab when we have a
+   * valid event serial (i.e. the popup was triggered by user input).    */
+  if (wlconfig->event_serial)
+    xdg_popup_grab(child->popup, wlconfig->seat, wlconfig->event_serial);
 
   if (parent->layer_surface)
     {
@@ -1204,6 +1338,7 @@ WaylandServer (SurfaceRoles)
       [window->wcs destroySurface];
     }
   window->configured = NO;
+  window->buffer_needs_attach = YES;
 }
 
 - (void)destroyWindowShell:(struct window *)window

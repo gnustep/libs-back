@@ -60,6 +60,41 @@ pointer_handle_enter(void *data, struct wl_pointer *pointer, uint32_t serial,
 
   wlconfig->pointer.focus = window;
 
+  float		 sx = wl_fixed_to_double(sx_w);
+  float		 sy = wl_fixed_to_double(sy_w);
+
+  /* Track cursor global (output-relative) position so we can infer where
+   * xdg_toplevel windows actually are on screen.
+   *
+   * Layer-shell surfaces have a known global position (we set the margins
+   * ourselves), so entering one gives us a ground-truth fix.  When the
+   * cursor then enters an xdg_toplevel we subtract the surface-local entry
+   * point to infer that toplevel's global origin and store it in
+   * saved_pos_x/y.  Both values are in Wayland output coordinates
+   * (Y increasing downward from the output's top-left corner).           */
+  if (window->layer_surface)
+    {
+      wlconfig->cursor_global_x     = window->pos_x + sx;
+      wlconfig->cursor_global_y     = window->pos_y + sy;
+      wlconfig->cursor_global_valid = YES;
+    }
+  else if (window->toplevel)
+    {
+      if (wlconfig->cursor_global_valid)
+        {
+          window->saved_pos_x      = wlconfig->cursor_global_x - sx;
+          window->saved_pos_y      = wlconfig->cursor_global_y - sy;
+          window->global_pos_known = YES;
+        }
+      /* Keep cursor_global current while traversing toplevels. */
+      if (window->global_pos_known)
+        {
+          wlconfig->cursor_global_x     = window->saved_pos_x + sx;
+          wlconfig->cursor_global_y     = window->saved_pos_y + sy;
+          wlconfig->cursor_global_valid = YES;
+        }
+    }
+
   if (wlconfig->pointer.captured)
     {
       return;
@@ -67,11 +102,7 @@ pointer_handle_enter(void *data, struct wl_pointer *pointer, uint32_t serial,
 
   [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
 
-
   NSDebugLog(@"[%d] pointer_handle_enter",window->window_id);
-
-  float		 sx = wl_fixed_to_double(sx_w);
-  float		 sy = wl_fixed_to_double(sy_w);
 
 
   if (window && wlconfig->pointer.serial)
@@ -185,6 +216,27 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer, uint32_t time,
 
   wlconfig->pointer.last_timestamp = (NSTimeInterval) time / 1000.0;
 
+  /* Keep cursor_global current on every motion so that the position is
+   * fresh at the moment a context menu is about to be opened.  Use
+   * pointer.focus (the actual Wayland surface receiving events) not the
+   * potentially-captured focused_window.                                 */
+  {
+    struct window *tw = wlconfig->pointer.focus;
+    if (tw)
+      {
+        if (tw->layer_surface)
+          {
+            wlconfig->cursor_global_x     = tw->pos_x + sx;
+            wlconfig->cursor_global_y     = tw->pos_y + sy;
+            wlconfig->cursor_global_valid = YES;
+          }
+        else if (tw->global_pos_known)
+          {
+            wlconfig->cursor_global_x = tw->saved_pos_x + sx;
+            wlconfig->cursor_global_y = tw->saved_pos_y + sy;
+          }
+      }
+  }
 
   [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
 
@@ -284,49 +336,41 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
     {
       wlconfig->pointer.button = button;
       if (window->toplevel)
-        {
-          // if the window is a toplevel we check if the event is for resizing or
-          // moving the window these actions are delegated to the compositor and
-          // therefore we skip forwarding the events to the NSWindow / NSView
+      {
+        NSWindow *nswindow = GSWindowWithNumber(window->window_id);
 
-          NSWindow *nswindow = GSWindowWithNumber(window->window_id);
-          if (nswindow != nil)
-            {
-              GSStandardWindowDecorationView * wd = [nswindow _windowView];
+        if (nswindow != nil
+            && ![(WaylandServer *)GSCurrentServer() handlesWindowDecorations])
+          {
+            GSStandardWindowDecorationView *wd = [nswindow _windowView];
 
-              if ([wd pointInTitleBarRect:eventLocation])
-                {
-                  xdg_toplevel_move(window->toplevel, wlconfig->seat, serial);
-                  window->moving = YES;
-                  return;
-                }
-              if ([wd pointInResizeBarRect:eventLocation])
-                {
-                  GSResizeEdgeMode mode = [wd resizeModeForPoint:eventLocation];
+            if ([wd pointInTitleBarRect:eventLocation])
+              {
+                xdg_toplevel_move(window->toplevel, wlconfig->seat, serial);
+                window->moving = YES;
+                return;
+              }
 
-                  uint32_t edges = XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM_RIGHT;
+            if ([wd pointInResizeBarRect:eventLocation])
+              {
+                GSResizeEdgeMode mode = [wd resizeModeForPoint:eventLocation];
 
-                  if (mode == GSResizeEdgeBottomLeftMode)
-                    {
-                      edges = XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM_LEFT;
-                    }
-                  else if (mode == GSResizeEdgeBottomRightMode)
-                    {
-                      edges = XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM_RIGHT;
-                    }
-                  else if (mode == GSResizeEdgeBottomMode)
-                    {
-                      edges = XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM;
-                    }
+                uint32_t edges = XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM_RIGHT;
 
-                    xdg_toplevel_resize(window->toplevel, wlconfig->seat, serial,
-                                edges);
-                    window->resizing = YES;
-                    return;
-                }
-            } // endif nswindow != nil
-        } // endif window->toplevel
-
+                if (mode == GSResizeEdgeBottomLeftMode)
+                  edges = XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM_LEFT;
+                else if (mode == GSResizeEdgeBottomRightMode)
+                  edges = XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM_RIGHT;
+                else if (mode == GSResizeEdgeBottomMode)
+                  edges = XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM;
+    
+                xdg_toplevel_resize(window->toplevel, wlconfig->seat, serial,
+                                    edges);
+                window->resizing = YES;
+                return;
+              }
+          }
+      }
       if (button == wlconfig->pointer.last_click_button
 	  && time - wlconfig->pointer.last_click_time < DOUBLECLICK_DELAY
 	  && fabsf(wlconfig->pointer.x - wlconfig->pointer.last_click_x)
