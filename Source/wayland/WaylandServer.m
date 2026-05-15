@@ -129,9 +129,12 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name,
   else if (strcmp(interface, wl_seat_interface.name) == 0)
     {
       wlconfig->pointer.wlpointer = NULL;
-      wlconfig->seat_version = version;
+      /* Bind at v5+ to receive wl_pointer.frame and axis-source/stop/discrete
+       * events needed for correct per-frame scroll accumulation. */
+      uint32_t seat_v = (version < 5) ? version : 5;
+      wlconfig->seat_version = seat_v;
       wlconfig->seat
-	= wl_registry_bind(wlconfig->registry, name, &wl_seat_interface, 1);
+	= wl_registry_bind(wlconfig->registry, name, &wl_seat_interface, seat_v);
       NSDebugLog(@"wayland: found seat interface");
       wl_seat_add_listener(wlconfig->seat, &seat_listener, wlconfig);
     }

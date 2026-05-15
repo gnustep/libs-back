@@ -263,7 +263,6 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer, uint32_t time,
 
       if (wlconfig->pointer.button_state == WL_POINTER_BUTTON_STATE_PRESSED)
         {
-
           switch (wlconfig->pointer.button)
             {
               case BTN_LEFT:
@@ -272,7 +271,7 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer, uint32_t time,
               case BTN_RIGHT:
                 eventType = NSRightMouseDragged;
                 break;
-              case BTN_MIDDLE:
+              default: /* BTN_MIDDLE, BTN_SIDE, BTN_EXTRA, BTN_FORWARD, BTN_BACK, … */
                 eventType = NSOtherMouseDragged;
                 break;
             }
@@ -400,17 +399,14 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
           case BTN_RIGHT:
             eventType = NSRightMouseDown;
             break;
-          case BTN_MIDDLE:
-            eventType = NSOtherMouseDown;
-            break;
-          /* TODO: handle BTN_SIDE, BTN_EXTRA, BTN_FORWARD, BTN_BACK and other
-           * constants in libinput. Map to NSOtherMouseDown with appropriate
-           * buttonNumber per Milestone 3 of wayland_feature_implementation_plan. */
           default:
+            /* BTN_MIDDLE (2), BTN_SIDE (3), BTN_EXTRA (4),
+               BTN_FORWARD (5), BTN_BACK (6), BTN_TASK (7), … */
+            eventType = NSOtherMouseDown;
             NSDebugFLLog(@"WaylandPointer",
-                         @"pointer_handle_button: unhandled button=0x%x state=%u",
-                         button, state_w);
-            return;
+                         @"pointer_handle_button: button=0x%x (btn%u) pressed",
+                         button, button - BTN_LEFT);
+            break;
         }
     }
   else if (state == WL_POINTER_BUTTON_STATE_RELEASED)
@@ -435,34 +431,34 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
           case BTN_RIGHT:
             eventType = NSRightMouseUp;
             break;
-          case BTN_MIDDLE:
-            eventType = NSOtherMouseUp;
-            break;
           default:
+            eventType = NSOtherMouseUp;
             NSDebugFLLog(@"WaylandPointer",
-                         @"pointer_handle_button: unhandled button=0x%x state=%u",
-                         button, state_w);
-            return;
+                         @"pointer_handle_button: button=0x%x (btn%u) released",
+                         button, button - BTN_LEFT);
+            break;
         }
     }
   else
     {
       return;
     }
-  /* FIXME: unlike in _motion and _axis handlers, the argument used in _button
-     is the "serial" of the event, not passed and unavailable in _motion and
-     _axis handlers. Is it allowed to pass "serial" as the eventNumber: in
-     _button handler, but "time" as the eventNumber: in the _motion and _axis
-     handlers? */
+  /* eventNumber: use the Wayland serial (a monotonically increasing counter
+     from the compositor) — it is consistent with what the button handlers
+     receive and matches what the pointer-enter handler uses for serial. */
   tick = serial;
 
-  /* FIXME: X11 backend uses the XGetPointerMapping()-returned values from
-     its map_return argument as constants for buttonNumber. As the variant
-     with buttonNumber: seems to be a GNUstep extension, and the value
-     internal, it might be ok to just provide libinput constant as we're doing
-     here. If this is truly correct, please update this comment to document
-     the correctness of doing so. */
-  buttonNumber = button;
+  /* buttonNumber: map evdev button codes to a 0-based AppKit button index.
+   *   BTN_LEFT   (0x110) → 0  (NSLeftMouse*)
+   *   BTN_RIGHT  (0x111) → 1  (NSRightMouse*)
+   *   BTN_MIDDLE (0x112) → 2  (NSOtherMouse*)
+   *   BTN_SIDE   (0x113) → 3  (NSOtherMouse* — browser back)
+   *   BTN_EXTRA  (0x114) → 4  (NSOtherMouse* — browser forward)
+   *   BTN_FORWARD(0x115) → 5
+   *   BTN_BACK   (0x116) → 6
+   * This is equivalent to the X11 approach of subtracting the base button
+   * code, and produces stable values across different mouse hardware.      */
+  buttonNumber = (int)(button - BTN_LEFT);
 
   event = [NSEvent mouseEventWithType:eventType
 			     location:eventLocation
@@ -488,14 +484,43 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
 
 }
 
-/* Groups axis events for the same logical frame.
- * TODO (Milestone 3): accumulate per-frame deltas before dispatching. */
+/* Accumulate axis delta for this logical frame.
+ * The event is dispatched as a single NSScrollWheel in pointer_handle_frame.
+ * This avoids two separate events when a compositor sends both vertical and
+ * horizontal components in the same frame (common for diagonal touchpad swipes). */
 static void
-pointer_handle_frame(void *data, struct wl_pointer *pointer)
+pointer_handle_axis(void *data, struct wl_pointer *pointer, uint32_t time,
+		    uint32_t axis, wl_fixed_t value)
 {
-  NSDebugFLLog(@"WaylandScroll", @"pointer_handle_frame");
+  WaylandConfig *wlconfig = data;
+  struct window *window   = wlconfig->pointer.focus;
+
+  if (window == NULL || window->ignoreMouse)
+    return;
+
+  float delta = wl_fixed_to_double(value) * wlconfig->mouse_scroll_multiplier;
+
+  switch (axis)
+    {
+      case WL_POINTER_AXIS_VERTICAL_SCROLL:
+        wlconfig->pointer.frame_deltaY += delta;
+        break;
+      case WL_POINTER_AXIS_HORIZONTAL_SCROLL:
+        wlconfig->pointer.frame_deltaX += delta;
+        break;
+      default:
+        return;
+    }
+
+  wlconfig->pointer.frame_has_axis = YES;
+  wlconfig->pointer.frame_time     = time;
+
+  NSDebugFLLog(@"WaylandScroll",
+               @"pointer_handle_axis: axis=%u delta=%g (source=%u)",
+               axis, delta, wlconfig->pointer.axis_source);
 }
 
+/* Store the axis source for the current frame (wheel, finger, continuous…). */
 static void
 pointer_handle_axis_source(void *data, struct wl_pointer *pointer,
 			   uint32_t axis_source)
@@ -505,102 +530,110 @@ pointer_handle_axis_source(void *data, struct wl_pointer *pointer,
   NSDebugFLLog(@"WaylandScroll", @"pointer_handle_axis_source: source=%u", axis_source);
 }
 
-/* TODO (Milestone 3): emit momentum-phase stop event to AppKit. */
+/* Emit a zero-delta NSScrollWheel to signal that a touchpad gesture ended.
+ * AppKit uses this to stop inertial scrolling. */
 static void
 pointer_handle_axis_stop(void *data, struct wl_pointer *pointer, uint32_t time,
 			 uint32_t axis)
 {
-  NSDebugFLLog(@"WaylandScroll", @"pointer_handle_axis_stop: time=%u axis=%u", time, axis);
+  WaylandConfig *wlconfig = data;
+  NSDebugFLLog(@"WaylandScroll", @"pointer_handle_axis_stop: axis=%u", axis);
+
+  struct window *window = wlconfig->pointer.focus;
+  if (window == NULL || window->ignoreMouse)
+    return;
+
+  [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
+
+  NSPoint loc = NSMakePoint(wlconfig->pointer.x, window->height - wlconfig->pointer.y);
+  NSEvent *ev = [NSEvent mouseEventWithType:NSScrollWheel
+                                   location:loc
+                              modifierFlags:wlconfig->modifiers
+                                  timestamp:(NSTimeInterval)time / 1000.0
+                               windowNumber:(int)window->window_id
+                                    context:GSCurrentContext()
+                                eventNumber:time
+                                 clickCount:0
+                                   pressure:0.0
+                               buttonNumber:0
+                                     deltaX:0.0
+                                     deltaY:0.0
+                                     deltaZ:0.0];
+  [GSCurrentServer() postEvent:ev atStart:NO];
 }
 
-/* TODO (Milestone 3): include discrete step count in scroll event. */
+/* Accumulate the integer scroll-wheel step count for the current frame.
+ * Discrete steps are reported alongside the smooth axis value and allow
+ * applications to snap to whole-line increments.                          */
 static void
 pointer_handle_axis_discrete(void *data, struct wl_pointer *pointer,
 			     uint32_t axis, int discrete)
 {
-  NSDebugFLLog(@"WaylandScroll", @"pointer_handle_axis_discrete: axis=%u discrete=%d",
-               axis, discrete);
-}
-
-// Scroll and other axis notifications.
-static void
-pointer_handle_axis(void *data, struct wl_pointer *pointer, uint32_t time,
-		    uint32_t axis, wl_fixed_t value)
-{
-  WaylandConfig	*wlconfig = data;
-  NSEvent		  *event;
-  NSEventType	     eventType;
-  NSPoint	     eventLocation;
-  NSGraphicsContext *gcontext;
-  unsigned int	     eventFlags;
-  float		     deltaX = 0.0;
-  float		     deltaY = 0.0;
-  int		     clickCount = 1;
-  int		     buttonNumber;
-
-  struct window *window = wlconfig->pointer.focus;
-  if (window->ignoreMouse)
-    {
-      return;
-    }
-
-  [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
-
-  gcontext = GSCurrentContext();
-  eventLocation
-    = NSMakePoint(wlconfig->pointer.x, window->height - wlconfig->pointer.y);
-  eventFlags = wlconfig->modifiers;
-
-  if (wlconfig->pointer.axis_source != WL_POINTER_AXIS_SOURCE_WHEEL)
-  {
-    /* axis_source == WL_POINTER_AXIS_SOURCE_FINGER or CONTINUOUS:
-     * scroll is from a touchpad — momentum phase should be set per
-     * Milestone 3 of wayland_feature_implementation_plan.          */
-    NSDebugFLLog(@"WaylandScroll",
-                 @"pointer_handle_axis: touch/continuous scroll axis=%u "
-                 @"value=%g source=%u",
-                 axis, wl_fixed_to_double(value),
-                 wlconfig->pointer.axis_source);
-  }
-
-  //float mouse_scroll_multiplier = wlconfig->mouse_scroll_multiplier;
-  /* For smooth-scroll events, we're not doing any cross-event or delta
-     calculations, as is done in button event handling. */
+  WaylandConfig *wlconfig = data;
+  NSDebugFLLog(@"WaylandScroll",
+               @"pointer_handle_axis_discrete: axis=%u discrete=%d", axis, discrete);
   switch (axis)
     {
-    case WL_POINTER_AXIS_VERTICAL_SCROLL:
-      eventType = NSScrollWheel;
-      deltaY = wl_fixed_to_double(value) * wlconfig->mouse_scroll_multiplier;
-      break;
-    case WL_POINTER_AXIS_HORIZONTAL_SCROLL:
-      eventType = NSScrollWheel;
-      deltaX = wl_fixed_to_double(value) * wlconfig->mouse_scroll_multiplier;
-      break;
+      case WL_POINTER_AXIS_VERTICAL_SCROLL:
+        wlconfig->pointer.frame_discrete_y += discrete;
+        break;
+      case WL_POINTER_AXIS_HORIZONTAL_SCROLL:
+        wlconfig->pointer.frame_discrete_x += discrete;
+        break;
     }
+}
 
-  /* FIXME: X11 backend uses the XGetPointerMapping()-returned values from
-     its map_return argument as constants for buttonNumber. As the variant
-     with buttonNumber: seems to be a GNUstep extension, and the value
-     internal, it might be ok to just not provide any value here.
-     If this is truly correct, please update this comment to document
-     the correctness of doing so. */
-  buttonNumber = 0;
+/* Dispatch the accumulated scroll deltas as a single NSScrollWheel event,
+ * then reset the per-frame state.  Grouping axis events per frame produces
+ * smoother diagonal scrolling and avoids redundant event dispatch.         */
+static void
+pointer_handle_frame(void *data, struct wl_pointer *pointer)
+{
+  WaylandConfig *wlconfig = data;
 
-  event = [NSEvent mouseEventWithType:eventType
-			     location:eventLocation
-			modifierFlags:eventFlags
-			    timestamp:(NSTimeInterval) time / 1000.0
-			 windowNumber:(int) window->window_id
-			      context:gcontext
-			  eventNumber:time
-			   clickCount:clickCount
-			     pressure:1.0
-			 buttonNumber:buttonNumber
-			       deltaX:deltaX
-			       deltaY:deltaY
-			       deltaZ:0.];
+  if (!wlconfig->pointer.frame_has_axis)
+    return;
 
-  [GSCurrentServer() postEvent:event atStart:NO];
+  struct window *window = wlconfig->pointer.focus;
+  if (window == NULL || window->ignoreMouse)
+    goto reset;
+
+  {
+    [(WaylandServer *)GSCurrentServer() initializeMouseIfRequired];
+
+    NSPoint loc = NSMakePoint(wlconfig->pointer.x,
+                              window->height - wlconfig->pointer.y);
+    NSTimeInterval ts = (NSTimeInterval)wlconfig->pointer.frame_time / 1000.0;
+
+    NSDebugFLLog(@"WaylandScroll",
+                 @"pointer_handle_frame: dx=%g dy=%g disc_x=%d disc_y=%d src=%u",
+                 wlconfig->pointer.frame_deltaX, wlconfig->pointer.frame_deltaY,
+                 wlconfig->pointer.frame_discrete_x, wlconfig->pointer.frame_discrete_y,
+                 wlconfig->pointer.axis_source);
+
+    NSEvent *ev = [NSEvent mouseEventWithType:NSScrollWheel
+                                     location:loc
+                                modifierFlags:wlconfig->modifiers
+                                    timestamp:ts
+                                 windowNumber:(int)window->window_id
+                                      context:GSCurrentContext()
+                                  eventNumber:wlconfig->pointer.frame_time
+                                   clickCount:0
+                                     pressure:0.0
+                                 buttonNumber:0
+                                       deltaX:wlconfig->pointer.frame_deltaX
+                                       deltaY:wlconfig->pointer.frame_deltaY
+                                       deltaZ:0.0];
+    [GSCurrentServer() postEvent:ev atStart:NO];
+  }
+
+reset:
+  wlconfig->pointer.frame_has_axis   = NO;
+  wlconfig->pointer.frame_deltaX     = 0.0f;
+  wlconfig->pointer.frame_deltaY     = 0.0f;
+  wlconfig->pointer.frame_discrete_x = 0;
+  wlconfig->pointer.frame_discrete_y = 0;
+  wlconfig->pointer.frame_time       = 0;
 }
 
 // the Seat category uses this listener

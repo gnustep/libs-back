@@ -65,6 +65,15 @@ struct pointer
   struct window *focus;
   struct window *captured;
 
+  /* Per-frame axis accumulation (cleared after each wl_pointer.frame event).
+   * Populated by axis/axis_discrete; dispatched as one NSScrollWheel in frame. */
+  BOOL     frame_has_axis;
+  float    frame_deltaX;
+  float    frame_deltaY;
+  int      frame_discrete_x;   /* discrete scroll steps this frame, horizontal */
+  int      frame_discrete_y;   /* discrete scroll steps this frame, vertical   */
+  uint32_t frame_time;         /* timestamp of the last axis event in this frame */
+
 };
 
 struct cursor
