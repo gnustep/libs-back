@@ -26,6 +26,7 @@
 */
 
 #include "wayland/WaylandServer.h"
+#include <Foundation/NSDebug.h>
 
 extern const struct wl_keyboard_listener keyboard_listener;
 
@@ -87,6 +88,17 @@ seat_handle_capabilities(void *data, struct wl_seat *seat,
 #endif
 }
 
+/* wl_seat.name — sent by the compositor since wl_seat v2.  We bound the seat
+ * at version 5 for frame/axis events, so this event now arrives at startup.
+ * An absent handler slot causes libwayland-client to abort with
+ * "listener function for opcode 1 of wl_seat is NULL".               */
+static void
+seat_handle_name(void *data, struct wl_seat *seat, const char *name)
+{
+  NSDebugFLLog(@"WaylandIME", @"seat_handle_name: '%s'", name);
+}
+
 const struct wl_seat_listener seat_listener = {
   seat_handle_capabilities,
+  seat_handle_name,
 };
