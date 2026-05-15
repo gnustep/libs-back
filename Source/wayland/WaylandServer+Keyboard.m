@@ -127,7 +127,9 @@ keyboard_handle_enter(void *data, struct wl_keyboard *keyboard, uint32_t serial,
   wlconfig->event_serial = serial;
   NSDebugFLLog(@"WaylandIME", @"keyboard_handle_enter: serial=%u", serial);
 
-  struct window *window = wl_surface_get_user_data(surface);
+  if (!surface)
+    return;
+  struct window *window = surface_get_window(surface);
   if (!window)
     return;
 

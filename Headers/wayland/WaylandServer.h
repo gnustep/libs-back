@@ -45,6 +45,38 @@
 #include "wayland/xdg-decoration-unstable-v1-client-protocol.h"
 #include "wayland/text-input-unstable-v3-client-protocol.h"
 
+/* User data stored on every wl_surface owned by GNUstep.
+ * For main window surfaces offset_x/y are 0.0.
+ * For GL subsurfaces they hold the subsurface position within the parent window
+ * (Wayland Y-down coordinates), so pointer event coordinates can be translated
+ * to parent-window space.  Each WaylandGLContext malloc's its own binding so
+ * multiple GL views in the same window each have independent offsets. */
+struct wl_surface_binding
+{
+  struct window *window;
+  float          offset_x;
+  float          offset_y;
+};
+
+/* Retrieve the window from any GNUstep-owned wl_surface. */
+static inline struct window *
+surface_get_window(struct wl_surface *surface)
+{
+  struct wl_surface_binding *b
+    = (struct wl_surface_binding *)wl_surface_get_user_data(surface);
+  return b ? b->window : NULL;
+}
+
+/* Retrieve the subsurface-to-window offset; returns (0,0) for main surfaces. */
+static inline void
+surface_get_offset(struct wl_surface *surface, float *ox, float *oy)
+{
+  struct wl_surface_binding *b
+    = (struct wl_surface_binding *)wl_surface_get_user_data(surface);
+  *ox = b ? b->offset_x : 0.0f;
+  *oy = b ? b->offset_y : 0.0f;
+}
+
 struct pointer
 {
   struct wl_pointer *wlpointer;
@@ -61,9 +93,15 @@ struct pointer
 
   uint32_t axis_source;
 
-  uint32_t	 serial;
-  struct window *focus;
-  struct window *captured;
+  uint32_t	     serial;
+  struct window     *focus;
+  struct window     *captured;
+  /* Subsurface-to-window offset captured at pointer-enter time.
+   * Zero for main window surfaces; non-zero when the pointer entered a GL
+   * subsurface.  Applied to sx/sy in motion/button handlers so all AppKit
+   * coordinates are expressed in parent-window space. */
+  float              focus_offset_x;
+  float              focus_offset_y;
 
   /* Per-frame axis accumulation (cleared after each wl_pointer.frame event).
    * Populated by axis/axis_discrete; dispatched as one NSScrollWheel in frame. */
@@ -213,6 +251,10 @@ struct window
   BOOL ignoreMouse;
   BOOL usesOpenGL;
   BOOL global_pos_known;   // saved_pos_x/y hold a reliable output-relative origin
+
+  /* Binding embedded in the struct for this window's own wl_surface.
+   * Set once at surface-creation time; offset_x/y are always 0,0. */
+  struct wl_surface_binding surface_binding;
 
   float pos_x;
   float pos_y;

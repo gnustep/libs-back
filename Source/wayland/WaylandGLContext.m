@@ -37,6 +37,7 @@
 #include <wayland-egl.h>
 #include <wayland-client-protocol.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "wayland/WaylandServer.h"
 #include "wayland/WaylandOpenGL.h"
@@ -271,7 +272,12 @@ static WaylandGLContext *currentGLContext;
 
           wl_subsurface_set_desync(_glSubsurface);
           wl_subsurface_set_position(_glSubsurface, subX, subY);
-          wl_surface_set_user_data(_glSurface, _window);
+          _glSurfaceBinding = (struct wl_surface_binding *)
+              malloc(sizeof(struct wl_surface_binding));
+          _glSurfaceBinding->window   = _window;
+          _glSurfaceBinding->offset_x = (float)subX;
+          _glSurfaceBinding->offset_y = (float)subY;
+          wl_surface_set_user_data(_glSurface, _glSurfaceBinding);
           wl_surface_commit(_window->surface);
           wl_display_flush(wlconfig->display);
 
@@ -346,6 +352,12 @@ static WaylandGLContext *currentGLContext;
     {
       wl_surface_destroy(_glSurface);
       _glSurface = NULL;
+    }
+
+  if (_glSurfaceBinding != NULL)
+    {
+      free(_glSurfaceBinding);
+      _glSurfaceBinding = NULL;
     }
 }
 
@@ -683,9 +695,14 @@ static WaylandGLContext *currentGLContext;
 
   if (_glSubsurface != NULL)
     {
-      wl_subsurface_set_position(_glSubsurface,
-                                 (int)NSMinX(viewFrame),
-                                 (int)NSMinY(viewFrame));
+      int newSubX = (int)NSMinX(viewFrame);
+      int newSubY = (int)NSMinY(viewFrame);
+      wl_subsurface_set_position(_glSubsurface, newSubX, newSubY);
+      if (_glSurfaceBinding != NULL)
+        {
+          _glSurfaceBinding->offset_x = (float)newSubX;
+          _glSurfaceBinding->offset_y = (float)newSubY;
+        }
       wl_surface_commit(_window->surface);
       wl_display_flush(_window->wlconfig->display);
     }

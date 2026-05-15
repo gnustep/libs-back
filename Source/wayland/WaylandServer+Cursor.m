@@ -53,17 +53,21 @@ pointer_handle_enter(void *data, struct wl_pointer *pointer, uint32_t serial,
 {
   WaylandConfig *wlconfig = data;
 
-  struct window *window = wl_surface_get_user_data(surface);
+  struct window *window = surface_get_window(surface);
 
   if (window == NULL || window->ignoreMouse)
     {
       return;
     }
 
-  wlconfig->pointer.focus = window;
+  float ox, oy;
+  surface_get_offset(surface, &ox, &oy);
+  wlconfig->pointer.focus          = window;
+  wlconfig->pointer.focus_offset_x = ox;
+  wlconfig->pointer.focus_offset_y = oy;
 
-  float		 sx = wl_fixed_to_double(sx_w);
-  float		 sy = wl_fixed_to_double(sy_w);
+  float		 sx = wl_fixed_to_double(sx_w) + ox;
+  float		 sy = wl_fixed_to_double(sy_w) + oy;
 
   /* Track cursor global (output-relative) position so we can infer where
    * xdg_toplevel windows actually are on screen.
@@ -149,7 +153,7 @@ pointer_handle_leave(void *data, struct wl_pointer *pointer, uint32_t serial,
 {
   WaylandConfig *wlconfig = data;
 
-  struct window *window = wl_surface_get_user_data(surface);
+  struct window *window = surface_get_window(surface);
 
   if (window == NULL || window->ignoreMouse)
     {
@@ -192,8 +196,10 @@ pointer_handle_leave(void *data, struct wl_pointer *pointer, uint32_t serial,
 
           [GSCurrentServer() postEvent:event atStart:NO];
         }
-      wlconfig->pointer.focus = NULL;
-      wlconfig->pointer.serial = serial;
+      wlconfig->pointer.focus          = NULL;
+      wlconfig->pointer.focus_offset_x = 0.0f;
+      wlconfig->pointer.focus_offset_y = 0.0f;
+      wlconfig->pointer.serial         = serial;
       wlconfig->event_serial = serial;
     }
 }
@@ -214,8 +220,8 @@ pointer_handle_motion(void *data, struct wl_pointer *pointer, uint32_t time,
     {
       return;
     }
-  float sx = wl_fixed_to_double(sx_w);
-  float sy = wl_fixed_to_double(sy_w);
+  float sx = wl_fixed_to_double(sx_w) + wlconfig->pointer.focus_offset_x;
+  float sy = wl_fixed_to_double(sy_w) + wlconfig->pointer.focus_offset_y;
 
   wlconfig->pointer.last_timestamp = (NSTimeInterval) time / 1000.0;
 

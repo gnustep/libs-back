@@ -1191,7 +1191,10 @@ WaylandServer (SurfaceRoles)
       return;
     }
 
-  wl_surface_set_user_data(window->surface, window);
+  window->surface_binding.window   = window;
+  window->surface_binding.offset_x = 0.0f;
+  window->surface_binding.offset_y = 0.0f;
+  wl_surface_set_user_data(window->surface, &window->surface_binding);
   if (window->xdg_surface == NULL)
     {
       window->xdg_surface
@@ -1258,7 +1261,10 @@ WaylandServer (SurfaceRoles)
     }
 
   window->surface = wl_compositor_create_surface(wlconfig->compositor);
-  wl_surface_set_user_data(window->surface, window);
+  window->surface_binding.window   = window;
+  window->surface_binding.offset_x = 0.0f;
+  window->surface_binding.offset_y = 0.0f;
+  wl_surface_set_user_data(window->surface, &window->surface_binding);
 
   const char *cString = [namespace UTF8String];
   window->layer_surface
@@ -1381,7 +1387,10 @@ WaylandServer (SurfaceRoles)
   child->parent_id = parent->window_id;
 
   child->surface = wl_compositor_create_surface(wlconfig->compositor);
-  wl_surface_set_user_data(child->surface, child);
+  child->surface_binding.window   = child;
+  child->surface_binding.offset_x = 0.0f;
+  child->surface_binding.offset_y = 0.0f;
+  wl_surface_set_user_data(child->surface, &child->surface_binding);
 
   NSWindow *nswin = (GSWindowWithNumber(child->window_id));
   CGFloat   x = nswin.frame.origin.x;

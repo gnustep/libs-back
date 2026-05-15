@@ -387,7 +387,7 @@ device_enter(void *data, struct wl_data_device *device,
   wlconfig->dnd_incoming = YES;
   wlconfig->event_serial = serial;
 
-  struct window *window = surface ? wl_surface_get_user_data(surface) : NULL;
+  struct window *window = surface ? surface_get_window(surface) : NULL;
   wlconfig->dnd_target = window;
 
   NSDebugFLLog(@"WaylandDnD", @"device_enter: win=%d pos=(%g,%g)",
