@@ -636,13 +636,48 @@ reset:
   wlconfig->pointer.frame_time       = 0;
 }
 
-// the Seat category uses this listener
+/* wl_pointer.axis_value120 (protocol v8) — high-resolution wheel step.
+ * Accumulate into the per-frame scroll state using the standard 1/120 scale. */
+static void
+pointer_handle_axis_value120(void *data, struct wl_pointer *pointer,
+			     uint32_t axis, int32_t value120)
+{
+  WaylandConfig *wlconfig = data;
+  NSDebugFLLog(@"WaylandScroll",
+               @"pointer_handle_axis_value120: axis=%u value120=%d", axis, value120);
+  float delta = ((float)value120 / 120.0f) * wlconfig->mouse_scroll_multiplier;
+  switch (axis)
+    {
+      case WL_POINTER_AXIS_VERTICAL_SCROLL:
+        wlconfig->pointer.frame_deltaY     += delta;
+        wlconfig->pointer.frame_discrete_y += (value120 / 120);
+        break;
+      case WL_POINTER_AXIS_HORIZONTAL_SCROLL:
+        wlconfig->pointer.frame_deltaX     += delta;
+        wlconfig->pointer.frame_discrete_x += (value120 / 120);
+        break;
+    }
+  wlconfig->pointer.frame_has_axis = YES;
+}
+
+/* wl_pointer.axis_relative_direction (protocol v9) — natural-scroll hint.
+ * Logged for traceability; direction inversion can be applied here later.   */
+static void
+pointer_handle_axis_relative_direction(void *data, struct wl_pointer *pointer,
+				       uint32_t axis, uint32_t direction)
+{
+  NSDebugFLLog(@"WaylandScroll",
+               @"pointer_handle_axis_relative_direction: axis=%u direction=%u",
+               axis, direction);
+}
+
 const struct wl_pointer_listener pointer_listener
-  = {pointer_handle_enter,	  pointer_handle_leave,
-     pointer_handle_motion,	  pointer_handle_button,
-     pointer_handle_axis,	  pointer_handle_frame,
-     pointer_handle_axis_source,  pointer_handle_axis_stop,
-     pointer_handle_axis_discrete};
+  = {pointer_handle_enter,	       pointer_handle_leave,
+     pointer_handle_motion,	       pointer_handle_button,
+     pointer_handle_axis,	       pointer_handle_frame,
+     pointer_handle_axis_source,       pointer_handle_axis_stop,
+     pointer_handle_axis_discrete,     pointer_handle_axis_value120,
+     pointer_handle_axis_relative_direction};
 
 @implementation
 WaylandServer (Cursor)
