@@ -118,10 +118,14 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name,
       memset(output, 0, sizeof(struct output));
       output->wlconfig = wlconfig;
       output->scale = 1;
+      /* Bind at version 4 to receive name/description events in addition to
+       * the v2 done/scale events.  Fall back to whatever the compositor
+       * offers if it is older.                                              */
+      uint32_t out_v = (version < 4) ? version : 4;
       output->output
-	= wl_registry_bind(registry, name, &wl_output_interface, 2);
+	= wl_registry_bind(registry, name, &wl_output_interface, out_v);
       output->server_output_id = name;
-      NSDebugLog(@"wayland: found output interface");
+      NSDebugLog(@"wayland: found output interface (version %u)", out_v);
       wl_list_insert(wlconfig->output_list.prev, &output->link);
       wlconfig->output_count++;
       wl_output_add_listener(output->output, &output_listener, output);
@@ -166,8 +170,66 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name,
     }
 }
 
-static void handle_global_remove(void *data, struct wl_registry *registry,
-                                 uint32_t name) {}
+static void
+handle_global_remove(void *data, struct wl_registry *registry, uint32_t name)
+{
+  WaylandConfig *wlconfig = data;
+
+  /* Find the output with this global name and remove it. */
+  struct output *output;
+  struct output *found = NULL;
+  wl_list_for_each(output, &wlconfig->output_list, link)
+  {
+    if (output->server_output_id == name)
+      {
+        found = output;
+        break;
+      }
+  }
+
+  if (found == NULL)
+    return;
+
+  NSDebugLog(@"wayland: global removed: output %u '%s'",
+             found->server_output_id, found->name ? found->name : "unknown");
+
+  /* Reassign any windows on the removed output to the first remaining output
+   * so that coordinate conversions (which dereference window->output) do not
+   * crash.                                                                    */
+  struct output *fallback = NULL;
+  wl_list_for_each(output, &wlconfig->output_list, link)
+  {
+    if (output != found) { fallback = output; break; }
+  }
+
+  struct window *window;
+  wl_list_for_each(window, &wlconfig->window_list, link)
+  {
+    if (window->output == found)
+      {
+        window->output = fallback;  /* may be NULL if last output removed */
+        NSDebugLog(@"wayland: window %d reassigned from removed output %u",
+                   window->window_id, name);
+      }
+  }
+
+  /* Remove from the list and free resources. */
+  wl_list_remove(&found->link);
+  wlconfig->output_count--;
+
+  wl_output_destroy(found->output);
+  if (found->make)        free(found->make);
+  if (found->model)       free(found->model);
+  if (found->name)        free(found->name);
+  if (found->description) free(found->description);
+  free(found);
+
+  /* Notify AppKit that the screen list changed. */
+  if (NSApp != nil)
+    [[NSNotificationCenter defaultCenter]
+      postNotificationName: NSApplicationDidChangeScreenParametersNotification
+                    object: NSApp];
+}
 
 static const struct wl_registry_listener registry_listener = {
     handle_global, handle_global_remove};
@@ -368,16 +430,32 @@ NSToWayland(struct window *window, int ns_y)
 
 - (NSRect)boundsForScreen:(int)screen
 {
-  NSDebugLog(@"boundsForScreen: %d", screen);
   struct output *output;
 
+  /* Find the output whose server_output_id matches the requested screen. */
   wl_list_for_each(output, &wlconfig->output_list, link)
   {
-    NSDebugLog(@"screen found: %dx%d", output->width, output->height);
-    return NSMakeRect(0, 0, output->width, output->height);
+    if ((int)output->server_output_id == screen)
+      {
+        int ew = output->configured ? output->effective_width  : output->width;
+        int eh = output->configured ? output->effective_height : output->height;
+        NSDebugLog(@"boundsForScreen: %d → logical=%dx%d (phys=%dx%d scale=%d)",
+                   screen, ew, eh, output->width, output->height, output->scale);
+        return NSMakeRect(output->alloc_x, output->alloc_y, ew, eh);
+      }
   }
 
-  NSDebugLog(@"can't find screen");
+  /* Fallback: return the first output's bounds. */
+  wl_list_for_each(output, &wlconfig->output_list, link)
+  {
+    int ew = output->configured ? output->effective_width  : output->width;
+    int eh = output->configured ? output->effective_height : output->height;
+    NSDebugLog(@"boundsForScreen: %d not found, using first output %dx%d",
+               screen, ew, eh);
+    return NSMakeRect(0, 0, ew, eh);
+  }
+
+  NSDebugLog(@"boundsForScreen: no outputs available");
   return NSZeroRect;
 }
 

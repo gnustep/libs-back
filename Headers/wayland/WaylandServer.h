@@ -182,14 +182,19 @@ struct output
   struct wl_output *output;
   uint32_t	    server_output_id;
   struct wl_list    link;
-  int		    alloc_x;
-  int		    alloc_y;
-  int		    width;
-  int		    height;
+  int		    alloc_x;        /* compositor layout origin X (physical pixels) */
+  int		    alloc_y;        /* compositor layout origin Y (physical pixels) */
+  int		    width;          /* current mode width  (physical pixels)        */
+  int		    height;         /* current mode height (physical pixels)        */
+  int		    effective_width;  /* logical width  = width  / scale, swap for rot */
+  int		    effective_height; /* logical height = height / scale, swap for rot */
   int		    transform;
   int		    scale;
   char	       *make;
   char	       *model;
+  char	       *name;           /* human-readable connector name (wl_output v4) */
+  char	       *description;    /* human-readable description    (wl_output v4) */
+  BOOL          configured;     /* YES after the first handle_done has fired    */
 
   void *user_data;
 };
