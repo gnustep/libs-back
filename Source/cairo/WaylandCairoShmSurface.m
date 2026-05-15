@@ -1,12 +1,21 @@
 /* WaylandCairoSurface
 
-   WaylandCairoShmSurface - A cairo surface backed by a wayland
-   shared memory buffer.
-   After the wayland surface is configured, the buffer needs to be
-   attached to the surface. Subsequent changes to the cairo surface
-   needs to be notified to the wayland server using wl_surface_damage
-   and wl_surface_commit. The buffer is freed after the compositor
-   releases it and the cairo surface is not in use.
+   WaylandCairoShmSurface - A cairo surface backed by a Wayland shared-memory
+   buffer.
+
+   Buffer lifecycle:
+   1. createShmBuffer — allocate SHM fd, mmap, create wl_shm_pool + wl_buffer.
+      Destroy the pool immediately (safe; the buffer keeps the mapping alive).
+   2. initWithDevice — attach the buffer to the wl_surface and commit with a
+      full-surface damage region.  Only after xdg_surface_configure (i.e.
+      window->configured == YES).
+   3. handleExposeRect — re-attach with the actual damage rect on every
+      AppKit expose.  If the compositor still holds the buffer (busy == true),
+      record needs_repaint and return; the release callback will re-commit.
+   4. buffer_handle_release — compositor released the buffer.  If needs_repaint
+      is set, immediately re-attach + commit to avoid losing the missed frame.
+   5. dealloc / finishBuffer — destroy the wl_buffer, unmap memory, close the
+      FD, and free the struct once the compositor has released it.
 
    Copyright (C) 2020 Free Software Foundation, Inc.
 
@@ -45,73 +54,82 @@
 #include <sys/mman.h>
 
 
-static const enum wl_shm_format wl_fmt = WL_SHM_FORMAT_ARGB8888;
-static const cairo_format_t	cairo_fmt = CAIRO_FORMAT_ARGB32;
+static const enum wl_shm_format wl_fmt    = WL_SHM_FORMAT_ARGB8888;
+static const cairo_format_t     cairo_fmt = CAIRO_FORMAT_ARGB32;
 
+
+/* ── Buffer lifetime ─────────────────────────────────────────────────────── */
+
+/* Free the pool_buffer once both conditions hold:
+ *   (a) the compositor has released the wl_buffer (busy == false), and
+ *   (b) nobody is rendering into the cairo surface (surface == NULL).
+ * Also closes the SHM file descriptor to prevent FD leaks.                  */
 static void
 finishBuffer(struct pool_buffer *buf)
 {
-  // The buffer can be deleted if it has been released by the compositor
-  // and if not used by the cairo surface
-  if(buf == NULL || buf->busy || buf->surface != NULL)
-  {
+  if (buf == NULL || buf->busy || buf->surface != NULL)
     return;
-  }
+
   if (buf->buffer)
     {
       wl_buffer_destroy(buf->buffer);
+      buf->buffer = NULL;
     }
   if (buf->data)
     {
       munmap(buf->data, buf->size);
+      buf->data = NULL;
+    }
+  if (buf->poolfd >= 0)
+    {
+      close(buf->poolfd);
+      buf->poolfd = -1;
     }
   free(buf);
-  return;
 }
 
+/* Compositor released the buffer.  If a repaint was queued while the buffer
+ * was busy, re-attach and commit now so the frame is not permanently lost.  */
 static void
 buffer_handle_release(void *data, struct wl_buffer *wl_buffer)
 {
   struct pool_buffer *buffer = data;
   buffer->busy = false;
-  // If the buffer was not released before dealloc
+
+  if (buffer->needs_repaint && buffer->owner_surface)
+    {
+      buffer->needs_repaint = false;
+      buffer->busy          = true;
+
+      wl_surface_attach(buffer->owner_surface, wl_buffer, 0, 0);
+      wl_surface_damage(buffer->owner_surface, 0, 0,
+                        (int32_t)buffer->width, (int32_t)buffer->height);
+      wl_surface_commit(buffer->owner_surface);
+
+      if (buffer->owner_display)
+        wl_display_flush(buffer->owner_display);
+
+      /* Don't call finishBuffer — we just re-submitted the buffer. */
+      return;
+    }
+
   finishBuffer(buffer);
 }
 
 static const struct wl_buffer_listener buffer_listener = {
-  // Sent by the compositor when it's no longer using a buffer
   .release = buffer_handle_release,
 };
 
-// Creates a file descriptor for the compositor to share pixel buffers
+
+/* ── SHM buffer allocation ───────────────────────────────────────────────── */
+
+/* Creates an anonymous in-memory file suitable for sharing with the
+ * compositor via wl_shm.  memfd_create is preferred over mkstemp because
+ * it never touches the filesystem and automatically cleans up on close.     */
 static int
 createPoolFile(off_t size)
 {
-  static const char template[] = "/gnustep-shared-XXXXXX";
-  const char *path;
-  char       *name;
-  int	      fd;
-
-  path = getenv("XDG_RUNTIME_DIR");
-  if (!path)
-    {
-      errno = ENOENT;
-      return -1;
-    }
-
-  name = malloc(strlen(path) + sizeof(template));
-  if (!name)
-    {
-      return -1;
-    }
-
-  strcpy(name, path);
-  strcat(name, template);
-
-  fd = memfd_create(name, MFD_CLOEXEC);
-
-  free(name);
-
+  int fd = memfd_create("gnustep-wl-shm", MFD_CLOEXEC);
   if (fd < 0)
     return -1;
 
@@ -128,101 +146,136 @@ struct pool_buffer *
 createShmBuffer(int width, int height, struct wl_shm *shm)
 {
   uint32_t stride = cairo_format_stride_for_width(cairo_fmt, width);
-  size_t   size = stride * height;
+  size_t   size   = stride * height;
 
-  struct pool_buffer * buf = malloc(sizeof(struct pool_buffer));
-
-  void *data = NULL;
-  if (size > 0)
-    {
-      buf->poolfd = createPoolFile(size);
-      if (buf->poolfd == -1)
-        {
-          return NULL;
-        }
-
-      data
-	= mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, buf->poolfd, 0);
-      if (data == MAP_FAILED)
-        {
-          return NULL;
-        }
-
-      buf->pool = wl_shm_create_pool(shm, buf->poolfd, size);
-      buf->buffer = wl_shm_pool_create_buffer(buf->pool, 0, width, height,
-					      stride, wl_fmt);
-      wl_buffer_add_listener(buf->buffer, &buffer_listener, buf);
-    }
-  else
-  {
+  if (size == 0)
     return NULL;
-  }
 
-  buf->data = data;
-  buf->size = size;
-  buf->width = width;
-  buf->height = height;
-  buf->surface = cairo_image_surface_create_for_data(data, cairo_fmt, width, height, stride);
+  struct pool_buffer *buf = calloc(1, sizeof(struct pool_buffer));
+  if (!buf)
+    return NULL;
 
-  if(buf->pool)
-  {
-    wl_shm_pool_destroy(buf->pool);
-  }
+  buf->poolfd = -1;
+
+  buf->poolfd = createPoolFile(size);
+  if (buf->poolfd < 0)
+    {
+      free(buf);
+      return NULL;
+    }
+
+  buf->data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, buf->poolfd, 0);
+  if (buf->data == MAP_FAILED)
+    {
+      close(buf->poolfd);
+      free(buf);
+      return NULL;
+    }
+
+  /* Create the pool and immediately the buffer.  The pool can be destroyed
+   * right after — the buffer retains the memory mapping independently.      */
+  struct wl_shm_pool *pool = wl_shm_create_pool(shm, buf->poolfd, size);
+  buf->buffer = wl_shm_pool_create_buffer(pool, 0, width, height, stride, wl_fmt);
+  wl_shm_pool_destroy(pool);
+  /* buf->pool is left NULL — pool is gone, nothing to free later. */
+
+  if (!buf->buffer)
+    {
+      munmap(buf->data, size);
+      close(buf->poolfd);
+      free(buf);
+      return NULL;
+    }
+
+  wl_buffer_add_listener(buf->buffer, &buffer_listener, buf);
+
+  buf->size    = size;
+  buf->width   = width;
+  buf->height  = height;
+  buf->surface = cairo_image_surface_create_for_data(
+      buf->data, cairo_fmt, width, height, stride);
+
   return buf;
 }
 
+
+/* ── WaylandCairoShmSurface ──────────────────────────────────────────────── */
+
 @implementation WaylandCairoShmSurface
+
 - (id)initWithDevice:(void *)device
 {
-  struct window *window = (struct window *) device;
-  NSDebugLog(@"WaylandCairoShmSurface: initWithDevice win=%d",
-	     window->window_id);
+  struct window *window = (struct window *)device;
+  NSDebugLog(@"WaylandCairoShmSurface: initWithDevice win=%d", window->window_id);
 
   gsDevice = device;
 
-  pbuffer = createShmBuffer(window->width, window->height, window->wlconfig->shm);
-
+  pbuffer = createShmBuffer((int)window->width, (int)window->height,
+                             window->wlconfig->shm);
   if (pbuffer == NULL)
     {
-      NSDebugLog(@"failed to obtain buffer");
+      NSDebugLog(@"WaylandCairoShmSurface: failed to allocate SHM buffer");
       return nil;
     }
 
   _surface = pbuffer->surface;
-
-  window->buffer_needs_attach = YES;
   if (_surface == NULL)
     {
-      NSDebugLog(@"can't create cairo surface");
+      NSDebugLog(@"WaylandCairoShmSurface: failed to create cairo surface");
+      finishBuffer(pbuffer);
+      pbuffer = NULL;
       return nil;
     }
 
+  /* Wire back-pointers so the release callback can re-commit missed frames. */
+  pbuffer->owner_surface = window->surface;
+  pbuffer->owner_display = window->wlconfig->display;
+
+  window->wcs = self;
+
   if (window->configured)
     {
-      // we can attach a buffer to the surface only if the surface is configured
-      // this is usually done in the configure event handler
-      // in case of resize of an already configured surface
-      // we should reattach the new allocated buffer
-      NSDebugLog(@"wl_surface_attach: win=%d",
-		 window->window_id);
+      /* Attach the fresh buffer with a full-surface damage region.
+       * wl_surface_damage is mandatory before commit — without it the
+       * compositor treats the commit as a no-op for rendering purposes.     */
       window->buffer_needs_attach = NO;
+      pbuffer->busy = true;
       wl_surface_attach(window->surface, pbuffer->buffer, 0, 0);
+      wl_surface_damage(window->surface, 0, 0,
+                        (int32_t)window->width, (int32_t)window->height);
       wl_surface_commit(window->surface);
     }
-  window->wcs = self;
+  else
+    {
+      window->buffer_needs_attach = YES;
+    }
 
   return self;
 }
 
 - (void)dealloc
 {
-  struct window *window = (struct window *) gsDevice;
-  NSDebugLog(@"WaylandCairoSurface: dealloc win=%d", window->window_id);
+  struct window *window = (struct window *)gsDevice;
+  NSDebugLog(@"WaylandCairoShmSurface: dealloc win=%d", window->window_id);
+
+  /* Detach this surface from the window so it won't be used again. */
+  if (window->wcs == self)
+    window->wcs = nil;
+
+  /* Sever the Cairo→buffer link; the buffer may still be compositor-held. */
   cairo_surface_destroy(_surface);
-  _surface = NULL;
+  _surface         = NULL;
   pbuffer->surface = NULL;
-  // try to free the buffer if already released by the compositor
+
+  /* Clear back-pointers so the release callback doesn't touch freed data.  */
+  pbuffer->owner_surface = NULL;
+  pbuffer->owner_display = NULL;
+  pbuffer->needs_repaint = false;
+
+  /* Free immediately if the compositor has already released the buffer;
+   * otherwise finishBuffer defers until the release callback fires.         */
   finishBuffer(pbuffer);
+  pbuffer = NULL;
 
   [super dealloc];
 }
@@ -230,38 +283,92 @@ createShmBuffer(int width, int height, struct wl_shm *shm)
 - (NSSize)size
 {
   if (_surface == NULL)
-    {
-      return NSZeroSize;
-    }
+    return NSZeroSize;
   return NSMakeSize(cairo_image_surface_get_width(_surface),
-		    cairo_image_surface_get_height(_surface));
+                    cairo_image_surface_get_height(_surface));
 }
 
 - (void)handleExposeRect:(NSRect)rect
 {
-  struct window *window = (struct window *) gsDevice;
-  NSDebugLog(@"[CairoSurface handleExposeRect] %d", window->window_id);
+  struct window *window = (struct window *)gsDevice;
 
-  window->buffer_needs_attach = YES;
-
-  if (window->configured)
+  if (!window->configured)
     {
-      window->buffer_needs_attach = NO;
-      wl_surface_attach(window->surface, pbuffer->buffer, 0, 0);
-      NSDebugLog(@"[%d] updating region: %d,%d %fx%f", window->window_id, 0, 0,
-		 window->width, window->height);
-      // FIXME we should update only the damaged area defined as x,y,width,
-      // height at the moment it doesnt work
-      wl_surface_damage(window->surface, 0, 0, window->width, window->height);
-      wl_surface_commit(window->surface);
-      wl_display_dispatch_pending(window->wlconfig->display);
-      wl_display_flush(window->wlconfig->display);
+      window->buffer_needs_attach = YES;
+      return;
     }
+
+  /* If the buffer dimensions no longer match the window (e.g. after a
+   * compositor-driven resize), the old buffer is stale.  Mark it for
+   * repaint-on-release so no frame is lost, then bail out — AppKit will
+   * allocate a correctly-sized WaylandCairoShmSurface via the next
+   * setWindowdevice:forContext: call.                                        */
+  if (pbuffer->width != (uint32_t)window->width
+      || pbuffer->height != (uint32_t)window->height)
+    {
+      NSDebugLog(@"[%d] handleExposeRect: size mismatch buf=%dx%d win=%dx%d — "
+                 @"deferring until resize completes",
+                 window->window_id,
+                 pbuffer->width, pbuffer->height,
+                 (int)window->width, (int)window->height);
+      pbuffer->needs_repaint = true;
+      return;
+    }
+
+  /* If the compositor still owns the buffer, queue a repaint for the moment
+   * it returns it.  Attaching a busy buffer causes a protocol error.        */
+  if (pbuffer->busy)
+    {
+      NSDebugLog(@"[%d] handleExposeRect: buffer busy — queuing repaint",
+                 window->window_id);
+      pbuffer->needs_repaint = true;
+      return;
+    }
+
+  /* Attach, mark the actual damaged region, and commit.
+   * Using the precise rect (converted to integer coordinates) reduces the
+   * compositor's repaint area for partial-surface updates.                  */
+  int dx = (int)NSMinX(rect);
+  int dy = (int)(window->height - NSMaxY(rect));  /* flip Y: AppKit → Wayland */
+  int dw = (int)NSWidth(rect)  + 1;               /* +1: cover sub-pixel edges */
+  int dh = (int)NSHeight(rect) + 1;
+
+  /* Clamp to buffer dimensions. */
+  if (dx < 0) dx = 0;
+  if (dy < 0) dy = 0;
+  if (dx + dw > (int)pbuffer->width)  dw = (int)pbuffer->width  - dx;
+  if (dy + dh > (int)pbuffer->height) dh = (int)pbuffer->height - dy;
+
+  NSDebugLog(@"[%d] handleExposeRect: attach+damage (%d,%d %dx%d)",
+             window->window_id, dx, dy, dw, dh);
+
+  pbuffer->needs_repaint = false;
+  pbuffer->busy          = true;
+  window->buffer_needs_attach = NO;
+
+  wl_surface_attach(window->surface, pbuffer->buffer, 0, 0);
+  wl_surface_damage(window->surface, dx, dy, dw, dh);
+  wl_surface_commit(window->surface);
+  wl_display_dispatch_pending(window->wlconfig->display);
+  wl_display_flush(window->wlconfig->display);
 }
 
 - (void)destroySurface
 {
-  // noop this is an offscreen surface
-  // no need to destroy it when not visible
+  /* Offscreen surface — no-op.  Destruction is handled in dealloc. */
 }
+
+- (void)clearOwnerSurface
+{
+  /* Called from destroySurfaceRole: just before wl_surface_destroy.
+   * Prevents the buffer_handle_release callback from writing to the
+   * about-to-be-freed proxy.                                              */
+  if (pbuffer)
+    {
+      pbuffer->owner_surface = NULL;
+      pbuffer->owner_display = NULL;
+      pbuffer->needs_repaint = false;
+    }
+}
+
 @end

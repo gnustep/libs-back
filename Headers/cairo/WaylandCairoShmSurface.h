@@ -41,6 +41,13 @@ struct pool_buffer
   void	                *data;
   size_t	        size;
   bool		        busy;
+
+  /* Repaint-on-release: set when handleExposeRect skips attach because
+   * the compositor still holds the buffer.  The release callback re-attaches
+   * and commits the buffer so the missed frame is not lost.                  */
+  bool                  needs_repaint;
+  struct wl_surface    *owner_surface; /* the wl_surface this buffer is on   */
+  struct wl_display    *owner_display; /* for flushing after re-attach        */
 };
 
 struct pool_buffer *
@@ -51,6 +58,9 @@ createShmBuffer(int width, int height, struct wl_shm *shm);
   struct pool_buffer *pbuffer;
 }
 - (void) destroySurface;
+/** Clear the wl_surface back-pointer so the release callback does not
+ *  write to a destroyed Wayland proxy after destroySurfaceRole:.           */
+- (void) clearOwnerSurface;
 @end
 
 #endif

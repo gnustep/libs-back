@@ -42,24 +42,12 @@ xdg_surface_on_configure(void *data, struct xdg_surface *xdg_surface,
 
   if (window->terminated == YES)
     {
-      // 'struct window' is defined in Headers/wayland/WaylandServer.
-      //
-      // window->terminated should only be true after
-      // -[WaylandServer(WindowOps) termwindow:(int)win] sets this to true
-      // after invoking -[WaylandServer destroyWindowShell:window] and
-      // using wl_list_remove(&window->link);.
-      //
-      // We do not expect 'window' to be referenced again, since
-      // -destroyWindowShell: invokes wl_display_dispatch_pending(...) and
-      // wl_display_flush(...);. On the off chance it does, first, we may want
-      // to patch every single invocation of get_window_with_id() that may
-      // currently be ignoring the case where NULL may be returned, and
-      // possibly crashing for that reason.
-      //
-      // But, a free here should on its own be fine as long as everyone
-      // passes around the window ID and does not store a ptr to window itself.
-      NSDebugLog(@"deleting window win=%d", window->window_id);
-      wl_list_remove(&window->link);
+      /* termwindow: already removed this window from wlconfig->window_list
+       * and set terminated = YES.  We must NOT call wl_list_remove again —
+       * the node's prev/next pointers point to themselves after the first
+       * remove, and a second remove would corrupt the list.
+       * This configure arrived in-flight after termwindow; free the struct. */
+      NSDebugLog(@"deleting window win=%d (deferred free)", window->window_id);
       free(window);
       return;
     }

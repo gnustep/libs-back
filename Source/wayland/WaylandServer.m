@@ -48,6 +48,7 @@
 #include "wayland/WaylandServer.h"
 #include "wayland/WaylandOpenGL.h"
 #include "wayland/WaylandInputServer.h"
+#include "cairo/WaylandCairoShmSurface.h"
 
 extern const struct wl_output_listener output_listener;
 extern const struct wl_seat_listener seat_listener;
@@ -1458,11 +1459,21 @@ WaylandServer (SurfaceRoles)
       xdg_surface_destroy(window->xdg_surface);
       window->xdg_surface = NULL;
     }
+  /* Destroy the base wl_surface last.  Role objects (xdg_surface,
+   * layer_surface) must be destroyed first per the Wayland protocol.
+   * The cairo SHM surface (window->wcs) is an ObjC object that holds a
+   * reference to the wl_surface via pbuffer->owner_surface; clear that
+   * pointer so the release callback does not write to a freed proxy.        */
   if (window->wcs)
     {
-    //  [window->wcs destroySurface];
+      [(WaylandCairoShmSurface *)window->wcs clearOwnerSurface];
     }
-  window->configured = NO;
+  if (window->surface)
+    {
+      wl_surface_destroy(window->surface);
+      window->surface = NULL;
+    }
+  window->configured          = NO;
   window->buffer_needs_attach = YES;
 }
 
