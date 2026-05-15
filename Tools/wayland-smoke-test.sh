@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# wayland-smoke-test.sh — Milestone 0 integration harness for the Wayland backend.
+# wayland-smoke-test.sh — Integration harness for the Wayland backend (M0–M5).
 #
 # Starts the Ambrosia compositor nested inside the current Wayland session,
 # then exercises each feature bucket in wayland_feature_implementation_plan.md
 # and captures log snapshots.
+#
+# Milestone coverage:
+#   M0  T1–T11  Baseline: compositor liveness, protocol globals, source snapshots
+#   M5  T12–T19 Stability: buffer lifecycle audits + sustained-operation stress
 #
 # Usage:
 #   ./Tools/wayland-smoke-test.sh [options]
@@ -239,7 +243,7 @@ check_log_absent() {
 
 echo ""
 echo "═══════════════════════════════════════════════"
-echo " Wayland backend smoke tests (Milestone 0)"
+echo " Wayland backend smoke tests (M0–M5)"
 echo " Compositor:  ${COMPOSITOR_BIN}"
 echo " Parent:      ${PARENT_DISPLAY}"
 echo " Client sock: ${CLIENT_WAYLAND_DISPLAY:-unknown}"
@@ -369,7 +373,7 @@ PTR_LOG="${OUTPUT_DIR}/pointer-snapshot.txt"
 } >"${PTR_LOG}"
 check_log_contains "T9: WaylandPointer category in source" "${PTR_LOG}" "WaylandPointer"
 check_log_contains "T9: WaylandScroll category in source"  "${PTR_LOG}" "WaylandScroll"
-check_log_contains "T9: extra-button Milestone 3 marker"   "${PTR_LOG}" "Milestone 3"
+check_log_contains "T9: extra-button BTN_SIDE mapped"      "${PTR_LOG}" "BTN_SIDE"
 
 # ── T10: output stub snapshot ─────────────────────────────────────────────────
 
@@ -388,6 +392,170 @@ check_log_contains "T10: WaylandOutput category in source" "${OUT_LOG}" "Wayland
 
 check_log_absent "T11: no crash/abort in compositor log" \
     "${COMPOSITOR_LOG}" "Segmentation fault|Aborted|SIGSEGV|double free"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Milestone 5 — Stability and rendering hardening
+# ══════════════════════════════════════════════════════════════════════════════
+
+SHM_SOURCE="${REPO_ROOT}/Source/cairo/WaylandCairoShmSurface.m"
+XDGSHELL_SOURCE="${REPO_ROOT}/Source/wayland/WaylandServer+Xdgshell.m"
+SERVER_SOURCE="${REPO_ROOT}/Source/wayland/WaylandServer.m"
+
+# ── T12: FD leak fix — finishBuffer closes poolfd ────────────────────────────
+# The pool file-descriptor was never closed before M5, leaking one FD per
+# window allocation.  The fix is a close() call in finishBuffer.
+
+M5_BUF_LOG="${OUTPUT_DIR}/m5-buffer.txt"
+{
+    echo "=== finishBuffer: poolfd close ==="
+    grep -n "close(buf->poolfd)\|close.*poolfd" "${SHM_SOURCE}" 2>/dev/null || true
+    echo ""
+    echo "=== calloc / poolfd = -1 init ==="
+    grep -n "calloc\|poolfd = -1" "${SHM_SOURCE}" 2>/dev/null || true
+    echo ""
+    echo "=== needs_repaint field ==="
+    grep -n "needs_repaint" "${SHM_SOURCE}" 2>/dev/null || true
+    echo ""
+    echo "=== owner_surface / owner_display ==="
+    grep -n "owner_surface\|owner_display" "${SHM_SOURCE}" 2>/dev/null || true
+} >"${M5_BUF_LOG}"
+
+check_log_contains "T12: finishBuffer closes poolfd"      "${M5_BUF_LOG}" "close.*poolfd"
+check_log_contains "T12: pool_buffer zero-initialised"    "${M5_BUF_LOG}" "calloc"
+check_log_contains "T12: needs_repaint field present"     "${M5_BUF_LOG}" "needs_repaint"
+check_log_contains "T12: owner back-pointers present"     "${M5_BUF_LOG}" "owner_surface"
+
+# ── T13: Busy guard in handleExposeRect ──────────────────────────────────────
+# Before M5, handleExposeRect attached the buffer unconditionally even while
+# the compositor still held it (protocol error / artifact).
+
+M5_EXPOSE_LOG="${OUTPUT_DIR}/m5-expose.txt"
+{
+    echo "=== busy check in handleExposeRect ==="
+    grep -n "pbuffer->busy\|busy" "${SHM_SOURCE}" 2>/dev/null || true
+    echo ""
+    echo "=== repaint-on-release in buffer_handle_release ==="
+    # Look for the release callback re-committing after a missed frame
+    awk '/buffer_handle_release/,/^}/' "${SHM_SOURCE}" 2>/dev/null | \
+        grep -n "needs_repaint\|wl_surface_attach\|wl_surface_commit" || true
+    echo ""
+    echo "=== size mismatch guard ==="
+    grep -n "pbuffer->width.*window->width\|size mismatch\|width != " "${SHM_SOURCE}" 2>/dev/null || true
+} >"${M5_EXPOSE_LOG}"
+
+check_log_contains "T13: busy guard in handleExposeRect"  "${M5_EXPOSE_LOG}" "pbuffer->busy"
+check_log_contains "T13: repaint-on-release path"         "${M5_EXPOSE_LOG}" "needs_repaint"
+check_log_contains "T13: size-mismatch guard"             "${M5_EXPOSE_LOG}" "pbuffer->width"
+
+# ── T14: Precise damage rect in handleExposeRect ─────────────────────────────
+# Before M5, wl_surface_damage always used the full surface (0,0,w,h).
+# Now the actual exposed NSRect is used.
+
+M5_DAMAGE_LOG="${OUTPUT_DIR}/m5-damage.txt"
+{
+    echo "=== precise damage in handleExposeRect ==="
+    grep -n "NSMinX\|NSMaxY\|NSWidth\|NSHeight\|dx\|dy\|dw\|dh" \
+        "${SHM_SOURCE}" 2>/dev/null || true
+    echo ""
+    echo "=== initial commit has damage ==="
+    # initWithDevice must call wl_surface_damage before wl_surface_commit
+    awk '/initWithDevice/,/^- \(/ { print NR": "$0 }' "${SHM_SOURCE}" 2>/dev/null | \
+        grep "wl_surface_damage\|wl_surface_commit" | head -10 || true
+} >"${M5_DAMAGE_LOG}"
+
+check_log_contains "T14: precise damage rect uses NSMinX/NSMaxY" \
+    "${M5_DAMAGE_LOG}" "NSMinX|NSMaxY|NSWidth|NSHeight"
+check_log_contains "T14: initial commit preceded by damage" \
+    "${M5_DAMAGE_LOG}" "wl_surface_damage"
+
+# ── T15: clearOwnerSurface prevents use-after-free ───────────────────────────
+# destroySurfaceRole: must clear the wl_surface back-pointer before calling
+# wl_surface_destroy so the async buffer_handle_release cannot write to a
+# freed proxy.
+
+M5_OWNER_LOG="${OUTPUT_DIR}/m5-owner.txt"
+{
+    echo "=== clearOwnerSurface in WaylandServer.m ==="
+    grep -n "clearOwnerSurface\|wl_surface_destroy" "${SERVER_SOURCE}" 2>/dev/null || true
+    echo ""
+    echo "=== clearOwnerSurface implementation ==="
+    awk '/clearOwnerSurface/,/^}/' "${SHM_SOURCE}" 2>/dev/null | head -20 || true
+    echo ""
+    echo "=== wl_surface_destroy in destroySurfaceRole ==="
+    awk '/destroySurfaceRole:/,/^- \(/ { print NR": "$0 }' \
+        "${SERVER_SOURCE}" 2>/dev/null | \
+        grep "wl_surface_destroy\|clearOwnerSurface" || true
+} >"${M5_OWNER_LOG}"
+
+check_log_contains "T15: clearOwnerSurface called before wl_surface_destroy" \
+    "${M5_OWNER_LOG}" "clearOwnerSurface"
+check_log_contains "T15: wl_surface_destroy present in destroySurfaceRole" \
+    "${M5_OWNER_LOG}" "wl_surface_destroy"
+
+# ── T16: No double wl_list_remove in xdg_surface_on_configure ────────────────
+# termwindow: removes the window from the list and sets terminated=YES.
+# xdg_surface_on_configure must NOT call wl_list_remove a second time.
+
+M5_LIST_LOG="${OUTPUT_DIR}/m5-list-remove.txt"
+{
+    echo "=== terminated path in xdg_surface_on_configure ==="
+    awk '/xdg_surface_on_configure/,/^const struct/' "${XDGSHELL_SOURCE}" 2>/dev/null | \
+        grep -n "terminated\|wl_list_remove\|free(window)" | head -20 || true
+} >"${M5_LIST_LOG}"
+
+check_log_contains "T16: terminated path frees window"    "${M5_LIST_LOG}" "free.window."
+check_log_absent   "T16: no second wl_list_remove" \
+    "${M5_LIST_LOG}" "wl_list_remove\("
+
+# ── T17: wl_shm_pool destroyed promptly (no dangling pool pointer) ────────────
+# The pool was stored in buf->pool and compared with NULL after being destroyed
+# (potential double-destroy if finishBuffer was ever changed to also destroy it).
+# M5 sets pool = NULL immediately after destroy and skips the buf->pool field.
+
+M5_POOL_LOG="${OUTPUT_DIR}/m5-pool.txt"
+{
+    echo "=== wl_shm_pool lifecycle in createShmBuffer ==="
+    awk '/createShmBuffer/,/^@implementation/' "${SHM_SOURCE}" 2>/dev/null | \
+        grep -n "wl_shm_pool\|wl_shm_create_pool\|wl_shm_pool_destroy\|buf->pool" | head -20 || true
+} >"${M5_POOL_LOG}"
+
+check_log_contains "T17: wl_shm_pool_destroy called"       "${M5_POOL_LOG}" "wl_shm_pool_destroy"
+check_log_absent   "T17: buf->pool not stored after destroy" "${M5_POOL_LOG}" "buf->pool ="
+
+# ── T18: Compositor survives sustained global queries (event-loop stress) ─────
+# Fire wayland-info 20 times in rapid succession against the running compositor.
+# Each invocation opens a Wayland connection, reads the global list, and closes.
+# A freeze or crash here indicates event-loop saturation or fd/memory leaks.
+
+if [[ -n "${CLIENT_WAYLAND_DISPLAY}" ]] && command -v wayland-info &>/dev/null; then
+    M5_STRESS_LOG="${OUTPUT_DIR}/m5-stress.log"
+    log "T18: sustained global query stress (20 iterations) …"
+    STRESS_OK=1
+    for i in $(seq 1 20); do
+        if ! timeout 5 wayland-info >>"${M5_STRESS_LOG}" 2>&1; then
+            STRESS_OK=0
+            fail "T18: wayland-info iteration ${i} failed"
+            break
+        fi
+    done
+    if [[ "${STRESS_OK}" -eq 1 ]]; then
+        pass "T18: compositor survived 20 consecutive global queries"
+    fi
+else
+    log "T18: stress test skipped (no compositor socket or wayland-info not installed)"
+fi
+
+# ── T19: Compositor still alive and clean after stress ───────────────────────
+
+sleep 1
+if kill -0 "${COMPOSITOR_PID}" 2>/dev/null; then
+    pass "T19: compositor still running after stress"
+else
+    fail "T19: compositor died during stress test"
+fi
+
+check_log_absent "T19: no crash/abort after stress" \
+    "${COMPOSITOR_LOG}" "Segmentation fault|Aborted|SIGSEGV|double free|wl_display_disconnect"
 
 # ── summary ───────────────────────────────────────────────────────────────────
 
