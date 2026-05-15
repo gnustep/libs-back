@@ -396,35 +396,52 @@ device_enter(void *data, struct wl_data_device *device,
   if (!offer || !window)
     return;
 
-  /* Find the best MIME type we can receive. */
-  NSString   *pboardType = nil;
-  const char *mime       = best_mime_for_offer(wlconfig, &pboardType);
+  /* Detect in-process drag: we are both the source (dnd_source != NULL) and
+   * the target.  The two cases need different treatment:
+   *
+   *  in-process  — deliver events directly to the window via sendEvent: so
+   *                they bypass GSDragView's running event loop.  Do NOT call
+   *                setupInboundDragWithPasteboard: — it would overwrite
+   *                dragPasteboard and break data_source_send.  The shared
+   *                WaylandDragView already carries the correct source info.
+   *
+   *  inter-process — post events to the app queue (GSDragView loop picks them
+   *                  up) and set up the drag view as the inbound NSDraggingInfo.
+   */
+  BOOL inProcess = (wlconfig->dnd_source != NULL);
 
-  if (mime)
+  if (!inProcess)
     {
-      wl_data_offer_accept(offer, serial, mime);
+      /* Find the best MIME type we can receive from an external source. */
+      NSString   *pboardType = nil;
+      const char *mime       = best_mime_for_offer(wlconfig, &pboardType);
 
-      if (wlconfig->data_device_manager_version >= 3)
+      if (mime)
         {
-          uint32_t myActions = ns_op_to_wl_actions(
-              NSDragOperationCopy | NSDragOperationMove);
-          wl_data_offer_set_actions(offer, myActions,
-                                    WL_DATA_DEVICE_MANAGER_DND_ACTION_COPY);
-        }
-    }
-  else
-    {
-      wl_data_offer_accept(offer, serial, NULL);
-    }
+          wl_data_offer_accept(offer, serial, mime);
 
-  /* Set up the shared drag view as NSDraggingInfo for AppKit. */
-  WaylandDragView *dv = [WaylandDragView sharedDragView];
-  [dv setupInboundDragWithPasteboard:
-        [NSPasteboard pasteboardWithName: NSDragPboard]
-                           operation: wl_action_to_ns(
-                               wlconfig->dnd_offer_source_actions
-                               ? wlconfig->dnd_offer_source_actions
-                               : WL_DATA_DEVICE_MANAGER_DND_ACTION_COPY)];
+          if (wlconfig->data_device_manager_version >= 3)
+            {
+              uint32_t myActions = ns_op_to_wl_actions(
+                  NSDragOperationCopy | NSDragOperationMove);
+              wl_data_offer_set_actions(offer, myActions,
+                                        WL_DATA_DEVICE_MANAGER_DND_ACTION_COPY);
+            }
+        }
+      else
+        {
+          wl_data_offer_accept(offer, serial, NULL);
+        }
+
+      /* Set up the shared drag view as NSDraggingInfo for AppKit. */
+      WaylandDragView *dv = [WaylandDragView sharedDragView];
+      [dv setupInboundDragWithPasteboard:
+            [NSPasteboard pasteboardWithName: NSDragPboard]
+                               operation: wl_action_to_ns(
+                                   wlconfig->dnd_offer_source_actions
+                                   ? wlconfig->dnd_offer_source_actions
+                                   : WL_DATA_DEVICE_MANAGER_DND_ACTION_COPY)];
+    }
 
   NSWindow *nswindow = GSWindowWithNumber(window->window_id);
   if (!nswindow)
@@ -441,7 +458,12 @@ device_enter(void *data, struct wl_data_device *device,
                         subtype: GSAppKitDraggingEnter
                           data1: 0
                           data2: 0];
-  [NSApp postEvent: ev atStart: NO];
+
+  /* Deliver directly for in-process; queue for inter-process. */
+  if (inProcess)
+    [nswindow sendEvent: ev];
+  else
+    [NSApp postEvent: ev atStart: NO];
 }
 
 static void
@@ -459,6 +481,7 @@ device_leave(void *data, struct wl_data_device *device)
       NSWindow *nswindow = GSWindowWithNumber(window->window_id);
       if (nswindow)
         {
+          BOOL inProcess = (wlconfig->dnd_source != NULL);
           NSEvent *ev =
             [NSEvent otherEventWithType: NSAppKitDefined
                                location: NSZeroPoint
@@ -469,7 +492,10 @@ device_leave(void *data, struct wl_data_device *device)
                                 subtype: GSAppKitDraggingExit
                                   data1: 0
                                   data2: 0];
-          [NSApp postEvent: ev atStart: NO];
+          if (inProcess)
+            [nswindow sendEvent: ev];
+          else
+            [NSApp postEvent: ev atStart: NO];
         }
     }
 
@@ -497,8 +523,11 @@ device_motion(void *data, struct wl_data_device *device,
 
   NSDebugFLLog(@"WaylandDnD", @"device_motion: (%g,%g)", x, y);
 
-  /* Keep accepting so the compositor knows we still want the drag. */
-  if (wlconfig->dnd_offer)
+  BOOL inProcess = (wlconfig->dnd_source != NULL);
+
+  /* Keep accepting so the compositor knows we still want the drag
+   * (only meaningful for inter-process; in-process has no offer to negotiate). */
+  if (!inProcess && wlconfig->dnd_offer)
     {
       NSString   *pt   = nil;
       const char *mime = best_mime_for_offer(wlconfig, &pt);
@@ -521,7 +550,11 @@ device_motion(void *data, struct wl_data_device *device,
                         subtype: GSAppKitDraggingUpdate
                           data1: (NSInteger)NSDragOperationCopy
                           data2: 0];
-  [NSApp postEvent: ev atStart: NO];
+
+  if (inProcess)
+    [nswindow sendEvent: ev];
+  else
+    [NSApp postEvent: ev atStart: NO];
 }
 
 static void
@@ -544,104 +577,145 @@ device_drop(void *data, struct wl_data_device *device)
       return;
     }
 
-  NSString   *pboardType = nil;
-  const char *mime       = best_mime_for_offer(wlconfig, &pboardType);
+  BOOL inProcess = (wlconfig->dnd_source != NULL);
 
-  if (!mime || !pboardType)
+  NSWindow *nswindow = GSWindowWithNumber(window->window_id);
+
+  if (inProcess)
     {
-      wl_data_offer_destroy(wlconfig->dnd_offer);
-      wlconfig->dnd_offer = NULL;
-      dnd_offer_mimes_free(wlconfig);
-      wlconfig->dnd_incoming = NO;
-      return;
-    }
+      /* In-process drop: source and target are the same Wayland client.
+       *
+       * We cannot go through wl_data_offer_receive + pipe here: receiving
+       * triggers the compositor to call wl_data_source.send back to us, but
+       * we are blocked inside a dispatch callback and cannot re-enter the
+       * event loop to process that send event — a deadlock.
+       *
+       * Instead, copy the types and data from the source pasteboard (which
+       * WaylandDragView still holds from the dragImage: call) directly to
+       * NSDragPboard so the target view gets the correct data.               */
+      WaylandDragView *dv = [WaylandDragView sharedDragView];
+      NSPasteboard *srcPboard = [dv draggingPasteboard];
+      NSPasteboard *pboard    = [NSPasteboard pasteboardWithName: NSDragPboard];
 
-  /* Receive the data via a pipe. */
-  int pipefd[2];
-  if (pipe(pipefd) < 0)
-    {
-      wl_data_offer_destroy(wlconfig->dnd_offer);
-      wlconfig->dnd_offer = NULL;
-      dnd_offer_mimes_free(wlconfig);
-      wlconfig->dnd_incoming = NO;
-      return;
-    }
-
-  wl_data_offer_receive(wlconfig->dnd_offer, mime, pipefd[1]);
-  close(pipefd[1]);
-  wl_display_flush(wlconfig->display);
-
-  /* Block-read; the source writes after the flush above. */
-  NSData *rawData = read_fd_to_data(pipefd[0]);
-
-  /* Populate the drag pasteboard. */
-  NSPasteboard *pboard = [NSPasteboard pasteboardWithName: NSDragPboard];
-  [pboard declareTypes: @[pboardType] owner: nil];
-
-  if ([pboardType isEqual: @"NSStringPboardType"]
-      || [pboardType isEqual: NSPasteboardTypeString])
-    {
-      NSString *s = [[NSString alloc]
-                      initWithData: rawData encoding: NSUTF8StringEncoding];
-      if (!s)
-        s = [[NSString alloc]
-              initWithData: rawData encoding: NSISOLatin1StringEncoding];
-      if (s)
+      NSArray *types = [srcPboard types];
+      if ([types count] > 0)
         {
-          [pboard setString: s forType: pboardType];
-          [s release];
+          [pboard declareTypes: types owner: nil];
+          for (NSString *type in types)
+            {
+              NSData *d = [srcPboard dataForType: type];
+              if (d)
+                [pboard setData: d forType: type];
+            }
         }
-    }
-  else if ([pboardType isEqual: @"NSFilenamesPboardType"])
-    {
-      NSString *raw = [[NSString alloc]
-                        initWithData: rawData encoding: NSUTF8StringEncoding];
-      NSArray  *lines = [raw componentsSeparatedByCharactersInSet:
-                              [NSCharacterSet newlineCharacterSet]];
-      NSMutableArray *paths = [NSMutableArray array];
-      for (NSString *line in lines)
+
+      if (nswindow)
         {
-          NSString *trimmed = [line stringByTrimmingCharactersInSet:
-                                      [NSCharacterSet whitespaceCharacterSet]];
-          if ([trimmed length] == 0 || [trimmed hasPrefix: @"#"])
-            continue;
-          NSURL *url = [NSURL URLWithString: trimmed];
-          if ([url isFileURL])
-            [paths addObject: [url path]];
-          else if ([trimmed hasPrefix: @"/"])
-            [paths addObject: trimmed];
+          NSDragOperation op = wl_action_to_ns(wlconfig->dnd_current_action);
+          if (op == NSDragOperationNone)
+            op = NSDragOperationCopy;
+          NSPoint nsPos =
+            NSMakePoint(wlconfig->dnd_x, window->height - wlconfig->dnd_y);
+          NSEvent *ev =
+            [NSEvent otherEventWithType: NSAppKitDefined
+                               location: nsPos
+                          modifierFlags: 0
+                              timestamp: [[NSDate date] timeIntervalSinceReferenceDate]
+                           windowNumber: window->window_id
+                                context: nil
+                                subtype: GSAppKitDraggingDrop
+                                  data1: (NSInteger)op
+                                  data2: 0];
+          [nswindow sendEvent: ev];
         }
-      [pboard setPropertyList: paths forType: @"NSFilenamesPboardType"];
-      [raw release];
     }
   else
     {
-      [pboard setData: rawData forType: pboardType];
+      /* Inter-process drop: receive data through the pipe. */
+      NSString   *pboardType = nil;
+      const char *mime       = best_mime_for_offer(wlconfig, &pboardType);
+
+      if (!mime || !pboardType)
+        goto cleanup;
+
+      int pipefd[2];
+      if (pipe(pipefd) < 0)
+        goto cleanup;
+
+      wl_data_offer_receive(wlconfig->dnd_offer, mime, pipefd[1]);
+      close(pipefd[1]);
+      wl_display_flush(wlconfig->display);
+
+      NSData *rawData = read_fd_to_data(pipefd[0]);
+
+      NSPasteboard *pboard = [NSPasteboard pasteboardWithName: NSDragPboard];
+      [pboard declareTypes: @[pboardType] owner: nil];
+
+      if ([pboardType isEqual: @"NSStringPboardType"]
+          || [pboardType isEqual: NSPasteboardTypeString])
+        {
+          NSString *s = [[NSString alloc]
+                          initWithData: rawData encoding: NSUTF8StringEncoding];
+          if (!s)
+            s = [[NSString alloc]
+                  initWithData: rawData encoding: NSISOLatin1StringEncoding];
+          if (s)
+            {
+              [pboard setString: s forType: pboardType];
+              [s release];
+            }
+        }
+      else if ([pboardType isEqual: @"NSFilenamesPboardType"])
+        {
+          NSString *raw = [[NSString alloc]
+                            initWithData: rawData encoding: NSUTF8StringEncoding];
+          NSArray  *lines = [raw componentsSeparatedByCharactersInSet:
+                                  [NSCharacterSet newlineCharacterSet]];
+          NSMutableArray *paths = [NSMutableArray array];
+          for (NSString *line in lines)
+            {
+              NSString *trimmed = [line stringByTrimmingCharactersInSet:
+                                          [NSCharacterSet whitespaceCharacterSet]];
+              if ([trimmed length] == 0 || [trimmed hasPrefix: @"#"])
+                continue;
+              NSURL *url = [NSURL URLWithString: trimmed];
+              if ([url isFileURL])
+                [paths addObject: [url path]];
+              else if ([trimmed hasPrefix: @"/"])
+                [paths addObject: trimmed];
+            }
+          [pboard setPropertyList: paths forType: @"NSFilenamesPboardType"];
+          [raw release];
+        }
+      else
+        {
+          [pboard setData: rawData forType: pboardType];
+        }
+
+      if (nswindow)
+        {
+          NSDragOperation op = wl_action_to_ns(wlconfig->dnd_current_action);
+          NSPoint nsPos =
+            NSMakePoint(wlconfig->dnd_x, window->height - wlconfig->dnd_y);
+          NSEvent *ev =
+            [NSEvent otherEventWithType: NSAppKitDefined
+                               location: nsPos
+                          modifierFlags: 0
+                              timestamp: [[NSDate date] timeIntervalSinceReferenceDate]
+                           windowNumber: window->window_id
+                                context: nil
+                                subtype: GSAppKitDraggingDrop
+                                  data1: (NSInteger)op
+                                  data2: 0];
+          [NSApp postEvent: ev atStart: NO];
+        }
+
+      /* Finish the offer (v3+). */
+      if (wlconfig->data_device_manager_version >= 3)
+        wl_data_offer_finish(wlconfig->dnd_offer);
     }
 
-  /* Deliver the drop event to the AppKit window. */
-  NSWindow *nswindow = GSWindowWithNumber(window->window_id);
-  if (nswindow)
-    {
-      NSDragOperation op = wl_action_to_ns(wlconfig->dnd_current_action);
-      NSPoint nsPos = NSMakePoint(wlconfig->dnd_x, window->height - wlconfig->dnd_y);
-
-      NSEvent *ev =
-        [NSEvent otherEventWithType: NSAppKitDefined
-                           location: nsPos
-                      modifierFlags: 0
-                          timestamp: [[NSDate date] timeIntervalSinceReferenceDate]
-                       windowNumber: window->window_id
-                            context: nil
-                            subtype: GSAppKitDraggingDrop
-                              data1: (NSInteger)op
-                              data2: 0];
-      [NSApp postEvent: ev atStart: NO];
-    }
-
-  /* Finish and destroy the offer. */
-  if (wlconfig->data_device_manager_version >= 3)
-    wl_data_offer_finish(wlconfig->dnd_offer);
+cleanup:
 
   wl_data_offer_destroy(wlconfig->dnd_offer);
   wlconfig->dnd_offer = NULL;
@@ -866,16 +940,38 @@ static WaylandDragView *sharedDragView = nil;
 
 - (void) postDragEvent: (NSEvent *)theEvent
 {
-  /* During a Wayland external drag, pointer events from the compositor stop.
-   * We only care about the fake NSLeftMouseUp we post from data_source
-   * callbacks to exit the event loop.  Suppress all other routing. */
-  if (_waylandExternalDragActive)
+  if (!_waylandExternalDragActive)
     {
-      if ([theEvent type] == NSLeftMouseUp)
-        isDragging = NO;
+      [super postDragEvent: theEvent];
       return;
     }
-  [super postDragEvent: theEvent];
+
+  /* During a Wayland-driven drag the compositor stops delivering pointer
+   * events, so only two event types matter in GSDragView's loop:
+   *
+   *  NSLeftMouseUp    — fake event posted by data_source callbacks to exit
+   *                     the loop when the drag ends (cancel or finish).
+   *
+   *  NSAppKitDefined  — GSAppKitDraggingEnter/Update/Drop events generated
+   *                     by the inter-process device_enter/motion/drop callbacks
+   *                     and posted to the app queue.  Forward them through
+   *                     super so AppKit routes them to the target window's
+   *                     dragging protocol methods (draggingEntered: etc.).
+   *                     In-process events go directly via sendEvent: and
+   *                     never reach here.
+   *
+   * Everything else is suppressed — no pointer motion arrives in this mode. */
+  switch ([theEvent type])
+    {
+      case NSLeftMouseUp:
+        isDragging = NO;
+        break;
+      case NSAppKitDefined:
+        [super postDragEvent: theEvent];
+        break;
+      default:
+        break;
+    }
 }
 
 - (void) sendExternalEvent: (GSAppKitSubtype)subtype
