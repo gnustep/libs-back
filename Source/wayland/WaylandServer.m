@@ -52,6 +52,7 @@
 extern const struct wl_output_listener output_listener;
 extern const struct wl_seat_listener seat_listener;
 extern const struct wl_data_device_listener data_device_listener;
+extern const struct zwp_text_input_v3_listener text_input_v3_listener;
 
 static void
 shm_format(void *data, struct wl_shm *wl_shm, uint32_t format)
@@ -154,6 +155,12 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name,
 	= wl_registry_bind(registry, name, &wl_data_device_manager_interface, v);
       NSDebugLog(@"wayland: found wl_data_device_manager (version %u)", v);
     }
+  else if (strcmp(interface, zwp_text_input_manager_v3_interface.name) == 0)
+    {
+      wlconfig->text_input_manager
+	= wl_registry_bind(registry, name, &zwp_text_input_manager_v3_interface, 1);
+      NSDebugLog(@"wayland: found zwp_text_input_manager_v3");
+    }
 }
 
 static void handle_global_remove(void *data, struct wl_registry *registry,
@@ -226,6 +233,19 @@ NSToWayland(struct window *window, int ns_y)
   wl_display_dispatch(wlconfig->display);
   wl_display_roundtrip(wlconfig->display);
 
+  /* Create text_input once both text_input_manager and seat are available. */
+  if (wlconfig->text_input_manager && wlconfig->seat)
+    {
+      wlconfig->text_input = zwp_text_input_manager_v3_get_text_input(
+          wlconfig->text_input_manager, wlconfig->seat);
+      if (wlconfig->text_input)
+        {
+          zwp_text_input_v3_add_listener(wlconfig->text_input,
+                                         &text_input_v3_listener, wlconfig);
+          NSDebugLog(@"wayland: zwp_text_input_v3 created");
+        }
+    }
+
   /* Get a data device now that both seat and data_device_manager are bound. */
   if (wlconfig->data_device_manager && wlconfig->seat)
     {
@@ -275,6 +295,7 @@ NSToWayland(struct window *window, int ns_y)
 
   inputServer = [[WaylandInputServer allocWithZone: [self zone]]
 		   initWithDelegate: nil name: @"WaylandInput"];
+  [(WaylandInputServer *)inputServer setWlconfig: wlconfig];
 
   return self;
 }

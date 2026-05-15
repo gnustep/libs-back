@@ -43,6 +43,7 @@
 #include "wayland/xdg-shell-client-protocol.h"
 #include "wayland/wlr-layer-shell-client-protocol.h"
 #include "wayland/xdg-decoration-unstable-v1-client-protocol.h"
+#include "wayland/text-input-unstable-v3-client-protocol.h"
 
 struct pointer
 {
@@ -127,6 +128,22 @@ typedef struct _WaylandConfig
     xkb_mod_mask_t     shift_mask;
   } xkb;
   int modifiers;
+
+  /* zwp_text_input_v3 — input method / preedit support */
+  struct zwp_text_input_manager_v3 *text_input_manager;
+  struct zwp_text_input_v3         *text_input;
+  BOOL                              text_input_active;  /* enabled for current surface */
+
+  /* Preedit geometry (set by AppKit via WaylandInputServer setters) */
+  NSPoint ime_preedit_spot;    /* cursor position for IM popup, in screen coords */
+  NSRect  ime_preedit_rect;    /* preedit bounding rect                           */
+
+  /* Pending IM events, applied together in the done callback */
+  char   *ime_pending_preedit;       /* NULL when no active preedit */
+  int32_t ime_preedit_cursor_begin;
+  int32_t ime_preedit_cursor_end;
+  char   *ime_pending_commit;        /* NULL when no pending commit */
+  uint32_t ime_serial;               /* most recent done serial     */
 
   /* wl_data_device — selection and drag-and-drop */
   struct wl_data_device_manager *data_device_manager;

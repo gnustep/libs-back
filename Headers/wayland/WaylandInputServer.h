@@ -25,17 +25,20 @@
 #define _WaylandInputServer_h_INCLUDE
 
 #include <AppKit/NSInputServer.h>
+#include "wayland/WaylandServer.h"
 
 @interface WaylandInputServer : NSInputServer
 {
-  id        delegate;
-  NSString *server_name;
-  int       focused_window_id;
+  id             delegate;
+  NSString      *server_name;
+  int            focused_window_id;
+  WaylandConfig *wlconfig;        /* back-pointer for IME geometry calls */
 }
 
 - (id) initWithDelegate: (id)aDelegate name: (NSString *)name;
 - (void) setFocusedWindowId: (int)windowId;
 - (int) focusedWindowId;
+- (void) setWlconfig: (WaylandConfig *)config;
 
 @end
 

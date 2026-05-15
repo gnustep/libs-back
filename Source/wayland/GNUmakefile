@@ -42,6 +42,7 @@ wayland_C_FILES = \
 xdg-shell-protocol.c \
 wlr-layer-shell-protocol.c \
 xdg-decoration-unstable-v1-protocol.c \
+text-input-unstable-v3-protocol.c \
 
 # The Objective-C source files to be compiled
 wayland_OBJC_FILES = \
