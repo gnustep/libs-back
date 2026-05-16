@@ -1,4 +1,193 @@
 
+2026-05-15  James Carthew  <jcarthew@gmail.com>
+
+	* Headers/wayland/WaylandOpenGL.h:
+	* Headers/wayland/WaylandServer.h:
+	* Source/wayland/WaylandDragView.m:
+	* Source/wayland/WaylandGLContext.m:
+	* Source/wayland/WaylandServer+Cursor.m:
+	* Source/wayland/WaylandServer+Keyboard.m:
+	* Source/wayland/WaylandServer.m:
+	Wayland: fix mouse tracking over OpenGL subsurfaces with multiple GL
+	views. Replace per-window subsurface offset with a per-surface
+	wl_surface_binding stored as wl_surface user data so each
+	WaylandGLContext has independent offset tracking.
+	pointer_handle_enter reads the offset via surface_get_offset() and
+	stores it in pointer.focus_offset_x/y; pointer_handle_motion applies
+	the stored offset for correct parent-window coordinate translation.
+	Folds in the keyboard_handle_enter NULL-surface guard.
+
+	* Source/wayland/WaylandDragView.m:
+	Wayland: fix in-process drag-and-drop in GNUstep applications.
+	postDragEvent: was discarding all events except NSLeftMouseUp once
+	the Wayland data device was available; pass NSAppKitDefined events
+	through to super so in-process draggingEntered:/draggingUpdated:/
+	performDragOperation: callbacks reach the target view. Fix
+	device_enter/motion/leave to skip same-process re-posting.
+
+	* Source/wayland/WaylandServer+Cursor.m:
+	Wayland: fill all wl_pointer_listener slots to prevent SIGABRT.
+	wayland-client 1.24 defines 11 event slots; add no-op stubs for
+	frame, axis_source, axis_stop, and axis_discrete handlers.
+
+	* Source/wayland/WaylandServer+Seat.m:
+	Wayland: add wl_seat.name handler to prevent SIGABRT on startup.
+	Bumping the seat binding to v5 causes wl_seat.name to be delivered
+	during the initial roundtrip. Add seat_handle_name stub so
+	libwayland does not abort on a NULL dispatcher slot.
+
+	* Tools/wayland-smoke-test.sh:
+	Wayland: extend smoke-test harness to Milestone 5 (buffer lifecycle
+	and stability checks).
+
+	* Headers/cairo/WaylandCairoShmSurface.h:
+	* Source/cairo/WaylandCairoShmSurface.m:
+	* Source/wayland/WaylandServer+Xdgshell.m:
+	* Source/wayland/WaylandServer.m:
+	Wayland M5: buffer lifecycle hardening and surface destruction
+	ordering. Add needs_repaint flag and owner back-pointers to
+	pool_buffer. Fix FD leak in finishBuffer. Re-attach buffers on
+	compositor release when a repaint is pending. Guard against size
+	mismatch and destroyed surfaces in the release callback.
+
+	* Headers/wayland/WaylandServer.h:
+	* Source/wayland/WaylandServer+Output.m:
+	* Source/wayland/WaylandServer.m:
+	Wayland M4: output hotplug and scale/geometry reconfiguration. Add
+	effective_width/height, name, description, and configured fields to
+	struct output. Rewrite output_listener: recompute logical dimensions
+	for scale and rotation, clamp windows to new bounds, and post
+	NSApplicationDidChangeScreenParametersNotification. Bind wl_output
+	at version 4.
+
+	* Headers/wayland/WaylandServer.h:
+	* Source/wayland/WaylandServer+Cursor.m:
+	* Source/wayland/WaylandServer.m:
+	Wayland M3: extra mouse buttons and per-frame scroll accumulation.
+	Map BTN_SIDE/EXTRA/FORWARD/BACK/TASK to NSOtherMouseDown/Up. Fix
+	buttonNumber to use button-BTN_LEFT offset. Bump wl_seat to v5 and
+	accumulate axis deltas per compositor frame before dispatching a
+	single NSScrollWheel event.
+
+	* Headers/wayland/WaylandInputServer.h:
+	* Headers/wayland/WaylandServer.h:
+	* Source/wayland/GNUmakefile:
+	* Source/wayland/WaylandInputServer.m:
+	* Source/wayland/WaylandServer+Keyboard.m:
+	* Source/wayland/WaylandServer.m:
+	* Source/wayland/text-input-unstable-v3-protocol.c:
+	Wayland M2: IME/preedit support via zwp_text_input_v3. Generate and
+	wire text-input-unstable-v3 protocol. Fix XKB UTF-8 conversion by
+	replacing the broken &sym cast with xkb_state_key_get_utf8. Add
+	WaylandInputServer for preedit spot/rect management. Bind
+	text_input_manager and create zwp_text_input_v3 from the seat.
+
+	* Headers/wayland/WaylandDragView.h:
+	* Headers/wayland/WaylandServer.h:
+	* Source/cairo/WaylandCairoShmSurface.m:
+	* Source/wayland/WaylandDragView.m:
+	* Source/wayland/WaylandInputServer.m:
+	* Source/wayland/WaylandServer+Cursor.m:
+	* Source/wayland/WaylandServer+Keyboard.m:
+	* Source/wayland/WaylandServer+Output.m:
+	* Source/wayland/WaylandServer.m:
+	* Tools/wayland-smoke-test.sh:
+	Wayland M0+M1: add targeted debug log categories and inter-process
+	DnD. Replace bare NSDebugLog with NSDebugMLLog/NSDebugFLLog across
+	Wayland sources (categories: WaylandDnD, WaylandIME, WaylandPointer,
+	WaylandScroll, WaylandOutput). Add Tools/wayland-smoke-test.sh
+	integration harness. Implement inter-process drag-and-drop via
+	wl_data_device: bind data_device_manager, wire source/offer
+	listeners, implement draggingSourceOperationMask,
+	addDragTypes:toWindow:, and performDragOperation:.
+
+	* Headers/wayland/WaylandServer.h:
+	* Source/wayland/GNUmakefile:
+	* Source/wayland/WaylandServer+Cursor.m:
+	* Source/wayland/WaylandServer+Xdgshell.m:
+	* Source/wayland/WaylandServer.m:
+	Wayland: update popup menu handling; add xdg-decoration-unstable-v1
+	protocol support for server-side window decorations.
+
+2026-04-30  Joe Maloney  <jpm820@gmail.com>
+
+	* Headers/opal/OpalSurface.h:
+	* Source/opal/OpalContext.m:
+	* Source/opal/OpalFontInfo.m:
+	* Source/opal/OpalGState.m:
+	* Source/opal/OpalSurface.m:
+	Opal backend: restore functionality. Fix font hinting, gradients,
+	blend modes, gray-to-RGB colour conversion, and lazy surface
+	creation. Fix window movement trails by flushing backing and X11
+	contexts in handleExposeRect. Make X11 surface attachment
+	self-contained.
+
+2026-04-30  James Carthew  <jcarthew@gmail.com>
+
+	* Headers/wayland/WaylandDragView.h:
+	* Headers/wayland/WaylandInputServer.h:
+	* Headers/wayland/WaylandOpenGL.h:
+	* Headers/wayland/WaylandServer.h:
+	* Source/wayland/GNUmakefile:
+	* Source/wayland/WaylandDragView.m:
+	* Source/wayland/WaylandGLContext.m:
+	* Source/wayland/WaylandGLPixelFormat.m:
+	* Source/wayland/WaylandInputServer.m:
+	* Source/wayland/WaylandServer+Keyboard.m:
+	* Source/wayland/WaylandServer+Xdgshell.m:
+	* Source/wayland/WaylandServer.m:
+	Wayland: complete OpenGL subsurface integration. Use wl_subsurface
+	to host GL views, implement frame callbacks and damage tracking, fix
+	context sharing, and integrate WaylandInputServer for input method
+	support alongside GL contexts.
+
+2026-04-20  James Carthew  <jcarthew@gmail.com>
+
+	* Source/wayland/WaylandServer+Cursor.m:
+	Wayland: fix cursor handling when moving between GL subsurfaces and
+	main window surfaces.
+
+2026-04-19  James Carthew  <jcarthew@gmail.com>
+
+	* Source/wayland/WaylandGLContext.m:
+	* Source/wayland/WaylandServer+Cursor.m:
+	Wayland: fix crash in cursor handling when the pointer enters a GL
+	subsurface.
+
+	* Headers/wayland/WaylandOpenGL.h:
+	* Headers/wayland/WaylandServer.h:
+	* Source/GNUmakefile.preamble:
+	* Source/wayland/GNUmakefile.preamble:
+	* Source/wayland/WaylandGLContext.m:
+	* Source/wayland/WaylandServer.m:
+	Wayland: complete OpenGL context implementation. Add EGL surface
+	creation on wl_subsurface, frame-callback-driven buffer swap, and
+	usesOpenGL tracking in struct window.
+
+2026-04-18  James Carthew  <jcarthew@gmail.com>
+
+	* Source/wayland/WaylandGLContext.m:
+	Wayland: fix noisy GL attach failures on unmapped surfaces; plug a
+	retain-count leak on early error paths in WaylandGLContext.
+
+	* Source/wayland/WaylandGLContext.m:
+	Wayland: rebind OpenGL context to the correct native window when a
+	view is reparented before makeCurrentContext is called.
+
+	* Headers/wayland/WaylandOpenGL.h:
+	* Headers/wayland/WaylandServer.h:
+	* Source/GNUmakefile.preamble:
+	* Source/wayland/GNUmakefile:
+	* Source/wayland/GNUmakefile.preamble:
+	* Source/wayland/WaylandGLContext.m:
+	* Source/wayland/WaylandGLPixelFormat.m:
+	* Source/wayland/WaylandServer.m:
+	* configure.ac:
+	Wayland: initial OpenGL support via EGL and wl_subsurface. Add new
+	WaylandGLContext and WaylandGLPixelFormat classes implementing
+	NSOpenGLContext/NSOpenGLPixelFormat for the Wayland backend. Link
+	against libGL, libEGL, and libwayland-egl.
+
 2025-12-18 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGServer.m:
