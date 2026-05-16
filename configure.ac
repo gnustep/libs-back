@@ -697,6 +697,10 @@ elif test x"$BUILD_GRAPHICS" = "xopal"; then
  CPPFLAGS="$FONTCONFIG_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
  LIBS="-lopal -lgnustep-corebase $LIBS"
  LIBS="$FONTCONFIG_LIBS $FREETYPE_LIBS $LIBS"
+ if test "$have_xrender" = yes -a "$BUILD_SERVER" = "x11"; then
+   AC_DEFINE(XRENDER,1,[Define if you have X11 XRender extension])
+   LIBS="-lXrender $LIBS"
+ fi
  if test "$have_freetype" = no ; then # FCFaceInfo requires this
     AC_MSG_WARN([can't find freetype, required for graphics=opal!])
     if test $BUILD_SERVER = win32; then
