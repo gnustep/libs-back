@@ -657,7 +657,17 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
       CAIRO_LIBS="$CAIRO_LIBS $XFT_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS"
       LIBS="-lwayland-client -lwayland-cursor -lxkbcommon $LIBS"
+      # Optional EGL/OpenGL support for the Wayland backend
+      WITH_EGL=no
+      AC_CHECK_HEADER(EGL/egl.h, [have_egl_h=yes], [have_egl_h=no])
+      AC_CHECK_LIB(EGL, eglGetDisplay, [have_egl=yes], [have_egl=no])
+      if test "x$have_egl_h" = "xyes" -a "x$have_egl" = "xyes"; then
+        WITH_EGL=yes
+        AC_DEFINE(HAVE_EGL, 1, [Define if EGL is available for Wayland OpenGL support])
+        LIBS="-lGL -lEGL -lwayland-egl $LIBS"
+      fi
     fi
+AC_SUBST(WITH_EGL)
     LIBS="$CAIRO_LIBS $LIBS"
     CPPFLAGS="$CAIRO_CFLAGS $CPPFLAGS"
   fi

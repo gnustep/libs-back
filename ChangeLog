@@ -1,3 +1,31 @@
+2026-05-21 DMJC <jcarthew@gmail.com>
+
+	* configure.ac:
+	* config.h.in:
+	* config.make.in:
+	* Source/GNUmakefile.preamble:
+	* Source/wayland/GNUmakefile:
+	* Source/wayland/GNUmakefile.preamble:
+	Add optional EGL detection to the Wayland backend configure block.
+	When EGL is present, HAVE_EGL is defined and WITH_EGL=yes is written
+	to config.make; -lGL -lEGL -lwayland-egl are added to the link line.
+	OpenGL source files are gated with ifeq ($(WITH_EGL),yes) in the
+	Wayland GNUmakefile so the backend builds cleanly without EGL.
+
+	* Headers/wayland/WaylandOpenGL.h:
+	* Source/wayland/WaylandGLContext.m:
+	* Source/wayland/WaylandGLPixelFormat.m:
+	* Headers/wayland/WaylandServer.h:
+	* Source/wayland/WaylandServer.m:
+	* Source/wayland/WaylandServer+Cursor.m:
+	Add optional OpenGL support for the Wayland backend via EGL.
+	WaylandGLContext implements NSOpenGLContext using EGL surfaces attached
+	to wl_subsurfaces positioned over the parent Wayland window.
+	WaylandGLPixelFormat implements NSOpenGLPixelFormat for EGL configs.
+	All integration points in WaylandServer (subcompositor binding,
+	glContextClass/glPixelFormatClass, usesOpenGL window flag, flushwindowrect
+	skip for GL windows) are gated with #ifdef HAVE_EGL.  Pointer enter/leave
+	handlers gain a NULL window guard to prevent crashes from subsurface events.
 2026-05-10 Fred Kiefer <FredKiefer@gmx.de>
 
 	* configure

@@ -515,6 +515,29 @@ as_cr_alnum=$as_cr_Letters$as_cr_digits
   exit
 }
 
+
+# Determine whether it's possible to make 'echo' print without a newline.
+# These variables are no longer used directly by Autoconf, but are AC_SUBSTed
+# for compatibility with existing Makefiles.
+ECHO_C= ECHO_N= ECHO_T=
+case `echo -n x` in #(((((
+-n*)
+  case `echo 'xy\c'` in
+  *c*) ECHO_T='	';;	# ECHO_T is single tab character.
+  xy)  ECHO_C='\c';;
+  *)   echo `echo ksh88 bug on AIX 6.1` > /dev/null
+       ECHO_T='	';;
+  esac;;
+*)
+  ECHO_N='-n';;
+esac
+
+# For backward compatibility with old third-party macros, we provide
+# the shell variables $as_echo and $as_echo_n.  New code should use
+# AS_ECHO(["message"]) and AS_ECHO_N(["message"]), respectively.
+as_echo='printf %s\n'
+as_echo_n='printf %s'
+
 rm -f conf$$ conf$$.exe conf$$.file
 if test -d conf$$.dir; then
   rm -f conf$$.dir/conf$$.file
@@ -629,6 +652,7 @@ BACKEND_NAME
 WARN_FLAGS
 BUILD_SERVER
 BUILD_GRAPHICS
+WITH_EGL
 WITH_WRASTER
 WITH_GLITZ
 GLITZ_WGL_LIBS
@@ -1596,7 +1620,7 @@ printf '%s\n' "$ac_try_echo"; } >&5
 then :
   ac_retval=0
 else case e in #(
-  e) printf '%s\n' "$as_me: failed program was:" >&5
+  e) printf "%s\n" "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
 	ac_retval=1 ;;
@@ -2082,8 +2106,8 @@ esac
 printf '%s\n' "$as_me: loading site script $ac_site_file" >&6;}
     sed 's/^/| /' "$ac_site_file" >&5
     . "$ac_site_file" \
-      || { { printf '%s\n' "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
-printf '%s\n' "$as_me: error: in '$ac_pwd':" >&2;}
+      || { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
 as_fn_error $? "failed to load site script $ac_site_file
 See 'config.log' for more details" "$LINENO" 5; }
   fi
@@ -2642,12 +2666,12 @@ for ac_var in $ac_precious_vars; do
   eval ac_new_val=\$ac_env_${ac_var}_value
   case $ac_old_set,$ac_new_set in
     set,)
-      { printf '%s\n' "$as_me:${as_lineno-$LINENO}: error: '$ac_var' was set to '$ac_old_val' in the previous run" >&5
-printf '%s\n' "$as_me: error: '$ac_var' was set to '$ac_old_val' in the previous run" >&2;}
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: '$ac_var' was set to '$ac_old_val' in the previous run" >&5
+printf "%s\n" "$as_me: error: '$ac_var' was set to '$ac_old_val' in the previous run" >&2;}
       ac_cache_corrupted=: ;;
     ,set)
-      { printf '%s\n' "$as_me:${as_lineno-$LINENO}: error: '$ac_var' was not set in the previous run" >&5
-printf '%s\n' "$as_me: error: '$ac_var' was not set in the previous run" >&2;}
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: '$ac_var' was not set in the previous run" >&5
+printf "%s\n" "$as_me: error: '$ac_var' was not set in the previous run" >&2;}
       ac_cache_corrupted=: ;;
     ,);;
     *)
@@ -2662,18 +2686,18 @@ printf '%s\n' "$as_me: error: '$ac_var' was not set in the previous run" >&2;}
 	  ac_new_val_w="$ac_new_val_w $ac_val"
 	done
 	if test "$ac_old_val_w" != "$ac_new_val_w"; then
-	  { printf '%s\n' "$as_me:${as_lineno-$LINENO}: error: '$ac_var' has changed since the previous run:" >&5
-printf '%s\n' "$as_me: error: '$ac_var' has changed since the previous run:" >&2;}
+	  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: '$ac_var' has changed since the previous run:" >&5
+printf "%s\n" "$as_me: error: '$ac_var' has changed since the previous run:" >&2;}
 	  ac_cache_corrupted=:
 	else
-	  { printf '%s\n' "$as_me:${as_lineno-$LINENO}: warning: ignoring whitespace changes in '$ac_var' since the previous run:" >&5
-printf '%s\n' "$as_me: warning: ignoring whitespace changes in '$ac_var' since the previous run:" >&2;}
+	  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: warning: ignoring whitespace changes in '$ac_var' since the previous run:" >&5
+printf "%s\n" "$as_me: warning: ignoring whitespace changes in '$ac_var' since the previous run:" >&2;}
 	  eval $ac_var=\$ac_old_val
 	fi
-	{ printf '%s\n' "$as_me:${as_lineno-$LINENO}:   former value:  '$ac_old_val'" >&5
-printf '%s\n' "$as_me:   former value:  '$ac_old_val'" >&2;}
-	{ printf '%s\n' "$as_me:${as_lineno-$LINENO}:   current value: '$ac_new_val'" >&5
-printf '%s\n' "$as_me:   current value: '$ac_new_val'" >&2;}
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}:   former value:  '$ac_old_val'" >&5
+printf "%s\n" "$as_me:   former value:  '$ac_old_val'" >&2;}
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}:   current value: '$ac_new_val'" >&5
+printf "%s\n" "$as_me:   current value: '$ac_new_val'" >&2;}
       fi;;
   esac
   # Pass precious variables to config.status.
@@ -2689,10 +2713,10 @@ printf '%s\n' "$as_me:   current value: '$ac_new_val'" >&2;}
   fi
 done
 if $ac_cache_corrupted; then
-  { printf '%s\n' "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
-printf '%s\n' "$as_me: error: in '$ac_pwd':" >&2;}
-  { printf '%s\n' "$as_me:${as_lineno-$LINENO}: error: changes in the environment can compromise the build" >&5
-printf '%s\n' "$as_me: error: changes in the environment can compromise the build" >&2;}
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: changes in the environment can compromise the build" >&5
+printf "%s\n" "$as_me: error: changes in the environment can compromise the build" >&2;}
   as_fn_error $? "run '${MAKE-make} distclean' and/or 'rm $cache_file'
 	    and start over" "$LINENO" 5
 fi
@@ -3360,8 +3384,8 @@ fi
 fi
 
 
-test -z "$CC" && { { printf '%s\n' "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
-printf '%s\n' "$as_me: error: in '$ac_pwd':" >&2;}
+test -z "$CC" && { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
 as_fn_error $? "no acceptable C compiler found in \$PATH
 See 'config.log' for more details" "$LINENO" 5; }
 
@@ -3478,13 +3502,13 @@ printf '%s\n' "no" >&6; }
 printf '%s\n' "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { printf '%s\n' "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
-printf '%s\n' "$as_me: error: in '$ac_pwd':" >&2;}
+{ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
 as_fn_error 77 "C compiler cannot create executables
 See 'config.log' for more details" "$LINENO" 5; }
 else case e in #(
-  e) { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf '%s\n' "yes" >&6; } ;;
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; } ;;
 esac
 fi
 { printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking for C compiler default output file name" >&5
@@ -3523,8 +3547,8 @@ for ac_file in conftest.exe conftest conftest.*; do
   esac
 done
 else case e in #(
-  e) { { printf '%s\n' "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
-printf '%s\n' "$as_me: error: in '$ac_pwd':" >&2;}
+  e) { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
 as_fn_error $? "cannot compute suffix of executables: cannot compile and link
 See 'config.log' for more details" "$LINENO" 5; } ;;
 esac
@@ -3584,8 +3608,8 @@ printf '%s\n' "$ac_try_echo"; } >&5
     if test "$cross_compiling" = maybe; then
 	cross_compiling=yes
     else
-	{ { printf '%s\n' "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
-printf '%s\n' "$as_me: error: in '$ac_pwd':" >&2;}
+	{ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
 as_fn_error 77 "cannot run C compiled programs.
 If you meant to cross compile, use '--host'.
 See 'config.log' for more details" "$LINENO" 5; }
@@ -3637,11 +3661,11 @@ then :
   esac
 done
 else case e in #(
-  e) printf '%s\n' "$as_me: failed program was:" >&5
+  e) printf "%s\n" "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { printf '%s\n' "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
-printf '%s\n' "$as_me: error: in '$ac_pwd':" >&2;}
+{ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
 as_fn_error $? "cannot compute suffix of object files: cannot compile
 See 'config.log' for more details" "$LINENO" 5; } ;;
 esac
@@ -3862,16 +3886,16 @@ fi
 
 if test "x$ac_cv_prog_cc_c11" = xno
 then :
-  { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: unsupported" >&5
-printf '%s\n' "unsupported" >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: unsupported" >&5
+printf "%s\n" "unsupported" >&6; }
 else case e in #(
   e) if test "x$ac_cv_prog_cc_c11" = x
 then :
-  { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: none needed" >&5
-printf '%s\n' "none needed" >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: none needed" >&5
+printf "%s\n" "none needed" >&6; }
 else case e in #(
-  e) { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: $ac_cv_prog_cc_c11" >&5
-printf '%s\n' "$ac_cv_prog_cc_c11" >&6; }
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_prog_cc_c11" >&5
+printf "%s\n" "$ac_cv_prog_cc_c11" >&6; }
      CC="$CC $ac_cv_prog_cc_c11" ;;
 esac
 fi
@@ -3911,16 +3935,16 @@ fi
 
 if test "x$ac_cv_prog_cc_c99" = xno
 then :
-  { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: unsupported" >&5
-printf '%s\n' "unsupported" >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: unsupported" >&5
+printf "%s\n" "unsupported" >&6; }
 else case e in #(
   e) if test "x$ac_cv_prog_cc_c99" = x
 then :
-  { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: none needed" >&5
-printf '%s\n' "none needed" >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: none needed" >&5
+printf "%s\n" "none needed" >&6; }
 else case e in #(
-  e) { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: $ac_cv_prog_cc_c99" >&5
-printf '%s\n' "$ac_cv_prog_cc_c99" >&6; }
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_prog_cc_c99" >&5
+printf "%s\n" "$ac_cv_prog_cc_c99" >&6; }
      CC="$CC $ac_cv_prog_cc_c99" ;;
 esac
 fi
@@ -3960,16 +3984,16 @@ fi
 
 if test "x$ac_cv_prog_cc_c89" = xno
 then :
-  { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: unsupported" >&5
-printf '%s\n' "unsupported" >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: unsupported" >&5
+printf "%s\n" "unsupported" >&6; }
 else case e in #(
   e) if test "x$ac_cv_prog_cc_c89" = x
 then :
-  { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: none needed" >&5
-printf '%s\n' "none needed" >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: none needed" >&5
+printf "%s\n" "none needed" >&6; }
 else case e in #(
-  e) { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: $ac_cv_prog_cc_c89" >&5
-printf '%s\n' "$ac_cv_prog_cc_c89" >&6; }
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_prog_cc_c89" >&5
+printf "%s\n" "$ac_cv_prog_cc_c89" >&6; }
      CC="$CC $ac_cv_prog_cc_c89" ;;
 esac
 fi
@@ -4110,8 +4134,8 @@ if $ac_preproc_ok
 then :
 
 else case e in #(
-  e) { { printf '%s\n' "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
-printf '%s\n' "$as_me: error: in '$ac_pwd':" >&2;}
+  e) { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
 as_fn_error $? "C preprocessor \"$CPP\" fails sanity check
 See 'config.log' for more details" "$LINENO" 5; } ;;
 esac
@@ -4426,7 +4450,7 @@ then :
 ac_x_libraries=
 else case e in #(
   e) LIBS=$ac_save_LIBS
-for ac_dir in `printf '%s\n' "$ac_x_includes $ac_x_header_dirs" | sed s/include/lib/g`
+for ac_dir in `printf "%s\n" "$ac_x_includes $ac_x_header_dirs" | sed s/include/lib/g`
 do
   # Don't even attempt the hair of trying to link an X program!
   for ac_extension in a so sl dylib la dll; do
@@ -4534,8 +4558,8 @@ then :
 printf '%s\n' "yes" >&6; }
 	  X_LIBS="$X_LIBS -R $x_libraries"
 else case e in #(
-  e) { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: neither works" >&5
-printf '%s\n' "neither works" >&6; } ;;
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: neither works" >&5
+printf "%s\n" "neither works" >&6; } ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
@@ -4584,7 +4608,7 @@ if ac_fn_c_try_link "$LINENO"
 then :
 
 else case e in #(
-  e) { printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking for dnet_ntoa in -ldnet" >&5
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for dnet_ntoa in -ldnet" >&5
 printf %s "checking for dnet_ntoa in -ldnet... " >&6; }
 if test ${ac_cv_lib_dnet_dnet_ntoa+y}
 then :
@@ -5305,10 +5329,10 @@ Alternatively, you may set the environment variables XEXT_CFLAGS
 and XEXT_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
 elif test $pkg_failed = untried; then
-        { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf '%s\n' "no" >&6; }
-	{ { printf '%s\n' "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
-printf '%s\n' "$as_me: error: in '$ac_pwd':" >&2;}
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+	{ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
 as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
 is in your PATH or set the PKG_CONFIG environment variable to the full
 path to pkg-config.
@@ -5441,10 +5465,10 @@ Alternatively, you may set the environment variables XT_CFLAGS
 and XT_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
 elif test $pkg_failed = untried; then
-        { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf '%s\n' "no" >&6; }
-	{ { printf '%s\n' "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
-printf '%s\n' "$as_me: error: in '$ac_pwd':" >&2;}
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+	{ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
 as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
 is in your PATH or set the PKG_CONFIG environment variable to the full
 path to pkg-config.
@@ -5577,10 +5601,10 @@ Alternatively, you may set the environment variables XMU_CFLAGS
 and XMU_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
 elif test $pkg_failed = untried; then
-        { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf '%s\n' "no" >&6; }
-	{ { printf '%s\n' "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
-printf '%s\n' "$as_me: error: in '$ac_pwd':" >&2;}
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+	{ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
 as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
 is in your PATH or set the PKG_CONFIG environment variable to the full
 path to pkg-config.
@@ -5864,7 +5888,7 @@ fi
 # Old X11 support
 { printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking for X11 function prototypes" >&5
 printf %s "checking for X11 function prototypes... " >&6; }
-{ printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking for egrep -e" >&5
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for egrep -e" >&5
 printf %s "checking for egrep -e... " >&6; }
 if test ${ac_cv_path_EGREP_TRADITIONAL+y}
 then :
@@ -5901,7 +5925,7 @@ case `"$ac_path_EGREP_TRADITIONAL" --version 2>&1` in #(
     cat "conftest.in" "conftest.in" >"conftest.tmp"
     mv "conftest.tmp" "conftest.in"
     cp "conftest.in" "conftest.nl"
-    printf '%s\n' 'EGREP_TRADITIONAL' >> "conftest.nl"
+    printf "%s\n" 'EGREP_TRADITIONAL' >> "conftest.nl"
     "$ac_path_EGREP_TRADITIONAL" -E 'EGR(EP|AC)_TRADITIONAL$' < "conftest.nl" >"conftest.out" 2>/dev/null || break
     diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
     as_fn_arith $ac_count + 1 && ac_count=$as_val
@@ -5963,7 +5987,7 @@ case `"$ac_path_EGREP_TRADITIONAL" --version 2>&1` in #(
     cat "conftest.in" "conftest.in" >"conftest.tmp"
     mv "conftest.tmp" "conftest.in"
     cp "conftest.in" "conftest.nl"
-    printf '%s\n' 'EGREP_TRADITIONAL' >> "conftest.nl"
+    printf "%s\n" 'EGREP_TRADITIONAL' >> "conftest.nl"
     "$ac_path_EGREP_TRADITIONAL" 'EGR(EP|AC)_TRADITIONAL$' < "conftest.nl" >"conftest.out" 2>/dev/null || break
     diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
     as_fn_arith $ac_count + 1 && ac_count=$as_val
@@ -5994,8 +6018,8 @@ esac
 fi ;;
 esac
 fi
-{ printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_EGREP_TRADITIONAL" >&5
-printf '%s\n' "$ac_cv_path_EGREP_TRADITIONAL" >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_EGREP_TRADITIONAL" >&5
+printf "%s\n" "$ac_cv_path_EGREP_TRADITIONAL" >&6; }
  EGREP_TRADITIONAL=$ac_cv_path_EGREP_TRADITIONAL
 
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -6136,10 +6160,10 @@ Alternatively, you may set the environment variables FREETYPE_CFLAGS
 and FREETYPE_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
 elif test $pkg_failed = untried; then
-        { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf '%s\n' "no" >&6; }
-	{ { printf '%s\n' "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
-printf '%s\n' "$as_me: error: in '$ac_pwd':" >&2;}
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+	{ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
 as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
 is in your PATH or set the PKG_CONFIG environment variable to the full
 path to pkg-config.
@@ -8303,7 +8327,77 @@ fi
       CAIRO_LIBS="$CAIRO_LIBS $XFT_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS"
       LIBS="-lwayland-client -lwayland-cursor -lxkbcommon $LIBS"
+      # Optional EGL/OpenGL support for the Wayland backend
+      WITH_EGL=no
+      ac_fn_c_check_header_compile "$LINENO" "EGL/egl.h" "ac_cv_header_EGL_egl_h" "$ac_includes_default"
+if test "x$ac_cv_header_EGL_egl_h" = xyes
+then :
+  have_egl_h=yes
+else case e in #(
+  e) have_egl_h=no ;;
+esac
+fi
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for eglGetDisplay in -lEGL" >&5
+printf %s "checking for eglGetDisplay in -lEGL... " >&6; }
+if test ${ac_cv_lib_EGL_eglGetDisplay+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) ac_check_lib_save_LIBS=$LIBS
+LIBS="-lEGL  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.
+   The 'extern "C"' is for builds by C++ compilers;
+   although this is not generally supported in C code supporting it here
+   has little cost and some practical benefit (sr 110532).  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char eglGetDisplay (void);
+int
+main (void)
+{
+return eglGetDisplay ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_EGL_eglGetDisplay=yes
+else case e in #(
+  e) ac_cv_lib_EGL_eglGetDisplay=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_EGL_eglGetDisplay" >&5
+printf "%s\n" "$ac_cv_lib_EGL_eglGetDisplay" >&6; }
+if test "x$ac_cv_lib_EGL_eglGetDisplay" = xyes
+then :
+  have_egl=yes
+else case e in #(
+  e) have_egl=no ;;
+esac
+fi
+
+      if test "x$have_egl_h" = "xyes" -a "x$have_egl" = "xyes"; then
+        WITH_EGL=yes
+
+printf "%s\n" "#define HAVE_EGL 1" >>confdefs.h
+
+        LIBS="-lGL -lEGL -lwayland-egl $LIBS"
+      fi
     fi
+
     LIBS="$CAIRO_LIBS $LIBS"
     CPPFLAGS="$CAIRO_CFLAGS $CPPFLAGS"
   fi
@@ -8506,7 +8600,44 @@ cat >confcache <<\_ACEOF
 
 _ACEOF
 
-ac_cache_dump |
+# The following way of writing the cache mishandles newlines in values,
+# but we know of no workaround that is simple, portable, and efficient.
+# So, we kill variables containing newlines.
+# Ultrix sh set writes to stderr and can't be redirected directly,
+# and sets the high bit in the cache file unless we assign to the vars.
+(
+  for ac_var in `(set) 2>&1 | sed -n 's/^\([a-zA-Z_][a-zA-Z0-9_]*\)=.*/\1/p'`; do
+    eval ac_val=\$$ac_var
+    case $ac_val in #(
+    *${as_nl}*)
+      case $ac_var in #(
+      *_cv_*) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: cache variable $ac_var contains a newline" >&5
+printf "%s\n" "$as_me: WARNING: cache variable $ac_var contains a newline" >&2;} ;;
+      esac
+      case $ac_var in #(
+      _ | IFS | as_nl) ;; #(
+      BASH_ARGV | BASH_SOURCE) eval $ac_var= ;; #(
+      *) { eval $ac_var=; unset $ac_var;} ;;
+      esac ;;
+    esac
+  done
+
+  (set) 2>&1 |
+    case $as_nl`(ac_space=' '; set) 2>&1` in #(
+    *${as_nl}ac_space=\ *)
+      # 'set' does not quote correctly, so add quotes: double-quote
+      # substitution turns \\\\ into \\, and sed turns \\ into \.
+      sed -n \
+	"s/'/'\\\\''/g;
+	  s/^\\([_$as_cr_alnum]*_cv_[_$as_cr_alnum]*\\)=\\(.*\\)/\\1='\\2'/p"
+      ;; #(
+    *)
+      # 'set' quotes correctly as required by POSIX, so do not add quotes.
+      sed -n "/^[_$as_cr_alnum]*_cv_[_$as_cr_alnum]*=/p"
+      ;;
+    esac |
+    sort
+) |
   sed '
      /^ac_cv_env_/b end
      t clear
@@ -9641,9 +9772,9 @@ test -z "$ac_datarootdir_hack$ac_datarootdir_seen" &&
   { ac_out=`sed -n '/\${datarootdir}/p' "$ac_tmp/out"`; test -n "$ac_out"; } &&
   { ac_out=`sed -n '/^[	 ]*datarootdir[	 ]*:*=/p' \
       "$ac_tmp/out"`; test -z "$ac_out"; } &&
-  { printf '%s\n' "$as_me:${as_lineno-$LINENO}: WARNING: $ac_file contains a reference to the variable 'datarootdir'
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: $ac_file contains a reference to the variable 'datarootdir'
 which seems to be undefined.  Please make sure it is defined" >&5
-printf '%s\n' "$as_me: WARNING: $ac_file contains a reference to the variable 'datarootdir'
+printf "%s\n" "$as_me: WARNING: $ac_file contains a reference to the variable 'datarootdir'
 which seems to be undefined.  Please make sure it is defined" >&2;}
 
   rm -f "$ac_tmp/stdin"

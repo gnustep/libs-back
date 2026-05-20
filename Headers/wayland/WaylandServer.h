@@ -84,6 +84,9 @@ typedef struct _WaylandConfig
   struct wl_keyboard	     *keyboard;
   struct xdg_wm_base	     *wm_base;
   struct zwlr_layer_shell_v1 *layer_shell;
+#ifdef HAVE_EGL
+  struct wl_subcompositor    *subcompositor;
+#endif
   int seat_version;
 
   struct wl_list output_list;
@@ -149,6 +152,9 @@ struct window
   BOOL moving;
   BOOL resizing;
   BOOL ignoreMouse;
+#ifdef HAVE_EGL
+  BOOL usesOpenGL;
+#endif
 
   float pos_x;
   float pos_y;
