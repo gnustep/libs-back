@@ -43,6 +43,9 @@ ADDITIONAL_INCLUDE_DIRS += -I../../Headers \
 
 # Additional LDFLAGS to pass to the linker
 ADDITIONAL_LDFLAGS =
+ifeq ($(WITH_EGL),yes)
+ADDITIONAL_LDFLAGS += -lGL -lEGL -lwayland-egl
+endif
 
 # Additional library directories the linker should search
 ADDITIONAL_LIB_DIRS =

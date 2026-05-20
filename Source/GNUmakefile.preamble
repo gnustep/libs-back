@@ -46,6 +46,9 @@ CONFIG_SYSTEM_INCL += $(GRAPHIC_CFLAGS)
 # Additional library directories the linker should search
 #ADDITIONAL_LIB_DIRS +=
 CONFIG_SYSTEM_LIB_DIR += $(GRAPHIC_LFLAGS)
+ifeq ($(WITH_EGL),yes)
+CONFIG_SYSTEM_LIB_DIR += -lGL -lEGL -lwayland-egl
+endif
 
 #
 # Flags for compiling as a bundle or library (if the system depends

@@ -52,6 +52,12 @@ WaylandServer+Seat.m  \
 WaylandServer+Xdgshell.m  \
 WaylandServer+Layershell.m  \
 
+ifeq ($(WITH_EGL),yes)
+wayland_OBJC_FILES += \
+WaylandGLContext.m  \
+WaylandGLPixelFormat.m
+endif
+
 -include GNUmakefile.preamble
 
 include $(GNUSTEP_MAKEFILES)/subproject.make
