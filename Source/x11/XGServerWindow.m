@@ -89,7 +89,7 @@ static NSMapTable *windowmaps = NULL;
 static NSMapTable *windowtags = NULL;
 
 /* Track used window numbers */
-static int		last_win_num = 0;
+static int	last_win_num = 0;
 
 @interface NSCursor (BackendPrivate)
 - (void *)_cid;
@@ -1439,14 +1439,16 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
    * Set up standard atoms.
    */
 #ifdef HAVE_XINTERNATOMS
-   XInternAtoms(dpy, atom_names, sizeof(atom_names)/sizeof(char*),
-                False, generic.atoms);
+  XInternAtoms(dpy, atom_names, sizeof(atom_names)/sizeof(char*),
+    False, generic.atoms);
 #else
-   {
-     int atomCount;
+  {
+    int count;
 
-     for (atomCount = 0; atomCount < sizeof(atom_names)/sizeof(char*); atomCount++)
-       generic.atoms[atomCount] = XInternAtom(dpy, atom_names[atomCount], False);
+    for (count = 0; count < sizeof(atom_names)/sizeof(char*); count++)
+      {
+        generic.atoms[count] = XInternAtom(dpy, atom_names[count], False);
+      }
    }
 #endif
 
@@ -1580,9 +1582,9 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
  * hold 64bit values.
  */
     XChangeProperty(dpy, ROOT,
-                    generic._GNUSTEP_WM_ATTR_ATOM, generic._GNUSTEP_WM_ATTR_ATOM,
-                    32, PropModeReplace, (unsigned char *)&win_attrs,
-                    sizeof(GNUstepWMAttributes)/sizeof(CARD32));
+      generic._GNUSTEP_WM_ATTR_ATOM, generic._GNUSTEP_WM_ATTR_ATOM,
+      32, PropModeReplace, (unsigned char *)&win_attrs,
+      sizeof(GNUstepWMAttributes)/sizeof(CARD32));
   }
 
   if ((generic.wm & XGWM_EWMH) != 0)
@@ -1595,11 +1597,12 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
  * hold 64bit values.
  */
       XChangeProperty(dpy, ROOT,
-		      generic._NET_WM_PID_ATOM, XA_CARDINAL,
-		      32, PropModeReplace,
-		      (unsigned char*)&pid, 1);
+	generic._NET_WM_PID_ATOM, XA_CARDINAL,
+	32, PropModeReplace,
+	(unsigned char*)&pid, 1);
       // FIXME: Need to set WM_CLIENT_MACHINE as well.
     }
+
 
   /* We need to determine the offsets between the actual decorated window
    * and the window we draw into.
@@ -1632,9 +1635,9 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
         }
       else
         {
-          offsets = (uint16_t *)PropGetCheckProperty(dpy, DefaultRootWindow(dpy),
-                                                     generic._GNUSTEP_FRAME_OFFSETS_ATOM,
-                                                     XA_CARDINAL, 16, 60, &count);
+          offsets = (uint16_t *)PropGetCheckProperty(dpy,
+	    DefaultRootWindow(dpy), generic._GNUSTEP_FRAME_OFFSETS_ATOM,
+	    XA_CARDINAL, 16, 60, &count);
         }
 
       if (offsets == 0)
@@ -1924,6 +1927,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
    * It could be done for popup windows, but at this point we don't know
    * about the usage of the window.
    */
+
   window->xwn_attrs.override_redirect = False;
 
   window->ident = XCreateWindow(dpy, window->root,
@@ -1939,10 +1943,11 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 				&window->xwn_attrs);
 
   /*
-   * Mark this as a GNUstep app with the current application name.
+   * Mark the window as the application with name & class so the WM can group it
    */
+  const char *procName = [[[NSProcessInfo processInfo] processName] UTF8String];
   classhint.res_name = generic.rootName;
-  classhint.res_class = "GNUstep";
+  classhint.res_class = (char *)procName;
   XSetClassHint(dpy, window->ident, &classhint);
 
   window->map_state = IsUnmapped;
@@ -2869,6 +2874,47 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 
   if (op != NSWindowOut)
     {
+      static BOOL	beenHere = NO;
+
+      /* To tell the window manager that our window corresponds to
+       * a particular task we must pass it the DESKTOP_STARTUP_ID
+       * by setting it as a property of the first toplevel window
+       * made visible.
+       * (issue #62 on github)
+       */
+      if (NO == beenHere)
+	{
+	  NSProcessInfo	*p = [NSProcessInfo processInfo];
+	  NSDictionary	*e = [p environment];
+	  NSString	*s = [e objectForKey: @"DESKTOP_STARTUP_ID"];
+
+	  beenHere = YES;
+	  if ([s length] > 0)
+	    {
+	      const char	*ptr = [s UTF8String];
+
+	      XChangeProperty(dpy, window->ident,
+		XInternAtom(dpy, "_NET_STARTUP_ID", False),
+		generic.UTF8_STRING_ATOM,
+		8,
+		PropModeReplace,
+		(unsigned char *)ptr,
+		strlen(ptr)
+	      );
+	      /* Ideally we should remove the value from the environment to
+	       * prevent any other library from acting on it.  There is no
+	       * OpenStep/Cocoa APIU to do that, but we can use an extension
+	       * from GNUstepBase if available.
+	       */
+	      if ([p respondsToSelector: @selector(setValue:inEnvironment:)])
+		{
+		  [p performSelector: @selector(setValue:inEnvironment:)
+			  withObject: nil
+			  withObject: @"DESKTOP_STARTUP_ID"];
+		}
+	    }
+	}
+
       /*
        * Some window managers ignore any hints and properties until the
        * window is actually mapped, so we need to set them all up
@@ -4464,7 +4510,86 @@ _screenSize(Display *dpy, int screen)
 
   return scrSize;
 }
-  
+
+/* An X server may have multiple physical monitors organised in some way to
+ * make up the whole display.  When XRANDR is available each physical monitor
+ * corresponds to an NSScreen,  but without that there is a single NSScreen
+ * corresponding to the composite display.
+ * The window managers provide the _NET_WORKAREA property which returns the
+ * usable area of the composite display, so this information is only usable
+ * when either XRANDR is not available or there is only one physical monitor
+ * and therefore only one NSScreen.
+ * Where the window manager provides multiple virtual work areas, _NET_WORKAREA
+ * may define multiple rectangles, but all refer to the same display/NSScreen.
+ * Returns nil if no information is available.
+ */
+static NSArray *
+_workAreas(Display *dpy, Window root)
+{
+  Atom		workarea_atom;
+  Atom		type;
+  int		format;
+  int		status;
+  unsigned long	*items;
+  unsigned long	nitems;
+  unsigned long	bytes_after;
+  unsigned char *data = NULL;
+  unsigned	count;
+  unsigned	index;
+  NSMutableArray	*array;
+
+  workarea_atom = XInternAtom(dpy, "_NET_WORKAREA", False);
+  status = XGetWindowProperty(dpy, root, workarea_atom,
+    0,                      /* offset */
+    (~0L),                  /* read all items */
+    False,
+    XA_CARDINAL,
+    &type,
+    &format,
+    &nitems,
+    &bytes_after,
+    &data
+  );
+
+  if (status != Success || !data)
+    {
+      NSLog(@"Failed to get _NET_WORKAREA\n");
+      return nil;
+    }
+  if (format != 32)
+    {
+      XFree(data);
+      return nil;
+    }
+
+  items = (unsigned long *)data;
+  count = nitems / 4;
+  if (0 == count)
+    {
+      XFree(data);
+      return nil;
+    }
+
+  array = [NSMutableArray arrayWithCapacity: count];
+  for (index = 0; index < count; index++)
+    {
+      NSRect	frame;
+
+      frame.origin.x = (uint32_t)*items++;
+      frame.origin.y = (uint32_t)*items++;
+      frame.size.width = (uint32_t)*items++;
+      frame.size.height = (uint32_t)*items++;
+      // X coordinates need to be flipped to OpenStep coordinates
+      if (frame.origin.y > 0.0)
+	{
+	  frame.origin.y = 0.0;
+	}
+      [array addObject: [NSValue valueWithRect: frame]];
+    }
+  XFree(data);
+  return array;
+}
+
 
 /* This method assumes that we deal with one X11 screen - `defScreen`.
    Basically it means that we have DISPLAY variable set to `:0.0`.
@@ -4478,16 +4603,18 @@ _screenSize(Display *dpy, int screen)
    We map XRandR monitors (outputs) to NSScreen. */
 - (NSArray *)screenList
 {
+  Window        root = [self xDisplayRootWindow];
+  NSArray	*workAreas = _workAreas(dpy, root);
   xScreenSize = _screenSize(dpy, defScreen);
 
   monitorsCount = 0;
-  if (monitors != NULL) {
-    NSZoneFree([self zone], monitors);
-    monitors = NULL;
-  }
+  if (monitors != NULL)
+    {
+      NSZoneFree([self zone], monitors);
+      monitors = NULL;
+    }
   
 #ifdef HAVE_XRANDR
-  Window              root = [self xDisplayRootWindow];
   XRRScreenResources *screen_res = XRRGetScreenResources(dpy, root);
 
   if (screen_res != NULL)
@@ -4497,38 +4624,63 @@ _screenSize(Display *dpy, int screen)
         {
           int             i;
           int             mi;
-          NSMutableArray *tmpScreens = [NSMutableArray arrayWithCapacity: monitorsCount];
+          NSMutableArray *tmpScreens;
           RROutput        primary_output = XRRGetOutputPrimary(dpy, root);
 
-          monitors = NSZoneMalloc([self zone], monitorsCount * sizeof(MonitorDevice));
+          tmpScreens = [NSMutableArray arrayWithCapacity: monitorsCount];
 
-          for (i = 0, mi = 0; i < screen_res->noutput; i++)
+          monitors = NSZoneMalloc([self zone],
+	    monitorsCount * sizeof(MonitorDevice));
+
+          for (i = 0, mi = 0; i < monitorsCount; i++)
             {
               XRROutputInfo *output_info;
               
-              output_info = XRRGetOutputInfo(dpy, screen_res, screen_res->outputs[i]);
+              output_info = XRRGetOutputInfo(dpy,
+		screen_res, screen_res->outputs[i]);
               if (output_info->crtc)
                 {
                   XRRCrtcInfo *crtc_info;
                   
-                  crtc_info = XRRGetCrtcInfo(dpy, screen_res, output_info->crtc);
+                  crtc_info = XRRGetCrtcInfo(dpy,
+		    screen_res, output_info->crtc);
                   
                   monitors[mi].screen_id = defScreen;
                   monitors[mi].depth = [self windowDepthForScreen: mi];
-                  monitors[mi].resolution = [self resolutionForScreen: defScreen];
-                  /* Transform coordinates from Xlib (flipped) to OpenStep (unflippped). 
-                     Windows and screens should have the same coordinate system. */
-                  monitors[mi].frame =
-                    NSMakeRect(crtc_info->x,
-                               xScreenSize.height - crtc_info->height - crtc_info->y,
-                               crtc_info->width,
-                               crtc_info->height);
+                  monitors[mi].resolution
+		    = [self resolutionForScreen: defScreen];
+
+		  /* We can only use the work area provided by _NET_WORKAREA
+		   * if we have a single screen/monitor, because that property
+		   * refers to coordinates in the composite display formed by
+		   * all the available monitors.
+		   */
+		  if (1 == monitorsCount && workAreas != nil)
+		    {
+		      monitors[0].frame = [[workAreas firstObject] rectValue];
+		    }
+		  else
+		    {
+		      /* Transform coordinates from Xlib (flipped)
+		       * to OpenStep (unflipped). 
+		       * Windows and screens should have the same
+		       * coordinate system.
+		       */
+		      monitors[mi].frame =
+			NSMakeRect(crtc_info->x,
+			  xScreenSize.height - crtc_info->height - crtc_info->y,
+			  crtc_info->width,
+			  crtc_info->height);
+		    }
                   /* Add monitor ID (index in monitors array).
-                     Put primary monitor ID at index 0 since NSScreen get this as main 
-                     screen if application has no key window. */
+                   * Put primary monitor ID at index 0 since
+		   * NSScreen gets this as main screen if application
+		   * has no key window.
+		   */
                   if (screen_res->outputs[i] == primary_output)
                     {
-                      [tmpScreens insertObject: [NSNumber numberWithInt: mi] atIndex: 0];
+                      [tmpScreens insertObject: [NSNumber numberWithInt: mi]
+				       atIndex: 0];
                     }
                   else
                     {
@@ -4565,6 +4717,11 @@ _screenSize(Display *dpy, int screen)
   monitors[0].depth = [self windowDepthForScreen: 0];
   monitors[0].resolution = [self resolutionForScreen: defScreen];
   monitors[0].frame = NSMakeRect(0, 0, xScreenSize.width, xScreenSize.height);
+
+  if (workAreas != nil)
+    {
+      monitors[0].frame = [[workAreas firstObject] rectValue];
+    }
   return [NSArray arrayWithObject: [NSNumber numberWithInt: defScreen]];
 }
 
@@ -4815,8 +4972,7 @@ _screenSize(Display *dpy, int screen)
   unsigned int number = 0;
 
   num = (unsigned int*)PropGetCheckProperty(dpy, RootWindow(dpy, screen),
-                                            generic._NET_CURRENT_DESKTOP_ATOM, XA_CARDINAL,
-                                            32, 1, &c);
+    generic._NET_CURRENT_DESKTOP_ATOM, XA_CARDINAL, 32, 1, &c);
 
   if (num)
     {
@@ -4851,8 +5007,7 @@ _screenSize(Display *dpy, int screen)
     return 0;
 
   num = (unsigned int*)PropGetCheckProperty(dpy, window->ident,
-                                            generic._NET_WM_DESKTOP_ATOM, XA_CARDINAL,
-                                            32, 1, &c);
+    generic._NET_WM_DESKTOP_ATOM, XA_CARDINAL, 32, 1, &c);
 
   if (num)
     {

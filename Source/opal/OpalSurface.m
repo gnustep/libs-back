@@ -80,20 +80,38 @@ static CGContextRef createCGBitmapContext(int pixelsWide,
   if (_x11CGContext || _backingCGContext)
     {
       NSLog(@"FIXME: Replacement of OpalSurface %p's CGContexts (x11=%p,backing=%p) without transfer of gstate", self, _x11CGContext, _backingCGContext);
+      // Resize path: drop the old X11 CGContext so the next expose
+      // recreates one at the new window size.  The backing bitmap
+      // below is reallocated at the new size, too.
+      if (_x11CGContext)
+        {
+          CGContextRelease(_x11CGContext);
+          _x11CGContext = NULL;
+        }
+      if (_backingCGContext)
+        {
+          CGContextRelease(_backingCGContext);
+          _backingCGContext = NULL;
+        }
     }
 
   if (ctx)
     {
+      // Client supplied a ready-made CGContext.  Treat it as the x11
+      // destination (pre-existing behaviour) and derive the size from it.
       _x11CGContext = ctx;
       pixelsWide = CGBitmapContextGetWidth(ctx);
       pixelsHigh = CGBitmapContextGetHeight(ctx);
     }
   else
     {
-      Display * display = _gsWindowDevice->display;
-      Window window = _gsWindowDevice->ident;
-
-      _x11CGContext = OPX11ContextCreate(display, window);
+      // Lazy path: defer creation of the X11 CGContext until the X window
+      // is actually mapped.  -[NSWindow _startBackendWindow] invokes
+      // GSSetDevice (which ends up here) before the window is mapped, so
+      // OPX11ContextCreate() either fails or returns a context that does
+      // not draw.  We instead create the X11 context on first use, which
+      // is triggered by the initial Expose event (or by any GState path
+      // that touches _x11CGContext).
       pixelsWide = _gsWindowDevice->buffer_width;
       pixelsHigh = _gsWindowDevice->buffer_height;
 
@@ -119,9 +137,45 @@ static CGContextRef createCGBitmapContext(int pixelsWide,
       _backingCGContext = createCGBitmapContext(pixelsWide, pixelsHigh);
     }
 
-  NSDebugLLog(@"OpalSurface", @"Created CGContexts: X11=%p, backing=%p, width=%d height=%d",
+  NSLog(@"OpalSurface Created CGContexts: X11=%p (deferred unless non-nil), backing=%p, width=%d height=%d",
               _x11CGContext, _backingCGContext, pixelsWide, pixelsHigh);
 
+}
+
+/**
+ * Lazily create the X11-backed CGContext.  Called from every code path
+ * that actually draws to or otherwise touches _x11CGContext.  Safe to
+ * call repeatedly; only has side effects the first time (per surface
+ * instance) or after an explicit invalidation.
+ *
+ * We do nothing unless the associated gswindow_device_t has a valid
+ * X Window id (ident != 0), because OPX11ContextCreate on an unmapped
+ * or zero drawable returns a context that cannot draw.
+ */
+- (void) ensureX11Context
+{
+  if (_x11CGContext != NULL)
+    return;
+  if (_gsWindowDevice == NULL)
+    return;
+  if (_gsWindowDevice->ident == 0)
+    return;
+
+  Display *display = _gsWindowDevice->display;
+  Window window = _gsWindowDevice->ident;
+
+  _x11CGContext = OPX11ContextCreate(display, window);
+  if (_x11CGContext == NULL)
+    {
+      NSDebugLLog(@"OpalSurface",
+        @"OpalSurface %p: OPX11ContextCreate(display=%p, window=%lu) returned NULL; will retry on next use",
+        self, display, (unsigned long)window);
+      return;
+    }
+
+  NSDebugLLog(@"OpalSurface",
+    @"OpalSurface %p: lazily created X11 CGContext=%p for window=%lu",
+    self, _x11CGContext, (unsigned long)window);
 }
 
 // FIXME: *VERY* bad things will happen if a non-bitmap
@@ -158,18 +212,29 @@ static CGContextRef createCGBitmapContext(int pixelsWide,
 
 - (CGContextRef) x11CGContext
 {
+  // All external readers of the X11 context must see a valid context
+  // if one can be created right now, so route through the lazy path.
+  [self ensureX11Context];
   return _x11CGContext;
 }
 
 - (void) handleExposeRect: (NSRect)rect
 {
+  // Expose events only fire on mapped windows, so this is the first
+  // safe moment at which we know the X Window is real.  Create the
+  // X11 CGContext on demand if we haven't already.
+  [self ensureX11Context];
+
+  NSLog(@"OpalSurface handleExposeRect: %@ backing=%p x11=%p", NSStringFromRect(rect), _backingCGContext, _x11CGContext);
   NSDebugLLog(@"OpalSurface", @"handleExposeRect %@", NSStringFromRect(rect));
 
-  if (!_backingCGContext)
+  if (!_backingCGContext || !_x11CGContext)
     {
       return;
     }
 
+  // Flush backing context to ensure all drawing is committed
+  CGContextFlush(_backingCGContext);
   CGImageRef backingImage = CGBitmapContextCreateImage(_backingCGContext);
   if (!backingImage) // FIXME: writing a nil image fails with Opal
     return;
@@ -191,6 +256,7 @@ static CGContextRef createCGBitmapContext(int pixelsWide,
 
 
   CGContextDrawImage(_x11CGContext, cgRect, subImage);
+  CGContextFlush(_x11CGContext);
 
 #if 0
 #warning Saving debug images
