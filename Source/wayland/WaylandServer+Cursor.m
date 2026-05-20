@@ -53,7 +53,7 @@ pointer_handle_enter(void *data, struct wl_pointer *pointer, uint32_t serial,
 
   struct window *window = wl_surface_get_user_data(surface);
 
-  if (window->ignoreMouse)
+  if (window == NULL || window->ignoreMouse)
     {
       return;
     }
@@ -117,7 +117,7 @@ pointer_handle_leave(void *data, struct wl_pointer *pointer, uint32_t serial,
 
   struct window *window = wl_surface_get_user_data(surface);
 
-  if (window->ignoreMouse)
+  if (window == NULL || window->ignoreMouse)
     {
       return;
     }
