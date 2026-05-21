@@ -46,6 +46,7 @@
 #include <sys/mman.h>
 
 #include "wayland/WaylandServer.h"
+#include "wayland/WaylandInputServer.h"
 #ifdef HAVE_EGL
 #include "wayland/WaylandOpenGL.h"
 #endif
@@ -228,6 +229,9 @@ NSToWayland(struct window *window, int ns_y)
 	       @"compositor must support the stable XDG Shell protocol"];
     }
 
+  inputServer = [[WaylandInputServer allocWithZone: [self zone]]
+		   initWithDelegate: nil name: @"WaylandInput"];
+
   return self;
 }
 
@@ -275,6 +279,7 @@ NSToWayland(struct window *window, int ns_y)
 - (void)dealloc
 {
   NSDebugLog(@"Destroying Wayland Server");
+  DESTROY(inputServer);
   [super dealloc];
 }
 
@@ -365,6 +370,64 @@ NSToWayland(struct window *window, int ns_y)
   return [WaylandGLPixelFormat class];
 }
 #endif
+
+@end
+
+@implementation WaylandServer (InputMethod)
+
+- (NSString *) inputMethodStyle
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer inputMethodStyle] : nil;
+}
+
+- (NSString *) fontSize: (int *)size
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer fontSize: size] : nil;
+}
+
+- (BOOL) clientWindowRect: (NSRect *)rect
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer clientWindowRect: rect] : NO;
+}
+
+- (BOOL) statusArea: (NSRect *)rect
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer statusArea: rect] : NO;
+}
+
+- (BOOL) preeditArea: (NSRect *)rect
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer preeditArea: rect] : NO;
+}
+
+- (BOOL) preeditSpot: (NSPoint *)p
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer preeditSpot: p] : NO;
+}
+
+- (BOOL) setStatusArea: (NSRect *)rect
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer setStatusArea: rect] : NO;
+}
+
+- (BOOL) setPreeditArea: (NSRect *)rect
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer setPreeditArea: rect] : NO;
+}
+
+- (BOOL) setPreeditSpot: (NSPoint *)p
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer setPreeditSpot: p] : NO;
+}
 
 @end
 

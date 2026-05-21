@@ -51,6 +51,7 @@ WaylandServer+Keyboard.m  \
 WaylandServer+Seat.m  \
 WaylandServer+Xdgshell.m  \
 WaylandServer+Layershell.m  \
+WaylandInputServer.m  \
 
 ifeq ($(WITH_EGL),yes)
 wayland_OBJC_FILES += \
