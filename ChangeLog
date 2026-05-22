@@ -1,5 +1,19 @@
 2026-05-21 DMJC <jcarthew@gmail.com>
 
+	* Headers/wayland/WaylandInputServer.h:
+	* Source/wayland/WaylandInputServer.m:
+	* Source/wayland/GNUmakefile:
+	* Headers/wayland/WaylandServer.h:
+	* Source/wayland/WaylandServer.m:
+	Add WaylandInputServer, implementing the NSInputServer/NSInputServiceProvider
+	protocol for the Wayland backend.  WaylandServer instantiates it at startup
+	and delegates all input-method queries (inputMethodStyle, fontSize,
+	clientWindowRect, preedit/status area accessors) to it via a new
+	WaylandServer (InputMethod) category.  The focused window is tracked via
+	activeConversationChanged:.
+
+2026-05-21 DMJC <jcarthew@gmail.com>
+
 	* configure.ac:
 	* config.h.in:
 	* config.make.in:
