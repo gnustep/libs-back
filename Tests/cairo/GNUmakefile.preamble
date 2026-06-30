@@ -1,0 +1,15 @@
+# Extra build settings for the cairo backend tests.
+#
+# The tests compile a backend source file directly (with a small stand-in for
+# its superclass) so they do not need the gui-linked back bundle, hence the
+# Headers/Source include dirs and the cairo / wayland-client packages.  The
+# backend uses memfd_create(), which needs _GNU_SOURCE.
+
+ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../../Headers \
+                           -I$(GNUSTEP_BUILD_DIR)/../../Source \
+                           -I../../Headers -I../../Source \
+                           $(shell pkg-config --cflags cairo wayland-client)
+
+ADDITIONAL_OBJCFLAGS += -D_GNU_SOURCE
+
+ADDITIONAL_TOOL_LIBS += $(shell pkg-config --libs cairo wayland-client)

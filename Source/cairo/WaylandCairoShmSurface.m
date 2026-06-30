@@ -138,6 +138,7 @@ createShmBuffer(int width, int height, struct wl_shm *shm)
       buf->poolfd = createPoolFile(size);
       if (buf->poolfd == -1)
         {
+          free(buf);
           return NULL;
         }
 
@@ -145,6 +146,8 @@ createShmBuffer(int width, int height, struct wl_shm *shm)
 	= mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, buf->poolfd, 0);
       if (data == MAP_FAILED)
         {
+          close(buf->poolfd);
+          free(buf);
           return NULL;
         }
 
@@ -155,6 +158,7 @@ createShmBuffer(int width, int height, struct wl_shm *shm)
     }
   else
   {
+    free(buf);
     return NULL;
   }
 
@@ -172,9 +176,6 @@ createShmBuffer(int width, int height, struct wl_shm *shm)
 }
 
 @implementation WaylandCairoShmSurface
-{
-    struct pool_buffer *pbuffer;
-}
 - (id)initWithDevice:(void *)device
 {
   struct window *window = (struct window *) device;
