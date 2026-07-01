@@ -11,9 +11,23 @@
  * stand-in) so the test does not need the gui-linked back bundle.  Built with
  * -fsanitize=address (see GNUmakefile) it fails before the fix with a
  * LeakSanitizer report at WaylandCairoShmSurface.m and passes after it.
+ *
+ * A backend test can only build against the backend it belongs to, so it guards
+ * itself on the backend actually being built: config.h names it as BUILD_SERVER
+ * / BUILD_GRAPHICS, and this test compiles the wayland+cairo source and runs the
+ * check only for that backend, skipping cleanly on every other one.  The
+ * matching GNUmakefile.preamble adds the wayland/cairo headers and libraries
+ * under the same condition, so the test builds everywhere but pulls in a
+ * backend's dependencies only where that backend is present.
  */
 #import <Foundation/Foundation.h>
 #import "Testing.h"
+#include "config.h"
+
+#if defined(BUILD_SERVER) && defined(SERVER_wayland) \
+  && defined(BUILD_GRAPHICS) && defined(GRAPHICS_cairo) \
+  && BUILD_SERVER == SERVER_wayland && BUILD_GRAPHICS == GRAPHICS_cairo
+
 #include "cairo/CairoSurface.h"
 
 /* Minimal stand-in for CairoSurface (the real one lives in CairoSurface.m). */
@@ -51,3 +65,16 @@ main(void)
   END_SET("WaylandCairoShmSurface createShmBuffer")
   return 0;
 }
+
+#else
+
+int
+main(void)
+{
+  START_SET("WaylandCairoShmSurface createShmBuffer")
+    SKIP("back is not built with the wayland+cairo backend")
+  END_SET("WaylandCairoShmSurface createShmBuffer")
+  return 0;
+}
+
+#endif

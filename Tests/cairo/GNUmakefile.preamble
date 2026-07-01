@@ -1,10 +1,19 @@
 # Extra build settings for the cairo backend tests.
 #
-# The tests compile a backend source file directly (with a small stand-in for
-# its superclass) so they do not need the gui-linked back bundle, hence the
-# Headers/Source include dirs and the cairo / wayland-client packages.  The
-# backend uses memfd_create(), which needs _GNU_SOURCE.
+# A backend test compiles a backend source file directly, so it can only build
+# for the backend it belongs to.  config.make names the backend being built
+# (BUILD_SERVER / BUILD_GRAPHICS); the wayland+cairo headers and libraries are
+# added only for that backend, and shmbuffer.m carries a matching source-level
+# guard (via config.h) so the test still builds -- and skips -- on every other
+# backend.  The backend uses memfd_create(), which needs _GNU_SOURCE.
 
+# config.h (used by the source-level guard) sits at the top of the (build) tree.
+ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../.. -I../..
+
+-include $(GNUSTEP_BUILD_DIR)/../../config.make
+-include ../../config.make
+
+ifeq ($(BUILD_SERVER)-$(BUILD_GRAPHICS),wayland-cairo)
 ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../../Headers \
                            -I$(GNUSTEP_BUILD_DIR)/../../Source \
                            -I../../Headers -I../../Source \
@@ -13,3 +22,4 @@ ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../../Headers \
 ADDITIONAL_OBJCFLAGS += -D_GNU_SOURCE
 
 ADDITIONAL_TOOL_LIBS += $(shell pkg-config --libs cairo wayland-client)
+endif
