@@ -41,20 +41,27 @@ endif
 
 include $(GNUSTEP_MAKEFILES)/common.make
 
-# Backend regression tests use the gnustep-make test framework.  Each test
-# subdirectory is named for the backend it exercises and guards itself -- in
-# both its source (via config.h) and its GNUmakefile.preamble (via config.make)
-# -- on the backend actually built, so this may be run against any backend
-# configuration: the tests for backends that are not built skip cleanly.
+# Backend regression tests use the gnustep-make test framework.  Each backend
+# keeps its tests in a subdirectory named for its Source/ directory (cairo,
+# x11, ...), marked by a TestInfo file.  Discover every such subdirectory and
+# run them all, so a new backend's tests are picked up automatically with no
+# change to this makefile.  Each test additionally guards itself -- in its
+# source (via config.h) and its GNUmakefile.preamble (via config.make) -- on
+# the backend actually built, so 'make check' works for any configuration:
+# tests for backends that are not built skip themselves cleanly.
+TEST_SUBDIRS := $(sort $(patsubst %/TestInfo,%,$(wildcard */TestInfo)))
+
 all::
 	@(echo If you want to run the gnustep-back testsuite, please type \'$(MAKE) check\')
 
 check::
 	(\
-	if [ "$(debug)" = "yes" ]; then \
-	  gnustep-tests --debug --timeout 300 cairo;\
+	if [ -z "$(TEST_SUBDIRS)" ]; then \
+	  echo "No backend test directories found; nothing to check.";\
+	elif [ "$(debug)" = "yes" ]; then \
+	  gnustep-tests --debug --timeout 300 $(TEST_SUBDIRS);\
 	else \
-	  gnustep-tests --timeout 300 cairo;\
+	  gnustep-tests --timeout 300 $(TEST_SUBDIRS);\
 	fi; \
 	)
 
