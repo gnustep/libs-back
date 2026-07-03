@@ -1,0 +1,9 @@
+# Extra build settings for the shared gsc tests.
+#
+# The gsc code is backend-independent, so these tests compile the source in
+# directly and need no per-backend guard.  Add the Headers and Source trees
+# (for gsc/gscolors.h and gsc/gscolors.c) and the build tree top (for config.h).
+ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../../Headers \
+                           -I$(GNUSTEP_BUILD_DIR)/../../Source \
+                           -I../../Headers -I../../Source \
+                           -I$(GNUSTEP_BUILD_DIR)/../.. -I../..
