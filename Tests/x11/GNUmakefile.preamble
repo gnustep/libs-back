@@ -4,8 +4,14 @@
 # for the backend it belongs to.  config.make names the backend being built
 # (BUILD_SERVER); the X11 headers and libraries are added only for x11, and the
 # tests carry a matching source-level guard (via config.h) so they still build
-# -- and skip -- on every other backend.  convert.m also compiles the wraster
-# image sources, which need the Xext, Xrender and Xmu libraries.
+# -- and skip -- on every other backend.  The tests also compile the wraster
+# image sources and context.c, which need libX11 and libXmu, libXext for the
+# XSHM path, and libXrender for the render path in a cairo-graphics build.
+#
+# Each library is queried on its own so that a package pkg-config cannot find
+# does not discard the flags for the ones it can (pkg-config fails as a whole
+# when any named package is missing), and so a library that a given graphics
+# backend does not use is simply left out.
 
 # config.h (used by the source-level guard) sits at the top of the (build) tree.
 ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../.. -I../..
@@ -17,7 +23,12 @@ ifeq ($(BUILD_SERVER),x11)
 ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../../Headers \
                            -I$(GNUSTEP_BUILD_DIR)/../../Source \
                            -I../../Headers -I../../Source \
-                           $(shell pkg-config --cflags x11 xext xrender)
+                           $(shell pkg-config --cflags x11) \
+                           $(shell pkg-config --cflags xext 2>/dev/null) \
+                           $(shell pkg-config --cflags xrender 2>/dev/null)
 
-ADDITIONAL_TOOL_LIBS += $(shell pkg-config --libs x11 xext xrender) -lXmu -lm
+ADDITIONAL_TOOL_LIBS += $(shell pkg-config --libs x11) \
+                        $(shell pkg-config --libs xext 2>/dev/null) \
+                        $(shell pkg-config --libs xrender 2>/dev/null) \
+                        -lXmu -lm
 endif
