@@ -302,22 +302,30 @@ calculateCombineArea(RImage *des, RImage *src, int *sx, int *sy,
                      unsigned *swidth, unsigned *sheight, int *dx, int *dy)
 {
     if (*dx < 0) {
+        if (-*dx >= (int)*swidth) /* entirely off the left edge */
+            return False;
         *sx = -*dx;
         *swidth = *swidth + *dx;
         *dx = 0;
     }
 
-    if (*dx + *swidth > des->width) {
+    if (*dx >= des->width) /* entirely off the right edge */
+        return False;
+    if (*dx + (int)*swidth > des->width) {
         *swidth = des->width - *dx;
     }
 
     if (*dy < 0) {
+        if (-*dy >= (int)*sheight) /* entirely off the top edge */
+            return False;
         *sy = -*dy;
         *sheight = *sheight + *dy;
         *dy = 0;
     }
 
-    if (*dy + *sheight > des->height) {
+    if (*dy >= des->height) /* entirely off the bottom edge */
+        return False;
+    if (*dy + (int)*sheight > des->height) {
         *sheight = des->height - *dy;
     }
 
