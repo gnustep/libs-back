@@ -25,7 +25,6 @@
 #if defined(BUILD_SERVER) && defined(SERVER_x11) && BUILD_SERVER == SERVER_x11
 
 #include <X11/Xlib.h>
-#include <X11/extensions/XShm.h>
 #include "x11/wraster.h"
 #include "x11/raster.c"
 #include "x11/scale.c"
