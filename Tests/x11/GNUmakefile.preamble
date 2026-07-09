@@ -1,0 +1,23 @@
+# Extra build settings for the x11 backend tests.
+#
+# A backend test compiles a backend source file directly, so it can only build
+# for the backend it belongs to.  config.make names the backend being built
+# (BUILD_SERVER); the X11 headers and libraries are added only for x11, and the
+# tests carry a matching source-level guard (via config.h) so they still build
+# -- and skip -- on every other backend.  convert.m also compiles the wraster
+# image sources, which need the Xext, Xrender and Xmu libraries.
+
+# config.h (used by the source-level guard) sits at the top of the (build) tree.
+ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../.. -I../..
+
+-include $(GNUSTEP_BUILD_DIR)/../../config.make
+-include ../../config.make
+
+ifeq ($(BUILD_SERVER),x11)
+ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../../Headers \
+                           -I$(GNUSTEP_BUILD_DIR)/../../Source \
+                           -I../../Headers -I../../Source \
+                           $(shell pkg-config --cflags x11 xext xrender)
+
+ADDITIONAL_TOOL_LIBS += $(shell pkg-config --libs x11 xext xrender) -lXmu -lm
+endif
