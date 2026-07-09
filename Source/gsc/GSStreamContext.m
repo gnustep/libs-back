@@ -353,7 +353,7 @@ fpfloat(FILE *stream, float f)
 - (void) DPSgstate
 {
   [super DPSgsave];
-  fprintf(gstream, "gstaten");
+  fprintf(gstream, "gstate\n");
 }
 
 - (void) DPSinitgraphics
