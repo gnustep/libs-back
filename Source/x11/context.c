@@ -607,7 +607,7 @@ count_offset(unsigned long mask)
     int i;
     
     i=0;
-    while ((mask & 1)==0) {
+    while (mask != 0 && (mask & 1)==0) {
 	i++;
 	mask = mask >> 1;
     }
