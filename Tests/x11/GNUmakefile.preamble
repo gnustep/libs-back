@@ -1,10 +1,12 @@
 # Extra build settings for the x11 backend tests.
 #
-# A backend test compiles backend source directly, so it can only build for the
-# backend it belongs to.  config.make names the backend being built
+# A backend test compiles a backend source file directly, so it can only build
+# for the backend it belongs to.  config.make names the backend being built
 # (BUILD_SERVER); the X11 headers and libraries are added only for x11, and the
 # tests carry a matching source-level guard (via config.h) so they still build
-# -- and skip -- on every other backend.
+# -- and skip -- on every other backend.  The tests also compile the wraster
+# image sources and context.c, which need libX11 and libXmu, libXext for the
+# XSHM path, and libXrender for the render path in a cairo-graphics build.
 #
 # Each library is queried on its own so that a package pkg-config cannot find
 # does not discard the flags for the ones it can (pkg-config fails as a whole
