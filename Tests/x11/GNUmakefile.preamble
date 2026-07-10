@@ -1,0 +1,32 @@
+# Extra build settings for the x11 backend tests.
+#
+# A backend test compiles backend source directly, so it can only build for the
+# backend it belongs to.  config.make names the backend being built
+# (BUILD_SERVER); the X11 headers and libraries are added only for x11, and the
+# tests carry a matching source-level guard (via config.h) so they still build
+# -- and skip -- on every other backend.
+#
+# Each library is queried on its own so that a package pkg-config cannot find
+# does not discard the flags for the ones it can (pkg-config fails as a whole
+# when any named package is missing), and so a library that a given graphics
+# backend does not use is simply left out.
+
+# config.h (used by the source-level guard) sits at the top of the (build) tree.
+ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../.. -I../..
+
+-include $(GNUSTEP_BUILD_DIR)/../../config.make
+-include ../../config.make
+
+ifeq ($(BUILD_SERVER),x11)
+ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../../Headers \
+                           -I$(GNUSTEP_BUILD_DIR)/../../Source \
+                           -I../../Headers -I../../Source \
+                           $(shell pkg-config --cflags x11) \
+                           $(shell pkg-config --cflags xext 2>/dev/null) \
+                           $(shell pkg-config --cflags xrender 2>/dev/null)
+
+ADDITIONAL_TOOL_LIBS += $(shell pkg-config --libs x11) \
+                        $(shell pkg-config --libs xext 2>/dev/null) \
+                        $(shell pkg-config --libs xrender 2>/dev/null) \
+                        -lXmu -lm
+endif
