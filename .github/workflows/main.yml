@@ -59,11 +59,17 @@ jobs:
       # packages for xlib runtime
       APT_PACKAGES_xlib: >-
         libxt-dev
-        
+        libxmu-dev
+        libxext-dev
+        xvfb
+
       # packages for cairo runtime
       APT_PACKAGES_cairo: >-
         libxt-dev
         libcairo2-dev
+        libxmu-dev
+        libxext-dev
+        xvfb
 
       # packages for headless runtime
       APT_PACKAGES_headless: >-
@@ -98,4 +104,8 @@ jobs:
       - name: Run tests
         run: |
           . $INSTALL_PATH/share/GNUstep/Makefiles/GNUstep.sh
-          make check
+          if [ "${{ matrix.server }}" = "x11" ]; then
+            xvfb-run -a make check
+          else
+            make check
+          fi
