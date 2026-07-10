@@ -188,8 +188,8 @@ static inline short gs_floor (float f)
       else
 	{
 	  int g = (int)f;
-      
-	  if (f - ((float)g) > 0)
+
+	  if (f - ((float)g) < 0)
 	    {
 	      return g - 1;
 	    }
