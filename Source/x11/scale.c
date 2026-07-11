@@ -404,7 +404,6 @@ CLIST	*contrib;		/* array of contribution lists */
 #define CLAMP(v,l,h)    ((v)<(l) ? (l) : (v) > (h) ? (h) : v)
 
 
-/* return of calloc is not checked if NULL in the function below! */
 RImage*
 RSmoothScaleImage(RImage *src, unsigned new_width, unsigned new_height)
 {    
@@ -422,14 +421,25 @@ RSmoothScaleImage(RImage *src, unsigned new_width, unsigned new_height)
 
     
     dst = RCreateImage(new_width, new_height, False);
+    if (!dst)
+	return NULL;
 
     /* create intermediate image to hold horizontal zoom */
     tmp = RCreateImage(dst->width, src->height, False);
+    if (!tmp) {
+	RReleaseImage(dst);
+	return NULL;
+    }
     xscale = (double)new_width / (double)src->width;
     yscale = (double)new_height / (double)src->height;
 
     /* pre-calculate filter contributions for a row */
     contrib = (CLIST *)calloc(new_width, sizeof(CLIST));
+    if (!contrib) {
+	RReleaseImage(dst);
+	RReleaseImage(tmp);
+	return NULL;
+    }
     if (xscale < 1.0) {
 	width = fwidth / xscale;
 	fscale = 1.0 / xscale;
@@ -514,6 +524,11 @@ RSmoothScaleImage(RImage *src, unsigned new_width, unsigned new_height)
     
     /* pre-calculate filter contributions for a column */
     contrib = (CLIST *)calloc(dst->height, sizeof(CLIST));
+    if (!contrib) {
+	RReleaseImage(dst);
+	RReleaseImage(tmp);
+	return NULL;
+    }
     if(yscale < 1.0) {
 	width = fwidth / yscale;
 	fscale = 1.0 / yscale;
