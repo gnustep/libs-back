@@ -193,7 +193,7 @@ gsColorToCMYK(device_color_t *color)
   switch(color->space)
     {
     case gray_colorspace:
-      color->field[3] = color->field[0];
+      color->field[3] = 1.0 - color->field[0];
       color->field[0] = 0.0;
       color->field[1] = 0.0;
       color->field[2] = 0.0;
