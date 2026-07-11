@@ -871,7 +871,7 @@ typedef enum {
 
 - (void) GSSetCTM: (NSAffineTransform *)newctm
 {
-  ASSIGN(ctm, newctm);
+  ASSIGNCOPY(ctm, newctm);
 }
 
 - (void) GSConcatCTM: (NSAffineTransform *)newctm
