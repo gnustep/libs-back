@@ -1,0 +1,4 @@
+ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../../Source \
+                           -I$(GNUSTEP_BUILD_DIR)/../../Source/art \
+                           -I../../Source -I../../Source/art \
+                           -I$(GNUSTEP_BUILD_DIR)/../.. -I../..
