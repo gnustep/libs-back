@@ -1,18 +1,22 @@
 # Extra build settings for the cairo backend tests.
-#
-# A backend test compiles a backend source file directly, so it can only build
-# for the backend it belongs to.  config.make names the backend being built
-# (BUILD_SERVER / BUILD_GRAPHICS); the wayland+cairo headers and libraries are
-# added only for that backend, and shmbuffer.m carries a matching source-level
-# guard (via config.h) so the test still builds -- and skips -- on every other
-# backend.  The backend uses memfd_create(), which needs _GNU_SOURCE.
 
-# config.h (used by the source-level guard) sits at the top of the (build) tree.
+# config.h (used by the source-level guards) sits at the top of the (build)
+# tree.
 ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../.. -I../..
 
 -include $(GNUSTEP_BUILD_DIR)/../../config.make
 -include ../../config.make
 
+# The rendering test drives the installed backend through AppKit and builds
+# only for the cairo graphics backend, so link the gui there.
+ifeq ($(BUILD_GRAPHICS),cairo)
+ADDITIONAL_TOOL_LIBS += -lgnustep-gui
+endif
+
+# The shared-memory buffer test compiles the wayland+cairo surface source in
+# directly, so its headers and libraries are added only for that backend (which
+# also needs _GNU_SOURCE for memfd_create); a source-level guard keeps it inert
+# elsewhere.
 ifeq ($(BUILD_SERVER)-$(BUILD_GRAPHICS),wayland-cairo)
 ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../../Headers \
                            -I$(GNUSTEP_BUILD_DIR)/../../Source \
