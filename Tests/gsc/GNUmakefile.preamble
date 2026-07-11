@@ -12,3 +12,6 @@ ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../.. -I../.. \
 # psescape drives GSStreamContext, which lives in the backend bundle, so it
 # links the gui and loads a backend at run time (and skips with no display).
 psescape_TOOL_LIBS += -lgnustep-gui
+
+# streambezier does the same.
+streambezier_TOOL_LIBS += -lgnustep-gui
