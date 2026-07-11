@@ -15,3 +15,5 @@ psescape_TOOL_LIBS += -lgnustep-gui
 
 # streambezier does the same.
 streambezier_TOOL_LIBS += -lgnustep-gui
+# streamops does the same.
+streamops_TOOL_LIBS += -lgnustep-gui
