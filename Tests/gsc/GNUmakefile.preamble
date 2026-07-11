@@ -13,6 +13,8 @@ ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../.. -I../.. \
 # links the gui and loads a backend at run time (and skips with no display).
 psescape_TOOL_LIBS += -lgnustep-gui
 
+# streamimage does the same.
+streamimage_TOOL_LIBS += -lgnustep-gui
 # streambezier does the same.
 streambezier_TOOL_LIBS += -lgnustep-gui
 # streamops does the same.
