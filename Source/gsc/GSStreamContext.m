@@ -1002,10 +1002,11 @@ static const char *hexdigits = "0123456789abcdef";
 	}
       fprintf(gstream, "\n");
     } 
-  else 
+  else
     {
       // The data is already in the format the context expects it in
       writeHex(gstream, data[0], bytes * samplesPerPixel);
+      fprintf(gstream, "\n");
     }
 
   /* Restore original scaling */
