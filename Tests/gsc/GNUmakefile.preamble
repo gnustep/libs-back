@@ -1,9 +1,14 @@
 # Extra build settings for the shared gsc tests.
 #
-# The gsc code is backend-independent, so these tests compile the source in
-# directly and need no per-backend guard.  Add the Headers and Source trees
-# (for gsc/gscolors.h and gsc/gscolors.c) and the build tree top (for config.h).
-ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../../Headers \
+# Most gsc code is backend-independent, so these tests compile the source in
+# directly.  The build tree top (for config.h) has to come first so config.h
+# resolves there and not to any copy under Source; the Headers and Source trees
+# follow, for gsc/gscolors.h and gsc/gscolors.c.
+ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../.. -I../.. \
+                           -I$(GNUSTEP_BUILD_DIR)/../../Headers \
                            -I$(GNUSTEP_BUILD_DIR)/../../Source \
-                           -I../../Headers -I../../Source \
-                           -I$(GNUSTEP_BUILD_DIR)/../.. -I../..
+                           -I../../Headers -I../../Source
+
+# psescape drives GSStreamContext, which lives in the backend bundle, so it
+# links the gui and loads a backend at run time (and skips with no display).
+psescape_TOOL_LIBS += -lgnustep-gui
