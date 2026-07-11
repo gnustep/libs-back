@@ -1030,6 +1030,9 @@ static const char *hexdigits = "0123456789abcdef";
 	case ')':
 	    fputs("\\)", gstream);
 	    break;
+	case '\\':
+	    fputs("\\\\", gstream);
+	    break;
 	default:
 	    fputc(s[i], gstream);
 	    break;
