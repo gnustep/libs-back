@@ -19,3 +19,5 @@ streamimage_TOOL_LIBS += -lgnustep-gui
 streambezier_TOOL_LIBS += -lgnustep-gui
 # streamops does the same.
 streamops_TOOL_LIBS += -lgnustep-gui
+# gstate does the same.
+gstate_TOOL_LIBS += -lgnustep-gui
