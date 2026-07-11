@@ -366,7 +366,7 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
   cairo_scaled_font_text_extents(_scaled, [string UTF8String], &ctext);
   if (cairo_scaled_font_status(_scaled) == CAIRO_STATUS_SUCCESS)
     {
-      return ctext.width;
+      return ctext.x_advance;
     }
 
   return 0.0;
