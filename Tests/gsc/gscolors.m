@@ -134,6 +134,61 @@ main(void)
     PASS(round == YES, "rgb -> cmyk -> rgb round-trips");
   }
 
+  /* --- hsb -> rgb across all six hue sextants (saturation and value 1) --- */
+  {
+    float expect[6][3] = {
+      {1.0, 0.5, 0.0}, {0.5, 1.0, 0.0}, {0.0, 1.0, 0.5},
+      {0.0, 0.5, 1.0}, {0.5, 0.0, 1.0}, {1.0, 0.0, 0.5}
+    };
+    int i;
+
+    for (i = 0; i < 6; i++)
+      {
+	gsMakeColor(&c, hsb_colorspace, (2 * i + 1) / 12.0, 1.0, 1.0, 0);
+	gsColorToRGB(&c);
+	PASS(isRGB(c, expect[i][0], expect[i][1], expect[i][2]),
+	  "hsb -> rgb is correct in hue sextant %d", i);
+      }
+  }
+
+  /* --- conversions that reach gray, cmyk and hsb through the rgb
+   *     fall-through paths --- */
+  gsMakeColor(&c, hsb_colorspace, 0.0, 1.0, 1.0, 0);
+  gsColorToGray(&c);
+  PASS(c.space == gray_colorspace && eq(c.field[0], 0.3),
+    "hsb red converts to gray through rgb");
+
+  gsMakeColor(&c, hsb_colorspace, 0.0, 1.0, 1.0, 0);
+  gsColorToCMYK(&c);
+  PASS(c.space == cmyk_colorspace
+    && eq(c.field[0], 0.0) && eq(c.field[1], 1.0)
+    && eq(c.field[2], 1.0) && eq(c.field[3], 0.0),
+    "hsb red converts to cmyk through rgb");
+
+  gsMakeColor(&c, cmyk_colorspace, 1.0, 0.0, 0.0, 0.0);
+  gsColorToGray(&c);
+  PASS(c.space == gray_colorspace && eq(c.field[0], 0.7),
+    "cmyk cyan converts to gray through rgb");
+
+  gsMakeColor(&c, cmyk_colorspace, 1.0, 0.0, 0.0, 0.0);
+  gsColorToHSB(&c);
+  PASS(c.space == hsb_colorspace
+    && eq(c.field[0], 0.5) && eq(c.field[1], 1.0) && eq(c.field[2], 1.0),
+    "cmyk cyan converts to hsb through rgb");
+
+  gsMakeColor(&c, gray_colorspace, 0.4, 0, 0, 0);
+  gsColorToHSB(&c);
+  PASS(c.space == hsb_colorspace
+    && eq(c.field[0], 0.0) && eq(c.field[1], 0.0) && eq(c.field[2], 0.4),
+    "gray converts to hsb with zero hue and saturation");
+
+  /* --- cmyk -> rgb with black between 0 and 1: pure black is a gray of one
+   *     minus the black --- */
+  gsMakeColor(&c, cmyk_colorspace, 0.0, 0.0, 0.0, 0.5);
+  gsColorToRGB(&c);
+  PASS(isRGB(c, 0.5, 0.5, 0.5),
+    "cmyk with only black converts to a gray of one minus the black");
+
   END_SET("gscolors conversions")
   return 0;
 }
