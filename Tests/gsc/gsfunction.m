@@ -204,6 +204,20 @@ main(void)
     PASS(agree == YES,
       "GSFunction2in3out matches the general evaluator at every test point");
 
+    /* the interpolated values are correct, not merely self-consistent */
+    {
+      double o[3];
+      double corner[2] = {0, 0}, centre[2] = {0.5, 0.5};
+
+      [base eval: corner : o];
+      PASS(eq(o[0], 0.0) && eq(o[1], 10 / 255.0) && eq(o[2], 20 / 255.0),
+        "the general evaluator returns the corner sample for each output");
+      [base eval: centre : o];
+      PASS(eq(o[0], 88.75 / 255.0) && eq(o[1], 95 / 255.0)
+        && eq(o[2], 107 / 255.0),
+        "the general evaluator averages the corners for each output");
+    }
+
     /* affectedRect reflects the domain */
     {
       NSRect r = [spc affectedRect];
@@ -214,6 +228,30 @@ main(void)
     }
     RELEASE(base);
     RELEASE(spc);
+  }
+
+  /* --- 1-in 3-out: a single input driving three outputs (a colour ramp) --- */
+  {
+    unsigned char data[] = { 0, 10, 20,  255, 100, 30 };
+    NSDictionary *d =
+      spec([NSArray arrayWithObjects: N(2), nil],
+	   [NSArray arrayWithObjects: N(0), N(1), nil],
+	   [NSArray arrayWithObjects: N(0), N(1), N(0), N(1), N(0), N(1), nil],
+	   8, data, 6, nil, nil);
+    GSFunction *f = [[GSFunction alloc] initWith: d];
+    double in[1], o[3];
+
+    PASS(f != nil, "a 1-in 3-out function is created");
+    in[0] = 0.0; [f eval: in : o];
+    PASS(eq(o[0], 0.0) && eq(o[1], 10 / 255.0) && eq(o[2], 20 / 255.0),
+      "1-in 3-out returns each output's first sample at the domain minimum");
+    in[0] = 1.0; [f eval: in : o];
+    PASS(eq(o[0], 1.0) && eq(o[1], 100 / 255.0) && eq(o[2], 30 / 255.0),
+      "1-in 3-out returns each output's last sample at the domain maximum");
+    in[0] = 0.5; [f eval: in : o];
+    PASS(eq(o[0], 0.5) && eq(o[1], 55 / 255.0) && eq(o[2], 25 / 255.0),
+      "1-in 3-out interpolates each output at the midpoint");
+    RELEASE(f);
   }
 
   LEAVE_POOL
