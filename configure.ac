@@ -26,9 +26,9 @@
 builtin(include, pkg.m4)dnl
 
 AC_INIT
-AC_PREREQ(2.57)
+AC_PREREQ([2.73])
 AC_CONFIG_SRCDIR([back.make.in])
-AC_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS([config.h])
 
 # If GNUSTEP_MAKEFILES is undefined, try to use gnustep-config to determine it.
 if test -z "$GNUSTEP_MAKEFILES"; then
@@ -319,7 +319,7 @@ if test $WITH_XFT = yes; then
     AC_DEFINE(HAVE_UTF8,1,[Define if you have XftDrawStringUtf8])
   fi
   AC_CHECK_LIB(Xft, XftPatternGetString, have_xftpgs=yes, have_xftpgs=no)
-  AC_HAVE_FUNCS(Xutf8LookupString)
+  AC_CHECK_FUNCS([Xutf8LookupString])
   AC_CHECK_LIB(fontconfig, FcPatternCreate, have_fc=yes, have_fc=no)
   AC_CHECK_HEADER(fontconfig/fontconfig.h)
   if test "$have_fc" = yes -a "$ac_cv_header_fontconfig_fontconfig_h" = yes; then
@@ -371,7 +371,7 @@ fi
 #--------------------------------------------------------------------
 # Functions
 #--------------------------------------------------------------------
-AC_HAVE_FUNCS(usleep)
+AC_CHECK_FUNCS([usleep])
 
 have_xshm=no
 AC_CHECK_HEADERS(X11/extensions/XShm.h,
@@ -424,8 +424,7 @@ if test "x$enable_wgl" = "xyes"; then
 
      save_libs="$LIBS"
      LIBS="$WGL_LIBS"
-     AC_TRY_LINK([#include <windows.h>], [ wglCreateContext(0); ],
-	   [use_wgl=yes], [use_wgl=no])
+     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <windows.h>]], [[ wglCreateContext(0); ]])],[use_wgl=yes],[use_wgl=no])
      LIBS="$save_libs"
      AC_MSG_RESULT([$use_wgl])
      WITH_WGL=$use_wgl
@@ -658,7 +657,17 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
       CAIRO_LIBS="$CAIRO_LIBS $XFT_LIBS"
       CAIRO_CFLAGS="$CAIRO_CFLAGS"
       LIBS="-lwayland-client -lwayland-cursor -lxkbcommon $LIBS"
+      # Optional EGL/OpenGL support for the Wayland backend
+      WITH_EGL=no
+      AC_CHECK_HEADER(EGL/egl.h, [have_egl_h=yes], [have_egl_h=no])
+      AC_CHECK_LIB(EGL, eglGetDisplay, [have_egl=yes], [have_egl=no])
+      if test "x$have_egl_h" = "xyes" -a "x$have_egl" = "xyes"; then
+        WITH_EGL=yes
+        AC_DEFINE(HAVE_EGL, 1, [Define if EGL is available for Wayland OpenGL support])
+        LIBS="-lGL -lEGL -lwayland-egl $LIBS"
+      fi
     fi
+AC_SUBST(WITH_EGL)
     LIBS="$CAIRO_LIBS $LIBS"
     CPPFLAGS="$CAIRO_CFLAGS $CPPFLAGS"
   fi
@@ -698,6 +707,10 @@ elif test x"$BUILD_GRAPHICS" = "xopal"; then
  CPPFLAGS="$FONTCONFIG_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
  LIBS="-lopal -lgnustep-corebase $LIBS"
  LIBS="$FONTCONFIG_LIBS $FREETYPE_LIBS $LIBS"
+ if test "$have_xrender" = yes -a "$BUILD_SERVER" = "x11"; then
+   AC_DEFINE(XRENDER,1,[Define if you have X11 XRender extension])
+   LIBS="-lXrender $LIBS"
+ fi
  if test "$have_freetype" = no ; then # FCFaceInfo requires this
     AC_MSG_WARN([can't find freetype, required for graphics=opal!])
     if test $BUILD_SERVER = win32; then

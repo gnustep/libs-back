@@ -353,7 +353,7 @@ fpfloat(FILE *stream, float f)
 - (void) DPSgstate
 {
   [super DPSgsave];
-  fprintf(gstream, "gstaten");
+  fprintf(gstream, "gstate\n");
 }
 
 - (void) DPSinitgraphics
@@ -634,6 +634,10 @@ fpfloat(FILE *stream, float f)
 
 - (void) DPSpathbbox: (CGFloat*)llx : (CGFloat*)lly : (CGFloat*)urx : (CGFloat*)ury
 {
+  /* A write-only stream context keeps no path geometry, so the bounding box
+   * cannot be computed here; return an empty box rather than leaving the
+   * caller's variables uninitialised. */
+  *llx = *lly = *urx = *ury = 0.0;
 }
 
 - (void) DPSrcurveto: (CGFloat)x1 : (CGFloat)y1 : (CGFloat)x2 : (CGFloat)y2 
@@ -998,10 +1002,11 @@ static const char *hexdigits = "0123456789abcdef";
 	}
       fprintf(gstream, "\n");
     } 
-  else 
+  else
     {
       // The data is already in the format the context expects it in
       writeHex(gstream, data[0], bytes * samplesPerPixel);
+      fprintf(gstream, "\n");
     }
 
   /* Restore original scaling */
@@ -1025,6 +1030,9 @@ static const char *hexdigits = "0123456789abcdef";
 	    break;
 	case ')':
 	    fputs("\\)", gstream);
+	    break;
+	case '\\':
+	    fputs("\\\\", gstream);
 	    break;
 	default:
 	    fputc(s[i], gstream);

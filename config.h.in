@@ -41,6 +41,9 @@
 /* Define if you have the glx library */
 #undef HAVE_GLX
 
+/* Define if EGL is available for Wayland OpenGL support */
+#undef HAVE_EGL
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 

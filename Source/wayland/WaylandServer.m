@@ -46,6 +46,10 @@
 #include <sys/mman.h>
 
 #include "wayland/WaylandServer.h"
+#include "wayland/WaylandInputServer.h"
+#ifdef HAVE_EGL
+#include "wayland/WaylandOpenGL.h"
+#endif
 
 extern const struct wl_output_listener output_listener;
 
@@ -128,6 +132,14 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name,
       NSDebugLog(@"wayland: found seat interface");
       wl_seat_add_listener(wlconfig->seat, &seat_listener, wlconfig);
     }
+#ifdef HAVE_EGL
+  else if (strcmp(interface, wl_subcompositor_interface.name) == 0)
+    {
+      wlconfig->subcompositor
+	= wl_registry_bind(registry, name, &wl_subcompositor_interface, 1);
+      NSDebugLog(@"wayland: found subcompositor interface");
+    }
+#endif
 }
 
 static void handle_global_remove(void *data, struct wl_registry *registry,
@@ -217,6 +229,9 @@ NSToWayland(struct window *window, int ns_y)
 	       @"compositor must support the stable XDG Shell protocol"];
     }
 
+  inputServer = [[WaylandInputServer allocWithZone: [self zone]]
+		   initWithDelegate: nil name: @"WaylandInput"];
+
   return self;
 }
 
@@ -264,6 +279,16 @@ NSToWayland(struct window *window, int ns_y)
 - (void)dealloc
 {
   NSDebugLog(@"Destroying Wayland Server");
+  DESTROY(inputServer);
+  if (wlconfig != NULL)
+    {
+      if (wlconfig->display != NULL)
+	{
+	  wl_display_disconnect(wlconfig->display);
+	}
+      free(wlconfig);
+      wlconfig = NULL;
+    }
   [super dealloc];
 }
 
@@ -330,13 +355,87 @@ NSToWayland(struct window *window, int ns_y)
 
 - (void *)windowDevice:(int)win
 {
-  NSDebugLog(@"windowDevice");
+  NSDebugLog(@"windowDevice: %d", win);
+#ifdef HAVE_EGL
+  return get_window_with_id(wlconfig, win);
+#else
   return NULL;
+#endif
 }
 
 - (void)beep
 {
   NSDebugLog(@"beep");
+}
+
+#ifdef HAVE_EGL
+- glContextClass
+{
+  return [WaylandGLContext class];
+}
+
+- glPixelFormatClass
+{
+  return [WaylandGLPixelFormat class];
+}
+#endif
+
+@end
+
+@implementation WaylandServer (InputMethod)
+
+- (NSString *) inputMethodStyle
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer inputMethodStyle] : nil;
+}
+
+- (NSString *) fontSize: (int *)size
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer fontSize: size] : nil;
+}
+
+- (BOOL) clientWindowRect: (NSRect *)rect
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer clientWindowRect: rect] : NO;
+}
+
+- (BOOL) statusArea: (NSRect *)rect
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer statusArea: rect] : NO;
+}
+
+- (BOOL) preeditArea: (NSRect *)rect
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer preeditArea: rect] : NO;
+}
+
+- (BOOL) preeditSpot: (NSPoint *)p
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer preeditSpot: p] : NO;
+}
+
+- (BOOL) setStatusArea: (NSRect *)rect
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer setStatusArea: rect] : NO;
+}
+
+- (BOOL) setPreeditArea: (NSRect *)rect
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer setPreeditArea: rect] : NO;
+}
+
+- (BOOL) setPreeditSpot: (NSPoint *)p
+{
+  return inputServer
+    ? [(WaylandInputServer *) inputServer setPreeditSpot: p] : NO;
 }
 
 @end
@@ -404,6 +503,9 @@ WaylandServer (WindowOps)
   window->moving = NO;
   window->resizing = NO;
   window->ignoreMouse = NO;
+#ifdef HAVE_EGL
+  window->usesOpenGL = NO;
+#endif
 
   // FIXME is this needed?
   if (window->pos_x < 0)
@@ -479,7 +581,7 @@ WaylandServer (WindowOps)
 - (void)titlewindow:(NSString *)window_title:(int)win
 {
   NSDebugLog(@"titlewindow: win=%d title=%@", win, window_title);
-  if (window_title == @"Window")
+  if ([window_title isEqualToString: @"Window"])
     {
       return;
     }
@@ -714,6 +816,16 @@ WaylandServer (WindowOps)
   NSDebugLog(@"[%d] flushwindowrect: %f,%f %fx%f", win, NSMinX(rect),
 	     NSMinY(rect), NSWidth(rect), NSHeight(rect));
   struct window *window = get_window_with_id(wlconfig, win);
+  if (window == NULL)
+    return;
+
+#ifdef HAVE_EGL
+  if (window->usesOpenGL)
+    {
+      NSDebugLog(@"[%d] skipping cairo flush for OpenGL-backed window", win);
+      return;
+    }
+#endif
 
   [[GSCurrentContext() class] handleExposeRect:rect forDriver:window->wcs];
 }

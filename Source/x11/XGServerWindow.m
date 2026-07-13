@@ -4582,7 +4582,6 @@ _workAreas(Display *dpy, Window root)
       // X coordinates need to be flipped to OpenStep coordinates
       if (frame.origin.y > 0.0)
 	{
-	  frame.size.height -= frame.origin.y;
 	  frame.origin.y = 0.0;
 	}
       [array addObject: [NSValue valueWithRect: frame]];

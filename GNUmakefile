@@ -53,6 +53,10 @@ ifneq ($(fonts), no)
 SUBPROJECTS += Fonts
 endif
 
+# Regression tests (run via 'make check'); guarded per-backend so they
+# build under any backend and skip where they do not apply.
+SUBPROJECTS += Tests
+
 -include GNUmakefile.preamble
 
 include $(GNUSTEP_MAKEFILES)/aggregate.make

@@ -12,3 +12,18 @@ ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../.. -I../..
 ifeq ($(BUILD_GRAPHICS),cairo)
 ADDITIONAL_TOOL_LIBS += -lgnustep-gui
 endif
+
+# The shared-memory buffer test compiles the wayland+cairo surface source in
+# directly, so its headers and libraries are added only for that backend (which
+# also needs _GNU_SOURCE for memfd_create); a source-level guard keeps it inert
+# elsewhere.
+ifeq ($(BUILD_SERVER)-$(BUILD_GRAPHICS),wayland-cairo)
+ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../../Headers \
+                           -I$(GNUSTEP_BUILD_DIR)/../../Source \
+                           -I../../Headers -I../../Source \
+                           $(shell pkg-config --cflags cairo wayland-client)
+
+ADDITIONAL_OBJCFLAGS += -D_GNU_SOURCE
+
+ADDITIONAL_TOOL_LIBS += $(shell pkg-config --libs cairo wayland-client)
+endif
