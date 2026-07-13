@@ -1584,10 +1584,26 @@ doesn't support to use the receiver cairo target as the source. */
           [gradient getColor: &color
                     location: &location
                      atIndex: i];
-          red = [color redComponent];
-          green = [color greenComponent];
-          blue = [color blueComponent];
-          alpha = [color alphaComponent];
+          /* Ensure color is in an RGB-compatible colorspace to avoid
+             -redComponent/-greenComponent/-blueComponent raising
+             for non-RGB colors (patterns, color lists, etc.). */
+          NS_DURING
+            {
+              NSColor *rgbColor = [color colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+              if (!rgbColor) rgbColor = [color colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
+              if (!rgbColor) rgbColor = [NSColor colorWithCalibratedWhite:0.0 alpha:1.0];
+              red = [rgbColor redComponent];
+              green = [rgbColor greenComponent];
+              blue = [rgbColor blueComponent];
+              alpha = [rgbColor alphaComponent];
+            }
+          NS_HANDLER
+            {
+              red = green = blue = 0.0;
+              alpha = 1.0;
+            }
+          NS_ENDHANDLER
+
           cairo_pattern_add_color_stop_rgba(cpattern, location,
                                             red, green, blue, alpha);
         }
@@ -1629,39 +1645,31 @@ doesn't support to use the receiver cairo target as the source. */
           double green;
           double blue;
           double alpha;
-          NSString *colorSpaceName;
-	  
+
           [gradient getColor: &color
                     location: &location
                      atIndex: i];
 
-	  colorSpaceName = [color colorSpaceName];
-	  if([NSCalibratedRGBColorSpace isEqualToString: colorSpaceName] ||
-	     [NSDeviceRGBColorSpace isEqualToString: colorSpaceName])
-	    {
-	      red = [color redComponent];
-	      green = [color greenComponent];
-	      blue = [color blueComponent];
-	      alpha = [color alphaComponent];
-	      cairo_pattern_add_color_stop_rgba(cpattern, location,
-						red, green, blue, alpha);
-	    }
-	  else if([NSCalibratedWhiteColorSpace isEqualToString: colorSpaceName] ||
-		  [NSDeviceWhiteColorSpace isEqualToString: colorSpaceName] ||
-		  [NSCalibratedBlackColorSpace isEqualToString: colorSpaceName] ||
-		  [NSDeviceBlackColorSpace isEqualToString: colorSpaceName])
-	    {
-	      red = [color whiteComponent];
-	      green = [color whiteComponent];
-	      blue = [color whiteComponent];
-	      alpha = [color alphaComponent];
-	      cairo_pattern_add_color_stop_rgba(cpattern, location,
-						red, green, blue, alpha);
-	    }
-	  else
-	    {
-	      NSLog(@"Cannot draw gradient for %@",colorSpaceName); 
-	    }
+          /* Normalize to RGB-compatible color before extracting components */
+          NS_DURING
+            {
+              NSColor *rgbColor = [color colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+              if (!rgbColor) rgbColor = [color colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
+              if (!rgbColor) rgbColor = [NSColor colorWithCalibratedWhite:0.0 alpha:1.0];
+              red = [rgbColor redComponent];
+              green = [rgbColor greenComponent];
+              blue = [rgbColor blueComponent];
+              alpha = [rgbColor alphaComponent];
+            }
+          NS_HANDLER
+            {
+              red = green = blue = 0.0;
+              alpha = 1.0;
+            }
+          NS_ENDHANDLER
+
+          cairo_pattern_add_color_stop_rgba(cpattern, location,
+                                            red, green, blue, alpha);
         }
       
       cairo_save(_ct);

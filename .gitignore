@@ -15,3 +15,4 @@ Source/libgnustep*Info.plist
 Tools/XGCommonFont.m
 Tools/xdnd.c
 *~
+Tests/*/GNUmakefile
