@@ -550,6 +550,9 @@ WaylandServer (WindowOps)
   NSDebugLog(@"termwindow: win=%d", win);
   struct window *window = get_window_with_id(wlconfig, win);
 
+  if (window == NULL)
+    return;
+
   [self destroyWindowShell:window];
   // FIXME should wait for buffer release before detroying it
   //
@@ -589,6 +592,9 @@ WaylandServer (WindowOps)
   struct window *window = get_window_with_id(wlconfig, win);
   const char    *cString = [window_title UTF8String];
 
+  if (window == NULL)
+    return;
+
   if (window->toplevel)
     {
       xdg_toplevel_set_title(window->toplevel, cString);
@@ -602,6 +608,9 @@ WaylandServer (WindowOps)
   struct window *window = get_window_with_id(wlconfig, win);
 
   NSDebugLog(@"miniwindow");
+  if (window == NULL)
+    return;
+
   if (window->toplevel)
     {
       xdg_toplevel_set_minimized(window->toplevel);
@@ -618,6 +627,9 @@ WaylandServer (WindowOps)
   struct window *window;
 
   window = get_window_with_id(wlconfig, winId);
+  if (window == NULL)
+    return;
+
   // FIXME we could resize the current surface instead of creating a new one
   if (window->wcs)
     {
@@ -631,6 +643,9 @@ WaylandServer (WindowOps)
 - (void)orderwindow:(int)op:(int)otherWin:(int)win
 {
   struct window *window = get_window_with_id(wlconfig, win);
+
+  if (window == NULL)
+    return;
 
   if (op == NSWindowOut)
     {
@@ -679,6 +694,9 @@ WaylandServer (WindowOps)
   struct window *window = get_window_with_id(wlconfig, win);
 
   NSDebugLog(@"[%d] placewindow: %@", win, NSStringFromRect(rect));
+  if (window == NULL)
+    return;
+
   WaylandConfig *config = window->wlconfig;
 
   NSRect frame;
@@ -755,6 +773,10 @@ WaylandServer (WindowOps)
 - (NSRect)windowbounds:(int)win
 {
   struct window *window = get_window_with_id(wlconfig, win);
+
+  if (window == NULL)
+    return NSZeroRect;
+
   NSDebugLog(@"windowbounds: win=%d, pos=%dx%d size=%dx%d", window->window_id,
 	     window->pos_x, window->pos_y, window->width, window->height);
 
@@ -778,6 +800,10 @@ WaylandServer (WindowOps)
 - (void)setwindowlevel:(int)level:(int)win
 {
   struct window *window = get_window_with_id(wlconfig, win);
+
+  if (window == NULL)
+    return;
+
   window->level = level;
 
   NSDebugLog(@"setwindowlevel: level=%d win=%d", level, win);
@@ -787,6 +813,10 @@ WaylandServer (WindowOps)
 {
   NSDebugLog(@"windowlevel: %d", win);
   struct window *window = get_window_with_id(wlconfig, win);
+
+  if (window == NULL)
+    return 0;
+
   return window->level;
 }
 
