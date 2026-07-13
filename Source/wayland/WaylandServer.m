@@ -758,7 +758,7 @@ WaylandServer (WindowOps)
   NSDebugLog(@"windowbounds: win=%d, pos=%dx%d size=%dx%d", window->window_id,
 	     window->pos_x, window->pos_y, window->width, window->height);
 
-  return NSMakeRect(window->pos_x, window->output->height - window->pos_y,
+  return NSMakeRect(window->pos_x, WaylandToNS(window, window->pos_y),
 		    window->width, window->height);
 }
 
