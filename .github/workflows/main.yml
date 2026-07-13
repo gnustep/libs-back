@@ -38,6 +38,8 @@ jobs:
             graphics: xlib
           - server: x11
             graphics: art
+          - server: wayland
+            graphics: cairo
           - server: headless
             graphics: headless
 
@@ -83,7 +85,13 @@ jobs:
 
       # packages for headless runtime
       APT_PACKAGES_headless: >-
-        libcairo2-dev 
+        libcairo2-dev
+
+      # extra packages for the wayland server (graphics=cairo supplies the rest)
+      APT_PACKAGES_wayland: >-
+        libwayland-dev
+        libxkbcommon-dev
+        weston
   
       DEBIAN_FRONTEND: noninteractive
       SRC_PATH: ${{ github.workspace }}/source
@@ -96,7 +104,7 @@ jobs:
       - name: Install packages
         run: |
           apt-get -q -y update
-          apt-get -q -y install $APT_PACKAGES $APT_PACKAGES_${{ matrix.graphics }}
+          apt-get -q -y install $APT_PACKAGES $APT_PACKAGES_${{ matrix.graphics }} $APT_PACKAGES_${{ matrix.server }}
 
       - name: Install dependencies
         env:
@@ -116,6 +124,20 @@ jobs:
           . $INSTALL_PATH/share/GNUstep/Makefiles/GNUstep.sh
           if [ "${{ matrix.server }}" = "x11" ]; then
             xvfb-run -a make check
+          elif [ "${{ matrix.server }}" = "wayland" ]; then
+            export XDG_RUNTIME_DIR="$(mktemp -d)"
+            chmod 700 "$XDG_RUNTIME_DIR"
+            weston --backend=headless-backend.so --socket=wayland-1 --idle-time=0 &
+            for i in $(seq 1 30); do
+              [ -S "$XDG_RUNTIME_DIR/wayland-1" ] && break
+              sleep 1
+            done
+            if [ ! -S "$XDG_RUNTIME_DIR/wayland-1" ]; then
+              echo "weston did not create its wayland socket"
+              exit 1
+            fi
+            export WAYLAND_DISPLAY=wayland-1
+            make check
           else
             make check
           fi
