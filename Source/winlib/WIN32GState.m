@@ -1375,7 +1375,7 @@ HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
   if (patternCount > 0)
     {
       NSInteger i = 0;
-      CGFloat* thePattern[patternCount];
+      CGFloat thePattern[patternCount];
       CGFloat phase = 0.0;
 
       penStyle = PS_GEOMETRIC | PS_USERSTYLE;
