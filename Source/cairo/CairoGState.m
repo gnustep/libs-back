@@ -1586,23 +1586,23 @@ doesn't support to use the receiver cairo target as the source. */
                      atIndex: i];
           /* Ensure color is in an RGB-compatible colorspace to avoid
              -redComponent/-greenComponent/-blueComponent raising
-             for non-RGB colors (patterns, color lists, etc.). Try
-             device RGB first, then calibrated RGB, and finally
-             fall back to a safe opaque black if conversion fails. */
-          NSColor *rgbColor = [color colorUsingColorSpaceName: NSDeviceRGBColorSpace];
-          if (!rgbColor) rgbColor = [color colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
-          if (!rgbColor) rgbColor = [NSColor colorWithCalibratedWhite:0.0 alpha:1.0];
-
-          @try {
-            red = [rgbColor redComponent];
-            green = [rgbColor greenComponent];
-            blue = [rgbColor blueComponent];
-            alpha = [rgbColor alphaComponent];
-          } @catch (NSException *ex) {
-            /* Last-resort safe defaults */
-            red = green = blue = 0.0;
-            alpha = 1.0;
-          }
+             for non-RGB colors (patterns, color lists, etc.). */
+          NS_DURING
+            {
+              NSColor *rgbColor = [color colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+              if (!rgbColor) rgbColor = [color colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
+              if (!rgbColor) rgbColor = [NSColor colorWithCalibratedWhite:0.0 alpha:1.0];
+              red = [rgbColor redComponent];
+              green = [rgbColor greenComponent];
+              blue = [rgbColor blueComponent];
+              alpha = [rgbColor alphaComponent];
+            }
+          NS_HANDLER
+            {
+              red = green = blue = 0.0;
+              alpha = 1.0;
+            }
+          NS_ENDHANDLER
 
           cairo_pattern_add_color_stop_rgba(cpattern, location,
                                             red, green, blue, alpha);
@@ -1651,19 +1651,22 @@ doesn't support to use the receiver cairo target as the source. */
                      atIndex: i];
 
           /* Normalize to RGB-compatible color before extracting components */
-          NSColor *rgbColor = [color colorUsingColorSpaceName: NSDeviceRGBColorSpace];
-          if (!rgbColor) rgbColor = [color colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
-          if (!rgbColor) rgbColor = [NSColor colorWithCalibratedWhite:0.0 alpha:1.0];
-
-          @try {
-            red = [rgbColor redComponent];
-            green = [rgbColor greenComponent];
-            blue = [rgbColor blueComponent];
-            alpha = [rgbColor alphaComponent];
-          } @catch (NSException *ex) {
-            red = green = blue = 0.0;
-            alpha = 1.0;
-          }
+          NS_DURING
+            {
+              NSColor *rgbColor = [color colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+              if (!rgbColor) rgbColor = [color colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
+              if (!rgbColor) rgbColor = [NSColor colorWithCalibratedWhite:0.0 alpha:1.0];
+              red = [rgbColor redComponent];
+              green = [rgbColor greenComponent];
+              blue = [rgbColor blueComponent];
+              alpha = [rgbColor alphaComponent];
+            }
+          NS_HANDLER
+            {
+              red = green = blue = 0.0;
+              alpha = 1.0;
+            }
+          NS_ENDHANDLER
 
           cairo_pattern_add_color_stop_rgba(cpattern, location,
                                             red, green, blue, alpha);
