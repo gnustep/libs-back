@@ -26,4 +26,7 @@ ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../../Headers \
 ADDITIONAL_OBJCFLAGS += -D_GNU_SOURCE
 
 ADDITIONAL_TOOL_LIBS += $(shell pkg-config --libs cairo wayland-client)
+
+# The EGL/OpenGL context test calls the GL API directly, so it also needs libGL.
+wlglcontext_TOOL_LIBS += -lGL
 endif
