@@ -54,6 +54,18 @@ gpbs_C_FILES += xdnd.c
 endif
 endif
 
+# The wayland backend has no pasteboard owner of its own, so build the X11
+# owner into gpbs when X11 is available; it reaches the desktop clipboard
+# through XWayland.  Without X11 gpbs stays an internal-only pasteboard.
+ifeq ($(BUILD_SERVER),wayland)
+ifneq ($(findstring -lX11,$(GRAPHIC_LIBS)),)
+gpbs_OBJC_FILES += xpbs.m
+ifeq ($(BACKEND_BUNDLE),yes)
+gpbs_C_FILES += xdnd.c
+endif
+endif
+endif
+
 ifeq ($(BUILD_SERVER),win32)
 gpbs_OBJC_FILES += win32pbs.m 
 endif
