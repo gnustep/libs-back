@@ -158,7 +158,7 @@
   // Remove existing font file if present
   if ([[NSFileManager defaultManager] fileExistsAtPath: destinationPath])
     {
-      [[NSFileManager defaultManager] removeItemAtPath: destinationPath error: nil];
+      [[NSFileManager defaultManager] removeItemAtPath: destinationPath error: NULL];
     }
 
   if (![[NSFileManager defaultManager] copyItemAtPath: fontPath
