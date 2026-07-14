@@ -113,7 +113,42 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
 }
 
 
-@implementation CairoGState 
+/* Emit a base-space bezier path onto a cairo context, resetting any current
+ * path first.  Used to replay tracked clip paths onto a copied context. */
+static void
+appendBezierToCairo(cairo_t *ct, NSBezierPath *bpath)
+{
+  NSInteger count = [bpath elementCount];
+  NSInteger i;
+
+  cairo_new_path(ct);
+  for (i = 0; i < count; i++)
+    {
+      NSPoint points[3];
+
+      switch ([bpath elementAtIndex: i associatedPoints: points])
+        {
+          case NSMoveToBezierPathElement:
+            cairo_move_to(ct, points[0].x, points[0].y);
+            break;
+          case NSLineToBezierPathElement:
+            cairo_line_to(ct, points[0].x, points[0].y);
+            break;
+          case NSCurveToBezierPathElement:
+            cairo_curve_to(ct, points[0].x, points[0].y,
+                           points[1].x, points[1].y,
+                           points[2].x, points[2].y);
+            break;
+          case NSClosePathBezierPathElement:
+            cairo_close_path(ct);
+            break;
+          default:
+            break;
+        }
+    }
+}
+
+@implementation CairoGState
 
 + (void) initialize
 {
@@ -129,6 +164,7 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
       cairo_destroy(_ct);
     }
   RELEASE(_surface);
+  RELEASE(_clipPaths);
 
   [super dealloc];
 }
@@ -146,6 +182,8 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
   CairoGState *copy = (CairoGState *)[super copyWithZone: zone];
 
   RETAIN(_surface);
+  /* super copies bitwise, so replace the shared pointer with our own list. */
+  copy->_clipPaths = [_clipPaths mutableCopy];
 
   if (_ct)
     {
@@ -165,7 +203,6 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
           cairo_path_t *cpath;
           cairo_matrix_t local_matrix;
 #if CAIRO_VERSION > CAIRO_VERSION_ENCODE(1, 4, 0)
-          cairo_rectangle_list_t *clip_rects;
           int	num_dashes;
 #endif
 
@@ -175,6 +212,36 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
           if (status != CAIRO_STATUS_SUCCESS)
             {
               NSLog(@"Cairo status '%s' in set matrix", cairo_status_to_string(status));
+            }
+
+          /* Reproduce the clip exactly by replaying the tracked paths under the
+           * same (base-space) matrix.  This runs before the current path is
+           * copied below, since cairo_clip() clears the path.  The tolerance
+           * and antialias are matched first so a curved clip is flattened into
+           * the same mask as the original. */
+          if ([copy->_clipPaths count] != 0)
+            {
+              NSUInteger ci, cn = [copy->_clipPaths count];
+
+              cairo_set_tolerance(copy->_ct, cairo_get_tolerance(_ct));
+              cairo_set_antialias(copy->_ct, cairo_get_antialias(_ct));
+
+              for (ci = 0; ci < cn; ci++)
+                {
+                  NSBezierPath *cp = [copy->_clipPaths objectAtIndex: ci];
+
+                  appendBezierToCairo(copy->_ct, cp);
+                  if ([cp windingRule] == NSEvenOddWindingRule)
+                    {
+                      cairo_set_fill_rule(copy->_ct, CAIRO_FILL_RULE_EVEN_ODD);
+                      cairo_clip(copy->_ct);
+                      cairo_set_fill_rule(copy->_ct, CAIRO_FILL_RULE_WINDING);
+                    }
+                  else
+                    {
+                      cairo_clip(copy->_ct);
+                    }
+                }
             }
 
           cpath = cairo_copy_path(_ct);
@@ -216,60 +283,6 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
               cairo_set_dash (copy->_ct, dashes, num_dashes, dash_offset);
               GS_ENDITEMBUF();
             }
-
-          // In cairo 1.4 there also is a way to get the current clipping path
-          clip_rects = cairo_copy_clip_rectangle_list(_ct);
-          status = clip_rects->status;
-          if (status == CAIRO_STATUS_SUCCESS)
-            {
-              int i;
-
-              if (cairo_version() >= CAIRO_VERSION_ENCODE(1, 6, 0))
-                {
-                  for (i = 0; i < clip_rects->num_rectangles; i++)
-                    {
-                      cairo_rectangle_t rect = clip_rects->rectangles[i];
-
-                      cairo_rectangle(copy->_ct, rect.x, rect.y, 
-                                      rect.width, rect.height);
-                      cairo_clip(copy->_ct);
-                    }
-                }
-              else
-                {
-                  for (i = 0; i < clip_rects->num_rectangles; i++)
-                    {
-                      cairo_rectangle_t rect = clip_rects->rectangles[i];
-                      NSSize size = [_surface size];
-
-                      cairo_rectangle(copy->_ct, rect.x, 
-                                      /* This strange computation is due 
-                                         to the device offset missing for 
-                                         clip rects in cairo < 1.6.0.  */
-                                      rect.y + 2*(offset.y - size.height), 
-                                      rect.width, rect.height);
-                      cairo_clip(copy->_ct);
-                    }
-                }
-            }
-          else if (status == CAIRO_STATUS_CLIP_NOT_REPRESENTABLE)
-            {
-              // We cannot get the exact clip, so we do the best we can
-              double x1;
-              double y1;
-              double x2;
-              double y2;
-
-              cairo_clip_extents(_ct, &x1, &y1, &x2, &y2);
-              cairo_rectangle(copy->_ct, x1, y1, x2 - x1, y2 - y1);
-              cairo_clip(copy->_ct);
-            }
-          else
-            {
-              NSLog(@"Cairo status '%s' in copy clip", cairo_status_to_string(status));
-            }
-
-          cairo_rectangle_list_destroy(clip_rects);
 #endif
         }
     }
@@ -507,6 +520,7 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
       cairo_destroy(_ct);
       _ct = NULL;
     }
+  [_clipPaths removeAllObjects];
   if (!_surface)
     {
       return;
@@ -728,12 +742,31 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
   cairo_set_antialias(_ct, [self shouldAntialias] ? CAIRO_ANTIALIAS_DEFAULT : CAIRO_ANTIALIAS_NONE);
 }
 
+/* Remember the path just intersected with the clip so a gstate copy can
+ * reproduce it exactly.  cairo only exposes its clip as a user-space rectangle
+ * list, which cannot represent a non-rectangular clip, so tracking the paths
+ * ourselves is the only way -copyWithZone: can keep the real clip shape. */
+- (void) _trackClipPath: (NSWindingRule)rule
+{
+  NSBezierPath *snapshot;
+
+  if (_clipPaths == nil)
+    {
+      _clipPaths = [[NSMutableArray alloc] initWithCapacity: 2];
+    }
+  snapshot = [path copy];
+  [snapshot setWindingRule: rule];
+  [_clipPaths addObject: snapshot];
+  RELEASE(snapshot);
+}
+
 - (void) DPSclip
 {
   if (_ct)
     {
       [self _setPath];
       cairo_clip(_ct);
+      [self _trackClipPath: NSNonZeroWindingRule];
      }
 }
 
@@ -745,6 +778,7 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
       cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_EVEN_ODD);
       cairo_clip(_ct);
       cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_WINDING);
+      [self _trackClipPath: NSEvenOddWindingRule];
     }
 }
 
@@ -799,6 +833,7 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
   if (_ct)
     {
       cairo_reset_clip(_ct);
+      [_clipPaths removeAllObjects];
     }
 }
 
