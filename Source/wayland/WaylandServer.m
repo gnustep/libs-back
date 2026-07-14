@@ -328,8 +328,14 @@ NSToWayland(struct window *window, int ns_y)
 
 - (const NSWindowDepth *)availableDepthsForScreen:(int)screen
 {
+  NSZone	*zone = NSDefaultMallocZone();
+  NSWindowDepth *depths;
+
   NSDebugLog(@"availableDepthsForScreen");
-  return NULL;
+  depths = NSZoneMalloc(zone, sizeof(NSWindowDepth) * 2);
+  depths[0] = (_GSRGBBitValue | 8);
+  depths[1] = 0;
+  return depths;
 }
 
 - (NSArray *)screenList
