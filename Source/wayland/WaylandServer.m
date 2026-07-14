@@ -309,8 +309,11 @@ NSToWayland(struct window *window, int ns_y)
 
   wl_list_for_each(output, &wlconfig->output_list, link)
   {
-    NSDebugLog(@"screen found: %dx%d", output->width, output->height);
-    return NSMakeRect(0, 0, output->width, output->height);
+    if (output->server_output_id == screen)
+      {
+	NSDebugLog(@"screen found: %dx%d", output->width, output->height);
+	return NSMakeRect(0, 0, output->width, output->height);
+      }
   }
 
   NSDebugLog(@"can't find screen");
