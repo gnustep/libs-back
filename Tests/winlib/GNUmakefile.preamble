@@ -1,0 +1,17 @@
+# Extra build settings for the winlib backend tests.
+
+# config.h (used by the source-level guards) sits at the top of the (build)
+# tree.
+ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../.. -I../..
+
+-include $(GNUSTEP_BUILD_DIR)/../../config.make
+-include ../../config.make
+
+# The rendering test drives the installed backend through AppKit and builds only
+# for the winlib graphics backend, so link the gui there.
+ifeq ($(BUILD_GRAPHICS),winlib)
+ADDITIONAL_TOOL_LIBS += -lgnustep-gui
+
+# The WGL/OpenGL test calls the GL API directly, so link opengl32 too.
+ADDITIONAL_TOOL_LIBS += -lopengl32
+endif
