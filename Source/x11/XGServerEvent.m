@@ -466,17 +466,20 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 	deltaX = 0.0;
         deltaY = 0.0;
 
+        /* -[NSEvent buttonNumber] uses the AppKit numbering, where the left
+         * button is 0, the right button is 1 and the middle button is 2,
+         * unlike the X11 numbering held in generic.lMouse and friends. */
         if (xEvent.xbutton.button == generic.lMouse)
           {
             if (swapMouseButtons)
               {
                 eventType = NSRightMouseDown;
-                buttonNumber = generic.rMouse;
+                buttonNumber = 1;
               }
             else
               {
                 eventType = NSLeftMouseDown;
-                buttonNumber = generic.lMouse;
+                buttonNumber = 0;
               }
           }
         else if (xEvent.xbutton.button == generic.rMouse
@@ -485,19 +488,19 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             if (swapMouseButtons)
               {
                 eventType = NSLeftMouseDown;
-                buttonNumber = generic.lMouse;
+                buttonNumber = 0;
               }
             else
               {
                 eventType = NSRightMouseDown;
-                buttonNumber = generic.rMouse;
+                buttonNumber = 1;
               }
           }
         else if (xEvent.xbutton.button == generic.mMouse
                  && generic.mMouse != 0)
           {
             eventType = NSOtherMouseDown;
-            buttonNumber = generic.mMouse;
+            buttonNumber = 2;
           }
         else if (xEvent.xbutton.button == generic.upMouse
                  && generic.upMouse != 0)
@@ -579,7 +582,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                      eventNumber: xEvent.xbutton.serial
                      clickCount: clickCount
                      pressure: 1.0
-                     buttonNumber: buttonNumber /* FIXME */
+                     buttonNumber: buttonNumber
                      deltaX: deltaX
                      deltaY: deltaY
                      deltaZ: 0.];
@@ -594,12 +597,12 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             if (swapMouseButtons)
               {
                 eventType = NSRightMouseUp;
-                buttonNumber = generic.rMouse;
+                buttonNumber = 1;
               }
             else
               {
                 eventType = NSLeftMouseUp;
-                buttonNumber = generic.lMouse;
+                buttonNumber = 0;
               }
           }
         else if (xEvent.xbutton.button == generic.rMouse
@@ -608,19 +611,19 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             if (swapMouseButtons)
               {
                 eventType = NSLeftMouseUp;
-                buttonNumber = generic.lMouse;
+                buttonNumber = 0;
               }
             else
               {
                 eventType = NSRightMouseUp;
-                buttonNumber = generic.rMouse;
+                buttonNumber = 1;
               }
           }
         else if (xEvent.xbutton.button == generic.mMouse
                  && generic.mMouse != 0)
           {
             eventType = NSOtherMouseUp;
-            buttonNumber = generic.mMouse;
+            buttonNumber = 2;
           }
         else
           {
@@ -652,7 +655,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                      eventNumber: xEvent.xbutton.serial
                      clickCount: clickCount
                      pressure: 1.0
-                     buttonNumber: buttonNumber        /* FIXMME */
+                     buttonNumber: buttonNumber
                      deltaX: 0.0
                      deltaY: 0.0
                      deltaZ: 0.0];
@@ -1539,18 +1542,22 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
           if (state & generic.lMouseMask)
             {
               eventType = NSLeftMouseDragged;
+              buttonNumber = 0;
             }
           else if (state & generic.rMouseMask)
             {
               eventType = NSRightMouseDragged;
+              buttonNumber = 1;
             }
           else if (state & generic.mMouseMask)
             {
               eventType = NSOtherMouseDragged;
+              buttonNumber = 2;
             }
           else
             {
               eventType = NSMouseMoved;
+              buttonNumber = 0;
             }
 
           eventFlags = process_modifier_flags(state);
@@ -1579,7 +1586,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                        eventNumber: xEvent.xbutton.serial
                        clickCount: clickCount
                        pressure: 1.0
-                       buttonNumber: 0 /* FIXME */
+                       buttonNumber: buttonNumber
                        deltaX: deltaX
                        deltaY: deltaY
                        deltaZ: 0];
