@@ -1151,7 +1151,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     }
   if (o->known == NO)
     {
-      NSLog(@"Failed to determine offsets for style %d", style);
+      NSDebugLLog(@"Offset", @"Failed to determine offsets for style %d", style);
       return NO;
     }
   return YES;
