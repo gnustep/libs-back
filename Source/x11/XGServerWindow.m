@@ -1992,6 +1992,35 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 		      (unsigned char *)&window->win_attrs,
 		      sizeof(GNUstepWMAttributes)/sizeof(CARD32));
 
+  // Let an EWMH window manager associate this window with our process.
+  // The specification requires WM_CLIENT_MACHINE to accompany _NET_WM_PID.
+  if ((generic.wm & XGWM_EWMH) != 0)
+    {
+      NSProcessInfo	*pInfo = [NSProcessInfo processInfo];
+      long		pid = [pInfo processIdentifier];
+      const char	*host_name = [[pInfo hostName] UTF8String];
+
+/* Warning ... X-bug .. when we specify 32bit data X actually expects data
+ * of type 'long' or 'unsigned long' even on machines where those types
+ * hold 64bit values.
+ */
+      XChangeProperty(dpy, window->ident,
+	generic._NET_WM_PID_ATOM, XA_CARDINAL,
+	32, PropModeReplace,
+	(unsigned char *)&pid, 1);
+
+      if (host_name != NULL && *host_name != '\0')
+	{
+	  XTextProperty	machine;
+
+	  if (XStringListToTextProperty((char **)&host_name, 1, &machine) != 0)
+	    {
+	      XSetWMClientMachine(dpy, window->ident, &machine);
+	      XFree(machine.value);
+	    }
+	}
+    }
+
   // send to the WM window style hints
   if ((generic.wm & XGWM_WINDOWMAKER) == 0)
     {
