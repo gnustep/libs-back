@@ -87,19 +87,17 @@ pointer_handle_enter(void *data, struct wl_pointer *pointer, uint32_t serial,
       gcontext = GSCurrentContext();
       eventLocation = NSMakePoint(sx, window->height - sy);
 
-      event = [NSEvent mouseEventWithType:NSMouseEntered
+      /* NSMouseEntered must be built with the enter/exit constructor;
+       * +mouseEventWithType: rejects it ("mouseEvent with wrong type"). */
+      event = [NSEvent enterExitEventWithType:NSMouseEntered
 				 location:eventLocation
 			    modifierFlags:wlconfig->modifiers
 				timestamp:wlconfig->pointer.last_timestamp
 			     windowNumber:window->window_id
 				  context:gcontext
 			      eventNumber:serial
-			       clickCount:0
-				 pressure:0.0
-			     buttonNumber:0
-				   deltaX:deltaX
-				   deltaY:deltaY
-				   deltaZ:0.];
+			   trackingNumber:0
+				 userData:NULL];
 
       [GSCurrentServer() postEvent:event atStart:NO];
     }
@@ -143,19 +141,19 @@ pointer_handle_leave(void *data, struct wl_pointer *pointer, uint32_t serial,
           gcontext = GSCurrentContext();
 
           eventLocation = NSMakePoint(wlconfig->pointer.x, wlconfig->pointer.y);
-          event = [NSEvent mouseEventWithType:NSMouseExited
+          /* NSMouseExited is not a plain mouse event: +mouseEventWithType:
+           * rejects it ("mouseEvent with wrong type").  This path is reached
+           * whenever the pointer leaves while a button is held - notably at
+           * the start of a drag - so it must use the enter/exit constructor. */
+          event = [NSEvent enterExitEventWithType:NSMouseExited
                           location:eventLocation
                       modifierFlags:0
                           timestamp:wlconfig->pointer.last_timestamp
                       windowNumber:window->window_id
                           context:gcontext
                       eventNumber:serial
-                      clickCount:0
-                          pressure:0.0
-                      buttonNumber:0
-                          deltaX:0
-                          deltaY:0
-                          deltaZ:0.];
+                      trackingNumber:0
+                          userData:NULL];
 
           [GSCurrentServer() postEvent:event atStart:NO];
         }
