@@ -51,6 +51,7 @@ WaylandServer+Keyboard.m  \
 WaylandServer+Seat.m  \
 WaylandServer+Xdgshell.m  \
 WaylandServer+Layershell.m  \
+WaylandDragView.m  \
 WaylandInputServer.m  \
 
 ifeq ($(WITH_EGL),yes)
