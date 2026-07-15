@@ -3445,11 +3445,15 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
             }
           else if (level == NSMainMenuWindowLevel)
             {
-              data[0] = generic._NET_WM_WINDOW_TYPE_DOCK_ATOM;
+              data[0] = generic._NET_WM_WINDOW_TYPE_TOOLBAR_ATOM;
               skipTaskbar = YES;
             }
-          else if (level == NSSubmenuWindowLevel
-                   || level == NSTornOffMenuWindowLevel)
+          else if (level == NSSubmenuWindowLevel)
+            {
+              data[0] = generic._NET_WM_WINDOW_TYPE_DROPDOWN_MENU_ATOM;
+              skipTaskbar = YES;
+            }
+          else if (level == NSTornOffMenuWindowLevel)
             {
               data[0] = generic._NET_WM_WINDOW_TYPE_MENU_ATOM;
               skipTaskbar = YES;
