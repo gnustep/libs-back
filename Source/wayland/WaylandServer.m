@@ -132,6 +132,12 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name,
       NSDebugLog(@"wayland: found seat interface");
       wl_seat_add_listener(wlconfig->seat, &seat_listener, wlconfig);
     }
+  else if (strcmp(interface, wl_data_device_manager_interface.name) == 0)
+    {
+      wlconfig->data_device_manager
+	= wl_registry_bind(registry, name, &wl_data_device_manager_interface, 3);
+      NSDebugLog(@"wayland: found data_device_manager interface");
+    }
 #ifdef HAVE_EGL
   else if (strcmp(interface, wl_subcompositor_interface.name) == 0)
     {
@@ -211,6 +217,19 @@ NSToWayland(struct window *window, int ns_y)
 
   wl_display_dispatch(wlconfig->display);
   wl_display_roundtrip(wlconfig->display);
+
+  /* Once the seat and the data device manager are both bound we can create
+   * the data device used for drag and drop and clipboard transfers. */
+  if (wlconfig->data_device_manager != NULL && wlconfig->seat != NULL
+      && wlconfig->data_device == NULL)
+    {
+      extern const struct wl_data_device_listener data_device_listener;
+
+      wlconfig->data_device = wl_data_device_manager_get_data_device(
+	wlconfig->data_device_manager, wlconfig->seat);
+      wl_data_device_add_listener(wlconfig->data_device,
+	&data_device_listener, wlconfig);
+    }
 
   if (!wlconfig->compositor)
     {

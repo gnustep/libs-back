@@ -82,6 +82,8 @@ typedef struct _WaylandConfig
   struct wl_shm		*shm;
   struct wl_seat		 *seat;
   struct wl_keyboard	     *keyboard;
+  struct wl_data_device_manager *data_device_manager;
+  struct wl_data_device	     *data_device;
   struct xdg_wm_base	     *wm_base;
   struct zwlr_layer_shell_v1 *layer_shell;
 #ifdef HAVE_EGL
