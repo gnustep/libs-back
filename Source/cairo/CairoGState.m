@@ -33,6 +33,7 @@
 #include <AppKit/NSColor.h>
 #include <AppKit/NSGradient.h>
 #include <AppKit/NSGraphics.h>
+#include <AppKit/NSShadow.h>
 #include "cairo/CairoGState.h"
 #include "cairo/CairoFontInfo.h"
 #include "cairo/CairoSurface.h"
@@ -760,6 +761,8 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
           return;
         }
 
+      [self _drawShadowForOperation: path_eofill];
+
       c = fillColor;
       gsColorToRGB(&c);
       // The underlying concept does not allow to determine if alpha is set or not.
@@ -770,6 +773,50 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
       cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_WINDING);
     }
   [self DPSnewpath];
+}
+
+/* Renders the current path offset by the active shadow, in the shadow colour,
+   as a plain (unblurred) shadow.  The shadow parameters live on the shared
+   GSGState so that any backend can render a shadow the same way; blur is not
+   yet applied. */
+- (void) _drawShadowForOperation: (ctxt_object_t)drawType
+{
+  NSColor *shadowColor;
+  NSSize soffset;
+  CGFloat r, g, b, a;
+
+  if (_shadow == nil || _ct == NULL)
+    return;
+
+  shadowColor = [[_shadow shadowColor]
+    colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+  if (shadowColor == nil)
+    return;
+  [shadowColor getRed: &r green: &g blue: &b alpha: &a];
+
+  soffset = [_shadow shadowOffset];
+
+  cairo_save(_ct);
+  /* The offset is expressed in the current user space, which is what the path
+     is built in, so translate by it directly. */
+  cairo_translate(_ct, soffset.width, soffset.height);
+  cairo_set_source_rgba(_ct, r, g, b, a);
+  [self _setPath];
+  switch (drawType)
+    {
+      case path_eofill:
+        cairo_set_fill_rule(_ct, CAIRO_FILL_RULE_EVEN_ODD);
+        /* fall through */
+      case path_fill:
+        cairo_fill(_ct);
+        break;
+      case path_stroke:
+        cairo_stroke(_ct);
+        break;
+      default:
+        break;
+    }
+  cairo_restore(_ct);
 }
 
 - (void) DPSfill
@@ -783,6 +830,8 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
           [self fillPath: path withPattern: pattern];
           return;
         }
+
+      [self _drawShadowForOperation: path_fill];
 
       c = fillColor;
       gsColorToRGB(&c);
@@ -808,6 +857,8 @@ static inline cairo_filter_t cairoFilterFromNSImageInterpolation(NSImageInterpol
     {
       BOOL zeroLineWidth = NO;
       device_color_t c;
+
+      [self _drawShadowForOperation: path_stroke];
 
       c = strokeColor;
       gsColorToRGB(&c);
