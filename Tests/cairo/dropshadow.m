@@ -79,12 +79,18 @@ main(int argc, const char **argv)
   NSBitmapImageRep *rep;
   NSBezierPath *p;
 
-  if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
-    {
-      NSLog(@"no window server available; skipping shadow tests");
-      DESTROY(pool);
-      return 0;
-    }
+  {
+    const char *x11 = getenv("DISPLAY");
+    const char *wayland = getenv("WAYLAND_DISPLAY");
+
+    if ((x11 == NULL || *x11 == '\0')
+      && (wayland == NULL || *wayland == '\0'))
+      {
+	NSLog(@"no window server available; skipping shadow tests");
+	DESTROY(pool);
+	return 0;
+      }
+  }
 
   [NSApplication sharedApplication];
 
