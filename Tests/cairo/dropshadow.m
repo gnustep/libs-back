@@ -6,16 +6,18 @@
  * stroke are each exercised.
  *
  * It needs a running window server, so it skips cleanly when there is none, and
- * it guards on the cairo graphics backend being the one built.  Colours are
- * checked with a small tolerance to allow for the backend's fixed-point
- * arithmetic.
+ * it guards on one of the raster graphics backends that render shadows being
+ * the one built.  Colours are checked with a small tolerance to allow for the
+ * backend's fixed-point arithmetic.
  */
 #import <Foundation/NSObject.h>
 #import "Testing.h"
 #include "config.h"
 
-#if defined(BUILD_GRAPHICS) && defined(GRAPHICS_cairo) \
-  && BUILD_GRAPHICS == GRAPHICS_cairo
+#if defined(BUILD_GRAPHICS) \
+  && (BUILD_GRAPHICS == GRAPHICS_cairo \
+      || BUILD_GRAPHICS == GRAPHICS_art \
+      || BUILD_GRAPHICS == GRAPHICS_xlib)
 
 #import <AppKit/AppKit.h>
 #import <AppKit/NSBezierPath.h>

@@ -7,9 +7,9 @@ ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../.. -I../..
 -include $(GNUSTEP_BUILD_DIR)/../../config.make
 -include ../../config.make
 
-# The rendering test drives the installed backend through AppKit and builds
-# only for the cairo graphics backend, so link the gui there.
-ifeq ($(BUILD_GRAPHICS),cairo)
+# The rendering tests drive the installed backend through AppKit, so link the
+# gui for the raster graphics backends they build for.
+ifneq ($(filter $(BUILD_GRAPHICS),cairo art xlib),)
 ADDITIONAL_TOOL_LIBS += -lgnustep-gui
 endif
 
