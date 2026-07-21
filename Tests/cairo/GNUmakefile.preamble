@@ -9,7 +9,7 @@ ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../.. -I../..
 
 # The rendering tests drive the installed backend through AppKit, so link the
 # gui for the raster graphics backends they build for.
-ifneq ($(filter $(BUILD_GRAPHICS),cairo art xlib),)
+ifneq ($(filter $(BUILD_GRAPHICS),cairo art),)
 ADDITIONAL_TOOL_LIBS += -lgnustep-gui
 endif
 

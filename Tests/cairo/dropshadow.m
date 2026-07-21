@@ -6,9 +6,10 @@
  * stroke are each exercised.
  *
  * It needs a running window server, so it skips cleanly when there is none, and
- * it guards on one of the raster graphics backends that render shadows being
- * the one built.  Colours are checked with a small tolerance to allow for the
- * backend's fixed-point arithmetic.
+ * it guards on the cairo or art graphics backend, whose offscreen drawing can
+ * be read back reliably in a headless test run.  The xlib and winlib backends
+ * render shadows the same way but are not exercised here.  Colours are checked
+ * with a small tolerance to allow for the backend's fixed-point arithmetic.
  */
 #import <Foundation/NSObject.h>
 #import "Testing.h"
@@ -16,8 +17,7 @@
 
 #if defined(BUILD_GRAPHICS) \
   && (BUILD_GRAPHICS == GRAPHICS_cairo \
-      || BUILD_GRAPHICS == GRAPHICS_art \
-      || BUILD_GRAPHICS == GRAPHICS_xlib)
+      || BUILD_GRAPHICS == GRAPHICS_art)
 
 #import <AppKit/AppKit.h>
 #import <AppKit/NSBezierPath.h>
