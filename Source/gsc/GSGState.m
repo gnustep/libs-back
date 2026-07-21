@@ -75,6 +75,7 @@
   RELEASE(fillColorS);
   RELEASE(strokeColorS);
   TEST_RELEASE(pattern);
+  TEST_RELEASE(_shadow);
   [super dealloc];
 }
 
@@ -97,6 +98,8 @@
     RETAIN(strokeColorS);
   if (pattern != nil)
     RETAIN(pattern);
+  if (_shadow != nil)
+    RETAIN(_shadow);
 
   return self;
 }
@@ -175,6 +178,16 @@
 - (void) setCompositingOperation: (NSCompositingOperation)operation
 {
   _compositingOperation = operation;
+}
+
+- (void) setShadow: (NSShadow *)shadow
+{
+  ASSIGN(_shadow, shadow);
+}
+
+- (NSShadow *) shadow
+{
+  return _shadow;
 }
 
 // This is only a fall back, the method should not be called any more.
