@@ -27,6 +27,11 @@ ADDITIONAL_OBJCFLAGS += -D_GNU_SOURCE
 
 ADDITIONAL_TOOL_LIBS += $(shell pkg-config --libs cairo wayland-client)
 
-# The EGL/OpenGL context test calls the GL API directly, so it also needs libGL.
+# The EGL/OpenGL context test calls the GL API directly, so it also needs
+# libGL, but only where the backend was built with EGL.  Without EGL the test
+# compiles to an inert skip and libGL need not be present, so linking it there
+# would break the build on systems that have no libGL.
+ifeq ($(WITH_EGL),yes)
 wlglcontext_TOOL_LIBS += -lGL
+endif
 endif
