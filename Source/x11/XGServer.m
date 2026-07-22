@@ -565,6 +565,7 @@ static NSString	*startupID = nil;
       NSZoneFree([self zone], monitors);
     }
   XCloseDisplay(dpy);
+  if (generic.rootName) free(generic.rootName);
   [super dealloc];
 }
 
