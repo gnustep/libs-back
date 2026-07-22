@@ -1,3 +1,15 @@
+2026-07-22 Richard Frith-Macdonald <rfm@gnu.org>
+
+	* Source/x11/XGServerEvent.m:
+	* Source/x11/XGServer.m:
+	Added -teardownRunLoopInputSourcesForMode: method and call it when the
+	server is deallocated.  Teardown of the runloop is necessary before
+	deallocation because otherwise an event in the loop can crash the
+	process while it is shutting down (message sent to deallocated object)
+	and while a crash on shutdown is not really very important, it messes
+	up regression testing and can cause odd efects which worry users.
+	NB. I expect this needs doing for the other backends too.
+
 2026-05-21 DMJC <jcarthew@gmail.com>
 
 	* Headers/wayland/WaylandInputServer.h:
@@ -5,8 +17,8 @@
 	* Source/wayland/GNUmakefile:
 	* Headers/wayland/WaylandServer.h:
 	* Source/wayland/WaylandServer.m:
-	Add WaylandInputServer, implementing the NSInputServer/NSInputServiceProvider
-	protocol for the Wayland backend.  WaylandServer instantiates it at startup
+	Add WaylandInputServer, implementing the
+	NSInputServer/NSInputServiceProvider protocol for the Wayland backend.  	WaylandServer instantiates it at startup
 	and delegates all input-method queries (inputMethodStyle, fontSize,
 	clientWindowRect, preedit/status area accessors) to it via a new
 	WaylandServer (InputMethod) category.  The focused window is tracked via

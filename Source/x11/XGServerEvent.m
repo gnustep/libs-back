@@ -127,6 +127,7 @@ static void (*procEvent)(id, SEL, XEvent*) = 0;
                  extra: (void*)extra
                forMode: (NSString*)mode;
 - (void) setupRunLoopInputSourcesForMode: (NSString*)mode; 
+- (void) teardownRunLoopInputSourcesForMode: (NSString*)mode; 
 - (NSDate*) timedOutEvent: (void*)data
                      type: (RunLoopEventType)type
                   forMode: (NSString*)mode;
@@ -275,6 +276,21 @@ static int check_modifier (XEvent *xEvent, KeySym key_sym)
       procEvent = (void (*)(id, SEL, XEvent*))
         [self methodForSelector: procSel];
     }
+}
+
+- (void) teardownRunLoopInputSourcesForMode: (NSString*)mode
+{
+  int xEventQueueFd = XConnectionNumber(dpy);
+  NSRunLoop *currentRunLoop = [NSRunLoop currentRunLoop];
+
+#if defined(LIB_FOUNDATION_LIBRARY)
+#elif defined(NeXT_PDO)
+#else
+  [currentRunLoop removeEvent: (void*)(gsaddr)xEventQueueFd
+			 type: ET_RDESC
+		      forMode: mode
+			  all: YES];
+#endif
 }
 
 #if LIB_FOUNDATION_LIBRARY

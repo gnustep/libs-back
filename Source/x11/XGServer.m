@@ -137,6 +137,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 
 @interface XGServer (Private)
 - (void) setupRunLoopInputSourcesForMode: (NSString*)mode; 
+- (void) teardownRunLoopInputSourcesForMode: (NSString*)mode; 
 @end
 
 @interface XGScreenContext : NSObject
@@ -567,6 +568,10 @@ static NSString	*startupID = nil;
   [[NSDistributedNotificationCenter defaultCenter] removeObserver:self];
   DESTROY(inputServer);
   [self _destroyServerWindows];
+  [self teardownRunLoopInputSourcesForMode: NSDefaultRunLoopMode]; 
+  [self teardownRunLoopInputSourcesForMode: NSConnectionReplyMode]; 
+  [self teardownRunLoopInputSourcesForMode: NSModalPanelRunLoopMode]; 
+  [self teardownRunLoopInputSourcesForMode: NSEventTrackingRunLoopMode]; 
   NSFreeMapTable(screenList);
   if (monitors != NULL)
     {
