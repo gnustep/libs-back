@@ -616,6 +616,10 @@ WaylandServer (Cursor)
 
 - (void)hidecursor
 {
+  if (wlconfig->pointer.wlpointer == NULL)
+    {
+      return;
+    }
   // to hide the cursor we set a NULL surface
   wl_pointer_set_cursor(wlconfig->pointer.wlpointer, wlconfig->pointer.serial,
 			NULL, 0, 0);
@@ -623,6 +627,10 @@ WaylandServer (Cursor)
 
 - (void)showcursor
 {
+  if (wlconfig->pointer.wlpointer == NULL)
+    {
+      return;
+    }
   // restore  the previous surface
   wl_pointer_set_cursor(wlconfig->pointer.wlpointer, wlconfig->pointer.serial,
 			wlconfig->cursor->surface,
@@ -773,6 +781,10 @@ WaylandServer (Cursor)
       return;
     }
   if (wayland_cursor->buffer == NULL)
+    {
+      return;
+    }
+  if (wlconfig->pointer.wlpointer == NULL)
     {
       return;
     }
