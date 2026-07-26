@@ -557,6 +557,25 @@ fi
 WITH_WRASTER=no
 AC_SUBST(WITH_WRASTER)
 
+dnl Whether to build against the wraster image code. Default: no (use the
+dnl plain-Xlib xlibimage layer). --enable-wraster restores the wraster path.
+dnl Orthogonal to WITH_WRASTER above, which selects a system vs bundled
+dnl wraster when the wraster path is in use.
+AC_ARG_ENABLE([wraster],
+  [AS_HELP_STRING([--enable-wraster],
+    [use the wraster image code instead of the plain-Xlib layer (default: no)])],
+  [enable_wraster=$enableval],
+  [enable_wraster=no])
+
+if test "x$enable_wraster" = "xyes"; then
+  USE_WRASTER=1
+else
+  USE_WRASTER=0
+fi
+AC_SUBST(USE_WRASTER)
+AC_DEFINE_UNQUOTED([USE_WRASTER], [$USE_WRASTER],
+  [Define to 1 to use the wraster image code, 0 for the plain-Xlib layer.])
+
 # Revert to previous flags (removing added GNUstep flags)
 CPPFLAGS=${GRAPHIC_CFLAGS}
 LDFLAGS=${GRAPHIC_LFLAGS}

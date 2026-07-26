@@ -173,6 +173,9 @@
 /* Define to enable glitz support */
 #undef USE_GLITZ
 
+/* Define to 1 to use the wraster image code, 0 for the plain-Xlib layer. */
+#undef USE_WRASTER
+
 /* Define to enable XIM support */
 #undef USE_XIM
 

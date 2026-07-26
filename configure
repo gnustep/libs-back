@@ -654,6 +654,7 @@ BUILD_SERVER
 BUILD_GRAPHICS
 WITH_EGL
 WITH_WRASTER
+USE_WRASTER
 WITH_GLITZ
 GLITZ_WGL_LIBS
 GLITZ_WGL_CFLAGS
@@ -1439,6 +1440,7 @@ Optional Features:
   --enable-glitz          Enable Glitz support
   --enable-server=SRV     Build server type: x11, win32, wayland, headless
   --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal, headless
+  --enable-wraster        use the wraster image code instead of the plain-Xlib layer (default: no)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -8064,6 +8066,23 @@ fi
 # Set definitions
 #--------------------------------------------------------------------
 WITH_WRASTER=no
+
+# Check whether --enable-wraster was given.
+if test ${enable_wraster+y}
+then :
+  enableval=$enable_wraster;
+else case e in #(
+  e) enable_wraster=no ;;
+esac
+fi
+
+if test "x$enable_wraster" = "xyes"; then
+  USE_WRASTER=1
+else
+  USE_WRASTER=0
+fi
+
+printf '%s\n' "#define USE_WRASTER $USE_WRASTER" >>confdefs.h
 
 
 # Revert to previous flags (removing added GNUstep flags)
