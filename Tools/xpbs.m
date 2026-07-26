@@ -254,6 +254,7 @@ NSPasteboardTypeFromAtom(Atom type)
   Time		_timeOfLastAppend;
   Time		_timeOfSetSelectionOwner;
   BOOL		_ownedByOpenStep;
+  BOOL		_updatingForeignTypes;
 }
 
 + (XPbOwner*) ownerByXPb: (Atom)p;
@@ -277,6 +278,7 @@ NSPasteboardTypeFromAtom(Atom type)
 - (NSPasteboard*) osPb;
 - (void) pasteboardChangedOwner: (NSPasteboard*)sender;
 - (void) pasteboard: (NSPasteboard*)pb provideDataForType: (NSString*)type;
+- (void) refreshForeignTypes;
 - (void) setData: (NSData*)obj;
 - (void) setOwnedByOpenStep: (BOOL)flag;
 - (void) setTimeOfLastAppend: (Time)when;
@@ -662,7 +664,16 @@ static int              xFixesEventBase;
       if (xEvent->owner != (Window)xAppWin)
        {
          NSDebugLLog(@"Pbs", @"Notified that selection %@ changed", [[o osPb] name]);
-	 // FIXME: Invalidate the cached types in the pasteboard since they are no longer valid
+	 /* The types cached for this pasteboard are now stale.  Refresh them
+	  * from the new owner once this notification has been handled: reading
+	  * the new owner's types needs its own selection round trip, which
+	  * cannot run from inside this callback. */
+	 [NSObject cancelPreviousPerformRequestsWithTarget: o
+	   selector: @selector(refreshForeignTypes)
+	   object: nil];
+	 [o performSelector: @selector(refreshForeignTypes)
+	        withObject: nil
+	        afterDelay: 0.0];
        }
       else
        {
@@ -752,12 +763,15 @@ static int              xFixesEventBase;
    *	To conform to ICCCM we need to specify an up-to-date timestamp.
    */
 
-  // FIXME: See note in -xSelectionClear:. This method is called by
-  // -[NSPasteboard declareTypes:owner:], but we might not want
-  // GNUstep to take ownership. (e.g. suppose selection ownership changes from
-  // gnome-terminal to OpenOffice.org. But, we will still need to update the
-  // types available on the pasteboard in case a GNUstep app wants to read from
-  // the pasteboard.)
+  // When we are only refreshing the types to match a foreign selection
+  // owner (see -refreshForeignTypes) we must not grab the X selection,
+  // otherwise we would take it away from the application that owns it and
+  // still need to read from.  We only update the pasteboard types in that
+  // case.
+  if (_updatingForeignTypes)
+    {
+      return;
+    }
 
   _timeOfSetSelectionOwner = [self xTimeByAppending];
   XSetSelectionOwner(xDisplay, _xPb, xAppWin, _timeOfSetSelectionOwner);
@@ -1085,6 +1099,29 @@ xErrorHandler(Display *d, XErrorEvent *e)
   // FIXME: This will cause -pasteboardChangedOwner: to be called, which will
   // take ownership of the X selection. That is probably wrong...
   [_pb declareTypes: [self availableTypes] owner: self];
+  [self setOwnedByOpenStep: NO];
+}
+
+- (void) refreshForeignTypes
+{
+  /* Another application has taken the X selection, so the types cached for
+   * this pasteboard are stale.  Re-read the new owner's types and update the
+   * pasteboard, so a GNUstep app reading from it sees the current contents.
+   * The -_updatingForeignTypes flag stops -pasteboardChangedOwner: from
+   * grabbing the X selection back from the owner we are reading.  This runs
+   * deferred (not from the XFixes callback) because -availableTypes needs its
+   * own selection round trip. */
+  _updatingForeignTypes = YES;
+  NS_DURING
+    {
+      [_pb declareTypes: [self availableTypes] owner: self];
+    }
+  NS_HANDLER
+    {
+      NSLog(@"Failed to refresh pasteboard types: %@", [localException reason]);
+    }
+  NS_ENDHANDLER
+  _updatingForeignTypes = NO;
   [self setOwnedByOpenStep: NO];
 }
 
