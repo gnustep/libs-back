@@ -457,6 +457,77 @@ static void load_font_configuration(void)
   DESTROY(families_pending);
 }
 
+/* The bold face of the family that `systemFont` (a family or face name)
+   belongs to, or nil.  This lets a custom system font, set through the
+   NSFont default, resolve to its own bold variant instead of falling
+   through to an unrelated hardcoded family. */
+static NSString *
+ftBoldFaceForSystemFont(NSString *systemFont)
+{
+  NSArray *faces = [fcfg_allFontFamilies objectForKey: systemFont];
+  NSUInteger i, n;
+
+  if (faces == nil)
+    {
+      NSEnumerator *fe = [fcfg_allFontFamilies keyEnumerator];
+      NSString *family;
+
+      while (faces == nil && (family = [fe nextObject]) != nil)
+        {
+          NSArray *fs = [fcfg_allFontFamilies objectForKey: family];
+
+          n = [fs count];
+          for (i = 0; i < n; i++)
+            {
+              if ([[[fs objectAtIndex: i] objectAtIndex: 0]
+                    isEqualToString: systemFont])
+                {
+                  faces = fs;
+                  break;
+                }
+            }
+        }
+    }
+  if (faces == nil)
+    return nil;
+
+  n = [faces count];
+  for (i = 0; i < n; i++)
+    {
+      NSArray *face = [faces objectAtIndex: i];
+
+      if ([[face objectAtIndex: 3] unsignedIntValue] & NSBoldFontMask)
+        return [face objectAtIndex: 0];
+    }
+  return nil;
+}
+
+/* The name of a plain (non-bold, non-italic) enumerated face carrying
+   `trait`, or nil.  Used to pick a fixed-pitch default from the enumerated
+   fonts rather than embedding a specific family name. */
+static NSString *
+ftPlainFaceWithTrait(NSFontTraitMask trait)
+{
+  NSEnumerator *fe = [fcfg_allFontFamilies objectEnumerator];
+  NSArray *faces;
+
+  while ((faces = [fe nextObject]) != nil)
+    {
+      NSUInteger i, n = [faces count];
+
+      for (i = 0; i < n; i++)
+        {
+          NSArray *face = [faces objectAtIndex: i];
+          NSFontTraitMask t = [[face objectAtIndex: 3] unsignedIntValue];
+
+          if ((t & trait) == trait
+              && (t & (NSBoldFontMask | NSItalicFontMask)) == 0)
+            return [face objectAtIndex: 0];
+        }
+    }
+  return nil;
+}
+
 @implementation FTFontEnumerator
 
 + (FTFaceInfo *) fontWithName: (NSString *)name
@@ -490,6 +561,19 @@ static void load_font_configuration(void)
 
 - (NSString *) defaultBoldSystemFontName
 {
+  /* Derive the bold face from the configured system font family, so a
+     custom system font gets its own bold variant.  The hardcoded names
+     remain only as a last resort. */
+  NSString *systemFont = [[NSUserDefaults standardUserDefaults]
+                           stringForKey: @"NSFont"];
+  NSString *name;
+
+  if (systemFont == nil)
+    systemFont = [self defaultSystemFontName];
+  name = ftBoldFaceForSystemFont(systemFont);
+  if (name != nil && [fcfg_allFontNames containsObject: name])
+    return name;
+
   if ([fcfg_allFontNames containsObject: @"BitstreamVeraSans-Bold"])
     return @"BitstreamVeraSans-Bold";
   if ([fcfg_allFontNames containsObject: @"FreeSansBold"])
@@ -499,6 +583,11 @@ static void load_font_configuration(void)
 
 - (NSString *) defaultFixedPitchFontName
 {
+  NSString *name = ftPlainFaceWithTrait(NSFixedPitchFontMask);
+
+  if (name != nil && [fcfg_allFontNames containsObject: name])
+    return name;
+
   if ([fcfg_allFontNames containsObject: @"BitstreamVeraSansMono-Roman"])
     return @"BitstreamVeraSansMono-Roman";
   if ([fcfg_allFontNames containsObject: @"FreeMono"])
