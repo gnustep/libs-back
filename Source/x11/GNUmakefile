@@ -33,6 +33,7 @@ include ../../config.make
 SUBPROJECT_NAME=x11
 
 # The C source files to be compiled
+ifeq ($(USE_WRASTER),1)
 ifeq ($(WITH_WRASTER),yes)
 x11_C_FILES = \
 xdnd.c
@@ -44,6 +45,11 @@ raster.c \
 scale.c \
 xdnd.c \
 xutil.c
+endif
+else
+x11_C_FILES = \
+xdnd.c \
+xlibimage.c
 endif
 
 # The Objective-C source files to be compiled

@@ -48,10 +48,14 @@
 #include <unistd.h>
 #endif
 
-#ifdef HAVE_WRASTER_H
-#include "wraster.h"
+#if USE_WRASTER
+# ifdef HAVE_WRASTER_H
+#  include "wraster.h"
+# else
+#  include "x11/wraster.h"
+# endif
 #else
-#include "x11/wraster.h"
+# include "x11/xlibimage.h"
 #endif
 
 // For X_HAVE_UTF8_STRING

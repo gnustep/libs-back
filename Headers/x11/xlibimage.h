@@ -9,6 +9,9 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#ifdef XSHM
+#include <X11/extensions/XShm.h>
+#endif
 
 /* RContextAttributes flag bits (values match wraster.h). */
 #define RC_RenderMode        (1<<0)

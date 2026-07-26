@@ -57,10 +57,14 @@ terminate(int sig)
     }
 }
 
-#ifdef HAVE_WRASTER_H
-#include "wraster.h"
+#if USE_WRASTER
+# ifdef HAVE_WRASTER_H
+#  include "wraster.h"
+# else
+#  include "x11/wraster.h"
+# endif
 #else
-#include "x11/wraster.h"
+# include "x11/xlibimage.h"
 #endif
 
 #include "x11/XGServer.h"
@@ -297,8 +301,8 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 
 - (void) dealloc
 {
-#ifndef HAVE_WRASTER_H
-  // FIXME: context.c does not include a clean up function for Rcontext, 
+#if USE_WRASTER && !defined(HAVE_WRASTER_H)
+  // FIXME: context.c does not include a clean up function for Rcontext,
   // so we try do it here.
 
   /*
@@ -330,6 +334,10 @@ _parse_display_name(NSString *name, int *dn, int *sn)
       free(rcontext->attribs);
       free(rcontext);
     }
+#endif
+#if !USE_WRASTER
+  if (rcontext)
+    RDestroyContext(rcontext);
 #endif
   [super dealloc];
 }

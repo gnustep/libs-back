@@ -51,10 +51,14 @@
 #include "x11/XGGeneric.h"
 #include "x11/xdnd.h"
 
-#ifdef HAVE_WRASTER_H
-#include "wraster.h"
+#if USE_WRASTER
+# ifdef HAVE_WRASTER_H
+#  include "wraster.h"
+# else
+#  include "x11/wraster.h"
+# endif
 #else
-#include "x11/wraster.h"
+# include "x11/xlibimage.h"
 #endif
 #ifdef HAVE_XRANDR
 #include <X11/extensions/Xrandr.h>
