@@ -453,8 +453,67 @@ static NSArray *faFromFc(FcPattern *pat)
   return @"Helvetica";
 }
 
+/* Return the enumerated font name of fontconfig's best match for pat,
+   applying the usual configuration and default substitutions, or nil.
+   Reuses faFromFc so the returned name is the same one under which the
+   font was enumerated (and thus present in allFontNames).  The caller
+   owns pat. */
+static NSString *
+fcDefaultFontName(FcPattern *pat)
+{
+  NSString *name = nil;
+  FcPattern *match;
+  FcResult result;
+
+  FcConfigSubstitute(NULL, pat, FcMatchPattern);
+  FcDefaultSubstitute(pat);
+  match = FcFontMatch(NULL, pat, &result);
+  if (match != NULL)
+    {
+      NSArray *fontArray = faFromFc(match);
+
+      if (fontArray != nil)
+        {
+          name = [fontArray objectAtIndex: 0];
+        }
+      FcPatternDestroy(match);
+    }
+  return name;
+}
+
 - (NSString *) defaultBoldSystemFontName
 {
+  /* Ask fontconfig for the bold face of the configured system font family,
+     so a custom system font (set through the NSFont default) gets its own
+     bold variant instead of an unrelated hardcoded family.  The list below
+     is only a last resort when fontconfig cannot resolve a bold face. */
+  NSString *systemFont = [[NSUserDefaults standardUserDefaults]
+                           stringForKey: @"NSFont"];
+  NSString *family;
+  NSString *name;
+  FcPattern *pat;
+
+  if (systemFont == nil)
+    {
+      systemFont = [self defaultSystemFontName];
+    }
+  family = [[FCFontEnumerator fontWithName: systemFont] familyName];
+  if (family == nil)
+    {
+      family = systemFont;
+    }
+
+  pat = FcPatternBuild(NULL,
+                       FC_FAMILY, FcTypeString, (const FcChar8 *)[family UTF8String],
+                       FC_WEIGHT, FcTypeInteger, FC_WEIGHT_BOLD,
+                       (char *)NULL);
+  name = fcDefaultFontName(pat);
+  FcPatternDestroy(pat);
+  if (name != nil && [allFontNames containsObject: name])
+    {
+      return name;
+    }
+
   if ([allFontNames containsObject: @"DejaVuSans-Bold"])
     {
       return @"DejaVuSans-Bold";
@@ -480,6 +539,21 @@ static NSArray *faFromFc(FcPattern *pat)
 
 - (NSString *) defaultFixedPitchFontName
 {
+  /* Ask fontconfig for the system's configured monospace font rather than
+     assuming a fixed list of family names.  The list below is only a last
+     resort. */
+  NSString *name;
+  FcPattern *pat = FcPatternBuild(NULL,
+                                  FC_FAMILY, FcTypeString, (const FcChar8 *)"monospace",
+                                  (char *)NULL);
+
+  name = fcDefaultFontName(pat);
+  FcPatternDestroy(pat);
+  if (name != nil && [allFontNames containsObject: name])
+    {
+      return name;
+    }
+
   if ([allFontNames containsObject: @"DejaVuSansMono"])
     {
       return @"DejaVuSansMono";
