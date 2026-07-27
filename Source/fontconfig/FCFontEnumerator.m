@@ -428,29 +428,31 @@ static NSArray *faFromFc(FcPattern *pat)
   }
 }
 
+/* Return the first of names that was enumerated (and is therefore usable on
+   this system), or fallback when none of them are present. */
+- (NSString *) firstAvailableFontName: (NSArray *)names
+                             fallback: (NSString *)fallback
+{
+  NSEnumerator *e = [names objectEnumerator];
+  NSString *name;
+
+  while ((name = [e nextObject]) != nil)
+    {
+      if ([allFontNames containsObject: name])
+        {
+          return name;
+        }
+    }
+  return fallback;
+}
+
 - (NSString *) defaultSystemFontName
 {
-  if ([allFontNames containsObject: @"DejaVuSans"])
-    {
-      return @"DejaVuSans";
-    }
-  if ([allFontNames containsObject: @"BitstreamVeraSans-Roman"])
-    {
-      return @"BitstreamVeraSans-Roman";
-    }
-  if ([allFontNames containsObject: @"FreeSans"])
-    {
-      return @"FreeSans";
-    }
-  if ([allFontNames containsObject: @"Tahoma"])
-    {
-      return @"Tahoma";
-    }
-  if ([allFontNames containsObject: @"ArialMT"])
-    {
-      return @"ArialMT";
-    }
-  return @"Helvetica";
+  return [self firstAvailableFontName:
+                 [NSArray arrayWithObjects: @"DejaVuSans",
+                  @"BitstreamVeraSans-Roman", @"FreeSans", @"Tahoma",
+                  @"ArialMT", nil]
+                             fallback: @"Helvetica"];
 }
 
 /* Return the enumerated font name of fontconfig's best match for pat,
@@ -514,27 +516,11 @@ fcDefaultFontName(FcPattern *pat)
       return name;
     }
 
-  if ([allFontNames containsObject: @"DejaVuSans-Bold"])
-    {
-      return @"DejaVuSans-Bold";
-    }
-  if ([allFontNames containsObject: @"BitstreamVeraSans-Bold"])
-    {
-      return @"BitstreamVeraSans-Bold";
-    }
-  if ([allFontNames containsObject: @"FreeSans-Bold"])
-    {
-      return @"FreeSans-Bold";
-    }
-  if ([allFontNames containsObject: @"Tahoma-Bold"])
-    {
-      return @"Tahoma-Bold";
-    }
-  if ([allFontNames containsObject: @"Arial-BoldMT"])
-    {
-      return @"Arial-BoldMT";
-    }
-  return @"Helvetica-Bold";
+  return [self firstAvailableFontName:
+                 [NSArray arrayWithObjects: @"DejaVuSans-Bold",
+                  @"BitstreamVeraSans-Bold", @"FreeSans-Bold",
+                  @"Tahoma-Bold", @"Arial-BoldMT", nil]
+                             fallback: @"Helvetica-Bold"];
 }
 
 - (NSString *) defaultFixedPitchFontName
@@ -554,23 +540,11 @@ fcDefaultFontName(FcPattern *pat)
       return name;
     }
 
-  if ([allFontNames containsObject: @"DejaVuSansMono"])
-    {
-      return @"DejaVuSansMono";
-    }
-  if ([allFontNames containsObject: @"BitstreamVeraSansMono-Roman"])
-    {
-      return @"BitstreamVeraSansMono-Roman";
-    }
-  if ([allFontNames containsObject: @"FreeMono"])
-    {
-      return @"FreeMono";
-    }
-  if ([allFontNames containsObject: @"CourierNewPSMT"])
-    {
-      return @"CourierNewPSMT";
-    }
-  return @"Courier";
+  return [self firstAvailableFontName:
+                 [NSArray arrayWithObjects: @"DejaVuSansMono",
+                  @"BitstreamVeraSansMono-Roman", @"FreeMono",
+                  @"CourierNewPSMT", nil]
+                             fallback: @"Courier"];
 }
 
 /**
