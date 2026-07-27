@@ -1835,8 +1835,7 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
 
   // --- determine region to read --------------------------------------
 
-  rect.origin = [ctm transformPoint: rect.origin];
-  srect = XGWindowRectToX(self, rect);
+  srect = XGViewRectToX(self, rect);
   srect = XGIntersectionRect (srect, accessibleRectForWindow (source_win));
   ssize.width = srect.width;
   ssize.height = srect.height;
