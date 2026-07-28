@@ -30,6 +30,9 @@ Path handling.
 
 #include <AppKit/NSAffineTransform.h>
 #include <AppKit/NSBezierPath.h>
+#include <AppKit/NSColor.h>
+#include <AppKit/NSGraphics.h>
+#include <AppKit/NSShadow.h>
 
 #include "ARTGState.h"
 
@@ -42,6 +45,9 @@ Path handling.
 #include <libart_lgpl/libart.h>
 #include <libart_lgpl/art_svp_intersect.h>
 
+@interface ARTGState (ShadowRendering)
+- (void) _stroke: (ArtVpath *)vp;
+@end
 
 #if 0
 /* useful when debugging */
@@ -950,6 +956,59 @@ static void clip_svp_callback(void *data, int y, int start,
   UPDATE_UNBUFFERED
 }
 
+/* Renders the current path offset by the active shadow, in the shadow colour,
+   as a plain (unblurred) shadow, before the path itself is drawn.  The shadow
+   parameters live on the shared GSGState. */
+- (void) _drawShadowForOperation: (ctxt_object_t)drawType
+{
+  NSColor *shadowColor;
+  NSBezierPath *savedPath, *shadowPath;
+  NSAffineTransform *xform;
+  device_color_t savedColor, dc;
+  NSSize soffset;
+  CGFloat r, g, b, a;
+  BOOL isStroke = (drawType == path_stroke);
+  color_state_t cs = isStroke ? COLOR_STROKE : COLOR_FILL;
+
+  if (_shadow == nil || path == nil || [path isEmpty])
+    return;
+
+  shadowColor = [[_shadow shadowColor]
+    colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+  if (shadowColor == nil)
+    return;
+  [shadowColor getRed: &r green: &g blue: &b alpha: &a];
+
+  soffset = [_shadow shadowOffset];
+  savedPath = path;
+  shadowPath = [path copy];
+  xform = [NSAffineTransform transform];
+  [xform translateXBy: soffset.width yBy: soffset.height];
+  [shadowPath transformUsingAffineTransform: xform];
+
+  savedColor = isStroke ? strokeColor : fillColor;
+  gsMakeColor(&dc, rgb_colorspace, r, g, b, 0);
+  dc.field[AINDEX] = a;
+
+  path = shadowPath;
+  [self setColor: &dc state: cs];
+  if (isStroke)
+    {
+      ArtVpath *vp = [self _vpath_from_current_path: NO];
+
+      if (vp)
+        [self _stroke: vp];
+    }
+  else
+    {
+      [self _fill: (drawType == path_eofill)
+        ? ART_WIND_RULE_ODDEVEN : ART_WIND_RULE_NONZERO];
+    }
+  [self setColor: &savedColor state: cs];
+  path = savedPath;
+  RELEASE(shadowPath);
+}
+
 - (void) DPSeofill
 {
   if (pattern != nil)
@@ -958,6 +1017,7 @@ static void clip_svp_callback(void *data, int y, int start,
       return;
     }
 
+  [self _drawShadowForOperation: path_eofill];
   [self _fill: ART_WIND_RULE_ODDEVEN];
 }
 
@@ -969,6 +1029,7 @@ static void clip_svp_callback(void *data, int y, int start,
       return;
     }
 
+  [self _drawShadowForOperation: path_fill];
   [self _fill: ART_WIND_RULE_NONZERO];
 }
 
@@ -1380,6 +1441,8 @@ will give correct results as long as both axises are scaled the same.
   if (!wi || !wi->data) return;
   if (all_clipped) return;
   if (!stroke_color[3]) return;
+
+  [self _drawShadowForOperation: path_stroke];
 
   /* TODO: this is wrong. we should transform _after_ we dash and
      stroke */

@@ -38,6 +38,7 @@
 @class NSBezierPath;
 @class NSFont;
 @class NSColorSpace;
+@class NSShadow;
 @class GSContext;
 
 typedef enum {
@@ -72,6 +73,7 @@ typedef enum {
   BOOL    _antialias;
   NSPoint _patternPhase;
   NSCompositingOperation _compositingOperation;
+  NSShadow *_shadow;            /* Current shadow, or nil */
 }
 
 - initWithDrawContext: (GSContext *)context;
@@ -89,6 +91,8 @@ typedef enum {
 - (void) setPatternPhase: (NSPoint)phase;
 - (NSCompositingOperation) compositingOperation;
 - (void) setCompositingOperation:(NSCompositingOperation) operation;
+- (void) setShadow: (NSShadow *)shadow;
+- (NSShadow *) shadow;
 
 - (void) compositeGState: (GSGState *)source
                 fromRect: (NSRect)aRect

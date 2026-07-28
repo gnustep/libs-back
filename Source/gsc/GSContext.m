@@ -290,6 +290,16 @@ static NSMapTable *gtable;
   [gstate setCompositingOperation: operation];
 }
 
+- (void) setShadow: (NSShadow *)shadow
+{
+  [gstate setShadow: shadow];
+}
+
+- (NSShadow *) shadow
+{
+  return [gstate shadow];
+}
+
 @end
 
 @implementation GSContext (Ops)

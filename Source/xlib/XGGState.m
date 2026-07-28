@@ -31,9 +31,12 @@
 #import <Foundation/NSDebug.h>
 #import <Foundation/NSDictionary.h>
 #import <Foundation/NSException.h>
+#import <AppKit/NSAffineTransform.h>
 #import <AppKit/NSBezierPath.h>
+#import <AppKit/NSColor.h>
 #import <AppKit/NSFont.h>
 #import <AppKit/NSGraphics.h>
+#import <AppKit/NSShadow.h>
 
 #import "xlib/XGGeometry.h"
 #import "xlib/XGContext.h"
@@ -1469,7 +1472,56 @@ static Region emptyRegion;
   [self _paintPath: path_eoclip];
 }
 
-- (void)DPSeofill 
+/* Renders the current path offset by the active shadow, in the shadow colour,
+   as a plain (unblurred) shadow, before the path itself is drawn.  The shadow
+   parameters live on the shared GSGState.  The colour state is invalidated so
+   that the following real paint reloads its own colour. */
+- (void) _drawShadowForOperation: (ctxt_object_t)drawType
+{
+  NSColor *shadowColor;
+  NSBezierPath *savedPath, *shadowPath;
+  NSAffineTransform *xform;
+  device_color_t savedColor, dc;
+  NSSize soffset;
+  CGFloat r, g, b, a;
+  color_state_t cs = (drawType == path_stroke) ? COLOR_STROKE : COLOR_FILL;
+
+  if (_shadow == nil || path == nil || [path isEmpty])
+    return;
+
+  shadowColor = [[_shadow shadowColor]
+    colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+  if (shadowColor == nil)
+    return;
+  [shadowColor getRed: &r green: &g blue: &b alpha: &a];
+
+  soffset = [_shadow shadowOffset];
+  savedPath = path;
+  shadowPath = [path copy];
+  xform = [NSAffineTransform transform];
+  [xform translateXBy: soffset.width yBy: soffset.height];
+  [shadowPath transformUsingAffineTransform: xform];
+
+  savedColor = (cs == COLOR_STROKE) ? strokeColor : fillColor;
+  gsMakeColor(&dc, rgb_colorspace, r, g, b, 0);
+  dc.field[AINDEX] = a;
+
+  path = shadowPath;
+  [self setColor: &dc state: cs];
+  [self _paintPath: drawType];
+  path = savedPath;
+  RELEASE(shadowPath);
+
+  /* Setting the shadow colour overwrote the fill or stroke colour ivar; put it
+     back and invalidate the loaded colour so the real paint reloads it. */
+  if (cs == COLOR_STROKE)
+    strokeColor = savedColor;
+  else
+    fillColor = savedColor;
+  cstate &= ~cs;
+}
+
+- (void)DPSeofill
 {
   if (pattern != nil)
     {
@@ -1477,19 +1529,23 @@ static Region emptyRegion;
       return;
     }
 
+  [self _drawShadowForOperation: path_eofill];
+
   if ((cstate & COLOR_FILL) == 0)
     [self setColor: &fillColor state: COLOR_FILL];
 
   [self _paintPath: path_eofill];
 }
 
-- (void)DPSfill 
+- (void)DPSfill
 {
   if (pattern != nil)
     {
       [self fillPath: path withPattern: pattern];
       return;
     }
+
+  [self _drawShadowForOperation: path_fill];
 
   if ((cstate & COLOR_FILL) == 0)
     [self setColor: &fillColor state: COLOR_FILL];
@@ -1609,8 +1665,10 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
     }
 }
 
-- (void)DPSstroke 
+- (void)DPSstroke
 {
+  [self _drawShadowForOperation: path_stroke];
+
   if ((cstate & COLOR_STROKE) == 0)
     [self setColor: &fillColor state: COLOR_STROKE];
 
