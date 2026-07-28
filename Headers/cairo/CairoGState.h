@@ -36,6 +36,7 @@
   @public
     cairo_t *_ct;
     CairoSurface *_surface;
+    NSMutableArray *_clipPaths;  /* base-space clip paths, in application order */
 }
 
 - (void) GSCurrentSurface: (CairoSurface **)surface : (int *)x : (int *)y;
