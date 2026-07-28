@@ -27,6 +27,8 @@
 
 int main(void)
 {
+  START_SET("context")
+
   PASS(count_offset(0) == 0,
        "count_offset of a zero mask is 0 and does not loop forever");
   PASS(count_offset(0xffUL) == 0,
@@ -42,6 +44,7 @@ int main(void)
   PASS(count_offset(0x80000000UL) == 31,
        "count_offset of the top bit of a 32-bit mask is 31");
 
+  END_SET("context")
   return 0;
 }
 

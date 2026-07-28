@@ -53,6 +53,7 @@ bit_count(unsigned long m)
 int
 main(void)
 {
+  START_SET("convert")
   Display	*dpy;
   RContext	*ctx;
   RContextAttributes attribs;
@@ -151,6 +152,7 @@ main(void)
 	}
     }
 
+  END_SET("convert")
   return 0;
 }
 

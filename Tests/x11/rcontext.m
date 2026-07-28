@@ -49,6 +49,7 @@ low_bit(unsigned long m)
 int
 main(void)
 {
+  START_SET("rcontext")
   Display		*dpy;
   int			screen;
   RContext		*ctx;
@@ -113,6 +114,7 @@ main(void)
 	   "the default-visual context records the screen's white pixel");
     }
 
+  END_SET("rcontext")
   return 0;
 }
 

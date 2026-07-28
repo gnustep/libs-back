@@ -53,6 +53,7 @@ freeImage(RImage *im)
 int
 main(void)
 {
+  START_SET("raster")
   RImage	*des = makeImage(8, 8);
   RImage	*src = makeImage(2, 2);
   int		sx, sy, dx, dy;
@@ -106,6 +107,7 @@ main(void)
 
   freeImage(src);
   freeImage(des);
+  END_SET("raster")
   return 0;
 }
 

@@ -28,6 +28,7 @@
 int
 main(void)
 {
+  START_SET("scale")
   RImage	*src = RCreateImage(4, 4, 0);
   RImage	*up;
   RImage	*sm;
@@ -54,6 +55,7 @@ main(void)
     "RSmoothScaleImage returns NULL for an over-large request");
 
   RReleaseImage(src);
+  END_SET("scale")
   return 0;
 }
 
