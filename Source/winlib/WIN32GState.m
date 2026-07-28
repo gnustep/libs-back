@@ -172,8 +172,11 @@ BOOL alpha_blend_source_over(HDC destDC,
 #ifdef USE_ALPHABLEND
   // Use (0..1) fraction to set a (0..255) alpha constant value
   BYTE SourceConstantAlpha = (BYTE)(delta * 255);
+  /* The source is a bitmap GDI has drawn into, which leaves its alpha bytes
+     at zero, so only the constant alpha above can be used; asking for
+     AC_SRC_ALPHA would read every pixel as fully transparent. */
   BLENDFUNCTION blendFunc
-    = {AC_SRC_OVER, 0, SourceConstantAlpha, AC_SRC_ALPHA};
+    = {AC_SRC_OVER, 0, SourceConstantAlpha, 0};
 
   /* There is actually a very real chance this could fail, even on 
      computers that supposedly support it. It's not known why it
@@ -409,15 +412,6 @@ BOOL alpha_blend_source_over(HDC destDC,
 - (void) compositerect: (NSRect)aRect
                     op: (NSCompositingOperation)op
 {
-  CGFloat gray;
-
-  // FIXME: This is taken from the xlib backend
-  [self DPScurrentgray: &gray];
-  if (fabs(gray - 0.667) < 0.005)
-    [self DPSsetgray: 0.333];
-  else    
-    [self DPSsetrgbcolor: 0.121 : 0.121 : 0];
-
   switch (op)
     {
       case   NSCompositeClear:
@@ -452,10 +446,66 @@ BOOL alpha_blend_source_over(HDC destDC,
       case   NSCompositePlusDarker:
       case   NSCompositePlusLighter:
       default:
-	[self DPSrectfill: NSMinX(aRect) : NSMinY(aRect) 
-	      : NSWidth(aRect) : NSHeight(aRect)];
+	if ((op == NSCompositeSourceOver) && (fillColor.field[AINDEX] < 1.0))
+	  {
+	    [self _blendRect: aRect withAlpha: fillColor.field[AINDEX]];
+	  }
+	else
+	  {
+	    [self DPSrectfill: NSMinX(aRect) : NSMinY(aRect)
+		  : NSWidth(aRect) : NSHeight(aRect)];
+	  }
 	break;
     }
+}
+
+/* Paint a rectangle of the fill colour over what is already there, letting
+   the colour's alpha through. GDI brushes have no alpha of their own, so the
+   colour is put on a bitmap of its own and blended from there. */
+- (void) _blendRect: (NSRect)aRect withAlpha: (CGFloat)alpha
+{
+  RECT   rect = GSViewRectToWin(self, aRect);
+  int    w = rect.right - rect.left;
+  int    h = rect.bottom - rect.top;
+  HDC    hDC;
+  HDC    memDC;
+  HBITMAP bitmap;
+  HGDIOBJ old;
+  HBRUSH brush;
+  RECT   from = { 0, 0, w, h };
+
+  if (w <= 0 || h <= 0)
+    {
+      return;
+    }
+
+  hDC = [self getHDC];
+  if (!hDC)
+    {
+      return;
+    }
+
+  memDC = CreateCompatibleDC(hDC);
+  if (memDC)
+    {
+      bitmap = CreateCompatibleBitmap(hDC, w, h);
+      if (bitmap)
+	{
+	  old = SelectObject(memDC, bitmap);
+	  brush = CreateSolidBrush(wfcolor);
+	  FillRect(memDC, &from, brush);
+	  DeleteObject(brush);
+
+	  alpha_blend_source_over(hDC, memDC, from,
+				  rect.left, rect.top, w, h, alpha);
+
+	  SelectObject(memDC, old);
+	  DeleteObject(bitmap);
+	}
+      DeleteDC(memDC);
+    }
+
+  [self releaseHDC: hDC];
 }
 
 // FIXME: Drawing images with alpha blending is broken
