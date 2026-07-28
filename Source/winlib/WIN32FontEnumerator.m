@@ -28,6 +28,8 @@
 #include <Foundation/NSAutoreleasePool.h>
 #include <Foundation/NSDebug.h>
 #include <Foundation/NSDictionary.h>
+#include <Foundation/NSEnumerator.h>
+#include <Foundation/NSUserDefaults.h>
 #include <Foundation/NSValue.h>
 
 #include "winlib/WIN32FontEnumerator.h"
@@ -262,6 +264,57 @@ int CALLBACK fontfamilyenum(ENUMLOGFONTEXW *lpelfe, NEWTEXTMETRICEXW *lpntme,
 
 - (NSString*) defaultBoldSystemFontName
 {
+  /* Derive the bold face from the configured system font family, so a
+     custom system font (set through the NSFont default) gets its own bold
+     variant instead of the hardcoded Tahoma Bold.  Falls back to Tahoma
+     Bold when the family has no bold face.  Fixed-pitch is left hardcoded
+     because the family enumeration here does not record that trait. */
+  NSString *systemFont = [[NSUserDefaults standardUserDefaults]
+                           stringForKey: @"NSFont"];
+  NSArray *faces;
+
+  if (systemFont == nil)
+    systemFont = [self defaultSystemFontName];
+
+  faces = [allFontFamilies objectForKey: systemFont];
+  if (faces == nil)
+    {
+      NSEnumerator *fe = [allFontFamilies keyEnumerator];
+      NSString *family;
+
+      while (faces == nil && (family = [fe nextObject]) != nil)
+        {
+          NSArray *fs = [allFontFamilies objectForKey: family];
+          NSUInteger i, n = [fs count];
+
+          for (i = 0; i < n; i++)
+            {
+              if ([[[fs objectAtIndex: i] objectAtIndex: 0]
+                    isEqualToString: systemFont])
+                {
+                  faces = fs;
+                  break;
+                }
+            }
+        }
+    }
+  if (faces != nil)
+    {
+      NSUInteger i, n = [faces count];
+
+      for (i = 0; i < n; i++)
+        {
+          NSArray *face = [faces objectAtIndex: i];
+
+          if ([[face objectAtIndex: 3] unsignedIntValue] & NSBoldFontMask)
+            {
+              NSString *name = [face objectAtIndex: 0];
+
+              if ([allFontNames containsObject: name])
+                return name;
+            }
+        }
+    }
   return @"Tahoma Bold";
 }
 
