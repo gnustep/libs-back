@@ -127,6 +127,8 @@ NSString *win32_font_family(NSString *fontName);
   HFONT old;
   GLYPHMETRICS gm;
   NSRect rect;
+  /* GetGlyphOutline takes no null transform, so hand it the identity one. */
+  static const MAT2 identity = {{0, 1}, {0, 0}, {0, 0}, {0, 1}};
 
   hdc = CreateCompatibleDC(NULL);
   old = SelectObject(hdc, hFont);
@@ -138,13 +140,13 @@ NSString *win32_font_family(NSString *fontName);
 NSLog(@"No glyph for U%d", c);
       return NSMakeRect(0, 0, 0, 0);	// No such glyph
     }
-  if (GDI_ERROR != GetGlyphOutlineW(hdc, windowsGlyph, 
-				   GGO_METRICS, // || GGO_GLYPH_INDEX
-				   &gm, 0, NULL, NULL))
+  if (GDI_ERROR != GetGlyphOutlineW(hdc, windowsGlyph,
+				   GGO_METRICS | GGO_GLYPH_INDEX,
+				   &gm, 0, NULL, &identity))
     {
-      rect = NSMakeRect(gm.gmptGlyphOrigin.x, 
+      rect = NSMakeRect(gm.gmptGlyphOrigin.x,
 			gm.gmptGlyphOrigin.y - gm.gmBlackBoxY,
-			gm.gmCellIncX, gm.gmCellIncY);
+			gm.gmBlackBoxX, gm.gmBlackBoxY);
     }
   else
     {
