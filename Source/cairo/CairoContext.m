@@ -143,7 +143,11 @@
   // FIXME:  Anyone know how this can be handled/fixed correctly...
   
 #if BUILD_SERVER == SERVER_x11
-  XFlush([(XGServer *)server xDisplay]);
+  /* A context drawing somewhere other than a window has no server to flush. */
+  if (server != nil)
+    {
+      XFlush([(XGServer *)server xDisplay]);
+    }
 #elif BUILD_SERVER == SERVER_win32
   CairoSurface *surface = nil;
 
