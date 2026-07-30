@@ -65,17 +65,23 @@ hasBBox(id gs, CGFloat llx, CGFloat lly, CGFloat urx, CGFloat ury)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("GSGState path")
   id ctxt, gs;
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping GSGState path tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
   ctxt = [[NSClassFromString(@"GSStreamContext") alloc] initWithContextInfo:
     [NSDictionary dictionaryWithObject:
       [NSTemporaryDirectory() stringByAppendingPathComponent: @"gsc_path.ps"]
@@ -84,8 +90,7 @@ main(int argc, const char **argv)
   PASS(gs != nil, "a GSGState is created for the stream context");
   if (gs == nil)
     {
-      DESTROY(pool);
-      return 0;
+      SKIP("gs could not be created")
     }
 
   [gs DPSmoveto: 10 : 20];
@@ -131,7 +136,7 @@ main(int argc, const char **argv)
   PASS(hasBBox(gs, 3, 4, 8, 9),
     "the bounding box is reported in user space under a transform");
 
-  DESTROY(pool);
+  END_SET("GSGState path")
   return 0;
 }
 
@@ -140,6 +145,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("GSGState path")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("GSGState path")
   return 0;
 }
 

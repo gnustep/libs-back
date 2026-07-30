@@ -55,19 +55,25 @@ pixelIs(NSBitmapImageRep *rep, int x, int y, int r, int g, int b)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("graphics state stack")
   int w = 20, h = 20;
   NSImage *img;
   NSBitmapImageRep *rep;
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping save/restore tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
 
   /* Restoring the graphics state recovers the earlier fill colour: red is set,
    * the state saved, blue set, then restored, so a fill uses red again. */
@@ -134,7 +140,7 @@ main(int argc, const char **argv)
   PASS(rep != nil && pixelIs(rep, 3 * w / 4, h / 2, 255, 0, 0),
        "an outer restore recovers the first colour on the stack");
 
-  DESTROY(pool);
+  END_SET("graphics state stack")
   return 0;
 }
 
@@ -143,6 +149,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("graphics state stack")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("graphics state stack")
   return 0;
 }
 

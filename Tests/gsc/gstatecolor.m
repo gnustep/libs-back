@@ -45,18 +45,24 @@ eqf(CGFloat a, CGFloat b)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("GSGState colour")
   id ctxt, gs;
   CGFloat r, g, b, k, a;
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping GSGState colour tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
   ctxt = [[NSClassFromString(@"GSStreamContext") alloc] initWithContextInfo:
     [NSDictionary dictionaryWithObject:
       [NSTemporaryDirectory() stringByAppendingPathComponent: @"gsc_color.ps"]
@@ -65,8 +71,7 @@ main(int argc, const char **argv)
   PASS(gs != nil, "a GSGState is created for the stream context");
   if (gs == nil)
     {
-      DESTROY(pool);
-      return 0;
+      SKIP("gs could not be created")
     }
 
   /* rgb red reads back as itself and converts into the other spaces */
@@ -124,7 +129,7 @@ main(int argc, const char **argv)
   PASS(eqf(r, 1) && eqf(g, 0) && eqf(b, 0.5),
     "rgb components are clamped to zero and one");
 
-  DESTROY(pool);
+  END_SET("GSGState colour")
   return 0;
 }
 
@@ -133,6 +138,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("GSGState colour")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("GSGState colour")
   return 0;
 }
 

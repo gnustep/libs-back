@@ -23,6 +23,8 @@
 
 int main(void)
 {
+  START_SET("GSFloor rounding")
+
   PASS(gs_floor(-0.5) == -1,
        "gs_floor(-0.5) is -1 (rounds down, not toward zero)");
   PASS(gs_floor(-1.5) == -2,
@@ -52,12 +54,16 @@ int main(void)
   PASS(mismatches == 0,
        "gs_floor matches floorf across [-3000, 3000] in steps of 0.25");
 
+  END_SET("GSFloor rounding")
   return 0;
 }
 
 #else
 int main(void)
 {
+  START_SET("GSFloor rounding")
+    SKIP("back is not built with the xlib graphics backend")
+  END_SET("GSFloor rounding")
   return 0;
 }
 #endif

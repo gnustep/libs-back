@@ -52,7 +52,7 @@ maps(id gs, NSPoint in, CGFloat x, CGFloat y)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("GSGState CTM")
   id ctxt, gs;
   NSAffineTransform *t;
   NSAffineTransformStruct s;
@@ -60,12 +60,18 @@ main(int argc, const char **argv)
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping GSGState CTM tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
   ctxt = [[NSClassFromString(@"GSStreamContext") alloc] initWithContextInfo:
     [NSDictionary dictionaryWithObject:
       [NSTemporaryDirectory() stringByAppendingPathComponent: @"gsc_gstate.ps"]
@@ -74,8 +80,7 @@ main(int argc, const char **argv)
   PASS(gs != nil, "a GSGState is created for the stream context");
   if (gs == nil)
     {
-      DESTROY(pool);
-      return 0;
+      SKIP("gs could not be created")
     }
 
   PASS(maps(gs, NSMakePoint(3, 4), 3, 4),
@@ -132,7 +137,7 @@ main(int argc, const char **argv)
       "GSConcatCTM prepends the given matrix");
   }
 
-  DESTROY(pool);
+  END_SET("GSGState CTM")
   return 0;
 }
 
@@ -141,6 +146,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("GSGState CTM")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("GSGState CTM")
   return 0;
 }
 

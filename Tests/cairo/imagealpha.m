@@ -83,16 +83,22 @@ over(NSImage *img, int bg)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("image alpha")
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping image alpha tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
 
   /* a half-transparent gray over black is half of 128 */
   PASS(pixelIs(over(solidImage(4, 128, 128, 128, 128), 0), 10, 10, 64, 64, 64),
@@ -106,7 +112,7 @@ main(int argc, const char **argv)
   PASS(pixelIs(over(solidImage(4, 128, 128, 128, 255), 0), 10, 10, 128, 128, 128),
     "an opaque gray image over black shows its colour");
 
-  DESTROY(pool);
+  END_SET("image alpha")
   return 0;
 }
 
@@ -115,6 +121,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("image alpha")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("image alpha")
   return 0;
 }
 

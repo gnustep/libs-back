@@ -66,6 +66,8 @@ scale255(int c, int a)
 int
 main(void)
 {
+  START_SET("art compositing")
+
   unsigned char src[3], dst[3], srca[1], dsta[1];
   composite_run_t c;
 
@@ -151,6 +153,7 @@ main(void)
          "sout_oa scales the source over the inverted destination alpha");
   }
 
+  END_SET("art compositing")
   return 0;
 }
 
@@ -159,6 +162,9 @@ main(void)
 int
 main(void)
 {
+  START_SET("art compositing")
+    SKIP("back is not built with the art graphics backend")
+  END_SET("art compositing")
   return 0;
 }
 

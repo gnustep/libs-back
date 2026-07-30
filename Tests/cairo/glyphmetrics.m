@@ -29,19 +29,25 @@ near(CGFloat a, CGFloat b)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("glyph metrics")
   NSFont *f, *big, *mono;
   NSSize aW, ai;
   NSRect bW, bi;
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping glyph metric tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
 
   f = [NSFont systemFontOfSize: 14];
   big = [NSFont systemFontOfSize: 28];
@@ -73,7 +79,7 @@ main(int argc, const char **argv)
   PASS([f glyphIsEncoded: (NSGlyph)'A'],
     "a common character is an encoded glyph");
 
-  DESTROY(pool);
+  END_SET("glyph metrics")
   return 0;
 }
 
@@ -82,6 +88,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("glyph metrics")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("glyph metrics")
   return 0;
 }
 

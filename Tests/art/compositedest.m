@@ -77,6 +77,8 @@ blend2(int a, int wa, int b, int wb)
 int
 main(void)
 {
+  START_SET("art destination compositing")
+
   unsigned char src[3], dst[3], srca[1], dsta[1];
   composite_run_t c;
 
@@ -192,6 +194,7 @@ main(void)
   PASS(dst[0] == 80 && dst[1] == 81 && dst[2] == 82 && dsta[0] == 255,
        "xor with an opaque source and empty destination copies the source");
 
+  END_SET("art destination compositing")
   return 0;
 }
 
@@ -200,6 +203,9 @@ main(void)
 int
 main(void)
 {
+  START_SET("art destination compositing")
+    SKIP("back is not built with the art graphics backend")
+  END_SET("art destination compositing")
   return 0;
 }
 

@@ -73,7 +73,7 @@ redShadow(void)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("drop shadow")
   int w = 40, h = 40;
   NSImage *img;
   NSBitmapImageRep *rep;
@@ -86,13 +86,19 @@ main(int argc, const char **argv)
     if ((x11 == NULL || *x11 == '\0')
       && (wayland == NULL || *wayland == '\0'))
       {
-	NSLog(@"no window server available; skipping shadow tests");
-	DESTROY(pool);
-	return 0;
+	SKIP("no window server available")
       }
   }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
 
   /* A blue rectangle with a red shadow offset to the lower right.  The shape
    * spans device x,y in 10..22 and the shadow 18..30 vertically 12..24. */
@@ -160,7 +166,7 @@ main(int argc, const char **argv)
   PASS(rep != nil && pixelIs(rep, 28, h - 1 - 16, 255, 255, 255),
        "a restored graphics state clears the shadow");
 
-  DESTROY(pool);
+  END_SET("drop shadow")
   return 0;
 }
 
@@ -169,6 +175,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("drop shadow")
+    SKIP("back is not built with the cairo or art graphics backend")
+  END_SET("drop shadow")
   return 0;
 }
 

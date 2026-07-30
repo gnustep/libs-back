@@ -38,18 +38,24 @@ deviceForImage(int w, int h, void **device, int *x, int *y)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("surface device")
   void *device;
   int x, y;
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping surface device tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
 
   device = NULL; x = -1; y = -1;
   deviceForImage(37, 21, &device, &x, &y);
@@ -62,7 +68,7 @@ main(int argc, const char **argv)
   PASS(device != NULL && x == 0 && y == 64,
     "the offset tracks a differently sized image");
 
-  DESTROY(pool);
+  END_SET("surface device")
   return 0;
 }
 
@@ -71,6 +77,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("surface device")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("surface device")
   return 0;
 }
 

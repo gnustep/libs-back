@@ -58,19 +58,25 @@ pixelIs(NSBitmapImageRep *rep, int x, int y, int r, int g, int b)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("curves")
   int w = 20, h = 20;
   NSImage *img;
   NSBitmapImageRep *rep;
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping curve tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
 
   /* A filled oval paints its centre and leaves the corners of the bounding box
    * clear, because the ellipse does not reach the corners. */
@@ -111,7 +117,7 @@ main(int argc, const char **argv)
   PASS(rep != nil && pixelIs(rep, 10, h - 1 - 4, 255, 255, 255),
        "a stroked cubic curve leaves the straight chord clear");
 
-  DESTROY(pool);
+  END_SET("curves")
   return 0;
 }
 
@@ -120,6 +126,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("curves")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("curves")
   return 0;
 }
 

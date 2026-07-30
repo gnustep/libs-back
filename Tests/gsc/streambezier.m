@@ -40,7 +40,7 @@ hasLines(NSArray *lines, NSArray *want)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("stream bezier")
   Class cls;
   id x;
   NSString *path;
@@ -49,18 +49,23 @@ main(int argc, const char **argv)
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping bezier path test");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
   cls = NSClassFromString(@"GSStreamContext");
   PASS(cls != Nil, "the GSStreamContext class is available");
   if (cls == Nil)
     {
-      DESTROY(pool);
-      return 0;
+      SKIP("cls could not be created")
     }
 
   bp = [NSBezierPath bezierPath];
@@ -99,7 +104,7 @@ main(int argc, const char **argv)
     @"closepath", nil]),
     "GSSendBezierPath emits the path elements in order");
 
-  DESTROY(pool);
+  END_SET("stream bezier")
   return 0;
 }
 
@@ -108,6 +113,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("stream bezier")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("stream bezier")
   return 0;
 }
 

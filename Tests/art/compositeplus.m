@@ -66,6 +66,8 @@ r255(int c, int a)
 int
 main(void)
 {
+  START_SET("art additive compositing")
+
   unsigned char src[3], dst[3], srca[1], dsta[1];
   composite_run_t c;
 
@@ -165,6 +167,7 @@ main(void)
          "dissolve_oa uses the fraction as the source coverage");
   }
 
+  END_SET("art additive compositing")
   return 0;
 }
 
@@ -173,6 +176,9 @@ main(void)
 int
 main(void)
 {
+  START_SET("art additive compositing")
+    SKIP("back is not built with the art graphics backend")
+  END_SET("art additive compositing")
   return 0;
 }
 

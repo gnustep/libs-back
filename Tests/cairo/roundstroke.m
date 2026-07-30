@@ -77,19 +77,25 @@ darkCount(NSBitmapImageRep *rep, int x0, int y0, int x1, int y1)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("round stroke")
   int w = 40, h = 40;
   NSImage *img;
   NSBitmapImageRep *rep;
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping round stroke tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
 
   /* A round cap paints a half-disc past the endpoint, so a point on the axis
    * just beyond the endpoint is painted, but rounds off the square corner, so a
@@ -146,7 +152,7 @@ main(int argc, const char **argv)
          "a miter join fills the outer corner more than a round join");
   }
 
-  DESTROY(pool);
+  END_SET("round stroke")
   return 0;
 }
 
@@ -155,6 +161,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("round stroke")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("round stroke")
   return 0;
 }
 

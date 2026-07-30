@@ -62,19 +62,25 @@ pixelIs(NSBitmapImageRep *rep, int x, int y, int r, int g, int b)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("rendering")
   int w = 20, h = 20;
   NSImage *img;
   NSBitmapImageRep *rep;
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping rendering tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
 
   /* A solid fill covers the whole image with one colour. */
   img = beginImage(w, h);
@@ -449,7 +455,7 @@ main(int argc, const char **argv)
   PASS(rep != nil && pixelIs(rep, w - 2, h / 2, 255, 255, 255),
        "the mark's original position is left unpainted after rotation");
 
-  DESTROY(pool);
+  END_SET("rendering")
   return 0;
 }
 
@@ -458,6 +464,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("rendering")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("rendering")
   return 0;
 }
 
