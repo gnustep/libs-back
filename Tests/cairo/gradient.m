@@ -1,14 +1,18 @@
-/* Regression test: drawing an NSGradient with a non-RGB (pattern) colour
- * must not raise an NSInternalInconsistencyException.  The fix in
- * CairoGState normalizes colours to an RGB-compatible colour space before
- * accessing -redComponent/-greenComponent/-blueComponent.
+/* Regression test: drawing an NSGradient must not raise, including when a
+ * stop holds a non-RGB colour such as a pattern, whose -redComponent,
+ * -greenComponent and -blueComponent refuse to answer.
+ *
+ * This runs against whichever graphics backend is built, because every
+ * backend has to be able to draw a gradient.  Before GSGState gained an
+ * implementation, only cairo and opal overrode the two gradient methods and
+ * the rest reached the subclassResponsibility in the base class.
  */
 #import <Foundation/NSObject.h>
 #import "Testing.h"
 #include "config.h"
 
-#if defined(BUILD_GRAPHICS) && defined(GRAPHICS_cairo) \
-  && BUILD_GRAPHICS == GRAPHICS_cairo
+#if defined(BUILD_GRAPHICS) && defined(GRAPHICS_headless) \
+  && BUILD_GRAPHICS != GRAPHICS_headless
 
 #import <AppKit/AppKit.h>
 #include <stdlib.h>
