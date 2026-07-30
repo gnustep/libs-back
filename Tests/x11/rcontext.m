@@ -58,8 +58,7 @@ main(void)
   dpy = XOpenDisplay(NULL);
   if (dpy == NULL)
     {
-      NSLog(@"no X display available; skipping RCreateContext test");
-      return 0;
+      SKIP("no X display available")
     }
   screen = DefaultScreen(dpy);
 
@@ -67,7 +66,9 @@ main(void)
   ctx = RCreateContext(dpy, screen, NULL);
   PASS(ctx != NULL, "RCreateContext succeeds with default attributes");
   if (ctx == NULL)
-    return 0;
+    {
+      SKIP("no render context could be created")
+    }
 
   PASS(ctx->dpy == dpy, "the context keeps the display it was created for");
   PASS(ctx->screen_number == screen, "the context keeps its screen number");
