@@ -20,16 +20,22 @@
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("gradient")
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping gradient test");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
 
   /* Create a small pattern image and make a pattern color (non-RGB). */
   NSImage *pat = [[NSImage alloc] initWithSize: NSMakeSize(4, 4)];
@@ -71,7 +77,7 @@ main(int argc, const char **argv)
   [rimg release];
   [rg release];
 
-  DESTROY(pool);
+  END_SET("gradient")
   return 0;
 }
 
@@ -80,6 +86,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("gradient")
+    SKIP("back is not built with a graphics backend that draws")
+  END_SET("gradient")
   return 0;
 }
 
