@@ -38,7 +38,6 @@ int
 main(void)
 {
   START_SET("Wayland window surface rendering")
-  ENTER_POOL
 
   GSDisplayServer *server = nil;
 
@@ -89,7 +88,6 @@ main(void)
       [win close];
     }
 
-  LEAVE_POOL
   END_SET("Wayland window surface rendering")
   return 0;
 }

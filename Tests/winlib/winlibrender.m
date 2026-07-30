@@ -60,7 +60,6 @@ int
 main(void)
 {
   START_SET("winlib rendering")
-  ENTER_POOL
 
   BOOL haveApp = NO;
 
@@ -123,7 +122,6 @@ main(void)
 	"outside the bezier rectangle stays red")
     }
 
-  LEAVE_POOL
   END_SET("winlib rendering")
   return 0;
 }

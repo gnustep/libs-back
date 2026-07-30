@@ -28,7 +28,6 @@ int
 main(void)
 {
   START_SET("WaylandServer window mapping")
-  ENTER_POOL
 
   GSDisplayServer *server = nil;
 
@@ -100,7 +99,6 @@ main(void)
       [win close];
     }
 
-  LEAVE_POOL
   END_SET("WaylandServer window mapping")
   return 0;
 }

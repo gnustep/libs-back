@@ -25,7 +25,6 @@ int
 main(void)
 {
   START_SET("fontconfig font enumeration")
-  ENTER_POOL
 
   GSFontEnumerator *e = nil;
 
@@ -92,7 +91,6 @@ main(void)
 	}
     }
 
-  LEAVE_POOL
   END_SET("fontconfig font enumeration")
   return 0;
 }

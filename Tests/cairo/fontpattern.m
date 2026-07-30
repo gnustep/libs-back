@@ -68,7 +68,6 @@ int
 main(void)
 {
   START_SET("fontconfig pattern round trip")
-  ENTER_POOL
 
   Class genClass = Nil;
   Class parserClass = Nil;
@@ -147,7 +146,6 @@ main(void)
 	"the expanded trait round-trips")
     }
 
-  LEAVE_POOL
   END_SET("fontconfig pattern round trip")
   return 0;
 }

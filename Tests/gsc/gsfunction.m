@@ -43,7 +43,6 @@ int
 main(void)
 {
   START_SET("GSFunction type 0")
-  ENTER_POOL
 
   /* --- 1-in 1-out, linear ramp over two samples --- */
   {
@@ -254,7 +253,6 @@ main(void)
     RELEASE(f);
   }
 
-  LEAVE_POOL
   END_SET("GSFunction type 0")
   return 0;
 }

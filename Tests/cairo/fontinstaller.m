@@ -41,7 +41,6 @@ int
 main(void)
 {
   START_SET("fontconfig font asset installer")
-  ENTER_POOL
 
   Class installerClass = Nil;
 
@@ -123,7 +122,6 @@ main(void)
       [fm removeItemAtPath: ttfPath error: NULL];
     }
 
-  LEAVE_POOL
   END_SET("fontconfig font asset installer")
   return 0;
 }

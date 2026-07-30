@@ -24,7 +24,6 @@ int
 main(void)
 {
   START_SET("win32 WGL OpenGL context")
-  ENTER_POOL
 
   BOOL haveApp = NO;
 
@@ -96,7 +95,6 @@ main(void)
 	"a current WGL context reports a GL version string")
     }
 
-  LEAVE_POOL
   END_SET("win32 WGL OpenGL context")
   return 0;
 }

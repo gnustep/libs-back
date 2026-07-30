@@ -28,7 +28,6 @@ int
 main(void)
 {
   START_SET("WaylandServer boundsForScreen")
-  ENTER_POOL
 
   GSDisplayServer *server = nil;
 
@@ -79,7 +78,6 @@ main(void)
 	"boundsForScreen: returns NSZeroRect for a negative screen number")
     }
 
-  LEAVE_POOL
   END_SET("WaylandServer boundsForScreen")
   return 0;
 }

@@ -59,7 +59,6 @@ int
 main(void)
 {
   START_SET("winlib text drawing")
-  ENTER_POOL
 
   BOOL haveApp = NO;
 
@@ -90,7 +89,6 @@ main(void)
 	"a larger point size paints more glyph pixels")
     }
 
-  LEAVE_POOL
   END_SET("winlib text drawing")
   return 0;
 }

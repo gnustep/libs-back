@@ -56,7 +56,6 @@ int
 main(void)
 {
   START_SET("winlib stroke")
-  ENTER_POOL
 
   BOOL haveApp = NO;
 
@@ -121,7 +120,6 @@ main(void)
 	"the gap after the first dash stays white")
     }
 
-  LEAVE_POOL
   END_SET("winlib stroke")
   return 0;
 }
