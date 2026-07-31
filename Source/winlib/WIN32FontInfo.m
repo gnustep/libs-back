@@ -37,6 +37,49 @@
 int win32_font_weight(LONG tmWeight);
 NSString *win32_font_family(NSString *fontName);
 
+/* CreateFontIndirect() picks a face for whatever it is handed, including an
+   empty name, so a name has to be checked against the enumerated families
+   before a font is built for it. */
+static BOOL
+win32_font_available(NSString *fontName)
+{
+  GSFontEnumerator *enumerator;
+  NSString *family;
+  NSRange hyphen;
+
+  if ([fontName length] == 0)
+    {
+      return NO;
+    }
+
+  enumerator = [GSFontEnumerator sharedEnumerator];
+  if ([[enumerator availableFonts] containsObject: fontName])
+    {
+      return YES;
+    }
+
+  /* The enumerator builds "<family> Bold" and the like from the family, so
+     the family is what has to exist. */
+  family = win32_font_family(fontName);
+  if ([[enumerator availableFontFamilies] containsObject: family])
+    {
+      return YES;
+    }
+
+  /* NSFont builds hyphenated names of this shape when it replaces Helvetica. */
+  hyphen = [family rangeOfString: @"-" options: NSBackwardsSearch];
+  if (hyphen.length != 0)
+    {
+      family = [family substringToIndex: hyphen.location];
+      if ([[enumerator availableFontFamilies] containsObject: family])
+        {
+          return YES;
+        }
+    }
+
+  return NO;
+}
+
 @interface WIN32FontInfo (Private)
 - (BOOL) setupAttributes;
 @end
@@ -48,6 +91,12 @@ NSString *win32_font_family(NSString *fontName);
 	screenFont: (BOOL)screenFont
 {
   if (screenFont)
+    {
+      RELEASE(self);
+      return nil;
+    }
+
+  if (!win32_font_available(name))
     {
       RELEASE(self);
       return nil;
