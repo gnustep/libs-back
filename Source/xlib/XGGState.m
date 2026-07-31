@@ -933,24 +933,88 @@ static Region emptyRegion;
     }
 }
 
+/* Clip to a path of more than one subpath. X has no polygon with a hole in it,
+   so each subpath becomes a region of its own and they are combined: an
+   even-odd clip takes their symmetric difference, a non-zero clip their union.
+   Clipping to each subpath in turn would intersect them, which leaves a ring
+   admitting only its hole. */
+- (void) _doComplexClip: (XPoint*)pts
+                       : (int*)types
+                       : (int)count
+                   draw: (ctxt_object_t)type
+{
+  Region total = XCreateRegion();
+  int    start = 0;
+  int    i;
+
+  for (i = 1; i <= count; i++)
+    {
+      if (i == count || types[i] == 0)
+        {
+          int n = i - start;
+
+          if (n > 2)
+            {
+              Region sub = XPolygonRegion(&pts[start], n,
+                (type == path_eoclip) ? EvenOddRule : WindingRule);
+              Region combined = XCreateRegion();
+
+              if (type == path_eoclip)
+                {
+                  XXorRegion(total, sub, combined);
+                }
+              else
+                {
+                  XUnionRegion(total, sub, combined);
+                }
+              XDestroyRegion(sub);
+              XDestroyRegion(total);
+              total = combined;
+            }
+          start = i;
+        }
+    }
+
+  if (clipregion)
+    {
+      Region new_region = XCreateRegion();
+
+      XIntersectRegion(clipregion, total, new_region);
+      XDestroyRegion(total);
+      XDestroyRegion(clipregion);
+      clipregion = new_region;
+    }
+  else
+    {
+      clipregion = total;
+    }
+  [self setClipMask];
+}
+
 /* fill a complex path. All coordinates should already have been
    transformed to device coordinates. */
-- (void) _doComplexPath: (XPoint*)pts 
-                       : (int*)types 
+- (void) _doComplexPath: (XPoint*)pts
+                       : (int*)types
                        : (int)count
-                     ll: (XPoint)ll 
-                     ur: (XPoint)ur 
+                     ll: (XPoint)ll
+                     ur: (XPoint)ur
                    draw: (ctxt_object_t)type
 {
   int x, y, i, j, cnt, nseg = 0;
   XSegment segments[count];
   Window root_rtn;
   unsigned int width, height, b_rtn, d_rtn;
-  
+
   COPY_GC_ON_CHANGE;
   if (draw == 0)
     {
       DPS_WARN (DPSinvalidid, @"No Drawable defined for path");
+      return;
+    }
+
+  if (type == path_clip || type == path_eoclip)
+    {
+      [self _doComplexClip: pts : types : count draw: type];
       return;
     }
 
@@ -1110,7 +1174,7 @@ static Region emptyRegion;
           switch(type) 
             {
             case NSMoveToBezierPathElement:
-              if (drawType != path_eofill && drawType != path_fill)
+              if (drawType == path_stroke)
                 {
                   if (i > 1)
                     {
@@ -1149,7 +1213,7 @@ static Region emptyRegion;
               p = last_p;
               ts[i] = 1;
 //              doit = YES;
-              if (drawType != path_eofill && drawType != path_fill)
+              if (drawType == path_stroke)
                 {
                   doit = YES;
                 }
