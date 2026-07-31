@@ -43,12 +43,14 @@ include $(GNUSTEP_MAKEFILES)/common.make
 
 # Backend regression tests use the gnustep-make test framework.  Each backend
 # keeps its tests in a subdirectory named for its Source/ directory (cairo,
-# x11, ...), marked by a TestInfo file.  Discover every such subdirectory and
-# run them all, so a new backend's tests are picked up automatically with no
-# change to this makefile.  Each test additionally guards itself -- in its
-# source (via config.h) and its GNUmakefile.preamble (via config.make) -- on
-# the backend actually built, so 'make check' works for any configuration:
-# tests for backends that are not built skip themselves cleanly.
+# x11, ...), marked by a TestInfo file, and tests that hold for every backend
+# rather than for one of them live in server/.  Discover every such
+# subdirectory and run them all, so a new backend's tests are picked up
+# automatically with no change to this makefile.  A test written for one
+# backend additionally guards itself -- in its source (via config.h) and its
+# GNUmakefile.preamble (via config.make) -- on the backend actually built, so
+# 'make check' works for any configuration: tests for backends that are not
+# built skip themselves cleanly.
 TEST_SUBDIRS := $(sort $(patsubst %/TestInfo,%,$(wildcard */TestInfo)))
 
 all::

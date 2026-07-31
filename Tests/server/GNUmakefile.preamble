@@ -1,0 +1,5 @@
+# Extra build settings for the generic display server tests.
+
+# The tests drive the server through the GSDisplayServer interface, which the
+# gui library declares, so they link it whichever backend is built.
+ADDITIONAL_TOOL_LIBS += -lgnustep-gui
