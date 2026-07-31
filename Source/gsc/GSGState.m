@@ -25,6 +25,7 @@
 */
 
 #include "config.h"
+#import <Foundation/NSException.h>
 #import <Foundation/NSObjCRuntime.h>
 #import <Foundation/NSValue.h>
 #import <Foundation/NSDictionary.h>
@@ -32,6 +33,7 @@
 #import <AppKit/NSBezierPath.h>
 #import <AppKit/NSColor.h>
 #import <AppKit/NSColorSpace.h>
+#import <AppKit/NSGradient.h>
 #import <AppKit/NSImage.h>
 #import <AppKit/NSShadow.h>
 #import <GNUstepGUI/GSFontInfo.h>
@@ -1463,14 +1465,206 @@ typedef enum {
 
 @implementation GSGState (NSGradient)
 
+/* A gradient is painted by interpolating its colours and filling a series
+ * of bands with the fill operation the backend already has, so that every
+ * backend draws one.  A backend whose drawing library takes a gradient
+ * directly overrides both methods.
+ */
+
+/* Bands are a device pixel apart, between these limits. */
+#define	GRADIENT_MIN_STEPS	2
+#define	GRADIENT_MAX_STEPS	256
+
+/* The caller clips before drawing, so a band reaches well past the area
+ * being painted rather than being measured against the clip.
+ */
+#define	GRADIENT_SPREAD(length)	((length) * 16.0 + 1024.0)
+
+- (int) _stepsForGradientFrom: (NSPoint)from to: (NSPoint)to
+{
+  NSPoint	a = [ctm transformPoint: from];
+  NSPoint	b = [ctm transformPoint: to];
+  CGFloat	dx = b.x - a.x;
+  CGFloat	dy = b.y - a.y;
+  int		steps = (int)ceil(sqrt(dx * dx + dy * dy));
+
+  if (steps < GRADIENT_MIN_STEPS)
+    {
+      steps = GRADIENT_MIN_STEPS;
+    }
+  if (steps > GRADIENT_MAX_STEPS)
+    {
+      steps = GRADIENT_MAX_STEPS;
+    }
+  return steps;
+}
+
+/* Set the fill colour to the gradient's colour at a location, and say
+ * whether it could be done.  A stop may hold a colour with no RGB
+ * components, a pattern for one, which the component accessors refuse.
+ */
+- (BOOL) _setColorFromGradient: (NSGradient*)gradient at: (CGFloat)location
+{
+  NSColor	*rgb = nil;
+
+  NS_DURING
+    {
+      NSColor	*color = [gradient interpolatedColorAtLocation: location];
+
+      if (nil != color)
+	{
+	  rgb = [color colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+	  if (nil == rgb)
+	    {
+	      rgb = [color colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
+	    }
+	}
+    }
+  NS_HANDLER
+    {
+      rgb = nil;
+    }
+  NS_ENDHANDLER
+
+  if (nil == rgb)
+    {
+      return NO;
+    }
+  [self DPSsetalpha: [rgb alphaComponent]];
+  [self DPSsetrgbcolor: [rgb redComponent]
+		      : [rgb greenComponent]
+		      : [rgb blueComponent]];
+  return YES;
+}
+
+- (void) _fillGradientQuad: (NSPoint*)corners
+{
+  NSBezierPath	*oldPath = path;
+
+  path = [[NSBezierPath alloc] init];
+  [path moveToPoint: corners[0]];
+  [path lineToPoint: corners[1]];
+  [path lineToPoint: corners[2]];
+  [path lineToPoint: corners[3]];
+  [path closePath];
+  [path transformUsingAffineTransform: ctm];
+  [self DPSfill];
+  RELEASE(path);
+  path = oldPath;
+}
+
+- (void) _fillGradientCircleAt: (NSPoint)center radius: (CGFloat)radius
+{
+  NSBezierPath	*oldPath = path;
+
+  path = [[NSBezierPath alloc] init];
+  [path appendBezierPathWithArcWithCenter: center
+				  radius: radius
+			      startAngle: 0.0
+				endAngle: 360.0];
+  [path closePath];
+  [path transformUsingAffineTransform: ctm];
+  [self DPSfill];
+  RELEASE(path);
+  path = oldPath;
+}
+
+- (void) _saveGradientColor: (device_color_t*)fill
+		     stroke: (device_color_t*)stroke
+		      state: (color_state_t*)state
+		    pattern: (NSImage**)image
+{
+  *fill = fillColor;
+  *stroke = strokeColor;
+  *state = cstate;
+  *image = RETAIN(pattern);
+}
+
+- (void) _restoreGradientColor: (device_color_t*)fill
+			stroke: (device_color_t*)stroke
+			 state: (color_state_t)state
+		       pattern: (NSImage*)image
+{
+  [self setColor: fill state: COLOR_FILL];
+  [self setColor: stroke state: COLOR_STROKE];
+  cstate = state;
+  if (nil != image)
+    {
+      [self GSSetPatterColor: image];
+    }
+  RELEASE(image);
+}
+
 - (void) drawGradient: (NSGradient*)gradient
            fromCenter: (NSPoint)startCenter
                radius: (CGFloat)startRadius
-             toCenter: (NSPoint)endCenter 
+             toCenter: (NSPoint)endCenter
                radius: (CGFloat)endRadius
               options: (NSUInteger)options
 {
-  [self subclassResponsibility: _cmd];
+  device_color_t	savedFill;
+  device_color_t	savedStroke;
+  color_state_t		savedState;
+  NSImage		*savedPattern;
+  CGFloat		dx = endCenter.x - startCenter.x;
+  CGFloat		dy = endCenter.y - startCenter.y;
+  CGFloat		span;
+  BOOL			outward = (endRadius >= startRadius) ? YES : NO;
+  int			steps;
+  int			i;
+
+  span = sqrt(dx * dx + dy * dy) + fabs(endRadius - startRadius);
+  if (span <= 0.0)
+    {
+      return;
+    }
+  [self _saveGradientColor: &savedFill
+		    stroke: &savedStroke
+		     state: &savedState
+		   pattern: &savedPattern];
+
+  steps = [self _stepsForGradientFrom: NSMakePoint(0.0, 0.0)
+				   to: NSMakePoint(span, 0.0)];
+
+  /* Anything past the outer circle takes the colour of that end. */
+  if (options & NSGradientDrawsAfterEndingLocation)
+    {
+      if (YES == [self _setColorFromGradient: gradient
+					  at: (YES == outward) ? 1.0 : 0.0])
+	{
+	  CGFloat	spread = GRADIENT_SPREAD(span);
+
+	  [self DPSrectfill: startCenter.x - spread : startCenter.y - spread
+			   : spread * 2.0 : spread * 2.0];
+	}
+    }
+
+  /* Paint the larger circles first so the smaller ones land on top. */
+  for (i = 0; i <= steps; i++)
+    {
+      CGFloat	t = (YES == outward)
+	? 1.0 - (CGFloat)i / (CGFloat)steps
+	: (CGFloat)i / (CGFloat)steps;
+      CGFloat	radius = startRadius + (endRadius - startRadius) * t;
+      NSPoint	center;
+
+      if (radius <= 0.0)
+	{
+	  continue;
+	}
+      if (NO == [self _setColorFromGradient: gradient at: t])
+	{
+	  continue;
+	}
+      center.x = startCenter.x + dx * t;
+      center.y = startCenter.y + dy * t;
+      [self _fillGradientCircleAt: center radius: radius];
+    }
+
+  [self _restoreGradientColor: &savedFill
+		       stroke: &savedStroke
+			state: savedState
+		      pattern: savedPattern];
 }
 
 - (void) drawGradient: (NSGradient*)gradient
@@ -1478,7 +1672,73 @@ typedef enum {
               toPoint: (NSPoint)endPoint
               options: (NSUInteger)options
 {
-  [self subclassResponsibility: _cmd];
+  device_color_t	savedFill;
+  device_color_t	savedStroke;
+  color_state_t		savedState;
+  NSImage		*savedPattern;
+  CGFloat		dx = endPoint.x - startPoint.x;
+  CGFloat		dy = endPoint.y - startPoint.y;
+  CGFloat		length = sqrt(dx * dx + dy * dy);
+  CGFloat		ux, uy, sx, sy, spread, overlap;
+  int			steps;
+  int			i;
+
+  if (length <= 0.0)
+    {
+      return;
+    }
+  [self _saveGradientColor: &savedFill
+		    stroke: &savedStroke
+		     state: &savedState
+		   pattern: &savedPattern];
+
+  steps = [self _stepsForGradientFrom: startPoint to: endPoint];
+  ux = dx / length;			/* along the gradient */
+  uy = dy / length;
+  spread = GRADIENT_SPREAD(length);
+  sx = -uy * spread;			/* across it */
+  sy = ux * spread;
+  /* Bands overlap by half their width so no seam is left between them.
+   * The next band is painted over the overlap, so the colours do not move.
+   */
+  overlap = 0.5 / (CGFloat)steps;
+
+  for (i = 0; i < steps; i++)
+    {
+      CGFloat	a0 = (CGFloat)i / (CGFloat)steps;
+      CGFloat	a1 = (CGFloat)(i + 1) / (CGFloat)steps + overlap;
+      NSPoint	corners[4];
+
+      if (NO == [self _setColorFromGradient: gradient
+					  at: (a0 + (CGFloat)(i + 1)
+					       / (CGFloat)steps) / 2.0])
+	{
+	  continue;
+	}
+      if (0 == i && (options & NSGradientDrawsBeforeStartingLocation))
+	{
+	  a0 = -spread / length;
+	}
+      if (steps - 1 == i && (options & NSGradientDrawsAfterEndingLocation))
+	{
+	  a1 = 1.0 + spread / length;
+	}
+
+      corners[0] = NSMakePoint(startPoint.x + dx * a0 + sx,
+			       startPoint.y + dy * a0 + sy);
+      corners[1] = NSMakePoint(startPoint.x + dx * a1 + sx,
+			       startPoint.y + dy * a1 + sy);
+      corners[2] = NSMakePoint(startPoint.x + dx * a1 - sx,
+			       startPoint.y + dy * a1 - sy);
+      corners[3] = NSMakePoint(startPoint.x + dx * a0 - sx,
+			       startPoint.y + dy * a0 - sy);
+      [self _fillGradientQuad: corners];
+    }
+
+  [self _restoreGradientColor: &savedFill
+		       stroke: &savedStroke
+			state: savedState
+		      pattern: savedPattern];
 }
 
 @end
