@@ -8,8 +8,10 @@ ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../.. -I../..
 -include ../../config.make
 
 # The rendering tests drive the installed backend through AppKit, so link the
-# gui for the raster graphics backends they build for.
-ifneq ($(filter $(BUILD_GRAPHICS),cairo art),)
+# gui wherever they build.  The gradient test builds for every graphics
+# backend that draws, so this has to cover all of them rather than the two
+# the older tests were written for.
+ifneq ($(BUILD_GRAPHICS),headless)
 ADDITIONAL_TOOL_LIBS += -lgnustep-gui
 endif
 

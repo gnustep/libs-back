@@ -46,7 +46,6 @@
 #import <AppKit/NSAffineTransform.h>
 #import <AppKit/NSBezierPath.h>
 #import <AppKit/NSColor.h>
-#import <AppKit/NSShadow.h>
 #import <AppKit/NSFont.h>
 #import <AppKit/NSGraphics.h>
 
@@ -172,8 +171,11 @@ BOOL alpha_blend_source_over(HDC destDC,
 #ifdef USE_ALPHABLEND
   // Use (0..1) fraction to set a (0..255) alpha constant value
   BYTE SourceConstantAlpha = (BYTE)(delta * 255);
+  /* The source is a bitmap GDI has drawn into, which leaves its alpha bytes
+     at zero, so only the constant alpha above can be used; asking for
+     AC_SRC_ALPHA would read every pixel as fully transparent. */
   BLENDFUNCTION blendFunc
-    = {AC_SRC_OVER, 0, SourceConstantAlpha, AC_SRC_ALPHA};
+    = {AC_SRC_OVER, 0, SourceConstantAlpha, 0};
 
   /* There is actually a very real chance this could fail, even on 
      computers that supposedly support it. It's not known why it
@@ -409,15 +411,6 @@ BOOL alpha_blend_source_over(HDC destDC,
 - (void) compositerect: (NSRect)aRect
                     op: (NSCompositingOperation)op
 {
-  CGFloat gray;
-
-  // FIXME: This is taken from the xlib backend
-  [self DPScurrentgray: &gray];
-  if (fabs(gray - 0.667) < 0.005)
-    [self DPSsetgray: 0.333];
-  else    
-    [self DPSsetrgbcolor: 0.121 : 0.121 : 0];
-
   switch (op)
     {
       case   NSCompositeClear:
@@ -452,10 +445,66 @@ BOOL alpha_blend_source_over(HDC destDC,
       case   NSCompositePlusDarker:
       case   NSCompositePlusLighter:
       default:
-	[self DPSrectfill: NSMinX(aRect) : NSMinY(aRect) 
-	      : NSWidth(aRect) : NSHeight(aRect)];
+	if ((op == NSCompositeSourceOver) && (fillColor.field[AINDEX] < 1.0))
+	  {
+	    [self _blendRect: aRect withAlpha: fillColor.field[AINDEX]];
+	  }
+	else
+	  {
+	    [self DPSrectfill: NSMinX(aRect) : NSMinY(aRect)
+		  : NSWidth(aRect) : NSHeight(aRect)];
+	  }
 	break;
     }
+}
+
+/* Paint a rectangle of the fill colour over what is already there, letting
+   the colour's alpha through. GDI brushes have no alpha of their own, so the
+   colour is put on a bitmap of its own and blended from there. */
+- (void) _blendRect: (NSRect)aRect withAlpha: (CGFloat)alpha
+{
+  RECT   rect = GSViewRectToWin(self, aRect);
+  int    w = rect.right - rect.left;
+  int    h = rect.bottom - rect.top;
+  HDC    hDC;
+  HDC    memDC;
+  HBITMAP bitmap;
+  HGDIOBJ old;
+  HBRUSH brush;
+  RECT   from = { 0, 0, w, h };
+
+  if (w <= 0 || h <= 0)
+    {
+      return;
+    }
+
+  hDC = [self getHDC];
+  if (!hDC)
+    {
+      return;
+    }
+
+  memDC = CreateCompatibleDC(hDC);
+  if (memDC)
+    {
+      bitmap = CreateCompatibleBitmap(hDC, w, h);
+      if (bitmap)
+	{
+	  old = SelectObject(memDC, bitmap);
+	  brush = CreateSolidBrush(wfcolor);
+	  FillRect(memDC, &from, brush);
+	  DeleteObject(brush);
+
+	  alpha_blend_source_over(hDC, memDC, from,
+				  rect.left, rect.top, w, h, alpha);
+
+	  SelectObject(memDC, old);
+	  DeleteObject(bitmap);
+	}
+      DeleteDC(memDC);
+    }
+
+  [self releaseHDC: hDC];
 }
 
 // FIXME: Drawing images with alpha blending is broken
@@ -1166,47 +1215,6 @@ HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
   [self _paintPath: path_eoclip];
 }
 
-/* Renders the current path offset by the active shadow, in the shadow colour,
-   as a plain (unblurred) shadow, before the path itself is drawn.  The shadow
-   parameters live on the shared GSGState. */
-- (void) _drawShadowForOperation: (ctxt_object_t)drawType
-{
-  NSColor *shadowColor;
-  NSBezierPath *savedPath, *shadowPath;
-  NSAffineTransform *xform;
-  device_color_t savedColor, dc;
-  NSSize soffset;
-  CGFloat r, g, b, a;
-  color_state_t cs = (drawType == path_stroke) ? COLOR_STROKE : COLOR_FILL;
-
-  if (_shadow == nil || path == nil || [path isEmpty])
-    return;
-
-  shadowColor = [[_shadow shadowColor]
-    colorUsingColorSpaceName: NSDeviceRGBColorSpace];
-  if (shadowColor == nil)
-    return;
-  [shadowColor getRed: &r green: &g blue: &b alpha: &a];
-
-  soffset = [_shadow shadowOffset];
-  savedPath = path;
-  shadowPath = [path copy];
-  xform = [NSAffineTransform transform];
-  [xform translateXBy: soffset.width yBy: soffset.height];
-  [shadowPath transformUsingAffineTransform: xform];
-
-  savedColor = (cs == COLOR_STROKE) ? strokeColor : fillColor;
-  gsMakeColor(&dc, rgb_colorspace, r, g, b, 0);
-  dc.field[AINDEX] = a;
-
-  path = shadowPath;
-  [self setColor: &dc state: cs];
-  [self _paintPath: drawType];
-  [self setColor: &savedColor state: cs];
-  path = savedPath;
-  RELEASE(shadowPath);
-}
-
 - (void)DPSeofill
 {
   if (pattern != nil)
@@ -1374,12 +1382,11 @@ HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
   NSInteger patternCount = 0;
   
   SetBkMode(hDC, TRANSPARENT);
+  /* The pen built from this below draws the stroke, so it takes the stroke
+     colour; the brush that fills takes the fill colour. */
   br.lbStyle = BS_SOLID;
-  br.lbColor = wfcolor;
+  br.lbColor = wscolor;
   br.lbHatch = 0;
-  /*
-  brush = CreateBrushIndirect(&br);
-  */
   brush = CreateSolidBrush(wfcolor);
   oldBrush = SelectObject(hDC, brush);
 
@@ -1574,6 +1581,7 @@ HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
   unsigned char *cdata;
   unsigned char *bits;
   int i = 0;
+  LONG row, stride;
   HDC hDC;
   HDC hdcMemDC = NULL;
   HBITMAP hbitmap = NULL;
@@ -1660,11 +1668,11 @@ HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
     }
 
   // Bit block transfer into our compatible memory DC.
-  if (!BitBlt(hdcMemDC, 0, 0, 
-    rcClient.right - rcClient.left, 
-    rcClient.bottom - rcClient.top, 
-    hDC, 
-    0, 0,
+  if (!BitBlt(hdcMemDC, 0, 0,
+    rcClient.right - rcClient.left,
+    rcClient.bottom - rcClient.top,
+    hDC,
+    rcClient.left, rcClient.top,
     SRCCOPY))
     {
       NSLog(@"BitBlt failed for window %d in GSReadRect. Error %d", 
@@ -1725,15 +1733,23 @@ HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
       return nil;
     }
 
-  // Copy to data
+  /* Copy to data.  GetDIBits hands back the rows bottom up, while the
+     bitmap wanted here starts with the top row, so they are taken in
+     reverse. */
   cdata = [data mutableBytes];
-  while (i < dwBmpSize)
+  stride = bmpCopied.bmWidth * 4;
+  for (row = 0; row < bmpCopied.bmHeight; row++)
     {
-      cdata[i+0] = bits[i+2];
-      cdata[i+1] = bits[i+1];
-      cdata[i+2] = bits[i+0];
-      cdata[i+3] = bits[i+3];
-      i += 4;
+      unsigned char *src = bits + (bmpCopied.bmHeight - 1 - row) * stride;
+      unsigned char *dst = cdata + row * stride;
+
+      for (i = 0; i < stride; i += 4)
+        {
+          dst[i+0] = src[i+2];
+          dst[i+1] = src[i+1];
+          dst[i+2] = src[i+0];
+          dst[i+3] = src[i+3];
+        }
     }
 
 

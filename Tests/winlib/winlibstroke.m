@@ -118,6 +118,35 @@ main(void)
 	"the first dash of a dashed stroke paints black")
       PASS(rep != nil && pixelIs(rep, 12, h / 2, 255, 255, 255),
 	"the gap after the first dash stays white")
+
+      /* A stroke takes the stroke colour even when the fill colour differs. */
+      img = beginImage(w, h);
+      [[NSColor colorWithDeviceRed: 1 green: 1 blue: 1 alpha: 1] set];
+      NSRectFill(NSMakeRect(0, 0, w, h));
+      [[NSColor colorWithDeviceRed: 0 green: 1 blue: 0 alpha: 1] setFill];
+      [[NSColor colorWithDeviceRed: 0 green: 0 blue: 1 alpha: 1] setStroke];
+      {
+	NSBezierPath *p = [NSBezierPath bezierPath];
+
+	[p setLineWidth: 6.0];
+	[p moveToPoint: NSMakePoint(0, h / 2)];
+	[p lineToPoint: NSMakePoint(w, h / 2)];
+	[p stroke];
+      }
+      rep = endImage(img, w, h);
+      PASS(rep != nil && pixelIs(rep, w / 2, h / 2, 0, 0, 255),
+	"a stroke paints in the stroke colour, not the fill colour")
+
+      /* And a fill still takes the fill colour. */
+      img = beginImage(w, h);
+      [[NSColor colorWithDeviceRed: 1 green: 1 blue: 1 alpha: 1] set];
+      NSRectFill(NSMakeRect(0, 0, w, h));
+      [[NSColor colorWithDeviceRed: 0 green: 1 blue: 0 alpha: 1] setFill];
+      [[NSColor colorWithDeviceRed: 0 green: 0 blue: 1 alpha: 1] setStroke];
+      [[NSBezierPath bezierPathWithRect: NSMakeRect(10, 10, 20, 20)] fill];
+      rep = endImage(img, w, h);
+      PASS(rep != nil && pixelIs(rep, w / 2, h / 2, 0, 255, 0),
+	"a fill paints in the fill colour")
     }
 
   END_SET("winlib stroke")
