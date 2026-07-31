@@ -94,6 +94,11 @@ typedef enum {
 - (void) setShadow: (NSShadow *)shadow;
 - (NSShadow *) shadow;
 
+/* Paints the current path with the current colour. Implemented by each
+   backend, which is what lets the shadow below be drawn here. */
+- (void) _paintPath: (ctxt_object_t)drawType;
+- (void) _drawShadowForOperation: (ctxt_object_t)drawType;
+
 - (void) compositeGState: (GSGState *)source
                 fromRect: (NSRect)aRect
                  toPoint: (NSPoint)aPoint

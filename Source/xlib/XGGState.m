@@ -33,10 +33,8 @@
 #import <Foundation/NSException.h>
 #import <AppKit/NSAffineTransform.h>
 #import <AppKit/NSBezierPath.h>
-#import <AppKit/NSColor.h>
 #import <AppKit/NSFont.h>
 #import <AppKit/NSGraphics.h>
-#import <AppKit/NSShadow.h>
 
 #import "xlib/XGGeometry.h"
 #import "xlib/XGContext.h"
@@ -74,7 +72,6 @@ xrRGBToPixel(RContext* context, device_color_t color)
 
 @interface XGGState (Private)
 - (void) _alphaBuffer: (gswindow_device_t *)dest_win;
-- (void) _paintPath: (ctxt_object_t) drawType;
 - (void) createGraphicContext;
 - (void) copyGraphicContext;
 - (void) setAlphaColor: (float)color;
@@ -1470,55 +1467,6 @@ static Region emptyRegion;
 - (void)DPSeoclip 
 {
   [self _paintPath: path_eoclip];
-}
-
-/* Renders the current path offset by the active shadow, in the shadow colour,
-   as a plain (unblurred) shadow, before the path itself is drawn.  The shadow
-   parameters live on the shared GSGState.  The colour state is invalidated so
-   that the following real paint reloads its own colour. */
-- (void) _drawShadowForOperation: (ctxt_object_t)drawType
-{
-  NSColor *shadowColor;
-  NSBezierPath *savedPath, *shadowPath;
-  NSAffineTransform *xform;
-  device_color_t savedColor, dc;
-  NSSize soffset;
-  CGFloat r, g, b, a;
-  color_state_t cs = (drawType == path_stroke) ? COLOR_STROKE : COLOR_FILL;
-
-  if (_shadow == nil || path == nil || [path isEmpty])
-    return;
-
-  shadowColor = [[_shadow shadowColor]
-    colorUsingColorSpaceName: NSDeviceRGBColorSpace];
-  if (shadowColor == nil)
-    return;
-  [shadowColor getRed: &r green: &g blue: &b alpha: &a];
-
-  soffset = [_shadow shadowOffset];
-  savedPath = path;
-  shadowPath = [path copy];
-  xform = [NSAffineTransform transform];
-  [xform translateXBy: soffset.width yBy: soffset.height];
-  [shadowPath transformUsingAffineTransform: xform];
-
-  savedColor = (cs == COLOR_STROKE) ? strokeColor : fillColor;
-  gsMakeColor(&dc, rgb_colorspace, r, g, b, 0);
-  dc.field[AINDEX] = a;
-
-  path = shadowPath;
-  [self setColor: &dc state: cs];
-  [self _paintPath: drawType];
-  path = savedPath;
-  RELEASE(shadowPath);
-
-  /* Setting the shadow colour overwrote the fill or stroke colour ivar; put it
-     back and invalidate the loaded colour so the real paint reloads it. */
-  if (cs == COLOR_STROKE)
-    strokeColor = savedColor;
-  else
-    fillColor = savedColor;
-  cstate &= ~cs;
 }
 
 - (void)DPSeofill

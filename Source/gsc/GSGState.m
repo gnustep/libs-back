@@ -33,6 +33,7 @@
 #import <AppKit/NSColor.h>
 #import <AppKit/NSColorSpace.h>
 #import <AppKit/NSImage.h>
+#import <AppKit/NSShadow.h>
 #import <GNUstepGUI/GSFontInfo.h>
 #import <AppKit/NSGraphics.h>
 #import "gsc/GSContext.h"
@@ -188,6 +189,52 @@
 - (NSShadow *) shadow
 {
   return _shadow;
+}
+
+- (void) _paintPath: (ctxt_object_t)drawType
+{
+  [self subclassResponsibility: _cmd];
+}
+
+/* Renders the current path offset by the active shadow, in the shadow colour,
+   as a plain (unblurred) shadow, before the path itself is drawn. Blur is not
+   applied. */
+- (void) _drawShadowForOperation: (ctxt_object_t)drawType
+{
+  NSColor *shadowColor;
+  NSBezierPath *savedPath, *shadowPath;
+  NSAffineTransform *xform;
+  device_color_t savedColor, dc;
+  NSSize soffset;
+  CGFloat r, g, b, a;
+  color_state_t cs = (drawType == path_stroke) ? COLOR_STROKE : COLOR_FILL;
+
+  if (_shadow == nil || path == nil || [path isEmpty])
+    return;
+
+  shadowColor = [[_shadow shadowColor]
+    colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+  if (shadowColor == nil)
+    return;
+  [shadowColor getRed: &r green: &g blue: &b alpha: &a];
+
+  soffset = [_shadow shadowOffset];
+  savedPath = path;
+  shadowPath = [path copy];
+  xform = [NSAffineTransform transform];
+  [xform translateXBy: soffset.width yBy: soffset.height];
+  [shadowPath transformUsingAffineTransform: xform];
+
+  savedColor = (cs == COLOR_STROKE) ? strokeColor : fillColor;
+  gsMakeColor(&dc, rgb_colorspace, r, g, b, 0);
+  dc.field[AINDEX] = a;
+
+  path = shadowPath;
+  [self setColor: &dc state: cs];
+  [self _paintPath: drawType];
+  [self setColor: &savedColor state: cs];
+  path = savedPath;
+  RELEASE(shadowPath);
 }
 
 // This is only a fall back, the method should not be called any more.
