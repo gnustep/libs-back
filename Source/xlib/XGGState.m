@@ -780,13 +780,8 @@ static Region emptyRegion;
 - (void) compositerect: (NSRect)aRect
                     op: (NSCompositingOperation)op
 {
-  CGFloat gray;
-
-  [self DPScurrentgray: &gray];
-  if (fabs(gray - 0.667) < 0.005)
-    [self DPSsetgray: 0.333];
-  else    
-    [self DPSsetrgbcolor: 0.121 : 0.121 : 0];
+  CGFloat gray = 0.0;
+  BOOL    highlight = NO;
 
   /* FIXME: Really need alpha dithering to do this right - combine with
      XGBitmapImageRep code? */
@@ -812,15 +807,15 @@ static Region emptyRegion;
       gcv.function = GXcopy;
       break;
     case NSCompositeDestinationOver:
-      gcv.function = GXcopy;
-      break;
     case NSCompositeDestinationIn:
+    case NSCompositeDestinationAtop:
+      /* An opaque destination admits nothing of the source, so it stands as
+         it is. */
+      if (drawingAlpha == NO)
+        return;
       gcv.function = GXcopy;
       break;
     case NSCompositeDestinationOut:
-      gcv.function = GXcopy;
-      break;
-    case NSCompositeDestinationAtop:
       gcv.function = GXcopy;
       break;
     case NSCompositeXOR:
@@ -830,17 +825,30 @@ static Region emptyRegion;
       gcv.function = GXcopy;
       break;
     case GSCompositeHighlight:
+      highlight = YES;
       gcv.function = GXxor;
       break;
     case NSCompositePlusLighter:
-      gcv.function = GXcopy;
+      /* X has no addition, so the nearest a core drawable offers is a
+         bitwise or of the two pixel values. */
+      gcv.function = GXor;
       break;
     default:
       gcv.function = GXcopy;
       break;
     }
+
+  if (highlight)
+    {
+      [self DPScurrentgray: &gray];
+      if (fabs(gray - 0.667) < 0.005)
+        [self DPSsetgray: 0.333];
+      else
+        [self DPSsetrgbcolor: 0.121 : 0.121 : 0];
+    }
+
   [self setGCValues: gcv withMask: GCFunction];
-  [self DPSrectfill: NSMinX(aRect) : NSMinY(aRect) 
+  [self DPSrectfill: NSMinX(aRect) : NSMinY(aRect)
         : NSWidth(aRect) : NSHeight(aRect)];
 
   if (gcv.function != GXcopy)
@@ -848,7 +856,10 @@ static Region emptyRegion;
       gcv.function = GXcopy;
       [self setGCValues: gcv withMask: GCFunction];
     }
-  [self DPSsetgray: gray];
+  if (highlight)
+    {
+      [self DPSsetgray: gray];
+    }
 }
 
 /* Paint the current path using Xlib calls. All coordinates should already
