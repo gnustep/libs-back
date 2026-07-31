@@ -57,7 +57,6 @@ int
 main(void)
 {
   START_SET("winlib image drawing")
-  ENTER_POOL
 
   BOOL haveApp = NO;
 
@@ -126,7 +125,6 @@ main(void)
 	"a 24-bit rgb image without alpha decodes to its colour")
     }
 
-  LEAVE_POOL
   END_SET("winlib image drawing")
   return 0;
 }

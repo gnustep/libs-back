@@ -32,7 +32,6 @@ int
 main(void)
 {
   START_SET("WaylandServer screen queries")
-  ENTER_POOL
 
   GSDisplayServer *server = nil;
 
@@ -123,7 +122,6 @@ main(void)
 	"windowDepthForScreen: reports an 8-bit RGB window depth")
     }
 
-  LEAVE_POOL
   END_SET("WaylandServer screen queries")
   return 0;
 }

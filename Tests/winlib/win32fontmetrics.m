@@ -31,7 +31,6 @@ int
 main(void)
 {
   START_SET("win32 font metrics")
-  ENTER_POOL
 
   BOOL haveApp = NO;
 
@@ -83,7 +82,6 @@ main(void)
 	"a common glyph is encoded")
     }
 
-  LEAVE_POOL
   END_SET("win32 font metrics")
   return 0;
 }

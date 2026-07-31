@@ -56,18 +56,24 @@ dataContains(NSData *d, const char *needle)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("PDF and PostScript output")
   GSPdfPsTestView *v;
   NSData *pdf, *eps;
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping PDF/PS output tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
   v = [[GSPdfPsTestView alloc] initWithFrame: NSMakeRect(0, 0, 100, 100)];
 
   pdf = [v dataWithPDFInsideRect: [v bounds]];
@@ -81,7 +87,7 @@ main(int argc, const char **argv)
        "dataWithEPSInsideRect produces a well-formed EPS document");
 
   [v release];
-  DESTROY(pool);
+  END_SET("PDF and PostScript output")
   return 0;
 }
 
@@ -90,6 +96,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("PDF and PostScript output")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("PDF and PostScript output")
   return 0;
 }
 

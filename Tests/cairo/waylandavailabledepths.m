@@ -26,7 +26,6 @@ int
 main(void)
 {
   START_SET("WaylandServer availableDepthsForScreen")
-  ENTER_POOL
 
   GSDisplayServer *server = nil;
 
@@ -90,7 +89,6 @@ main(void)
 	}
     }
 
-  LEAVE_POOL
   END_SET("WaylandServer availableDepthsForScreen")
   return 0;
 }

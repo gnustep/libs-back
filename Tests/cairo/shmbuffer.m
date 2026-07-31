@@ -46,7 +46,6 @@ int
 main(void)
 {
   START_SET("WaylandCairoShmSurface createShmBuffer")
-  ENTER_POOL
   int	i;
   BOOL	ok = YES;
 
@@ -61,7 +60,6 @@ main(void)
     }
   PASS(ok == YES,
     "createShmBuffer rejects a zero-area request without leaking the buffer")
-  LEAVE_POOL
   END_SET("WaylandCairoShmSurface createShmBuffer")
   return 0;
 }

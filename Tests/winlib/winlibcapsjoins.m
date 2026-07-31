@@ -59,7 +59,6 @@ int
 main(void)
 {
   START_SET("winlib line caps and joins")
-  ENTER_POOL
 
   BOOL haveApp = NO;
 
@@ -152,7 +151,6 @@ main(void)
       }
     }
 
-  LEAVE_POOL
   END_SET("winlib line caps and joins")
   return 0;
 }

@@ -72,7 +72,6 @@ int
 main(void)
 {
   START_SET("winlib compositing")
-  ENTER_POOL
 
   BOOL haveApp = NO;
 
@@ -145,7 +144,6 @@ main(void)
 	"compositing an opaque image with source-over paints the image")
     }
 
-  LEAVE_POOL
   END_SET("winlib compositing")
   return 0;
 }

@@ -69,7 +69,7 @@ donutPath(void)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("winding rule")
   int w = 20, h = 20;
   NSImage *img;
   NSBitmapImageRep *rep;
@@ -77,12 +77,18 @@ main(int argc, const char **argv)
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping winding rule tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
 
   /* Non-zero fill: the inner region is enclosed twice, so it is filled and the
    * hole is painted over. */
@@ -132,7 +138,7 @@ main(int argc, const char **argv)
   PASS(rep != nil && pixelIs(rep, 0, h - 1 - 0, 255, 255, 255),
        "an even-odd clip excludes the area outside the path");
 
-  DESTROY(pool);
+  END_SET("winding rule")
   return 0;
 }
 
@@ -141,6 +147,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("winding rule")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("winding rule")
   return 0;
 }
 

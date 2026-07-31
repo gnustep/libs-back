@@ -30,18 +30,24 @@ near(CGFloat a, CGFloat b)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("font metrics")
   NSFont *f, *big;
   CGFloat wi, wiiii, wW, wWWWW;
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping font metric tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
 
   f = [NSFont systemFontOfSize: 14];
   big = [NSFont systemFontOfSize: 28];
@@ -74,7 +80,7 @@ main(int argc, const char **argv)
   PASS([f maximumAdvancement].width >= wW,
     "the maximum advancement is at least the width of a W");
 
-  DESTROY(pool);
+  END_SET("font metrics")
   return 0;
 }
 
@@ -83,6 +89,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("font metrics")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("font metrics")
   return 0;
 }
 

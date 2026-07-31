@@ -67,8 +67,7 @@ main(void)
   dpy = XOpenDisplay(NULL);
   if (dpy == NULL)
     {
-      NSLog(@"no X display available; skipping RConvertImage round-trip test");
-      return 0;
+      SKIP("no X display available")
     }
 
   memset(&attribs, 0, sizeof(attribs));
@@ -79,7 +78,9 @@ main(void)
   ctx = RCreateContext(dpy, DefaultScreen(dpy), &attribs);
   PASS(ctx != NULL, "RCreateContext succeeds on the display");
   if (ctx == NULL)
-    return 0;
+    {
+      SKIP("no render context could be created")
+    }
 
   trueColor = (ctx->vclass == TrueColor || ctx->vclass == DirectColor);
 

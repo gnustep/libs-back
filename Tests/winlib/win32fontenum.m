@@ -23,7 +23,6 @@ int
 main(void)
 {
   START_SET("win32 font enumeration")
-  ENTER_POOL
 
   GSFontEnumerator *e = nil;
 
@@ -75,7 +74,6 @@ main(void)
       }
     }
 
-  LEAVE_POOL
   END_SET("win32 font enumeration")
   return 0;
 }

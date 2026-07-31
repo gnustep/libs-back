@@ -34,19 +34,25 @@ makeRep(int spp, int bps, BOOL alpha, BOOL planar, NSString *cs)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("compatible bitmap")
   NSImage *img;
   id ctxt;
   NSBitmapImageRep *alphaFirst;
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping compatible-bitmap tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
 
   img = [[NSImage alloc] initWithSize: NSMakeSize(4, 4)];
   [img lockFocus];
@@ -85,7 +91,7 @@ main(int argc, const char **argv)
 
   [img unlockFocus];
   [img release];
-  DESTROY(pool);
+  END_SET("compatible bitmap")
   return 0;
 }
 
@@ -94,6 +100,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("compatible bitmap")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("compatible bitmap")
   return 0;
 }
 

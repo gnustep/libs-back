@@ -30,7 +30,6 @@ int
 main(void)
 {
   START_SET("WaylandServer unknown window number")
-  ENTER_POOL
 
   GSDisplayServer *server = nil;
 
@@ -77,7 +76,6 @@ main(void)
 	"window operations on an unknown window number do not crash")
     }
 
-  LEAVE_POOL
   END_SET("WaylandServer unknown window number")
   return 0;
 }

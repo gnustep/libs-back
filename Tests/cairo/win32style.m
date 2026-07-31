@@ -36,7 +36,6 @@ int
 main(void)
 {
   START_SET("WIN32Server window style mapping")
-  ENTER_POOL
 
   GSDisplayServer *server = nil;
 
@@ -127,7 +126,6 @@ main(void)
       [server setUsesNativeTaskbar: YES];
     }
 
-  LEAVE_POOL
   END_SET("WIN32Server window style mapping")
   return 0;
 }

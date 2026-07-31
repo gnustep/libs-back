@@ -68,18 +68,24 @@ composite(NSColor *fg, NSCompositingOperation op)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("composite operators")
   NSColor *blue = [NSColor colorWithDeviceRed: 0.0 green: 0.0 blue: 1.0 alpha: 1.0];
   NSColor *green = [NSColor colorWithDeviceRed: 0.0 green: 1.0 blue: 0.0 alpha: 1.0];
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping compositing tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
 
   PASS(pixelIs(composite(blue, NSCompositeCopy), 10, 10, 0, 0, 255),
     "copy replaces the destination with the source");
@@ -96,7 +102,7 @@ main(int argc, const char **argv)
   PASS(pixelIs(composite(blue, NSCompositeClear), 10, 10, 0, 0, 0),
     "clear erases the destination");
 
-  DESTROY(pool);
+  END_SET("composite operators")
   return 0;
 }
 
@@ -105,6 +111,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("composite operators")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("composite operators")
   return 0;
 }
 

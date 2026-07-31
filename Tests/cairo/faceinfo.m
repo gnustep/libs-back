@@ -45,7 +45,6 @@ int
 main(void)
 {
   START_SET("fontconfig face info")
-  ENTER_POOL
 
   Class faceClass = Nil;
   id gen = nil;
@@ -149,7 +148,6 @@ main(void)
       }
     }
 
-  LEAVE_POOL
   END_SET("fontconfig face info")
   return 0;
 }

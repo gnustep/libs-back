@@ -26,7 +26,6 @@ int
 main(void)
 {
   START_SET("WIN32Server screen queries")
-  ENTER_POOL
 
   GSDisplayServer *server = nil;
 
@@ -149,7 +148,6 @@ main(void)
       }
     }
 
-  LEAVE_POOL
   END_SET("WIN32Server screen queries")
   return 0;
 }

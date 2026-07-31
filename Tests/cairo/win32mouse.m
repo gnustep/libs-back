@@ -26,7 +26,6 @@ int
 main(void)
 {
   START_SET("WIN32Server mouse location")
-  ENTER_POOL
 
   GSDisplayServer *server = nil;
 
@@ -81,7 +80,6 @@ main(void)
       SetCursorPos(saved.x, saved.y);
     }
 
-  LEAVE_POOL
   END_SET("WIN32Server mouse location")
   return 0;
 }

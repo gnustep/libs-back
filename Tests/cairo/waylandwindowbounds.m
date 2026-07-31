@@ -40,7 +40,6 @@ int
 main(void)
 {
   START_SET("WaylandServer windowbounds round-trip")
-  ENTER_POOL
 
   GSDisplayServer *server = nil;
 
@@ -77,7 +76,6 @@ main(void)
 	"windowbounds: round-trips a taller frame")
     }
 
-  LEAVE_POOL
   END_SET("WaylandServer windowbounds round-trip")
   return 0;
 }

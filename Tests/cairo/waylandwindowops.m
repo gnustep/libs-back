@@ -29,7 +29,6 @@ int
 main(void)
 {
   START_SET("WaylandServer window operations")
-  ENTER_POOL
 
   GSDisplayServer *server = nil;
 
@@ -125,7 +124,6 @@ main(void)
       [server termwindow: win];
     }
 
-  LEAVE_POOL
   END_SET("WaylandServer window operations")
   return 0;
 }

@@ -37,19 +37,25 @@ eqf(CGFloat a, CGFloat b)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("GSGState alias")
   id ctxt, gs;
   NSAffineTransform *t;
   NSPoint p;
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping GSSetCTM alias test");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
   ctxt = [[NSClassFromString(@"GSStreamContext") alloc] initWithContextInfo:
     [NSDictionary dictionaryWithObject:
       [NSTemporaryDirectory() stringByAppendingPathComponent: @"gsc_alias.ps"]
@@ -58,8 +64,7 @@ main(int argc, const char **argv)
   PASS(gs != nil, "a GSGState is created for the stream context");
   if (gs == nil)
     {
-      DESTROY(pool);
-      return 0;
+      SKIP("gs could not be created")
     }
 
   /* The caller changing its transform after the call must not reach into the
@@ -82,7 +87,7 @@ main(int argc, const char **argv)
   PASS(eqf(p.x, 7) && eqf(p.y, 8),
     "the gstate resetting its matrix does not change the caller's transform");
 
-  DESTROY(pool);
+  END_SET("GSGState alias")
   return 0;
 }
 
@@ -91,6 +96,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("GSGState alias")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("GSGState alias")
   return 0;
 }
 

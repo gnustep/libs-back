@@ -57,7 +57,7 @@ draw(NSImage *src)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("image pixels")
   NSBitmapImageRep *rep, *out;
   NSImage *src;
   unsigned char *d;
@@ -65,12 +65,18 @@ main(int argc, const char **argv)
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping image pixel tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
 
   /* A 2x2 image, bitmap row 0 (top) = red, green; row 1 (bottom) = blue, white.
    * Drawn over the canvas it must keep that layout. */
@@ -112,7 +118,7 @@ main(int argc, const char **argv)
   PASS(pixelIs(out, 10, 10, 0, 255, 255),
     "a 24-bit rgb image without alpha decodes to its colour");
 
-  DESTROY(pool);
+  END_SET("image pixels")
   return 0;
 }
 
@@ -121,6 +127,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("image pixels")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("image pixels")
   return 0;
 }
 

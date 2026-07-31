@@ -54,7 +54,6 @@ int
 main(void)
 {
   START_SET("winlib image rotation")
-  ENTER_POOL
 
   BOOL haveApp = NO;
 
@@ -112,7 +111,6 @@ main(void)
 	"an image drawn under a rotated transform is rotated a quarter turn")
     }
 
-  LEAVE_POOL
   END_SET("winlib image rotation")
   return 0;
 }

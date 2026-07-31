@@ -91,19 +91,25 @@ clipGradientFill(int w, int h, NSBezierPath *clip)
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
+  START_SET("clip save and restore")
   int w = 24, h = 24;
   NSBitmapImageRep *rep;
   NSBezierPath *p;
 
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping clip save/restore tests");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
-  [NSApplication sharedApplication];
+  NS_DURING
+    {
+      [NSApplication sharedApplication];
+    }
+  NS_HANDLER
+    {
+      SKIP("It looks like GNUstep backend is not yet installed")
+    }
+  NS_ENDHANDLER
 
   /* A triangle with the right angle at (3,3) and hypotenuse (21,3)-(3,21).
    * Read back (top-left origin) its interior is the lower-left half: (7,16) is
@@ -153,7 +159,7 @@ main(int argc, const char **argv)
   PASS(rep != nil && pixelIs(rep, 12, 12, 255, 255, 255),
        "an even-odd ring clip keeps its hole after save/restore");
 
-  DESTROY(pool);
+  END_SET("clip save and restore")
   return 0;
 }
 
@@ -162,6 +168,9 @@ main(int argc, const char **argv)
 int
 main(int argc, const char **argv)
 {
+  START_SET("clip save and restore")
+    SKIP("back is not built with the cairo graphics backend")
+  END_SET("clip save and restore")
   return 0;
 }
 

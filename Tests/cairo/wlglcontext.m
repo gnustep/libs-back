@@ -27,7 +27,6 @@ int
 main(void)
 {
   START_SET("Wayland EGL OpenGL context")
-  ENTER_POOL
 
   GSDisplayServer *server = nil;
 
@@ -99,7 +98,6 @@ main(void)
 	"a current EGL context reports a GL version string")
     }
 
-  LEAVE_POOL
   END_SET("Wayland EGL OpenGL context")
   return 0;
 }
