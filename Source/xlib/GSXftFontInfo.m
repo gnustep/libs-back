@@ -115,11 +115,13 @@
   [string getCharacters: (unichar*)str];
   XftTextExtents16 ([XGServer xDisplay],
 		    font_info,
-		    str, 
+		    str,
 		    len,
 		    &extents);
 
-  return extents.width;
+  /* The width of a string is how far it advances the drawing position, not
+     the width of the ink it puts down. */
+  return extents.xOff;
 }
 
 - (CGFloat) widthOfGlyphs: (const NSGlyph *) glyphs length: (int) len
@@ -139,7 +141,7 @@
 		    len,
 		    &extents);
 
-  return extents.width;
+  return extents.xOff;
 }
 
 - (NSMultibyteGlyphPacking)glyphPacking
@@ -178,16 +180,44 @@
 
 - (NSRect) boundingRectForGlyph: (NSGlyph)glyph
 {
-  XGlyphInfo *pc = [self xGlyphInfo: glyph];
+  XGlyphInfo *pc;
+  FT_Face face;
 
+  /* The extents Xft reports are those of the image it renders, which is
+     padded, so an i comes out as wide as it advances. The face has the ink
+     box itself, in 26.6 fixed point. */
+  face = XftLockFace((XftFont *)font_info);
+  if (face != NULL)
+    {
+      FT_UInt index = XftCharIndex([XGServer xDisplay],
+                                   (XftFont *)font_info, glyph);
+
+      if (FT_Load_Glyph(face, index, FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP) == 0)
+	{
+	  FT_Glyph_Metrics m = face->glyph->metrics;
+	  NSRect box = NSMakeRect(m.horiBearingX / 64.0,
+				  (m.horiBearingY - m.height) / 64.0,
+				  m.width / 64.0,
+				  m.height / 64.0);
+
+	  XftUnlockFace((XftFont *)font_info);
+	  return box;
+	}
+      XftUnlockFace((XftFont *)font_info);
+    }
+
+  pc = [self xGlyphInfo: glyph];
   // if per_char is NULL assume max bounds
   if (!pc)
       return NSMakeRect(0.0, 0.0,
 		    (float)font_info->max_advance_width,
 		    (float)(font_info->ascent + font_info->descent));
 
-  return NSMakeRect((float)pc->x, (float)-pc->y, 
-		    (float)(pc->width), 
+  /* Xft measures x and y from the glyph's origin to the top left corner of
+     its ink, x positive to the left and y positive upwards. */
+  return NSMakeRect((float)(-pc->x),
+		    (float)(pc->y - pc->height),
+		    (float)(pc->width),
 		    (float)(pc->height));
 }
 
@@ -502,8 +532,14 @@ static FT_Outline_Funcs bezierpath_funcs = {
   // FIXME: It would be correcter to use FC_SIZE as GNUstep should be
   // using point measurements, but as the rest of the library uses pixel,
   // we need to stick with that here.
+  /* The pattern this was matched from already carries a size, and adding a
+     value appends to the list rather than replacing it, so the size asked for
+     here is only reached once the earlier ones are removed. */
+  FcPatternDel(fontPattern, FC_PIXEL_SIZE);
+  FcPatternDel(fontPattern, FC_SIZE);
   FcPatternAddDouble(fontPattern, FC_PIXEL_SIZE, (double)(matrix[0]));
   // Should do this only when size > 8
+  FcPatternDel(fontPattern, FC_AUTOHINT);
   FcPatternAddBool(fontPattern, FC_AUTOHINT, FcTrue);
   pattern = XftFontMatch(xdpy, defaultScreen, fontPattern, &fc_result);
   // tide up
