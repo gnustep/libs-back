@@ -72,6 +72,7 @@ xrRGBToPixel(RContext* context, device_color_t color)
 
 @interface XGGState (Private)
 - (void) _alphaBuffer: (gswindow_device_t *)dest_win;
+- (BOOL) _blendRect: (NSRect)aRect;
 - (void) createGraphicContext;
 - (void) copyGraphicContext;
 - (void) setAlphaColor: (float)color;
@@ -777,11 +778,118 @@ static Region emptyRegion;
     }
 }
 
+/* Paint the fill colour over the rectangle with source over, letting the
+   colour's alpha through.  The pixels have to be read back, combined and
+   written again, which is only possible where they are kept, so this
+   answers NO when there is nothing to read and the caller falls back. */
+- (BOOL) _blendRect: (NSRect)aRect
+{
+  gswindow_device_t *dest_win = (gswindow_device_t *)windevice;
+  XRectangle	    bounds;
+  XRectangle	    from;
+  Pixmap	    source;
+  GC		    sgc;
+  RXImage	    *source_im;
+  RXImage	    *dest_im;
+  RXImage	    *dest_alpha = NULL;
+
+  CHECK_GC;
+  if (draw == 0 || dest_win == NULL)
+    {
+      return NO;
+    }
+  if (dest_win->buffer == 0 && dest_win->map_state != IsViewable)
+    {
+      return NO;
+    }
+
+  bounds = XGViewRectToX(self, aRect);
+  if (bounds.width == 0 || bounds.height == 0)
+    {
+      return NO;
+    }
+  from.x = 0;
+  from.y = 0;
+  from.width = bounds.width;
+  from.height = bounds.height;
+
+  if ((cstate & COLOR_FILL) == 0)
+    [self setColor: &fillColor state: COLOR_FILL];
+
+  /* The colour is only available as a pixel value in the graphics context,
+     so lay it down on a scratch drawable to get an image of the source.  It
+     takes a graphics context of its own: the clipping on ours belongs to the
+     destination and would fall in the wrong place here. */
+  source = XCreatePixmap(XDPY, draw, bounds.width, bounds.height,
+                         dest_win->depth);
+  if (source == 0)
+    {
+      return NO;
+    }
+  sgc = XCreateGC(XDPY, source, 0, NULL);
+  XCopyGC(XDPY, xgcntxt, GCForeground, sgc);
+  XFillRectangle(XDPY, source, sgc, 0, 0, bounds.width, bounds.height);
+  XFreeGC(XDPY, sgc);
+  source_im = RGetXImage((RContext *)context, source, 0, 0,
+                         bounds.width, bounds.height);
+  XFreePixmap(XDPY, source);
+
+  dest_im = RGetXImage((RContext *)context, draw, bounds.x, bounds.y,
+                       bounds.width, bounds.height);
+
+  if (source_im == NULL || source_im->image == 0
+      || dest_im == NULL || dest_im->image == 0)
+    {
+      if (source_im != NULL)
+        RDestroyXImage((RContext *)context, source_im);
+      if (dest_im != NULL)
+        RDestroyXImage((RContext *)context, dest_im);
+      return NO;
+    }
+
+  /* Where the destination keeps an alpha plane the combined alpha goes back
+     into it; without one the destination is opaque and so is the result. */
+  if (drawingAlpha == YES && alpha_buffer != 0)
+    {
+      dest_alpha = RGetXImage((RContext *)context, alpha_buffer,
+                              bounds.x, bounds.y,
+                              bounds.width, bounds.height);
+    }
+
+  _pixmap_combine_alpha((RContext *)context, source_im, NULL,
+                        dest_im, dest_alpha, from,
+                        NSCompositeSourceOver, drawMechanism,
+                        fillColor.field[AINDEX]);
+
+  RPutXImage((RContext *)context, draw, xgcntxt, dest_im, 0, 0,
+             bounds.x, bounds.y, bounds.width, bounds.height);
+  if (dest_alpha != NULL)
+    {
+      RPutXImage((RContext *)context, alpha_buffer, xgcntxt, dest_alpha,
+                 0, 0, bounds.x, bounds.y, bounds.width, bounds.height);
+      RDestroyXImage((RContext *)context, dest_alpha);
+    }
+  RDestroyXImage((RContext *)context, dest_im);
+  RDestroyXImage((RContext *)context, source_im);
+  return YES;
+}
+
 - (void) compositerect: (NSRect)aRect
                     op: (NSCompositingOperation)op
 {
   CGFloat gray = 0.0;
   BOOL    highlight = NO;
+
+  /* Source over is the one operator here whose result depends on the alpha
+     of the colour, and no raster function can express that: whatever is
+     drawn, the pixel that goes down is the colour itself. */
+  if ((op == NSCompositeSourceOver || op == NSCompositeHighlight)
+      && fillColor.field[AINDEX] < 1.0
+      && pattern == nil
+      && [self _blendRect: aRect] == YES)
+    {
+      return;
+    }
 
   /* FIXME: Really need alpha dithering to do this right - combine with
      XGBitmapImageRep code? */
