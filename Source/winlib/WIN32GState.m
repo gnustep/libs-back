@@ -1574,6 +1574,7 @@ HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
   unsigned char *cdata;
   unsigned char *bits;
   int i = 0;
+  LONG row, stride;
   HDC hDC;
   HDC hdcMemDC = NULL;
   HBITMAP hbitmap = NULL;
@@ -1660,11 +1661,11 @@ HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
     }
 
   // Bit block transfer into our compatible memory DC.
-  if (!BitBlt(hdcMemDC, 0, 0, 
-    rcClient.right - rcClient.left, 
-    rcClient.bottom - rcClient.top, 
-    hDC, 
-    0, 0,
+  if (!BitBlt(hdcMemDC, 0, 0,
+    rcClient.right - rcClient.left,
+    rcClient.bottom - rcClient.top,
+    hDC,
+    rcClient.left, rcClient.top,
     SRCCOPY))
     {
       NSLog(@"BitBlt failed for window %d in GSReadRect. Error %d", 
@@ -1725,15 +1726,23 @@ HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
       return nil;
     }
 
-  // Copy to data
+  /* Copy to data.  GetDIBits hands back the rows bottom up, while the
+     bitmap wanted here starts with the top row, so they are taken in
+     reverse. */
   cdata = [data mutableBytes];
-  while (i < dwBmpSize)
+  stride = bmpCopied.bmWidth * 4;
+  for (row = 0; row < bmpCopied.bmHeight; row++)
     {
-      cdata[i+0] = bits[i+2];
-      cdata[i+1] = bits[i+1];
-      cdata[i+2] = bits[i+0];
-      cdata[i+3] = bits[i+3];
-      i += 4;
+      unsigned char *src = bits + (bmpCopied.bmHeight - 1 - row) * stride;
+      unsigned char *dst = cdata + row * stride;
+
+      for (i = 0; i < stride; i += 4)
+        {
+          dst[i+0] = src[i+2];
+          dst[i+1] = src[i+1];
+          dst[i+2] = src[i+0];
+          dst[i+3] = src[i+3];
+        }
     }
 
 
