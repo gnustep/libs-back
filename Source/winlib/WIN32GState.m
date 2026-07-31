@@ -1374,12 +1374,11 @@ HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
   NSInteger patternCount = 0;
   
   SetBkMode(hDC, TRANSPARENT);
+  /* The pen built from this below draws the stroke, so it takes the stroke
+     colour; the brush that fills takes the fill colour. */
   br.lbStyle = BS_SOLID;
-  br.lbColor = wfcolor;
+  br.lbColor = wscolor;
   br.lbHatch = 0;
-  /*
-  brush = CreateBrushIndirect(&br);
-  */
   brush = CreateSolidBrush(wfcolor);
   oldBrush = SelectObject(hDC, brush);
 
