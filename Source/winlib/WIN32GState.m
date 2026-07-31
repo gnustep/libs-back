@@ -414,6 +414,29 @@ BOOL alpha_blend_source_over(HDC destDC,
   switch (op)
     {
       case   NSCompositeClear:
+	{
+	  HDC hDC;
+	  RECT rect = GSViewRectToWin(self, aRect);
+
+	  hDC = [self getHDC];
+	  if (!hDC)
+	    {
+	      return;
+	    }
+
+	  PatBlt(hDC, rect.left, rect.top, rect.right - rect.left,
+		 rect.bottom - rect.top, BLACKNESS);
+	  [self releaseHDC: hDC];
+	  break;
+	}
+      case   NSCompositeDestinationOver:
+      case   NSCompositeDestinationIn:
+      case   NSCompositeDestinationAtop:
+	/* A GDI surface carries no alpha of its own, so the destination admits
+	   nothing of the source and stands as it is. */
+	break;
+      case   NSCompositePlusLighter:
+	[self _orRect: aRect];
 	break;
       case   GSCompositeHighlight:
 	{
@@ -437,13 +460,9 @@ BOOL alpha_blend_source_over(HDC destDC,
       case   NSCompositeSourceIn:
       case   NSCompositeSourceOut:
       case   NSCompositeSourceAtop:
-      case   NSCompositeDestinationOver:
-      case   NSCompositeDestinationIn:
       case   NSCompositeDestinationOut:
-      case   NSCompositeDestinationAtop:
       case   NSCompositeXOR:
       case   NSCompositePlusDarker:
-      case   NSCompositePlusLighter:
       default:
 	if ((op == NSCompositeSourceOver) && (fillColor.field[AINDEX] < 1.0))
 	  {
@@ -456,6 +475,54 @@ BOOL alpha_blend_source_over(HDC destDC,
 	  }
 	break;
     }
+}
+
+/* Add the fill colour to what is already there. GDI has no addition, so the
+   colour goes on a bitmap of its own and is combined from there with a
+   bitwise or, which is as close as a raster operation gets. */
+- (void) _orRect: (NSRect)aRect
+{
+  RECT   rect = GSViewRectToWin(self, aRect);
+  int    w = rect.right - rect.left;
+  int    h = rect.bottom - rect.top;
+  HDC    hDC;
+  HDC    memDC;
+  HBITMAP bitmap;
+  HGDIOBJ old;
+  HBRUSH brush;
+  RECT   from = { 0, 0, w, h };
+
+  if (w <= 0 || h <= 0)
+    {
+      return;
+    }
+
+  hDC = [self getHDC];
+  if (!hDC)
+    {
+      return;
+    }
+
+  memDC = CreateCompatibleDC(hDC);
+  if (memDC)
+    {
+      bitmap = CreateCompatibleBitmap(hDC, w, h);
+      if (bitmap)
+	{
+	  old = SelectObject(memDC, bitmap);
+	  brush = CreateSolidBrush(wfcolor);
+	  FillRect(memDC, &from, brush);
+	  DeleteObject(brush);
+
+	  BitBlt(hDC, rect.left, rect.top, w, h, memDC, 0, 0, SRCPAINT);
+
+	  SelectObject(memDC, old);
+	  DeleteObject(bitmap);
+	}
+      DeleteDC(memDC);
+    }
+
+  [self releaseHDC: hDC];
 }
 
 /* Paint a rectangle of the fill colour over what is already there, letting
