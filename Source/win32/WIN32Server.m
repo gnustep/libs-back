@@ -3058,12 +3058,30 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT uMsg,
 			     WPARAM wParam, LPARAM lParam)
 {
   WIN32Server	*ctxt = (WIN32Server *)GSCurrentServer();
-  
+  LRESULT	result;
+
   if(_enableCallbacks == NO)
     {
       return (LRESULT)NULL;
     }
 
-  return [ctxt windowEventProc: hwnd : uMsg : wParam : lParam];
+  /* Windows calls a window procedure from inside the kernel, and the stack
+   * cannot be unwound back through that call, so an exception must not be
+   * allowed to leave here.  One that does stops the process responding
+   * rather than reporting anything.  Report it instead and answer as we do
+   * for a message we did not handle.
+   */
+  NS_DURING
+    {
+      result = [ctxt windowEventProc: hwnd : uMsg : wParam : lParam];
+    }
+  NS_HANDLER
+    {
+      NSLog(@"Exception handling window message %d: %@", uMsg, localException);
+      result = DefWindowProcW(hwnd, uMsg, wParam, lParam);
+    }
+  NS_ENDHANDLER
+
+  return result;
 }
 
