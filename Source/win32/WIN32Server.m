@@ -2089,7 +2089,13 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
 {
   RECT r;
 
-  GetWindowRect((HWND)winNum, &r);
+  /* A window number that is not a window leaves the rectangle unwritten, so
+   * without this it is whatever the stack held that gets converted and
+   * returned as the window's bounds. */
+  if (!GetWindowRect((HWND)winNum, &r))
+    {
+      return NSZeroRect;
+    }
   return MSScreenRectToGS(r);
 }
 
