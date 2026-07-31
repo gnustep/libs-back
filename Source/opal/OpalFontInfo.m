@@ -81,7 +81,9 @@
     }
 
   ascender = [self _fontUnitToUserSpace: CGFontGetAscent(face)];
-  descender = [self _fontUnitToUserSpace: CGFontGetDescent(face)];
+  /* Opal reports the descent as a distance below the baseline, while a font's
+     descender is the signed offset from it. */
+  descender = -[self _fontUnitToUserSpace: CGFontGetDescent(face)];
   xHeight = [self _fontUnitToUserSpace: CGFontGetXHeight(face)];
 
   CGFloat pointSize = matrix[0];
@@ -108,7 +110,7 @@
   //   lineHeight = font_extents.height
   // alternatively: line spacing = (ascent + descent + "external leading")
   // (internal discussion between ivucica and ericwa, 2013-09-17)
-  lineHeight = leading + ascender + descender;
+  lineHeight = leading + ascender - descender;
 
 #if 0
   // Get default font options
@@ -326,18 +328,17 @@ BOOL _cairo_extents_for_NSGlyph(cairo_scaled_font_t *scaled_font, NSGlyph glyph,
 
 - (NSRect) boundingRectForGlyph: (NSGlyph)glyph
 {
-  // Use glyph advance as approximation for bounding rect
   CGGlyph cgGlyph = (CGGlyph)glyph;
-  int advance = 0;
+  CGRect bbox;
+
   if (_faceInfo && [_faceInfo fontFace])
     {
-      CGFontGetGlyphAdvances([_faceInfo fontFace], &cgGlyph, 1, &advance);
-      int unitsPerEm = CGFontGetUnitsPerEm([_faceInfo fontFace]);
-      if (unitsPerEm > 0)
+      if (CGFontGetGlyphBBoxes([_faceInfo fontFace], &cgGlyph, 1, &bbox))
         {
-          CGFloat scale = matrix[0] / (CGFloat)unitsPerEm;
-          CGFloat w = advance * scale;
-          return NSMakeRect(0, descender, w, ascender - descender);
+          return NSMakeRect([self _fontUnitToUserSpace: bbox.origin.x],
+                            [self _fontUnitToUserSpace: bbox.origin.y],
+                            [self _fontUnitToUserSpace: bbox.size.width],
+                            [self _fontUnitToUserSpace: bbox.size.height]);
         }
     }
   return NSMakeRect(0, descender, matrix[0] * 0.6, ascender - descender);

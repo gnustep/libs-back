@@ -33,6 +33,7 @@
 #import <AppKit/NSColor.h>
 #import <AppKit/NSGradient.h>
 #import <AppKit/NSColor.h>
+#import <AppKit/NSShadow.h>
 #import "opal/OpalGState.h"
 #import "opal/OpalSurface.h"
 #import "opal/OpalFontInfo.h"
@@ -80,6 +81,19 @@ _opalBlendModeForOp(NSCompositingOperation op)
       case NSCompositePlusDarker:      return kCGBlendModePlusDarker;
       case NSCompositePlusLighter:     return kCGBlendModePlusLighter;
       default:                         return kCGBlendModeNormal;
+    }
+}
+
+static CGInterpolationQuality
+_opalInterpolationForImageInterpolation(NSImageInterpolation interpolation)
+{
+  switch (interpolation)
+    {
+      case NSImageInterpolationNone: return kCGInterpolationNone;
+      case NSImageInterpolationLow:  return kCGInterpolationLow;
+      case NSImageInterpolationHigh: return kCGInterpolationHigh;
+      case NSImageInterpolationDefault:
+      default:                       return kCGInterpolationDefault;
     }
 }
 
@@ -549,6 +563,64 @@ _opalBlendModeForOp(NSCompositingOperation op)
   [super DPSnewpath];
 }
 
+/* Renders the current path offset by the active shadow, in the shadow colour,
+   before the path itself is drawn. Blur is not applied. Painting consumes the
+   context's path, so it is taken and put back around the shadow. */
+- (void) _drawShadowForOperation: (ctxt_object_t)drawType
+{
+  CGContextRef cgctx = CGCTX;
+  NSColor *shadowColor;
+  NSSize soffset;
+  CGPathRef saved;
+  CGFloat r, g, b, a;
+
+  if (_shadow == nil || cgctx == NULL)
+    {
+      return;
+    }
+  shadowColor = [[_shadow shadowColor]
+    colorUsingColorSpaceName: NSDeviceRGBColorSpace];
+  if (shadowColor == nil)
+    {
+      return;
+    }
+  [shadowColor getRed: &r green: &g blue: &b alpha: &a];
+  soffset = [_shadow shadowOffset];
+
+  saved = CGContextCopyPath(cgctx);
+  if (saved == NULL)
+    {
+      return;
+    }
+
+  CGContextSaveGState(cgctx);
+  CGContextTranslateCTM(cgctx, soffset.width, soffset.height);
+  CGContextBeginPath(cgctx);
+  CGContextAddPath(cgctx, saved);
+  if (drawType == path_stroke)
+    {
+      CGContextSetRGBStrokeColor(cgctx, r, g, b, a);
+      CGContextStrokePath(cgctx);
+    }
+  else
+    {
+      CGContextSetRGBFillColor(cgctx, r, g, b, a);
+      if (drawType == path_eofill)
+        {
+          CGContextEOFillPath(cgctx);
+        }
+      else
+        {
+          CGContextFillPath(cgctx);
+        }
+    }
+  CGContextRestoreGState(cgctx);
+
+  CGContextBeginPath(cgctx);
+  CGContextAddPath(cgctx, saved);
+  CGPathRelease(saved);
+}
+
 - (void) DPSeofill
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
@@ -556,6 +628,7 @@ _opalBlendModeForOp(NSCompositingOperation op)
 
   if (cgctx)
     {
+      [self _drawShadowForOperation: path_eofill];
       CGContextEOFillPath(cgctx);
     }
   [super DPSnewpath];
@@ -568,6 +641,7 @@ _opalBlendModeForOp(NSCompositingOperation op)
 
   if (cgctx)
     {
+      [self _drawShadowForOperation: path_fill];
       CGContextFillPath(cgctx);
     }
   [super DPSnewpath];
@@ -717,6 +791,7 @@ _opalBlendModeForOp(NSCompositingOperation op)
 
   if (cgctx)
     {
+      [self _drawShadowForOperation: path_stroke];
       CGContextStrokePath(cgctx);
     }
   [super DPSnewpath];
@@ -892,6 +967,8 @@ _opalBlendModeForOp(NSCompositingOperation op)
 
       CGContextSaveGState(cgctx);
       CGContextConcatCTM(cgctx, cgAT);
+      CGContextSetInterpolationQuality(cgctx,
+        _opalInterpolationForImageInterpolation([drawcontext imageInterpolation]));
 
       CGColorSpaceRef colorSpace = CGColorSpaceCreateWithName(colorSpaceName);
       NSData *nsData = [NSData dataWithBytesNoCopy: (void*)*data
@@ -953,6 +1030,8 @@ _opalBlendModeForOp(NSCompositingOperation op)
   // Apply compositing operation and alpha
   CGContextSetBlendMode(destCGContext, _opalBlendModeForOp(op));
   CGContextSetAlpha(destCGContext, delta);
+  CGContextSetInterpolationQuality(destCGContext,
+    _opalInterpolationForImageInterpolation([drawcontext imageInterpolation]));
   CGContextDrawImage(destCGContext, destCGRect, subImage);
 
   OPContextSetCairoDeviceOffset(CGCTX, -offset.x,
@@ -1024,6 +1103,8 @@ doesn't support to use the receiver cairo target as the source. */
   CGContextSaveGState(destCGContext);
   CGContextSetBlendMode(destCGContext, _opalBlendModeForOp(op));
   CGContextSetAlpha(destCGContext, delta);
+  CGContextSetInterpolationQuality(destCGContext,
+    _opalInterpolationForImageInterpolation([drawcontext imageInterpolation]));
   CGContextDrawImage(destCGContext, destCGRect, subImage);
   CGContextRestoreGState(destCGContext);
   CGImageRelease(subImage);
@@ -1066,7 +1147,8 @@ doesn't support to use the receiver cairo target as the source. */
       CGContextSetBlendMode(cgctx, _opalBlendModeForOp(op));
       CGContextFillRect(cgctx,
                         CGRectMake(aRect.origin.x,
-                                   [_opalSurface size].height -  aRect.origin.y,
+                                   [_opalSurface size].height - aRect.origin.y
+                                     - aRect.size.height,
                                    aRect.size.width, aRect.size.height));
       CGContextRestoreGState(cgctx);
     }
