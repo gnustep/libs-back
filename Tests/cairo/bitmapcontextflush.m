@@ -19,15 +19,14 @@
 int
 main(int argc, const char **argv)
 {
-  CREATE_AUTORELEASE_POOL(pool);
   NSBitmapImageRep *rep;
   NSGraphicsContext *ctxt;
 
+  START_SET("bitmap context flush")
+
   if (getenv("DISPLAY") == NULL || *getenv("DISPLAY") == '\0')
     {
-      NSLog(@"no window server available; skipping bitmap context flush test");
-      DESTROY(pool);
-      return 0;
+      SKIP("no window server available")
     }
 
   [NSApplication sharedApplication];
@@ -56,7 +55,8 @@ main(int argc, const char **argv)
   PASS([NSGraphicsContext currentContext] != ctxt,
        "flushing a bitmap context leaves the graphics state stack in step");
 
-  DESTROY(pool);
+  END_SET("bitmap context flush")
+
   return 0;
 }
 

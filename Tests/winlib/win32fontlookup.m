@@ -23,7 +23,6 @@ int
 main(void)
 {
   START_SET("win32 font lookup")
-  ENTER_POOL
 
   GSFontEnumerator *e = nil;
 
@@ -89,7 +88,6 @@ main(void)
       }
     }
 
-  LEAVE_POOL
   END_SET("win32 font lookup")
   return 0;
 }
