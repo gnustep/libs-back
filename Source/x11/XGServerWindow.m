@@ -795,6 +795,53 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   return extents;
 }
 
+static BOOL	wmTestFailed;
+
+static int
+_wmTestErrorHandler(Display *display, XErrorEvent *event)
+{
+  if (event->error_code == BadAccess)
+    {
+      wmTestFailed = YES;
+    }
+  return 0;
+}
+
+/* Is there no window manager running at all?  Only one client at a time may
+   select SubstructureRedirect on the root window and a window manager always
+   does, so being allowed to select it means there is none.  It is given back
+   immediately.  The answer is worked out once.
+*/
+- (BOOL) _noWindowManager
+{
+  static BOOL	checked = NO;
+  static BOOL	none = NO;
+
+  if (checked == NO)
+    {
+      Window		root = DefaultRootWindow(dpy);
+      XWindowAttributes	attributes;
+      int		(*previous)(Display *, XErrorEvent *);
+
+      checked = YES;
+      wmTestFailed = NO;
+      XGetWindowAttributes(dpy, root, &attributes);
+      XSync(dpy, False);
+      previous = XSetErrorHandler(_wmTestErrorHandler);
+      XSelectInput(dpy, root,
+                   attributes.your_event_mask | SubstructureRedirectMask);
+      XSync(dpy, False);
+      XSetErrorHandler(previous);
+      if (wmTestFailed == NO)
+        {
+          XSelectInput(dpy, root, attributes.your_event_mask);
+          XSync(dpy, False);
+          none = YES;
+        }
+    }
+  return none;
+}
+
 - (BOOL) _checkStyle: (unsigned)style
 {
   gswindow_device_t	*window;
@@ -1644,7 +1691,23 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
 	    XA_CARDINAL, 16, 60, &count);
         }
 
-      if (offsets == 0)
+      if (offsets == 0 && [self _noWindowManager] == YES)
+        {
+          /* Nothing is decorating our windows, so every style has zero
+           * offsets and there is nothing to test for.  They are not stored
+           * on the root window, where a window manager started later would
+           * find them and use them in place of its own.
+           */
+          for (i = 1; i < 16; i++)
+            {
+              generic.offsets[i].l = 0.0;
+              generic.offsets[i].r = 0.0;
+              generic.offsets[i].t = 0.0;
+              generic.offsets[i].b = 0.0;
+              generic.offsets[i].known = YES;
+            }
+        }
+      else if (offsets == 0)
         {
           BOOL	ok = YES;
 
