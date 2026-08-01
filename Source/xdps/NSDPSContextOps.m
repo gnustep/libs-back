@@ -27,10 +27,16 @@
 
 #include <math.h>
 
-#ifdef HAVE_WRASTER_H
-#include "wraster.h"
+#include "config.h"
+
+#if USE_WRASTER
+# ifdef HAVE_WRASTER_H
+#  include "wraster.h"
+# else
+#  include "x11/wraster.h"
+# endif
 #else
-#include "x11/wraster.h"
+# include "x11/xlibimage.h"
 #endif
 
 #define BOOL XWINDOWSBOOL
