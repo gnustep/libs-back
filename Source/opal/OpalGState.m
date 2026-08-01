@@ -217,7 +217,7 @@ _opalInterpolationForImageInterpolation(NSImageInterpolation interpolation)
   if (cgctx && s && length > 0)
     {
       CGPoint pt = CGContextGetPathCurrentPoint(cgctx);
-      pt.y += [self->font defaultLineHeightForFont] * 0.3;
+      pt.y += [self->font ascender];
       CGContextSetTextPosition(cgctx, pt.x, pt.y);
       CGContextShowText(cgctx, s, length);
     }
@@ -262,8 +262,7 @@ _opalInterpolationForImageInterpolation(NSImageInterpolation interpolation)
         }
 
       CGPoint pt = CGContextGetPathCurrentPoint(cgctx);
-      // Offset Y to account for flipped coordinate system
-      pt.y += [self->font defaultLineHeightForFont] * 0.3;
+      pt.y += [self->font ascender];
       CGContextSetTextPosition(cgctx, pt.x, pt.y);
       CGContextShowGlyphsWithAdvances(cgctx, cgglyphs, (const CGSize *)advances,
                                       length);
