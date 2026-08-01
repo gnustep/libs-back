@@ -198,14 +198,10 @@ _opalInterpolationForImageInterpolation(NSImageInterpolation interpolation)
 - (void) DPSshow: (const char *)s
 {
   NSDebugLLog(@"OpalGState", @"%p (%@): %s", self, [self class], __PRETTY_FUNCTION__);
-  CGContextRef cgctx = CGCTX;
 
-  if (cgctx)
+  if (s != NULL)
     {
-      CGContextSaveGState(cgctx);
-      CGContextSetRGBFillColor(cgctx, 0, 1, 0, 1);
-      CGContextFillRect(cgctx, CGRectMake(0, 0, strlen(s) * 12, 12));
-      CGContextRestoreGState(cgctx);
+      [self GSShowText: s : strlen(s)];
     }
 }
 
