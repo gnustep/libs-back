@@ -79,6 +79,7 @@ main(void)
   PASS(ctx != NULL, "RCreateContext succeeds on the display");
   if (ctx == NULL)
     {
+      XCloseDisplay(dpy);
       SKIP("no render context could be created")
     }
 
@@ -152,6 +153,20 @@ main(void)
 	  PASS(maxError <= 255, "the converted pixels are readable");
 	}
     }
+
+  if (xi != NULL)
+    {
+      XDestroyImage(xi);
+    }
+  if (pixmap != 0)
+    {
+      XFreePixmap(dpy, pixmap);
+    }
+  RReleaseImage(img);
+  /* The context is left to the display close: RDestroyContext lives in
+   * xlibimage.c, which carries its own RCreateContext and so cannot be
+   * compiled in beside context.c. */
+  XCloseDisplay(dpy);
 
   END_SET("convert")
   return 0;

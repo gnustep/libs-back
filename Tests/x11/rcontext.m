@@ -67,6 +67,7 @@ main(void)
   PASS(ctx != NULL, "RCreateContext succeeds with default attributes");
   if (ctx == NULL)
     {
+      XCloseDisplay(dpy);
       SKIP("no render context could be created")
     }
 
@@ -114,6 +115,10 @@ main(void)
       PASS(ctx->white == WhitePixel(dpy, screen),
 	   "the default-visual context records the screen's white pixel");
     }
+  /* The contexts are left to the display close: RDestroyContext lives in
+   * xlibimage.c, which carries its own RCreateContext and so cannot be
+   * compiled in beside context.c. */
+  XCloseDisplay(dpy);
 
   END_SET("rcontext")
   return 0;
