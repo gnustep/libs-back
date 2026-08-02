@@ -1317,7 +1317,16 @@ static CGGradientRef OpalCreateGradientFromNSGradient(NSGradient *gradient)
       [gradient getColor: &color location: &location atIndex: i];
       NSColor *rgb = [color colorUsingColorSpaceName: NSCalibratedRGBColorSpace];
       if (rgb == nil)
-        rgb = [NSColor blackColor];
+        {
+          /* A stop may hold a colour with no components to read, a pattern
+           * for one.  There is no colour to interpolate towards, so draw
+           * nothing rather than substituting one: the same answer GSGState
+           * gives, where _setColorFromGradient: returns NO and the band is
+           * left undrawn. */
+          free(components);
+          free(locations);
+          return NULL;
+        }
       components[i*4+0] = [rgb redComponent];
       components[i*4+1] = [rgb greenComponent];
       components[i*4+2] = [rgb blueComponent];
