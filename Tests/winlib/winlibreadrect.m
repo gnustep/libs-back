@@ -34,7 +34,6 @@ int
 main(void)
 {
   START_SET("winlib read back")
-  ENTER_POOL
 
   BOOL haveApp = NO;
 
@@ -93,7 +92,6 @@ main(void)
 	"reading part of a drawing gives that part, not the top of it")
     }
 
-  LEAVE_POOL
   END_SET("winlib read back")
 
   return 0;
