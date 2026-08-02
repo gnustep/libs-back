@@ -4607,86 +4607,6 @@ _screenSize(Display *dpy, int screen)
   return scrSize;
 }
 
-/* An X server may have multiple physical monitors organised in some way to
- * make up the whole display.  When XRANDR is available each physical monitor
- * corresponds to an NSScreen,  but without that there is a single NSScreen
- * corresponding to the composite display.
- * The window managers provide the _NET_WORKAREA property which returns the
- * usable area of the composite display, so this information is only usable
- * when either XRANDR is not available or there is only one physical monitor
- * and therefore only one NSScreen.
- * Where the window manager provides multiple virtual work areas, _NET_WORKAREA
- * may define multiple rectangles, but all refer to the same display/NSScreen.
- * Returns nil if no information is available.
- */
-static NSArray *
-_workAreas(Display *dpy, Window root)
-{
-  Atom		workarea_atom;
-  Atom		type;
-  int		format;
-  int		status;
-  unsigned long	*items;
-  unsigned long	nitems;
-  unsigned long	bytes_after;
-  unsigned char *data = NULL;
-  unsigned	count;
-  unsigned	index;
-  NSMutableArray	*array;
-
-  workarea_atom = XInternAtom(dpy, "_NET_WORKAREA", False);
-  status = XGetWindowProperty(dpy, root, workarea_atom,
-    0,                      /* offset */
-    (~0L),                  /* read all items */
-    False,
-    XA_CARDINAL,
-    &type,
-    &format,
-    &nitems,
-    &bytes_after,
-    &data
-  );
-
-  if (status != Success || !data)
-    {
-      NSLog(@"Failed to get _NET_WORKAREA\n");
-      return nil;
-    }
-  if (format != 32)
-    {
-      XFree(data);
-      return nil;
-    }
-
-  items = (unsigned long *)data;
-  count = nitems / 4;
-  if (0 == count)
-    {
-      XFree(data);
-      return nil;
-    }
-
-  array = [NSMutableArray arrayWithCapacity: count];
-  for (index = 0; index < count; index++)
-    {
-      NSRect	frame;
-
-      frame.origin.x = (uint32_t)*items++;
-      frame.origin.y = (uint32_t)*items++;
-      frame.size.width = (uint32_t)*items++;
-      frame.size.height = (uint32_t)*items++;
-      // X coordinates need to be flipped to OpenStep coordinates
-      if (frame.origin.y > 0.0)
-	{
-	  frame.origin.y = 0.0;
-	}
-      [array addObject: [NSValue valueWithRect: frame]];
-    }
-  XFree(data);
-  return array;
-}
-
-
 /* This method assumes that we deal with one X11 screen - `defScreen`.
    Basically it means that we have DISPLAY variable set to `:0.0`.
    Where both digits have artbitrary values, but it defines once on
@@ -4700,7 +4620,6 @@ _workAreas(Display *dpy, Window root)
 - (NSArray *)screenList
 {
   Window        root = [self xDisplayRootWindow];
-  NSArray	*workAreas = _workAreas(dpy, root);
   xScreenSize = _screenSize(dpy, defScreen);
 
   monitorsCount = 0;
@@ -4746,28 +4665,21 @@ _workAreas(Display *dpy, Window root)
                   monitors[mi].resolution
 		    = [self resolutionForScreen: defScreen];
 
-		  /* We can only use the work area provided by _NET_WORKAREA
-		   * if we have a single screen/monitor, because that property
-		   * refers to coordinates in the composite display formed by
-		   * all the available monitors.
+		  /* Use the full output size, not _NET_WORKAREA, for the screen
+		   * frame.  In the AppKit/OpenStep model a screen frame is the whole
+		   * display; the usable area left after panels and struts is a
+		   * separate concept that applications query on their own.  More
+		   * importantly, the window Y-flip below (_OSFrameToXFrame) converts
+		   * against the full screen height, so the screen frame must use that
+		   * same full height: if the frame were shorter (e.g. a work area
+		   * that excludes reserved areas), a window positioned at the top of
+		   * the screen would be shifted down by the difference.
 		   */
-		  if (1 == monitorsCount && workAreas != nil)
-		    {
-		      monitors[0].frame = [[workAreas firstObject] rectValue];
-		    }
-		  else
-		    {
-		      /* Transform coordinates from Xlib (flipped)
-		       * to OpenStep (unflipped). 
-		       * Windows and screens should have the same
-		       * coordinate system.
-		       */
-		      monitors[mi].frame =
-			NSMakeRect(crtc_info->x,
-			  xScreenSize.height - crtc_info->height - crtc_info->y,
-			  crtc_info->width,
-			  crtc_info->height);
-		    }
+		  monitors[mi].frame =
+		    NSMakeRect(crtc_info->x,
+		      xScreenSize.height - crtc_info->height - crtc_info->y,
+		      crtc_info->width,
+		      crtc_info->height);
                   /* Add monitor ID (index in monitors array).
                    * Put primary monitor ID at index 0 since
 		   * NSScreen gets this as main screen if application
@@ -4813,11 +4725,6 @@ _workAreas(Display *dpy, Window root)
   monitors[0].depth = [self windowDepthForScreen: 0];
   monitors[0].resolution = [self resolutionForScreen: defScreen];
   monitors[0].frame = NSMakeRect(0, 0, xScreenSize.width, xScreenSize.height);
-
-  if (workAreas != nil)
-    {
-      monitors[0].frame = [[workAreas firstObject] rectValue];
-    }
   return [NSArray arrayWithObject: [NSNumber numberWithInt: defScreen]];
 }
 
