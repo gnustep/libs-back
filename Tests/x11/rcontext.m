@@ -20,7 +20,8 @@
 #import "Testing.h"
 #include "config.h"
 
-#if defined(BUILD_SERVER) && defined(SERVER_x11) && BUILD_SERVER == SERVER_x11
+#if defined(BUILD_SERVER) && defined(SERVER_x11) \
+  && BUILD_SERVER == SERVER_x11 && defined(USE_WRASTER) && USE_WRASTER
 
 #include <X11/Xlib.h>
 #include "x11/wraster.h"
@@ -129,6 +130,9 @@ main(void)
 int
 main(void)
 {
+  START_SET("rcontext")
+  SKIP("back is not built with the wraster image code")
+  END_SET("rcontext")
   return 0;
 }
 
