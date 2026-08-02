@@ -58,8 +58,11 @@ main(void)
   ok = YES;
   NS_DURING
     {
-      (void)[server availableDepthsForScreen:
+      NSWindowDepth *depths;
+
+      depths = [server availableDepthsForScreen:
 	[[screens objectAtIndex: 0] intValue]];
+      if (depths) NSZoneFree(NSDefaultMallocZone(), depths);
     }
   NS_HANDLER
     {
@@ -152,6 +155,7 @@ main(void)
 		found = YES;
 	      }
 	  }
+	NSZoneFree(NSDefaultMallocZone(), depths);
       }
     PASS(terminated == YES, "availableDepthsForScreen: list is zero-terminated")
     PASS(found == YES,
