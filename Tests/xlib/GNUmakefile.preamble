@@ -1,10 +1,11 @@
 # Extra build settings for the xlib graphics backend tests.
 #
-# These tests include an xlib backend header directly, so they can only build
-# for that backend.  config.make names the graphics backend being built
-# (BUILD_GRAPHICS); the X11, Xft and backend header paths are added only for
-# xlib, and the tests carry a matching source-level guard (via config.h) so
-# they still build -- and skip -- on every other backend.
+# These tests include an xlib backend header directly, or drive the installed
+# backend through AppKit, so they can only build for that backend.
+# config.make names the graphics backend being built (BUILD_GRAPHICS); the
+# X11, Xft, gui and backend header paths are added only for xlib, and the
+# tests carry a matching source-level guard (via config.h) so they still
+# build -- and skip -- on every other backend.
 
 # config.h (used by the source-level guard) sits at the top of the (build) tree.
 ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../.. -I../..
@@ -17,5 +18,5 @@ ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../../Headers \
                            -I../../Headers \
                            $(shell pkg-config --cflags x11 xft)
 
-ADDITIONAL_TOOL_LIBS += -lm
+ADDITIONAL_TOOL_LIBS += -lm -lgnustep-gui
 endif
