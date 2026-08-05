@@ -115,6 +115,7 @@ main(int argc, const char **argv)
     }
   NS_HANDLER
     {
+      NSLog(@"the application did not start: %@", localException);
       SKIP("It looks like the GNUstep backend is not installed")
     }
   NS_ENDHANDLER
