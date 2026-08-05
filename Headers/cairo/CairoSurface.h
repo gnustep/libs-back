@@ -44,6 +44,9 @@
 
 - (void) handleExposeRect: (NSRect)rect;
 
+/* Write out anything the surface is holding back from its destination. */
+- (void) flush;
+
 - (BOOL) isDrawingToScreen;
 
 @end
