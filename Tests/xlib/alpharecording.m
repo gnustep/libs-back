@@ -22,9 +22,34 @@
 
 #define SIDE 20
 
-/* Draw into an offscreen image and read the centre pixel back. */
+enum
+{
+  OpaqueFill,
+  Cleared,
+  FillThenClear,
+  ClearThenFill,
+  HalfFill
+};
+
+static void
+fill(CGFloat alpha)
+{
+  [[NSColor colorWithDeviceRed: 1.0
+                         green: 0.0
+                          blue: 0.0
+                         alpha: alpha] set];
+  NSRectFill(NSMakeRect(0, 0, SIDE, SIDE));
+}
+
+static void
+clear(void)
+{
+  NSRectFillUsingOperation(NSMakeRect(0, 0, SIDE, SIDE), NSCompositeClear);
+}
+
+/* Draw one of the cases into an offscreen image and read the pixels back. */
 static NSBitmapImageRep *
-drawn(void (^body)(void))
+drawn(int which)
 {
   NSImage *image;
   NSBitmapImageRep *rep;
@@ -32,7 +57,26 @@ drawn(void (^body)(void))
   image = AUTORELEASE([[NSImage alloc]
     initWithSize: NSMakeSize(SIDE, SIDE)]);
   [image lockFocus];
-  body();
+  switch (which)
+    {
+      case OpaqueFill:
+        fill(1.0);
+        break;
+      case Cleared:
+        clear();
+        break;
+      case FillThenClear:
+        fill(1.0);
+        clear();
+        break;
+      case ClearThenFill:
+        clear();
+        fill(1.0);
+        break;
+      case HalfFill:
+        fill(0.5);
+        break;
+    }
   rep = AUTORELEASE([[NSBitmapImageRep alloc]
     initWithFocusedViewRect: NSMakeRect(0, 0, SIDE, SIDE)]);
   [image unlockFocus];
@@ -75,42 +119,23 @@ main(int argc, const char **argv)
     }
   NS_ENDHANDLER
 
-  rep = drawn(^{
-    [[NSColor colorWithDeviceRed: 1.0 green: 0.0 blue: 0.0 alpha: 1.0] set];
-    NSRectFill(NSMakeRect(0, 0, SIDE, SIDE));
-  });
+  rep = drawn(OpaqueFill);
   PASS(rep != nil, "an offscreen image reads back");
   PASS(sample(rep, 0) == 255 && sample(rep, 1) == 0 && sample(rep, 2) == 0,
     "an opaque fill reads back as the colour that was drawn");
   PASS(sample(rep, 3) == 255,
     "an opaque fill reads back opaque");
 
-  rep = drawn(^{
-    NSRectFillUsingOperation(NSMakeRect(0, 0, SIDE, SIDE), NSCompositeClear);
-  });
-  PASS(sample(rep, 3) == 0,
+  PASS(sample(drawn(Cleared), 3) == 0,
     "a cleared rectangle reads back transparent");
 
-  rep = drawn(^{
-    [[NSColor colorWithDeviceRed: 1.0 green: 0.0 blue: 0.0 alpha: 1.0] set];
-    NSRectFill(NSMakeRect(0, 0, SIDE, SIDE));
-    NSRectFillUsingOperation(NSMakeRect(0, 0, SIDE, SIDE), NSCompositeClear);
-  });
-  PASS(sample(rep, 3) == 0,
+  PASS(sample(drawn(FillThenClear), 3) == 0,
     "clearing over an opaque fill reads back transparent");
 
-  rep = drawn(^{
-    NSRectFillUsingOperation(NSMakeRect(0, 0, SIDE, SIDE), NSCompositeClear);
-    [[NSColor colorWithDeviceRed: 1.0 green: 0.0 blue: 0.0 alpha: 1.0] set];
-    NSRectFill(NSMakeRect(0, 0, SIDE, SIDE));
-  });
-  PASS(sample(rep, 3) == 255,
+  PASS(sample(drawn(ClearThenFill), 3) == 255,
     "an opaque fill over a cleared rectangle reads back opaque");
 
-  rep = drawn(^{
-    [[NSColor colorWithDeviceRed: 1.0 green: 0.0 blue: 0.0 alpha: 0.5] set];
-    NSRectFill(NSMakeRect(0, 0, SIDE, SIDE));
-  });
+  rep = drawn(HalfFill);
   PASS(sample(rep, 3) > 100 && sample(rep, 3) < 160,
     "a half transparent fill reads back half transparent");
 
