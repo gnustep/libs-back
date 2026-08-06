@@ -142,6 +142,13 @@ _pixmap_combine_alpha(RContext *context,
     {
       VARIABLES_DECLARATION;
       unsigned	row;
+      /* The operators that leave the destination alone where the source is
+         fully transparent; the rest have to be computed for every pixel. */
+      BOOL keepsDestination = (op == NSCompositeSourceOver
+	|| op == NSCompositeHighlight || op == NSCompositeSourceAtop
+	|| op == NSCompositeDestinationOver || op == NSCompositeDestinationOut
+	|| op == NSCompositeXOR || op == NSCompositePlusLighter
+	|| op == NSCompositePlusDarker);
 
       switch (drawMechanism)
 	{
@@ -175,7 +182,8 @@ _pixmap_combine_alpha(RContext *context,
 	    {
 	      unsigned	sr, sg, sb, sa; // source
 	      unsigned	dr, dg, db, da; // dest
-	      unsigned	ialpha;
+	      unsigned	fs, fd;         // the two Porter Duff coefficients
+	      unsigned	ws, wd, ra;
 
 	      // Get the source pixel information
 	      pixel = XGetPixel(source_im->image, srect.x+col, srect.y+row);
@@ -190,26 +198,16 @@ _pixmap_combine_alpha(RContext *context,
 	      else
 		sa = _amask;
 
-	      if (sa == 0)	// dest wouldn't be changed
-		continue;
+	      if (sa == 0 && keepsDestination)
+		continue;		// dest wouldn't be changed
 
 	      if (fraction < 1.0)
 		sa *= fraction;
-
-	      sr *= sa;
-	      sg *= sa;
-	      sb *= sa;
-
-      	      ialpha = (_amask - sa);
 
 	      // Now get dest pixel
 	      pixel = XGetPixel(dest_im->image, col, row);
 	      PixelToRGB(pixel, dr, dg, db);
 
-      	      dr *= ialpha;
-      	      dg *= ialpha;
-      	      db *= ialpha;
-	      
 	      if (dest_alpha)
 		{
 		  pixel = XGetPixel(dest_alpha->image, col, row);
@@ -218,25 +216,79 @@ _pixmap_combine_alpha(RContext *context,
 	      else  // no alpha channel, background is opaque
 		da = _amask;
 
-	      dr = (sr + dr) / _amask;
-	      dg = (sg + dg) / _amask;
-	      db = (sb + db) / _amask;
+	      /* What each operator keeps of the source and of the
+	         destination, as a share of the alpha unit. */
+	      fs = _amask;
+	      fd = 0;
+	      switch (op)
+		{
+		  case NSCompositeClear:		fs = 0; fd = 0; break;
+		  case NSCompositeCopy:			fs = _amask; fd = 0; break;
+		  case NSCompositeSourceOver:
+		  case NSCompositeHighlight:
+		    fs = _amask; fd = _amask - sa; break;
+		  case NSCompositeSourceIn:		fs = da; fd = 0; break;
+		  case NSCompositeSourceOut:		fs = _amask - da; fd = 0; break;
+		  case NSCompositeSourceAtop:		fs = da; fd = _amask - sa; break;
+		  case NSCompositeDestinationOver:	fs = _amask - da; fd = _amask; break;
+		  case NSCompositeDestinationIn:	fs = 0; fd = sa; break;
+		  case NSCompositeDestinationOut:	fs = 0; fd = _amask - sa; break;
+		  case NSCompositeDestinationAtop:	fs = _amask - da; fd = sa; break;
+		  case NSCompositeXOR:			fs = _amask - da; fd = _amask - sa; break;
+		  case NSCompositePlusLighter:
+		  case NSCompositePlusDarker:
+		    fs = _amask; fd = _amask; break;
+		  default:
+		    fs = _amask; fd = _amask - sa; break;
+		}
 
-	      // calc final alpha
-	      if (sa == _amask || da == _amask)
-		da = _amask;
+	      /* The share each side contributes, in alpha units. */
+	      ws = (fs * sa) / _amask;
+	      wd = (fd * da) / _amask;
+
+	      if (NSCompositePlusDarker == op)
+		{
+		  /* Add the premultiplied colours and take off the amount by
+		     which the two alphas overlap, which with both opaque is
+		     MAX(0, source + destination - 1). */
+		  unsigned over = (sa + da > _amask) ? (sa + da - _amask) : 0;
+		  unsigned or_ = (over * _rmask) / _amask;
+		  unsigned og = (over * _gmask) / _amask;
+		  unsigned ob = (over * _bmask) / _amask;
+
+		  sr = (sr * sa) / _amask;
+		  sg = (sg * sa) / _amask;
+		  sb = (sb * sa) / _amask;
+		  dr = (dr * da) / _amask;
+		  dg = (dg * da) / _amask;
+		  db = (db * da) / _amask;
+		  sr = (sr + dr > or_) ? (sr + dr - or_) : 0;
+		  sg = (sg + dg > og) ? (sg + dg - og) : 0;
+		  sb = (sb + db > ob) ? (sb + db - ob) : 0;
+		  ra = MIN(_amask, sa + da);
+		  dr = ra ? MIN(_rmask, (sr * _amask) / ra) : 0;
+		  dg = ra ? MIN(_gmask, (sg * _amask) / ra) : 0;
+		  db = ra ? MIN(_bmask, (sb * _amask) / ra) : 0;
+		}
 	      else
-		da = sa + ((da * ialpha) / _amask);
+		{
+		  /* The colour is kept without its alpha, so the two shares
+		     are combined and the result divided by the alpha it ends
+		     up with. */
+		  unsigned nr = ws * sr + wd * dr;
+		  unsigned ng = ws * sg + wd * dg;
+		  unsigned nb = ws * sb + wd * db;
 
-	      CLAMP(dr);
-	      CLAMP(dg);
-	      CLAMP(db);
-	      CLAMP(da);
+		  ra = MIN(_amask, ws + wd);
+		  dr = ra ? MIN(_rmask, nr / ra) : 0;
+		  dg = ra ? MIN(_gmask, ng / ra) : 0;
+		  db = ra ? MIN(_bmask, nb / ra) : 0;
+		}
 
 	      RGBToPixel(dr, dg, db, pixel);
 	      XPutPixel(dest_im->image, col, row, pixel);
 	      if (dest_alpha)
-		XPutPixel(dest_alpha->image, col, row, da << _ashift);
+		XPutPixel(dest_alpha->image, col, row, ra << _ashift);
 	    }
 	}
     }
