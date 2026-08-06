@@ -4749,28 +4749,16 @@ _workAreas(Display *dpy, Window root, CGFloat screenHeight)
                   monitors[mi].resolution
 		    = [self resolutionForScreen: defScreen];
 
-		  /* We can only use the work area provided by _NET_WORKAREA
-		   * if we have a single screen/monitor, because that property
-		   * refers to coordinates in the composite display formed by
-		   * all the available monitors.
+		  /* Transform coordinates from Xlib (flipped)
+		   * to OpenStep (unflipped).
+		   * Windows and screens should have the same
+		   * coordinate system.
 		   */
-		  if (1 == monitorsCount && workAreas != nil)
-		    {
-		      monitors[0].frame = [[workAreas firstObject] rectValue];
-		    }
-		  else
-		    {
-		      /* Transform coordinates from Xlib (flipped)
-		       * to OpenStep (unflipped).
-		       * Windows and screens should have the same
-		       * coordinate system.
-		       */
-		      monitors[mi].frame =
-			NSMakeRect(crtc_info->x,
-			  xScreenSize.height - crtc_info->height - crtc_info->y,
-			  crtc_info->width,
-			  crtc_info->height);
-		    }
+		  monitors[mi].frame =
+		    NSMakeRect(crtc_info->x,
+		      xScreenSize.height - crtc_info->height - crtc_info->y,
+		      crtc_info->width,
+		      crtc_info->height);
                   /* Add monitor ID (index in monitors array).
                    * Put primary monitor ID at index 0 since
 		   * NSScreen gets this as main screen if application
@@ -4794,6 +4782,18 @@ _workAreas(Display *dpy, Window root, CGFloat screenHeight)
           monitorsCount = mi;
           if (monitorsCount != 0)
             {
+	      /* We can only use the work area provided by _NET_WORKAREA if we
+	       * have a single screen/monitor, because that property refers to
+	       * coordinates in the composite display formed by all the
+	       * available monitors.  The number of monitors is known only once
+	       * the outputs have been walked: an output the display is not
+	       * using has no CRTC and is not a monitor, and a driver reports an
+	       * output for every connector it supports.
+	       */
+	      if (1 == monitorsCount && workAreas != nil)
+		{
+		  monitors[0].frame = [[workAreas firstObject] rectValue];
+		}
               XRRFreeScreenResources(screen_res);
               return [NSArray arrayWithArray: tmpScreens];
             }
