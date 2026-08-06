@@ -450,6 +450,7 @@ BOOL AtomPresentAndPointsToItself(Display *dpy, Atom atom, Atom type)
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
                      : (unsigned int) style : (Window) win;
 - (void) _setSupportedWMProtocols: (gswindow_device_t *) window;
+- (unsigned long *) _getExtents: (Window)win;
 @end
 
 @implementation XGServer (WindowOps)
