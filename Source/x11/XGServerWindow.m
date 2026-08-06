@@ -719,11 +719,26 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     }
 }
 
-/* A window manager that decorates a window reports a frame extent for it.
- * Some answer the _NET_REQUEST_FRAME_EXTENTS message with four zeros and
- * publish the real extents only once the window has been mapped, so zeros for
- * a style that carries a title bar are not an answer we can use.  A style
- * without decoration is zero on all four sides and is taken as it stands.
+/* A window manager that decorates a window reports a frame extent for it, so
+ * four zeros for a style that carries a title bar is not an answer we can
+ * use.  A style without decoration is zero on all four sides and is taken as
+ * it stands.
+ */
+static BOOL
+_extentsUsable(unsigned long *extents, unsigned style)
+{
+  if (!((style & NSTitledWindowMask) || (style & NSClosableWindowMask)
+    || (style & NSMiniaturizableWindowMask)))
+    {
+      return YES;
+    }
+  return (extents[0] != 0 || extents[1] != 0
+    || extents[2] != 0 || extents[3] != 0);
+}
+
+/* Some window managers answer the _NET_REQUEST_FRAME_EXTENTS message with
+ * four zeros and publish the real extents only once the window has been
+ * mapped.
  */
 - (BOOL) _frameExtentsUsable: (gswindow_device_t *)window
 {
@@ -731,19 +746,12 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
   unsigned long	*extents;
   BOOL		usable;
 
-  if (!((style & NSTitledWindowMask) || (style & NSClosableWindowMask)
-    || (style & NSMiniaturizableWindowMask)))
-    {
-      return YES;
-    }
-
   extents = [self _getExtents: window->ident];
   if (extents == 0)
     {
       return NO;
     }
-  usable = (extents[0] != 0 || extents[1] != 0
-    || extents[2] != 0 || extents[3] != 0);
+  usable = _extentsUsable(extents, style);
   if (usable == NO)
     {
       NSDebugLLog(@"Offset", @"Frame extents for style %u are all zero,"
@@ -1104,6 +1112,17 @@ _wmTestErrorHandler(Display *display, XErrorEvent *event)
     }
 
   extents = [self _getExtents: window->ident];
+  if (extents != 0 && repp != 0 && _extentsUsable(extents, style) == NO)
+    {
+      /* The property still holds the answer given before the window was
+       * mapped, which a decorated window cannot have.  The window has been
+       * reparented, so its own geometry says what the decoration is.
+       */
+      NSDebugLLog(@"Offset", @"Frame extents are still all zero after mapping,"
+                  @" taking the offsets from the reparent instead");
+      XFree(extents);
+      extents = 0;
+    }
   if (extents != 0)
     {
       o->l = extents[0];
