@@ -2928,12 +2928,12 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
   height = [rep pixelsHigh];
   colors = [rep samplesPerPixel];
 
-  if (rcontext->depth != 32)
-    {
-      NSLog(@"Unsupported context depth %d", rcontext->depth);
-      return 0;
-    }
-
+  /* swapColors() writes four bytes per pixel, so the image must have that
+   * layout.  The depth itself does not have to be 32: a depth 24 visual,
+   * which is what almost every screen has, gives 32 bits per pixel with the
+   * fourth byte unused, and the transparency comes from xIconMask rather
+   * than from the pixmap.
+   */
   rxImage = RCreateXImage(rcontext, rcontext->depth, width, height);
   if (rxImage->image->bytes_per_line != 4 * width)
     {
