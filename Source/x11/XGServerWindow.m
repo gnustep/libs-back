@@ -719,6 +719,40 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     }
 }
 
+/* A window manager that decorates a window reports a frame extent for it.
+ * Some answer the _NET_REQUEST_FRAME_EXTENTS message with four zeros and
+ * publish the real extents only once the window has been mapped, so zeros for
+ * a style that carries a title bar are not an answer we can use.  A style
+ * without decoration is zero on all four sides and is taken as it stands.
+ */
+- (BOOL) _frameExtentsUsable: (gswindow_device_t *)window
+{
+  unsigned	style = window->win_attrs.window_style;
+  unsigned long	*extents;
+  BOOL		usable;
+
+  if (!((style & NSTitledWindowMask) || (style & NSClosableWindowMask)
+    || (style & NSMiniaturizableWindowMask)))
+    {
+      return YES;
+    }
+
+  extents = [self _getExtents: window->ident];
+  if (extents == 0)
+    {
+      return NO;
+    }
+  usable = (extents[0] != 0 || extents[1] != 0
+    || extents[2] != 0 || extents[3] != 0);
+  if (usable == NO)
+    {
+      NSDebugLLog(@"Offset", @"Frame extents for style %u are all zero,"
+        @" mapping the window to read them instead", style);
+    }
+  XFree(extents);
+  return usable;
+}
+
 - (BOOL) _tryRequestFrameExtents: (gswindow_device_t *)window
 {
   XEvent xEvent;
@@ -751,7 +785,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       else if (XCheckIfEvent(dpy, &xEvent, _get_next_prop_new_event,
                              (char*)(&event_data)))
         {
-          return YES;
+          return [self _frameExtentsUsable: window];
         }
       else
         {
