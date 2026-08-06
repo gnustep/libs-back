@@ -160,24 +160,274 @@ void* get_bits(HDC dc,
   return bits;
 }
 
-BOOL alpha_blend_source_over(HDC destDC, 
-			     HDC srcDC, 
-			     RECT rectFrom, 
-			     int x, int y, int w, int h, 
-			     CGFloat delta)
+/* Maintaining the alpha byte of a drawable.
+
+   GDI writes zero into the alpha byte of every pixel it draws and leaves
+   every other pixel alone, so once an operation has run, the pixels of zero
+   alpha inside the area it could reach are the ones it drew. A drawing path
+   can therefore keep an alpha channel without rendering the operation a
+   second time into a mask.
+
+   alpha_reserve copies the alpha bytes of that area, which the operation is
+   about to destroy, and lifts a stored zero to one so that a pixel that is
+   already transparent is not taken for one GDI has written. alpha_record
+   puts the copy back over what was not drawn and composites the colour's
+   alpha into what was.
+
+   The drawable has to be a 32 bit DIB section for any of this; a window with
+   no backing store draws on the window device context and a printer has no
+   bits at all, and there both are a no-op.
+
+   The rows are taken to run top down, which is how WIN32CreateDrawable makes
+   them. GetObject reports a DIB section's height as positive whichever way it
+   was created, so the orientation cannot be read back and is a convention
+   rather than something to check. */
+
+static unsigned char *
+drawable_bits(HDC hDC, LONG *width, LONG *height, LONG *stride)
+{
+  HBITMAP     bitmap;
+  DIBSECTION  ds;
+
+  bitmap = (HBITMAP)GetCurrentObject(hDC, OBJ_BITMAP);
+  if (bitmap == NULL)
+    {
+      return NULL;
+    }
+  if (GetObject(bitmap, sizeof(DIBSECTION), &ds) != sizeof(DIBSECTION))
+    {
+      return NULL;
+    }
+  if (ds.dsBm.bmBitsPixel != 32 || ds.dsBm.bmBits == NULL)
+    {
+      return NULL;
+    }
+
+  *width = ds.dsBm.bmWidth;
+  *height = ds.dsBm.bmHeight;
+  *stride = ds.dsBm.bmWidthBytes;
+
+  /* GDI batches its drawing, so it has to be flushed before the bits it
+     wrote can be read. */
+  GdiFlush();
+
+  return (unsigned char *)ds.dsBm.bmBits;
+}
+
+static BOOL
+clip_to_drawable(RECT *r, LONG width, LONG height)
+{
+  LONG t;
+
+  if (r->top > r->bottom)
+    {
+      t = r->top;
+      r->top = r->bottom;
+      r->bottom = t;
+    }
+  if (r->left > r->right)
+    {
+      t = r->left;
+      r->left = r->right;
+      r->right = t;
+    }
+  if (r->left < 0)
+    {
+      r->left = 0;
+    }
+  if (r->top < 0)
+    {
+      r->top = 0;
+    }
+  if (r->right > width)
+    {
+      r->right = width;
+    }
+  if (r->bottom > height)
+    {
+      r->bottom = height;
+    }
+
+  return (r->right > r->left) && (r->bottom > r->top);
+}
+
+static unsigned char *
+alpha_reserve(HDC hDC, RECT *r)
+{
+  unsigned char *bits;
+  unsigned char *saved;
+  LONG           width, height, stride, x, y;
+
+  bits = drawable_bits(hDC, &width, &height, &stride);
+  if (bits == NULL || !clip_to_drawable(r, width, height))
+    {
+      return NULL;
+    }
+
+  saved = malloc((r->right - r->left) * (r->bottom - r->top));
+  if (saved == NULL)
+    {
+      return NULL;
+    }
+
+  for (y = r->top; y < r->bottom; y++)
+    {
+      unsigned char *p = bits + y * stride + r->left * 4 + 3;
+      unsigned char *s = saved + (y - r->top) * (r->right - r->left);
+
+      for (x = r->left; x < r->right; x++, p += 4, s++)
+        {
+          *s = *p;
+          if (*p == 0)
+            {
+              *p = 1;
+            }
+        }
+    }
+
+  return saved;
+}
+
+static void
+alpha_record(HDC hDC, RECT r, unsigned char *saved, CGFloat alpha)
+{
+  unsigned char *bits;
+  LONG           width, height, stride, x, y;
+  unsigned       src = (unsigned)(alpha * 255.0 + 0.5);
+
+  if (saved == NULL)
+    {
+      return;
+    }
+
+  bits = drawable_bits(hDC, &width, &height, &stride);
+  if (bits != NULL)
+    {
+      for (y = r.top; y < r.bottom; y++)
+        {
+          unsigned char *p = bits + y * stride + r.left * 4 + 3;
+          unsigned char *s = saved + (y - r.top) * (r.right - r.left);
+
+          for (x = r.left; x < r.right; x++, p += 4, s++)
+            {
+              if (*p == 0)
+                {
+                  *p = (unsigned char)(src + *s * (255 - src) / 255);
+                }
+              else
+                {
+                  *p = *s;
+                }
+            }
+        }
+    }
+
+  free(saved);
+}
+
+/* Put the copy back over the whole area, for an operation that changes the
+   colour of a pixel without changing how much of it there is. */
+static void
+alpha_restore(HDC hDC, RECT r, unsigned char *saved)
+{
+  unsigned char *bits;
+  LONG           width, height, stride, x, y;
+
+  if (saved == NULL)
+    {
+      return;
+    }
+
+  bits = drawable_bits(hDC, &width, &height, &stride);
+  if (bits != NULL)
+    {
+      for (y = r.top; y < r.bottom; y++)
+        {
+          unsigned char *p = bits + y * stride + r.left * 4 + 3;
+          unsigned char *s = saved + (y - r.top) * (r.right - r.left);
+
+          for (x = r.left; x < r.right; x++, p += 4, s++)
+            {
+              *p = *s;
+            }
+        }
+    }
+
+  free(saved);
+}
+
+/* Fill a scratch drawable with one colour, premultiplied by the given alpha
+   and carrying it, so that the operations combining a colour with what is
+   already there have a source with a real alpha channel. Answers NO if the
+   scratch has no addressable bits, and the caller then falls back to what GDI
+   can do with a brush. */
+static BOOL
+fill_solid(HDC memDC, COLORREF colour, CGFloat alpha)
+{
+  unsigned char *bits;
+  LONG           width, height, stride, x, y;
+  unsigned       a = (unsigned)(alpha * 255.0 + 0.5);
+  unsigned char  b = (unsigned char)((GetBValue(colour) * a) / 255);
+  unsigned char  g = (unsigned char)((GetGValue(colour) * a) / 255);
+  unsigned char  r = (unsigned char)((GetRValue(colour) * a) / 255);
+
+  bits = drawable_bits(memDC, &width, &height, &stride);
+  if (bits == NULL)
+    {
+      return NO;
+    }
+
+  for (y = 0; y < height; y++)
+    {
+      unsigned char *p = bits + y * stride;
+
+      for (x = 0; x < width; x++, p += 4)
+        {
+          p[0] = b;
+          p[1] = g;
+          p[2] = r;
+          p[3] = (unsigned char)a;
+        }
+    }
+
+  return YES;
+}
+
+/* Whether a device context draws on a drawable whose alpha byte this backend
+   maintains. */
+static BOOL
+drawable_has_alpha(HDC hDC)
+{
+  LONG width, height, stride;
+
+  return drawable_bits(hDC, &width, &height, &stride) != NULL;
+}
+
+/* srcIsDrawable says the source is another gstate's drawable, whose alpha
+   byte is maintained, rather than a colour GDI has just filled a scratch
+   bitmap with. */
+BOOL alpha_blend_source_over(HDC destDC,
+			     HDC srcDC,
+			     RECT rectFrom,
+			     int x, int y, int w, int h,
+			     CGFloat delta,
+			     BOOL srcIsDrawable)
 {
   BOOL success = YES;
 
 #ifdef USE_ALPHABLEND
   // Use (0..1) fraction to set a (0..255) alpha constant value
   BYTE SourceConstantAlpha = (BYTE)(delta * 255);
-  /* The source is a bitmap GDI has drawn into, which leaves its alpha bytes
-     at zero, so only the constant alpha above can be used; asking for
-     AC_SRC_ALPHA would read every pixel as fully transparent. */
+  /* A source that carries a maintained alpha byte is blended by that byte as
+     well as by the constant above. One GDI has merely drawn into carries
+     alpha bytes of zero, and AC_SRC_ALPHA would read every one of its pixels
+     as fully transparent, so there the constant is all there is. */
+  BYTE alphaFormat = (srcIsDrawable && drawable_has_alpha(srcDC))
+    ? AC_SRC_ALPHA : 0;
   BLENDFUNCTION blendFunc
-    = {AC_SRC_OVER, 0, SourceConstantAlpha, 0};
+    = {AC_SRC_OVER, 0, SourceConstantAlpha, alphaFormat};
 
-  /* There is actually a very real chance this could fail, even on 
+  /* There is actually a very real chance this could fail, even on
      computers that supposedly support it. It's not known why it
      fails though... */
   success = AlphaBlend(destDC,
@@ -187,7 +437,7 @@ BOOL alpha_blend_source_over(HDC destDC,
 		       w, h, blendFunc);
   // #else
   // HBITMAP    sbitmap;
-  // HBITMAP    dbitmap; 
+  // HBITMAP    dbitmap;
   // unsigned char *sbits = (unsigned char *)get_bits(srcDC,w,h,&sbitmap);
   // unsigned char *dbits = (unsigned char *)get_bits(destDC,w,h,&dbitmap);
 
@@ -368,11 +618,11 @@ BOOL alpha_blend_source_over(HDC destDC,
     case NSCompositeSourceOver:
     case NSCompositeHighlight:
       {
-	success = alpha_blend_source_over(hDC, 
-					  sourceDC, 
-					  rectFrom, 
-					  x, y, w, h, 
-					  delta);
+	success = alpha_blend_source_over(hDC,
+					  sourceDC,
+					  rectFrom,
+					  x, y, w, h,
+					  delta, YES);
 	if (success)
 	  break;
       }
@@ -442,14 +692,21 @@ BOOL alpha_blend_source_over(HDC destDC,
 	{
 	  HDC hDC;
 	  RECT rect = GSViewRectToWin(self, aRect);
+	  RECT bounds = rect;
+	  unsigned char *savedAlpha;
 
 	  hDC = [self getHDC];
 	  if (!hDC)
 	    {
 	      return;
-	    } 
+	    }
 
+	  /* The inversion is a raster operation over all four bytes, so it
+	     inverts the alpha as well; a highlight does not change how much
+	     of a pixel is there. */
+	  savedAlpha = alpha_reserve(hDC, &bounds);
 	  InvertRect(hDC, &rect);
+	  alpha_restore(hDC, bounds, savedAlpha);
 	  [self releaseHDC: hDC];
 	  break;
 	}
@@ -506,13 +763,18 @@ BOOL alpha_blend_source_over(HDC destDC,
   memDC = CreateCompatibleDC(hDC);
   if (memDC)
     {
-      bitmap = CreateCompatibleBitmap(hDC, w, h);
+      bitmap = WIN32CreateDrawable(hDC, w, h);
       if (bitmap)
 	{
 	  old = SelectObject(memDC, bitmap);
-	  brush = CreateSolidBrush(wfcolor);
-	  FillRect(memDC, &from, brush);
-	  DeleteObject(brush);
+	  /* The colour carries its alpha, which the raster operation then
+	     combines with the alpha already there, as it does the colour. */
+	  if (!fill_solid(memDC, wfcolor, fillColor.field[AINDEX]))
+	    {
+	      brush = CreateSolidBrush(wfcolor);
+	      FillRect(memDC, &from, brush);
+	      DeleteObject(brush);
+	    }
 
 	  BitBlt(hDC, rect.left, rect.top, w, h, memDC, 0, 0, SRCPAINT);
 
@@ -539,6 +801,7 @@ BOOL alpha_blend_source_over(HDC destDC,
   HGDIOBJ old;
   HBRUSH brush;
   RECT   from = { 0, 0, w, h };
+  BOOL   sourceCarriesAlpha;
 
   if (w <= 0 || h <= 0)
     {
@@ -554,16 +817,25 @@ BOOL alpha_blend_source_over(HDC destDC,
   memDC = CreateCompatibleDC(hDC);
   if (memDC)
     {
-      bitmap = CreateCompatibleBitmap(hDC, w, h);
+      bitmap = WIN32CreateDrawable(hDC, w, h);
       if (bitmap)
 	{
 	  old = SelectObject(memDC, bitmap);
-	  brush = CreateSolidBrush(wfcolor);
-	  FillRect(memDC, &from, brush);
-	  DeleteObject(brush);
+	  /* Where the colour can carry its own alpha, the blend takes it from
+	     the pixels and maintains the alpha of the destination as well as
+	     its colour; otherwise the constant alpha is all there is and the
+	     destination keeps whatever alpha the blend leaves. */
+	  sourceCarriesAlpha = fill_solid(memDC, wfcolor, alpha);
+	  if (!sourceCarriesAlpha)
+	    {
+	      brush = CreateSolidBrush(wfcolor);
+	      FillRect(memDC, &from, brush);
+	      DeleteObject(brush);
+	    }
 
-	  alpha_blend_source_over(hDC, memDC, from,
-				  rect.left, rect.top, w, h, alpha);
+	  alpha_blend_source_over(hDC, memDC, from, rect.left, rect.top, w, h,
+				  sourceCarriesAlpha ? 1.0 : alpha,
+				  sourceCarriesAlpha);
 
 	  SelectObject(memDC, old);
 	  DeleteObject(bitmap);
@@ -646,11 +918,11 @@ BOOL alpha_blend_source_over(HDC destDC,
     case NSCompositeSourceOver:
     case NSCompositeHighlight:
       {
-	success = alpha_blend_source_over(hDC, 
-					  sourceDC, 
-					  rectFrom, 
-					  x, y, w, h, 
-					  delta);
+	success = alpha_blend_source_over(hDC,
+					  sourceDC,
+					  rectFrom,
+					  x, y, w, h,
+					  delta, YES);
 	if (success)
 	  break;
       }
@@ -1144,10 +1416,22 @@ HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
 
 @implementation WIN32GState (PathOps)
 
+/* The area a path can reach on the device: its bounds, widened by the pen
+   and by a pixel for the rounding GDI does when it scan converts. */
+- (RECT) _deviceBoundsForPath
+{
+  CGFloat pad = lineWidth / 2 + 1;
+
+  return GSWindowRectToMS(self,
+    NSInsetRect([path controlPointBounds], -pad, -pad));
+}
+
 - (void) _paintPath: (ctxt_object_t) drawType
 {
   unsigned count;
   HDC hDC;
+  RECT bounds;
+  unsigned char *savedAlpha;
 
   hDC = [self getHDC];
   if (!hDC)
@@ -1205,21 +1489,30 @@ HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
 	case path_stroke:
 	  if (strokeColor.field[AINDEX] != 0.0)
 	    {
+	      bounds = [self _deviceBoundsForPath];
+	      savedAlpha = alpha_reserve(hDC, &bounds);
 	      StrokePath(hDC);
+	      alpha_record(hDC, bounds, savedAlpha, strokeColor.field[AINDEX]);
 	    }
 	  break;
 	case path_eofill:
 	  if (fillColor.field[AINDEX] != 0.0)
 	    {
+	      bounds = [self _deviceBoundsForPath];
+	      savedAlpha = alpha_reserve(hDC, &bounds);
 	      SetPolyFillMode(hDC, ALTERNATE);
 	      FillPath(hDC);
+	      alpha_record(hDC, bounds, savedAlpha, fillColor.field[AINDEX]);
 	    }
 	  break;
 	case path_fill:
 	  if (fillColor.field[AINDEX] != 0.0)
 	    {
+	      bounds = [self _deviceBoundsForPath];
+	      savedAlpha = alpha_reserve(hDC, &bounds);
 	      SetPolyFillMode(hDC, WINDING);
 	      FillPath(hDC);
+	      alpha_record(hDC, bounds, savedAlpha, fillColor.field[AINDEX]);
 	    }
 	  break;
 	case path_eoclip:
@@ -1321,21 +1614,43 @@ HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
     }
 }
 
-- (void)DPSshow: (const char *)s 
+/* The area a run of text can reach on the device: the cell the font draws
+   into, from the point the run starts at, widened by a pixel for the rounding
+   and for any overhang. */
+- (RECT) _deviceBoundsForTextAt: (POINT)p width: (CGFloat)width
+{
+  RECT r;
+
+  r.left = p.x - 1;
+  r.right = p.x + (LONG)ceil(width) + 2;
+  r.top = p.y - (LONG)ceil([font ascender]) - 1;
+  r.bottom = p.y - (LONG)floor([font descender]) + 1;
+
+  return r;
+}
+
+- (void)DPSshow: (const char *)s
 {
   NSPoint current = [path currentPoint];
   POINT p;
   HDC hDC;
+  RECT bounds;
+  unsigned char *savedAlpha;
+  size_t length = strlen(s);
 
   hDC = [self getHDC];
   if (!hDC)
     {
       return;
-    } 
+    }
 
   p = GSWindowPointToMS(self, current);
-  [(WIN32FontInfo*)font draw: s length:  strlen(s)
+  bounds = [self _deviceBoundsForTextAt: p
+				  width: length * [font maximumAdvancement].width];
+  savedAlpha = alpha_reserve(hDC, &bounds);
+  [(WIN32FontInfo*)font draw: s length:  length
 		   onDC: hDC at: p];
+  alpha_record(hDC, bounds, savedAlpha, fillColor.field[AINDEX]);
   [self releaseHDC: hDC];
 }
 
@@ -1346,18 +1661,24 @@ HBITMAP GSCreateBitmap(HDC hDC, NSInteger pixelsWide, NSInteger pixelsHigh,
   NSPoint current = [path currentPoint];
   POINT p;
   HDC hDC;
+  RECT bounds;
+  unsigned char *savedAlpha;
 
   hDC = [self getHDC];
   if (!hDC)
     {
       return;
-    } 
+    }
 
   p = GSWindowPointToMS(self, current);
+  bounds = [self _deviceBoundsForTextAt: p
+				  width: length * [font maximumAdvancement].width];
+  savedAlpha = alpha_reserve(hDC, &bounds);
   [(WIN32FontInfo*)font drawGlyphs: glyphs
 			    length: length
 			      onDC: hDC
 				at: p];
+  alpha_record(hDC, bounds, savedAlpha, fillColor.field[AINDEX]);
   [self releaseHDC: hDC];
 }
 @end

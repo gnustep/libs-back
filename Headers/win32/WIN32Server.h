@@ -239,4 +239,44 @@ typedef struct _win_intern {
 #endif
 } WIN_INTERN;
 
+/* Create a drawable of the given size for a device context.
+
+   The bitmap is a 32 bit DIB section rather than a device dependent bitmap so
+   that the alpha byte of a pixel can be addressed; the winlib drawing paths
+   maintain that byte, which is what gives a window an alpha channel. The rows
+   run top down, so a row index is a device y coordinate. A device that will
+   not make a DIB section gets a device dependent bitmap as before, and the
+   alpha maintenance then finds no bits and does nothing. */
+static inline HBITMAP
+WIN32CreateDrawable(HDC hDC, int width, int height)
+{
+  BITMAPINFO info;
+  void      *bits = NULL;
+  HBITMAP    bitmap;
+
+  if (width < 1)
+    {
+      width = 1;
+    }
+  if (height < 1)
+    {
+      height = 1;
+    }
+
+  ZeroMemory(&info, sizeof(info));
+  info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+  info.bmiHeader.biWidth = width;
+  info.bmiHeader.biHeight = -height;
+  info.bmiHeader.biPlanes = 1;
+  info.bmiHeader.biBitCount = 32;
+  info.bmiHeader.biCompression = BI_RGB;
+
+  bitmap = CreateDIBSection(hDC, &info, DIB_RGB_COLORS, &bits, NULL, 0);
+  if (bitmap == NULL)
+    {
+      return CreateCompatibleBitmap(hDC, width, height);
+    }
+  return bitmap;
+}
+
 #endif /* _WIN32Server_h_INCLUDE */
