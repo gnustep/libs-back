@@ -69,6 +69,10 @@
 {
 }
 
+- (void) flush
+{
+}
+
 - (BOOL) isDrawingToScreen
 {
   return YES;
