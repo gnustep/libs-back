@@ -33,7 +33,7 @@ main(int argc, const char **argv)
       SKIP("no window server available")
     }
 
-  wm = fakeWMStart(YES);
+  wm = fakeWMStart(FakeWMReparenting);
   if (wm < 0)
     {
       SKIP("the test window manager did not start")

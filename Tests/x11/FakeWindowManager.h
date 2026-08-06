@@ -1,12 +1,17 @@
 /* A window manager for the offsets tests, forked by the test that needs one.
  *
- * It announces itself the way an EWMH window manager does, advertises
- * _NET_REQUEST_FRAME_EXTENTS and answers that message with four zeros, which
- * is what recent Mutter releases do.  The real extents follow later: with
- * reparenting NO they are published as the window is mapped, and with
- * reparenting YES the window is put inside a frame and the extents are
- * published after the reparent, so a client reading the property as soon as
- * it sees the ReparentNotify reads the earlier answer instead.
+ * It announces itself the way an EWMH window manager does and advertises
+ * _NET_REQUEST_FRAME_EXTENTS.  What it does then depends on the mode:
+ *
+ * FakeWMDecorating answers that message with four zeros, which is what recent
+ * Mutter releases do, and publishes the real extents as the window is mapped.
+ *
+ * FakeWMReparenting answers with zeros as well, and puts the window inside a
+ * frame, publishing the real extents after the reparent, so a client reading
+ * the property as soon as it sees the ReparentNotify reads the earlier answer.
+ *
+ * FakeWMUndecorated maps windows and decorates nothing, which is how a
+ * rootless X server driving a native window manager can behave.
  */
 #ifndef FAKE_WINDOW_MANAGER_H
 #define FAKE_WINDOW_MANAGER_H
@@ -19,6 +24,16 @@
 
 /* The height of the window manager's title bar. */
 #define FAKE_WM_TOP 37
+
+enum
+{
+  /* Decorates, and publishes the extents as the window is mapped. */
+  FakeWMDecorating = 0,
+  /* Decorates by reparenting, and publishes the extents afterwards. */
+  FakeWMReparenting = 1,
+  /* Maps windows and decorates nothing at all. */
+  FakeWMUndecorated = 2
+};
 
 /* The windows being probed are destroyed as soon as they have been measured,
  * so a request naming one can fail at any point.  Xlib's default handler
@@ -44,7 +59,7 @@ fakeWMSetExtents(Display *dpy, Window w, long top)
 
 /* Runs in the child and never returns. */
 static void
-fakeWMRun(BOOL reparenting)
+fakeWMRun(int mode)
 {
   Display	*dpy;
   Window	root;
@@ -90,11 +105,20 @@ fakeWMRun(BOOL reparenting)
       XNextEvent(dpy, &e);
       if (e.type == ClientMessage && e.xclient.message_type == netRequest)
 	{
-	  fakeWMSetExtents(dpy, e.xclient.window, 0);
+	  /* One that decorates nothing has no extents to report. */
+	  if (mode != FakeWMUndecorated)
+	    {
+	      fakeWMSetExtents(dpy, e.xclient.window, 0);
+	    }
 	}
       else if (e.type == MapRequest)
 	{
-	  if (reparenting == YES)
+	  if (mode == FakeWMUndecorated)
+	    {
+	      XMapWindow(dpy, e.xmaprequest.window);
+	      XFlush(dpy);
+	    }
+	  else if (mode == FakeWMReparenting)
 	    {
 	      XWindowAttributes	wa;
 	      Window		frame;
@@ -117,7 +141,7 @@ fakeWMRun(BOOL reparenting)
 	      XFlush(dpy);
 	    }
 	}
-      else if (e.type == MapNotify && reparenting == NO
+      else if (e.type == MapNotify && mode == FakeWMDecorating
 	&& e.xmap.window != check)
 	{
 	  fakeWMSetExtents(dpy, e.xmap.window, FAKE_WM_TOP);
@@ -168,13 +192,13 @@ fakeWMWait(void)
 
 /* Answers the process id of the window manager, or -1. */
 static pid_t
-fakeWMStart(BOOL reparenting)
+fakeWMStart(int mode)
 {
   pid_t	wm = fork();
 
   if (wm == 0)
     {
-      fakeWMRun(reparenting);
+      fakeWMRun(mode);
       _exit(0);
     }
   if (wm < 0)
