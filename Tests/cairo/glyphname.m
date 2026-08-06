@@ -63,18 +63,33 @@ main(void)
 {
   START_SET("cairo glyphWithName")
 
+  NSFont *anyFont = nil;
   NSFont *font = nil;
 
   NS_DURING
     {
       [NSApplication sharedApplication];
+      anyFont = [NSFont userFontOfSize: 14];
       font = fontWithGlyphNames();
     }
   NS_HANDLER
     {
+      anyFont = nil;
       font = nil;
     }
   NS_ENDHANDLER
+
+  if (anyFont == nil)
+    {
+      SKIP("no backend to reach a font with")
+    }
+  else
+    {
+      /* Holds whether or not the face carries glyph names, so it runs
+	 wherever there is a backend at all. */
+      PASS([anyFont glyphWithName: @"notaglyphname"] == NSNullGlyph,
+	"a name no font carries answers NSNullGlyph")
+    }
 
   if (font == nil)
     {
@@ -115,8 +130,6 @@ main(void)
 			  (NSGlyph)[@"W" characterAtIndex: 0]]),
 	"the glyph named W has the bounding rect of the character W")
 
-      PASS([font glyphWithName: @"notaglyphname"] == NSNullGlyph,
-	"a name the font does not carry answers NSNullGlyph")
     }
 
   END_SET("cairo glyphWithName")
