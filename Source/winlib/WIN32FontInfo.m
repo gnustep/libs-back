@@ -526,7 +526,11 @@ NSLog(@"No glyph for U%d", c);
   DeleteDC(hdc);
 
   // Fill the ivars
-  isFixedPitch = TMPF_FIXED_PITCH & metric.tmPitchAndFamily;
+  /* TMPF_FIXED_PITCH is set for a font of VARIABLE pitch, which is the
+     opposite of what the name says. Courier New and Consolas report the bit
+     clear and advance W and i alike; Tahoma and Arial report it set and do
+     not. */
+  isFixedPitch = (TMPF_FIXED_PITCH & metric.tmPitchAndFamily) == 0;
   isBaseFont = NO;
   ascender = metric.tmAscent;
   //NSLog(@"Resulted in height %d and ascent %d", metric.tmHeight, metric.tmAscent);
