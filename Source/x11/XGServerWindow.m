@@ -1764,6 +1764,7 @@ _wmTestErrorHandler(Display *display, XErrorEvent *event)
       else if (offsets == 0)
         {
           BOOL	ok = YES;
+          BOOL	decorated = NO;
 
           /* No offsets available on the root window ... so we test each
            * style of window to determine its offsets.
@@ -1774,6 +1775,28 @@ _wmTestErrorHandler(Display *display, XErrorEvent *event)
                 {
                   ok = NO;	// test failed for this style
                 }
+              else if (generic.offsets[i].l != 0.0
+                || generic.offsets[i].r != 0.0
+                || generic.offsets[i].t != 0.0
+                || generic.offsets[i].b != 0.0)
+                {
+                  decorated = YES;
+                }
+            }
+
+          /* A window manager is running, and it put a border on none of the
+           * styles.  It is not going to draw a title bar or a close button
+           * either, so the gui library has to.  A window manager that is not
+           * running at all is dealt with above, and a decoration default the
+           * user has set stands.
+           */
+          if (decorated == NO && handlesWindowDecorations == YES
+            && [defs objectForKey: @"GSBackHandlesWindowDecorations"] == nil
+            && [defs objectForKey: @"GSX11HandlesWindowDecorations"] == nil)
+            {
+              NSLog(@"The window manager decorates none of our windows,"
+                @" so the gui library will draw the decorations.");
+              handlesWindowDecorations = NO;
             }
 
           if (ok == YES)
