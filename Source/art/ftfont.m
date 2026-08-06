@@ -147,6 +147,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
 
   weight = [font_entry weight];
   traits = [font_entry traits];
+  isFixedPitch = (traits & NSFixedPitchFontMask) != 0;
 
   fontName = [name copy];
   familyName = [[face_info familyName] copy];
