@@ -34,8 +34,37 @@
 
 #include "winlib/WIN32FontInfo.h"
 
+#include <string.h>
+
 int win32_font_weight(LONG tmWeight);
 NSString *win32_font_family(NSString *fontName);
+
+/* The standard glyph names of the Latin set, for -glyphWithName:. The names
+   of the letters and digits are the characters themselves, apart from the
+   digits, so only the ones that differ are listed. */
+static const struct
+{
+  const char *name;
+  unichar     character;
+}
+standardGlyphNames[] =
+{
+  {"space", 0x0020},       {"exclam", 0x0021},      {"quotedbl", 0x0022},
+  {"numbersign", 0x0023},  {"dollar", 0x0024},      {"percent", 0x0025},
+  {"ampersand", 0x0026},   {"quotesingle", 0x0027}, {"parenleft", 0x0028},
+  {"parenright", 0x0029},  {"asterisk", 0x002A},    {"plus", 0x002B},
+  {"comma", 0x002C},       {"hyphen", 0x002D},      {"period", 0x002E},
+  {"slash", 0x002F},       {"zero", 0x0030},        {"one", 0x0031},
+  {"two", 0x0032},         {"three", 0x0033},       {"four", 0x0034},
+  {"five", 0x0035},        {"six", 0x0036},         {"seven", 0x0037},
+  {"eight", 0x0038},       {"nine", 0x0039},        {"colon", 0x003A},
+  {"semicolon", 0x003B},   {"less", 0x003C},        {"equal", 0x003D},
+  {"greater", 0x003E},     {"question", 0x003F},    {"at", 0x0040},
+  {"bracketleft", 0x005B}, {"backslash", 0x005C},   {"bracketright", 0x005D},
+  {"asciicircum", 0x005E}, {"underscore", 0x005F},  {"grave", 0x0060},
+  {"braceleft", 0x007B},   {"bar", 0x007C},         {"braceright", 0x007D},
+  {"asciitilde", 0x007E},  {"quoteleft", 0x2018},   {"quoteright", 0x2019}
+};
 
 /* CreateFontIndirect() picks a face for whatever it is handed, including an
    empty name, so a name has to be checked against the enumerated families
@@ -232,7 +261,40 @@ NSLog(@"No glyph for U%d", c);
 
 - (NSGlyph) glyphWithName: (NSString*)glyphName
 {
-  return 0;
+  unichar c = 0;
+
+  /* A glyph is a character here, which is what -glyphIsEncoded: and
+     -advancementForGlyph: read, so a name is answered as the character it
+     stands for. A name of a single character is that character, and the rest
+     are the standard names of the Latin set. GDI has no call that reads the
+     names a face carries, so a name outside that set has no answer, as a
+     character the font does not carry has none. */
+  if ([glyphName length] == 1)
+    {
+      c = [glyphName characterAtIndex: 0];
+    }
+  else
+    {
+      const char *name = [glyphName UTF8String];
+      unsigned    i;
+
+      for (i = 0; i < sizeof(standardGlyphNames) / sizeof(*standardGlyphNames);
+	   i++)
+	{
+	  if (strcmp(standardGlyphNames[i].name, name) == 0)
+	    {
+	      c = standardGlyphNames[i].character;
+	      break;
+	    }
+	}
+    }
+
+  if (c == 0 || [self glyphIsEncoded: (NSGlyph)c] == NO)
+    {
+      return NSNullGlyph;
+    }
+
+  return (NSGlyph)c;
 }
 
 - (NSPoint) positionOfGlyph: (NSGlyph)curGlyph
