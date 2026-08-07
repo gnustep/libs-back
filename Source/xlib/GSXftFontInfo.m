@@ -229,12 +229,44 @@
 
 - (NSGlyph) glyphWithName: (NSString*)glyphName
 {
-  // FIXME: There is a mismatch between PS names and X names, that we should 
-  // try to correct here
-  KeySym k = XStringToKeysym([glyphName cString]);
+  FT_Face face;
+  KeySym  k;
+
+  /* A glyph is a character here, which is what -glyphIsEncoded: and
+     -boundingRectForGlyph: read, so a PostScript name is answered as the
+     character that selects the glyph carrying it. The face answers 0 for a
+     name it does not have, and for any face that carries no glyph names at
+     all, and the X names below then have their turn. */
+  face = XftLockFace((XftFont *)font_info);
+  if (face != NULL)
+    {
+      FT_UInt index = FT_Get_Name_Index(face,
+	(FT_String *)[glyphName UTF8String]);
+
+      if (index != 0)
+	{
+	  FT_UInt  gindex;
+	  FT_ULong charcode = FT_Get_First_Char(face, &gindex);
+
+	  while (gindex != 0)
+	    {
+	      if (gindex == index)
+		{
+		  XftUnlockFace((XftFont *)font_info);
+		  return (NSGlyph)charcode;
+		}
+	      charcode = FT_Get_Next_Char(face, charcode, &gindex);
+	    }
+	}
+      XftUnlockFace((XftFont *)font_info);
+    }
+
+  /* The X names cover a face without PostScript names, since a keysym name is
+     the character for the Latin set. */
+  k = XStringToKeysym([glyphName cString]);
 
   if (k == NoSymbol)
-    return 0;
+    return NSNullGlyph;
   else
     return (NSGlyph)k;
 }

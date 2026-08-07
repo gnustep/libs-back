@@ -266,9 +266,32 @@ void set_font_options(cairo_font_options_t *options)
   if (_scaled)
     {
       FT_Face face = cairo_ft_scaled_font_lock_face(_scaled);
+
       if (FT_Has_PS_Glyph_Names(face))
 	{
-	  val = (NSGlyph) FT_Get_Name_Index(face, name);
+	  FT_UInt index = FT_Get_Name_Index(face, name);
+
+	  /* An NSGlyph is a character here, which is what -glyphIsEncoded:,
+	     -advancementForGlyph: and -boundingRectForGlyph: read, so the
+	     named glyph is answered as the character that selects it rather
+	     than as the index the name has in the face. A glyph no character
+	     reaches, an alternate or a ligature, has no answer in that
+	     convention and stays NSNullGlyph. */
+	  if (index != 0)
+	    {
+	      FT_UInt  gindex;
+	      FT_ULong charcode = FT_Get_First_Char(face, &gindex);
+
+	      while (gindex != 0)
+		{
+		  if (gindex == index)
+		    {
+		      val = (NSGlyph)charcode;
+		      break;
+		    }
+		  charcode = FT_Get_Next_Char(face, charcode, &gindex);
+		}
+	    }
 	}
 
       cairo_ft_scaled_font_unlock_face(_scaled);
