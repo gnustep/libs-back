@@ -450,6 +450,7 @@ BOOL AtomPresentAndPointsToItself(Display *dpy, Atom atom, Atom type)
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
                      : (unsigned int) style : (Window) win;
 - (void) _setSupportedWMProtocols: (gswindow_device_t *) window;
+- (unsigned long *) _getExtents: (Window)win;
 @end
 
 @implementation XGServer (WindowOps)
@@ -719,6 +720,48 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
     }
 }
 
+/* A window manager that decorates a window reports a frame extent for it, so
+ * four zeros for a style that carries a title bar is not an answer we can
+ * use.  A style without decoration is zero on all four sides and is taken as
+ * it stands.
+ */
+static BOOL
+_extentsUsable(unsigned long *extents, unsigned style)
+{
+  if (!((style & NSTitledWindowMask) || (style & NSClosableWindowMask)
+    || (style & NSMiniaturizableWindowMask)))
+    {
+      return YES;
+    }
+  return (extents[0] != 0 || extents[1] != 0
+    || extents[2] != 0 || extents[3] != 0);
+}
+
+/* Some window managers answer the _NET_REQUEST_FRAME_EXTENTS message with
+ * four zeros and publish the real extents only once the window has been
+ * mapped.
+ */
+- (BOOL) _frameExtentsUsable: (gswindow_device_t *)window
+{
+  unsigned	style = window->win_attrs.window_style;
+  unsigned long	*extents;
+  BOOL		usable;
+
+  extents = [self _getExtents: window->ident];
+  if (extents == 0)
+    {
+      return NO;
+    }
+  usable = _extentsUsable(extents, style);
+  if (usable == NO)
+    {
+      NSDebugLLog(@"Offset", @"Frame extents for style %u are all zero,"
+        @" mapping the window to read them instead", style);
+    }
+  XFree(extents);
+  return usable;
+}
+
 - (BOOL) _tryRequestFrameExtents: (gswindow_device_t *)window
 {
   XEvent xEvent;
@@ -751,7 +794,7 @@ _get_next_prop_new_event(Display *display, XEvent *event, char *arg)
       else if (XCheckIfEvent(dpy, &xEvent, _get_next_prop_new_event,
                              (char*)(&event_data)))
         {
-          return YES;
+          return [self _frameExtentsUsable: window];
         }
       else
         {
@@ -1070,6 +1113,17 @@ _wmTestErrorHandler(Display *display, XErrorEvent *event)
     }
 
   extents = [self _getExtents: window->ident];
+  if (extents != 0 && repp != 0 && _extentsUsable(extents, style) == NO)
+    {
+      /* The property still holds the answer given before the window was
+       * mapped, which a decorated window cannot have.  The window has been
+       * reparented, so its own geometry says what the decoration is.
+       */
+      NSDebugLLog(@"Offset", @"Frame extents are still all zero after mapping,"
+                  @" taking the offsets from the reparent instead");
+      XFree(extents);
+      extents = 0;
+    }
   if (extents != 0)
     {
       o->l = extents[0];
@@ -1710,6 +1764,7 @@ _wmTestErrorHandler(Display *display, XErrorEvent *event)
       else if (offsets == 0)
         {
           BOOL	ok = YES;
+          BOOL	decorated = NO;
 
           /* No offsets available on the root window ... so we test each
            * style of window to determine its offsets.
@@ -1720,6 +1775,28 @@ _wmTestErrorHandler(Display *display, XErrorEvent *event)
                 {
                   ok = NO;	// test failed for this style
                 }
+              else if (generic.offsets[i].l != 0.0
+                || generic.offsets[i].r != 0.0
+                || generic.offsets[i].t != 0.0
+                || generic.offsets[i].b != 0.0)
+                {
+                  decorated = YES;
+                }
+            }
+
+          /* A window manager is running, and it put a border on none of the
+           * styles.  It is not going to draw a title bar or a close button
+           * either, so the gui library has to.  A window manager that is not
+           * running at all is dealt with above, and a decoration default the
+           * user has set stands.
+           */
+          if (decorated == NO && handlesWindowDecorations == YES
+            && [defs objectForKey: @"GSBackHandlesWindowDecorations"] == nil
+            && [defs objectForKey: @"GSX11HandlesWindowDecorations"] == nil)
+            {
+              NSLog(@"The window manager decorates none of our windows,"
+                @" so the gui library will draw the decorations.");
+              handlesWindowDecorations = NO;
             }
 
           if (ok == YES)
