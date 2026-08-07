@@ -32,6 +32,7 @@
 
 #include "cairo/CairoContext.h"
 #include "cairo/CairoSurface.h"
+#include "cairo/CairoBitmapSurface.h"
 #include "cairo/CairoPSSurface.h"
 #include "cairo/CairoPDFSurface.h"
 #include "cairo/CairoFontInfo.h"
@@ -113,7 +114,28 @@
   self = [super initWithContextInfo: info];
   if (self)
     {
+      id dest;
+
       [self setImageInterpolation: NSImageInterpolationDefault];
+
+      /* A context drawing into a bitmap representation gets a surface over
+       * that representation.  Only a window destination is handled further
+       * up, and without a surface nothing this context draws goes anywhere.
+       */
+      dest = [info objectForKey: NSGraphicsContextDestinationAttributeName];
+      if ((dest != nil) && [dest isKindOfClass: [NSBitmapImageRep class]])
+        {
+          CairoSurface *surface;
+
+          surface = [[CairoBitmapSurface alloc] initWithDevice: dest];
+          if (surface != nil)
+            {
+              [CGSTATE GSSetSurface: surface
+                                   : 0
+                                   : (int)[(NSBitmapImageRep *)dest pixelsHigh]];
+              RELEASE(surface);
+            }
+        }
     }
   return self;
 }
@@ -127,6 +149,14 @@
 
 - (void) flushGraphics
 {
+  CairoSurface *surface = nil;
+
+  /* A surface that keeps the drawing in a buffer of its own writes it out
+   * to its destination here.
+   */
+  [CGSTATE GSCurrentSurface: &surface : NULL : NULL];
+  [surface flush];
+
   // FIXME: Why is this here? When is it called?
   // Comments added 07/20/2013 to address the above question after
   // further debugging cairo/MSwindows non-retained backing store type:
@@ -149,9 +179,6 @@
       XFlush([(XGServer *)server xDisplay]);
     }
 #elif BUILD_SERVER == SERVER_win32
-  CairoSurface *surface = nil;
-
-  [CGSTATE GSCurrentSurface: &surface : NULL : NULL];
   if ((surface != nil) && ([surface surface] != NULL))
     {
       // Non-retained backing store types currently unsupported on MSWindows...

@@ -30,6 +30,7 @@ SUBPROJECT_NAME=cairo
 
 # The Objective-C source files to be compiled
 cairo_OBJC_FILES = CairoSurface.m \
+  CairoBitmapSurface.m \
   CairoFontInfo.m \
   CairoGState.m \
   CairoContext.m \

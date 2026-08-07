@@ -72,7 +72,8 @@ xrRGBToPixel(RContext* context, device_color_t color)
 
 @interface XGGState (Private)
 - (void) _alphaBuffer: (gswindow_device_t *)dest_win;
-- (BOOL) _blendRect: (NSRect)aRect;
+- (void) _useAlphaBuffer;
+- (BOOL) _blendRect: (NSRect)aRect op: (NSCompositingOperation)op;
 - (void) createGraphicContext;
 - (void) copyGraphicContext;
 - (void) setAlphaColor: (float)color;
@@ -483,7 +484,25 @@ static Region emptyRegion;
     }
 }
 
-- (void) _compositeGState: (XGGState *) source 
+/* A state takes the window's alpha plane in -setWindowDevice:, but the plane
+   is created on demand and need not have existed then.  Take it before
+   drawing, so that what this state draws is recorded there as well.  The
+   plane is not created here: a window without one is opaque, and drawing an
+   opaque colour into it keeps it that way.
+*/
+- (void) _useAlphaBuffer
+{
+  gswindow_device_t *gs_win = (gswindow_device_t *)windevice;
+
+  if (drawingAlpha == NO && shouldDrawAlpha == YES
+      && gs_win != NULL && gs_win->alpha_buffer != 0)
+    {
+      alpha_buffer = gs_win->alpha_buffer;
+      drawingAlpha = YES;
+    }
+}
+
+- (void) _compositeGState: (XGGState *) source
                  fromRect: (NSRect) fromRect
                   toPoint: (NSPoint) toPoint
                        op: (NSCompositingOperation) op
@@ -782,7 +801,7 @@ static Region emptyRegion;
    colour's alpha through.  The pixels have to be read back, combined and
    written again, which is only possible where they are kept, so this
    answers NO when there is nothing to read and the caller falls back. */
-- (BOOL) _blendRect: (NSRect)aRect
+- (BOOL) _blendRect: (NSRect)aRect op: (NSCompositingOperation)op
 {
   gswindow_device_t *dest_win = (gswindow_device_t *)windevice;
   XRectangle	    bounds;
@@ -858,7 +877,7 @@ static Region emptyRegion;
 
   _pixmap_combine_alpha((RContext *)context, source_im, NULL,
                         dest_im, dest_alpha, from,
-                        NSCompositeSourceOver, drawMechanism,
+                        op, drawMechanism,
                         fillColor.field[AINDEX]);
 
   RPutXImage((RContext *)context, draw, xgcntxt, dest_im, 0, 0,
@@ -880,15 +899,36 @@ static Region emptyRegion;
   CGFloat gray = 0.0;
   BOOL    highlight = NO;
 
-  /* Source over is the one operator here whose result depends on the alpha
-     of the colour, and no raster function can express that: whatever is
-     drawn, the pixel that goes down is the colour itself. */
-  if ((op == NSCompositeSourceOver || op == NSCompositeHighlight)
-      && fillColor.field[AINDEX] < 1.0
-      && pattern == nil
-      && [self _blendRect: aRect] == YES)
+  [self _useAlphaBuffer];
+
+  /* A raster function can only express a copy and a clear.  It happens to
+     give the right answer for the other operators when both the colour and
+     the destination are opaque, because the result is then either the colour
+     or the destination untouched; the operators that make a pixel
+     transparent are not among them.  Everything else has to combine the
+     colour with what is already there, one pixel at a time, and the result
+     needs an alpha plane to be recorded in. */
+  if (pattern == nil
+      && op != NSCompositeClear
+      && op != NSCompositeCopy
+      && op != GSCompositeHighlight
+      && !(fillColor.field[AINDEX] >= 1.0 && drawingAlpha == NO
+        && (op == NSCompositeSourceOver || op == NSCompositeHighlight
+          || op == NSCompositeSourceIn || op == NSCompositeSourceAtop
+          || op == NSCompositeDestinationOver
+          || op == NSCompositeDestinationIn
+          || op == NSCompositeDestinationAtop)))
     {
-      return;
+      gswindow_device_t *gs_win = (gswindow_device_t *)windevice;
+
+      if (gs_win != NULL)
+        {
+          [self _alphaBuffer: gs_win];
+        }
+      if ([self _blendRect: aRect op: op] == YES)
+        {
+          return;
+        }
     }
 
   /* FIXME: Really need alpha dithering to do this right - combine with
@@ -918,11 +958,12 @@ static Region emptyRegion;
     case NSCompositeDestinationIn:
     case NSCompositeDestinationAtop:
       /* An opaque destination admits nothing of the source, so it stands as
-         it is. */
-      if (drawingAlpha == NO)
-        return;
-      gcv.function = GXcopy;
-      break;
+         it is.  Where the destination is transparent the source belongs
+         underneath it, which no raster function expresses: a copy would put
+         the source over the whole rectangle instead.  So nothing is drawn.
+         Whether this state records alpha says nothing about the destination
+         and is not consulted here. */
+      return;
     case NSCompositeDestinationOut:
       gcv.function = GXcopy;
       break;
@@ -956,11 +997,24 @@ static Region emptyRegion;
     }
 
   [self setGCValues: gcv withMask: GCFunction];
+  /* The alpha plane records what the colour plane is given, so it takes the
+     same raster function.  Without this a clear leaves the colour at zero
+     and the alpha at the colour's own, and the rectangle reads back opaque.
+     The alpha graphics context is made on demand, so ask for it first. */
+  if (drawingAlpha == YES && gcv.function != GXcopy)
+    {
+      [self setAlphaColor: fillColor.field[AINDEX]];
+      XSetFunction(XDPY, agcntxt, gcv.function);
+    }
   [self DPSrectfill: NSMinX(aRect) : NSMinY(aRect)
         : NSWidth(aRect) : NSHeight(aRect)];
 
   if (gcv.function != GXcopy)
     {
+      if (drawingAlpha == YES)
+        {
+          XSetFunction(XDPY, agcntxt, GXcopy);
+        }
       gcv.function = GXcopy;
       [self setGCValues: gcv withMask: GCFunction];
     }
@@ -982,6 +1036,7 @@ static Region emptyRegion;
       DPS_WARN(DPSinvalidid, @"No Drawable defined for path");
       return;
     }
+  [self _useAlphaBuffer];
   fill_rule = WindingRule;
   switch (type)
     {
@@ -1125,6 +1180,8 @@ static Region emptyRegion;
       [self _doComplexClip: pts : types : count draw: type];
       return;
     }
+
+  [self _useAlphaBuffer];
 
   XGetGeometry (XDPY, draw, &root_rtn, &x, &y, &width, &height,
                 &b_rtn, &d_rtn);
@@ -1451,7 +1508,8 @@ static Region emptyRegion;
       DPS_WARN(DPSinvalidid, @"No Drawable defined for show");
       return;
     }
-  
+  [self _useAlphaBuffer];
+
   if ((cstate & COLOR_FILL) == 0)
     [self setColor: &fillColor state: COLOR_FILL];
 
@@ -1501,7 +1559,8 @@ static Region emptyRegion;
       DPS_WARN(DPSinvalidid, @"No Drawable defined for show");
       return;
     }
-  
+  [self _useAlphaBuffer];
+
   if ((cstate & COLOR_FILL) == 0)
     [self setColor: &fillColor state: COLOR_FILL];
 
@@ -1729,6 +1788,7 @@ static Region emptyRegion;
       DPS_WARN(DPSinvalidid, @"No Drawable defined for drawing");
       return;
     }
+  [self _useAlphaBuffer];
 
   if (pattern != nil)
     {
@@ -1775,6 +1835,7 @@ NSDebugLLog(@"XGGraphics", @"Fill %@ X rect %d,%d,%d,%d",
       DPS_WARN(DPSinvalidid, @"No Drawable defined for drawing");
       return;
     }
+  [self _useAlphaBuffer];
 
   if ((cstate & COLOR_STROKE) == 0)
     [self setColor: &fillColor state: COLOR_STROKE];

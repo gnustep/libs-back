@@ -1260,6 +1260,120 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
     }
 }
 
+#if CAIRO_VERSION >= CAIRO_VERSION_ENCODE(1, 12, 0)
+/* Plus darker adds the two premultiplied colours and takes off the amount by
+   which their alphas overlap: Ra = MIN(1, Sa + Da) and
+   Rp = MAX(0, Sp + Dp - MAX(0, Sa + Da - 1)).  With both opaque that is
+   MAX(0, S + D - 1), which is what the operator is documented as.  Cairo has
+   no operator for it, so the pixels are read, combined and written again.
+   Answers NO when the surface cannot be reached that way, and the caller then
+   falls back.
+*/
+- (BOOL) _plusDarkerRect: (NSRect)aRect
+{
+  cairo_surface_t *target;
+  cairo_surface_t *image;
+  cairo_format_t format;
+  device_color_t c;
+  double x1, y1, x2, y2, ox, oy;
+  int left, top, right, bottom, x, y, stride, width, height;
+  unsigned sr, sg, sb, sa;
+  unsigned char *data;
+
+  target = cairo_get_target(_ct);
+  if (target == NULL || cairo_surface_status(target) != CAIRO_STATUS_SUCCESS)
+    {
+      return NO;
+    }
+
+  /* The clip is already the rectangle, in user space; the surface holds the
+     pixels at its own origin, which the device offset gives. */
+  cairo_clip_extents(_ct, &x1, &y1, &x2, &y2);
+  cairo_user_to_device(_ct, &x1, &y1);
+  cairo_user_to_device(_ct, &x2, &y2);
+  cairo_surface_get_device_offset(target, &ox, &oy);
+  left = (int)floor(MIN(x1, x2) + ox);
+  top = (int)floor(MIN(y1, y2) + oy);
+  right = (int)ceil(MAX(x1, x2) + ox);
+  bottom = (int)ceil(MAX(y1, y2) + oy);
+
+  width = right - left;
+  height = bottom - top;
+  if (width <= 0 || height <= 0)
+    {
+      return NO;
+    }
+
+  /* Take a copy of the destination through cairo itself, rather than writing
+     into the surface behind its back. */
+  image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+  if (cairo_surface_status(image) != CAIRO_STATUS_SUCCESS)
+    {
+      cairo_surface_destroy(image);
+      return NO;
+    }
+  {
+    cairo_t *copy = cairo_create(image);
+
+    cairo_set_operator(copy, CAIRO_OPERATOR_SOURCE);
+    cairo_set_source_surface(copy, target, -(left - ox), -(top - oy));
+    cairo_paint(copy);
+    cairo_destroy(copy);
+  }
+
+  cairo_surface_flush(image);
+  format = CAIRO_FORMAT_ARGB32;
+  stride = cairo_image_surface_get_stride(image);
+  data = cairo_image_surface_get_data(image);
+  if (data == NULL)
+    {
+      cairo_surface_destroy(image);
+      return NO;
+    }
+
+  c = fillColor;
+  gsColorToRGB(&c);
+  sa = (unsigned)(c.field[AINDEX] * 255 + 0.5);
+  sr = (unsigned)(c.field[0] * c.field[AINDEX] * 255 + 0.5);
+  sg = (unsigned)(c.field[1] * c.field[AINDEX] * 255 + 0.5);
+  sb = (unsigned)(c.field[2] * c.field[AINDEX] * 255 + 0.5);
+
+  for (y = 0; y < height; y++)
+    {
+      uint32_t *row = (uint32_t *)(data + y * stride);
+
+      for (x = 0; x < width; x++)
+        {
+          unsigned da = (format == CAIRO_FORMAT_ARGB32)
+            ? ((row[x] >> 24) & 0xff) : 255;
+          unsigned dr = (row[x] >> 16) & 0xff;
+          unsigned dg = (row[x] >> 8) & 0xff;
+          unsigned db = row[x] & 0xff;
+          unsigned over = (sa + da > 255) ? (sa + da - 255) : 0;
+          unsigned ra = MIN(255, sa + da);
+          unsigned rr = (sr + dr > over) ? (sr + dr - over) : 0;
+          unsigned rg = (sg + dg > over) ? (sg + dg - over) : 0;
+          unsigned rb = (sb + db > over) ? (sb + db - over) : 0;
+
+          row[x] = (ra << 24) | (MIN(rr, ra) << 16) | (MIN(rg, ra) << 8)
+            | MIN(rb, ra);
+        }
+    }
+  cairo_surface_mark_dirty(image);
+
+  /* Put the combined pixels back where they came from. */
+  cairo_save(_ct);
+  cairo_identity_matrix(_ct);
+  cairo_set_operator(_ct, CAIRO_OPERATOR_SOURCE);
+  cairo_set_source_surface(_ct, image, left - ox, top - oy);
+  cairo_paint(_ct);
+  cairo_restore(_ct);
+  cairo_surface_destroy(image);
+
+  return YES;
+}
+#endif
+
 - (void) compositerect: (NSRect)aRect op: (NSCompositingOperation)op
 {
   if (_ct)
@@ -1291,7 +1405,16 @@ _set_op(cairo_t *ct, NSCompositingOperation op)
       [path transformUsingAffineTransform: ctm];
       [self _setPath];
       cairo_clip(_ct);
-      cairo_paint(_ct);
+#if CAIRO_VERSION >= CAIRO_VERSION_ENCODE(1, 12, 0)
+      if (NSCompositePlusDarker == op && [self _plusDarkerRect: aRect] == YES)
+        {
+          /* The pixels were combined directly. */
+        }
+      else
+#endif
+        {
+          cairo_paint(_ct);
+        }
       cairo_restore(_ct);
       path = oldPath;
     }
