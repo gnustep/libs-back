@@ -73,7 +73,7 @@ xrRGBToPixel(RContext* context, device_color_t color)
 @interface XGGState (Private)
 - (void) _alphaBuffer: (gswindow_device_t *)dest_win;
 - (void) _useAlphaBuffer;
-- (BOOL) _blendRect: (NSRect)aRect;
+- (BOOL) _blendRect: (NSRect)aRect op: (NSCompositingOperation)op;
 - (void) createGraphicContext;
 - (void) copyGraphicContext;
 - (void) setAlphaColor: (float)color;
@@ -801,7 +801,7 @@ static Region emptyRegion;
    colour's alpha through.  The pixels have to be read back, combined and
    written again, which is only possible where they are kept, so this
    answers NO when there is nothing to read and the caller falls back. */
-- (BOOL) _blendRect: (NSRect)aRect
+- (BOOL) _blendRect: (NSRect)aRect op: (NSCompositingOperation)op
 {
   gswindow_device_t *dest_win = (gswindow_device_t *)windevice;
   XRectangle	    bounds;
@@ -877,7 +877,7 @@ static Region emptyRegion;
 
   _pixmap_combine_alpha((RContext *)context, source_im, NULL,
                         dest_im, dest_alpha, from,
-                        NSCompositeSourceOver, drawMechanism,
+                        op, drawMechanism,
                         fillColor.field[AINDEX]);
 
   RPutXImage((RContext *)context, draw, xgcntxt, dest_im, 0, 0,
@@ -901,15 +901,34 @@ static Region emptyRegion;
 
   [self _useAlphaBuffer];
 
-  /* Source over is the one operator here whose result depends on the alpha
-     of the colour, and no raster function can express that: whatever is
-     drawn, the pixel that goes down is the colour itself. */
-  if ((op == NSCompositeSourceOver || op == NSCompositeHighlight)
-      && fillColor.field[AINDEX] < 1.0
-      && pattern == nil
-      && [self _blendRect: aRect] == YES)
+  /* A raster function can only express a copy and a clear.  It happens to
+     give the right answer for the other operators when both the colour and
+     the destination are opaque, because the result is then either the colour
+     or the destination untouched; the operators that make a pixel
+     transparent are not among them.  Everything else has to combine the
+     colour with what is already there, one pixel at a time, and the result
+     needs an alpha plane to be recorded in. */
+  if (pattern == nil
+      && op != NSCompositeClear
+      && op != NSCompositeCopy
+      && op != GSCompositeHighlight
+      && !(fillColor.field[AINDEX] >= 1.0 && drawingAlpha == NO
+        && (op == NSCompositeSourceOver || op == NSCompositeHighlight
+          || op == NSCompositeSourceIn || op == NSCompositeSourceAtop
+          || op == NSCompositeDestinationOver
+          || op == NSCompositeDestinationIn
+          || op == NSCompositeDestinationAtop)))
     {
-      return;
+      gswindow_device_t *gs_win = (gswindow_device_t *)windevice;
+
+      if (gs_win != NULL)
+        {
+          [self _alphaBuffer: gs_win];
+        }
+      if ([self _blendRect: aRect op: op] == YES)
+        {
+          return;
+        }
     }
 
   /* FIXME: Really need alpha dithering to do this right - combine with
