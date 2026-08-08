@@ -731,7 +731,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       GetClientRect((HWND)hwnd, &r);
       hdc = GetDC((HWND)hwnd);
       hdc2 = CreateCompatibleDC(hdc);
-      hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, r.bottom - r.top);
+      hbitmap = WIN32CreateDrawable(hdc, r.right - r.left, r.bottom - r.top);
       win->old = SelectObject(hdc2, hbitmap);
       win->hdc = hdc2;
       
@@ -1726,7 +1726,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       GetClientRect((HWND)winNum, &r);
       hdc = GetDC((HWND)winNum);
       hdc2 = CreateCompatibleDC(hdc);
-      hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, r.bottom - r.top);
+      hbitmap = WIN32CreateDrawable(hdc, r.right - r.left, r.bottom - r.top);
       win->old = SelectObject(hdc2, hbitmap);
       win->hdc = hdc2;
       win->useHDC = YES;
@@ -2070,7 +2070,7 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
       GetClientRect((HWND)winNum, &r);
       hdc = GetDC((HWND)winNum);
       hdc2 = CreateCompatibleDC(hdc);
-      hbitmap = CreateCompatibleBitmap(hdc, r.right - r.left, r.bottom - r.top);
+      hbitmap = WIN32CreateDrawable(hdc, r.right - r.left, r.bottom - r.top);
       win->old = SelectObject(hdc2, hbitmap);
       win->hdc = hdc2;
       
