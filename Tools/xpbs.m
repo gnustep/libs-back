@@ -1302,7 +1302,7 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	     * So wait on the X connection descriptor for the next chunk with
 	     * a deadline and abandon the transfer if nothing arrives.
 	     */
-	    NSDate	*limit = [NSDate dateWithTimeIntervalSinceNow: 5.0];
+	    NSDate	*limit = [NSDate dateWithTimeIntervalSinceNow: 20.0];
 	    int		xfd = XConnectionNumber(xDisplay);
 	    BOOL	timedOut = NO;
 
