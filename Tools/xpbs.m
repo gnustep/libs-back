@@ -324,6 +324,7 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
 #if HAVE_XFIXES
 static int              xFixesEventBase;
 #endif
+static int xErrorHandler(Display *d, XErrorEvent *e);
 
 @implementation	XPbOwner
 
