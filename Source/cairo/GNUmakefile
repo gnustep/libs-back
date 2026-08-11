@@ -45,24 +45,38 @@ cairo_OBJC_FILES = CairoSurface.m \
   ../fontconfig/FCFontAssetInstaller.m \
 
 
+# The window surface is chosen by the display server, because a surface is that
+# server's window seen as something cairo can draw into.  Each server names its
+# own, and a server with no branch here compiles no window surface at all --
+# which is the right answer for a server that has no window to draw into, and is
+# what lets a new server be added without touching the others.
+#
+# This subproject is reached only when the graphics backend is cairo, since
+# Source/GNUmakefile puts $(BUILD_GRAPHICS) in SUBPROJECTS, so the graphics
+# backend is not tested again in each branch.
+
 ifeq ($(BUILD_SERVER),x11)
   ifeq ($(WITH_GLITZ),yes)
     cairo_OBJC_FILES += XGCairoGlitzSurface.m
   else
     cairo_OBJC_FILES += XGCairoSurface.m XGCairoXImageSurface.m XGCairoModernSurface.m
   endif
-else
-  ifeq ($(BUILD_SERVER),wayland)
-    cairo_OBJC_FILES += WaylandCairoShmSurface.m
+endif
+
+ifeq ($(BUILD_SERVER),wayland)
+  cairo_OBJC_FILES += WaylandCairoShmSurface.m
+endif
+
+ifeq ($(BUILD_SERVER),android)
+  cairo_OBJC_FILES += AndroidCairoSurface.m
+endif
+
+ifeq ($(BUILD_SERVER),win32)
+  ifeq ($(WITH_GLITZ),yes)
+    cairo_OBJC_FILES += Win32CairoGlitzSurface.m
   else
-    ifeq ($(BUILD_GRAPHICS),cairo)
-      ifeq ($(WITH_GLITZ),yes)
-        cairo_OBJC_FILES += Win32CairoGlitzSurface.m
-      else
-        cairo_OBJC_FILES += Win32CairoSurface.m Win32CairoGState.m
-        # Win32CairoXImageSurface.m 
-      endif
-    endif
+    cairo_OBJC_FILES += Win32CairoSurface.m Win32CairoGState.m
+    # Win32CairoXImageSurface.m
   endif
 endif
 

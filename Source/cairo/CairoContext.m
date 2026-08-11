@@ -79,6 +79,12 @@
 #  include "cairo/WaylandCairoShmSurface.h"
 #  define _CAIRO_GSTATE_CLASSNAME CairoGState
 #  define _CAIRO_SURFACE_CLASSNAME WaylandCairoShmSurface
+#elif BUILD_SERVER == SERVER_android
+#  include "android/AndroidServer.h"
+#  include "cairo/CairoGState.h"
+#  include "cairo/AndroidCairoSurface.h"
+#  define _CAIRO_GSTATE_CLASSNAME CairoGState
+#  define _CAIRO_SURFACE_CLASSNAME AndroidCairoSurface
 #else
 #  error Invalid server for Cairo backend : non implemented
 #endif /* BUILD_SERVER */

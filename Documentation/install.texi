@@ -63,6 +63,43 @@ Before running an application, choose one backend using the defaults program:
 defaults write NSGlobalDomain GSBackend libgnustep-xlib
 @end example
 
+@subsection Android
+
+The android server draws through cairo and is chosen with
+
+@example
+configure --enable-server=android --enable-graphics=cairo
+@end example
+
+An application is run from a package, and a package carries an executable
+file only as @file{lib/<abi>/lib<name>.so}, so a tool is installed under
+that name and is found there rather than in the tool directories a
+filesystem layout gives.
+
+The activity a package declares must name the configuration changes it
+handles:
+
+@example
+<activity android:name="android.app.NativeActivity"
+          android:configChanges="orientation|screenSize|screenLayout|
+                                 smallestScreenSize|keyboardHidden|
+                                 density|uiMode">
+@end example
+
+Without that, Android destroys and recreates the activity on a rotation.
+The application is ended and started again from the beginning, losing
+everything it held, and no error is reported: the exit is a clean one.
+With it the activity is kept and the surface arrives again, which the
+server takes as a change of screen.
+
+A process that has no activity, such as a test, cannot ask Android how
+large the screen is.  It reports the size given by the
+@code{GSAndroidScreenSize} default instead:
+
+@example
+defaults write NSGlobalDomain GSAndroidScreenSize 1080x2340
+@end example
+
 @node Compilation, Installing, Configuration, Top
 @section Compilation
 
