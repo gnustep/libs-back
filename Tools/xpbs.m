@@ -2201,6 +2201,7 @@ static DndClass dnd;
       xdnd_init(&dnd, xDisplay);
       p = [NSPasteboard pasteboardWithName: NSDragPboard];
       [[XDragPbOwner alloc] initWithXPb: dnd.XdndSelection osPb: p];
+XSetErrorHandler(xErrorHandler);
     }
 }
 
