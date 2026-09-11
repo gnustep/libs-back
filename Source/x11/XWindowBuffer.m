@@ -94,7 +94,7 @@ static void test_xshm(Display *display, Visual *visual, int drawing_depth)
   {
     XImage *ximage;
     XShmSegmentInfo shminfo;
-    int (*old_error_handler)();
+    int (*old_error_handler)(struct _XDisplay *, XErrorEvent *);
 
     old_error_handler = XSetErrorHandler(test_xshm_error_handler);
 
