@@ -8452,9 +8452,19 @@ printf '%s\n' "$as_me: WARNING: can't find libart, required for graphics=art" >&
     fi
     { printf '%s\n' "$as_me:${as_lineno-$LINENO}: Switching to $BUILD_GRAPHICS" >&5
 printf '%s\n' "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
+  elif test "$have_fontconfig" = no ; then
+    { printf '%s\n' "$as_me:${as_lineno-$LINENO}: WARNING: can't find fontconfig, required for graphics=art!" >&5
+printf '%s\n' "$as_me: WARNING: can't find fontconfig, required for graphics=art!" >&2;}
+    if test $BUILD_SERVER = win32; then
+      BUILD_GRAPHICS=winlib
+    else
+      BUILD_GRAPHICS=xlib
+    fi
+    { printf '%s\n' "$as_me:${as_lineno-$LINENO}: Switching to $BUILD_GRAPHICS" >&5
+printf '%s\n' "$as_me: Switching to $BUILD_GRAPHICS" >&6;}
   else
-    LIBS="$LIBART_LIBS $FREETYPE_LIBS $LIBS"
-    CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
+    LIBS="$LIBART_LIBS $FREETYPE_LIBS $FONTCONFIG_LIBS $LIBS"
+    CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $FONTCONFIG_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xxlib"; then
  LIBS="$FREETYPE_LIBS $LIBS"

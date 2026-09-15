@@ -27,9 +27,13 @@
 
 #include <GNUstepGUI/GSFontInfo.h>
 
+#include "fontconfig/FCFontEnumerator.h"
+
 @class FTFaceInfo;
 
-@interface FTFontEnumerator : GSFontEnumerator
+/* The faces fontconfig knows about, which is what the cairo, opal and xlib
+   backends enumerate too. */
+@interface FTFontEnumerator : FCFontEnumerator
 
 + (FTFaceInfo *) fontWithName: (NSString *)name;
 

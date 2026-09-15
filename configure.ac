@@ -721,9 +721,17 @@ elif test x"$BUILD_GRAPHICS" = "xart"; then
       BUILD_GRAPHICS=xlib
     fi
     AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
+  elif test "$have_fontconfig" = no ; then
+    AC_MSG_WARN([can't find fontconfig, required for graphics=art!])
+    if test $BUILD_SERVER = win32; then
+      BUILD_GRAPHICS=winlib
+    else
+      BUILD_GRAPHICS=xlib
+    fi
+    AC_MSG_NOTICE([Switching to $BUILD_GRAPHICS])
   else
-    LIBS="$LIBART_LIBS $FREETYPE_LIBS $LIBS"
-    CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $CPPFLAGS"
+    LIBS="$LIBART_LIBS $FREETYPE_LIBS $FONTCONFIG_LIBS $LIBS"
+    CPPFLAGS="$LIBART_CFLAGS $FREETYPE_CFLAGS $FONTCONFIG_CFLAGS $CPPFLAGS"
   fi
 elif test x"$BUILD_GRAPHICS" = "xxlib"; then
  LIBS="$FREETYPE_LIBS $LIBS"
