@@ -4697,7 +4697,7 @@ _screenSize(Display *dpy, int screen)
  * Returns nil if no information is available.
  */
 static NSArray *
-_workAreas(Display *dpy, Window root)
+_workAreas(Display *dpy, Window root, CGFloat screenHeight)
 {
   Atom		workarea_atom;
   Atom		type;
@@ -4753,10 +4753,7 @@ _workAreas(Display *dpy, Window root)
       frame.size.width = (uint32_t)*items++;
       frame.size.height = (uint32_t)*items++;
       // X coordinates need to be flipped to OpenStep coordinates
-      if (frame.origin.y > 0.0)
-	{
-	  frame.origin.y = 0.0;
-	}
+      frame.origin.y = screenHeight - frame.origin.y - frame.size.height;
       [array addObject: [NSValue valueWithRect: frame]];
     }
   XFree(data);
@@ -4777,8 +4774,10 @@ _workAreas(Display *dpy, Window root)
 - (NSArray *)screenList
 {
   Window        root = [self xDisplayRootWindow];
-  NSArray	*workAreas = _workAreas(dpy, root);
+  NSArray	*workAreas;
+
   xScreenSize = _screenSize(dpy, defScreen);
+  workAreas = _workAreas(dpy, root, xScreenSize.height);
 
   monitorsCount = 0;
   if (monitors != NULL)
@@ -4823,28 +4822,16 @@ _workAreas(Display *dpy, Window root)
                   monitors[mi].resolution
 		    = [self resolutionForScreen: defScreen];
 
-		  /* We can only use the work area provided by _NET_WORKAREA
-		   * if we have a single screen/monitor, because that property
-		   * refers to coordinates in the composite display formed by
-		   * all the available monitors.
+		  /* Transform coordinates from Xlib (flipped)
+		   * to OpenStep (unflipped).
+		   * Windows and screens should have the same
+		   * coordinate system.
 		   */
-		  if (1 == monitorsCount && workAreas != nil)
-		    {
-		      monitors[0].frame = [[workAreas firstObject] rectValue];
-		    }
-		  else
-		    {
-		      /* Transform coordinates from Xlib (flipped)
-		       * to OpenStep (unflipped). 
-		       * Windows and screens should have the same
-		       * coordinate system.
-		       */
-		      monitors[mi].frame =
-			NSMakeRect(crtc_info->x,
-			  xScreenSize.height - crtc_info->height - crtc_info->y,
-			  crtc_info->width,
-			  crtc_info->height);
-		    }
+		  monitors[mi].frame =
+		    NSMakeRect(crtc_info->x,
+		      xScreenSize.height - crtc_info->height - crtc_info->y,
+		      crtc_info->width,
+		      crtc_info->height);
                   /* Add monitor ID (index in monitors array).
                    * Put primary monitor ID at index 0 since
 		   * NSScreen gets this as main screen if application
@@ -4868,6 +4855,15 @@ _workAreas(Display *dpy, Window root)
           monitorsCount = mi;
           if (monitorsCount != 0)
             {
+	      /* We can only use the work area provided by _NET_WORKAREA
+	       * if we have a single screen/monitor, because that property
+	       * refers to coordinates in the composite display formed by
+	       * all the available monitors.
+	       */
+	      if (1 == monitorsCount && workAreas != nil)
+		{
+		  monitors[0].frame = [[workAreas firstObject] rectValue];
+		}
               XRRFreeScreenResources(screen_res);
               return [NSArray arrayWithArray: tmpScreens];
             }
