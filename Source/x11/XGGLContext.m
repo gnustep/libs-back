@@ -56,6 +56,30 @@
 
 @end
 
+/* The rectangle of the view in the pixels of the X window that holds it.
+ * Window base coordinates are device pixels, also when the window is scaled
+ * (GSScaleFactor), so the view is converted to them rather than to the
+ * coordinates of another view, which would be points.
+ */
+static NSRect
+XRectForView(NSView *view, GSDisplayServer *server)
+{
+  NSRect rect = [view convertRect: [view bounds] toView: nil];
+
+  if ([server handlesWindowDecorations] == YES)
+    {
+      /* The window manager handles window decorations, so the
+       * parent X window is equal to the content view.
+       */
+      NSView *content = [[view window] contentView];
+      NSRect contentRect = [content convertRect: [content bounds] toView: nil];
+
+      rect.origin.x -= NSMinX(contentRect);
+      rect.origin.y -= NSMinY(contentRect);
+    }
+  return rect;
+}
+
 @implementation XGXSubWindow
 
 //We assume that the current context is the same and is an XGServer
@@ -80,11 +104,11 @@
   NSAssert(window, @"Request of an X window attachment on a view that is not\
                      on a NSWindow");
 
-  if ([view isRotatedOrScaledFromBase])
+  if ([view isRotatedFromBase])
     {
       [NSException raise: NSInvalidArgumentException
                    format: @"Cannot attach an Xwindow to a view that is\
-                           rotated or scaled"];
+                           rotated"];
     }
   
   server = (XGServer *)GSServerForWindow(window);
@@ -96,28 +120,7 @@
   win_info = [XGServer _windowWithTag: [window windowNumber]];
   NSAssert(win_info, NSInternalInconsistencyException);
 
-  if ([server handlesWindowDecorations] == YES)
-    {
-      /* The window manager handles window decorations, so the
-       * the parent X window is equal to the content view and
-       * we must therefore use content view coordinates.
-       */
-      rect = [view convertRect: [view bounds]
-                        toView: [window contentView]];
-      if ([[window contentView] isFlipped])
-        {
-          rect.origin.y = NSHeight([[window contentView] frame]) - (rect.size.height + rect.origin.y);
-        }
-    }
-  else
-    {
-      /* The GUI library handles window decorations, so the
-       * the parent X window is equal to the NSWindow frame
-       * and we can use window base coordinates.
-       */
-      rect = [view convertRect: [view bounds] toView: nil];
-    }
-
+  rect = XRectForView(view, server);
   x = NSMinX(rect);
   y = NSHeight(win_info->xframe) - NSMaxY(rect);
   width = NSWidth(rect);
@@ -175,8 +178,8 @@
   win = [attached window];
   NSAssert1(win, @"%@'s window is nil now!", attached);
 
-  NSAssert1(![attached isRotatedOrScaledFromBase],
-	    @"%@ is rotated or scaled, now!", attached);
+  NSAssert1(![attached isRotatedFromBase],
+	    @"%@ is rotated, now!", attached);
   
   server = GSServerForWindow(win);
   NSAssert(server != nil, NSInternalInconsistencyException);
@@ -190,28 +193,7 @@
   win_info = [XGServer _windowWithTag: [win windowNumber]];
   NSAssert(win_info, NSInternalInconsistencyException);
 
-  if ([server handlesWindowDecorations] == YES)
-    {
-      /* The window manager handles window decorations, so the
-       * the parent X window is equal to the content view and
-       * we must therefore use content view coordinates.
-       */
-      rect = [attached convertRect: [attached bounds]
-			    toView: [[attached window] contentView]];
-      if ([[[attached window] contentView] isFlipped])
-        {
-          rect.origin.y = NSHeight([[[attached window] contentView] frame]) - (rect.size.height + rect.origin.y);
-        }
-    }
-  else
-    {
-      /* The GUI library handles window decorations, so the
-       * the parent X window is equal to the NSWindow frame
-       * and we can use window base coordinates.
-       */
-      rect = [attached convertRect: [attached bounds] toView: nil];
-    }
-
+  rect = XRectForView(attached, server);
   x = NSMinX(rect);
   y = NSHeight(win_info->xframe) - NSMaxY(rect);
   width = NSWidth(rect);
