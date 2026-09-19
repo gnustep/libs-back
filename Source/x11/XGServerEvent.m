@@ -447,9 +447,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
          */
         {
           BOOL incrementCount = YES;
-          
-          if (clickTime == 0) [self initializeMouse];
-         
+
           if (xEvent.xbutton.time
             >= (unsigned long)(generic.lastClick + clickTime))
             incrementCount = NO;

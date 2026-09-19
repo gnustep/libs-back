@@ -138,6 +138,7 @@ _parse_display_name(NSString *name, int *dn, int *sn)
 @interface XGServer (Private)
 - (void) setupRunLoopInputSourcesForMode: (NSString*)mode; 
 - (void) teardownRunLoopInputSourcesForMode: (NSString*)mode; 
+- (void) initializeMouse;
 @end
 
 @interface XGScreenContext : NSObject
@@ -556,6 +557,13 @@ static NSString	*startupID = nil;
   [self setupRunLoopInputSourcesForMode: NSConnectionReplyMode]; 
   [self setupRunLoopInputSourcesForMode: NSModalPanelRunLoopMode]; 
   [self setupRunLoopInputSourcesForMode: NSEventTrackingRunLoopMode]; 
+
+  /* Registering with the distributed notification center waits for
+   * gdnc in a nested run loop, which reads pending X events.  Doing it
+   * here rather than on the first button press keeps that press from
+   * being queued after the X events that follow it.
+   */
+  [self initializeMouse];
   return self;
 }
 
