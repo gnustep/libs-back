@@ -501,6 +501,11 @@ LRESULT CALLBACK windowEnumCallback(HWND hwnd, LPARAM lParam)
   return NSZeroRect;
 }
 
+- (NSRect) workAreaForScreen: (int)screen
+{
+  return [self boundsForScreen: screen];
+}
+
 - (HMONITOR) monitorHandleForScreen: (int)screen
 {
   if (screen < [monitorInfo count])
