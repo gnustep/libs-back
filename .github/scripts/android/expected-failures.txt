@@ -1,0 +1,16 @@
+# Tests that are known to fail on Android, one "directory/name" per line.
+#
+# An entry here is a claim that the failure is NOT the android backend's, and
+# it has to be justified by the x11+cairo result: a test that x11+cairo passes
+# and android+cairo fails is a defect to fix, not a line to add here.
+#
+# Two things belong in this file and nothing else does:
+#   - a failure x11+cairo also produces, with its counts quoted as evidence
+#   - a divergence that has been read and accepted
+#
+# In particular, do NOT regenerate this file from a red run. An executable that
+# prints nothing may be crashing, and listing a crash as expected is how a
+# suite goes green while proving less than it did before.
+#
+# The file is empty on purpose: the first Android run of libs-back's suite has
+# not been triaged yet, so nothing has earned a place in it.
