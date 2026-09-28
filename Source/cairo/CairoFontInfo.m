@@ -181,8 +181,28 @@ void set_font_options(cairo_font_options_t *options)
 
   ascender = font_extents.ascent;
   descender = -font_extents.descent;
-  xHeight = ascender * 0.6;
   lineHeight = font_extents.height;
+
+  {
+    cairo_text_extents_t extents;
+
+    cairo_scaled_font_text_extents(_scaled, "H", &extents);
+    if (cairo_scaled_font_status(_scaled) == CAIRO_STATUS_SUCCESS
+        && extents.y_bearing < 0)
+      {
+        capHeight = -extents.y_bearing;
+      }
+    cairo_scaled_font_text_extents(_scaled, "x", &extents);
+    if (cairo_scaled_font_status(_scaled) == CAIRO_STATUS_SUCCESS
+        && extents.y_bearing < 0)
+      {
+        xHeight = -extents.y_bearing;
+      }
+    else
+      {
+        xHeight = ascender * 0.6;
+      }
+  }
   maximumAdvancement = NSMakeSize(font_extents.max_x_advance, 
                                   font_extents.max_y_advance);
   fontBBox = NSMakeRect(0, descender, 
