@@ -40,6 +40,9 @@
 #if HAVE_XFIXES
 #include <X11/extensions/Xfixes.h>
 #endif
+#include <sys/types.h>
+#include <sys/select.h>
+#include <sys/time.h>
 
 /*
  *	Non-predefined atoms that are used in the X selection mechanism
@@ -321,6 +324,7 @@ static NSString		*xWaitMode = @"XPasteboardWaitMode";
 #if HAVE_XFIXES
 static int              xFixesEventBase;
 #endif
+static int xErrorHandler(Display *d, XErrorEvent *e);
 
 @implementation	XPbOwner
 
@@ -343,6 +347,12 @@ static int              xFixesEventBase;
       NSLog(@"Unable to open X display - no X interoperation available");
       return NO;
     }
+
+  /* Direct synchronous X errors (e.g. from an over-eager XChangeProperty) to
+   * our handler so they are captured rather than terminating the server via
+   * the default Xlib error handler.
+   */
+  XSetErrorHandler(xErrorHandler);
 
   /*
    * Set up atoms for use in X selection mechanism.
@@ -1285,24 +1295,62 @@ xErrorHandler(Display *d, XErrorEvent *e)
 	    {
 	      [md setCapacity: size * 10];
 	    }
-          while (wait)
-            {
-              XNextEvent(xDisplay, &event);
+	  {
+	    /* The X selection owner may die or stall mid-transfer.  Without
+	     * a timeout, XNextEvent below would block forever and gpbs would
+	     * stop answering pasteboard requests, forcing it to be killed.
+	     * So wait on the X connection descriptor for the next chunk with
+	     * a deadline and abandon the transfer if nothing arrives.
+	     */
+	    NSDate	*limit = [NSDate dateWithTimeIntervalSinceNow: 20.0];
+	    int		xfd = XConnectionNumber(xDisplay);
+	    BOOL	timedOut = NO;
 
-              if (event.type == PropertyNotify
-	        && event.xproperty.state == PropertyNewValue)
-                {
+	    while (wait)
+	      {
+		if (XQLength(xDisplay) == 0)
+		  {
+		    fd_set		rfds;
+		    struct timeval	tv;
+		    NSTimeInterval	remain = [limit timeIntervalSinceNow];
+
+		    if (remain <= 0.0)
+		      {
+			NSDebugLLog(@"Pbs",
+			  @"Timed out waiting for INCR data for %@", _name);
+			timedOut = YES;
+			break;	/* Timeout */
+		      }
+		    FD_ZERO(&rfds);
+		    FD_SET(xfd, &rfds);
+		    tv.tv_sec = (long)remain;
+		    tv.tv_usec = (long)((remain - (NSTimeInterval)tv.tv_sec)
+		      * 1000000.0);
+		    if (select(xfd + 1, &rfds, NULL, NULL, &tv) <= 0)
+		      {
+			NSDebugLLog(@"Pbs",
+			  @"Timed out waiting for INCR data for %@", _name);
+			timedOut = YES;
+			break;	/* Timeout or error */
+		      }
+		  }
+
+		XNextEvent(xDisplay, &event);
+
+		if (event.type == PropertyNotify
+		  && event.xproperty.state == PropertyNewValue)
+		{
 		  long	length;
 
 		  /* Getting the property data also deletes the property,
 		   * telling the other end to send the next chunk.
 		   * An empty chunk indicates end of transfer.
 		   */
-                  if ((length = [self getSelectionData: xEvent
+		  if ((length = [self getSelectionData: xEvent
 						  type: &actual_type
 						  size: size
 						  into: md]) > 0)
-                    {
+		    {
 		      if (GSDebugSet(@"INCR"))
 			{
 			  char *name = XGetAtomName(xDisplay, actual_type);
@@ -1311,13 +1359,20 @@ xErrorHandler(Display *d, XErrorEvent *e)
 			  XFree(name);
 			}
 		      count++;
-                    }
-                  else
-                    {
-                      wait = NO;
-                    }
-                }
-            }
+		    }
+		  else
+		    {
+		      wait = NO;
+		    }
+		}
+	      }
+	    if (timedOut)
+	      {
+		/* Discard the partial data so a truncated transfer is not
+		 * presented as complete pasteboard contents. */
+		[md setLength: 0];
+	      }
+	  }
 	  if ([md length] == 0)
 	    {
 	      md = nil;
