@@ -75,7 +75,9 @@ main(int argc, const char **argv)
     [NSDictionary dictionaryWithObject:
       [NSTemporaryDirectory() stringByAppendingPathComponent: @"gsc_gstate.ps"]
       forKey: @"NSOutputFile"]];
+  AUTORELEASE(ctxt);
   gs = [[NSClassFromString(@"GSGState") alloc] initWithDrawContext: ctxt];
+  AUTORELEASE(gs);
   PASS(gs != nil, "a GSGState is created for the stream context");
   if (gs == nil)
     {
