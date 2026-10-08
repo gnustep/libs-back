@@ -1,3 +1,20 @@
+2026-10-08 Daniel Boyd <danieljboyd@icloud.com>
+
+	* Tools/win32pbs.m:
+	Bridge images between the Windows clipboard and the general
+	pasteboard, not only text.  A DIB (or a bitmap, which Windows
+	converts) on the clipboard is offered as NSTIFFPboardType, and a
+	"PNG" as NSPasteboardTypePNG and NSTIFFPboardType.  TIFF or PNG on
+	the general pasteboard is published as CF_DIB and "PNG", rendered
+	on demand like the text.  WM_RENDERFORMAT now renders the format
+	asked for, and CF_UNICODETEXT is only published when the pasteboard
+	holds a string.
+	* Tools/GNUmakefile: Link gpbs with gdi32 on win32.
+	* Tests/win32/TestInfo:
+	* Tests/win32/GNUmakefile.preamble:
+	* Tests/win32/pasteboard.m:
+	Test text and images passing both ways through gpbs.
+
 2026-07-22 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGServerEvent.m:

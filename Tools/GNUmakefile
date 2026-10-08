@@ -68,6 +68,7 @@ endif
 
 ifeq ($(BUILD_SERVER),win32)
 gpbs_OBJC_FILES += win32pbs.m 
+gpbs_TOOL_LIBS += -lgdi32
 endif
 
 -include GNUmakefile.preamble
