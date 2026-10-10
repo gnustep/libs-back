@@ -475,6 +475,28 @@ PKG_CHECK_MODULES(CAIRO_WIN32, cairo-win32, have_cairo_win32=yes, have_cairo_win
 PKG_CHECK_MODULES(CAIRO_GLITZ, cairo-glitz, have_cairo_glitz=yes, have_cairo_glitz=no)
 PKG_CHECK_MODULES(FONTCONFIG, fontconfig, have_fontconfig=yes, have_fontconfig=no)
 
+# A fontconfig built as an archive keeps the libraries it needs in Libs.private,
+# and pkg-config reports those only when it is asked for a static link line.
+# Reading a configuration is what reaches them, so a link that does no more than
+# initialise the library can succeed while the backend, which parses one, fails
+# on expat's symbols.  The reported line is tried against a call that parses, and
+# the static line is used when it does not resolve.
+if test "$have_fontconfig" = yes; then
+  gs_save_LIBS="$LIBS"
+  LIBS="$FONTCONFIG_LIBS $LIBS"
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <fontconfig/fontconfig.h>]],
+                                  [[FcConfig *c = FcInitLoadConfig(); (void)c;]])],
+                 [gs_fontconfig_links=yes], [gs_fontconfig_links=no])
+  LIBS="$gs_save_LIBS"
+  if test "$gs_fontconfig_links" = no; then
+    gs_fontconfig_static=`$PKG_CONFIG --static --libs fontconfig 2>/dev/null`
+    if test -n "$gs_fontconfig_static"; then
+      AC_MSG_NOTICE([fontconfig needs its static link line: $gs_fontconfig_static])
+      FONTCONFIG_LIBS="$gs_fontconfig_static"
+    fi
+  fi
+fi
+
 if test "$have_cairo" = no; then
   AC_CHECK_LIB(cairo, cairo_create, have_cairo=yes)
 fi
@@ -589,8 +611,8 @@ case $target_os in
               BUILD_GRAPHICS=winlib;;
 esac
 
-AC_ARG_ENABLE(server, 
-  [  --enable-server=SRV     Build server type: x11, win32, wayland, headless],,
+AC_ARG_ENABLE(server,
+  [  --enable-server=SRV     Build server type: x11, win32, wayland, android, headless],,
   enable_server=$BUILD_SERVER)
 AC_ARG_ENABLE(graphics, 
   [  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal, headless],,
@@ -611,6 +633,8 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
       BUILD_GRAPHICS=winlib
     elif test $BUILD_SERVER = wayland; then
       AC_MSG_ERROR([wayland backend requires cairo])
+    elif test $BUILD_SERVER = android; then
+      AC_MSG_ERROR([android backend requires cairo])
     else
       BUILD_GRAPHICS=xlib
     fi
@@ -621,6 +645,8 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
       BUILD_GRAPHICS=winlib
     elif test $BUILD_SERVER = wayland; then
       AC_MSG_ERROR([wayland backend requires cairo])
+    elif test $BUILD_SERVER = android; then
+      AC_MSG_ERROR([android backend requires cairo])
     else
       BUILD_GRAPHICS=art
     fi
@@ -692,6 +718,19 @@ if test x"$BUILD_GRAPHICS" = "xcairo"; then
         AC_DEFINE(HAVE_EGL, 1, [Define if EGL is available for Wayland OpenGL support])
         LIBS="-lGL -lEGL -lwayland-egl $LIBS"
       fi
+    elif test $BUILD_SERVER = android; then
+      dnl The android surface draws into a cairo image surface, so nothing from
+      dnl the NDK is linked.  A surface backed by ANativeWindow adds
+      dnl -landroid -lnativewindow here.
+      dnl
+      dnl fontconfig is named here for the same reason win32 names it: on this
+      dnl platform it is usually an archive, and cairo-ft's link line reports it
+      dnl without the libraries it needs itself.  Reading a configuration then
+      dnl leaves expat's symbols undefined in the bundle, which loads as far as
+      dnl "Can't load object file from backend" and says nothing more.
+      CAIRO_LIBS="$CAIRO_LIBS $FONTCONFIG_LIBS"
+      CAIRO_CFLAGS="$CAIRO_CFLAGS $FONTCONFIG_CFLAGS"
+      AC_MSG_RESULT(android)
     fi
 AC_SUBST(WITH_EGL)
     LIBS="$CAIRO_LIBS $LIBS"
@@ -800,6 +839,7 @@ AH_TOP([
 #define SERVER_win32      2
 #define SERVER_wayland    3
 #define SERVER_headless   4
+#define SERVER_android    5
 #define GRAPHICS_xdps     0
 #define GRAPHICS_art      1
 #define GRAPHICS_xlib     2

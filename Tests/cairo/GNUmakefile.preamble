@@ -37,3 +37,21 @@ ifeq ($(WITH_EGL),yes)
 wlglcontext_TOOL_LIBS += -lGL
 endif
 endif
+
+# The android surface test compiles the android+cairo surface source in
+# directly, the same way, so its headers and libraries are added only for that
+# backend; a source-level guard keeps it inert elsewhere.
+ifeq ($(BUILD_SERVER)-$(BUILD_GRAPHICS),android-cairo)
+ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../../Headers \
+                           -I$(GNUSTEP_BUILD_DIR)/../../Source \
+                           -I../../Headers -I../../Source \
+                           $(shell pkg-config --cflags cairo)
+
+# The surface posts through ANativeWindow, so a test that compiles it in links
+# libandroid as well as cairo.
+ADDITIONAL_TOOL_LIBS += $(shell pkg-config --libs cairo) -landroid
+
+# The post test needs a window to post into, and AImageReader supplies one
+# without an activity.  It is the only test that needs libmediandk.
+androidpost_TOOL_LIBS += -lmediandk
+endif
