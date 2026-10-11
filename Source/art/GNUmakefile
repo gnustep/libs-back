@@ -40,6 +40,8 @@ art_OBJC_FILES = \
   ftfont.m \
 	FTFontEnumerator.m \
 	FTFaceInfo.m \
+  ../fontconfig/FCFaceInfo.m \
+  ../fontconfig/FCFontEnumerator.m \
   image.m \
   composite.m \
   path.m \

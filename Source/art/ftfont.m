@@ -82,33 +82,26 @@ static FTC_CMapCache ftc_cmapcache;
 /*
  * Helper method used inside of FTC_Manager to create an FT_FACE.
  */
-static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib, 
+static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
                             FT_Pointer data, FT_Face *pface)
 {
   FT_Error err;
-  NSArray *rfi = (NSArray *)fid;
-  int i, c = [rfi count];
-  const char *face_name = [[rfi objectAtIndex: 0] fileSystemRepresentation];
+  FTFaceInfo *info = (FTFaceInfo *)fid;
+  NSString *file = [info fontFile];
 
-  NSDebugLLog(@"ftfont", @"ft_get_face: %@ '%s'", rfi, face_name);
-  err = FT_New_Face(lib, face_name, 0, pface);
-  if (err)
+  if (file == nil)
     {
-      NSLog(@"Error when loading '%@' (%08x)", [rfi objectAtIndex: 0], err);
-      return err;
+      NSLog(@"No file for %@", info);
+      return FT_Err_Cannot_Open_Resource;
     }
 
-  for (i = 1; i < c; i++)
+  NSDebugLLog(@"ftfont", @"ft_get_face: %@ '%@'", info, file);
+  err = FT_New_Face(lib, [file fileSystemRepresentation],
+                    [info faceIndex], pface);
+  if (err)
     {
-      face_name = [[rfi objectAtIndex: i] fileSystemRepresentation];
-
-      NSDebugLLog(@"ftfont", @"   do '%s'", face_name);
-      err = FT_Attach_File(*pface, face_name);
-      if (err)
-        {
-          NSLog(@"Error when loading '%@' (%08x)", [rfi objectAtIndex: i], err);
-          /* pretend it's alright */
-        }
+      NSLog(@"Error when loading '%@' (%08x)", file, err);
+      return err;
     }
 
   return 0;
@@ -121,7 +114,6 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
                  matrix: (const CGFloat *)fmatrix
              screenFont: (BOOL)p_screenFont
 {
-  NSArray *rfi;
   FTFaceInfo *font_entry;
   FT_Error error;
 
@@ -153,11 +145,12 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
 
   face_info = font_entry;
 
-  weight = font_entry->weight;
-  traits = font_entry->traits;
+  weight = [font_entry weight];
+  traits = [font_entry traits];
+  isFixedPitch = (traits & NSFixedPitchFontMask) != 0;
 
   fontName = [name copy];
-  familyName = [face_info->familyName copy];
+  familyName = [[face_info familyName] copy];
   memcpy(matrix, fmatrix, sizeof(matrix));
 
   /* Using utf8 is a bit ugly, but it works.  Besides, the bulk of the text
@@ -178,22 +171,11 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
   pix_width = fabs(matrix[0]);
   pix_height = fabs(matrix[3]);
 
-  rfi = font_entry->files;
-  if (screenFont && font_entry->num_sizes && pix_width == pix_height)
-    {
-      int i;
-
-      for (i = 0; i < font_entry->num_sizes; i++)
-        {
-          if (font_entry->sizes[i].pixel_size == pix_width)
-            {
-              rfi = font_entry->sizes[i].files;
-              break;
-            }
-        }
-    }
-
-  faceId = (FTC_FaceID)rfi;
+  /* The face itself is the id the cache asks -ft_get_face about, which reads
+     the file and the face index out of it. A bitmap strike is not chosen by
+     size here: fontconfig matched the face, and the scalable file it names
+     serves every size. */
+  faceId = (FTC_FaceID)font_entry;
 
   imageType.face_id = faceId;
   imageType.width = pix_width;
@@ -263,7 +245,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
 
       if (pix_width == pix_height && pix_width < 16 && pix_height >= 8)
         {
-          int rh = face_info->render_hints_hack;
+          int rh = [face_info renderHints];
 
           if (rh & 0x10000)
             {
@@ -305,7 +287,7 @@ static FT_Error ft_get_face(FTC_FaceID fid, FT_Library lib,
 
 - (NSString*) displayName
 {
-  return face_info->displayName;
+  return [face_info displayName];
 }
 
 - (void) set
