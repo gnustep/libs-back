@@ -2389,6 +2389,13 @@ _wmTestErrorHandler(Display *display, XErrorEvent *event)
       NSMapRemove(windowmaps, (void*)window->ident);
     }
 
+#ifdef HAVE_X11_EXTENSIONS_SYNC_H
+  /* Sync counters are independent X resources, not children of the window.
+   * Destroying the window does not release its EWMH resize counter. */
+  if (window->net_wm_sync_request_counter != None)
+    XSyncDestroyCounter(dpy, window->net_wm_sync_request_counter);
+#endif
+
   if (window->buffer)
     XFreePixmap (dpy, window->buffer);
   if (window->alpha_buffer)
