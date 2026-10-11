@@ -268,6 +268,26 @@ if test $ac_cv_header_DPS_dpsNXargs_h = no; then
 fi
 
 #--------------------------------------------------------------------
+# Which projects should we build?
+#--------------------------------------------------------------------
+BUILD_SERVER=x11
+BUILD_GRAPHICS=cairo
+case $target_os in
+  *mingw32* ) BUILD_SERVER=win32
+              BUILD_GRAPHICS=winlib;;
+esac
+
+AC_ARG_ENABLE(server, 
+  [  --enable-server=SRV     Build server type: x11, win32, wayland, headless],,
+  enable_server=$BUILD_SERVER)
+AC_ARG_ENABLE(graphics, 
+  [  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal, headless],,
+  enable_graphics="$BUILD_GRAPHICS")
+
+BUILD_SERVER=$enable_server
+BUILD_GRAPHICS="$enable_graphics"
+
+#--------------------------------------------------------------------
 # freetype libraries
 #--------------------------------------------------------------------
 # Mac OS X with macports has a freetype which includes Apple's Foundation
@@ -277,7 +297,12 @@ AC_ARG_WITH(freetype,
 	   with_freetype=yes)
 
 have_freetype=no
-if test $with_freetype = yes; then
+# Only the font-rendering graphics backends need freetype
+case "$BUILD_GRAPHICS" in
+  art | cairo | xlib | opal ) need_freetype=yes;;
+  * ) need_freetype=no;;
+esac
+if test $with_freetype = yes -a $need_freetype = yes; then
   PKG_CHECK_MODULES([FREETYPE], [freetype2])
 
   if test x"$FREETYPE_LIBS" != x; then
@@ -579,25 +604,6 @@ AC_DEFINE_UNQUOTED([USE_WRASTER], [$USE_WRASTER],
 # Revert to previous flags (removing added GNUstep flags)
 CPPFLAGS=${GRAPHIC_CFLAGS}
 LDFLAGS=${GRAPHIC_LFLAGS}
-#--------------------------------------------------------------------
-# Which projects should we build?
-#--------------------------------------------------------------------
-BUILD_SERVER=x11
-BUILD_GRAPHICS=cairo
-case $target_os in
-  *mingw32* ) BUILD_SERVER=win32
-              BUILD_GRAPHICS=winlib;;
-esac
-
-AC_ARG_ENABLE(server, 
-  [  --enable-server=SRV     Build server type: x11, win32, wayland, headless],,
-  enable_server=$BUILD_SERVER)
-AC_ARG_ENABLE(graphics, 
-  [  --enable-graphics=GPH   Build graphics: xlib, xdps, winlib, art, cairo, opal, headless],,
-  enable_graphics="$BUILD_GRAPHICS")
-
-BUILD_SERVER=$enable_server
-BUILD_GRAPHICS="$enable_graphics"
 AC_MSG_CHECKING(Backend Server)
 AC_MSG_RESULT($BUILD_SERVER)
 
