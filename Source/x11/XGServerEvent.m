@@ -1938,12 +1938,72 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             && (xEvent.xconfigure.window == RootWindow(dpy, defScreen)))
           {
             // Check if other RandR events are waiting in the queue.
+            // The server defers RRScreenChangeNotify per client until
+            // its next request, so a burst often starts with a stale
+            // duplicate: collapse it onto the LAST event, which carries
+            // the newest state (assigning inside the loop also leaves
+            // *event untouched when nothing was drained).
             XSync(dpy, 0);
-            while (XCheckTypedEvent(dpy, randr_event_type, &xEvent)) {;}
-                    
+            while (XCheckTypedEvent(dpy, randr_event_type, &xEvent))
+              *event = xEvent;
+
+            CGFloat previousHeight = xScreenSize.height;
             XRRUpdateConfiguration(event);
+            /* XRRGetScreenResources may serve cached state one
+             * transition old: RRSetScreenSize does not bump the
+             * resources config timestamp, so resetScreens can derive
+             * the PREVIOUS screen size. Refresh the backend screen
+             * data from fresh sources (root geometry, per-CRTC info)
+             * before the gui rebuilds NSScreen. */
+            [self screenList];
             // Regenerate NSScreens
             [NSScreen resetScreens];
+            /* Realign mapped windows against the server truth (XGetGeometry +
+             * XTranslateCoordinates per window) and propagate the corrected
+             * frames to the gui. With the companion gui-side guard (see the
+             * libs-gui discussion) the backend becomes the single remapper
+             * for screen changes. */
+            {
+              CGFloat heightDelta = xScreenSize.height - previousHeight;
+              NSArray *appWindows = [[NSApp windows] retain];
+              for (NSWindow *window in appWindows)
+                {
+                  gswindow_device_t *wdev;
+                  Window root_child;
+                  int root_x, root_y;
+                  unsigned int width, height, border, depth;
+                  NSRect xframe, osframe;
+                  if (window == nil || [window windowNumber] == 0) continue;
+                  wdev = [XGServer _windowWithTag: [window windowNumber]];
+                  if (wdev == 0 || wdev->ident == 0 || wdev->map_state != IsViewable) continue;
+                  if (XGetGeometry(dpy, wdev->ident, &root_child, &root_x, &root_y, &width, &height, &border, &depth) == 0) continue;
+                  XTranslateCoordinates(dpy, wdev->ident, RootWindow(dpy, wdev->screen_id), 0, 0, &root_x, &root_y, &root_child);
+                  xframe = NSMakeRect(root_x, root_y, width, height);
+                  osframe = [self _XFrameToOSFrame: xframe for: wdev];
+                  if (root_y != (int)wdev->xframe.origin.y && heightDelta != 0)
+                    {
+                      osframe.origin.y = wdev->osframe.origin.y + heightDelta;
+                    }
+                  else if (NSEqualRects(osframe, wdev->osframe)) continue;
+                  wdev->osframe = osframe;
+                  wdev->xframe = xframe;
+                  if ([window isVisible])
+                    {
+                      NSEvent *moved = [NSEvent otherEventWithType: NSAppKitDefined location: osframe.origin modifierFlags: 0 timestamp: 0 windowNumber: [window windowNumber] context: gcontext subtype: GSAppKitWindowMoved data1: osframe.origin.x data2: osframe.origin.y];
+                      [window sendEvent: moved];
+                    }
+                  {
+                    NSRect xf = [self _OSFrameToXFrame: osframe for: wdev];
+                    if ((int)xf.origin.y != root_y || (int)xf.origin.x != root_x)
+                      {
+                        XMoveWindow(dpy, wdev->ident, xf.origin.x, xf.origin.y);
+                        wdev->xframe = xf;
+                      }
+                  }
+                }
+              [appWindows release];
+            }
+
             // Notify application about screen parameters change
             [[NSNotificationCenter defaultCenter]
                       postNotificationName: NSApplicationDidChangeScreenParametersNotification
