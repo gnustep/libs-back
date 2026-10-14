@@ -1938,45 +1938,47 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             && (xEvent.xconfigure.window == RootWindow(dpy, defScreen)))
           {
             // Check if other RandR events are waiting in the queue.
-            // The server defers RRScreenChangeNotify per client until
-            // its next request, so a burst often starts with a stale
-            // duplicate: collapse it onto the LAST event, which carries
-            // the newest state (assigning inside the loop also leaves
-            // *event untouched when nothing was drained).
+            // Collapse the burst onto the newest event.
             XSync(dpy, 0);
             while (XCheckTypedEvent(dpy, randr_event_type, &xEvent))
-              *event = xEvent;
+              {
+                *event = xEvent;
+              }
 
             CGFloat previousHeight = xScreenSize.height;
             XRRUpdateConfiguration(event);
-            /* XRRGetScreenResources may serve cached state one
-             * transition old: RRSetScreenSize does not bump the
-             * resources config timestamp, so resetScreens can derive
-             * the PREVIOUS screen size. Refresh the backend screen
-             * data from fresh sources (root geometry, per-CRTC info)
-             * before the gui rebuilds NSScreen. */
+            /* The cached RandR resources may lag a transition behind;
+             * screenList re-reads them from fresh sources. */
             [self screenList];
             // Regenerate NSScreens
             [NSScreen resetScreens];
-            /* Realign mapped windows against the server truth (XGetGeometry +
-             * XTranslateCoordinates per window) and propagate the corrected
-             * frames to the gui. With the companion gui-side guard (see the
-             * libs-gui discussion) the backend becomes the single remapper
-             * for screen changes. */
+            /* Realign mapped windows against the server truth. */
             {
               CGFloat heightDelta = xScreenSize.height - previousHeight;
               NSArray *appWindows = [[NSApp windows] retain];
-              for (NSWindow *window in appWindows)
+              GS_FOR_IN (NSWindow *, window, appWindows)
                 {
                   gswindow_device_t *wdev;
                   Window root_child;
                   int root_x, root_y;
                   unsigned int width, height, border, depth;
                   NSRect xframe, osframe;
-                  if (window == nil || [window windowNumber] == 0) continue;
+                  if (window == nil || [window windowNumber] == 0)
+                    {
+                      continue;
+                    }
                   wdev = [XGServer _windowWithTag: [window windowNumber]];
-                  if (wdev == 0 || wdev->ident == 0 || wdev->map_state != IsViewable) continue;
-                  if (XGetGeometry(dpy, wdev->ident, &root_child, &root_x, &root_y, &width, &height, &border, &depth) == 0) continue;
+                  if (wdev == 0 || wdev->ident == 0
+                      || wdev->map_state != IsViewable)
+                    {
+                      continue;
+                    }
+                  if (XGetGeometry(dpy, wdev->ident, &root_child, &root_x,
+                                   &root_y, &width, &height,
+                                   &border, &depth) == 0)
+                    {
+                      continue;
+                    }
                   XTranslateCoordinates(dpy, wdev->ident, RootWindow(dpy, wdev->screen_id), 0, 0, &root_x, &root_y, &root_child);
                   xframe = NSMakeRect(root_x, root_y, width, height);
                   osframe = [self _XFrameToOSFrame: xframe for: wdev];
@@ -1984,7 +1986,10 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                     {
                       osframe.origin.y = wdev->osframe.origin.y + heightDelta;
                     }
-                  else if (NSEqualRects(osframe, wdev->osframe)) continue;
+                  else if (NSEqualRects(osframe, wdev->osframe))
+                    {
+                      continue;
+                    }
                   wdev->osframe = osframe;
                   wdev->xframe = xframe;
                   if ([window isVisible])
@@ -2001,6 +2006,7 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                       }
                   }
                 }
+              GS_END_FOR(appWindows)
               [appWindows release];
             }
 
