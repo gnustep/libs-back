@@ -1938,12 +1938,78 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
             && (xEvent.xconfigure.window == RootWindow(dpy, defScreen)))
           {
             // Check if other RandR events are waiting in the queue.
+            // Collapse the burst onto the newest event.
             XSync(dpy, 0);
-            while (XCheckTypedEvent(dpy, randr_event_type, &xEvent)) {;}
-                    
+            while (XCheckTypedEvent(dpy, randr_event_type, &xEvent))
+              {
+                *event = xEvent;
+              }
+
+            CGFloat previousHeight = xScreenSize.height;
             XRRUpdateConfiguration(event);
+            /* The cached RandR resources may lag a transition behind;
+             * screenList re-reads them from fresh sources. */
+            [self screenList];
             // Regenerate NSScreens
             [NSScreen resetScreens];
+            /* Realign mapped windows against the server truth. */
+            {
+              CGFloat heightDelta = xScreenSize.height - previousHeight;
+              NSArray *appWindows = [[NSApp windows] retain];
+              GS_FOR_IN (NSWindow *, window, appWindows)
+                {
+                  gswindow_device_t *wdev;
+                  Window root_child;
+                  int root_x, root_y;
+                  unsigned int width, height, border, depth;
+                  NSRect xframe, osframe;
+                  if (window == nil || [window windowNumber] == 0)
+                    {
+                      continue;
+                    }
+                  wdev = [XGServer _windowWithTag: [window windowNumber]];
+                  if (wdev == 0 || wdev->ident == 0
+                      || wdev->map_state != IsViewable)
+                    {
+                      continue;
+                    }
+                  if (XGetGeometry(dpy, wdev->ident, &root_child, &root_x,
+                                   &root_y, &width, &height,
+                                   &border, &depth) == 0)
+                    {
+                      continue;
+                    }
+                  XTranslateCoordinates(dpy, wdev->ident, RootWindow(dpy, wdev->screen_id), 0, 0, &root_x, &root_y, &root_child);
+                  xframe = NSMakeRect(root_x, root_y, width, height);
+                  osframe = [self _XFrameToOSFrame: xframe for: wdev];
+                  if (root_y != (int)wdev->xframe.origin.y && heightDelta != 0)
+                    {
+                      osframe.origin.y = wdev->osframe.origin.y + heightDelta;
+                    }
+                  else if (NSEqualRects(osframe, wdev->osframe))
+                    {
+                      continue;
+                    }
+                  wdev->osframe = osframe;
+                  wdev->xframe = xframe;
+                  if ([window isVisible])
+                    {
+                      NSEvent *moved = [NSEvent otherEventWithType: NSAppKitDefined location: osframe.origin modifierFlags: 0 timestamp: 0 windowNumber: [window windowNumber] context: gcontext subtype: GSAppKitWindowMoved data1: osframe.origin.x data2: osframe.origin.y];
+                      [window sendEvent: moved];
+                    }
+                  {
+                    NSRect xf = [self _OSFrameToXFrame: osframe for: wdev];
+                    if ((int)xf.origin.y != root_y || (int)xf.origin.x != root_x)
+                      {
+                        XMoveWindow(dpy, wdev->ident, xf.origin.x, xf.origin.y);
+                        wdev->xframe = xf;
+                      }
+                  }
+                }
+              GS_END_FOR(appWindows)
+              [appWindows release];
+            }
+
             // Notify application about screen parameters change
             [[NSNotificationCenter defaultCenter]
                       postNotificationName: NSApplicationDidChangeScreenParametersNotification
