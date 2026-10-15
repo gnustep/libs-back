@@ -341,8 +341,7 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
   hints->functions = 0;
 
   /* Now add to the hints from the styleMask */
-  if (styleMask == NSBorderlessWindowMask
-      || !handlesWindowDecorations)
+  if (styleMask == NSBorderlessWindowMask)
     {
       hints->flags |= MWM_HINTS_DECORATIONS;
       hints->flags |= MWM_HINTS_FUNCTIONS;
@@ -386,6 +385,19 @@ static void setWindowHintsForStyle (Display *dpy, Window window,
 	  hints->functions |= MWM_FUNC_MAXIMIZE;
 	  hints->functions |= MWM_FUNC_MOVE;
         }
+      if (!handlesWindowDecorations)
+	{
+	  /* The gui library draws the decorations: ask for none, but keep
+	     the functions, so that the window manager still moves,
+	     resizes, maximizes, minimizes and closes the window when the
+	     user or the decorations ask it to (_NET_WM_MOVERESIZE, its
+	     window menu, keyboard shortcuts). With functions 0 a window
+	     manager such as Mutter refuses all of them. */
+	  hints->flags |= MWM_HINTS_DECORATIONS;
+	  hints->flags |= MWM_HINTS_FUNCTIONS;
+	  hints->decorations = 0;
+	  hints->functions |= MWM_FUNC_MOVE;
+	}
       if (styleMask & NSIconWindowMask)
 	{
 	  // FIXME

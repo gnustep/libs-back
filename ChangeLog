@@ -1,3 +1,14 @@
+2026-10-06 Daniel Boyd <danieljboyd@icloud.com>
+
+	* Source/x11/XGServerWindow.m (setWindowHintsForStyle): For a styled
+	window whose decorations the gui draws (GSBackHandlesWindowDecorations
+	or GSX11HandlesWindowDecorations NO), ask for no decorations but keep
+	the functions the style allows, plus move.  With functions 0, window
+	managers such as Mutter refused to move, resize, maximize, minimize
+	or close the window, even when asked with _NET_WM_MOVERESIZE or
+	_NET_WM_STATE.  Borderless windows still allow no functions.
+	* Tests/x11/motifhints.m: New test.
+
 2026-07-22 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGServerEvent.m:
