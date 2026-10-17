@@ -4873,6 +4873,12 @@ _workAreas(Display *dpy, Window root)
             }
 
           monitorsCount = mi;
+          /* An fb-only resize (xrandr --fb, streaming servers) leaves
+           * the CRTC reporting the old mode; with no work area published
+           * the root geometry is the only authority for the screen.  */
+          if (monitorsCount == 1 && workAreas == nil)
+            monitors[0].frame =
+              NSMakeRect(0, 0, xScreenSize.width, xScreenSize.height);
           if (monitorsCount != 0)
             {
               XRRFreeScreenResources(screen_res);
