@@ -4873,16 +4873,10 @@ _workAreas(Display *dpy, Window root)
             }
 
           monitorsCount = mi;
-          /* A single monitor always spans the whole X screen.  The CRTC
-           * data can be stale here because RRSetScreenSize (xrandr --fb,
-           * and what streaming servers use) does not bump the resources
-           * config timestamp that XRRGetScreenResources caches on, and
-           * Xvfb typically exposes several outputs with only one
-           * connected.  The root geometry from DisplayWidth/DisplayHeight
-           * (refreshed above through XRRUpdateConfiguration) is the
-           * reliable source, so normalize after the loop, on the
-           * connected-output count. */
-          if (monitorsCount == 1)
+          /* An fb-only resize (xrandr --fb, streaming servers) leaves
+           * the CRTC reporting the old mode; with no work area published
+           * the root geometry is the only authority for the screen.  */
+          if (monitorsCount == 1 && workAreas == nil)
             monitors[0].frame =
               NSMakeRect(0, 0, xScreenSize.width, xScreenSize.height);
           if (monitorsCount != 0)
