@@ -70,6 +70,11 @@ terminate(int sig)
  return NSMakeRect(0, 0, 400, 400);
 }
 
+- (NSRect) workAreaForScreen: (int)screen
+{
+  return [self boundsForScreen: screen];
+}
+
 - (NSWindowDepth) windowDepthForScreen: (int) screen_num
 {
   return 0;

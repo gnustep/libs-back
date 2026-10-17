@@ -1,3 +1,15 @@
+2026-09-21 Simon Peter <probonopd@users.noreply.github.com>
+
+	* Headers/x11/XGServer.h: Keep the work area of a monitor beside
+	its frame.
+	* Source/x11/XGServerWindow.m (-screenList, -workAreaForScreen:):
+	Report the whole monitor as the frame of a screen and answer the
+	area _NET_WORKAREA leaves to application windows separately.
+	* Source/headless/HeadlessServer.m (-workAreaForScreen:),
+	* Source/wayland/WaylandServer.m (-workAreaForScreen:),
+	* Source/win32/WIN32Server.m (-workAreaForScreen:): Answer the
+	whole screen, which those servers do not reserve anything of.
+
 2026-07-22 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGServerEvent.m:
