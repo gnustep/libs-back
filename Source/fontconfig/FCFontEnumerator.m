@@ -345,6 +345,12 @@ static NSArray *faFromFc(FcPattern *pat)
 		  nil];
 }
 
+- (void) refreshFontCache
+{
+  FcInitReinitialize();
+  [super refreshFontCache];
+}
+
 - (void) enumerateFontsAndFamilies
 {
   int i;
