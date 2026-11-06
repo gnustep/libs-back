@@ -452,15 +452,6 @@ static NSArray *faFromFc(FcPattern *pat)
   return fallback;
 }
 
-- (NSString *) defaultSystemFontName
-{
-  return [self firstAvailableFontName:
-                 [NSArray arrayWithObjects: @"DejaVuSans",
-                  @"BitstreamVeraSans-Roman", @"FreeSans", @"Tahoma",
-                  @"ArialMT", nil]
-                             fallback: @"Helvetica"];
-}
-
 /* Return the enumerated font name of fontconfig's best match for pat,
    applying the usual configuration and default substitutions, or nil.
    Reuses faFromFc so the returned name is the same one under which the
@@ -485,6 +476,33 @@ fcDefaultFontName(FcPattern *pat)
           name = [fontArray objectAtIndex: 0];
         }
       FcPatternDestroy(match);
+    }
+  return name;
+}
+
+- (NSString *) defaultSystemFontName
+{
+  /* The list comes first, to keep the look of systems which have these.
+     Without any of them ask fontconfig, which always has an answer if any
+     font is installed: "Helvetica" is only a name to end on when none is. */
+  NSString *name = [self firstAvailableFontName:
+                 [NSArray arrayWithObjects: @"DejaVuSans",
+                  @"BitstreamVeraSans-Roman", @"FreeSans", @"Tahoma",
+                  @"ArialMT", nil]
+                             fallback: nil];
+
+  if (name == nil)
+    {
+      FcPattern *pat = FcPatternBuild(NULL,
+                                      FC_FAMILY, FcTypeString, (const FcChar8 *)"sans-serif",
+                                      (char *)NULL);
+
+      name = fcDefaultFontName(pat);
+      FcPatternDestroy(pat);
+      if (name == nil || ![allFontNames containsObject: name])
+        {
+          name = @"Helvetica";
+        }
     }
   return name;
 }

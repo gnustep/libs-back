@@ -1,3 +1,10 @@
+2026-11-06 Daniel Boyd <danieljboyd@icloud.com>
+
+	* Source/fontconfig/FCFontEnumerator.m (-defaultSystemFontName):
+	With none of the listed fonts installed, use what fontconfig gives for
+	sans-serif rather than "Helvetica", which nothing may have.
+	* Tests/cairo/defaultsystemfont.m: New test.
+
 2026-07-22 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGServerEvent.m:
