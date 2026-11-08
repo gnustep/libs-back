@@ -2,3 +2,12 @@ ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../../Source \
                            -I$(GNUSTEP_BUILD_DIR)/../../Source/art \
                            -I../../Source -I../../Source/art \
                            -I$(GNUSTEP_BUILD_DIR)/../.. -I../..
+
+# The tests that drive AppKit need the gui library, which every backend but
+# headless has.
+-include $(GNUSTEP_BUILD_DIR)/../../config.make
+-include ../../config.make
+
+ifneq ($(BUILD_GRAPHICS),headless)
+ADDITIONAL_TOOL_LIBS += -lgnustep-gui
+endif

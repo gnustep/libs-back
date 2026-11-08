@@ -23,21 +23,90 @@
 */
 
 #include <Foundation/NSString.h>
+#include <Foundation/NSDebug.h>
 #include "FTFaceInfo.h"
 
+@interface FTFaceInfo (Private)
+- (void) resolve;
+@end
+
 @implementation FTFaceInfo
+
+/* Read the file and the hinting out of the pattern fontconfig matched, once. */
+- (void) resolve
+{
+  FcPattern *pattern;
+  FcChar8   *file = NULL;
+  int        index = 0;
+  FcBool     antialias = FcTrue;
+  FcBool     hinting = FcTrue;
+  FcBool     autohint = FcFalse;
+  unsigned int hints;
+
+  if (_resolved)
+    {
+      return;
+    }
+  _resolved = YES;
+
+  pattern = [self matchedPattern];
+  if (pattern == NULL)
+    {
+      return;
+    }
+
+  if (FcPatternGetString(pattern, FC_FILE, 0, &file) == FcResultMatch)
+    {
+      ASSIGN(_fontFile, [NSString stringWithUTF8String: (const char *)file]);
+    }
+  if (FcPatternGetInteger(pattern, FC_INDEX, 0, &index) == FcResultMatch)
+    {
+      _faceIndex = index;
+    }
+  FcPatternGetBool(pattern, FC_ANTIALIAS, 0, &antialias);
+  FcPatternGetBool(pattern, FC_HINTING, 0, &hinting);
+  FcPatternGetBool(pattern, FC_AUTOHINT, 0, &autohint);
+  FcPatternDestroy(pattern);
+
+  hints = (autohint == FcTrue ? 1 : 0) | (hinting == FcTrue ? 2 : 0);
+  _renderHints = hints | (hints << 8)
+    | (antialias == FcTrue ? 0x10000 : 0);
+}
+
+- (NSString *) fontFile
+{
+  [self resolve];
+  return _fontFile;
+}
+
+- (int) faceIndex
+{
+  [self resolve];
+  return _faceIndex;
+}
+
+- (unsigned int) renderHints
+{
+  [self resolve];
+  return _renderHints;
+}
+
+/* The renderer opens the file itself, so there is no face to hand back. */
+- (void *) fontFace
+{
+  return NULL;
+}
 
 - (NSString *) description
 {
   return [NSString stringWithFormat: @"<FTFaceInfo %p: '%@' %@ %i %i>",
-    self, displayName, files, weight, traits];
+    self, [self familyName], [self fontFile], [self weight], [self traits]];
 }
 
-/* FTFaceInfo:s should never be deallocated */
 - (void) dealloc
 {
-  NSLog(@"Warning: -dealloc called on %@",self);
-  GSNOSUPERDEALLOC;
+  DESTROY(_fontFile);
+  [super dealloc];
 }
 
 @end
