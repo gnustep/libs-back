@@ -44,13 +44,18 @@ include $(GNUSTEP_MAKEFILES)/common.make
 
 include ./Version
 
+# Helper variable to check if the generated makefiles are present.
+_have_makefiles := $(shell test -f config.make -o -f back.make && echo yes)
+
 #
 # The list of subproject directories
 #
+ifeq ($(have_makefiles),yes)
 SUBPROJECTS = Source Tools
 
 ifneq ($(fonts), no)
 SUBPROJECTS += Fonts
+endif
 endif
 
 # Regression tests (run via 'make check'); guarded per-backend so they
