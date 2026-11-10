@@ -50,7 +50,7 @@ _have_makefiles := $(shell test -f config.make -o -f back.make && echo yes)
 #
 # The list of subproject directories
 #
-ifeq ($(have_makefiles),yes)
+ifeq ($(_have_makefiles),yes)
 SUBPROJECTS = Source Tools
 
 ifneq ($(fonts), no)

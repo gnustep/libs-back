@@ -29,7 +29,7 @@ before-all::
 # which we need in order to do our job.  If you need any special
 # argument to ./configure, you can't rely on this rule, and you must
 # always run ./configure manually
-ifeq ($(have_makefiles),)
+ifeq ($(_have_makefiles),)
 	./configure
 endif
 
