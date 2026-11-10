@@ -39,6 +39,7 @@
 #include <AppKit/DPSOperators.h>
 #include <AppKit/NSApplication.h>
 #include <AppKit/NSCursor.h>
+#include <AppKit/NSScreen.h>
 #include <AppKit/NSGraphics.h>
 #include <AppKit/NSWindow.h>
 #include <AppKit/NSImage.h>
@@ -76,6 +77,7 @@
 
 #include "x11/XGDragView.h"
 #include "x11/XGInputServer.h"
+#include "x11/XGCursorScale.h"
 
 #define	ROOT generic.appRootWindow
 
@@ -98,6 +100,57 @@ static int	last_win_num = 0;
 @interface NSCursor (BackendPrivate)
 - (void *)_cid;
 @end
+
+#define XG_CURSOR_MAX_VARIANTS 8
+
+@interface XGCursorSource : NSObject
+{
+@public
+  int		style;
+  NSImage	*image;
+  NSPoint	hotSpot;
+  BOOL		recolored;
+  XColor	fg;
+  XColor	bg;
+  int		count;
+  int		keys[XG_CURSOR_MAX_VARIANTS];
+  Cursor	cursors[XG_CURSOR_MAX_VARIANTS];
+}
+@end
+
+@implementation XGCursorSource
+- (void) dealloc
+{
+  RELEASE(image);
+  [super dealloc];
+}
+@end
+
+static NSMapTable	*cursorSources = NULL;
+static Cursor		currentCursor = None;
+static int		pointerFactorKey = -1;
+static BOOL		monitorKeysValid = NO;
+static unsigned		monitorKeyCount = 0;
+static NSRect		*monitorFrames = NULL;
+static int		*monitorKeys = NULL;
+
+static const struct {
+  int		style;
+  unsigned int	glyph;
+  const char	*name;
+} standardCursors[] = {
+  { GSArrowCursor,		XC_left_ptr,		"left_ptr" },
+  { GSIBeamCursor,		XC_xterm,		"xterm" },
+  { GSOpenHandCursor,		XC_hand1,		"hand1" },
+  { GSPointingHandCursor,	XC_hand2,		"hand2" },
+  { GSCrosshairCursor,		XC_crosshair,		"crosshair" },
+  { GSResizeDownCursor,		XC_bottom_side,		"bottom_side" },
+  { GSResizeLeftCursor,		XC_left_side,		"left_side" },
+  { GSResizeLeftRightCursor,	XC_sb_h_double_arrow,	"sb_h_double_arrow" },
+  { GSResizeRightCursor,	XC_right_side,		"right_side" },
+  { GSResizeUpCursor,		XC_top_side,		"top_side" },
+  { GSResizeUpDownCursor,	XC_sb_v_double_arrow,	"sb_v_double_arrow" },
+};
 
 @interface NSBitmapImageRep (GSPrivate)
 - (NSBitmapImageRep *) _convertToFormatBitsPerSample: (NSInteger)bps
@@ -2418,6 +2471,15 @@ _wmTestErrorHandler(Display *display, XErrorEvent *event)
 }
 
 - (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
+		     : (unsigned int) style window: (int) win
+{
+  gswindow_device_t *window = WINDOW_WITH_TAG(win);
+
+  [self styleoffsets: l : r : t : b : style
+		    : (window != NULL) ? window->ident : (Window) 0];
+}
+
+- (void) styleoffsets: (float *) l : (float *) r : (float *) t : (float *) b
 		     : (unsigned int) style : (Window) win
 {
   Offsets	*o;
@@ -2436,8 +2498,18 @@ _wmTestErrorHandler(Display *display, XErrorEvent *event)
   /* First check _NET_FRAME_EXTENTS */
   if (win  && ((generic.wm & XGWM_EWMH) != 0))
     {
-      unsigned long *extents = [self _getExtents: win];
+      gswindow_device_t *device = [XGServer _windowForXWindow: win];
+      unsigned long *extents;
 
+      if (device != NULL && device->extents_cached)
+        {
+          *l = device->extents[0];
+          *r = device->extents[1];
+          *t = device->extents[2];
+          *b = device->extents[3];
+          return;
+        }
+      extents = [self _getExtents: win];
       if (extents)
         {
           NSDebugLLog(@"Frame",
@@ -2448,6 +2520,14 @@ _wmTestErrorHandler(Display *display, XErrorEvent *event)
           *t = extents[2];
           *b = extents[3];
           XFree(extents);
+          if (device != NULL)
+            {
+              device->extents[0] = *l;
+              device->extents[1] = *r;
+              device->extents[2] = *t;
+              device->extents[3] = *b;
+              device->extents_cached = YES;
+            }
           return;
         }
     }
@@ -3487,6 +3567,11 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
 
   NSDebugLLog(@"Moving", @"Place %lu - o:%@, x:%@", window->number,
     NSStringFromRect(rect), NSStringFromRect(xFrame));
+  if (resize == YES)
+    {
+      window->resize_serial = NextRequest(dpy);
+      window->resize_pending = YES;
+    }
   XMoveResizeWindow (dpy, window->ident,
     window->siz_hints.x, window->siz_hints.y,
     window->siz_hints.width, window->siz_hints.height);
@@ -4261,6 +4346,218 @@ static char xgps_blank_cursor_bits [] = {
 static Cursor xgps_blank_cursor = None;
 static BOOL   cursor_hidden = NO;
 
+- (void) _updateMonitorFactorKeys
+{
+  NSArray	*screens;
+  unsigned	n;
+  BOOL		allOne = YES;
+  unsigned	i;
+
+  if (GSCurrentServer() != self)
+    {
+      monitorKeyCount = 0;
+      return;
+    }
+  screens = [NSScreen screens];
+  n = [screens count];
+
+  free(monitorFrames);
+  free(monitorKeys);
+  monitorFrames = malloc(n * sizeof(NSRect));
+  monitorKeys = malloc(n * sizeof(int));
+  monitorKeyCount = n;
+  for (i = 0; i < n; i++)
+    {
+      NSScreen	*screen = [screens objectAtIndex: i];
+      CGFloat	factor = [screen userSpaceScaleFactor];
+
+      if (factor <= 0.0)
+        {
+          factor = 1.0;
+        }
+      if (factor != 1.0)
+        {
+          allOne = NO;
+        }
+      monitorFrames[i] = [screen frame];
+      monitorKeys[i] = (int)lround(factor * 100.0);
+    }
+  if (allOne)
+    {
+      for (i = 0; i < n; i++)
+        {
+          monitorKeys[i] = 0;
+        }
+    }
+  monitorKeysValid = YES;
+}
+
+- (int) _factorKeyAtRootX: (int)x y: (int)y
+{
+  NSPoint	p;
+  unsigned	i;
+
+  if (!monitorKeysValid)
+    {
+      [self _updateMonitorFactorKeys];
+    }
+  if (monitorKeyCount == 0)
+    {
+      return 0;
+    }
+  p = NSMakePoint(x + 0.5, xScreenSize.height - y - 0.5);
+  for (i = 0; i < monitorKeyCount; i++)
+    {
+      if (NSPointInRect(p, monitorFrames[i]))
+        {
+          return monitorKeys[i];
+        }
+    }
+  return monitorKeys[0];
+}
+
+- (int) _pointerFactorKey
+{
+  if (pointerFactorKey < 0)
+    {
+      Window		root, child;
+      int		rx, ry, wx, wy;
+      unsigned int	mask;
+
+      if (XQueryPointer(dpy, [self xDisplayRootWindow], &root, &child,
+			&rx, &ry, &wx, &wy, &mask))
+        {
+          pointerFactorKey = [self _factorKeyAtRootX: rx y: ry];
+        }
+      else
+        {
+          pointerFactorKey = [self _factorKeyAtRootX: 0 y: 0];
+        }
+    }
+  return pointerFactorKey;
+}
+
+- (void) _invalidateCursorFactors
+{
+  monitorKeysValid = NO;
+  pointerFactorKey = -1;
+}
+
+- (void) _pointerMovedToRootX: (int)x y: (int)y
+{
+  int	key = [self _factorKeyAtRootX: x y: y];
+
+  if (key == pointerFactorKey)
+    {
+      return;
+    }
+  pointerFactorKey = key;
+  if (!cursor_hidden && currentCursor != None)
+    {
+      [self _DPSsetcursor: [self _cursor: currentCursor forFactorKey: key]
+			 : YES];
+    }
+}
+
+- (Cursor) _themeCursor: (int)style factorKey: (int)key
+{
+  unsigned	i;
+
+  for (i = 0; i < sizeof(standardCursors) / sizeof(standardCursors[0]); i++)
+    {
+      if (standardCursors[i].style == style)
+        {
+#if HAVE_XCURSOR
+          int size = XGCursorThemeSize(key / 100.0, key == 0);
+
+          if (size > 0)
+            {
+              XcursorImages *images = XcursorLibraryLoadImages(
+		standardCursors[i].name, XcursorGetTheme(dpy), size);
+
+              if (images != NULL)
+                {
+                  Cursor cursor = XcursorImagesLoadCursor(dpy, images);
+
+                  XcursorImagesDestroy(images);
+                  return cursor;
+                }
+            }
+#endif
+          return XCreateFontCursor(dpy, standardCursors[i].glyph);
+        }
+    }
+  return None;
+}
+
+- (void) _registerCursor: (Cursor)cursor
+		   style: (int)style
+		   image: (NSImage *)image
+		 hotSpot: (NSPoint)hotp
+	       factorKey: (int)key
+{
+  XGCursorSource *source = [XGCursorSource new];
+
+  source->style = style;
+  source->image = RETAIN(image);
+  source->hotSpot = hotp;
+  source->count = 1;
+  source->keys[0] = key;
+  source->cursors[0] = cursor;
+  if (cursorSources == NULL)
+    {
+      cursorSources = NSCreateMapTable(NSNonOwnedPointerMapKeyCallBacks,
+				       NSObjectMapValueCallBacks, 16);
+    }
+  NSMapInsert(cursorSources, (void *)cursor, source);
+  RELEASE(source);
+}
+
+- (Cursor) _cursor: (Cursor)cid forFactorKey: (int)key
+{
+  XGCursorSource	*source = (cursorSources ? NSMapGet(cursorSources, (void *)cid) : nil);
+  Cursor		cursor;
+  int			i;
+
+  if (source == nil)
+    {
+      return cid;
+    }
+  for (i = 0; i < source->count; i++)
+    {
+      if (source->keys[i] == key)
+        {
+          return source->cursors[i];
+        }
+    }
+  if (source->count == XG_CURSOR_MAX_VARIANTS)
+    {
+      return cid;
+    }
+  if (source->style >= 0)
+    {
+      cursor = [self _themeCursor: source->style factorKey: key];
+    }
+  else
+    {
+      cursor = [self _imageCursor: source->image
+			  hotSpot: source->hotSpot
+			factorKey: key];
+    }
+  if (cursor == None)
+    {
+      return cid;
+    }
+  if (source->recolored)
+    {
+      XRecolorCursor(dpy, cursor, &source->fg, &source->bg);
+    }
+  source->keys[source->count] = key;
+  source->cursors[source->count] = cursor;
+  source->count++;
+  return cursor;
+}
+
 - (Cursor) _blankCursor
 {
   if (xgps_blank_cursor == None)
@@ -4302,7 +4599,8 @@ static BOOL   cursor_hidden = NO;
     {
       Cursor cid = (Cursor)[[NSCursor currentCursor] _cid];
 
-      XDefineCursor (dpy, win, cid);
+      XDefineCursor (dpy, win,
+	[self _cursor: cid forFactorKey: [self _pointerFactorKey]]);
     }
 }
 
@@ -4444,51 +4742,42 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
 
 - (void) standardcursor: (int)style : (void **)cid
 {
-  Cursor cursor = None;
+  int		key = [self _pointerFactorKey];
+  Cursor	cursor = [self _themeCursor: style factorKey: key];
 
-  switch (style)
+  if (cursor != None)
     {
-    case GSArrowCursor:
-      cursor = XCreateFontCursor(dpy, XC_left_ptr);
-      break;
-    case GSIBeamCursor:
-      cursor = XCreateFontCursor(dpy, XC_xterm);
-      break;
-    case GSOpenHandCursor:
-      cursor = XCreateFontCursor(dpy, XC_hand1);
-      break;
-    case GSPointingHandCursor:
-      cursor = XCreateFontCursor(dpy, XC_hand2);
-      break;
-    case GSCrosshairCursor:
-      cursor = XCreateFontCursor(dpy, XC_crosshair);
-      break;
-    case GSResizeDownCursor:
-      cursor = XCreateFontCursor(dpy, XC_bottom_side);
-      break;
-    case GSResizeLeftCursor:
-      cursor = XCreateFontCursor(dpy, XC_left_side);
-      break;
-    case GSResizeLeftRightCursor:
-      cursor = XCreateFontCursor(dpy, XC_sb_h_double_arrow);
-      break;
-    case GSResizeRightCursor:
-      cursor = XCreateFontCursor(dpy, XC_right_side);
-      break;
-    case GSResizeUpCursor:
-      cursor = XCreateFontCursor(dpy, XC_top_side);
-      break;
-    case GSResizeUpDownCursor:
-      cursor = XCreateFontCursor(dpy, XC_sb_v_double_arrow);
-      break;
-    default:
-      return;
+      [self _registerCursor: cursor
+		      style: style
+		      image: nil
+		    hotSpot: NSZeroPoint
+		  factorKey: key];
     }
-  if (cid)
-    *cid = (void *)cursor;
+  *cid = (void *)cursor;
 }
 
 - (void) imagecursor: (NSPoint)hotp : (NSImage *)image : (void **)cid
+{
+  int		key = [self _pointerFactorKey];
+  Cursor	cursor = [self _imageCursor: image hotSpot: hotp factorKey: key];
+
+  if (cursor != None)
+    {
+      [self _registerCursor: cursor
+		      style: -1
+		      image: image
+		    hotSpot: hotp
+		  factorKey: key];
+    }
+  if (cid)
+    {
+      *cid = (cursor == None) ? NULL : (void *)cursor;
+    }
+}
+
+- (Cursor) _imageCursor: (NSImage *)image
+		hotSpot: (NSPoint)hotp
+	      factorKey: (int)key
 {
   Cursor cursor;
   NSBitmapImageRep *rep;
@@ -4500,8 +4789,7 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
     {
       /* FIXME: We might create a blank cursor here? */
       NSLog(@"Could not convert cursor bitmap data");
-      *cid = NULL;
-      return;
+      return None;
     }
 
   if (hotp.x >= [rep pixelsWide])
@@ -4516,8 +4804,7 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
 
   if (w <= 0 || h <= 0)
     {
-      *cid = NULL;
-      return;
+      return None;
     }
 
 #if HAVE_XCURSOR
@@ -4525,8 +4812,7 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
   // alpha, and document the format.
   if (colors != 4)
     {
-      *cid = NULL;
-      return;
+      return None;
     }
 
   {
@@ -4537,7 +4823,32 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
 
     // Copy the data from the image rep to the Xcursor structure
     swapColors((unsigned char *)xcursorImage->pixels, rep);
-    
+
+    if (key != 0)
+      {
+        NSSize	size = [image size];
+        double	factor = key / 100.0;
+        int	tw, th;
+
+        if (size.width <= 0 || size.height <= 0)
+          {
+            size = NSMakeSize(w, h);
+          }
+        tw = XGCursorScaledLength(size.width, factor);
+        th = XGCursorScaledLength(size.height, factor);
+        if (tw != w || th != h)
+          {
+            XcursorImage *scaled = XcursorImageCreate(tw, th);
+
+            XGCursorScaleARGB((const uint32_t *)xcursorImage->pixels, w, h,
+			      (uint32_t *)scaled->pixels, tw, th);
+            scaled->xhot = MIN((int)(hotp.x * tw / size.width), tw - 1);
+            scaled->yhot = MIN((int)(hotp.y * th / size.height), th - 1);
+            XcursorImageDestroy(xcursorImage);
+            xcursorImage = scaled;
+          }
+      }
+
     cursor = XcursorImageLoadCursor(dpy, xcursorImage);
     XcursorImageDestroy(xcursorImage);
   }
@@ -4567,8 +4878,7 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
   }
 #endif
 
-  if (cid)
-    *cid = (void *)cursor;
+  return cursor;
 }
 
 - (void) recolorcursor: (NSColor *)fg : (NSColor *)bg : (void*) cid
@@ -4600,6 +4910,24 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
   xb = [self xColorFromColor: xb];
 
   XRecolorCursor(dpy, cursor, &xf, &xb);
+  {
+    XGCursorSource *source = (cursorSources ? NSMapGet(cursorSources, (void *)cursor) : nil);
+    int		    i;
+
+    if (source != nil)
+      {
+        source->recolored = YES;
+        source->fg = xf;
+        source->bg = xb;
+        for (i = 0; i < source->count; i++)
+          {
+            if (source->cursors[i] != cursor)
+              {
+                XRecolorCursor(dpy, source->cursors[i], &xf, &xb);
+              }
+          }
+      }
+  }
 }
 
 - (void) setcursor: (void*) cid
@@ -4613,7 +4941,10 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
       return;
     }
 
-  [self _DPSsetcursor: cursor : YES];
+  currentCursor = cursor;
+  [self _DPSsetcursor: [self _cursor: cursor
+		       forFactorKey: [self _pointerFactorKey]]
+		     : YES];
 }
 
 - (void) freecursor: (void*) cid
@@ -4627,7 +4958,27 @@ xgps_cursor_image(Display *xdpy, Drawable draw, const unsigned char *data,
       return;
     }
 
-  XFreeCursor(dpy, cursor);
+  {
+    XGCursorSource *source = (cursorSources ? NSMapGet(cursorSources, (void *)cursor) : nil);
+    int		    i;
+
+    if (source != nil)
+      {
+        for (i = 0; i < source->count; i++)
+          {
+            XFreeCursor(dpy, source->cursors[i]);
+          }
+        NSMapRemove(cursorSources, (void *)cursor);
+      }
+    else
+      {
+        XFreeCursor(dpy, cursor);
+      }
+  }
+  if (currentCursor == cursor)
+    {
+      currentCursor = None;
+    }
 }
 
 /*******************************************************************************
@@ -4771,6 +5122,67 @@ _workAreas(Display *dpy, Window root)
 }
 
 
+#ifdef HAVE_XRANDR
+static CGFloat
+_scaleFactorForOutput(Display *dpy, RROutput output,
+                      XRROutputInfo *output_info, XRRCrtcInfo *crtc_info)
+{
+  Atom		dpi_atom;
+  Atom		type;
+  int		format;
+  unsigned long	nitems;
+  unsigned long	bytes_after;
+  unsigned char	*data = NULL;
+  CGFloat	factor = 0.0;
+
+  dpi_atom = XInternAtom(dpy, "DPI", True);
+  if (dpi_atom != None
+    && XRRGetOutputProperty(dpy, output, dpi_atom, 0, 1, False, False,
+      AnyPropertyType, &type, &format, &nitems, &bytes_after,
+      &data) == Success)
+    {
+      if (data != NULL && type == XA_INTEGER && format == 32 && nitems == 1)
+	{
+	  long	dpi = *(long *)data;
+
+	  if (dpi > 0)
+	    {
+	      factor = dpi / 96.0;
+	    }
+	}
+      if (data != NULL)
+	{
+	  XFree(data);
+	}
+    }
+
+  if (factor == 0.0
+    && output_info->mm_width > 0 && output_info->mm_height > 0
+    && [[NSUserDefaults standardUserDefaults]
+	 boolForKey: @"GSScreenScaleFromSize"])
+    {
+      CGFloat	inches = hypot(output_info->mm_width,
+			       output_info->mm_height) / 25.4;
+      CGFloat	dpi = hypot(crtc_info->width, crtc_info->height) / inches;
+      CGFloat	target = (inches >= 20.0) ? 110.0 : 135.0;
+      CGFloat	step = [[NSUserDefaults standardUserDefaults]
+			 floatForKey: @"GSScaleFactorStep"];
+
+      if (step <= 0.0)
+	{
+	  step = 0.25;
+	}
+      factor = rint(dpi / target / step) * step;
+      if (factor < 1.0)
+	{
+	  factor = 1.0;
+	}
+    }
+
+  return factor;
+}
+#endif
+
 /* This method assumes that we deal with one X11 screen - `defScreen`.
    Basically it means that we have DISPLAY variable set to `:0.0`.
    Where both digits have artbitrary values, but it defines once on
@@ -4786,6 +5198,8 @@ _workAreas(Display *dpy, Window root)
   Window        root = [self xDisplayRootWindow];
   NSArray	*workAreas = _workAreas(dpy, root);
   xScreenSize = _screenSize(dpy, defScreen);
+
+  [self _invalidateCursorFactors];
 
   monitorsCount = 0;
   if (monitors != NULL)
@@ -4827,8 +5241,20 @@ _workAreas(Display *dpy, Window root)
                   
                   monitors[mi].screen_id = defScreen;
                   monitors[mi].depth = [self windowDepthForScreen: mi];
-                  monitors[mi].resolution
-		    = [self resolutionForScreen: defScreen];
+                  {
+                    CGFloat factor = _scaleFactorForOutput(dpy,
+		      screen_res->outputs[i], output_info, crtc_info);
+
+                    if (factor > 0.0)
+                      {
+                        monitors[mi].resolution
+			  = NSMakeSize(72.0 * factor, 72.0 * factor);
+                      }
+                    else
+                      {
+                        monitors[mi].resolution = NSMakeSize(72, 72);
+                      }
+                  }
 
 		  /* We can only use the work area provided by _NET_WORKAREA
 		   * if we have a single screen/monitor, because that property
@@ -4873,6 +5299,21 @@ _workAreas(Display *dpy, Window root)
             }
 
           monitorsCount = mi;
+          for (i = 1; i < monitorsCount; i++)
+            {
+              if (!NSEqualSizes(monitors[i].resolution,
+		monitors[0].resolution))
+                {
+                  break;
+                }
+            }
+          if (i == monitorsCount)
+            {
+              for (i = 0; i < monitorsCount; i++)
+                {
+                  monitors[i].resolution = NSMakeSize(72, 72);
+                }
+            }
           if (monitorsCount != 0)
             {
               XRRFreeScreenResources(screen_res);
@@ -4895,7 +5336,7 @@ _workAreas(Display *dpy, Window root)
   monitors = NSZoneMalloc([self zone], sizeof(MonitorDevice));
   monitors[0].screen_id = defScreen;
   monitors[0].depth = [self windowDepthForScreen: 0];
-  monitors[0].resolution = [self resolutionForScreen: defScreen];
+  monitors[0].resolution = NSMakeSize(72, 72);
   monitors[0].frame = NSMakeRect(0, 0, xScreenSize.width, xScreenSize.height);
 
   if (workAreas != nil)
@@ -4965,38 +5406,14 @@ _workAreas(Display *dpy, Window root)
   return depths;
 }
 
-// `screen_num` is a Xlib screen number.
-- (NSSize) resolutionForScreen: (int)screen_num
+// `screen` is a monitor index not X11 screen
+- (NSSize) resolutionForScreen: (int)screen
 {
-  // NOTE:
-  // -gui now trusts the return value of resolutionForScreen:,
-  // so if it is not {72, 72} then the entire UI will be scaled.
-  //
-  // I commented out the implementation below because it may not
-  // be safe to use the DPI value we get from the X server.
-  // (i.e. I don't know if it will be a "fake" DPI like 72 or 96,
-  //  or a real measurement reported from the monitor's firmware
-  //  (possibly incorrect?))
-  // More research needs to be done.
-
-  return NSMakeSize(72, 72);
-
-  /*
-  int res_x, res_y;
-
-  if (screen < 0 || screen_num >= ScreenCount(dpy))
+  if (monitors == NULL || screen < 0 || screen >= monitorsCount)
     {
-      NSLog(@"Invalidparam: no screen %d", screen);
-      return NSMakeSize(0,0);
+      return NSMakeSize(72, 72);
     }
-  // This does not take virtual displays into account!!
-  res_x = DisplayWidth(dpy, screen) /
-      (DisplayWidthMM(dpy, screen) / 25.4);
-  res_y = DisplayHeight(dpy, screen) /
-      (DisplayHeightMM(dpy, screen) / 25.4);
-
-  return NSMakeSize(res_x, res_y);
-  */
+  return monitors[screen].resolution;
 }
 
 // `screen` is a monitor index not X11 screen

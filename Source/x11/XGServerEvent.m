@@ -112,6 +112,19 @@ void __objc_xgcontextevent_linking (void)
 {
 }
 
+static Bool
+realConfigureQueued(Display *dpy, XEvent *ev, XPointer arg)
+{
+  Window *w = (Window *)arg;
+
+  if (ev->type == ConfigureNotify && ev->xconfigure.window == w[0]
+    && ev->xconfigure.send_event == False)
+    {
+      w[1] = 1;
+    }
+  return False;
+}
+
 static SEL procSel = 0;
 static void (*procEvent)(id, SEL, XEvent*) = 0;
 
@@ -996,6 +1009,33 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
                 x.origin.y = root_y;
               }
 
+            if (xEvent.xconfigure.send_event
+              || (long)(xEvent.xconfigure.serial - cWin->resize_serial) < 0)
+              {
+                x.size = r.size;
+              }
+            else if (cWin->resize_pending && !NSEqualSizes(x.size, r.size))
+              {
+                XEvent scratch;
+                Window probe[2] = { cWin->ident, 0 };
+
+                XSync(dpy, False);
+                XCheckIfEvent(dpy, &scratch, realConfigureQueued,
+                              (XPointer)probe);
+                if (probe[1])
+                  {
+                    x.size = r.size;
+                  }
+                else
+                  {
+                    cWin->resize_pending = NO;
+                  }
+              }
+            else if (xEvent.xconfigure.send_event == False)
+              {
+                cWin->resize_pending = NO;
+              }
+
             cWin->xframe = x;
             n = [self _XFrameToOSFrame: x for: cWin];
             NSDebugLLog(@"Moving",
@@ -1102,6 +1142,8 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
       case EnterNotify:
         NSDebugLLog(@"NSEvent", @"%lu EnterNotify\n",
                     xEvent.xcrossing.window);
+        [self _pointerMovedToRootX: xEvent.xcrossing.x_root
+                                 y: xEvent.xcrossing.y_root];
         break;
               
             // when the pointer leaves a window
@@ -1558,6 +1600,8 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
 
           generic.lastMotion = xEvent.xmotion.time;
           [self setLastTime: generic.lastMotion];
+          [self _pointerMovedToRootX: xEvent.xmotion.x_root
+                                   y: xEvent.xmotion.y_root];
           state = xEvent.xmotion.state;
           if (state & generic.lMouseMask)
             {
@@ -1618,6 +1662,35 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
         NSDebugLLog(@"NSEvent", @"%lu PropertyNotify - '%s'\n",
                     xEvent.xproperty.window,
                     XGetAtomName(dpy, xEvent.xproperty.atom));
+	if (xEvent.xproperty.atom == generic._NET_FRAME_EXTENTS_ATOM)
+	  {
+	    gswindow_device_t *device
+	      = [XGServer _windowForXWindow: xEvent.xproperty.window];
+
+	    if (device != NULL)
+	      {
+		NSRect osframe;
+
+		device->extents_cached = NO;
+		osframe = [self _XFrameToOSFrame: device->xframe for: device];
+		if (!NSEqualRects(osframe, device->osframe))
+		  {
+		    NSEvent *r;
+
+		    device->osframe = osframe;
+		    r = [NSEvent otherEventWithType: NSAppKitDefined
+					   location: osframe.origin
+				      modifierFlags: 0
+					  timestamp: xEvent.xproperty.time / 1000
+				       windowNumber: device->number
+					    context: gcontext
+					    subtype: GSAppKitWindowResized
+					      data1: osframe.size.width
+					      data2: osframe.size.height];
+		    [[NSApp windowWithWindowNumber: device->number] sendEvent: r];
+		  }
+	      }
+	  }
 	if (xEvent.xproperty.atom == generic.WM_STATE_ATOM)
 	  {
 	    if (cWin == 0 || xEvent.xproperty.window != cWin->ident)
@@ -1933,6 +2006,18 @@ posixFileDescriptor: (NSPosixFileDescriptor*)fileDescriptor
           }
 #endif
 #ifdef HAVE_XRANDR
+        if (xEvent.type == randrEventBase + RRNotify
+          && ((XRRNotifyEvent *)&xEvent)->subtype == RRNotify_OutputProperty
+          && ((XRROutputPropertyNotifyEvent *)&xEvent)->property
+            == XInternAtom(dpy, "DPI", True))
+          {
+            [self screenList];
+            [NSScreen resetScreens];
+            [[NSNotificationCenter defaultCenter]
+              postNotificationName: NSApplicationDidChangeScreenParametersNotification
+                            object: NSApp];
+            break;
+          }
         int randr_event_type = randrEventBase + RRScreenChangeNotify;
         if (xEvent.type == randr_event_type
             && (xEvent.xconfigure.window == RootWindow(dpy, defScreen)))

@@ -527,7 +527,8 @@ static NSString	*startupID = nil;
   
 #ifdef HAVE_XRANDR
   XRRQueryExtension(dpy, &randrEventBase, &randrErrorBase);
-  XRRSelectInput(dpy, RootWindow(dpy, defScreen), RRScreenChangeNotifyMask);
+  XRRSelectInput(dpy, RootWindow(dpy, defScreen),
+    RRScreenChangeNotifyMask | RROutputPropertyNotifyMask);
 #endif
   return self;
 }
