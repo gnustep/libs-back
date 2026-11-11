@@ -1,3 +1,21 @@
+2026-11-11 Daniel Boyd <danieljboyd@icloud.com>
+
+	* Source/win32/w32_movesize.m:
+	* Source/win32/WIN32Server.m:
+	* Headers/win32/WIN32Server.h:
+	Fire the run loop's timers and redisplay windows while a window is
+	moved or sized.  Windows runs its own modal loop inside DefWindowProc
+	for the whole drag, so timers stopped and a progress indicator froze.
+	A Win32 timer set on WM_ENTERSIZEMOVE and killed on WM_EXITSIZEMOVE
+	now fires the due timers in the run loop's current mode and displays
+	windows that need it.  A timer that starts a nested event loop (a
+	modal panel) cancels the drag first, so the drag can't lose its input.
+	* Tests/win32/GNUmakefile.preamble:
+	* Tests/win32/TestInfo:
+	* Tests/win32/sizemove.m:
+	New win32 backend tests: timers during a move loop, and a modal panel
+	started by a timer during one.
+
 2026-07-22 Richard Frith-Macdonald <rfm@gnu.org>
 
 	* Source/x11/XGServerEvent.m:
