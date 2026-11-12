@@ -4101,9 +4101,17 @@ swapColors(unsigned char *image_data, NSBitmapImageRep *rep)
     {
       Time last = [self lastTime];
 
-      NSDebugLLog(@"Focus", @"Setting user time for %lu to %lu", window->ident, last);
-      XChangeProperty(dpy, window->ident, generic._NET_WM_USER_TIME_ATOM, XA_CARDINAL, 32,
-                      PropModeReplace, (unsigned char *)&last, 1);
+      /* -lastTime answers CurrentTime (0) before the first event and once
+       * the last one is out of date.  That is no user time to report: in
+       * this property 0 asks the window manager not to focus the window
+       * when it is mapped, and Mutter then stacks it below the focused one.
+       */
+      if (last != CurrentTime)
+        {
+          NSDebugLLog(@"Focus", @"Setting user time for %lu to %lu", window->ident, last);
+          XChangeProperty(dpy, window->ident, generic._NET_WM_USER_TIME_ATOM, XA_CARDINAL, 32,
+                          PropModeReplace, (unsigned char *)&last, 1);
+        }
     }
 
   NSDebugLLog(@"Focus", @"Setting focus to %lu", window->number);
