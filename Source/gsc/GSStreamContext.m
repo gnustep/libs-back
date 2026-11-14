@@ -101,7 +101,7 @@ fpfloat(FILE *stream, float f)
     {
       NSString *path = [info objectForKey: @"NSOutputFile"];
       NSDebugLLog(@"GSContext", @"Printing to %@", path);
-#if	defined(__MINGW32__)
+#if	defined(__MINGW32__) || defined(_WIN32)
       gstream = _wfopen([path fileSystemRepresentation], L"wb");
 #else
       gstream = fopen([path fileSystemRepresentation], "w");
