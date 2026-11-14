@@ -339,6 +339,11 @@ NSToWayland(struct window *window, int ns_y)
   return NSZeroRect;
 }
 
+- (NSRect)workAreaForScreen:(int)screen
+{
+  return [self boundsForScreen: screen];
+}
+
 - (NSWindowDepth)windowDepthForScreen:(int)screen
 {
   NSDebugLog(@"windowDepthForScreen: %d", screen);

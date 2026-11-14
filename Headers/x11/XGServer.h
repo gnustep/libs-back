@@ -57,6 +57,7 @@ typedef struct MonitorDevice {
   NSWindowDepth depth;
   NSSize resolution;
   NSRect frame;
+  NSRect workArea;
 } MonitorDevice;
 
 @interface XGServer : GSDisplayServer
