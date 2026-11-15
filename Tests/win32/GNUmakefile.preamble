@@ -1,0 +1,18 @@
+# Extra build settings for the win32 backend tests.
+#
+# config.make names the backend being built (BUILD_SERVER); the tests carry a
+# matching source-level guard (via config.h) so they still build -- and
+# skip -- on every other backend.
+
+# config.h (used by the source-level guard) sits at the top of the (build) tree.
+ADDITIONAL_INCLUDE_DIRS += -I$(GNUSTEP_BUILD_DIR)/../.. -I../..
+
+-include $(GNUSTEP_BUILD_DIR)/../../config.make
+-include ../../config.make
+
+# The tests open windows through the gui library.
+ADDITIONAL_TOOL_LIBS += -lgnustep-gui
+
+ifeq ($(BUILD_SERVER),win32)
+ADDITIONAL_TOOL_LIBS += -luser32
+endif
