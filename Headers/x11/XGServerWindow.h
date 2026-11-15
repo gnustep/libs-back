@@ -124,6 +124,10 @@ typedef struct _gswindow_device_t {
   uint32_t              net_wm_sync_request_counter_value_high;
   XSyncCounter          net_wm_sync_request_counter;
 #endif
+  float                 extents[4];
+  BOOL                  extents_cached;
+  unsigned long         resize_serial;
+  BOOL                  resize_pending;
 } gswindow_device_t;
 
 #define GET_XDRAWABLE(win)  ((win)->buffer ? (win)->buffer: (win)->ident)
@@ -139,6 +143,7 @@ typedef struct _gswindow_device_t {
 
 /* This needs to go in GSDisplayServer */
 - (void) _DPSsetcursor: (Cursor)c : (BOOL)set;
+- (void) _pointerMovedToRootX: (int)x y: (int)y;
 
 - (int) _wm_state: (Window) win;
 - (BOOL) _ewmh_isHidden: (Window) win;
